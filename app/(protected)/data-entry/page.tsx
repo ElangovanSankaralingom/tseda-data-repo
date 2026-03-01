@@ -9,27 +9,27 @@ type EntryItem = {
 const ITEMS: EntryItem[] = [
   {
     title: "FDP — Attended",
-    subtitle: "Add programs you attended (dates, organiser, certificate, etc.)",
+    subtitle: "Record FDPs you attended with support amount and required supporting documents.",
     href: "/data-entry/fdp-attended",
   },
   {
-    title: "FDP — Organised",
-    subtitle: "Add programs you organised (role, dates, approvals, etc.)",
-    href: "/data-entry/fdp-organised",
+    title: "FDP — Conducted",
+    subtitle: "Capture FDPs conducted with coordinator details, dates, and required supporting documents.",
+    href: "/data-entry/fdp-conducted",
   },
   {
     title: "Case Studies",
-    subtitle: "Add case studies (project, location, learning outcomes, images/docs)",
+    subtitle: "Maintain case study records with academic context, outcomes, and supporting material.",
     href: "/data-entry/case-studies",
   },
   {
     title: "Guest Lectures",
-    subtitle: "Add invited talks (topic, institution, mode, proof)",
+    subtitle: "Capture invited lectures with host institution, topic, mode, and documentary proof.",
     href: "/data-entry/guest-lectures",
   },
   {
     title: "Workshops",
-    subtitle: "Add workshops (conducted/attended, participants, outcomes, proof)",
+    subtitle: "Record workshop activities with organisers, participation details, outcomes, and proof.",
     href: "/data-entry/workshops",
   },
 ];
@@ -45,7 +45,7 @@ export default function DataEntryHomePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Data Entry</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose a category to start entering records. We’ll expand these forms step by step.
+            Choose a category to record faculty activities and supporting documents.
           </p>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function DataEntryHomePage() {
       </div>
 
       <div className="mt-6 rounded-2xl border border-border bg-white/70 dark:bg-black/20 p-4 text-sm text-muted-foreground">
-        Tip: We’ll keep each category as a separate flow so it stays clean and HR-ready.
+        Each category keeps records focused, verifiable, and ready for review.
       </div>
     </div>
   );
