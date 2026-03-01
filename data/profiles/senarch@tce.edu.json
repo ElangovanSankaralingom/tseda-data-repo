@@ -1,0 +1,31 @@
+{
+  "email": "senarch@tce.edu",
+  "googleName": "Elangovan Sankaralingom",
+  "googlePhotoURL": "https://lh3.googleusercontent.com/a/ACg8ocKqKk9m1l0lR7Y_H2rvaYEn_ndQjah913AJ0b7CuEokgc1xkY8o=s96-c",
+  "userPreferredName": "Elangovan Sankaralingom",
+  "customPhotoURL": null,
+  "personal": {
+    "dob": "1993-07-29",
+    "bloodGroup": "O+"
+  },
+  "academic": {
+    "dateOfJoiningTCE": "2019-12-05",
+    "designation": "Assistant",
+    "phdStatus": "Not Enrolled"
+  },
+  "experience": {
+    "lopPeriods": [],
+    "academicOutsideTCE": [],
+    "industry": []
+  },
+  "uploads": {
+    "appointmentLetter": null,
+    "joiningLetter": null,
+    "aadhar": null
+  },
+  "settings": {
+    "theme": "light"
+  },
+  "createdAt": "2026-02-28T19:29:48.469Z",
+  "updatedAt": "2026-03-01T09:11:27.655Z"
+}
