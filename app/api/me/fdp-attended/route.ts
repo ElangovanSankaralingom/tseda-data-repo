@@ -15,6 +15,8 @@ type FileMeta = {
 
 type FdpAttended = {
   id: string;
+  startDate: string;
+  endDate: string;
   programName: string;
   organisingBody: string;
   supportAmount: number | null;
@@ -107,6 +109,10 @@ function isValidFileMeta(meta: FileMeta | null) {
   );
 }
 
+function isISODate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+}
+
 export async function GET() {
   const email = await getAuthorizedEmail();
   if (!email) {
@@ -133,10 +139,24 @@ export async function POST(request: Request) {
 
     const programName = String(entry.programName ?? "").trim();
     const organisingBody = String(entry.organisingBody ?? "").trim();
+    const startDate = String(entry.startDate ?? "").trim();
+    const endDate = String(entry.endDate ?? "").trim();
     const supportAmount =
       typeof entry.supportAmount === "number" && Number.isFinite(entry.supportAmount) && entry.supportAmount >= 0
         ? entry.supportAmount
         : null;
+
+    if (!isISODate(startDate)) {
+      return NextResponse.json({ error: "startDate required" }, { status: 400 });
+    }
+
+    if (!isISODate(endDate)) {
+      return NextResponse.json({ error: "endDate required" }, { status: 400 });
+    }
+
+    if (endDate < startDate) {
+      return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
+    }
 
     if (!programName) {
       return NextResponse.json({ error: "programName required" }, { status: 400 });
@@ -163,6 +183,8 @@ export async function POST(request: Request) {
 
     const savedEntry: FdpAttended = {
       id: entry.id,
+      startDate,
+      endDate,
       programName,
       organisingBody,
       supportAmount,

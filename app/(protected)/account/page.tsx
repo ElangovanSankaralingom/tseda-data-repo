@@ -27,7 +27,12 @@ type Profile = {
   googlePhotoURL?: string;
   userPreferredName?: string;
 
-  personal?: { dob?: string; bloodGroup?: BloodGroup };
+  personal?: {
+    dob?: string;
+    bloodGroup?: BloodGroup;
+    aadharNumber?: string;
+    panCardNumber?: string;
+  };
   academic?: { dateOfJoiningTCE?: string; designation?: Designation; phdStatus?: PhdStatus };
 
   experience?: Experience;
@@ -36,6 +41,7 @@ type Profile = {
     appointmentLetter: FileMeta | null;
     joiningLetter: FileMeta | null;
     aadhar: FileMeta | null;
+    panCard: FileMeta | null;
   };
 };
 
@@ -48,6 +54,21 @@ type SaveAllOptions = {
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function formatAadharNumber(value: string) {
+  return value
+    .replace(/\D/g, "")
+    .slice(0, 12)
+    .replace(/(\d{4})(?=\d)/g, "$1 ")
+    .trim();
+}
+
+function normalizePanCardNumber(value: string) {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
 }
 
 function SectionCard({
@@ -186,7 +207,7 @@ function uploadCertificateXHR(opts: {
 }
 
 function uploadDocXHR(opts: {
-  docType: "appointmentLetter" | "joiningLetter" | "aadhar";
+  docType: "appointmentLetter" | "joiningLetter" | "aadhar" | "panCard";
   file: File;
   onProgress: (pct: number) => void;
 }): Promise<FileMeta> {
@@ -241,11 +262,12 @@ export default function AccountPage() {
 
   // uploads/doc progress state
   const [pendingDocFile, setPendingDocFile] = useState<
-    Record<"appointmentLetter" | "joiningLetter" | "aadhar", File | null>
+    Record<"appointmentLetter" | "joiningLetter" | "aadhar" | "panCard", File | null>
   >({
     appointmentLetter: null,
     joiningLetter: null,
     aadhar: null,
+    panCard: null,
   });
   const [docProgress, setDocProgress] = useState<Record<string, number>>({});
   const [docBusy, setDocBusy] = useState<Record<string, boolean>>({});
@@ -259,7 +281,7 @@ export default function AccountPage() {
     personal: {},
     academic: {},
     experience: { lopPeriods: [], academicOutsideTCE: [], industry: [] },
-    uploads: { appointmentLetter: null, joiningLetter: null, aadhar: null },
+    uploads: { appointmentLetter: null, joiningLetter: null, aadhar: null, panCard: null },
   });
 
   const [draft, setDraft] = useState<Profile>(profile);
@@ -271,7 +293,8 @@ export default function AccountPage() {
         const r = await fetch("/api/me", { cache: "no-store" });
         const p = (await r.json()) as Profile;
         p.experience = p.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
-        p.uploads = p.uploads ?? { appointmentLetter: null, joiningLetter: null, aadhar: null };
+        p.uploads = p.uploads ?? { appointmentLetter: null, joiningLetter: null, aadhar: null, panCard: null };
+        p.uploads.panCard = p.uploads.panCard ?? null;
         setProfile(p);
         setDraft(p);
       } catch {
@@ -315,6 +338,16 @@ export default function AccountPage() {
 
     const dob = profile.personal?.dob;
     if (dob && !isISODate(dob)) e.dob = "Invalid date.";
+
+    const aadharDigits = (profile.personal?.aadharNumber ?? "").replace(/\D/g, "");
+    if (profile.personal?.aadharNumber && aadharDigits.length !== 12) {
+      e.aadharNumber = "Aadhar number must be 12 digits.";
+    }
+
+    const panCardNumber = (profile.personal?.panCardNumber ?? "").trim();
+    if (panCardNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panCardNumber)) {
+      e.panCardNumber = "PAN card number format is invalid.";
+    }
 
     const doj = profile.academic?.dateOfJoiningTCE;
     if (doj && !isISODate(doj)) e.doj = "Invalid date.";
@@ -419,7 +452,7 @@ export default function AccountPage() {
 
     for (const [key] of scopeErrors) {
       if (key === "userPreferredName" || key === "email") sections.add("Profile");
-      else if (key === "dob") sections.add("Personal");
+      else if (key === "dob" || key === "aadharNumber" || key === "panCardNumber") sections.add("Personal");
       else if (key === "doj") sections.add("Academic");
       else sections.add("Experience");
     }
@@ -465,7 +498,8 @@ export default function AccountPage() {
       if (!r.ok) throw new Error("Save failed");
       const updated = (await r.json()) as Profile;
       updated.experience = updated.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
-      updated.uploads = updated.uploads ?? { appointmentLetter: null, joiningLetter: null, aadhar: null };
+      updated.uploads = updated.uploads ?? { appointmentLetter: null, joiningLetter: null, aadhar: null, panCard: null };
+      updated.uploads.panCard = updated.uploads.panCard ?? null;
       setProfile(updated);
       setDraft(updated);
       setToast({ type: "ok", msg: "Saved." });
@@ -575,7 +609,7 @@ export default function AccountPage() {
     }
   }
 
-  async function uploadAndSaveDoc(docType: "appointmentLetter" | "joiningLetter" | "aadhar") {
+  async function uploadAndSaveDoc(docType: "appointmentLetter" | "joiningLetter" | "aadhar" | "panCard") {
     const key = `doc:${docType}`;
     const file = pendingDocFile[docType];
 
@@ -611,7 +645,7 @@ export default function AccountPage() {
       const nextDraft = {
         ...draft,
         uploads: {
-          ...(draft.uploads || { appointmentLetter: null, joiningLetter: null, aadhar: null }),
+          ...(draft.uploads || { appointmentLetter: null, joiningLetter: null, aadhar: null, panCard: null }),
           [docType]: meta,
         },
       };
@@ -630,7 +664,7 @@ export default function AccountPage() {
   }
 
   // ✅ FIXED: doc delete now uses storedPath (required by backend)
-  async function deleteDoc(docType: "appointmentLetter" | "joiningLetter" | "aadhar") {
+  async function deleteDoc(docType: "appointmentLetter" | "joiningLetter" | "aadhar" | "panCard") {
     const meta = draft.uploads?.[docType];
     if (!meta?.storedPath) {
       setToast({ type: "err", msg: "File path missing. Upload again once and Save." });
@@ -654,6 +688,7 @@ export default function AccountPage() {
             appointmentLetter: null,
             joiningLetter: null,
             aadhar: null,
+            panCard: null,
           }),
           [docType]: null,
         },
@@ -860,6 +895,50 @@ export default function AccountPage() {
                     <option key={bg} value={bg}>{bg}</option>
                   ))}
                 </select>
+              </Field>
+
+              <Field label="Aadhar Number" error={errors.aadharNumber} hint="12-digit format">
+                <input
+                  inputMode="numeric"
+                  maxLength={14}
+                  placeholder="1234 5678 9012"
+                  value={draft.personal?.aadharNumber ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      personal: {
+                        ...(d.personal || {}),
+                        aadharNumber: formatAadharNumber(e.target.value),
+                      },
+                    }))
+                  }
+                  className={cx(
+                    "w-full rounded-lg border px-3 py-2 text-sm",
+                    errors.aadharNumber ? "border-red-300" : "border-border"
+                  )}
+                />
+              </Field>
+
+              <Field label="PAN Card Number" error={errors.panCardNumber} hint="ABCDE1234F">
+                <input
+                  autoCapitalize="characters"
+                  maxLength={10}
+                  placeholder="ABCDE1234F"
+                  value={draft.personal?.panCardNumber ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      personal: {
+                        ...(d.personal || {}),
+                        panCardNumber: normalizePanCardNumber(e.target.value),
+                      },
+                    }))
+                  }
+                  className={cx(
+                    "w-full rounded-lg border px-3 py-2 text-sm",
+                    errors.panCardNumber ? "border-red-300" : "border-border"
+                  )}
+                />
               </Field>
             </div>
           </SectionCard>
@@ -1472,6 +1551,7 @@ export default function AccountPage() {
                   ["appointmentLetter", "Appointment Letter"],
                   ["joiningLetter", "Joining Letter"],
                   ["aadhar", "Aadhar"],
+                  ["panCard", "PAN Card"],
                 ] as const
               ).map(([docType, label]) => {
                 const key = `doc:${docType}`;

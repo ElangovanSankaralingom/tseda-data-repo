@@ -29,6 +29,7 @@ function readProfile(email: string): AnyObj {
         appointmentLetter: null,
         joiningLetter: null,
         aadhar: null,
+        panCard: null,
       },
       settings: {
         theme: "light",
