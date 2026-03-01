@@ -10,7 +10,7 @@ const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
 const LEGACY_UPLOADS_ROOT = path.join(process.cwd(), "storage");
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
-const DOC_TYPES = new Set(["appointmentLetter", "joiningLetter", "aadhar"]);
+const DOC_TYPES = new Set(["appointmentLetter", "joiningLetter", "aadhar", "panCard"]);
 const CERTIFICATE_CATEGORIES = new Set(["academicOutsideTCE", "industry"]);
 
 function sanitizeSegment(value: string) {
