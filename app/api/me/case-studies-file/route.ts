@@ -4,12 +4,12 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-type Slot = "permissionLetter" | "geotaggedPhotos";
+type Slot = "permissionLetter" | "travelPlan" | "geotaggedPhotos";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
-const ALLOWED_SLOTS = new Set<Slot>(["permissionLetter", "geotaggedPhotos"]);
+const ALLOWED_SLOTS = new Set<Slot>(["permissionLetter", "travelPlan", "geotaggedPhotos"]);
 
 function safeEmailDir(email: string) {
   return email.toLowerCase().replace(/[^a-z0-9@._-]/g, "_");
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     const relDir = path.posix.join(
       "uploads",
       safeEmailDir(email),
-      "fdp-conducted",
+      "case-studies",
       safeName(recordId),
       slot
     );
@@ -119,15 +119,13 @@ export async function DELETE(request: Request) {
   try {
     const body = (await request.json()) as { storedPath?: string };
     const storedPath = normalizeStoredPath(String(body?.storedPath ?? "").trim());
-    const ownerPrefix = path.posix.join("uploads", safeEmailDir(authorizedEmail), "fdp-conducted") + "/";
+    const ownerPrefix = path.posix.join("uploads", safeEmailDir(authorizedEmail), "case-studies") + "/";
 
     if (!storedPath.startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const absPath = path.join(process.cwd(), "public", storedPath);
-    await fs.unlink(absPath).catch(() => null);
-
+    await fs.unlink(path.join(process.cwd(), "public", storedPath)).catch(() => null);
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Delete failed";

@@ -1,5 +1,6 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { findFacultyByEmail } from "@/lib/facultyDirectory";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,8 +16,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ profile }) {
       const email = (profile?.email ?? "").toLowerCase();
-      // allow only @tce.edu
-      return email.endsWith("@tce.edu");
+      return email.endsWith("@tce.edu") && !!findFacultyByEmail(email);
     },
   },
 };

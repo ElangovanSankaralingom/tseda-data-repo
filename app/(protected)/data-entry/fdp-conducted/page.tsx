@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import DateField from "@/components/controls/DateField";
+import FacultySelect from "@/components/controls/FacultySelect";
+import SelectDropdown from "@/components/controls/SelectDropdown";
+import MultiPhotoUpload from "@/components/uploads/MultiPhotoUpload";
+import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
 
 type FileMeta = {
   fileName: string;
@@ -11,11 +16,6 @@ type FileMeta = {
   storedPath: string;
 };
 
-type FacultyOption = {
-  name: string;
-  email: string;
-};
-
 type FacultySelection = {
   name: string;
   email: string;
@@ -23,51 +23,41 @@ type FacultySelection = {
 
 type FdpConducted = {
   id: string;
+  academicYear: string;
+  semesterType: string;
   startDate: string;
   endDate: string;
   coordinatorName: string;
   coordinatorEmail: string;
   coCoordinators: FacultySelection[];
   permissionLetter: FileMeta | null;
-  geotaggedPhoto: FileMeta | null;
+  geotaggedPhotos: FileMeta[];
   createdAt: string;
   updatedAt: string;
 };
 
-const FACULTY_OPTIONS: FacultyOption[] = [
-  { name: "Dr. G. Balaji", email: "gbarch@tce.edu" },
-  { name: "Dr.J.Jinu Louishidha Kitchley", email: "jinujoshua@tce.edu" },
-  { name: "Ar. S. Karthikeya Raja", email: "skrarch@tce.edu" },
-  { name: "Dr. I. Chandramathy", email: "cmarch@tce.edu" },
-  { name: "Ar. P. Vivek", email: "pvkarch@tce.edu" },
-  { name: "Ar. S. Thangalavanya", email: "lavanya_arch@tce.edu" },
-  { name: "Ar. M. Sindhuja", email: "crissindhu@tce.edu" },
-  { name: "Ar. R. Jeyabalaji", email: "ajarch@tce.edu" },
-  { name: "Dr. R. Meena Kumari", email: "rmiarch@tce.edu" },
-  { name: "Ar. U. Vijay Anand", email: "uvaarch@tce.edu" },
-  { name: "Mr. R. Vinoth Kumar", email: "rvkarch@tce.edu" },
-  { name: "Ar. A. Ayswarya", email: "aaarch@tce.edu" },
-  { name: "Ar. P. Pavalavelsh", email: "ppharch@tce.edu" },
-  { name: "Ar. S. M. Vidhya Sankari", email: "smvsarch@tce.edu" },
-  { name: "Ar. C. Piraiarasi", email: "cparch@tce.edu" },
-  { name: "Ar. S. Elangovan", email: "senarch@tce.edu" },
-  { name: "Ar.G.Vaishali", email: "gviarch@tce.edu" },
-  { name: "Ar. M. Lekshmi Shunnma", email: "mlsarch@tce.edu" },
-  { name: "Ar. M. Vishal", email: "mvlarch@tce.edu" },
-  { name: "Ms. S. Anu", email: "saarch@tce.edu" },
-  { name: "Ar. D. Gokul", email: "dglarch@tce.edu" },
-  { name: "Ar. A. Geo", email: "agarch@tce.edu" },
-  { name: "Ar. Divya Raveendran", email: "drnarch@tce.edu" },
-  { name: "Ar. R. Prathiksha", email: "rpaarch@tce.edu" },
-  { name: "Ar. SV. Lakshmipriya", email: "svlarch@tce.edu" },
-  { name: "Ar. R. Roshma", email: "rrarch@tce.edu" },
-  { name: "Ar. A. Akeel Alawdeen Kamal", email: "aakarch@tce.edu" },
-  { name: "Ar. R. Saravana Raja", email: "rsrarch@tce.edu" },
-  { name: "Ar. Gayathri Suresh", email: "gsharch@tce.edu" },
-  { name: "Ar. S. Aravind Roshan", email: "sararch@tce.edu" },
-  { name: "Ar. S. Sindhu", email: "ssuarch@tce.edu" },
-  { name: "Dr. G. Sooraj", email: "gsjarch@tce.edu" },
-];
+type CurrentFaculty = {
+  name: string;
+  email: string;
+};
+
+const ACADEMIC_YEAR_OPTIONS = [
+  "Academic Year 2025-2026",
+  "Academic Year 2026-2027",
+  "Academic Year 2027-2028",
+] as const;
+
+const SEMESTER_TYPE_OPTIONS = ["Odd Semester", "Even Semester"] as const;
+const ACADEMIC_YEAR_DROPDOWN_OPTIONS = ACADEMIC_YEAR_OPTIONS.map((option) => ({
+  label: option,
+  value: option,
+}));
+const SEMESTER_TYPE_DROPDOWN_OPTIONS = SEMESTER_TYPE_OPTIONS.map((option) => ({
+  label: option,
+  value: option,
+}));
+
+const FACULTY_OPTIONS: FacultyDirectoryEntry[] = FACULTY_DIRECTORY;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -91,6 +81,20 @@ function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
 }
 
+function getAcademicYearRange(academicYear: string) {
+  const match = academicYear.match(/^Academic Year (\d{4})-(\d{4})$/);
+  if (!match) return null;
+
+  const startYear = match[1];
+  const endYear = match[2];
+
+  return {
+    start: `${startYear}-07-01`,
+    end: `${endYear}-06-30`,
+    label: `Jul 1, ${startYear} to Jun 30, ${endYear}`,
+  };
+}
+
 function getInclusiveDays(startDate: string, endDate: string) {
   if (!isISODate(startDate) || !isISODate(endDate) || endDate < startDate) {
     return null;
@@ -111,16 +115,18 @@ function formatFacultyDisplay(selection: FacultySelection) {
   return selection.name;
 }
 
-function emptyForm(): FdpConducted {
+function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
   return {
     id: uuid(),
+    academicYear: "",
+    semesterType: "",
     startDate: "",
     endDate: "",
-    coordinatorName: "",
-    coordinatorEmail: "",
+    coordinatorName: currentFaculty?.name ?? "",
+    coordinatorEmail: currentFaculty?.email ?? "",
     coCoordinators: [],
     permissionLetter: null,
-    geotaggedPhoto: null,
+    geotaggedPhotos: [],
     createdAt: "",
     updatedAt: "",
   };
@@ -169,58 +175,6 @@ function Field({
   );
 }
 
-function FacultySelect({
-  value,
-  onChange,
-  options,
-  disabledEmails,
-  placeholder,
-}: {
-  value: FacultySelection;
-  onChange: (next: FacultySelection) => void;
-  options: FacultyOption[];
-  disabledEmails: Set<string>;
-  placeholder?: string;
-}) {
-  const normalizedValueEmail = value.email.toLowerCase();
-  const knownCurrent = !!normalizedValueEmail && options.some((option) => option.email === normalizedValueEmail);
-  const currentFallbackValue = !knownCurrent && (value.name || value.email) ? "__current__" : "";
-
-  return (
-    <select
-      value={knownCurrent ? normalizedValueEmail : currentFallbackValue}
-      onChange={(event) => {
-        if (!event.target.value) {
-          onChange({ name: "", email: "" });
-          return;
-        }
-
-        if (event.target.value === "__current__") {
-          onChange(value);
-          return;
-        }
-
-        const selected = options.find((option) => option.email === event.target.value);
-        if (selected) {
-          onChange({ name: selected.name, email: selected.email });
-        }
-      }}
-      className={cx(
-        "w-full rounded-lg border px-3 py-2 text-sm",
-        value.name || value.email ? "border-border" : "border-border text-muted-foreground"
-      )}
-    >
-      <option value="">{placeholder ?? "Select faculty"}</option>
-      {currentFallbackValue ? <option value="__current__">{value.name || value.email}</option> : null}
-      {options.map((option) => (
-        <option key={option.email} value={option.email} disabled={disabledEmails.has(option.email.toLowerCase())}>
-          {option.name}
-        </option>
-      ))}
-    </select>
-  );
-}
-
 function MiniButton({
   children,
   onClick,
@@ -234,7 +188,7 @@ function MiniButton({
   disabled?: boolean;
   type?: "button" | "submit";
 }) {
-  const base = "rounded-lg border px-3 py-2 text-sm";
+  const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
   const activeCls =
     variant === "danger"
       ? "border-border text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -270,7 +224,7 @@ function ProgressBar({ value }: { value: number }) {
 function uploadConductedFileXHR(opts: {
   email: string;
   recordId: string;
-  slot: "permissionLetter" | "geotaggedPhoto";
+  slot: "permissionLetter";
   file: File;
   onProgress: (pct: number) => void;
 }): Promise<FileMeta> {
@@ -315,26 +269,25 @@ export default function FdpConductedPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [email, setEmail] = useState("");
+  const [currentFaculty, setCurrentFaculty] = useState<CurrentFaculty | null>(null);
   const [list, setList] = useState<FdpConducted[]>([]);
-  const [form, setForm] = useState<FdpConducted>(emptyForm);
-  const [pending, setPending] = useState<Record<"permissionLetter" | "geotaggedPhoto", File | null>>({
+  const [form, setForm] = useState<FdpConducted>(() => emptyForm());
+  const [pending, setPending] = useState<Record<"permissionLetter", File | null>>({
     permissionLetter: null,
-    geotaggedPhoto: null,
   });
-  const [busy, setBusy] = useState<Record<"permissionLetter" | "geotaggedPhoto", boolean>>({
+  const [busy, setBusy] = useState<Record<"permissionLetter", boolean>>({
     permissionLetter: false,
-    geotaggedPhoto: false,
   });
-  const [progress, setProgress] = useState<Record<"permissionLetter" | "geotaggedPhoto", number>>({
+  const [progress, setProgress] = useState<Record<"permissionLetter", number>>({
     permissionLetter: 0,
-    geotaggedPhoto: 0,
   });
-  const [uploadError, setUploadError] = useState<Record<"permissionLetter" | "geotaggedPhoto", string | null>>({
+  const [uploadError, setUploadError] = useState<Record<"permissionLetter", string | null>>({
     permissionLetter: null,
-    geotaggedPhoto: null,
   });
+  const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
 
   useEffect(() => {
@@ -350,6 +303,12 @@ export default function FdpConductedPage() {
         }
 
         setEmail(nextEmail);
+        const nextFaculty = {
+          email: nextEmail,
+          name: String(me?.officialName ?? me?.userPreferredName ?? nextEmail.split("@")[0]).trim(),
+        };
+        setCurrentFaculty(nextFaculty);
+        setForm(emptyForm(nextFaculty));
 
         const listResponse = await fetch(`/api/me/fdp-conducted?email=${encodeURIComponent(nextEmail)}`, {
           cache: "no-store",
@@ -373,8 +332,21 @@ export default function FdpConductedPage() {
   const errors = useMemo(() => {
     const nextErrors: Record<string, string> = {};
 
+    if (!ACADEMIC_YEAR_OPTIONS.includes(form.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
+      nextErrors.academicYear = "Academic year is required.";
+    }
+
+    if (!SEMESTER_TYPE_OPTIONS.includes(form.semesterType as (typeof SEMESTER_TYPE_OPTIONS)[number])) {
+      nextErrors.semesterType = "Semester type is required.";
+    }
+
     if (!isISODate(form.startDate)) {
       nextErrors.startDate = "Starting date is required.";
+    } else {
+      const academicYearRange = getAcademicYearRange(form.academicYear);
+      if (academicYearRange && (form.startDate < academicYearRange.start || form.startDate > academicYearRange.end)) {
+        nextErrors.startDate = `Starting date must fall within ${form.academicYear} (${academicYearRange.label}).`;
+      }
     }
 
     if (!isISODate(form.endDate)) {
@@ -383,7 +355,7 @@ export default function FdpConductedPage() {
       nextErrors.endDate = "Ending date must be on or after starting date.";
     }
 
-    if (form.coordinatorName.trim().length === 0) {
+    if (form.coordinatorName.trim().length === 0 || form.coordinatorEmail.trim().length === 0) {
       nextErrors.coordinator = "Coordinator is required.";
     }
 
@@ -415,8 +387,8 @@ export default function FdpConductedPage() {
       nextErrors.permissionLetter = "Permission letter is mandatory.";
     }
 
-    if (!form.geotaggedPhoto) {
-      nextErrors.geotaggedPhoto = "Geotagged photo is mandatory.";
+    if (form.geotaggedPhotos.length === 0) {
+      nextErrors.geotaggedPhotos = "At least one geotagged photo is mandatory.";
     }
 
     return nextErrors;
@@ -430,17 +402,8 @@ export default function FdpConductedPage() {
         .filter(Boolean)
     );
   }, [form.coordinatorEmail, form.coCoordinators]);
-  const hasPendingFiles = !!pending.permissionLetter || !!pending.geotaggedPhoto;
-  const hasBusyUploads = busy.permissionLetter || busy.geotaggedPhoto;
-  const canSave = Object.keys(errors).length === 0 && !saving && !loading && !hasBusyUploads && !hasPendingFiles;
-
-  const disabledForCoordinator = useMemo(() => {
-    const next = new Set(selectedEmails);
-    if (form.coordinatorEmail) {
-      next.delete(form.coordinatorEmail.toLowerCase());
-    }
-    return next;
-  }, [form.coordinatorEmail, selectedEmails]);
+  const hasPendingFiles = !!pending.permissionLetter || photoUploadStatus.hasPending;
+  const hasBusyUploads = busy.permissionLetter || photoUploadStatus.busy;
 
   function getDisabledForCoCoordinatorRow(index: number) {
     const next = new Set(selectedEmails);
@@ -454,28 +417,21 @@ export default function FdpConductedPage() {
   }
 
   function resetForm() {
-    setForm(emptyForm());
+    setSubmitted(false);
+    setForm(emptyForm(currentFaculty ?? undefined));
     setPending({
       permissionLetter: null,
-      geotaggedPhoto: null,
     });
     setBusy({
       permissionLetter: false,
-      geotaggedPhoto: false,
     });
     setProgress({
       permissionLetter: 0,
-      geotaggedPhoto: 0,
     });
     setUploadError({
       permissionLetter: null,
-      geotaggedPhoto: null,
     });
-  }
-
-  function closeForm() {
-    resetForm();
-    setFormOpen(false);
+    setPhotoUploadStatus({ hasPending: false, busy: false });
   }
 
   async function refreshList() {
@@ -497,7 +453,23 @@ export default function FdpConductedPage() {
     }).catch(() => null);
   }
 
-  async function uploadSlot(slot: "permissionLetter" | "geotaggedPhoto") {
+  async function cleanupDraftUploads(entry: FdpConducted) {
+    const metas = [entry.permissionLetter, ...entry.geotaggedPhotos].filter(
+      (meta): meta is FileMeta => !!meta?.storedPath
+    );
+
+    await Promise.all(metas.map((meta) => deleteStoredFile(meta.storedPath)));
+  }
+
+  async function closeForm() {
+    if (form.permissionLetter || form.geotaggedPhotos.length > 0) {
+      await cleanupDraftUploads(form);
+    }
+    resetForm();
+    setFormOpen(false);
+  }
+
+  async function uploadSlot(slot: "permissionLetter") {
     const file = pending[slot];
     if (!file) {
       setUploadError((current) => ({ ...current, [slot]: "Select a file first." }));
@@ -545,7 +517,7 @@ export default function FdpConductedPage() {
     }
   }
 
-  async function deleteSlot(slot: "permissionLetter" | "geotaggedPhoto") {
+  async function deleteSlot(slot: "permissionLetter") {
     const meta = form[slot];
     if (!meta?.storedPath) {
       setToast({ type: "err", msg: "File path missing." });
@@ -585,6 +557,8 @@ export default function FdpConductedPage() {
     saveLockRef.current = true;
 
     try {
+      setSubmitted(true);
+
       if (Object.keys(errors).length > 0) {
         setToast({ type: "err", msg: "Complete all mandatory fields before saving." });
         setTimeout(() => setToast(null), 1800);
@@ -598,10 +572,15 @@ export default function FdpConductedPage() {
       }
 
       setSaving(true);
+      const entryToSave: FdpConducted = {
+        ...form,
+        coordinatorName: currentFaculty?.name ?? form.coordinatorName,
+        coordinatorEmail: currentFaculty?.email ?? form.coordinatorEmail,
+      };
       const response = await fetch("/api/me/fdp-conducted", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, entry: form }),
+        body: JSON.stringify({ email, entry: entryToSave }),
       });
       const payload = await response.json();
 
@@ -653,17 +632,17 @@ export default function FdpConductedPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">FDP — Conducted</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Record FDPs conducted with coordinator details, duration, and the required supporting documents.
+            Record FDPs conducted with duration and the required supporting documents.
           </p>
         </div>
 
         <div className="flex gap-2">
           {formOpen ? (
             <>
-              <MiniButton variant="ghost" onClick={closeForm} disabled={saving || loading || hasBusyUploads}>
+              <MiniButton variant="ghost" onClick={() => void closeForm()} disabled={saving || loading || hasBusyUploads}>
                 Cancel
               </MiniButton>
-              <MiniButton onClick={() => void saveEntry()} disabled={!canSave}>
+              <MiniButton onClick={() => void saveEntry()} disabled={saving || loading || hasBusyUploads}>
                 {saving ? "Saving..." : "Save"}
               </MiniButton>
             </>
@@ -702,30 +681,46 @@ export default function FdpConductedPage() {
         {!loading && formOpen ? (
           <SectionCard
             title="New FDP Entry"
-            subtitle="Mandatory: dates, coordinator, permission letter, and geotagged photo."
+            subtitle="Add the entry details and upload the required documents."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Starting Date" error={errors.startDate}>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))}
-                  className={cx(
-                    "w-full rounded-lg border px-3 py-2 text-sm",
-                    errors.startDate ? "border-red-300" : "border-border"
-                  )}
+              <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
+                <SelectDropdown
+                  value={form.academicYear}
+                  onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
+                  options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
+                  placeholder="Select academic year"
+                  error={submitted && !!errors.academicYear}
                 />
               </Field>
 
-              <Field label="Ending Date" error={errors.endDate} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
-                <input
-                  type="date"
+              <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+                <SelectDropdown
+                  value={form.semesterType}
+                  onChange={(value) => setForm((current) => ({ ...current, semesterType: value }))}
+                  options={SEMESTER_TYPE_DROPDOWN_OPTIONS}
+                  placeholder="Select semester type"
+                  error={submitted && !!errors.semesterType}
+                />
+              </Field>
+
+              <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
+                <DateField
+                  value={form.startDate}
+                  onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
+                  error={submitted && !!errors.startDate}
+                />
+              </Field>
+
+              <Field
+                label="Ending Date"
+                error={submitted ? errors.endDate : undefined}
+                hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}
+              >
+                <DateField
                   value={form.endDate}
-                  onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))}
-                  className={cx(
-                    "w-full rounded-lg border px-3 py-2 text-sm",
-                    errors.endDate ? "border-red-300" : "border-border"
-                  )}
+                  onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
+                  error={submitted && !!errors.endDate}
                 />
               </Field>
 
@@ -734,25 +729,10 @@ export default function FdpConductedPage() {
                   {inclusiveDays ?? "-"}
                 </div>
               </Field>
+            </div>
 
-              <Field label="Coordinator" error={errors.coordinator}>
-                <FacultySelect
-                  value={{
-                    name: form.coordinatorName,
-                    email: form.coordinatorEmail,
-                  }}
-                  onChange={(next) =>
-                    setForm((current) => ({
-                      ...current,
-                      coordinatorName: next.name,
-                      coordinatorEmail: next.email,
-                    }))
-                  }
-                  options={FACULTY_OPTIONS}
-                  disabledEmails={disabledForCoordinator}
-                  placeholder="Select coordinator"
-                />
-              </Field>
+            <div className="mt-5 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+              Coordinator: <span className="font-medium text-foreground">{form.coordinatorName || "-"}</span>
             </div>
 
             <div className="mt-5 rounded-xl border border-border p-4">
@@ -777,7 +757,7 @@ export default function FdpConductedPage() {
                 </MiniButton>
               </div>
 
-              {errors.coCoordinators ? (
+              {submitted && errors.coCoordinators ? (
                 <div className="mt-2 text-xs text-red-600">{errors.coCoordinators}</div>
               ) : null}
 
@@ -786,10 +766,13 @@ export default function FdpConductedPage() {
                   {form.coCoordinators.map((value, index) => (
                     <div
                       key={`${index}-${value.email || value.name}`}
-                      className="flex flex-col gap-3 sm:flex-row sm:items-end"
+                      className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
                     >
-                      <div className="flex-1">
-                        <Field label={`Co-coordinator ${index + 1}`} error={errors[`coCoordinators.${index}`]}>
+                      <div>
+                        <Field
+                          label={`Co-coordinator ${index + 1}`}
+                          error={submitted ? errors[`coCoordinators.${index}`] : undefined}
+                        >
                           <FacultySelect
                             value={value}
                             onChange={(next) =>
@@ -802,7 +785,8 @@ export default function FdpConductedPage() {
                             }
                             options={FACULTY_OPTIONS}
                             disabledEmails={getDisabledForCoCoordinatorRow(index)}
-                            placeholder="Select co-coordinator"
+                            placeholder="Search or type co-coordinator"
+                            error={submitted && !!errors[`coCoordinators.${index}`]}
                           />
                         </Field>
                       </div>
@@ -830,7 +814,6 @@ export default function FdpConductedPage() {
               {(
                 [
                   ["permissionLetter", "Upload Permission Letter"],
-                  ["geotaggedPhoto", "Upload Geotagged Photo"],
                 ] as const
               ).map(([slot, label]) => {
                 const meta = form[slot];
@@ -853,8 +836,8 @@ export default function FdpConductedPage() {
                         • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
                       </div>
                     ) : (
-                      <div className="text-xs text-red-600">
-                        {errors[slot] || "This upload is mandatory."}
+                      <div className={cx("text-xs", submitted ? "text-red-600" : "text-muted-foreground")}>
+                        {submitted ? (errors[slot] || "This upload is mandatory.") : "No file uploaded yet."}
                       </div>
                     )}
 
@@ -894,7 +877,7 @@ export default function FdpConductedPage() {
 
                       <label
                         className={cx(
-                          "rounded-lg border border-border px-3 py-2 text-sm",
+                          "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
                           slotBusy
                             ? "pointer-events-none cursor-not-allowed opacity-60"
                             : "cursor-pointer transition hover:bg-muted"
@@ -922,6 +905,31 @@ export default function FdpConductedPage() {
                   </div>
                 );
               })}
+
+              <MultiPhotoUpload
+                key={form.id}
+                title="Geotagged Photos"
+                value={form.geotaggedPhotos}
+                onUploaded={(meta) =>
+                  setForm((current) => ({
+                    ...current,
+                    geotaggedPhotos: [...current.geotaggedPhotos, meta],
+                  }))
+                }
+                onDeleted={(meta) =>
+                  setForm((current) => ({
+                    ...current,
+                    geotaggedPhotos: current.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath),
+                  }))
+                }
+                uploadEndpoint="/api/me/fdp-conducted-file"
+                email={email}
+                recordId={form.id}
+                slotName="geotaggedPhotos"
+                showRequiredError={submitted && !!errors.geotaggedPhotos}
+                requiredErrorText={errors.geotaggedPhotos}
+                onStatusChange={setPhotoUploadStatus}
+              />
             </div>
           </SectionCard>
         ) : null}
@@ -951,6 +959,8 @@ export default function FdpConductedPage() {
                             : "No co-coordinators recorded."}
                         </div>
                         <div className="mt-2 text-xs text-muted-foreground">
+                          Academic Year: {entry.academicYear || "-"} {" • "}
+                          Semester: {entry.semesterType || "-"} {" • "}
                           Start: {formatDisplayDate(entry.startDate)} {" • "}
                           End: {formatDisplayDate(entry.endDate)} {" • "}
                           Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
@@ -964,11 +974,17 @@ export default function FdpConductedPage() {
                               Permission Letter
                             </a>
                           ) : null}
-                          {entry.geotaggedPhoto ? (
-                            <a className="underline" href={entry.geotaggedPhoto.url} target="_blank" rel="noreferrer">
-                              Geotagged Photo
+                          {entry.geotaggedPhotos.map((meta, index) => (
+                            <a
+                              key={meta.storedPath}
+                              className="underline"
+                              href={meta.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Geotagged Photo {index + 1}
                             </a>
-                          ) : null}
+                          ))}
                         </div>
                       </div>
 

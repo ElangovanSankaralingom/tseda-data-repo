@@ -2,16 +2,19 @@
   "email": "senarch@tce.edu",
   "googleName": "Elangovan Sankaralingom",
   "googlePhotoURL": "https://lh3.googleusercontent.com/a/ACg8ocKqKk9m1l0lR7Y_H2rvaYEn_ndQjah913AJ0b7CuEokgc1xkY8o=s96-c",
-  "userPreferredName": "Elangovan Sankaralingom",
+  "userPreferredName": "Elan",
   "customPhotoURL": null,
   "personal": {
     "dob": "1993-07-29",
-    "bloodGroup": "O+"
+    "bloodGroup": "O+",
+    "aadharNumber": "6555 6688 9999",
+    "panCardNumber": ""
   },
   "academic": {
     "dateOfJoiningTCE": "2019-12-05",
     "designation": "Assistant",
-    "phdStatus": "Not Enrolled"
+    "phdStatus": "Not Enrolled",
+    "employeeId": ""
   },
   "experience": {
     "lopPeriods": [],
@@ -27,5 +30,8 @@
     "theme": "light"
   },
   "createdAt": "2026-02-28T19:29:48.469Z",
-  "updatedAt": "2026-03-01T14:04:14.274Z"
+  "updatedAt": "2026-03-02T01:29:54.329Z",
+  "facultyId": "senarch@tce.edu",
+  "isFacultyListed": true,
+  "officialName": "Ar. S. Elangovan"
 }
