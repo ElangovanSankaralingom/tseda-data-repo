@@ -57,7 +57,9 @@ export default function SignInPage() {
     const e = params.get("error");
     if (!e) return "";
     // Keep it user-friendly; avoid technical codes.
-    if (e.toLowerCase().includes("accessdenied")) return "Access denied. Please sign in using your tce.edu ID.";
+    if (e.toLowerCase().includes("accessdenied")) {
+      return "Access denied. Your tce.edu account is not listed in the faculty directory.";
+    }
     return "Sign-in failed. Please try again.";
   }, [params]);
 

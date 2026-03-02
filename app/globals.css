@@ -114,3 +114,30 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .date-modern {
+    appearance: none;
+    -webkit-appearance: none;
+    color-scheme: light;
+  }
+
+  .dark .date-modern {
+    color-scheme: dark;
+  }
+
+  .date-modern::-webkit-calendar-picker-indicator {
+    inset: 0;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 3rem;
+  }
+
+  .date-modern::-webkit-date-and-time-value {
+    min-height: 1.2em;
+    text-align: left;
+  }
+}

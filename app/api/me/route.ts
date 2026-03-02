@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { ensureDirs, PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
+import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
 
-type AnyObj = Record<string, any>;
+type AnyObj = Record<string, unknown>;
 
 function readProfile(email: string): AnyObj {
   ensureDirs();
@@ -14,6 +16,9 @@ function readProfile(email: string): AnyObj {
   if (!fs.existsSync(file)) {
     const seed = {
       email,
+      facultyId: normalizeEmail(email),
+      officialName: "",
+      isFacultyListed: false,
       googleName: "",
       googlePhotoURL: "",
       userPreferredName: "",
@@ -66,33 +71,85 @@ function deepMerge(base: AnyObj, patch: AnyObj): AnyObj {
 }
 
 export async function GET() {
-  const session = await getServerSession();
-  const email = session?.user?.email;
+  const session = await getServerSession(authOptions);
+  const sessionEmail = session?.user?.email;
+  const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const profile = readProfile(email);
+  const canonical = findFacultyByEmail(email);
+  const fallbackName = profile.userPreferredName || session?.user?.name || email.split("@")[0];
+  const academicRecord =
+    typeof profile.academic === "object" && profile.academic ? (profile.academic as AnyObj) : {};
 
-  // Sync google fields if available
+  profile.email = email;
+  profile.facultyId = email;
+  profile.isFacultyListed = !!canonical;
+  profile.officialName = canonical?.name ?? fallbackName;
   profile.googleName = session?.user?.name ?? profile.googleName ?? "";
   profile.googlePhotoURL = session?.user?.image ?? profile.googlePhotoURL ?? "";
-  if (!profile.userPreferredName) profile.userPreferredName = profile.googleName || "";
+  profile.academic = {
+    ...academicRecord,
+    employeeId: typeof academicRecord.employeeId === "string" ? academicRecord.employeeId.replace(/\D/g, "").slice(0, 6) : "",
+  };
 
   writeProfile(email, profile);
   return NextResponse.json(profile);
 }
 
 export async function PUT(req: Request) {
-  const session = await getServerSession();
-  const email = session?.user?.email;
+  const session = await getServerSession(authOptions);
+  const sessionEmail = session?.user?.email;
+  const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const patch = (await req.json()) as AnyObj;
+  let patch: AnyObj;
+  try {
+    patch = (await req.json()) as AnyObj;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
+  }
   const current = readProfile(email);
+  const canonical = findFacultyByEmail(email);
+  const sanitizedPatch = { ...patch };
 
-  // Always keep email keyed by auth
-  patch.email = email;
+  delete sanitizedPatch.email;
+  delete sanitizedPatch.facultyId;
+  delete sanitizedPatch.officialName;
+  delete sanitizedPatch.isFacultyListed;
 
-  const merged = deepMerge(current, patch);
+  const merged = deepMerge(current, sanitizedPatch);
+  const patchAcademic =
+    typeof sanitizedPatch.academic === "object" && sanitizedPatch.academic ? (sanitizedPatch.academic as AnyObj) : null;
+  const mergedAcademic = typeof merged.academic === "object" && merged.academic ? (merged.academic as AnyObj) : {};
+
+  if (patchAcademic && Object.prototype.hasOwnProperty.call(patchAcademic, "employeeId")) {
+    const rawEmployeeId = patchAcademic.employeeId;
+    const normalizedEmployeeId =
+      typeof rawEmployeeId === "string" ? rawEmployeeId.replace(/\D/g, "").slice(0, 6) : "";
+
+    if (!/^\d{6}$/.test(normalizedEmployeeId)) {
+      return NextResponse.json({ error: "Employee ID must be exactly 6 digits." }, { status: 400 });
+    }
+
+    merged.academic = {
+      ...mergedAcademic,
+      employeeId: normalizedEmployeeId,
+    };
+  } else if (!merged.academic || typeof merged.academic !== "object") {
+    merged.academic = {};
+  }
+
+  merged.email = email;
+  merged.facultyId = email;
+  merged.isFacultyListed = !!canonical;
+  merged.officialName =
+    canonical?.name ??
+    merged.userPreferredName ??
+    session?.user?.name ??
+    email.split("@")[0];
+  merged.googleName = session?.user?.name ?? merged.googleName ?? "";
+  merged.googlePhotoURL = session?.user?.image ?? merged.googlePhotoURL ?? "";
   writeProfile(email, merged);
 
   return NextResponse.json(merged);

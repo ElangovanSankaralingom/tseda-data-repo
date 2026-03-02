@@ -15,6 +15,8 @@ type FileMeta = {
 
 type FdpAttended = {
   id: string;
+  academicYear: string;
+  semesterType: string;
   startDate: string;
   endDate: string;
   programName: string;
@@ -25,6 +27,13 @@ type FdpAttended = {
   createdAt: string;
   updatedAt: string;
 };
+
+const ACADEMIC_YEAR_OPTIONS = new Set([
+  "Academic Year 2025-2026",
+  "Academic Year 2026-2027",
+  "Academic Year 2027-2028",
+]);
+const SEMESTER_TYPE_OPTIONS = new Set(["Odd Semester", "Even Semester"]);
 
 const STORE_ROOT = path.join(process.cwd(), "data", "fdp-attended");
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -113,6 +122,20 @@ function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
 }
 
+function getAcademicYearRange(academicYear: string) {
+  const match = academicYear.match(/^Academic Year (\d{4})-(\d{4})$/);
+  if (!match) return null;
+
+  const startYear = match[1];
+  const endYear = match[2];
+
+  return {
+    start: `${startYear}-07-01`,
+    end: `${endYear}-06-30`,
+    label: `Jul 1, ${startYear} to Jun 30, ${endYear}`,
+  };
+}
+
 export async function GET() {
   const email = await getAuthorizedEmail();
   if (!email) {
@@ -139,6 +162,8 @@ export async function POST(request: Request) {
 
     const programName = String(entry.programName ?? "").trim();
     const organisingBody = String(entry.organisingBody ?? "").trim();
+    const academicYear = String(entry.academicYear ?? "").trim();
+    const semesterType = String(entry.semesterType ?? "").trim();
     const startDate = String(entry.startDate ?? "").trim();
     const endDate = String(entry.endDate ?? "").trim();
     const supportAmount =
@@ -146,8 +171,24 @@ export async function POST(request: Request) {
         ? entry.supportAmount
         : null;
 
+    if (!ACADEMIC_YEAR_OPTIONS.has(academicYear)) {
+      return NextResponse.json({ error: "academicYear required" }, { status: 400 });
+    }
+
+    if (!SEMESTER_TYPE_OPTIONS.has(semesterType)) {
+      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
+    }
+
     if (!isISODate(startDate)) {
       return NextResponse.json({ error: "startDate required" }, { status: 400 });
+    }
+
+    const academicYearRange = getAcademicYearRange(academicYear);
+    if (academicYearRange && (startDate < academicYearRange.start || startDate > academicYearRange.end)) {
+      return NextResponse.json(
+        { error: `startDate must fall within ${academicYear} (${academicYearRange.label})` },
+        { status: 400 }
+      );
     }
 
     if (!isISODate(endDate)) {
@@ -183,6 +224,8 @@ export async function POST(request: Request) {
 
     const savedEntry: FdpAttended = {
       id: entry.id,
+      academicYear,
+      semesterType,
       startDate,
       endDate,
       programName,
