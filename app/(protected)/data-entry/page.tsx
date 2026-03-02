@@ -24,12 +24,12 @@ const ITEMS: EntryItem[] = [
   },
   {
     title: "Guest Lectures",
-    subtitle: "Capture invited lectures with host institution, topic, mode, and documentary proof.",
+    subtitle: "Record event details and supporting documents.",
     href: "/data-entry/guest-lectures",
   },
   {
     title: "Workshops",
-    subtitle: "Record workshop activities with organisers, participation details, outcomes, and proof.",
+    subtitle: "Record workshop details and supporting documents.",
     href: "/data-entry/workshops",
   },
 ];
@@ -75,7 +75,7 @@ export default function DataEntryHomePage() {
       </div>
 
       <div className="mt-6 rounded-2xl border border-border bg-white/70 dark:bg-black/20 p-4 text-sm text-muted-foreground">
-        Each category keeps records focused, verifiable, and ready for review.
+        Add entries and upload required documents by category.
       </div>
     </div>
   );

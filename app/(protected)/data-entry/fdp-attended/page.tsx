@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import CurrencyField from "@/components/controls/CurrencyField";
+import DateField from "@/components/controls/DateField";
+import SelectDropdown from "@/components/controls/SelectDropdown";
 
 type FileMeta = {
   fileName: string;
@@ -13,6 +16,8 @@ type FileMeta = {
 
 type FdpAttended = {
   id: string;
+  academicYear: string;
+  semesterType: string;
   startDate: string;
   endDate: string;
   programName: string;
@@ -23,6 +28,22 @@ type FdpAttended = {
   createdAt: string;
   updatedAt: string;
 };
+
+const ACADEMIC_YEAR_OPTIONS = [
+  "Academic Year 2025-2026",
+  "Academic Year 2026-2027",
+  "Academic Year 2027-2028",
+] as const;
+
+const SEMESTER_TYPE_OPTIONS = ["Odd Semester", "Even Semester"] as const;
+const ACADEMIC_YEAR_DROPDOWN_OPTIONS = ACADEMIC_YEAR_OPTIONS.map((option) => ({
+  label: option,
+  value: option,
+}));
+const SEMESTER_TYPE_DROPDOWN_OPTIONS = SEMESTER_TYPE_OPTIONS.map((option) => ({
+  label: option,
+  value: option,
+}));
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -45,6 +66,8 @@ function uuid() {
 function emptyForm(): FdpAttended {
   return {
     id: uuid(),
+    academicYear: "",
+    semesterType: "",
     startDate: "",
     endDate: "",
     programName: "",
@@ -59,6 +82,20 @@ function emptyForm(): FdpAttended {
 
 function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+}
+
+function getAcademicYearRange(academicYear: string) {
+  const match = academicYear.match(/^Academic Year (\d{4})-(\d{4})$/);
+  if (!match) return null;
+
+  const startYear = match[1];
+  const endYear = match[2];
+
+  return {
+    start: `${startYear}-07-01`,
+    end: `${endYear}-06-30`,
+    label: `Jul 1, ${startYear} to Jun 30, ${endYear}`,
+  };
 }
 
 function getInclusiveDays(startDate: string, endDate: string) {
@@ -132,7 +169,7 @@ function MiniButton({
   disabled?: boolean;
   type?: "button" | "submit";
 }) {
-  const base = "rounded-lg border px-3 py-2 text-sm";
+  const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
   const activeCls =
     variant === "danger"
       ? "border-border text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -211,6 +248,7 @@ export default function FdpAttendedPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [list, setList] = useState<FdpAttended[]>([]);
   const [form, setForm] = useState<FdpAttended>(emptyForm);
@@ -262,8 +300,21 @@ export default function FdpAttendedPage() {
   const errors = useMemo(() => {
     const nextErrors: Record<string, string> = {};
 
+    if (!ACADEMIC_YEAR_OPTIONS.includes(form.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
+      nextErrors.academicYear = "Academic year is required.";
+    }
+
+    if (!SEMESTER_TYPE_OPTIONS.includes(form.semesterType as (typeof SEMESTER_TYPE_OPTIONS)[number])) {
+      nextErrors.semesterType = "Semester type is required.";
+    }
+
     if (!isISODate(form.startDate)) {
       nextErrors.startDate = "Starting date is required.";
+    } else {
+      const academicYearRange = getAcademicYearRange(form.academicYear);
+      if (academicYearRange && (form.startDate < academicYearRange.start || form.startDate > academicYearRange.end)) {
+        nextErrors.startDate = `Starting date must fall within ${form.academicYear} (${academicYearRange.label}).`;
+      }
     }
 
     if (!isISODate(form.endDate)) {
@@ -300,9 +351,9 @@ export default function FdpAttendedPage() {
   const hasPendingFiles = !!pending.permissionLetter || !!pending.completionCertificate;
   const hasBusyUploads = busy.permissionLetter || busy.completionCertificate;
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const canSave = Object.keys(errors).length === 0 && !saving && !loading && !hasBusyUploads && !hasPendingFiles;
 
   function resetForm() {
+    setSubmitted(false);
     setForm(emptyForm());
     setPending({
       permissionLetter: null,
@@ -421,6 +472,8 @@ export default function FdpAttendedPage() {
     saveLockRef.current = true;
 
     try {
+      setSubmitted(true);
+
       if (Object.keys(errors).length > 0) {
         setToast({ type: "err", msg: "Complete all mandatory fields before saving." });
         setTimeout(() => setToast(null), 1800);
@@ -504,7 +557,7 @@ export default function FdpAttendedPage() {
               <MiniButton variant="ghost" onClick={closeForm} disabled={saving || loading || hasBusyUploads}>
                 Cancel
               </MiniButton>
-              <MiniButton onClick={() => void saveEntry()} disabled={!canSave}>
+              <MiniButton onClick={() => void saveEntry()} disabled={saving || loading || hasBusyUploads}>
                 {saving ? "Saving..." : "Save"}
               </MiniButton>
             </>
@@ -543,30 +596,46 @@ export default function FdpAttendedPage() {
         {!loading && formOpen ? (
           <SectionCard
             title="New FDP Entry"
-            subtitle="Mandatory: program name, organising body, permission letter, completion certificate."
+            subtitle="Add the entry details and upload the required documents."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Starting Date" error={errors.startDate}>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))}
-                  className={cx(
-                    "w-full rounded-lg border px-3 py-2 text-sm",
-                    errors.startDate ? "border-red-300" : "border-border"
-                  )}
+              <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
+                <SelectDropdown
+                  value={form.academicYear}
+                  onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
+                  options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
+                  placeholder="Select academic year"
+                  error={submitted && !!errors.academicYear}
                 />
               </Field>
 
-              <Field label="Ending Date" error={errors.endDate} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
-                <input
-                  type="date"
+              <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+                <SelectDropdown
+                  value={form.semesterType}
+                  onChange={(value) => setForm((current) => ({ ...current, semesterType: value }))}
+                  options={SEMESTER_TYPE_DROPDOWN_OPTIONS}
+                  placeholder="Select semester type"
+                  error={submitted && !!errors.semesterType}
+                />
+              </Field>
+
+              <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
+                <DateField
+                  value={form.startDate}
+                  onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
+                  error={submitted && !!errors.startDate}
+                />
+              </Field>
+
+              <Field
+                label="Ending Date"
+                error={submitted ? errors.endDate : undefined}
+                hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}
+              >
+                <DateField
                   value={form.endDate}
-                  onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))}
-                  className={cx(
-                    "w-full rounded-lg border px-3 py-2 text-sm",
-                    errors.endDate ? "border-red-300" : "border-border"
-                  )}
+                  onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
+                  error={submitted && !!errors.endDate}
                 />
               </Field>
 
@@ -576,45 +645,44 @@ export default function FdpAttendedPage() {
                 </div>
               </Field>
 
-              <Field label="Name of the Faculty Development Program" error={errors.programName}>
+              <Field label="Name of the Faculty Development Program" error={submitted ? errors.programName : undefined}>
                 <input
                   value={form.programName}
                   onChange={(event) => setForm((current) => ({ ...current, programName: event.target.value }))}
                   className={cx(
                     "w-full rounded-lg border px-3 py-2 text-sm",
-                    errors.programName ? "border-red-300" : "border-border"
+                    submitted && errors.programName ? "border-red-300" : "border-border"
                   )}
                 />
               </Field>
 
-              <Field label="Name of the Organising Body" error={errors.organisingBody}>
+              <Field label="Name of the Organising Body" error={submitted ? errors.organisingBody : undefined}>
                 <input
                   value={form.organisingBody}
                   onChange={(event) => setForm((current) => ({ ...current, organisingBody: event.target.value }))}
                   className={cx(
                     "w-full rounded-lg border px-3 py-2 text-sm",
-                    errors.organisingBody ? "border-red-300" : "border-border"
+                    submitted && errors.organisingBody ? "border-red-300" : "border-border"
                   )}
                 />
               </Field>
 
-              <Field label="Amount of Support (₹) — optional" error={errors.supportAmount} hint="Numbers only">
-                <div className="flex overflow-hidden rounded-lg border border-border">
-                  <div className="border-r border-border bg-muted/60 px-3 py-2 text-sm text-muted-foreground">₹</div>
-                  <input
-                    inputMode="numeric"
-                    value={form.supportAmount === null ? "" : String(form.supportAmount)}
-                    onChange={(event) => {
-                      const digits = event.target.value.replace(/\D/g, "");
-                      setForm((current) => ({
-                        ...current,
-                        supportAmount: digits === "" ? null : Number(digits),
-                      }));
-                    }}
-                    className="w-full bg-background px-3 py-2 text-sm"
-                    placeholder="e.g., 15000"
-                  />
-                </div>
+              <Field
+                label="Amount of Support (₹) — optional"
+                error={submitted ? errors.supportAmount : undefined}
+                hint="Numbers only"
+              >
+                <CurrencyField
+                  value={form.supportAmount === null ? "" : String(form.supportAmount)}
+                  onChange={(value) =>
+                    setForm((current) => ({
+                      ...current,
+                      supportAmount: value === "" ? null : Number(value),
+                    }))
+                  }
+                  error={submitted && !!errors.supportAmount}
+                  placeholder="15000"
+                />
               </Field>
             </div>
 
@@ -645,8 +713,12 @@ export default function FdpAttendedPage() {
                         • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
                       </div>
                     ) : (
-                      <div className="text-xs text-red-600">
-                        {errors[slot] || "This upload is mandatory."}
+                      <div className={cx("text-xs", submitted ? "text-red-600" : "text-muted-foreground")}>
+                        {submitted ? (
+                          errors[slot] || "This upload is mandatory."
+                        ) : (
+                          "No file uploaded yet."
+                        )}
                       </div>
                     )}
 
@@ -686,7 +758,7 @@ export default function FdpAttendedPage() {
 
                       <label
                         className={cx(
-                          "rounded-lg border border-border px-3 py-2 text-sm",
+                          "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
                           slotBusy
                             ? "pointer-events-none cursor-not-allowed opacity-60"
                             : "cursor-pointer transition hover:bg-muted"
@@ -737,6 +809,8 @@ export default function FdpAttendedPage() {
                         <div className="text-sm font-semibold">{entry.programName}</div>
                         <div className="mt-1 text-sm text-muted-foreground">{entry.organisingBody}</div>
                         <div className="mt-2 text-xs text-muted-foreground">
+                          Academic Year: {entry.academicYear || "-"} {" • "}
+                          Semester: {entry.semesterType || "-"} {" • "}
                           Start: {formatDisplayDate(entry.startDate)} {" • "}
                           End: {formatDisplayDate(entry.endDate)} {" • "}
                           Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
