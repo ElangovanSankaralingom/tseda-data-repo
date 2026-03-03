@@ -14,18 +14,17 @@ import UploadField from "@/components/entry/UploadField";
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { groupEntriesByLifecycle } from "@/lib/entries/lifecycle";
-import { computeEntryLifecycle } from "@/lib/entries/stateMachine";
 import {
   getEditLockState,
   isEntryLockedState,
   type StreakState,
 } from "@/lib/gamification";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
-import { useDirtyTracker } from "@/hooks/useDirtyTracker";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
+import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
 
 type FileMeta = {
@@ -442,22 +441,16 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && !!form.completionCertificate;
-  const dirtyTracker = useDirtyTracker({ fieldDirty: formDirty });
-  const preStageDirty = uploadsVisible ? pdfState.pdfStale : dirtyTracker.shouldEnableTopSave;
-  const postStageDirty = uploadsVisible && !pdfState.pdfStale && dirtyTracker.shouldEnableTopSave;
-  const lifecycle = useMemo(
-    () =>
-      computeEntryLifecycle({
-        isLocked,
-        hasPdfSnapshot: uploadsVisible,
-        preStageValid: generateReady,
-        postStageValid: uploadsVisible && requiredUploadsComplete,
-        preStageDirty,
-        postStageDirty,
-      }),
-    [generateReady, isLocked, postStageDirty, preStageDirty, requiredUploadsComplete, uploadsVisible]
-  );
-  const canGenerate = lifecycle.canGenerate;
+  const workflow = useEntryWorkflow({
+    isLocked,
+    coreValid: generateReady,
+    hasPdfSnapshot: uploadsVisible,
+    pdfStale: pdfState.pdfStale,
+    completionValid: requiredUploadsComplete,
+    fieldDirty: formDirty,
+  });
+  const lifecycle = workflow.lifecycle;
+  const canGenerate = workflow.canGenerate;
   const groupedEntries = useMemo(() => groupEntriesByLifecycle(list), [list]);
 
   const resetUploadState = useCallback(() => {
