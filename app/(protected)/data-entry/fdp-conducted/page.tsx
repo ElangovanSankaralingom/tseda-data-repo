@@ -17,13 +17,12 @@ import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/Facu
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
 import { groupEntriesByLifecycle } from "@/lib/entries/lifecycle";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
-import { useDirtyTracker } from "@/hooks/useDirtyTracker";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
+import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
-import { computeEntryLifecycle } from "@/lib/entries/stateMachine";
 import {
   getEditLockState,
   isEntryLockedState,
@@ -477,22 +476,16 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   const hasBusyUploads = permissionController.busy || photoUploadStatus.busy;
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0;
-  const dirtyTracker = useDirtyTracker({ fieldDirty: formDirty });
-  const preStageDirty = uploadsVisible ? pdfState.pdfStale : dirtyTracker.shouldEnableTopSave;
-  const postStageDirty = uploadsVisible && !pdfState.pdfStale && dirtyTracker.shouldEnableTopSave;
-  const lifecycle = useMemo(
-    () =>
-      computeEntryLifecycle({
-        isLocked,
-        hasPdfSnapshot: uploadsVisible,
-        preStageValid: generateReady,
-        postStageValid: uploadsVisible && requiredUploadsComplete,
-        preStageDirty,
-        postStageDirty,
-      }),
-    [generateReady, isLocked, postStageDirty, preStageDirty, requiredUploadsComplete, uploadsVisible]
-  );
-  const canGenerate = lifecycle.canGenerate;
+  const workflow = useEntryWorkflow({
+    isLocked,
+    coreValid: generateReady,
+    hasPdfSnapshot: uploadsVisible,
+    pdfStale: pdfState.pdfStale,
+    completionValid: requiredUploadsComplete,
+    fieldDirty: formDirty,
+  });
+  const lifecycle = workflow.lifecycle;
+  const canGenerate = workflow.canGenerate;
   const groupedEntries = useMemo(() => groupEntriesByLifecycle(list), [list]);
 
   const resetUploadState = useCallback(() => {
@@ -564,7 +557,9 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       throw new Error(items?.error || "Failed to refresh saved entries.");
     }
 
-    setList(Array.isArray(items) ? (items as FdpConducted[]) : []);
+    const nextItems = Array.isArray(items) ? (items as FdpConducted[]) : [];
+    setList(nextItems);
+    return nextItems;
   }
 
   async function persistProgress(nextForm: FdpConducted) {
@@ -781,9 +776,20 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
         pdfSourceHash: form.pdfSourceHash || "",
       };
       const persisted = await persistProgress(draftEntry);
-      const payload = await generateEntrySnapshot(persisted.id);
+      const persistedId = String(persisted?.id ?? "").trim();
+      if (!persistedId) {
+        throw new Error("Could not generate the entry because it was not saved correctly.");
+      }
+
+      const refreshedEntries = await refreshList();
+      const confirmedEntry = refreshedEntries.find((item) => item.id === persistedId);
+      if (!confirmedEntry) {
+        throw new Error("Saved entry could not be confirmed before generating. Please click Save and try again.");
+      }
+
+      const payload = await generateEntrySnapshot(persistedId);
       const nextEntry = {
-        ...(payload?.entry ?? persisted),
+        ...(payload?.entry ?? confirmedEntry),
         pdfSourceHash: prePdfFieldsHash,
         pdfStale: false,
       };
