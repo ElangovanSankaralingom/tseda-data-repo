@@ -23,7 +23,7 @@ function getInitials(name: string, email: string) {
   return source.slice(0, 2).toUpperCase();
 }
 
-export default function AvatarMenu() {
+export default function AvatarMenu({ refreshKey = 0 }: { refreshKey?: number }) {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -47,7 +47,7 @@ export default function AvatarMenu() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     if (!open) return;
