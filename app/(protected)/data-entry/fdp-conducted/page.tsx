@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DateField from "@/components/controls/DateField";
 import { HeaderEntryActionsBar, PdfEntryActionsBar } from "@/components/entry/EntryActionsBar";
 import FinalisationBadge from "@/components/entry/FinalisationBadge";
+import RequestEditAction from "@/components/entry/RequestEditAction";
 import UploadField from "@/components/entry/UploadField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
@@ -22,7 +23,6 @@ import {
   getEditLockState,
   isEntryLockedState,
   isFutureDatedEntry,
-  isWithinRequestEditWindow,
 } from "@/lib/entryLock";
 
 type FdpConducted = {
@@ -157,6 +157,20 @@ function getEntryCreatedSortTime(entry: FdpConducted) {
 
 function formatFacultyDisplay(selection: FacultyRowValue) {
   return selection.name || selection.email || "-";
+}
+
+function getConductedEntryTitle(entry: FdpConducted) {
+  return entry.eventName.trim() || "Untitled event";
+}
+
+function getConductedEntrySubtitle(entry: FdpConducted) {
+  const parts = [`Coordinator: ${entry.coordinatorName || entry.coordinatorEmail || "-"}`];
+
+  if (entry.coCoordinators.length > 0) {
+    parts.push(`Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`);
+  }
+
+  return parts.join(" • ");
 }
 
 function getConductedEntryStatus(entry: FdpConducted): FdpConductedEntryStatus {
@@ -1094,67 +1108,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
     }
   }
 
-  function renderLockedRequestAction(entry: FdpConducted) {
-    if (!isEntryLocked(entry)) return null;
-
-    const currentStatus = entry.requestEditStatus ?? "none";
-    const isRequesting = requestingEditIds[entry.id];
-    const canCancelRequest =
-      currentStatus === "pending" &&
-      isWithinRequestEditWindow(entry.requestEditRequestedAtISO ?? null, 5) &&
-      !isRequesting;
-
-    if (currentStatus === "approved") {
-      return (
-        <button
-          type="button"
-          disabled
-          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-        >
-          Approved
-        </button>
-      );
-    }
-
-    if (currentStatus === "pending" || isRequesting) {
-      return (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled
-            className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-          >
-            Request Sent
-          </button>
-          {canCancelRequest ? (
-            <button
-              type="button"
-              onClick={() => void cancelRequestEdit(entry)}
-              className="cursor-pointer text-xs text-muted-foreground underline transition-colors hover:text-foreground"
-            >
-              Cancel Request
-            </button>
-          ) : null}
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => void requestEdit(entry)}
-          className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
-        >
-          Request Edit
-        </button>
-        {currentStatus === "rejected" ? (
-          <span className="text-xs text-muted-foreground">Request was rejected</span>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-5xl">
       <div className="flex items-start justify-between gap-4">
@@ -1423,47 +1376,49 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`D${index + 1}`}</span>
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
-                                    {formatFacultyDisplay({
-                                    name: entry.coordinatorName,
-                                    email: entry.coordinatorEmail,
-                                  })}
+                                    {getConductedEntryTitle(entry)}
                                   </Link>
                                 </div>
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                  {entry.coCoordinators.length > 0
-                                    ? `Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
-                                    : "No co-coordinators recorded."}
-                                </div>
+                                <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex shrink-0 flex-col items-end gap-2">
-                                <FinalisationBadge lockState={lockState} />
-                                <div className="flex items-center gap-2">
-                                  {entry.pdfMeta?.url ? (
-                                    <a
-                                      href={entry.pdfMeta.url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
-                                    >
-                                      Preview
-                                    </a>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      disabled
-                                      className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
-                                    >
-                                      Preview
-                                    </button>
-                                  )}
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    {entry.pdfMeta?.url ? (
+                                      <a
+                                        href={entry.pdfMeta.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
+                                      >
+                                        Preview
+                                      </a>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
+                                      >
+                                        Preview
+                                      </button>
+                                    )}
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              ) : null}
                             </div>
 
                             <div className="min-w-0">
@@ -1518,41 +1473,43 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                   <span className="text-xs font-mono text-muted-foreground">{`P${index + 1}`}</span>
                                   <FlameStatusIcon tone="gray" />
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
-                                    {formatFacultyDisplay({
-                                    name: entry.coordinatorName,
-                                    email: entry.coordinatorEmail,
-                                  })}
+                                    {getConductedEntryTitle(entry)}
                                   </Link>
                                 </div>
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                  {entry.coCoordinators.length > 0
-                                    ? `Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
-                                    : "No co-coordinators recorded."}
-                                </div>
+                                <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex shrink-0 flex-col items-end gap-2">
-                                <FinalisationBadge lockState={lockState} />
-                                <div className="flex items-center gap-2">
-                                  <MiniButton
-                                    onClick={() => {
-                                      openEntry(entry);
-                                      router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                    }}
-                                    disabled={entryLocked}
-                                  >
-                                    Edit
-                                  </MiniButton>
-                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                    Delete entry
-                                  </MiniButton>
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    <MiniButton
+                                      onClick={() => {
+                                        openEntry(entry);
+                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                      }}
+                                      disabled={entryLocked}
+                                    >
+                                      Edit
+                                    </MiniButton>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                      Delete entry
+                                    </MiniButton>
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              ) : null}
                             </div>
 
                             <div className="min-w-0">
@@ -1613,41 +1570,43 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                   <span className="text-xs font-mono text-muted-foreground">{`C${index + 1}`}</span>
                                   <FlameStatusIcon tone="color" />
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
-                                    {formatFacultyDisplay({
-                                    name: entry.coordinatorName,
-                                    email: entry.coordinatorEmail,
-                                  })}
+                                    {getConductedEntryTitle(entry)}
                                   </Link>
                                 </div>
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                  {entry.coCoordinators.length > 0
-                                    ? `Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
-                                    : "No co-coordinators recorded."}
-                                </div>
+                                <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex shrink-0 flex-col items-end gap-2">
-                                <FinalisationBadge lockState={lockState} />
-                                <div className="flex items-center gap-2">
-                                  <MiniButton
-                                    onClick={() => {
-                                      openEntry(entry);
-                                      router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                    }}
-                                    disabled={entryLocked}
-                                  >
-                                    Edit
-                                  </MiniButton>
-                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                    Delete entry
-                                  </MiniButton>
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    <MiniButton
+                                      onClick={() => {
+                                        openEntry(entry);
+                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                      }}
+                                      disabled={entryLocked}
+                                    >
+                                      Edit
+                                    </MiniButton>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                      Delete entry
+                                    </MiniButton>
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              ) : null}
                             </div>
 
                             <div className="min-w-0">
@@ -1708,41 +1667,43 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                   <span className="text-xs font-mono text-muted-foreground">{`G${index + 1}`}</span>
                                   <SlashedFireIcon />
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
-                                    {formatFacultyDisplay({
-                                    name: entry.coordinatorName,
-                                    email: entry.coordinatorEmail,
-                                  })}
+                                    {getConductedEntryTitle(entry)}
                                   </Link>
                                 </div>
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                  {entry.coCoordinators.length > 0
-                                    ? `Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
-                                    : "No co-coordinators recorded."}
-                                </div>
+                                <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex shrink-0 flex-col items-end gap-2">
-                                <FinalisationBadge lockState={lockState} />
-                                <div className="flex items-center gap-2">
-                                  <MiniButton
-                                    onClick={() => {
-                                      openEntry(entry);
-                                      router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                    }}
-                                    disabled={entryLocked}
-                                  >
-                                    Edit
-                                  </MiniButton>
-                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                    Delete entry
-                                  </MiniButton>
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    <MiniButton
+                                      onClick={() => {
+                                        openEntry(entry);
+                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                      }}
+                                      disabled={entryLocked}
+                                    >
+                                      Edit
+                                    </MiniButton>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                      Delete entry
+                                    </MiniButton>
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              ) : null}
                             </div>
 
                             <div className="min-w-0">

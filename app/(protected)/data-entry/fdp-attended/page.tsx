@@ -7,6 +7,7 @@ import CurrencyField from "@/components/controls/CurrencyField";
 import DateField from "@/components/controls/DateField";
 import { HeaderEntryActionsBar, PdfEntryActionsBar } from "@/components/entry/EntryActionsBar";
 import FinalisationBadge from "@/components/entry/FinalisationBadge";
+import RequestEditAction from "@/components/entry/RequestEditAction";
 import UploadField from "@/components/entry/UploadField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import {
@@ -17,7 +18,6 @@ import {
   getEditLockState,
   isEntryLockedState,
   isFutureDatedEntry,
-  isWithinRequestEditWindow,
 } from "@/lib/entryLock";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
@@ -1037,67 +1037,6 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
     }
   }
 
-  function renderLockedRequestAction(entry: FdpAttended) {
-    if (!isEntryLocked(entry)) return null;
-
-    const currentStatus = entry.requestEditStatus ?? "none";
-    const isRequesting = requestingEditIds[entry.id];
-    const canCancelRequest =
-      currentStatus === "pending" &&
-      isWithinRequestEditWindow(entry.requestEditRequestedAtISO ?? null, 5) &&
-      !isRequesting;
-
-    if (currentStatus === "approved") {
-      return (
-        <button
-          type="button"
-          disabled
-          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-        >
-          Approved
-        </button>
-      );
-    }
-
-    if (currentStatus === "pending" || isRequesting) {
-      return (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled
-            className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-          >
-            Request Sent
-          </button>
-          {canCancelRequest ? (
-            <button
-              type="button"
-              onClick={() => void cancelRequestEdit(entry)}
-              className="cursor-pointer text-xs text-muted-foreground underline transition-colors hover:text-foreground"
-            >
-              Cancel Request
-            </button>
-          ) : null}
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => void requestEdit(entry)}
-          className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
-        >
-          Request Edit
-        </button>
-        {currentStatus === "rejected" ? (
-          <span className="text-xs text-muted-foreground">Request was rejected</span>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-5xl">
       <div className="flex items-start justify-between gap-4">
@@ -1369,7 +1308,14 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
                                         Preview
                                       </button>
                                     )}
-                                    {renderLockedRequestAction(entry)}
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
                                   </div>
                                 </div>
                               ) : null}
@@ -1458,7 +1404,14 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
                                     <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
                                       Delete entry
                                     </MiniButton>
-                                    {renderLockedRequestAction(entry)}
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
                                   </div>
                                 </div>
                               ) : null}
@@ -1557,7 +1510,14 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
                                     <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
                                       Delete entry
                                     </MiniButton>
-                                    {renderLockedRequestAction(entry)}
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
                                   </div>
                                 </div>
                               ) : null}
@@ -1656,7 +1616,14 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
                                     <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
                                       Delete entry
                                     </MiniButton>
-                                    {renderLockedRequestAction(entry)}
+                                    <RequestEditAction
+                                      locked={isEntryLocked(entry)}
+                                      status={entry.requestEditStatus}
+                                      requestedAtISO={entry.requestEditRequestedAtISO}
+                                      requesting={!!requestingEditIds[entry.id]}
+                                      onRequest={() => void requestEdit(entry)}
+                                      onCancel={() => void cancelRequestEdit(entry)}
+                                    />
                                   </div>
                                 </div>
                               ) : null}
