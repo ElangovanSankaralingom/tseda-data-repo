@@ -4,7 +4,7 @@ import {
   isFutureDatedEntry as isSharedFutureDatedEntry,
   isWithinRequestEditWindow as isSharedRequestEditWindow,
   type EditLockState,
-} from "@/lib/gamification";
+} from "./gamification.ts";
 
 export function getEditLockState(entry: unknown, mode?: "streak" | "generic") {
   void mode;

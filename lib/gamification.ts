@@ -209,6 +209,12 @@ export function computeEditableUntilISO(createdAtISO: string) {
   return toISTDateTime(editableDayISO, 23, 59, 59, 999);
 }
 
+export function computeGenericDueAtISO(endDateISO: string) {
+  if (!isISODate(endDateISO)) return null;
+  const dueDayISO = addDaysISO(endDateISO, 2);
+  return toISTDateTime(dueDayISO, 23, 59, 59, 999);
+}
+
 export function remainingDaysFromDueAtISO(dueAtISO: string | null | undefined) {
   if (!dueAtISO || !isISODateTime(dueAtISO)) return 0;
 
@@ -286,12 +292,15 @@ export function getEditLockState(entry: LockableEntryLike): EditLockState {
     };
   }
 
-  if (entry.createdAt) {
-    const expiresAtISO = computeEditableUntilISO(entry.createdAt);
+  const genericExpiresAtISO =
+    (entry.endDate ? computeGenericDueAtISO(entry.endDate) : null) ||
+    (entry.createdAt ? computeEditableUntilISO(entry.createdAt) : null);
+
+  if (genericExpiresAtISO) {
     return {
-      isLocked: expiresAtISO ? !isWithinDueWindow(expiresAtISO) : false,
-      expiresAtISO,
-      daysRemaining: remainingDaysFromDueAtISO(expiresAtISO),
+      isLocked: !isWithinDueWindow(genericExpiresAtISO),
+      expiresAtISO: genericExpiresAtISO,
+      daysRemaining: remainingDaysFromDueAtISO(genericExpiresAtISO),
     };
   }
 

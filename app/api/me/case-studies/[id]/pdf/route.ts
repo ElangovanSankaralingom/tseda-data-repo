@@ -8,13 +8,8 @@ import {
   storeEntryPdf,
   type PdfMeta,
 } from "@/lib/entry-pdf";
-import {
-  computeDueAtISO,
-  isFutureDatedEntry,
-  isWithinDueWindow,
-  normalizeStreakState,
-  nowISTTimestampISO,
-} from "@/lib/gamification";
+import { normalizeStreakState } from "@/lib/gamification";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
 const STORE_ROOT = path.join(process.cwd(), ".data", "users");
 
@@ -48,6 +43,8 @@ type EntryRecord = {
   participants?: number | null;
   amountSupport?: number | null;
   pdfMeta?: PdfMeta | null;
+  pdfSourceHash?: string | null;
+  pdfStale?: boolean;
   permissionLetter?: FileMeta | null;
   travelPlan?: FileMeta | null;
   geotaggedPhotos?: FileMeta[];
@@ -86,15 +83,6 @@ async function writeList(email: string, list: EntryRecord[]) {
   const filePath = getStoreFile(email);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
-}
-
-function hasCompletedUploads(entry: EntryRecord) {
-  return (
-    !!entry.permissionLetter?.storedPath &&
-    !!entry.travelPlan?.storedPath &&
-    Array.isArray(entry.geotaggedPhotos) &&
-    entry.geotaggedPhotos.length > 0
-  );
 }
 
 export async function POST(_: Request, context: { params: Promise<{ id: string }> }) {
@@ -171,26 +159,13 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     bytes,
   });
 
-  const eligible = isFutureDatedEntry(startDate, endDate);
-  const normalizedStreak = normalizeStreakState(entry.streak);
-  const dueAtISO = eligible ? normalizedStreak.dueAtISO ?? computeDueAtISO(endDate) : null;
-  const updatedStreak = eligible
-    ? {
-        ...normalizedStreak,
-        activatedAtISO: normalizedStreak.activatedAtISO ?? nowISTTimestampISO(),
-        dueAtISO,
-        completedAtISO:
-          hasCompletedUploads(entry) && dueAtISO && isWithinDueWindow(dueAtISO)
-            ? normalizedStreak.completedAtISO ?? nowISTTimestampISO()
-            : normalizedStreak.completedAtISO ?? null,
-      }
-    : normalizeStreakState(null);
-
   const updatedEntry: EntryRecord = {
     ...entry,
-    status: "final",
+    status: entry.status === "final" ? "final" : "draft",
     pdfMeta,
-    streak: updatedStreak,
+    pdfSourceHash: hashPrePdfFields(entry as Record<string, unknown>, "case-studies"),
+    pdfStale: false,
+    streak: normalizeStreakState(entry.streak),
     updatedAt: new Date().toISOString(),
   };
 
