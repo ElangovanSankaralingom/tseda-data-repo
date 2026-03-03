@@ -7,6 +7,7 @@ import {
   cloneFileMetaArrayToTarget,
   cloneFileMetaToTarget,
 } from "@/lib/crosspost.server";
+import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import {
   findFacultyByEmail,
   findFacultyByName,
@@ -14,6 +15,13 @@ import {
   normalizeEmail,
   type Faculty,
 } from "@/lib/facultyDirectory";
+import {
+  computeDueAtISO,
+  isFutureDatedEntry,
+  isWithinDueWindow,
+  normalizeStreakState,
+  type StreakState,
+} from "@/lib/gamification";
 
 type FileMeta = {
   fileName: string;
@@ -25,8 +33,11 @@ type FileMeta = {
 };
 
 type FacultySelection = {
+  id?: string;
   name: string;
   email: string;
+  isLocked?: boolean;
+  savedAtISO?: string | null;
 };
 
 type Uploads = {
@@ -42,6 +53,7 @@ type WorkshopEntry = {
   sharedEntryId?: string;
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
+  status?: "draft" | "final";
   academicYear: string;
   semesterType: string;
   startDate: string;
@@ -51,7 +63,10 @@ type WorkshopEntry = {
   organisationName: string;
   coordinator: FacultySelection;
   coCoordinators: FacultySelection[];
+  participants?: number | null;
+  pdfMeta?: PdfMeta | null;
   uploads: Uploads;
+  streak?: StreakState;
   createdAt: string;
   updatedAt: string;
 };
@@ -122,35 +137,59 @@ function normalizeFileMetaArray(value: unknown, legacyValue?: unknown) {
 
 function normalizeFacultySelection(value: unknown): FacultySelection {
   if (typeof value === "string") {
-    return { name: value.trim(), email: "" };
+    return { id: undefined, name: value.trim(), email: "", isLocked: false, savedAtISO: null };
   }
 
   if (value && typeof value === "object") {
-    const record = value as { name?: unknown; email?: unknown };
+    const record = value as {
+      id?: unknown;
+      name?: unknown;
+      email?: unknown;
+      isLocked?: unknown;
+      savedAtISO?: unknown;
+    };
     return {
+      id: String(record.id ?? "").trim() || undefined,
       name: String(record.name ?? "").trim(),
       email: normalizeEmail(String(record.email ?? "")),
+      isLocked: record.isLocked === true,
+      savedAtISO: typeof record.savedAtISO === "string" && record.savedAtISO.trim() ? record.savedAtISO : null,
     };
   }
 
-  return { name: "", email: "" };
+  return { id: undefined, name: "", email: "", isLocked: false, savedAtISO: null };
 }
 
 function canonicalizeFacultySelection(value: FacultySelection) {
   const normalizedEmail = value.email ? normalizeEmail(value.email) : "";
   const byEmail = normalizedEmail ? findFacultyByEmail(normalizedEmail) : null;
   if (byEmail) {
-    return { name: byEmail.name, email: byEmail.email };
+    return {
+      id: value.id,
+      name: byEmail.name,
+      email: byEmail.email,
+      isLocked: value.isLocked === true,
+      savedAtISO: value.savedAtISO ?? null,
+    };
   }
 
   const byName = value.name ? findFacultyByName(value.name) : null;
   if (byName) {
-    return { name: byName.name, email: byName.email };
+    return {
+      id: value.id,
+      name: byName.name,
+      email: byName.email,
+      isLocked: value.isLocked === true,
+      savedAtISO: value.savedAtISO ?? null,
+    };
   }
 
   return {
+    id: value.id,
     name: value.name.trim(),
     email: normalizedEmail,
+    isLocked: value.isLocked === true,
+    savedAtISO: value.savedAtISO ?? null,
   };
 }
 
@@ -186,6 +225,7 @@ function normalizeEntry(value: unknown): WorkshopEntry | null {
     sharedEntryId: String(record.sharedEntryId ?? "").trim() || undefined,
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
     sharedRole: record.sharedRole === "coCoordinator" ? "coCoordinator" : undefined,
+    status: record.status === "final" ? "final" : "draft",
     academicYear: String(record.academicYear ?? "").trim(),
     semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
@@ -195,9 +235,47 @@ function normalizeEntry(value: unknown): WorkshopEntry | null {
     organisationName: String(record.organisationName ?? "").trim(),
     coordinator,
     coCoordinators,
+    participants:
+      typeof record.participants === "number" && Number.isFinite(record.participants)
+        ? record.participants
+        : typeof record.participants === "string" && record.participants.trim()
+          ? Number(record.participants)
+          : null,
+    pdfMeta: isValidPdfMeta((record.pdfMeta as PdfMeta | null) ?? null)
+      ? ((record.pdfMeta as PdfMeta | null) ?? null)
+      : null,
     uploads: normalizeUploads(record.uploads),
+    streak: normalizeStreakState(record.streak),
     createdAt: String(record.createdAt ?? "").trim(),
     updatedAt: String(record.updatedAt ?? "").trim(),
+  };
+}
+
+function buildSavedStreak(
+  entry: Pick<WorkshopEntry, "status" | "pdfMeta" | "startDate" | "endDate" | "streak" | "uploads">
+) {
+  const normalized = normalizeStreakState(entry.streak);
+  const eligible = isFutureDatedEntry(entry.startDate, entry.endDate);
+  const uploadsComplete =
+    isValidFileMeta(entry.uploads.permissionLetter) &&
+    isValidFileMeta(entry.uploads.brochure) &&
+    isValidFileMeta(entry.uploads.attendance) &&
+    isValidFileMeta(entry.uploads.organiserProfile) &&
+    entry.uploads.geotaggedPhotos.length > 0;
+
+  if (entry.status !== "final" || !entry.pdfMeta || !eligible) {
+    return normalizeStreakState(null);
+  }
+
+  const dueAtISO = normalized.dueAtISO ?? computeDueAtISO(entry.endDate);
+  return {
+    ...normalized,
+    activatedAtISO: normalized.activatedAtISO ?? null,
+    dueAtISO,
+    completedAtISO:
+      uploadsComplete && dueAtISO && isWithinDueWindow(dueAtISO)
+        ? normalized.completedAtISO ?? new Date().toISOString()
+        : normalized.completedAtISO ?? null,
   };
 }
 
@@ -372,20 +450,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "duplicate faculty selection" }, { status: 400 });
     }
 
-    for (const slot of REQUIRED_SINGLE_SLOTS) {
-      if (!isValidFileMeta(entry.uploads[slot])) {
-        return NextResponse.json({ error: `${slot} required` }, { status: 400 });
-      }
-    }
+    const participants =
+      entry.participants === null || entry.participants === undefined
+        ? null
+        : typeof entry.participants === "number" &&
+            Number.isFinite(entry.participants) &&
+            entry.participants > 0
+          ? entry.participants
+          : NaN;
 
-    if (!Array.isArray(entry.uploads.geotaggedPhotos) || entry.uploads.geotaggedPhotos.length === 0) {
-      return NextResponse.json({ error: "geotaggedPhotos required" }, { status: 400 });
+    if (Number.isNaN(participants)) {
+      return NextResponse.json({ error: "participants invalid" }, { status: 400 });
     }
 
     const ownerPrefix = path.posix.join("uploads", safeEmailDir(email), "workshops") + "/";
     for (const slot of REQUIRED_SINGLE_SLOTS) {
       const meta = entry.uploads[slot];
-      if (!meta || !normalizeStoredPath(meta.storedPath).startsWith(ownerPrefix)) {
+      if (meta && !normalizeStoredPath(meta.storedPath).startsWith(ownerPrefix)) {
         return NextResponse.json({ error: `${slot} invalid` }, { status: 400 });
       }
     }
@@ -407,6 +488,7 @@ export async function POST(request: Request) {
       id: entry.id,
       sharedEntryId,
       sourceEmail: email,
+      status: entry.status === "final" ? "final" : "draft",
       academicYear: entry.academicYear,
       semesterType: entry.semesterType,
       startDate: entry.startDate,
@@ -419,10 +501,23 @@ export async function POST(request: Request) {
         name: getCanonicalName(coordinator.email) ?? coordinator.name,
       },
       coCoordinators: coCoordinators.map((item) => ({
+        id: item.id,
         email: item.email,
         name: getCanonicalName(item.email) ?? item.name,
+        isLocked: item.isLocked === true,
+        savedAtISO: item.savedAtISO ?? null,
       })),
+      participants,
+      pdfMeta: entry.status === "final" ? entry.pdfMeta ?? null : null,
       uploads: entry.uploads,
+      streak: buildSavedStreak({
+        status: entry.status === "final" ? "final" : "draft",
+        pdfMeta: entry.status === "final" ? entry.pdfMeta ?? null : null,
+        startDate: entry.startDate,
+        endDate: entry.endDate,
+        streak: entry.streak,
+        uploads: entry.uploads,
+      }),
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
@@ -504,6 +599,204 @@ export async function POST(request: Request) {
 
       await writeList(target.email, [clonedEntry, ...targetList]);
     }
+
+    return NextResponse.json(savedEntry, { status: 200 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Save failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const authorizedEmail = await getAuthorizedEmail();
+  if (!authorizedEmail) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = (await request.json()) as { email?: string; entry?: unknown };
+    const email = normalizeEmail(String(body?.email ?? ""));
+    const entryRecord =
+      body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
+    const entry = normalizeEntry(body?.entry);
+
+    if (!email) {
+      return NextResponse.json({ error: "email required" }, { status: 400 });
+    }
+
+    if (safeEmailDir(email) !== safeEmailDir(authorizedEmail)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!entry?.id) {
+      return NextResponse.json({ error: "entry.id required" }, { status: 400 });
+    }
+
+    const currentList = await readList(email);
+    const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    const now = new Date().toISOString();
+
+    const hasAcademicYear = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "academicYear");
+    const hasSemesterType = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "semesterType");
+    const hasStartDate = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "startDate");
+    const hasEndDate = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "endDate");
+    const hasEventName = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "eventName");
+    const hasSpeakerName = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "speakerName");
+    const hasOrganisationName =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "organisationName");
+    const hasCoCoordinators = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "coCoordinators");
+    const hasParticipants = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "participants");
+    const hasUploads = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "uploads");
+
+    if (hasAcademicYear && entry.academicYear && !ACADEMIC_YEAR_OPTIONS.has(entry.academicYear)) {
+      return NextResponse.json({ error: "academicYear invalid" }, { status: 400 });
+    }
+
+    if (hasSemesterType && entry.semesterType && !SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
+      return NextResponse.json({ error: "semesterType invalid" }, { status: 400 });
+    }
+
+    if (hasStartDate && entry.startDate && !isISODate(entry.startDate)) {
+      return NextResponse.json({ error: "startDate invalid" }, { status: 400 });
+    }
+
+    if (hasEndDate && entry.endDate && !isISODate(entry.endDate)) {
+      return NextResponse.json({ error: "endDate invalid" }, { status: 400 });
+    }
+
+    const nextAcademicYear = (hasAcademicYear ? entry.academicYear : existing?.academicYear) ?? "";
+    const nextStartDate = (hasStartDate ? entry.startDate : existing?.startDate) ?? "";
+    const nextEndDate = (hasEndDate ? entry.endDate : existing?.endDate) ?? "";
+    const academicYearRange = nextAcademicYear ? getAcademicYearRange(nextAcademicYear) : null;
+
+    if (academicYearRange && nextStartDate && (nextStartDate < academicYearRange.start || nextStartDate > academicYearRange.end)) {
+      return NextResponse.json(
+        { error: `startDate must fall within ${nextAcademicYear} (${academicYearRange.label})` },
+        { status: 400 }
+      );
+    }
+
+    if (nextStartDate && nextEndDate && nextEndDate < nextStartDate) {
+      return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
+    }
+
+    const coordinator = {
+      email,
+      name: getCanonicalName(email) ?? entry.coordinator.name ?? existing?.coordinator.name ?? email.split("@")[0],
+    };
+
+    const nextCoCoordinators = hasCoCoordinators
+      ? entry.coCoordinators.map(canonicalizeFacultySelection).filter((item) => item.name || item.email)
+      : existing?.coCoordinators || [];
+
+    if (nextCoCoordinators.some((item) => !item.email || !findFacultyByEmail(item.email))) {
+      return NextResponse.json({ error: "coCoordinators invalid" }, { status: 400 });
+    }
+
+    const selectedEmails = [coordinator.email, ...nextCoCoordinators.map((item) => item.email)];
+    if (new Set(selectedEmails).size !== selectedEmails.length) {
+      return NextResponse.json({ error: "duplicate faculty selection" }, { status: 400 });
+    }
+
+    if (
+      hasParticipants &&
+      entry.participants !== null &&
+      entry.participants !== undefined &&
+      (!Number.isFinite(entry.participants) || entry.participants <= 0)
+    ) {
+      return NextResponse.json({ error: "participants invalid" }, { status: 400 });
+    }
+
+    const nextUploads = hasUploads ? normalizeUploads(entryRecord?.uploads) : existing?.uploads ?? normalizeUploads(null);
+    const ownerPrefix = path.posix.join("uploads", safeEmailDir(email), "workshops") + "/";
+    for (const meta of [
+      nextUploads.permissionLetter,
+      nextUploads.brochure,
+      nextUploads.attendance,
+      nextUploads.organiserProfile,
+    ]) {
+      if (meta?.storedPath && !normalizeStoredPath(meta.storedPath).startsWith(ownerPrefix)) {
+        return NextResponse.json({ error: "uploads invalid" }, { status: 400 });
+      }
+    }
+    if (
+      nextUploads.geotaggedPhotos.some(
+        (meta) => !isValidFileMeta(meta) || !normalizeStoredPath(meta.storedPath).startsWith(ownerPrefix)
+      )
+    ) {
+      return NextResponse.json({ error: "geotaggedPhotos invalid" }, { status: 400 });
+    }
+
+    const savedEntry: WorkshopEntry = {
+      ...(existing ?? {
+        id: entry.id,
+        status: "draft",
+        coordinator,
+        coCoordinators: [],
+        participants: null,
+        pdfMeta: null,
+        uploads: normalizeUploads(null),
+        streak: normalizeStreakState(null),
+        academicYear: "",
+        semesterType: "",
+        startDate: "",
+        endDate: "",
+        eventName: "",
+        speakerName: "",
+        organisationName: "",
+        createdAt: now,
+        updatedAt: now,
+      }),
+      id: entry.id,
+      status: entry.status === "final" ? "final" : existing?.status ?? "draft",
+      academicYear: hasAcademicYear ? entry.academicYear : existing?.academicYear ?? "",
+      semesterType: hasSemesterType ? entry.semesterType : existing?.semesterType ?? "",
+      startDate: hasStartDate ? entry.startDate : existing?.startDate ?? "",
+      endDate: hasEndDate ? entry.endDate : existing?.endDate ?? "",
+      eventName: hasEventName ? entry.eventName : existing?.eventName ?? "",
+      speakerName: hasSpeakerName ? entry.speakerName : existing?.speakerName ?? "",
+      organisationName: hasOrganisationName ? entry.organisationName : existing?.organisationName ?? "",
+      coordinator: {
+        email: coordinator.email,
+        name: getCanonicalName(coordinator.email) ?? coordinator.name,
+      },
+      coCoordinators: nextCoCoordinators.map((item) => ({
+        id: item.id,
+        email: item.email,
+        name: getCanonicalName(item.email) ?? item.name,
+        isLocked: item.isLocked === true,
+        savedAtISO: item.savedAtISO ?? null,
+      })),
+      participants:
+        Object.prototype.hasOwnProperty.call(entryRecord ?? {}, "participants")
+          ? entry.participants
+          : existing?.participants ?? null,
+      pdfMeta:
+        entry.status === "final"
+          ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
+          : null,
+      uploads: nextUploads,
+      streak: buildSavedStreak({
+        status: entry.status === "final" ? "final" : existing?.status ?? "draft",
+        pdfMeta:
+          entry.status === "final"
+            ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
+            : null,
+        startDate: hasStartDate ? entry.startDate : existing?.startDate ?? "",
+        endDate: hasEndDate ? entry.endDate : existing?.endDate ?? "",
+        streak: entry.streak ?? existing?.streak,
+        uploads: nextUploads,
+      }),
+      createdAt: existing?.createdAt ?? entry.createdAt ?? now,
+      updatedAt: now,
+    };
+
+    await writeList(
+      email,
+      existing
+        ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
+        : [savedEntry, ...currentList]
+    );
 
     return NextResponse.json(savedEntry, { status: 200 });
   } catch (error) {

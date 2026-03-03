@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import FacultySelect, { type FacultySelection } from "@/components/controls/FacultySelect";
 import DateField from "@/components/controls/DateField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
 import MultiPhotoUpload from "@/components/uploads/MultiPhotoUpload";
 import { FACULTY } from "@/lib/facultyDirectory";
 
@@ -27,6 +27,7 @@ type WorkshopEntry = {
   sharedEntryId?: string;
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
+  status?: "draft" | "final";
   academicYear: string;
   semesterType: "Odd" | "Even" | "";
   startDate: string;
@@ -34,9 +35,22 @@ type WorkshopEntry = {
   eventName: string;
   speakerName: string;
   organisationName: string;
-  coordinator: FacultySelection;
-  coCoordinators: FacultySelection[];
+  coordinator: FacultyRowValue;
+  coCoordinators: FacultyRowValue[];
+  participants: number | null;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
   uploads: Record<UploadSlot, FileMeta | null> & { geotaggedPhotos: FileMeta[] };
+  streak?: {
+    activatedAtISO?: string | null;
+    dueAtISO?: string | null;
+    completedAtISO?: string | null;
+    windowDays?: number;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -121,17 +135,18 @@ function emptyUploads(): Record<UploadSlot, FileMeta | null> {
   };
 }
 
-function emptyFacultySelection(): FacultySelection {
-  return { name: "", email: "" };
+function emptyFacultySelection(): FacultyRowValue {
+  return { id: uuid(), name: "", email: "", isLocked: false, savedAtISO: null };
 }
 
-function formatFacultyDisplay(selection: FacultySelection) {
+function formatFacultyDisplay(selection: FacultyRowValue) {
   return selection.name || selection.email || "";
 }
 
-function createEmptyForm(currentFaculty?: FacultySelection): WorkshopEntry {
+function createEmptyForm(currentFaculty?: FacultyRowValue): WorkshopEntry {
   return {
     id: uuid(),
+    status: "draft",
     academicYear: "",
     semesterType: "",
     startDate: "",
@@ -141,10 +156,13 @@ function createEmptyForm(currentFaculty?: FacultySelection): WorkshopEntry {
     organisationName: "",
     coordinator: currentFaculty?.email ? currentFaculty : emptyFacultySelection(),
     coCoordinators: [],
+    participants: null,
+    pdfMeta: null,
     uploads: {
       ...emptyUploads(),
       geotaggedPhotos: [],
     },
+    streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
   };
@@ -290,7 +308,7 @@ export default function WorkshopsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [email, setEmail] = useState("");
-  const [currentFaculty, setCurrentFaculty] = useState<FacultySelection>(emptyFacultySelection);
+  const [currentFaculty, setCurrentFaculty] = useState<FacultyRowValue>(emptyFacultySelection);
   const [list, setList] = useState<WorkshopEntry[]>([]);
   const [form, setForm] = useState<WorkshopEntry>(() => createEmptyForm());
   const [pending, setPending] = useState<Record<UploadSlot, File | null>>({
@@ -420,39 +438,50 @@ export default function WorkshopsPage() {
       }
     });
 
-    for (const { slot, label } of UPLOAD_CONFIG) {
-      if (!form.uploads[slot]) {
-        nextErrors[slot] = `${label} is mandatory.`;
+    if (form.participants !== null) {
+      if (!Number.isFinite(form.participants) || form.participants <= 0) {
+        nextErrors.participants = "Participants must be greater than 0.";
       }
-    }
-
-    if (form.uploads.geotaggedPhotos.length === 0) {
-      nextErrors.geotaggedPhotos = "At least one geotagged photo is mandatory.";
     }
 
     return nextErrors;
   }, [form, currentFaculty.email]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const selectedEmails = useMemo(() => {
-    return new Set(
-      [(currentFaculty.email || form.coordinator.email), ...form.coCoordinators.map((value) => value.email)]
-        .map((value) => value.trim().toLowerCase())
-        .filter(Boolean)
-    );
-  }, [currentFaculty.email, form.coordinator.email, form.coCoordinators]);
   const hasPendingFiles = Object.values(pending).some(Boolean) || photoUploadStatus.hasPending;
   const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
+  const generateReady =
+    !!form.academicYear &&
+    !!form.semesterType &&
+    isISODate(form.startDate) &&
+    isISODate(form.endDate) &&
+    form.endDate >= form.startDate &&
+    !!form.eventName.trim() &&
+    !!form.speakerName.trim() &&
+    !!form.organisationName.trim() &&
+    !form.coCoordinators.some((value) => !value.isLocked || !value.email.trim());
+  const uploadsVisible = !!form.pdfMeta;
 
-  function getDisabledForCoCoordinatorRow(index: number) {
-    const next = new Set(selectedEmails);
-    const currentEmail = form.coCoordinators[index]?.email?.toLowerCase();
+  async function parseApiError(response: Response, fallback: string) {
+    const text = await response.text();
+    let message = `${fallback} (${response.status})`;
+    let payload: unknown = null;
 
-    if (currentEmail) {
-      next.delete(currentEmail);
+    try {
+      payload = text ? JSON.parse(text) : null;
+      if (
+        payload &&
+        typeof payload === "object" &&
+        "error" in payload &&
+        typeof (payload as { error?: unknown }).error === "string"
+      ) {
+        message = `${(payload as { error: string }).error} (${response.status})`;
+      }
+    } catch {
+      payload = null;
     }
 
-    return next;
+    return { message, payload };
   }
 
   function resetForm() {
@@ -485,6 +514,21 @@ export default function WorkshopsPage() {
     setPhotoUploadStatus({ hasPending: false, busy: false });
   }
 
+  async function persistProgress(nextForm: WorkshopEntry) {
+    const response = await fetch("/api/me/workshops", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, entry: nextForm }),
+    });
+    const { message, payload } = await parseApiError(response, "Save failed");
+
+    if (!response.ok) {
+      throw new Error(message);
+    }
+
+    return payload as WorkshopEntry;
+  }
+
   async function deleteStoredFile(storedPath: string) {
     await fetch("/api/me/workshops-file", {
       method: "DELETE",
@@ -507,11 +551,14 @@ export default function WorkshopsPage() {
 
   async function closeForm() {
     if (
-      entryHasUpload(form.uploads.permissionLetter) ||
-      entryHasUpload(form.uploads.brochure) ||
-      entryHasUpload(form.uploads.attendance) ||
-      entryHasUpload(form.uploads.organiserProfile) ||
-      form.uploads.geotaggedPhotos.length > 0
+      !form.pdfMeta &&
+      (
+        entryHasUpload(form.uploads.permissionLetter) ||
+        entryHasUpload(form.uploads.brochure) ||
+        entryHasUpload(form.uploads.attendance) ||
+        entryHasUpload(form.uploads.organiserProfile) ||
+        form.uploads.geotaggedPhotos.length > 0
+      )
     ) {
       await cleanupDraftUploads(form);
     }
@@ -534,6 +581,7 @@ export default function WorkshopsPage() {
   }
 
   async function uploadSlot(slot: UploadSlot) {
+    const currentForm = form;
     const file = pending[slot];
     if (!file) {
       setUploadError((current) => ({ ...current, [slot]: "Select a file first." }));
@@ -570,16 +618,19 @@ export default function WorkshopsPage() {
         void deleteStoredFile(previousMeta.storedPath);
       }
 
-      setForm((current) => ({
-        ...current,
+      const nextForm = {
+        ...currentForm,
         uploads: {
-          ...current.uploads,
+          ...currentForm.uploads,
           [slot]: meta,
         },
-      }));
+      };
+      const persisted = await persistProgress(nextForm);
+      setForm(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
       setProgress((current) => ({ ...current, [slot]: 100 }));
+      await refreshList(email);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Upload failed.";
       setBusy((current) => ({ ...current, [slot]: false }));
@@ -588,7 +639,8 @@ export default function WorkshopsPage() {
   }
 
   async function deleteSlot(slot: UploadSlot) {
-    const meta = form.uploads[slot];
+    const currentForm = form;
+    const meta = currentForm.uploads[slot];
     if (!meta?.storedPath) {
       setToast({ type: "err", msg: "File path missing." });
       setTimeout(() => setToast(null), 1500);
@@ -607,17 +659,20 @@ export default function WorkshopsPage() {
         throw new Error(payload?.error || "Delete failed.");
       }
 
-      setForm((current) => ({
-        ...current,
+      const nextForm = {
+        ...currentForm,
         uploads: {
-          ...current.uploads,
+          ...currentForm.uploads,
           [slot]: null,
         },
-      }));
+      };
+      const persisted = await persistProgress(nextForm);
+      setForm(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
       setProgress((current) => ({ ...current, [slot]: 0 }));
       setUploadError((current) => ({ ...current, [slot]: null }));
+      await refreshList(email);
 
       setToast({ type: "ok", msg: "File deleted." });
       setTimeout(() => setToast(null), 1200);
@@ -650,19 +705,10 @@ export default function WorkshopsPage() {
       setSaving(true);
       const entryToSave: WorkshopEntry = {
         ...form,
+        status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
-      const response = await fetch("/api/me/workshops", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, entry: entryToSave }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload?.error || "Save failed.");
-      }
-
+      await persistProgress(entryToSave);
       await refreshList(email);
       setToast({ type: "ok", msg: "Workshop saved." });
       setTimeout(() => setToast(null), 1400);
@@ -670,6 +716,81 @@ export default function WorkshopsPage() {
       setFormOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Save failed.";
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
+    } finally {
+      setSaving(false);
+      saveLockRef.current = false;
+    }
+  }
+
+  async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
+    if (saveLockRef.current) {
+      throw new Error("Please wait for the current save to finish.");
+    }
+
+    saveLockRef.current = true;
+
+    try {
+      const persisted = await persistProgress({
+        ...form,
+        coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
+        coCoordinators: nextRows,
+      });
+      setForm(persisted);
+      return persisted.coCoordinators;
+    } finally {
+      saveLockRef.current = false;
+    }
+  }
+
+  async function generateEntry() {
+    if (saveLockRef.current) return;
+    saveLockRef.current = true;
+
+    try {
+      setSubmitted(true);
+
+      if (Object.keys(errors).length > 0 || !generateReady) {
+        setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
+        setTimeout(() => setToast(null), 1800);
+        return;
+      }
+
+      if (hasPendingFiles || hasBusyUploads) {
+        setToast({ type: "err", msg: "Finish the current uploads before generating the entry." });
+        setTimeout(() => setToast(null), 1800);
+        return;
+      }
+
+      setSaving(true);
+      const draftEntry: WorkshopEntry = {
+        ...form,
+        status: form.status === "final" ? "final" : "draft",
+        coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
+      };
+      const persistedDraft = await persistProgress(draftEntry);
+      const response = await fetch(`/api/me/workshops/${encodeURIComponent(persistedDraft.id)}/pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const { message, payload } = await parseApiError(response, "Generate failed");
+
+      if (!response.ok) {
+        throw new Error(message);
+      }
+
+      const nextEntry =
+        payload && typeof payload === "object" && "entry" in payload
+          ? ((payload as { entry?: WorkshopEntry }).entry ?? persistedDraft)
+          : persistedDraft;
+
+      setForm(nextEntry);
+      await refreshList(email);
+      setToast({ type: "ok", msg: "Entry generated." });
+      setTimeout(() => setToast(null), 1400);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Generate failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
     } finally {
@@ -756,7 +877,7 @@ export default function WorkshopsPage() {
         {!loading && formOpen ? (
           <SectionCard
             title="New Workshop Entry"
-            subtitle="Add the entry details and upload the required documents."
+            subtitle="Add the entry details and generate the entry to unlock uploads."
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
@@ -853,74 +974,79 @@ export default function WorkshopsPage() {
               Coordinator: <span className="font-medium text-foreground">{currentFaculty.name || form.coordinator.name || "-"}</span>
             </div>
 
-            <div className="mt-5 rounded-xl border border-border p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold">Co-coordinator(s)</div>
-                  <div className="mt-1 text-xs text-muted-foreground">Add co-coordinators only when applicable.</div>
-                </div>
-                <MiniButton
-                  variant="ghost"
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      coCoordinators: [...current.coCoordinators, emptyFacultySelection()],
-                    }))
-                  }
-                >
-                  + Add Co-coordinator
-                </MiniButton>
-              </div>
-
-              {submitted && errors.coCoordinators ? (
-                <div className="mt-2 text-xs text-red-600">{errors.coCoordinators}</div>
-              ) : null}
-
-              {form.coCoordinators.length > 0 ? (
-                <div className="mt-4 space-y-3">
-                  {form.coCoordinators.map((value, index) => (
-                    <div key={`${index}-${value.email || value.name}`} className="grid grid-cols-[1fr_auto] items-end gap-2">
-                      <Field
-                        label={`Co-coordinator ${index + 1}`}
-                        error={submitted ? errors[`coCoordinators.${index}`] : undefined}
-                      >
-                        <FacultySelect
-                          value={value}
-                          onChange={(next) =>
-                            setForm((current) => ({
-                              ...current,
-                              coCoordinators: current.coCoordinators.map((item, itemIndex) =>
-                                itemIndex === index ? next : item
-                              ),
-                            }))
-                          }
-                          options={FACULTY_OPTIONS}
-                          disabledEmails={getDisabledForCoCoordinatorRow(index)}
-                          placeholder="Search or type co-coordinator"
-                          error={submitted && !!errors[`coCoordinators.${index}`]}
-                        />
-                      </Field>
-
-                      <MiniButton
-                        variant="danger"
-                        onClick={() =>
-                          setForm((current) => ({
-                            ...current,
-                            coCoordinators: current.coCoordinators.filter((_, itemIndex) => itemIndex !== index),
-                          }))
-                        }
-                      >
-                        Delete
-                      </MiniButton>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-4 text-sm text-muted-foreground">No co-coordinators added.</div>
-              )}
+            <div className="mt-5">
+              <FacultyRowPicker
+                title="Co-coordinator(s)"
+                helperText="Add co-coordinators only when applicable."
+                addLabel="+ Add Co-coordinator"
+                rowLabelPrefix="Co-coordinator"
+                rows={form.coCoordinators}
+                onRowsChange={(rows) => setForm((current) => ({ ...current, coCoordinators: rows }))}
+                onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
+                facultyOptions={FACULTY_OPTIONS}
+                disableEmails={[currentFaculty.email || form.coordinator.email]}
+                sectionError={errors.coCoordinators}
+                showSectionError={submitted}
+                emptyStateText="No co-coordinators added."
+                validateRow={(rows, row, index) => {
+                  if (!row.email) return "Select a faculty member from the list.";
+                  const duplicates = rows.filter(
+                    (item, itemIndex) =>
+                      itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
+                  ).length;
+                  return duplicates > 0 ? "This faculty is already selected in another role." : null;
+                }}
+              />
             </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <Field label="Number of Participants" error={submitted ? errors.participants : undefined} hint="Optional. Digits only">
+                <input
+                  inputMode="numeric"
+                  value={form.participants === null ? "" : String(form.participants)}
+                  onChange={(event) => {
+                    const digits = event.target.value.replace(/\D/g, "");
+                    setForm((current) => ({
+                      ...current,
+                      participants: digits === "" ? null : Number(digits),
+                    }));
+                  }}
+                  className={cx(
+                    "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                    submitted && errors.participants
+                      ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
+                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                  )}
+                />
+              </Field>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <MiniButton
+                  onClick={() => void generateEntry()}
+                  disabled={saving || loading || hasBusyUploads || hasPendingFiles || !generateReady}
+                >
+                  {saving ? "Generating..." : "Generate Entry"}
+                </MiniButton>
+                {form.pdfMeta?.url ? (
+                  <a
+                    href={form.pdfMeta.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+                  >
+                    Download Entry
+                  </a>
+                ) : (
+                  <MiniButton variant="ghost" disabled>
+                    Download Entry
+                  </MiniButton>
+                )}
+              </div>
+
+              {uploadsVisible ? (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {UPLOAD_CONFIG.map(({ slot, label }) => {
                 const meta = form.uploads[slot];
                 const currentPending = pending[slot];
@@ -942,9 +1068,7 @@ export default function WorkshopsPage() {
                         • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
                       </div>
                     ) : (
-                      <div className={cx("text-xs", submitted ? "text-red-600" : "text-muted-foreground")}>
-                        {submitted ? (errors[slot] || "This upload is mandatory.") : "No file uploaded yet."}
-                      </div>
+                      <div className="text-xs text-muted-foreground">No file uploaded yet.</div>
                     )}
 
                     <div className="text-xs text-muted-foreground">
@@ -1016,34 +1140,41 @@ export default function WorkshopsPage() {
                 key={form.id}
                 title="Geotagged Photos"
                 value={form.uploads.geotaggedPhotos}
-                onUploaded={(meta) =>
-                  setForm((current) => ({
-                    ...current,
+                onUploaded={async (meta) => {
+                  const nextForm = {
+                    ...form,
                     uploads: {
-                      ...current.uploads,
-                      geotaggedPhotos: [...current.uploads.geotaggedPhotos, meta],
+                      ...form.uploads,
+                      geotaggedPhotos: [...form.uploads.geotaggedPhotos, meta],
                     },
-                  }))
-                }
-                onDeleted={(meta) =>
-                  setForm((current) => ({
-                    ...current,
+                  };
+                  const persisted = await persistProgress(nextForm);
+                  setForm(persisted);
+                  await refreshList(email);
+                }}
+                onDeleted={async (meta) => {
+                  const nextForm = {
+                    ...form,
                     uploads: {
-                      ...current.uploads,
-                      geotaggedPhotos: current.uploads.geotaggedPhotos.filter(
+                      ...form.uploads,
+                      geotaggedPhotos: form.uploads.geotaggedPhotos.filter(
                         (item) => item.storedPath !== meta.storedPath
                       ),
                     },
-                  }))
-                }
+                  };
+                  const persisted = await persistProgress(nextForm);
+                  setForm(persisted);
+                  await refreshList(email);
+                }}
                 uploadEndpoint="/api/me/workshops-file"
                 email={email}
                 recordId={form.id}
                 slotName="geotaggedPhotos"
-                showRequiredError={submitted && !!errors.geotaggedPhotos}
-                requiredErrorText={errors.geotaggedPhotos}
+                showRequiredError={false}
                 onStatusChange={setPhotoUploadStatus}
               />
+                </div>
+              ) : null}
             </div>
           </SectionCard>
         ) : null}

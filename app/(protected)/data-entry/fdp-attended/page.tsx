@@ -38,6 +38,12 @@ type FdpAttended = {
   programName: string;
   organisingBody: string;
   supportAmount: number | null;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
   permissionLetter: FileMeta | null;
   completionCertificate: FileMeta | null;
   streak: StreakState;
@@ -95,6 +101,7 @@ function emptyForm(): FdpAttended {
     programName: "",
     organisingBody: "",
     supportAmount: null,
+    pdfMeta: null,
     permissionLetter: null,
     completionCertificate: null,
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
@@ -494,10 +501,6 @@ export default function FdpAttendedPage() {
       }
     }
 
-    if (!form.permissionLetter) {
-      nextErrors.permissionLetter = "Permission letter is mandatory.";
-    }
-
     return nextErrors;
   }, [form]);
 
@@ -505,23 +508,17 @@ export default function FdpAttendedPage() {
   const hasPendingFiles = !!pending.permissionLetter || !!pending.completionCertificate;
   const hasBusyUploads = busy.permissionLetter || busy.completionCertificate;
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const completionVisible = form.status === "final" && !!form.streak.activatedAtISO;
+  const uploadsVisible = !!form.pdfMeta;
   const isDirty = stableStringify(form) !== lastPersistedSnapshot;
   const isLocked = !!form.createdAt && isEntryLocked(form);
-  const doneReady =
+  const generateReady =
     !!form.academicYear &&
     !!form.semesterType &&
     isISODate(form.startDate) &&
     isISODate(form.endDate) &&
     form.endDate >= form.startDate &&
     !!form.programName.trim() &&
-    !!form.organisingBody.trim() &&
-    !!form.permissionLetter;
-  const needsCompletionFinalization =
-    form.status === "final" &&
-    !!form.completionCertificate &&
-    !!form.streak.activatedAtISO &&
-    !form.streak.completedAtISO;
+    !!form.organisingBody.trim();
   const groupedEntries = useMemo(() => {
     const indexedEntries = list.map((entry, index) => ({ entry, index }));
     const sortChronologically = (
@@ -666,19 +663,18 @@ export default function FdpAttendedPage() {
       return;
     }
 
-    if (!doneReady || isLocked) {
-      setSubmitted(true);
-      setToast({ type: "err", msg: isLocked ? "This entry is locked." : "Complete the required fields first." });
+    if (isLocked) {
+      setToast({ type: "err", msg: "This entry is locked." });
       setTimeout(() => setToast(null), 1800);
       return;
     }
 
-    if (!isDirty && !needsCompletionFinalization && form.status === "final") {
+    if (!isDirty) {
       closeForm();
       return;
     }
 
-    await finalizeAndExit();
+    await saveDraftChanges({ closeAfterSave: true });
   }
 
   useEffect(() => {
@@ -799,7 +795,7 @@ export default function FdpAttendedPage() {
     }
   }
 
-  async function saveDraftChanges() {
+  async function saveDraftChanges(options?: { closeAfterSave?: boolean }) {
     if (saveLockRef.current || !isDirty || isLocked) return;
     saveLockRef.current = true;
 
@@ -820,7 +816,12 @@ export default function FdpAttendedPage() {
       setLastPersistedSnapshot(stableStringify(persisted));
       setSubmitted(false);
       await refreshList();
-      setToast({ type: "ok", msg: "Saved" });
+      if (options?.closeAfterSave) {
+        closeForm();
+        setToast({ type: "ok", msg: "Saved" });
+      } else {
+        setToast({ type: "ok", msg: "Saved" });
+      }
       setTimeout(() => setToast(null), 1400);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Save failed.";
@@ -833,15 +834,15 @@ export default function FdpAttendedPage() {
     }
   }
 
-  async function finalizeAndExit() {
+  async function generateEntry() {
     if (saveLockRef.current) return;
     saveLockRef.current = true;
 
     try {
       setSubmitted(true);
 
-      if (Object.keys(errors).length > 0 || !doneReady) {
-        setToast({ type: "err", msg: "Complete all mandatory fields before saving." });
+      if (Object.keys(errors).length > 0 || !generateReady) {
+        setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
         setTimeout(() => setToast(null), 1800);
         return;
       }
@@ -853,21 +854,22 @@ export default function FdpAttendedPage() {
       }
 
       setSaving(true);
-      setSaveIntent("done");
-      const entryToSave: FdpAttended = {
+      setSaveIntent("save");
+      const draftEntry: FdpAttended = {
         ...form,
-        status: "final",
+        status: form.status === "final" ? "final" : "draft",
       };
-      const response = await fetch("/api/me/fdp-attended", {
+      const persisted = await persistProgress(draftEntry);
+      const response = await fetch(`/api/me/fdp-attended/${encodeURIComponent(persisted.id)}/pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entry: entryToSave }),
       });
       const text = await response.text();
       let message = `Save failed (${response.status})`;
+      let payload: { entry?: FdpAttended; error?: string } | null = null;
 
       try {
-        const payload = text ? (JSON.parse(text) as { error?: string }) : null;
+        payload = text ? (JSON.parse(text) as { entry?: FdpAttended; error?: string }) : null;
         if (payload?.error) {
           message = payload.error;
         }
@@ -879,18 +881,12 @@ export default function FdpAttendedPage() {
         throw new Error(message);
       }
 
-      if (!isEligibleFuture) {
-        setToast({ type: "ok", msg: "Streak activates only for upcoming FDP dates." });
-      } else if (needsCompletionFinalization && form.completionCertificate) {
-        setToast({ type: "ok", msg: "Streak win recorded." });
-      } else {
-        setToast({ type: "ok", msg: "FDP Attended saved." });
-      }
+      const nextEntry = payload?.entry ?? persisted;
+      setForm(nextEntry);
+      setLastPersistedSnapshot(stableStringify(nextEntry));
+      setToast({ type: "ok", msg: "Entry generated." });
       await refreshList();
       setTimeout(() => setToast(null), 1400);
-      resetForm();
-      setFormOpen(false);
-      router.replace(pathname, { scroll: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Save failed.";
       setToast({ type: "err", msg: message });
@@ -1138,9 +1134,9 @@ export default function FdpAttendedPage() {
               </MiniButton>
               <MiniButton
                 onClick={() => void handleDone()}
-                disabled={saving || loading || hasBusyUploads || hasPendingFiles || !doneReady || isLocked}
+                disabled={saving || loading || hasBusyUploads || hasPendingFiles || isLocked}
               >
-                {saving && saveIntent === "done" ? "Saving..." : "Done"}
+                {saving && saveIntent === "save" ? "Saving..." : "Done"}
               </MiniButton>
             </>
           ) : (
@@ -1270,14 +1266,35 @@ export default function FdpAttendedPage() {
             </div>
 
             <div className="mt-5 space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <MiniButton
+                  onClick={() => void generateEntry()}
+                  disabled={saving || loading || hasBusyUploads || hasPendingFiles || !generateReady || isLocked}
+                >
+                  {saving && saveIntent === "save" ? "Generating..." : "Generate Entry"}
+                </MiniButton>
+                {form.pdfMeta?.url ? (
+                  <a
+                    href={form.pdfMeta.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+                  >
+                    Download Entry
+                  </a>
+                ) : (
+                  <MiniButton variant="ghost" disabled>
+                    Download Entry
+                  </MiniButton>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
-              <div className={cx("grid gap-4", completionVisible ? "sm:grid-cols-2" : "sm:grid-cols-1")}>
+              {uploadsVisible ? (
+              <div className="grid gap-4 sm:grid-cols-2">
               {(
                 [
                   ["permissionLetter", "Upload Permission Letter"],
-                  ...(completionVisible
-                    ? ([["completionCertificate", "Upload Completion Certificate"]] as const)
-                    : []),
+                  ["completionCertificate", "Upload Completion Certificate"],
                 ] as const
               ).map(([slot, label]) => {
                 const meta = form[slot];
@@ -1374,6 +1391,7 @@ export default function FdpAttendedPage() {
                 );
               })}
               </div>
+              ) : null}
             </div>
           </SectionCard>
         ) : null}
