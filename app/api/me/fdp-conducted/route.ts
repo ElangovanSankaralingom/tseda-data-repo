@@ -51,6 +51,8 @@ type FdpConducted = {
   coordinatorEmail: string;
   coCoordinators: FacultySelection[];
   pdfMeta?: PdfMeta | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
   permissionLetter: FileMeta | null;
   geotaggedPhotos: FileMeta[];
   streak: StreakState;
@@ -194,6 +196,22 @@ function normalizeRequestEditStatus(
     : fallback;
 }
 
+function getPrePdfFieldsHash(
+  entry: Pick<FdpConducted, "academicYear" | "semesterType" | "startDate" | "endDate" | "eventName" | "coCoordinators">
+) {
+  return JSON.stringify({
+    academicYear: String(entry.academicYear ?? "").trim(),
+    semesterType: String(entry.semesterType ?? "").trim(),
+    startDate: String(entry.startDate ?? "").trim(),
+    endDate: String(entry.endDate ?? "").trim(),
+    eventName: String(entry.eventName ?? "").trim(),
+    coCoordinators: entry.coCoordinators.map((value) => ({
+      id: String(value.id ?? ""),
+      email: String(value.email ?? "").trim().toLowerCase(),
+    })),
+  });
+}
+
 function normalizeEntry(value: unknown): FdpConducted | null {
   if (!value || typeof value !== "object") return null;
 
@@ -208,7 +226,7 @@ function normalizeEntry(value: unknown): FdpConducted | null {
     .map(normalizeFacultySelection)
     .filter((item) => item.name || item.email);
 
-  return {
+  const normalized: FdpConducted = {
     id: String(record.id ?? "").trim(),
     status: normalizeStatus(record.status),
     requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
@@ -231,12 +249,25 @@ function normalizeEntry(value: unknown): FdpConducted | null {
     pdfMeta: isValidPdfMeta((record.pdfMeta as PdfMeta | null) ?? null)
       ? ((record.pdfMeta as PdfMeta | null) ?? null)
       : null,
+    pdfStale: record.pdfStale === true,
+    pdfSourceHash: typeof record.pdfSourceHash === "string" ? record.pdfSourceHash : "",
     permissionLetter: (record.permissionLetter as FileMeta | null) ?? null,
     geotaggedPhotos: normalizeFileMetaArray(record.geotaggedPhotos, record.geotaggedPhoto),
     streak: normalizeStreakState(record.streak),
     createdAt: String(record.createdAt ?? "").trim(),
     updatedAt: String(record.updatedAt ?? "").trim(),
   };
+
+  if (normalized.pdfMeta && !normalized.pdfSourceHash) {
+    normalized.pdfSourceHash = getPrePdfFieldsHash(normalized);
+  }
+
+  normalized.pdfStale =
+    !!normalized.pdfMeta &&
+    !!normalized.pdfSourceHash &&
+    getPrePdfFieldsHash(normalized) !== normalized.pdfSourceHash;
+
+  return normalized;
 }
 
 function normalizeStoredPath(storedPath: string) {
@@ -500,12 +531,19 @@ export async function POST(request: Request) {
         savedAtISO: value.savedAtISO ?? null,
       })),
       pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
+      pdfSourceHash: entry.pdfSourceHash || existing?.pdfSourceHash || "",
+      pdfStale: entry.pdfStale === true,
       permissionLetter: entry.permissionLetter,
       geotaggedPhotos: entry.geotaggedPhotos,
       streak,
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
+
+    savedEntry.pdfStale =
+      !!savedEntry.pdfMeta &&
+      !!savedEntry.pdfSourceHash &&
+      getPrePdfFieldsHash(savedEntry) !== savedEntry.pdfSourceHash;
 
     if (existing) {
       if (existing.permissionLetter?.storedPath !== savedEntry.permissionLetter?.storedPath) {
@@ -671,12 +709,19 @@ export async function PATCH(request: Request) {
         ? entry.coCoordinators.map(canonicalizeFacultySelection)
         : existing?.coCoordinators || [],
       pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
+      pdfSourceHash: entry.pdfSourceHash || existing?.pdfSourceHash || "",
+      pdfStale: entry.pdfStale === true,
       permissionLetter: hasPermissionLetter ? entry.permissionLetter : existing?.permissionLetter || null,
       geotaggedPhotos: hasGeotaggedPhotos ? entry.geotaggedPhotos : existing?.geotaggedPhotos || [],
       streak: normalizeStreakState(existing?.streak ?? entry.streak),
       createdAt: existing?.createdAt || entry.createdAt || now,
       updatedAt: now,
     };
+
+    savedEntry.pdfStale =
+      !!savedEntry.pdfMeta &&
+      !!savedEntry.pdfSourceHash &&
+      getPrePdfFieldsHash(savedEntry) !== savedEntry.pdfSourceHash;
 
     const eligible = isFutureDatedEntry(savedEntry.startDate, savedEntry.endDate);
     if (savedEntry.status !== "final" || !savedEntry.pdfMeta || !eligible) {
