@@ -13,11 +13,10 @@ import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
-import { useDirtyTracker } from "@/hooks/useDirtyTracker";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
+import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { groupEntriesByLifecycle, type EntryDisplayCategory } from "@/lib/entries/lifecycle";
-import { computeEntryLifecycle } from "@/lib/entries/stateMachine";
 import { getEditLockState, isEntryLockedState, nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
@@ -356,6 +355,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   });
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
+  const seededViewEntryIdRef = useRef<string | null>(null);
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
     "/data-entry/case-studies",
     viewEntryId
@@ -410,9 +410,18 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   }, []);
 
   useEffect(() => {
-    if (!viewedEntry) return;
+    if (!viewEntryId) {
+      seededViewEntryIdRef.current = null;
+      return;
+    }
 
-    const hydratedEntry = hydrateEntry(viewedEntry);
+    if (seededViewEntryIdRef.current === viewEntryId) return;
+
+    const nextViewedEntry = list.find((item) => item.id === viewEntryId);
+    if (!nextViewedEntry) return;
+
+    seededViewEntryIdRef.current = viewEntryId;
+    const hydratedEntry = hydrateEntry(nextViewedEntry);
     setForm(hydratedEntry);
     setLastPersistedSnapshot(stableStringify(hydratedEntry));
     setAttemptedSectionSave(false);
@@ -434,7 +443,12 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       travelPlan: null,
     });
     setPhotoUploadStatus({ hasPending: false, busy: false });
-  }, [viewedEntry]);
+  }, [list, viewEntryId]);
+
+  function applyPersistedEntry(nextEntry: CaseStudyEntry) {
+    setForm(nextEntry);
+    setLastPersistedSnapshot(stableStringify(nextEntry));
+  }
 
   function buildEntryErrors(entry: CaseStudyEntry) {
     const nextErrors: Record<string, string> = {};
@@ -545,21 +559,15 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       }),
     [form.pdfMeta, form.pdfSourceHash, generateReady, isLocked, pdfHash]
   );
-  const dirtyTracker = useDirtyTracker({ fieldDirty: formDirty });
-  const preStageDirty = uploadsVisible ? pdfState.pdfStale : dirtyTracker.shouldEnableTopSave;
-  const postStageDirty = uploadsVisible && !pdfState.pdfStale && dirtyTracker.shouldEnableTopSave;
-  const lifecycle = useMemo(
-    () =>
-      computeEntryLifecycle({
-        isLocked,
-        hasPdfSnapshot: uploadsVisible,
-        preStageValid: generateReady,
-        postStageValid: uploadsVisible && requiredUploadsComplete,
-        preStageDirty,
-        postStageDirty,
-      }),
-    [generateReady, isLocked, postStageDirty, preStageDirty, requiredUploadsComplete, uploadsVisible]
-  );
+  const workflow = useEntryWorkflow({
+    isLocked,
+    coreValid: generateReady,
+    hasPdfSnapshot: uploadsVisible,
+    pdfStale: pdfState.pdfStale,
+    completionValid: requiredUploadsComplete,
+    fieldDirty: formDirty,
+  });
+  const lifecycle = workflow.lifecycle;
   const showForm = formOpen || (isViewMode && !!viewedEntry);
 
   function resetForm() {
@@ -719,7 +727,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
 
       const nextForm = { ...currentForm, [slot]: meta };
       const persisted = hydrateEntry(await persistProgress(nextForm));
-      setForm(persisted);
+      applyPersistedEntry(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
       setProgress((current) => ({ ...current, [slot]: 100 }));
@@ -754,7 +762,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
 
       const nextForm = { ...currentForm, [slot]: null };
       const persisted = hydrateEntry(await persistProgress(nextForm));
-      setForm(persisted);
+      applyPersistedEntry(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
       setProgress((current) => ({ ...current, [slot]: 0 }));
@@ -788,8 +796,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
       const persisted = hydrateEntry(await persistProgress(entryToSave));
-      setForm(persisted);
-      setLastPersistedSnapshot(stableStringify(persisted));
+      applyPersistedEntry(persisted);
       setAttemptedSectionSave(false);
       setSubmitAttemptedFinal(false);
       await refreshList(email);
@@ -872,8 +879,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
           ? hydrateEntry((payload as { entry?: CaseStudyEntry }).entry ?? persistedDraft)
           : persistedDraft;
 
-      setForm(nextEntry);
-      setLastPersistedSnapshot(stableStringify(nextEntry));
+      applyPersistedEntry(nextEntry);
       setAttemptedSectionSave(false);
       setSubmitAttemptedFinal(false);
       await refreshList(email);
@@ -1615,7 +1621,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                     geotaggedPhotos: [...form.geotaggedPhotos, meta],
                   };
                   const persisted = hydrateEntry(await persistProgress(nextForm));
-                  setForm(persisted);
+                  applyPersistedEntry(persisted);
                   await refreshList(email);
                 }}
                 onDeleted={async (meta) => {
@@ -1624,7 +1630,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                     geotaggedPhotos: form.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath),
                   };
                   const persisted = hydrateEntry(await persistProgress(nextForm));
-                  setForm(persisted);
+                  applyPersistedEntry(persisted);
                   await refreshList(email);
                 }}
                 uploadEndpoint="/api/me/case-studies-file"
@@ -1642,7 +1648,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
           </SectionCard>
         ) : null}
 
-        {!loading && !isViewMode ? (
+        {!loading && !showForm ? (
           <SectionCard
             title="Saved Case Study Entries"
             subtitle="Your saved case study records are stored locally and keyed to your signed-in email."
