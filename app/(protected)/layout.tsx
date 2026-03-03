@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import ShellClient from "@/app/ShellClient";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
 
 export default async function ProtectedLayout({

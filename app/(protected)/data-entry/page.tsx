@@ -56,7 +56,7 @@ export default function DataEntryHomePage() {
             key={it.href}
             href={it.href}
             className={cx(
-              "group rounded-2xl border border-border bg-white/70 dark:bg-black/20 p-5",
+              "group rounded-2xl border border-border bg-white/70 p-5",
               "transition hover:bg-muted/40 active:bg-muted/60"
             )}
           >
@@ -74,7 +74,7 @@ export default function DataEntryHomePage() {
         ))}
       </div>
 
-      <div className="mt-6 rounded-2xl border border-border bg-white/70 dark:bg-black/20 p-4 text-sm text-muted-foreground">
+      <div className="mt-6 rounded-2xl border border-border bg-white/70 p-4 text-sm text-muted-foreground">
         Add entries and upload required documents by category.
       </div>
     </div>

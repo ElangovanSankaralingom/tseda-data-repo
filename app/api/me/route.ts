@@ -3,11 +3,15 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { ensureDirs, PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
 
 type AnyObj = Record<string, unknown>;
+
+function isAnyObj(value: unknown): value is AnyObj {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
 
 function readProfile(email: string): AnyObj {
   ensureDirs();
@@ -19,8 +23,8 @@ function readProfile(email: string): AnyObj {
       facultyId: normalizeEmail(email),
       officialName: "",
       isFacultyListed: false,
-      googleName: "",
-      googlePhotoURL: "",
+      googleName: null,
+      googlePhotoURL: null,
       userPreferredName: "",
       customPhotoURL: null,
       personal: {},
@@ -57,17 +61,33 @@ function writeProfile(email: string, profile: AnyObj) {
 }
 
 function deepMerge(base: AnyObj, patch: AnyObj): AnyObj {
-  const out: AnyObj = Array.isArray(base) ? [...base] : { ...base };
+  const out: AnyObj = { ...base };
   for (const k of Object.keys(patch || {})) {
     const pv = patch[k];
     const bv = base?.[k];
-    if (pv && typeof pv === "object" && !Array.isArray(pv) && bv && typeof bv === "object" && !Array.isArray(bv)) {
+    if (isAnyObj(pv) && isAnyObj(bv)) {
       out[k] = deepMerge(bv, pv);
     } else {
       out[k] = pv;
     }
   }
   return out;
+}
+
+function getSessionGoogleName(session: unknown) {
+  const user =
+    session && typeof session === "object" && "user" in session
+      ? (session as { user?: { name?: unknown } }).user
+      : undefined;
+  return typeof user?.name === "string" ? user.name.trim() : "";
+}
+
+function getSessionGooglePhotoURL(session: unknown) {
+  const user =
+    session && typeof session === "object" && "user" in session
+      ? (session as { user?: { image?: unknown } }).user
+      : undefined;
+  return typeof user?.image === "string" ? user.image.trim() : "";
 }
 
 export async function GET() {
@@ -78,7 +98,9 @@ export async function GET() {
 
   const profile = readProfile(email);
   const canonical = findFacultyByEmail(email);
-  const fallbackName = profile.userPreferredName || session?.user?.name || email.split("@")[0];
+  const sessionGoogleName = getSessionGoogleName(session);
+  const sessionGooglePhotoURL = getSessionGooglePhotoURL(session);
+  const fallbackName = profile.userPreferredName || sessionGoogleName || email.split("@")[0];
   const academicRecord =
     typeof profile.academic === "object" && profile.academic ? (profile.academic as AnyObj) : {};
 
@@ -86,8 +108,9 @@ export async function GET() {
   profile.facultyId = email;
   profile.isFacultyListed = !!canonical;
   profile.officialName = canonical?.name ?? fallbackName;
-  profile.googleName = session?.user?.name ?? profile.googleName ?? "";
-  profile.googlePhotoURL = session?.user?.image ?? profile.googlePhotoURL ?? "";
+  profile.googleName = sessionGoogleName || String(profile.googleName ?? "").trim() || null;
+  profile.googlePhotoURL =
+    sessionGooglePhotoURL || String(profile.googlePhotoURL ?? "").trim() || null;
   profile.academic = {
     ...academicRecord,
     employeeId: typeof academicRecord.employeeId === "string" ? academicRecord.employeeId.replace(/\D/g, "").slice(0, 6) : "",
@@ -111,12 +134,16 @@ export async function PUT(req: Request) {
   }
   const current = readProfile(email);
   const canonical = findFacultyByEmail(email);
+  const sessionGoogleName = getSessionGoogleName(session);
+  const sessionGooglePhotoURL = getSessionGooglePhotoURL(session);
   const sanitizedPatch = { ...patch };
 
   delete sanitizedPatch.email;
   delete sanitizedPatch.facultyId;
   delete sanitizedPatch.officialName;
   delete sanitizedPatch.isFacultyListed;
+  delete sanitizedPatch.googleName;
+  delete sanitizedPatch.googlePhotoURL;
 
   const merged = deepMerge(current, sanitizedPatch);
   const patchAcademic =
@@ -146,10 +173,14 @@ export async function PUT(req: Request) {
   merged.officialName =
     canonical?.name ??
     merged.userPreferredName ??
-    session?.user?.name ??
+    sessionGoogleName ??
     email.split("@")[0];
-  merged.googleName = session?.user?.name ?? merged.googleName ?? "";
-  merged.googlePhotoURL = session?.user?.image ?? merged.googlePhotoURL ?? "";
+  merged.googleName =
+    sessionGoogleName || String(current.googleName ?? merged.googleName ?? "").trim() || null;
+  merged.googlePhotoURL =
+    sessionGooglePhotoURL ||
+    String(current.googlePhotoURL ?? merged.googlePhotoURL ?? "").trim() ||
+    null;
   writeProfile(email, merged);
 
   return NextResponse.json(merged);

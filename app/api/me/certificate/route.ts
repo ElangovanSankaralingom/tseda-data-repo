@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import { getProfileByEmail, upsertProfile, StoredFile } from "@/lib/profileStore";
+import { getProfileByEmail, upsertProfile, StoredFile, type OutsideAcademic, type IndustryExp } from "@/lib/profileStore";
 
 const ACCEPT = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const MAX_MB = 20;
@@ -15,6 +15,10 @@ function safe(s: string) {
 function ensureCategory(category: string) {
   if (category !== "academicOutside" && category !== "industry") throw new Error("Invalid category");
   return category as "academicOutside" | "industry";
+}
+
+function cloneProfile<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 export async function POST(req: Request) {
@@ -72,12 +76,12 @@ export async function POST(req: Request) {
     uploadedAt: new Date().toISOString(),
   };
 
-  const next = JSON.parse(JSON.stringify(profile));
+  const next = cloneProfile(profile);
   if (category === "academicOutside") {
-    const idx = next.experience.academicOutside.findIndex((x: any) => x.id === entryId);
+    const idx = next.experience.academicOutside.findIndex((x: OutsideAcademic) => x.id === entryId);
     next.experience.academicOutside[idx].certificate = stored;
   } else {
-    const idx = next.experience.industry.findIndex((x: any) => x.id === entryId);
+    const idx = next.experience.industry.findIndex((x: IndustryExp) => x.id === entryId);
     next.experience.industry[idx].certificate = stored;
   }
 
@@ -103,16 +107,16 @@ export async function DELETE(req: Request) {
   const profile = await getProfileByEmail(email);
   if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-  const next = JSON.parse(JSON.stringify(profile));
+  const next = cloneProfile(profile);
   let certPath: string | null = null;
 
   if (category === "academicOutside") {
-    const idx = next.experience.academicOutside.findIndex((x: any) => x.id === entryId);
+    const idx = next.experience.academicOutside.findIndex((x: OutsideAcademic) => x.id === entryId);
     if (idx === -1) return NextResponse.json({ error: "Entry not found" }, { status: 404 });
     certPath = next.experience.academicOutside[idx]?.certificate?.path ?? null;
     next.experience.academicOutside[idx].certificate = undefined;
   } else {
-    const idx = next.experience.industry.findIndex((x: any) => x.id === entryId);
+    const idx = next.experience.industry.findIndex((x: IndustryExp) => x.id === entryId);
     if (idx === -1) return NextResponse.json({ error: "Entry not found" }, { status: 404 });
     certPath = next.experience.industry[idx]?.certificate?.path ?? null;
     next.experience.industry[idx].certificate = undefined;

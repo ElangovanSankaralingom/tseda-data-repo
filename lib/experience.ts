@@ -1,5 +1,3 @@
-import crypto from "node:crypto";
-
 // lib/experience.ts
 export type ISODate = string; // "YYYY-MM-DD"
 
@@ -25,7 +23,7 @@ export type OutsideAcademicExp = {
   institution: string;
   startDate: ISODate;
   endDate: ISODate;
-  certificate: FileMeta; // mandatory
+  certificate: FileMeta | null; // mandatory before final save
 };
 
 export type IndustryExp = {
@@ -34,7 +32,7 @@ export type IndustryExp = {
   role: string; // mandatory
   startDate: ISODate;
   endDate: ISODate;
-  certificate: FileMeta; // mandatory
+  certificate: FileMeta | null; // mandatory before final save
 };
 
 export type Experience = {
@@ -216,11 +214,9 @@ export function formatYMD(d: DurationYMD) {
 
 export function uuid() {
   // Modern browsers + Node 19+
-  if (typeof globalThis !== "undefined") {
-    const c: any = globalThis.crypto;
-    if (c && typeof c.randomUUID === "function") {
-      return c.randomUUID();
-    }
+  const cryptoApi = typeof globalThis !== "undefined" ? globalThis.crypto : undefined;
+  if (cryptoApi && typeof cryptoApi.randomUUID === "function") {
+    return cryptoApi.randomUUID();
   }
 
   // Fallback for environments like Turbopack crypto-browserify

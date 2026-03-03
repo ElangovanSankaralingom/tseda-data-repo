@@ -27,7 +27,7 @@ export function allowedSemestersForYear(year: StudentYear | undefined): number[]
 }
 
 export function isSemesterAllowed(year: StudentYear | undefined, semester: number | undefined): boolean {
-  if (!year || !Number.isInteger(semester)) return false;
+  if (!year || typeof semester !== "number" || !Number.isInteger(semester)) return false;
   return YEAR_TO_SEMESTERS[year].includes(semester);
 }
 

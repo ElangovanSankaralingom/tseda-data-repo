@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import {
   cloneFileMetaArrayToTarget,
   cloneFileMetaToTarget,
@@ -104,7 +104,7 @@ function getAcademicYearRange(academicYear: string) {
   };
 }
 
-function isValidFileMeta(meta: FileMeta | null) {
+function isValidFileMeta(meta: FileMeta | null): meta is FileMeta {
   return !!(
     meta &&
     meta.fileName &&

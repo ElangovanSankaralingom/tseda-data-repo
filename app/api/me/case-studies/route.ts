@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import {
   cloneFileMetaArrayToTarget,
   cloneFileMetaToTarget,
@@ -30,8 +30,11 @@ type FileMeta = {
 };
 
 type StaffSelection = {
+  id?: string;
   name: string;
   email: string;
+  isLocked?: boolean;
+  savedAtISO?: string | null;
 };
 
 type CaseStudyEntry = {
@@ -86,7 +89,7 @@ function getAcademicYearRange(academicYear: string) {
   };
 }
 
-function isValidFileMeta(meta: FileMeta | null) {
+function isValidFileMeta(meta: FileMeta | null): meta is FileMeta {
   return !!(
     meta &&
     meta.fileName &&
@@ -120,35 +123,59 @@ function normalizeStoredPath(storedPath: string) {
 
 function normalizeStaffSelection(value: unknown): StaffSelection {
   if (typeof value === "string") {
-    return { name: value.trim(), email: "" };
+    return { id: undefined, name: value.trim(), email: "", isLocked: false, savedAtISO: null };
   }
 
   if (value && typeof value === "object") {
-    const record = value as { name?: unknown; email?: unknown };
+    const record = value as {
+      id?: unknown;
+      name?: unknown;
+      email?: unknown;
+      isLocked?: unknown;
+      savedAtISO?: unknown;
+    };
     return {
+      id: String(record.id ?? "").trim() || undefined,
       name: String(record.name ?? "").trim(),
       email: normalizeEmail(String(record.email ?? "")),
+      isLocked: record.isLocked === true,
+      savedAtISO: typeof record.savedAtISO === "string" && record.savedAtISO.trim() ? record.savedAtISO : null,
     };
   }
 
-  return { name: "", email: "" };
+  return { id: undefined, name: "", email: "", isLocked: false, savedAtISO: null };
 }
 
 function canonicalizeStaffSelection(value: StaffSelection) {
   const normalizedEmail = value.email ? normalizeEmail(value.email) : "";
   const byEmail = normalizedEmail ? findFacultyByEmail(normalizedEmail) : null;
   if (byEmail) {
-    return { name: byEmail.name, email: byEmail.email };
+    return {
+      id: value.id,
+      name: byEmail.name,
+      email: byEmail.email,
+      isLocked: value.isLocked === true,
+      savedAtISO: value.savedAtISO ?? null,
+    };
   }
 
   const byName = value.name ? findFacultyByName(value.name) : null;
   if (byName) {
-    return { name: byName.name, email: byName.email };
+    return {
+      id: value.id,
+      name: byName.name,
+      email: byName.email,
+      isLocked: value.isLocked === true,
+      savedAtISO: value.savedAtISO ?? null,
+    };
   }
 
   return {
+    id: value.id,
     name: value.name.trim(),
     email: normalizedEmail,
+    isLocked: value.isLocked === true,
+    savedAtISO: value.savedAtISO ?? null,
   };
 }
 
@@ -280,6 +307,71 @@ function buildTargetEmails(staffAccompanying: StaffSelection[], creatorEmail: st
   return targets;
 }
 
+async function upsertSharedTargets(savedEntry: CaseStudyEntry, creatorEmail: string, now: string) {
+  const sharedEntryId = savedEntry.sharedEntryId ?? savedEntry.id;
+  const targets = buildTargetEmails(savedEntry.staffAccompanying, creatorEmail);
+
+  for (const target of targets) {
+    const targetList = await readList(target.email);
+    const existingTarget =
+      targetList.find((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId) ?? null;
+
+    const permissionLetter =
+      savedEntry.permissionLetter
+        ? await cloneFileMetaToTarget(
+            savedEntry.permissionLetter,
+            target.email,
+            "case-studies",
+            sharedEntryId,
+            "permissionLetter"
+          )
+        : existingTarget?.permissionLetter ?? null;
+
+    const travelPlan =
+      savedEntry.travelPlan
+        ? await cloneFileMetaToTarget(
+            savedEntry.travelPlan,
+            target.email,
+            "case-studies",
+            sharedEntryId,
+            "travelPlan"
+          )
+        : existingTarget?.travelPlan ?? null;
+
+    const geotaggedPhotos =
+      savedEntry.geotaggedPhotos.length > 0
+        ? await cloneFileMetaArrayToTarget(
+            savedEntry.geotaggedPhotos,
+            target.email,
+            "case-studies",
+            sharedEntryId,
+            "geotaggedPhotos"
+          )
+        : existingTarget?.geotaggedPhotos ?? [];
+
+    const clonedEntry: CaseStudyEntry = {
+      ...(existingTarget ?? savedEntry),
+      ...savedEntry,
+      id: sharedEntryId,
+      sharedEntryId,
+      sourceEmail: creatorEmail,
+      sharedRole: "staffAccompanying",
+      permissionLetter,
+      travelPlan,
+      geotaggedPhotos,
+      createdAt: existingTarget?.createdAt ?? now,
+      updatedAt: now,
+    };
+
+    await writeList(
+      target.email,
+      existingTarget
+        ? targetList.map((item) => (item.id === existingTarget.id ? clonedEntry : item))
+        : [clonedEntry, ...targetList]
+    );
+  }
+}
+
 export async function GET(request: Request) {
   const authorizedEmail = await getAuthorizedEmail();
   if (!authorizedEmail) {
@@ -409,15 +501,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "geotaggedPhotos required" }, { status: 400 });
     }
 
+    const permissionLetter = entry.permissionLetter;
+    const travelPlan = entry.travelPlan;
+    const geotaggedPhotos = entry.geotaggedPhotos;
     const ownerPrefix = path.posix.join("uploads", safeEmailDir(email), "case-studies") + "/";
-    if (!normalizeStoredPath(entry.permissionLetter.storedPath).startsWith(ownerPrefix)) {
+    if (!normalizeStoredPath(permissionLetter.storedPath).startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "permissionLetter invalid" }, { status: 400 });
     }
-    if (!normalizeStoredPath(entry.travelPlan.storedPath).startsWith(ownerPrefix)) {
+    if (!normalizeStoredPath(travelPlan.storedPath).startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "travelPlan invalid" }, { status: 400 });
     }
     if (
-      entry.geotaggedPhotos.some(
+      geotaggedPhotos.some(
         (meta) => !isValidFileMeta(meta) || !normalizeStoredPath(meta.storedPath).startsWith(ownerPrefix)
       )
     ) {
@@ -446,15 +541,18 @@ export async function POST(request: Request) {
       placeOfVisit: entry.placeOfVisit,
       purposeOfVisit: entry.purposeOfVisit,
       staffAccompanying: staffAccompanying.map((staff) => ({
+        id: staff.id,
         name: staff.email ? (getCanonicalName(staff.email) ?? staff.name) : staff.name,
         email: staff.email,
+        isLocked: staff.isLocked === true,
+        savedAtISO: staff.isLocked ? staff.savedAtISO ?? now : null,
       })),
       studentYear: entry.studentYear,
       semesterNumber: entry.semesterNumber,
       amountSupport,
-      permissionLetter: entry.permissionLetter,
-      travelPlan: entry.travelPlan,
-      geotaggedPhotos: entry.geotaggedPhotos,
+      permissionLetter,
+      travelPlan,
+      geotaggedPhotos,
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
@@ -480,46 +578,152 @@ export async function POST(request: Request) {
 
     await writeList(email, next);
 
-    const targets = buildTargetEmails(savedEntry.staffAccompanying, email);
-    for (const target of targets) {
-      const targetList = await readList(target.email);
-      if (targetList.some((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId)) {
-        continue;
-      }
+    await upsertSharedTargets(savedEntry, email, now);
 
-      const clonedEntry: CaseStudyEntry = {
-        ...savedEntry,
-        id: sharedEntryId,
-        sharedEntryId,
-        sourceEmail: email,
-        sharedRole: "staffAccompanying",
-        permissionLetter: await cloneFileMetaToTarget(
-          savedEntry.permissionLetter!,
-          target.email,
-          "case-studies",
-          sharedEntryId,
-          "permissionLetter"
-        ),
-        travelPlan: await cloneFileMetaToTarget(
-          savedEntry.travelPlan!,
-          target.email,
-          "case-studies",
-          sharedEntryId,
-          "travelPlan"
-        ),
-        geotaggedPhotos: await cloneFileMetaArrayToTarget(
-          savedEntry.geotaggedPhotos,
-          target.email,
-          "case-studies",
-          sharedEntryId,
-          "geotaggedPhotos"
-        ),
+    return NextResponse.json(savedEntry, { status: 200 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Save failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const authorizedEmail = await getAuthorizedEmail();
+  if (!authorizedEmail) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = (await request.json()) as { email?: string; entry?: unknown };
+    const email = normalizeEmail(String(body?.email ?? ""));
+    const entry = normalizeEntry(body?.entry);
+
+    if (!email) {
+      return NextResponse.json({ error: "email required" }, { status: 400 });
+    }
+
+    if (safeEmailDir(email) !== safeEmailDir(authorizedEmail)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!entry?.id) {
+      return NextResponse.json({ error: "entry.id required" }, { status: 400 });
+    }
+
+    if (!ACADEMIC_YEAR_OPTIONS.has(entry.academicYear)) {
+      return NextResponse.json({ error: "academicYear required" }, { status: 400 });
+    }
+
+    if (!SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
+      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
+    }
+
+    if (!isISODate(entry.startDate)) {
+      return NextResponse.json({ error: "startDate required" }, { status: 400 });
+    }
+
+    const academicYearRange = getAcademicYearRange(entry.academicYear);
+    if (academicYearRange && (entry.startDate < academicYearRange.start || entry.startDate > academicYearRange.end)) {
+      return NextResponse.json(
+        { error: `startDate must fall within ${entry.academicYear} (${academicYearRange.label})` },
+        { status: 400 }
+      );
+    }
+
+    if (!isISODate(entry.endDate)) {
+      return NextResponse.json({ error: "endDate required" }, { status: 400 });
+    }
+
+    if (entry.endDate < entry.startDate) {
+      return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
+    }
+
+    if (!Array.isArray(entry.staffAccompanying) || entry.staffAccompanying.length === 0) {
+      return NextResponse.json({ error: "staffAccompanying required" }, { status: 400 });
+    }
+
+    const staffAccompanying = entry.staffAccompanying
+      .map(canonicalizeStaffSelection)
+      .filter((staff) => staff.name || staff.email);
+
+    if (
+      staffAccompanying.length === 0 ||
+      staffAccompanying.some((staff) => !staff.name || !staff.email || !findFacultyByEmail(staff.email))
+    ) {
+      return NextResponse.json({ error: "staffAccompanying invalid" }, { status: 400 });
+    }
+
+    const dedupeKeys = staffAccompanying.map(buildStaffKey);
+    if (new Set(dedupeKeys).size !== dedupeKeys.length) {
+      return NextResponse.json({ error: "duplicate staff selection" }, { status: 400 });
+    }
+
+    const currentList = await readList(email);
+    const existing =
+      currentList.find((item) => item.id === entry.id || item.sharedEntryId === entry.sharedEntryId) ?? null;
+    const now = new Date().toISOString();
+    const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
+    const coordinator: StaffSelection = {
+      email,
+      name: getCanonicalName(email) ?? email.split("@")[0],
+    };
+
+    const savedEntry: CaseStudyEntry = {
+      ...(existing ?? {
+        id: entry.id,
+        academicYear: "",
+        semesterType: "",
+        startDate: "",
+        endDate: "",
+        coordinator,
+        placeOfVisit: "",
+        purposeOfVisit: "",
+        staffAccompanying: [],
+        studentYear: "",
+        semesterNumber: null,
+        amountSupport: null,
+        permissionLetter: null,
+        travelPlan: null,
+        geotaggedPhotos: [],
         createdAt: now,
         updatedAt: now,
-      };
+      }),
+      id: entry.id,
+      sharedEntryId,
+      sourceEmail: email,
+      academicYear: entry.academicYear,
+      semesterType: entry.semesterType,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
+      coordinator,
+      placeOfVisit: entry.placeOfVisit || existing?.placeOfVisit || "",
+      purposeOfVisit: entry.purposeOfVisit || existing?.purposeOfVisit || "",
+      staffAccompanying: staffAccompanying.map((staff) => ({
+        id: staff.id,
+        name: getCanonicalName(staff.email) ?? staff.name,
+        email: staff.email,
+        isLocked: staff.isLocked === true,
+        savedAtISO: staff.isLocked ? staff.savedAtISO ?? now : null,
+      })),
+      studentYear: entry.studentYear || existing?.studentYear || "",
+      semesterNumber: entry.semesterNumber ?? existing?.semesterNumber ?? null,
+      amountSupport: entry.amountSupport ?? existing?.amountSupport ?? null,
+      permissionLetter: isValidFileMeta(entry.permissionLetter) ? entry.permissionLetter : existing?.permissionLetter ?? null,
+      travelPlan: isValidFileMeta(entry.travelPlan) ? entry.travelPlan : existing?.travelPlan ?? null,
+      geotaggedPhotos:
+        entry.geotaggedPhotos.length > 0 ? entry.geotaggedPhotos : existing?.geotaggedPhotos ?? [],
+      createdAt: existing?.createdAt ?? entry.createdAt ?? now,
+      updatedAt: now,
+    };
 
-      await writeList(target.email, [clonedEntry, ...targetList]);
-    }
+    await writeList(
+      email,
+      existing
+        ? currentList.map((item) => (item.id === existing.id ? savedEntry : item))
+        : [savedEntry, ...currentList]
+    );
+
+    await upsertSharedTargets(savedEntry, email, now);
 
     return NextResponse.json(savedEntry, { status: 200 });
   } catch (error) {

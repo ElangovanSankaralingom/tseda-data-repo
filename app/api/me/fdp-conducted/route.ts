@@ -2,13 +2,22 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import {
   findFacultyByEmail,
   findFacultyByName,
   getCanonicalName,
   normalizeEmail,
 } from "@/lib/facultyDirectory";
+import {
+  computeDueAtISO,
+  ensureActivated,
+  isEntryEditable,
+  isFutureDatedEntry,
+  markCompleted,
+  normalizeStreakState,
+  type StreakState,
+} from "@/lib/gamification";
 
 type FileMeta = {
   fileName: string;
@@ -26,6 +35,10 @@ type FacultySelection = {
 
 type FdpConducted = {
   id: string;
+  status: "draft" | "final";
+  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
   academicYear: string;
   semesterType: string;
   startDate: string;
@@ -35,6 +48,7 @@ type FdpConducted = {
   coCoordinators: FacultySelection[];
   permissionLetter: FileMeta | null;
   geotaggedPhotos: FileMeta[];
+  streak: StreakState;
   createdAt: string;
   updatedAt: string;
 };
@@ -68,7 +82,7 @@ function getAcademicYearRange(academicYear: string) {
   };
 }
 
-function isValidFileMeta(meta: FileMeta | null) {
+function isValidFileMeta(meta: FileMeta | null): meta is FileMeta {
   return !!(
     meta &&
     meta.fileName &&
@@ -111,10 +125,10 @@ function normalizeFacultySelection(value: unknown): FacultySelection {
 
   if (value && typeof value === "object") {
     const record = value as { name?: unknown; email?: unknown };
-      return {
-        name: String(record.name ?? "").trim(),
-        email: normalizeEmail(String(record.email ?? "")),
-      };
+    return {
+      name: String(record.name ?? "").trim(),
+      email: normalizeEmail(String(record.email ?? "")),
+    };
   }
 
   return { name: "", email: "" };
@@ -138,6 +152,19 @@ function canonicalizeFacultySelection(value: FacultySelection) {
   };
 }
 
+function normalizeStatus(value: unknown, fallback: "draft" | "final" = "draft") {
+  return value === "final" ? "final" : value === "draft" ? "draft" : fallback;
+}
+
+function normalizeRequestEditStatus(
+  value: unknown,
+  fallback: "none" | "pending" | "approved" | "rejected" = "none"
+) {
+  return value === "pending" || value === "approved" || value === "rejected" || value === "none"
+    ? value
+    : fallback;
+}
+
 function normalizeEntry(value: unknown): FdpConducted | null {
   if (!value || typeof value !== "object") return null;
 
@@ -154,6 +181,16 @@ function normalizeEntry(value: unknown): FdpConducted | null {
 
   return {
     id: String(record.id ?? "").trim(),
+    status: normalizeStatus(record.status),
+    requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
+    requestEditRequestedAtISO:
+      typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
+        ? record.requestEditRequestedAtISO.trim()
+        : null,
+    requestEditMessage:
+      typeof record.requestEditMessage === "string" && record.requestEditMessage.trim()
+        ? record.requestEditMessage.trim()
+        : "",
     academicYear: String(record.academicYear ?? "").trim(),
     semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
@@ -163,6 +200,7 @@ function normalizeEntry(value: unknown): FdpConducted | null {
     coCoordinators,
     permissionLetter: (record.permissionLetter as FileMeta | null) ?? null,
     geotaggedPhotos: normalizeFileMetaArray(record.geotaggedPhotos, record.geotaggedPhoto),
+    streak: normalizeStreakState(record.streak),
     createdAt: String(record.createdAt ?? "").trim(),
     updatedAt: String(record.updatedAt ?? "").trim(),
   };
@@ -229,6 +267,44 @@ async function deleteStoredFile(email: string, meta: FileMeta | null) {
   }
 }
 
+function canEditEntry(entry: FdpConducted) {
+  return isEntryEditable(entry);
+}
+
+function validateCoreFields(entry: FdpConducted) {
+  const startDate = String(entry.startDate ?? "").trim();
+  const endDate = String(entry.endDate ?? "").trim();
+  const academicYear = String(entry.academicYear ?? "").trim();
+  const semesterType = String(entry.semesterType ?? "").trim();
+
+  if (!ACADEMIC_YEAR_OPTIONS.has(academicYear)) {
+    return { error: "academicYear required" };
+  }
+
+  if (!SEMESTER_TYPE_OPTIONS.has(semesterType)) {
+    return { error: "semesterType required" };
+  }
+
+  if (!isISODate(startDate)) {
+    return { error: "startDate required" };
+  }
+
+  const academicYearRange = getAcademicYearRange(academicYear);
+  if (academicYearRange && (startDate < academicYearRange.start || startDate > academicYearRange.end)) {
+    return { error: `startDate must fall within ${academicYear} (${academicYearRange.label})` };
+  }
+
+  if (!isISODate(endDate)) {
+    return { error: "endDate required" };
+  }
+
+  if (endDate < startDate) {
+    return { error: "endDate must be on or after startDate" };
+  }
+
+  return { academicYear, semesterType, startDate, endDate };
+}
+
 export async function GET(request: Request) {
   const authorizedEmail = await getAuthorizedEmail();
   if (!authorizedEmail) {
@@ -272,10 +348,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "entry.id required" }, { status: 400 });
     }
 
-    const startDate = String(entry.startDate ?? "").trim();
-    const endDate = String(entry.endDate ?? "").trim();
-    const academicYear = String(entry.academicYear ?? "").trim();
-    const semesterType = String(entry.semesterType ?? "").trim();
+    const validated = validateCoreFields(entry);
+    if ("error" in validated) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
+
     const coordinator = canonicalizeFacultySelection({
       name: getCanonicalName(authorizedEmail) ?? String(entry.coordinatorName ?? "").trim(),
       email: authorizedEmail,
@@ -287,34 +364,6 @@ export async function POST(request: Request) {
           .filter((value) => value.name || value.email)
       : [];
 
-    if (!ACADEMIC_YEAR_OPTIONS.has(academicYear)) {
-      return NextResponse.json({ error: "academicYear required" }, { status: 400 });
-    }
-
-    if (!SEMESTER_TYPE_OPTIONS.has(semesterType)) {
-      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
-    }
-
-    if (!isISODate(startDate)) {
-      return NextResponse.json({ error: "startDate required" }, { status: 400 });
-    }
-
-    const academicYearRange = getAcademicYearRange(academicYear);
-    if (academicYearRange && (startDate < academicYearRange.start || startDate > academicYearRange.end)) {
-      return NextResponse.json(
-        { error: `startDate must fall within ${academicYear} (${academicYearRange.label})` },
-        { status: 400 }
-      );
-    }
-
-    if (!isISODate(endDate)) {
-      return NextResponse.json({ error: "endDate required" }, { status: 400 });
-    }
-
-    if (endDate < startDate) {
-      return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
-    }
-
     if (!coordinator.name || !coordinator.email) {
       return NextResponse.json({ error: "coordinator required" }, { status: 400 });
     }
@@ -323,7 +372,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "coordinator invalid" }, { status: 400 });
     }
 
-    if (coCoordinators.some((value) => !value.email || !findFacultyByEmail(value.email))) {
+    if (coCoordinators.some((value) => value.email && !findFacultyByEmail(value.email))) {
       return NextResponse.json({ error: "coCoordinators invalid" }, { status: 400 });
     }
 
@@ -340,10 +389,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "permissionLetter required" }, { status: 400 });
     }
 
-    if (!Array.isArray(entry.geotaggedPhotos) || entry.geotaggedPhotos.length === 0) {
-      return NextResponse.json({ error: "geotaggedPhotos required" }, { status: 400 });
-    }
-
     const ownerPrefix = path.posix.join("uploads", safeEmailDir(email), "fdp-conducted") + "/";
     if (!normalizeStoredPath(entry.permissionLetter.storedPath).startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "permissionLetter invalid" }, { status: 400 });
@@ -358,14 +403,57 @@ export async function POST(request: Request) {
 
     const currentList = await readList(email);
     const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    if (existing && !canEditEntry(existing)) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+    }
+
     const now = new Date().toISOString();
+    const eligible = isFutureDatedEntry(validated.startDate, validated.endDate);
+    const requestedStatus = normalizeStatus(entry.status, "draft");
+    const nextStatus: "draft" | "final" = requestedStatus === "final" ? "final" : "draft";
+    const existingStreak = normalizeStreakState(existing?.streak ?? entry.streak);
+    let streak = normalizeStreakState(existingStreak);
+
+    if (nextStatus === "final") {
+      streak = eligible
+        ? ensureActivated(existingStreak, validated.endDate)
+        : {
+            ...existingStreak,
+            activatedAtISO: null,
+            dueAtISO: null,
+            completedAtISO: null,
+          };
+
+      if (eligible) {
+        streak.dueAtISO = streak.dueAtISO || computeDueAtISO(validated.endDate);
+        if (
+          entry.geotaggedPhotos.length > 0 &&
+          streak.dueAtISO &&
+          !streak.completedAtISO &&
+          Date.now() <= new Date(streak.dueAtISO).getTime()
+        ) {
+          streak = markCompleted(streak);
+        }
+      }
+    } else {
+      streak = {
+        ...existingStreak,
+        activatedAtISO: null,
+        dueAtISO: null,
+        completedAtISO: null,
+      };
+    }
 
     const savedEntry: FdpConducted = {
       id: entry.id,
-      academicYear,
-      semesterType,
-      startDate,
-      endDate,
+      status: nextStatus,
+      requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
+      requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
+      requestEditMessage: entry.requestEditMessage ?? existing?.requestEditMessage ?? "",
+      academicYear: validated.academicYear,
+      semesterType: validated.semesterType,
+      startDate: validated.startDate,
+      endDate: validated.endDate,
       coordinatorName: coordinator.email ? (getCanonicalName(coordinator.email) ?? coordinator.name) : coordinator.name,
       coordinatorEmail: coordinator.email,
       coCoordinators: coCoordinators.map((value) => ({
@@ -374,6 +462,7 @@ export async function POST(request: Request) {
       })),
       permissionLetter: entry.permissionLetter,
       geotaggedPhotos: entry.geotaggedPhotos,
+      streak,
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
@@ -395,6 +484,171 @@ export async function POST(request: Request) {
       : [savedEntry, ...currentList];
 
     await writeList(email, next);
+    return NextResponse.json(savedEntry, { status: 200 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Save failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const authorizedEmail = await getAuthorizedEmail();
+  if (!authorizedEmail) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = (await request.json()) as { email?: string; entry?: unknown };
+    const email = normalizeEmail(String(body?.email ?? ""));
+    const entryRecord =
+      body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
+    const entry = normalizeEntry(body?.entry);
+
+    const hasRequestEditStatus =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "requestEditStatus");
+
+    if (!email) {
+      return NextResponse.json({ error: "email required" }, { status: 400 });
+    }
+
+    if (safeEmailDir(email) !== safeEmailDir(authorizedEmail)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!entry?.id) {
+      return NextResponse.json({ error: "entry.id required" }, { status: 400 });
+    }
+
+    if (entry.academicYear && !ACADEMIC_YEAR_OPTIONS.has(entry.academicYear)) {
+      return NextResponse.json({ error: "academicYear invalid" }, { status: 400 });
+    }
+
+    if (entry.semesterType && !SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
+      return NextResponse.json({ error: "semesterType invalid" }, { status: 400 });
+    }
+
+    if (entry.startDate && !isISODate(entry.startDate)) {
+      return NextResponse.json({ error: "startDate invalid" }, { status: 400 });
+    }
+
+    if (entry.endDate && !isISODate(entry.endDate)) {
+      return NextResponse.json({ error: "endDate invalid" }, { status: 400 });
+    }
+
+    if (entry.startDate && entry.endDate && entry.endDate < entry.startDate) {
+      return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
+    }
+
+    const academicYearRange = entry.academicYear ? getAcademicYearRange(entry.academicYear) : null;
+    if (
+      academicYearRange &&
+      entry.startDate &&
+      (entry.startDate < academicYearRange.start || entry.startDate > academicYearRange.end)
+    ) {
+      return NextResponse.json(
+        { error: `startDate must fall within ${entry.academicYear} (${academicYearRange.label})` },
+        { status: 400 }
+      );
+    }
+
+    if (entry.permissionLetter?.storedPath) {
+      const ownerPrefix = path.posix.join("uploads", safeEmailDir(email), "fdp-conducted") + "/";
+      if (!normalizeStoredPath(entry.permissionLetter.storedPath).startsWith(ownerPrefix)) {
+        return NextResponse.json({ error: "permissionLetter invalid" }, { status: 400 });
+      }
+    }
+
+    if (
+      Array.isArray(entry.geotaggedPhotos) &&
+      entry.geotaggedPhotos.some(
+        (meta) =>
+          !isValidFileMeta(meta) ||
+          !normalizeStoredPath(meta.storedPath).startsWith(
+            path.posix.join("uploads", safeEmailDir(email), "fdp-conducted") + "/"
+          )
+      )
+    ) {
+      return NextResponse.json({ error: "geotaggedPhotos invalid" }, { status: 400 });
+    }
+
+    const currentList = await readList(email);
+    const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    if (existing && !canEditEntry(existing) && !hasRequestEditStatus) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+    }
+
+    const now = new Date().toISOString();
+    const hasPermissionLetter = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "permissionLetter");
+    const hasGeotaggedPhotos = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "geotaggedPhotos");
+    const hasCoCoordinators = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "coCoordinators");
+    const requestedStatus = normalizeStatus(entry.status, existing?.status ?? "draft");
+    const coordinatorName =
+      getCanonicalName(email) ?? existing?.coordinatorName ?? entry.coordinatorName ?? email.split("@")[0];
+
+    const savedEntry: FdpConducted = {
+      ...(existing ?? {
+        id: entry.id,
+        status: "draft",
+        requestEditStatus: "none",
+        requestEditRequestedAtISO: null,
+        requestEditMessage: "",
+        academicYear: "",
+        semesterType: "",
+        startDate: "",
+        endDate: "",
+        coordinatorName,
+        coordinatorEmail: email,
+        coCoordinators: [],
+        permissionLetter: null,
+        geotaggedPhotos: [],
+        streak: normalizeStreakState(null),
+        createdAt: now,
+        updatedAt: now,
+      }),
+      id: entry.id,
+      status: existing?.status === "final" ? "final" : requestedStatus,
+      requestEditStatus: hasRequestEditStatus
+        ? normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none")
+        : existing?.requestEditStatus ?? "none",
+      requestEditRequestedAtISO:
+        !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "requestEditRequestedAtISO")
+          ? entry.requestEditRequestedAtISO ?? null
+          : existing?.requestEditRequestedAtISO ?? null,
+      requestEditMessage:
+        !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "requestEditMessage")
+          ? entry.requestEditMessage ?? ""
+          : existing?.requestEditMessage ?? "",
+      academicYear: entry.academicYear || existing?.academicYear || "",
+      semesterType: entry.semesterType || existing?.semesterType || "",
+      startDate: entry.startDate || existing?.startDate || "",
+      endDate: entry.endDate || existing?.endDate || "",
+      coordinatorName,
+      coordinatorEmail: email,
+      coCoordinators: hasCoCoordinators
+        ? entry.coCoordinators.map(canonicalizeFacultySelection)
+        : existing?.coCoordinators || [],
+      permissionLetter: hasPermissionLetter ? entry.permissionLetter : existing?.permissionLetter || null,
+      geotaggedPhotos: hasGeotaggedPhotos ? entry.geotaggedPhotos : existing?.geotaggedPhotos || [],
+      streak:
+        existing?.status === "final"
+          ? normalizeStreakState(existing.streak)
+          : {
+              ...normalizeStreakState(entry.streak),
+              activatedAtISO: null,
+              dueAtISO: null,
+              completedAtISO: null,
+            },
+      createdAt: existing?.createdAt || entry.createdAt || now,
+      updatedAt: now,
+    };
+
+    await writeList(
+      email,
+      existing
+        ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
+        : [savedEntry, ...currentList]
+    );
+
     return NextResponse.json(savedEntry, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Save failed";
@@ -427,6 +681,10 @@ export async function DELETE(request: Request) {
 
     const currentList = await readList(email);
     const target = currentList.find((item) => item.id === id) ?? null;
+    if (target && !canEditEntry(target)) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+    }
+
     await writeList(
       email,
       currentList.filter((item) => item.id !== id)

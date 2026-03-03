@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");

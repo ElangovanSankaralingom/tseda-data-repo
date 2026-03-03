@@ -26,7 +26,7 @@ export type OutsideAcademic = {
   institution: string;
   startDate: string;
   endDate: string;
-  certificate: StoredFile; // mandatory
+  certificate?: StoredFile;
 };
 
 export type IndustryExp = {
@@ -35,7 +35,7 @@ export type IndustryExp = {
   role: string;          // mandatory
   startDate: string;
   endDate: string;
-  certificate: StoredFile; // mandatory
+  certificate?: StoredFile;
 };
 
 export type ThemeMode = "light" | "dark";

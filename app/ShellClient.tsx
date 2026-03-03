@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
-
-type ThemeMode = "light" | "dark";
+import { useState } from "react";
+import AvatarMenu from "@/components/AvatarMenu";
 
 export default function ShellClient({
   children,
@@ -16,21 +15,6 @@ export default function ShellClient({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [theme, setTheme] = useState<ThemeMode>("light");
-
-  useEffect(() => {
-    // default from localStorage if present
-    const saved = (localStorage.getItem("tseda_theme") as ThemeMode | null) ?? "light";
-    setTheme(saved);
-    document.documentElement.classList.toggle("dark", saved === "dark");
-  }, []);
-
-  function toggleTheme() {
-    const next: ThemeMode = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    localStorage.setItem("tseda_theme", next);
-    document.documentElement.classList.toggle("dark", next === "dark");
-  }
 
   const nav = [
     { href: "/dashboard", label: "Dashboard" },
@@ -43,7 +27,7 @@ export default function ShellClient({
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => setOpen(true)}
@@ -52,17 +36,19 @@ export default function ShellClient({
             >
               ☰
             </button>
-            <div className="font-semibold">{title}</div>
+            <Link href="/dashboard" className="font-semibold">
+              {title}
+            </Link>
+            <Link
+              href="/data-entry"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-foreground bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-colors duration-150 hover:opacity-90 active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
+            >
+              Data Entry
+            </Link>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted transition"
-            >
-              {theme === "light" ? "Dark" : "Light"} mode
-            </button>
+            <AvatarMenu />
           </div>
         </div>
       </header>
