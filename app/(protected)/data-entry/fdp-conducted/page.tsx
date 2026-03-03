@@ -4,26 +4,31 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DateField from "@/components/controls/DateField";
-import { HeaderEntryActionsBar, PdfEntryActionsBar } from "@/components/entry/EntryActionsBar";
-import FinalisationBadge from "@/components/entry/FinalisationBadge";
+import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
+import { EntryHeaderActionsBar, EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
+import EntryLockBadge from "@/components/entry/EntryLockBadge";
+import EntryPageHeader from "@/components/entry/EntryPageHeader";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import UploadField from "@/components/entry/UploadField";
+import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldMulti";
+import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
-import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
-import MultiPhotoUpload, { type FileMeta } from "@/components/uploads/MultiPhotoUpload";
+import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
+import { groupEntriesByLifecycle } from "@/lib/entries/lifecycle";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
+import { useDirtyTracker } from "@/hooks/useDirtyTracker";
+import { useGenerateEntry } from "@/hooks/useGenerateEntry";
+import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
+import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useUploadController } from "@/hooks/useUploadController";
-import {
-  status as getStreakStatus,
-  type StreakState,
-} from "@/lib/gamification";
+import { computeEntryLifecycle } from "@/lib/entries/stateMachine";
 import {
   getEditLockState,
   isEntryLockedState,
-  isFutureDatedEntry,
-} from "@/lib/entryLock";
+  type StreakState,
+} from "@/lib/gamification";
 
 type FdpConducted = {
   id: string;
@@ -58,8 +63,6 @@ type CurrentFaculty = {
   name: string;
   email: string;
 };
-
-type FdpConductedEntryStatus = "completed" | "activated" | "expired" | "none";
 
 const ACADEMIC_YEAR_OPTIONS = [
   "Academic Year 2025-2026",
@@ -145,16 +148,6 @@ function formatEntryTimestamp(value: string) {
   });
 }
 
-function getEntryCreatedSortTime(entry: FdpConducted) {
-  const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
-  if (!Number.isNaN(createdTime)) return createdTime;
-
-  const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
-  if (!Number.isNaN(updatedTime)) return updatedTime;
-
-  return 0;
-}
-
 function formatFacultyDisplay(selection: FacultyRowValue) {
   return selection.name || selection.email || "-";
 }
@@ -171,20 +164,6 @@ function getConductedEntrySubtitle(entry: FdpConducted) {
   }
 
   return parts.join(" • ");
-}
-
-function getConductedEntryStatus(entry: FdpConducted): FdpConductedEntryStatus {
-  const streakStatus = getStreakStatus(entry.streak);
-
-  if (entry.streak.completedAtISO) {
-    return "completed";
-  }
-
-  if (entry.status === "final" && entry.streak.activatedAtISO) {
-    return streakStatus === "expired" ? "expired" : "activated";
-  }
-
-  return "none";
 }
 
 function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
@@ -221,48 +200,6 @@ function isEntryLocked(entry: FdpConducted) {
   return isEntryLockedState(entry);
 }
 
-function FlameStatusIcon({ tone }: { tone: "gray" | "color" }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-5 w-5 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M12.9 2.6c.5 3-1 4.9-2.2 6.4-1 1.3-1.8 2.3-1.8 3.9 0 2 1.6 3.6 3.6 3.6 2.8 0 4.6-2.5 4.6-5.2 0-2.2-1.3-4.5-4.2-8.7Z"
-        fill={tone === "color" ? "#f97316" : "#9ca3af"}
-      />
-      <path
-        d="M12 10.5c1.8 2 2.6 3.3 2.6 4.8A2.6 2.6 0 0 1 12 18a2.6 2.6 0 0 1-2.6-2.7c0-1 .5-1.9 1.4-3 .4-.5.8-1.1 1.2-1.8Z"
-        fill={tone === "color" ? "#fdba74" : "#d1d5db"}
-      />
-    </svg>
-  );
-}
-
-function SlashedFireIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-5 w-5 shrink-0 text-muted-foreground opacity-70"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M12.9 2.6c.5 3-1 4.9-2.2 6.4-1 1.3-1.8 2.3-1.8 3.9 0 2 1.6 3.6 3.6 3.6 2.8 0 4.6-2.5 4.6-5.2 0-2.2-1.3-4.5-4.2-8.7Z"
-        fill="#9ca3af"
-      />
-      <path
-        d="M12 10.5c1.8 2 2.6 3.3 2.6 4.8A2.6 2.6 0 0 1 12 18a2.6 2.6 0 0 1-2.6-2.7c0-1 .5-1.9 1.4-3 .4-.5.8-1.1 1.2-1.8Z"
-        fill="#d1d5db"
-      />
-      <path d="M5 5 19 19" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
-    </svg>
-  );
-}
 
 function SectionCard({
   title,
@@ -307,41 +244,8 @@ function Field({
   );
 }
 
-function MiniButton({
-  children,
-  onClick,
-  variant = "default",
-  disabled,
-  type = "button",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  variant?: "default" | "danger" | "ghost";
-  disabled?: boolean;
-  type?: "button" | "submit";
-}) {
-  const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
-  const activeCls =
-    variant === "danger"
-      ? "border-border text-red-600 transition hover:bg-red-50"
-      : variant === "ghost"
-        ? "border-border transition hover:bg-muted"
-        : "border-foreground bg-foreground text-background transition hover:opacity-90";
-  const disabledCls =
-    variant === "default"
-      ? "pointer-events-none cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60"
-      : "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60";
-
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={cx(base, disabled ? disabledCls : activeCls)}
-    >
-      {children}
-    </button>
-  );
+function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
+  return <ActionButton {...props} />;
 }
 
 function uploadConductedFileXHR(opts: {
@@ -407,12 +311,14 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   const [currentFaculty, setCurrentFaculty] = useState<CurrentFaculty | null>(null);
   const [list, setList] = useState<FdpConducted[]>([]);
   const [editorSeed, setEditorSeed] = useState<FdpConducted>(() => emptyForm());
-  const [requestingEditIds, setRequestingEditIds] = useState<Record<string, boolean>>({});
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
   const queryEntryId = searchParams.get("id")?.trim() ?? "";
   const activeEntryId = viewEntryId?.trim() || queryEntryId;
-  const isViewMode = !!viewEntryId;
+  const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
+    "/data-entry/fdp-conducted",
+    viewEntryId
+  );
   const {
     draft: form,
     setDraft: setForm,
@@ -434,6 +340,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       !!draft.eventName.trim() &&
       !draft.coCoordinators.some((value) => !value.isLocked || !value.email.trim()),
   });
+  const generateEntrySnapshot = useGenerateEntry<FdpConducted>("fdp-conducted");
   const viewedEntry = useMemo(
     () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
     [activeEntryId, list]
@@ -567,62 +474,26 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       }
     },
   });
-  const hasPendingFiles = !!permissionController.pendingFile || photoUploadStatus.hasPending;
   const hasBusyUploads = permissionController.busy || photoUploadStatus.busy;
-  const pdfStale = pdfState.pdfStale;
-  const canGenerate = pdfState.canGenerate;
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0;
-  const isComplete = uploadsVisible && generateReady && requiredUploadsComplete;
-  const isDirty = formDirty || hasPendingFiles;
-  const groupedEntries = useMemo(() => {
-    const indexedEntries = list.map((entry, index) => ({ entry, index }));
-    const sortChronologically = (
-      left: { entry: FdpConducted; index: number },
-      right: { entry: FdpConducted; index: number }
-    ) => {
-      const leftTime = getEntryCreatedSortTime(left.entry);
-      const rightTime = getEntryCreatedSortTime(right.entry);
-
-      if (leftTime !== rightTime) return leftTime - rightTime;
-      return left.index - right.index;
-    };
-
-    const draftEntries = indexedEntries
-      .filter(({ entry }) => isFutureDatedEntry(entry.startDate, entry.endDate) && entry.status !== "final")
-      .sort(sortChronologically)
-      .map(({ entry }) => entry);
-
-    const pendingEntries = indexedEntries
-      .filter(({ entry }) => {
-        if (!isFutureDatedEntry(entry.startDate, entry.endDate)) return false;
-        if (entry.status !== "final") return false;
-        const entryStatus = getConductedEntryStatus(entry);
-        return entryStatus === "activated" || entryStatus === "expired";
-      })
-      .sort(sortChronologically)
-      .map(({ entry }) => entry);
-
-    const completedEntries = indexedEntries
-      .filter(
-        ({ entry }) =>
-          isFutureDatedEntry(entry.startDate, entry.endDate) && getConductedEntryStatus(entry) === "completed"
-      )
-      .sort(sortChronologically)
-      .map(({ entry }) => entry);
-
-    const nonStreakEntries = indexedEntries
-      .filter(({ entry }) => !isFutureDatedEntry(entry.startDate, entry.endDate))
-      .sort(sortChronologically)
-      .map(({ entry }) => entry);
-
-    return {
-      drafts: draftEntries,
-      pending: pendingEntries,
-      completed: completedEntries,
-      nonStreak: nonStreakEntries,
-    };
-  }, [list]);
+  const dirtyTracker = useDirtyTracker({ fieldDirty: formDirty });
+  const preStageDirty = uploadsVisible ? pdfState.pdfStale : dirtyTracker.shouldEnableTopSave;
+  const postStageDirty = uploadsVisible && !pdfState.pdfStale && dirtyTracker.shouldEnableTopSave;
+  const lifecycle = useMemo(
+    () =>
+      computeEntryLifecycle({
+        isLocked,
+        hasPdfSnapshot: uploadsVisible,
+        preStageValid: generateReady,
+        postStageValid: uploadsVisible && requiredUploadsComplete,
+        preStageDirty,
+        postStageDirty,
+      }),
+    [generateReady, isLocked, postStageDirty, preStageDirty, requiredUploadsComplete, uploadsVisible]
+  );
+  const canGenerate = lifecycle.canGenerate;
+  const groupedEntries = useMemo(() => groupEntriesByLifecycle(list), [list]);
 
   const resetUploadState = useCallback(() => {
     permissionController.reset();
@@ -762,13 +633,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       return;
     }
 
-    if (hasPendingFiles) {
-      setToast({ type: "err", msg: "Please upload the selected file(s) first." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
-    if (!isComplete) {
+    if (!lifecycle.canDone) {
       setToast({ type: "err", msg: "Complete all required uploads before finishing." });
       setTimeout(() => setToast(null), 1800);
       return;
@@ -781,7 +646,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       return;
     }
 
-    if (!isDirty) {
+    if (!lifecycle.canSave) {
       closeForm();
       return;
     }
@@ -849,12 +714,12 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   }
 
   async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
-    if (saveLockRef.current || !isDirty || isLocked) return;
+    if (saveLockRef.current || !lifecycle.canSave || isLocked) return;
     saveLockRef.current = true;
 
     try {
-      if (hasPendingFiles || hasBusyUploads) {
-        setToast({ type: "err", msg: "Finish the current uploads before saving." });
+      if (hasBusyUploads) {
+        setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
         setTimeout(() => setToast(null), 1800);
         return;
       }
@@ -893,7 +758,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
     try {
       setSubmitted(true);
 
-      if (Object.keys(errors).length > 0 || !canGenerate) {
+      if (Object.keys(errors).length > 0 || !lifecycle.canGenerate) {
         setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
         setTimeout(() => setToast(null), 1800);
         return;
@@ -912,31 +777,11 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
         status: form.status === "final" ? "final" : "draft",
         coordinatorName: currentFaculty?.name ?? form.coordinatorName,
         coordinatorEmail: currentFaculty?.email ?? form.coordinatorEmail,
-        pdfStale,
+        pdfStale: pdfState.pdfStale,
         pdfSourceHash: form.pdfSourceHash || "",
       };
       const persisted = await persistProgress(draftEntry);
-      const response = await fetch(`/api/me/fdp-conducted/${encodeURIComponent(persisted.id)}/pdf`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const text = await response.text();
-      let message = `Save failed (${response.status})`;
-      let payload: { entry?: FdpConducted; error?: string } | null = null;
-
-      try {
-        payload = text ? (JSON.parse(text) as { entry?: FdpConducted; error?: string }) : null;
-        if (payload?.error) {
-          message = payload.error;
-        }
-      } catch {
-        // Keep fallback message when the response is not JSON.
-      }
-
-      if (!response.ok) {
-        throw new Error(message);
-      }
-
+      const payload = await generateEntrySnapshot(persisted.id);
       const nextEntry = {
         ...(payload?.entry ?? persisted),
         pdfSourceHash: prePdfFieldsHash,
@@ -983,143 +828,56 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
     }
   }
 
-  async function requestEdit(entry: FdpConducted) {
-    const currentStatus = entry.requestEditStatus ?? "none";
-    if (currentStatus === "pending" || requestingEditIds[entry.id]) {
-      return;
-    }
-
-    const previousList = list;
-    const requestedAtISO = new Date().toISOString();
-    setRequestingEditIds((current) => ({ ...current, [entry.id]: true }));
-    setList((current) =>
-      current.map((item) =>
-        item.id === entry.id
-          ? {
-              ...item,
-              requestEditStatus: "pending",
-              requestEditRequestedAtISO: requestedAtISO,
-              requestEditMessage: "",
-            }
-          : item
-      )
-    );
-
-    try {
+  const { requestingIds: requestingEditIds, requestEdit, cancelRequestEdit } = useRequestEdit<FdpConducted>({
+    setItems: setList,
+    persistRequest: async (entry) => {
       const response = await fetch(`/api/me/fdp-conducted/${encodeURIComponent(entry.id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "request_edit" }),
       });
-      const text = await response.text();
-      let message = `Request failed (${response.status})`;
-      let updatedEntry: FdpConducted | null = null;
-
-      try {
-        const payload = text ? (JSON.parse(text) as FdpConducted & { error?: string }) : null;
-        if (payload?.error) {
-          message = payload.error;
-        }
-        if (payload && !payload.error) {
-          updatedEntry = payload;
-        }
-      } catch {
-        // Keep fallback message for non-JSON responses.
-      }
+      const payload = (await response.json()) as FdpConducted | { error?: string };
 
       if (!response.ok) {
-        throw new Error(message);
+        throw new Error(("error" in payload && payload.error) || "Request failed.");
       }
 
-      if (updatedEntry) {
-        setList((current) =>
-          current.map((item) => (item.id === entry.id ? updatedEntry ?? item : item))
-        );
-      }
-    } catch (error) {
-      setList(previousList);
-      const message = error instanceof Error ? error.message : "Request failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1800);
-    } finally {
-      setRequestingEditIds((current) => ({ ...current, [entry.id]: false }));
-    }
-  }
-
-  async function cancelRequestEdit(entry: FdpConducted) {
-    const currentStatus = entry.requestEditStatus ?? "none";
-    if (currentStatus !== "pending" || requestingEditIds[entry.id]) {
-      return;
-    }
-
-    const previousList = list;
-    setRequestingEditIds((current) => ({ ...current, [entry.id]: true }));
-    setList((current) =>
-      current.map((item) =>
-        item.id === entry.id
-          ? {
-              ...item,
-              requestEditStatus: "none",
-              requestEditRequestedAtISO: null,
-              requestEditMessage: "",
-            }
-          : item
-      )
-    );
-
-    try {
+      return payload as FdpConducted;
+    },
+    persistCancel: async (entry) => {
       const response = await fetch(`/api/me/fdp-conducted/${encodeURIComponent(entry.id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "cancel_request_edit" }),
       });
-      const text = await response.text();
-      let message = `Cancel request failed (${response.status})`;
-      let updatedEntry: FdpConducted | null = null;
-
-      try {
-        const payload = text ? (JSON.parse(text) as FdpConducted & { error?: string }) : null;
-        if (payload?.error) {
-          message = payload.error;
-        }
-        if (payload && !payload.error) {
-          updatedEntry = payload;
-        }
-      } catch {
-        // Keep fallback message for non-JSON responses.
-      }
+      const payload = (await response.json()) as FdpConducted | { error?: string };
 
       if (!response.ok) {
-        throw new Error(message);
+        throw new Error(("error" in payload && payload.error) || "Cancel request failed.");
       }
 
-      if (updatedEntry) {
-        setList((current) =>
-          current.map((item) => (item.id === entry.id ? updatedEntry ?? item : item))
-        );
-      }
-    } catch (error) {
-      setList(previousList);
-      const message = error instanceof Error ? error.message : "Cancel request failed.";
+      return payload as FdpConducted;
+    },
+    onSuccess: (message) => {
+      setToast({ type: "ok", msg: message });
+      setTimeout(() => setToast(null), 1400);
+    },
+    onError: (message) => {
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
-    } finally {
-      setRequestingEditIds((current) => ({ ...current, [entry.id]: false }));
-    }
-  }
+    },
+  });
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">FDP — Conducted</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Record FDPs conducted with duration and the required supporting documents.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <HeaderEntryActionsBar
+      <EntryPageHeader
+        title="FDP — Conducted"
+        subtitle="Record FDPs conducted with duration and the required supporting documents."
+        isViewMode={isViewMode}
+        backHref={backHref}
+        backDisabled={backDisabled}
+        actions={
+          <EntryHeaderActionsBar
             isEditing={showForm}
             isViewMode={isViewMode}
             loading={loading}
@@ -1130,16 +888,16 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
             }}
             addLabel="+ Add FDP Entry"
             onCancel={() => void handleCancel()}
-            cancelDisabled={isViewMode || saving || loading || hasBusyUploads || isComplete}
+            cancelDisabled={isViewMode || saving || loading || hasBusyUploads || lifecycle.canDone}
             onSave={() => void saveDraftChanges()}
-            saveDisabled={isViewMode || saving || loading || hasBusyUploads || !isDirty || isComplete || isLocked}
+            saveDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave || isLocked}
             onDone={() => void handleDone()}
-            doneDisabled={isViewMode || saving || loading || hasBusyUploads || !isComplete || isLocked}
+            doneDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone || isLocked}
             saving={saving}
             saveIntent={saveIntent}
           />
-        </div>
-      </div>
+        }
+      />
 
       {toast ? (
         <div
@@ -1236,7 +994,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
             </div>
 
             <div className="mt-5">
-              <FacultyRowPicker
+              <FacultyPickerRows
                 title="Co-coordinator(s)"
                 helperText="Add co-coordinators only when applicable."
                 addLabel="+ Add Co-coordinator"
@@ -1266,15 +1024,15 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
             </div>
 
             <div className="mt-5 space-y-4">
-              <PdfEntryActionsBar
+              <EntryPdfActionsBar
                 isViewMode={isViewMode}
                 canGenerate={canGenerate}
                 onGenerate={() => void generateEntry()}
                 generating={saving && saveIntent === "save"}
                 pdfMeta={form.pdfMeta ?? null}
-                pdfDisabled={!pdfState.canPreviewDownload}
+                pdfDisabled={!lifecycle.canPreview}
               />
-              {pdfStale ? (
+              {pdfState.pdfStale ? (
                 <p className="text-sm text-muted-foreground">
                   Entry changed. Regenerate PDF to update Preview/Download.
                 </p>
@@ -1301,7 +1059,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                   validationMessage={errors.permissionLetter}
                 />
 
-              <MultiPhotoUpload
+              <UploadFieldMulti
                   key={form.id}
                   title="Geotagged Photos"
                   value={form.geotaggedPhotos}
@@ -1374,10 +1132,11 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs font-mono text-muted-foreground">{`D${index + 1}`}</span>
+                                  <EntryCategoryMarker category="draft" index={index} />
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                                     {getConductedEntryTitle(entry)}
                                   </Link>
+                                  <EntryLockBadge lockState={lockState} />
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1388,7 +1147,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
 
                               {!(activeEntryId && entry.id === activeEntryId) ? (
                                 <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <FinalisationBadge lockState={lockState} />
                                   <div className="flex items-center gap-2">
                                     {entry.pdfMeta?.url ? (
                                       <a
@@ -1470,11 +1228,11 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs font-mono text-muted-foreground">{`P${index + 1}`}</span>
-                                  <FlameStatusIcon tone="gray" />
+                                  <EntryCategoryMarker category="streak_active" index={index} />
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                                     {getConductedEntryTitle(entry)}
                                   </Link>
+                                  <EntryLockBadge lockState={lockState} />
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1485,7 +1243,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
 
                               {!(activeEntryId && entry.id === activeEntryId) ? (
                                 <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <FinalisationBadge lockState={lockState} />
                                   <div className="flex items-center gap-2">
                                     <MiniButton
                                       onClick={() => {
@@ -1567,11 +1324,11 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs font-mono text-muted-foreground">{`C${index + 1}`}</span>
-                                  <FlameStatusIcon tone="color" />
+                                  <EntryCategoryMarker category="completed" index={index} />
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                                     {getConductedEntryTitle(entry)}
                                   </Link>
+                                  <EntryLockBadge lockState={lockState} />
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1582,7 +1339,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
 
                               {!(activeEntryId && entry.id === activeEntryId) ? (
                                 <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <FinalisationBadge lockState={lockState} />
                                   <div className="flex items-center gap-2">
                                     <MiniButton
                                       onClick={() => {
@@ -1664,11 +1420,11 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs font-mono text-muted-foreground">{`G${index + 1}`}</span>
-                                  <SlashedFireIcon />
+                                  <EntryCategoryMarker category="generic" index={index} />
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                                     {getConductedEntryTitle(entry)}
                                   </Link>
+                                  <EntryLockBadge lockState={lockState} />
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1679,7 +1435,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
 
                               {!(activeEntryId && entry.id === activeEntryId) ? (
                                 <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <FinalisationBadge lockState={lockState} />
                                   <div className="flex items-center gap-2">
                                     <MiniButton
                                       onClick={() => {

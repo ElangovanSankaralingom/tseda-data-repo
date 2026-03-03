@@ -28,6 +28,7 @@ import {
   normalizeStudentYear,
   type StudentYear,
 } from "@/lib/student-academic";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
 type FileMeta = {
   fileName: string;
@@ -69,6 +70,8 @@ type CaseStudyEntry = {
   participants: number | null;
   amountSupport: number | null;
   pdfMeta?: PdfMeta | null;
+  pdfSourceHash?: string | null;
+  pdfStale?: boolean;
   permissionLetter: FileMeta | null;
   travelPlan: FileMeta | null;
   geotaggedPhotos: FileMeta[];
@@ -247,7 +250,7 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
     participants = Number.isFinite(parsed) ? parsed : null;
   }
 
-  return {
+  const normalized: CaseStudyEntry = {
     id: String(record.id ?? "").trim(),
     sharedEntryId: String(record.sharedEntryId ?? "").trim() || undefined,
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
@@ -273,6 +276,8 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
     pdfMeta: isValidPdfMeta((record.pdfMeta as PdfMeta | null) ?? null)
       ? ((record.pdfMeta as PdfMeta | null) ?? null)
       : null,
+    pdfSourceHash: typeof record.pdfSourceHash === "string" ? record.pdfSourceHash : "",
+    pdfStale: record.pdfStale === true,
     permissionLetter: (record.permissionLetter as FileMeta | null) ?? null,
     travelPlan: (record.travelPlan as FileMeta | null) ?? null,
     geotaggedPhotos: normalizeFileMetaArray(record.geotaggedPhotos, record.geotaggedPhoto),
@@ -280,6 +285,17 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
     createdAt: String(record.createdAt ?? "").trim(),
     updatedAt: String(record.updatedAt ?? "").trim(),
   };
+
+  if (normalized.pdfMeta && !normalized.pdfSourceHash) {
+    normalized.pdfSourceHash = hashPrePdfFields(normalized, "case-studies");
+  }
+
+  normalized.pdfStale =
+    !!normalized.pdfMeta &&
+    !!normalized.pdfSourceHash &&
+    hashPrePdfFields(normalized, "case-studies") !== normalized.pdfSourceHash;
+
+  return normalized;
 }
 
 function buildSavedStreak(
@@ -624,6 +640,11 @@ export async function POST(request: Request) {
           : null,
       amountSupport,
       pdfMeta: entry.status === "final" && entry.pdfMeta ? entry.pdfMeta : null,
+      pdfSourceHash:
+        entry.status === "final"
+          ? entry.pdfSourceHash || existing?.pdfSourceHash || ""
+          : "",
+      pdfStale: entry.status === "final" ? entry.pdfStale === true : false,
       permissionLetter,
       travelPlan,
       geotaggedPhotos,
@@ -640,6 +661,11 @@ export async function POST(request: Request) {
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
+
+    savedEntry.pdfStale =
+      !!savedEntry.pdfMeta &&
+      !!savedEntry.pdfSourceHash &&
+      hashPrePdfFields(savedEntry, "case-studies") !== savedEntry.pdfSourceHash;
 
     if (existing) {
       if (existing.permissionLetter?.storedPath !== savedEntry.permissionLetter?.storedPath) {
@@ -791,6 +817,8 @@ export async function PATCH(request: Request) {
         participants: null,
         amountSupport: null,
         pdfMeta: null,
+        pdfSourceHash: "",
+        pdfStale: false,
         permissionLetter: null,
         travelPlan: null,
         geotaggedPhotos: [],
@@ -829,6 +857,18 @@ export async function PATCH(request: Request) {
         entry.status === "final"
           ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
           : null,
+      pdfSourceHash:
+        entry.status === "final"
+          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash")
+              ? (entry.pdfSourceHash ?? "")
+              : (existing?.pdfSourceHash ?? ""))
+          : "",
+      pdfStale:
+        entry.status === "final"
+          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale")
+              ? entry.pdfStale === true
+              : existing?.pdfStale === true)
+          : false,
       permissionLetter: nextPermissionLetter,
       travelPlan: nextTravelPlan,
       geotaggedPhotos: nextGeotaggedPhotos,
@@ -848,6 +888,11 @@ export async function PATCH(request: Request) {
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
+
+    savedEntry.pdfStale =
+      !!savedEntry.pdfMeta &&
+      !!savedEntry.pdfSourceHash &&
+      hashPrePdfFields(savedEntry, "case-studies") !== savedEntry.pdfSourceHash;
 
     await writeList(
       email,

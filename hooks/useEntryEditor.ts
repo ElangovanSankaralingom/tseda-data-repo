@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState, type SetStateAction } from "react";
-import { getEditLockState } from "@/lib/entryLock";
+import { createDirtySnapshot, isDirtySnapshot } from "@/lib/entries/dirty";
+import { getEditLockState } from "@/lib/entries/lock";
 import {
   computePdfState,
   hashPrePdfFields,
@@ -13,6 +14,12 @@ type EntryEditorLike = {
   pdfMeta?: { url?: string | null; storedPath?: string | null } | null;
   pdfSourceHash?: string | null;
   pdfStale?: boolean;
+  status?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  createdAt?: string | null;
+  streak?: unknown;
+  requestEditStatus?: string | null;
 };
 
 type UseEntryEditorOptions<T extends EntryEditorLike> = {
@@ -20,24 +27,6 @@ type UseEntryEditorOptions<T extends EntryEditorLike> = {
   category: PdfSnapshotCategory;
   validatePrePdfFields: (draft: T) => boolean;
 };
-
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-
-  const entries = Object.entries(value as Record<string, unknown>).sort(([left], [right]) =>
-    left.localeCompare(right)
-  );
-
-  return `{${entries
-    .map(([key, entryValue]) => `${JSON.stringify(key)}:${stableStringify(entryValue)}`)
-    .join(",")}}`;
-}
 
 export function useEntryEditor<T extends EntryEditorLike>({
   initialEntry,
@@ -66,7 +55,7 @@ export function useEntryEditor<T extends EntryEditorLike>({
   );
   const [draftState, setDraftState] = useState<T>(() => hydratePdfSnapshot(initialEntry, category));
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState(() =>
-    stableStringify(hydratePdfSnapshot(initialEntry, category))
+    createDirtySnapshot(hydratePdfSnapshot(initialEntry, category))
   );
   const setDraft = useCallback(
     (value: SetStateAction<T>) => {
@@ -95,13 +84,13 @@ export function useEntryEditor<T extends EntryEditorLike>({
     [currentHash, draft.pdfMeta, draft.pdfSourceHash, fieldsGateOk, lockState.isLocked]
   );
 
-  const dirty = useMemo(() => stableStringify(draft) !== lastSavedSnapshot, [draft, lastSavedSnapshot]);
+  const dirty = useMemo(() => isDirtySnapshot(draft, lastSavedSnapshot), [draft, lastSavedSnapshot]);
 
   const loadEntry = useCallback(
     (nextEntry: T) => {
       const hydratedEntry = syncPdfDraftState(hydratePdfSnapshot(nextEntry, category));
       setDraftState(hydratedEntry);
-      setLastSavedSnapshot(stableStringify(hydratedEntry));
+      setLastSavedSnapshot(createDirtySnapshot(hydratedEntry));
       return hydratedEntry;
     },
     [category, syncPdfDraftState]

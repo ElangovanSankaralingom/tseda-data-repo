@@ -5,11 +5,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import DateField from "@/components/controls/DateField";
+import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
+import EntryLockBadge from "@/components/entry/EntryLockBadge";
+import EntryPageHeader from "@/components/entry/EntryPageHeader";
+import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
+import RequestEditAction from "@/components/entry/RequestEditAction";
+import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
+import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
-import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
-import MultiPhotoUpload from "@/components/uploads/MultiPhotoUpload";
+import { useDirtyTracker } from "@/hooks/useDirtyTracker";
+import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { FACULTY } from "@/lib/facultyDirectory";
-import { isEntryLockedState, nowISTTimestampISO } from "@/lib/gamification";
+import { groupEntriesByLifecycle, type EntryDisplayCategory } from "@/lib/entries/lifecycle";
+import { computeEntryLifecycle } from "@/lib/entries/stateMachine";
+import { getEditLockState, isEntryLockedState, nowISTTimestampISO } from "@/lib/gamification";
+import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
+import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -57,6 +68,8 @@ type CaseStudyEntry = {
     fileName: string;
     generatedAtISO: string;
   } | null;
+  pdfSourceHash?: string | null;
+  pdfStale?: boolean;
   permissionLetter: FileMeta | null;
   travelPlan: FileMeta | null;
   geotaggedPhotos: FileMeta[];
@@ -186,6 +199,8 @@ function emptyForm(currentFaculty?: FacultyRowValue): CaseStudyEntry {
     participants: null,
     amountSupport: null,
     pdfMeta: null,
+    pdfSourceHash: "",
+    pdfStale: false,
     permissionLetter: null,
     travelPlan: null,
     geotaggedPhotos: [],
@@ -201,6 +216,10 @@ function isEntryLocked(entry: CaseStudyEntry) {
   }
 
   return isEntryLockedState(entry);
+}
+
+function hydrateEntry(entry: CaseStudyEntry) {
+  return hydratePdfSnapshot(entry, "case-studies");
 }
 
 function SectionCard({
@@ -246,41 +265,8 @@ function Field({
   );
 }
 
-function MiniButton({
-  children,
-  onClick,
-  variant = "default",
-  disabled,
-  type = "button",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  variant?: "default" | "danger" | "ghost";
-  disabled?: boolean;
-  type?: "button" | "submit";
-}) {
-  const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
-  const activeCls =
-    variant === "danger"
-      ? "border-border text-red-600 transition hover:bg-red-50"
-      : variant === "ghost"
-      ? "border-border transition hover:bg-muted"
-      : "border-foreground bg-foreground text-background transition hover:opacity-90";
-  const disabledCls =
-    variant === "default"
-      ? "border-border bg-muted text-muted-foreground pointer-events-none cursor-not-allowed opacity-60"
-      : "border-border bg-transparent text-muted-foreground pointer-events-none cursor-not-allowed opacity-60";
-
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={cx(base, disabled ? disabledCls : activeCls)}
-    >
-      {children}
-    </button>
-  );
+function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
+  return <ActionButton {...props} />;
 }
 
 function ProgressBar({ value }: { value: number }) {
@@ -350,7 +336,6 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   const [email, setEmail] = useState("");
   const [currentFaculty, setCurrentFaculty] = useState<FacultyRowValue>(emptyStaff);
   const [list, setList] = useState<CaseStudyEntry[]>([]);
-  const [requestingEditIds, setRequestingEditIds] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState<CaseStudyEntry>(() => emptyForm());
   const [lastPersistedSnapshot, setLastPersistedSnapshot] = useState(() => stableStringify(emptyForm()));
   const [pending, setPending] = useState<Record<UploadSlot, File | null>>({
@@ -371,11 +356,15 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   });
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
-  const isViewMode = !!viewEntryId;
+  const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
+    "/data-entry/case-studies",
+    viewEntryId
+  );
   const viewedEntry = useMemo(
     () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
     [list, viewEntryId]
   );
+  const groupedEntries = useMemo(() => groupEntriesByLifecycle(list), [list]);
 
   useEffect(() => {
     (async () => {
@@ -408,7 +397,9 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
           throw new Error(items?.error || "Failed to load Case Studies records.");
         }
 
-        setList(Array.isArray(items) ? (items as CaseStudyEntry[]) : []);
+        setList(
+          Array.isArray(items) ? (items as CaseStudyEntry[]).map((entry) => hydrateEntry(entry)) : []
+        );
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to load.";
         setToast({ type: "err", msg: message });
@@ -421,8 +412,9 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   useEffect(() => {
     if (!viewedEntry) return;
 
-    setForm(viewedEntry);
-    setLastPersistedSnapshot(stableStringify(viewedEntry));
+    const hydratedEntry = hydrateEntry(viewedEntry);
+    setForm(hydratedEntry);
+    setLastPersistedSnapshot(stableStringify(hydratedEntry));
     setAttemptedSectionSave(false);
     setSubmitAttemptedFinal(false);
     setPending({
@@ -525,7 +517,8 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeStudentYear(form.studentYear);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
-  const hasPendingFiles = Object.values(pending).some(Boolean) || photoUploadStatus.hasPending;
+  const isLocked = !!form.createdAt && isEntryLocked(form);
+  const controlsDisabled = isViewMode || isLocked;
   const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const generateReady =
@@ -540,11 +533,34 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     !form.staffAccompanying.some((staff) => !staff.isLocked || !staff.email.trim());
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && !!form.travelPlan && form.geotaggedPhotos.length > 0;
-  const isComplete = uploadsVisible && generateReady && requiredUploadsComplete;
-  const isDirty = formDirty || hasPendingFiles;
+  const pdfHash = useMemo(() => hashPrePdfFields(form, "case-studies"), [form]);
+  const pdfState = useMemo(
+    () =>
+      computePdfState({
+        pdfMeta: form.pdfMeta ?? null,
+        pdfSourceHash: form.pdfSourceHash ?? "",
+        draftHash: pdfHash,
+        fieldsGateOk: generateReady,
+        isLocked,
+      }),
+    [form.pdfMeta, form.pdfSourceHash, generateReady, isLocked, pdfHash]
+  );
+  const dirtyTracker = useDirtyTracker({ fieldDirty: formDirty });
+  const preStageDirty = uploadsVisible ? pdfState.pdfStale : dirtyTracker.shouldEnableTopSave;
+  const postStageDirty = uploadsVisible && !pdfState.pdfStale && dirtyTracker.shouldEnableTopSave;
+  const lifecycle = useMemo(
+    () =>
+      computeEntryLifecycle({
+        isLocked,
+        hasPdfSnapshot: uploadsVisible,
+        preStageValid: generateReady,
+        postStageValid: uploadsVisible && requiredUploadsComplete,
+        preStageDirty,
+        postStageDirty,
+      }),
+    [generateReady, isLocked, postStageDirty, preStageDirty, requiredUploadsComplete, uploadsVisible]
+  );
   const showForm = formOpen || (isViewMode && !!viewedEntry);
-  const isLocked = !!form.createdAt && isEntryLocked(form);
-  const controlsDisabled = isViewMode || isLocked;
 
   function resetForm() {
     setAttemptedSectionSave(false);
@@ -605,7 +621,9 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       throw new Error(items?.error || "Failed to refresh saved entries.");
     }
 
-    setList(Array.isArray(items) ? (items as CaseStudyEntry[]) : []);
+    setList(
+      Array.isArray(items) ? (items as CaseStudyEntry[]).map((entry) => hydrateEntry(entry)) : []
+    );
   }
 
   async function persistProgress(nextForm: CaseStudyEntry) {
@@ -700,7 +718,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       }
 
       const nextForm = { ...currentForm, [slot]: meta };
-      const persisted = await persistProgress(nextForm);
+      const persisted = hydrateEntry(await persistProgress(nextForm));
       setForm(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
@@ -735,7 +753,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       }
 
       const nextForm = { ...currentForm, [slot]: null };
-      const persisted = await persistProgress(nextForm);
+      const persisted = hydrateEntry(await persistProgress(nextForm));
       setForm(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
@@ -757,8 +775,8 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     saveLockRef.current = true;
 
     try {
-      if (hasPendingFiles || hasBusyUploads) {
-        setToast({ type: "err", msg: "Finish the current uploads before saving." });
+      if (hasBusyUploads) {
+        setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
         setTimeout(() => setToast(null), 1800);
         return;
       }
@@ -769,7 +787,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
         status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
-      const persisted = await persistProgress(entryToSave);
+      const persisted = hydrateEntry(await persistProgress(entryToSave));
       setForm(persisted);
       setLastPersistedSnapshot(stableStringify(persisted));
       setAttemptedSectionSave(false);
@@ -799,13 +817,13 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       return;
     }
 
-    if (!isComplete) {
+    if (!lifecycle.canDone) {
       setToast({ type: "err", msg: "Complete all required uploads before finishing." });
       setTimeout(() => setToast(null), 1800);
       return;
     }
 
-    if (!isDirty) {
+    if (!lifecycle.canSave) {
       await closeForm();
       return;
     }
@@ -820,13 +838,13 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     try {
       setAttemptedSectionSave(true);
 
-      if (Object.keys(errors).length > 0 || !generateReady) {
+      if (Object.keys(errors).length > 0 || !lifecycle.canGenerate) {
         setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
         setTimeout(() => setToast(null), 1800);
         return;
       }
 
-      if (hasPendingFiles || hasBusyUploads) {
+      if (hasBusyUploads) {
         setToast({ type: "err", msg: "Finish the current uploads before generating the entry." });
         setTimeout(() => setToast(null), 1800);
         return;
@@ -838,7 +856,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
         status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
-      const persistedDraft = await persistProgress(draftEntry);
+      const persistedDraft = hydrateEntry(await persistProgress(draftEntry));
       const response = await fetch(`/api/me/case-studies/${encodeURIComponent(persistedDraft.id)}/pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -851,7 +869,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
 
       const nextEntry =
         payload && typeof payload === "object" && "entry" in payload
-          ? ((payload as { entry?: CaseStudyEntry }).entry ?? persistedDraft)
+          ? hydrateEntry((payload as { entry?: CaseStudyEntry }).entry ?? persistedDraft)
           : persistedDraft;
 
       setForm(nextEntry);
@@ -1035,108 +1053,172 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     }
   }
 
-  async function requestEdit(entry: CaseStudyEntry) {
-    if (requestingEditIds[entry.id] || entry.requestEditStatus === "pending") {
-      return;
-    }
-
-    const optimisticEntry: CaseStudyEntry = {
-      ...entry,
-      requestEditStatus: "pending",
-      requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
-    };
-
-    setRequestingEditIds((current) => ({ ...current, [entry.id]: true }));
-    setList((current) => current.map((item) => (item.id === entry.id ? optimisticEntry : item)));
-
-    try {
-      const persisted = await persistProgress(optimisticEntry);
-      setList((current) => current.map((item) => (item.id === entry.id ? persisted : item)));
-      setToast({ type: "ok", msg: "Request sent." });
+  const { requestingIds: requestingEditIds, requestEdit, cancelRequestEdit } = useRequestEdit<CaseStudyEntry>({
+    setItems: setList,
+    persistRequest: async (entry) =>
+      persistProgress({
+        ...entry,
+        requestEditStatus: "pending",
+        requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
+      }),
+    persistCancel: async (entry) =>
+      persistProgress({
+        ...entry,
+        requestEditStatus: "none",
+        requestEditRequestedAtISO: null,
+      }),
+    onSuccess: (message) => {
+      setToast({ type: "ok", msg: message });
       setTimeout(() => setToast(null), 1400);
-    } catch (error) {
-      setList((current) => current.map((item) => (item.id === entry.id ? entry : item)));
-      const message = error instanceof Error ? error.message : "Request failed.";
+    },
+    onError: (message) => {
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
-    } finally {
-      setRequestingEditIds((current) => ({ ...current, [entry.id]: false }));
-    }
+    },
+  });
+
+  function formatEntryTimestamp(value?: string) {
+    if (!value) return "-";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
   }
 
-  function renderCompletedRequestAction(entry: CaseStudyEntry) {
-    const currentStatus = entry.requestEditStatus ?? "none";
-    const isRequesting = requestingEditIds[entry.id];
-
-    if (currentStatus === "approved") {
-      return (
-        <button
-          type="button"
-          disabled
-          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-        >
-          Approved
-        </button>
-      );
-    }
-
-    if (currentStatus === "pending" || isRequesting) {
-      return (
-        <button
-          type="button"
-          disabled
-          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-        >
-          Request Sent
-        </button>
-      );
-    }
+  function renderSavedEntry(entry: CaseStudyEntry, category: EntryDisplayCategory, index: number) {
+    const lockState = getEditLockState(entry);
+    const entryLocked = isEntryLocked(entry);
+    const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
+    const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
+    const showUpdated =
+      !Number.isNaN(createdTime) &&
+      !Number.isNaN(updatedTime) &&
+      Math.abs(updatedTime - createdTime) > 60 * 1000;
+    const completedEntry = entry.status === "final";
+    const days = getInclusiveDays(entry.startDate, entry.endDate);
 
     return (
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => void requestEdit(entry)}
-          className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
-        >
-          Request Edit
-        </button>
-        {currentStatus === "rejected" ? (
-          <span className="text-xs text-muted-foreground">Request was rejected</span>
-        ) : null}
+      <div key={entry.id} className="rounded-xl border border-border p-4">
+        <div className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <EntryCategoryMarker category={category} index={index} />
+                <Link href={`/data-entry/case-studies/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                  {entry.academicYear} • {entry.semesterType} Semester
+                </Link>
+                <EntryLockBadge lockState={lockState} />
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                {entry.placeOfVisit} • {entry.studentYear || "-"} • Semester {entry.semesterNumber ?? "-"}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
+                {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
+              </div>
+            </div>
+
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <div className="flex items-center gap-2">
+                {completedEntry ? (
+                  entry.pdfMeta?.url ? (
+                    <a
+                      href={entry.pdfMeta.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
+                    >
+                      Preview
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
+                    >
+                      Preview
+                    </button>
+                  )
+                ) : null}
+                {!completedEntry ? (
+                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                    Delete Entry
+                  </MiniButton>
+                ) : null}
+                <RequestEditAction
+                  locked={entryLocked}
+                  status={entry.requestEditStatus}
+                  requestedAtISO={entry.requestEditRequestedAtISO}
+                  requesting={!!requestingEditIds[entry.id]}
+                  onRequest={() => void requestEdit(entry)}
+                  onCancel={() => void cancelRequestEdit(entry)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Staff Count: {entry.staffAccompanying.length}
+            {entry.amountSupport !== null ? ` • Amount: ${entry.amountSupport}` : ""}
+          </div>
+          <div className="text-sm text-muted-foreground line-clamp-2">{entry.purposeOfVisit}</div>
+
+          <div className="flex flex-wrap gap-3 text-sm">
+            {entry.permissionLetter ? (
+              <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
+                Permission Letter
+              </a>
+            ) : null}
+            {entry.travelPlan ? (
+              <a className="underline" href={entry.travelPlan.url} target="_blank" rel="noreferrer">
+                Travel Plan
+              </a>
+            ) : null}
+            {entry.geotaggedPhotos.map((meta, photoIndex) => (
+              <a
+                key={meta.storedPath}
+                className="underline"
+                href={meta.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Geotagged Photo {photoIndex + 1}
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Case Studies</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Record case study visits with academic context, staff involvement, dates, and the required supporting documents.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          {showForm && !isViewMode ? (
+      <EntryPageHeader
+        title="Case Studies"
+        subtitle="Record case study visits with academic context, staff involvement, dates, and the required supporting documents."
+        isViewMode={isViewMode}
+        backHref={backHref}
+        backDisabled={backDisabled}
+        actions={
+          showForm && !isViewMode ? (
             <>
               <MiniButton
                 variant="ghost"
                 onClick={() => void closeForm()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || isComplete}
+                disabled={isViewMode || saving || loading || hasBusyUploads || lifecycle.canDone}
               >
                 Cancel
               </MiniButton>
               <MiniButton
                 onClick={() => void saveDraftChanges()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !isDirty || isComplete}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave}
               >
                 {saving ? "Saving..." : "Save"}
               </MiniButton>
               <MiniButton
                 onClick={() => void handleDone()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !isComplete}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone}
               >
                 {saving ? "Saving..." : "Done"}
               </MiniButton>
@@ -1151,9 +1233,9 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
             >
               + Add Case Study
             </MiniButton>
-          ) : null}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {toast ? (
         <div
@@ -1387,13 +1469,18 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                 {!isViewMode ? (
                   <MiniButton
                     onClick={() => void generateEntry()}
-                    disabled={controlsDisabled || saving || loading || hasBusyUploads || hasPendingFiles || !generateReady}
+                    disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canGenerate}
                   >
                     {saving ? "Generating..." : "Generate Entry"}
                   </MiniButton>
                 ) : null}
-                <EntryPdfActions pdfMeta={form.pdfMeta ?? null} />
+                <EntryPdfActions pdfMeta={form.pdfMeta ?? null} disabled={!lifecycle.canPreview} />
               </div>
+              {pdfState.pdfStale ? (
+                <p className="text-sm text-muted-foreground">
+                  Entry changed. Regenerate PDF to update Preview/Download.
+                </p>
+              ) : null}
 
               {uploadsVisible ? (
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -1527,7 +1614,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                     ...form,
                     geotaggedPhotos: [...form.geotaggedPhotos, meta],
                   };
-                  const persisted = await persistProgress(nextForm);
+                  const persisted = hydrateEntry(await persistProgress(nextForm));
                   setForm(persisted);
                   await refreshList(email);
                 }}
@@ -1536,7 +1623,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                     ...form,
                     geotaggedPhotos: form.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath),
                   };
-                  const persisted = await persistProgress(nextForm);
+                  const persisted = hydrateEntry(await persistProgress(nextForm));
                   setForm(persisted);
                   await refreshList(email);
                 }}
@@ -1564,91 +1651,30 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
               <div className="text-sm text-muted-foreground">No entries yet.</div>
             ) : (
               <div className="space-y-3">
-                {list.map((entry) => {
-                  const days = getInclusiveDays(entry.startDate, entry.endDate);
-                  const completedEntry = entry.status === "final";
-                  const entryLocked = isEntryLocked(entry);
-                  return (
-                    <div key={entry.id} className="rounded-xl border border-border p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold">
-                            <Link href={`/data-entry/case-studies/${entry.id}`} className="hover:underline">
-                              {entry.academicYear} • {entry.semesterType} Semester
-                            </Link>
-                          </div>
-                          <div className="mt-1 text-sm text-muted-foreground">
-                            Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
-                          </div>
-                          <div className="mt-1 text-sm text-muted-foreground">
-                            {entry.placeOfVisit} • {entry.studentYear || "-"} • Semester {entry.semesterNumber ?? "-"}
-                          </div>
-                          <div className="mt-1 text-sm text-muted-foreground">
-                            Staff Count: {entry.staffAccompanying.length}
-                            {entry.amountSupport !== null ? ` • Amount: ${entry.amountSupport}` : ""}
-                          </div>
-                          <div className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                            {entry.purposeOfVisit}
-                          </div>
-
-                          <div className="mt-3 flex flex-wrap gap-3 text-sm">
-                            {entry.permissionLetter ? (
-                              <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-                                Permission Letter
-                              </a>
-                            ) : null}
-                            {entry.travelPlan ? (
-                              <a className="underline" href={entry.travelPlan.url} target="_blank" rel="noreferrer">
-                                Travel Plan
-                              </a>
-                            ) : null}
-                            {entry.geotaggedPhotos.map((meta, index) => (
-                              <a
-                                key={meta.storedPath}
-                                className="underline"
-                                href={meta.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Geotagged Photo {index + 1}
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {completedEntry ? (
-                            entry.pdfMeta?.url ? (
-                              <a
-                                href={entry.pdfMeta.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
-                              >
-                                Preview
-                              </a>
-                            ) : (
-                              <button
-                                type="button"
-                                disabled
-                                className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
-                              >
-                                Preview
-                              </button>
-                            )
-                          ) : null}
-                          {completedEntry ? (
-                            renderCompletedRequestAction(entry)
-                          ) : (
-                            <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                              Delete Entry
-                            </MiniButton>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {groupedEntries.drafts.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold">Drafts</div>
+                    {groupedEntries.drafts.map((entry, index) => renderSavedEntry(entry, "draft", index))}
+                  </div>
+                ) : null}
+                {groupedEntries.pending.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold">Pending (Streak Activated)</div>
+                    {groupedEntries.pending.map((entry, index) => renderSavedEntry(entry, "streak_active", index))}
+                  </div>
+                ) : null}
+                {groupedEntries.completed.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold">Completed</div>
+                    {groupedEntries.completed.map((entry, index) => renderSavedEntry(entry, "completed", index))}
+                  </div>
+                ) : null}
+                {groupedEntries.nonStreak.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold">Non-Streak Entries</div>
+                    {groupedEntries.nonStreak.map((entry, index) => renderSavedEntry(entry, "generic", index))}
+                  </div>
+                ) : null}
               </div>
             )}
           </SectionCard>

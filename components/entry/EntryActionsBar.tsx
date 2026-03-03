@@ -1,43 +1,7 @@
 "use client";
 
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
-
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
-
-function ActionButton({
-  children,
-  onClick,
-  variant = "default",
-  disabled,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  variant?: "default" | "ghost";
-  disabled?: boolean;
-}) {
-  const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
-  const activeCls =
-    variant === "ghost"
-      ? "border-border transition hover:bg-muted"
-      : "border-foreground bg-foreground text-background transition hover:opacity-90";
-  const disabledCls =
-    variant === "default"
-      ? "pointer-events-none cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60"
-      : "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cx(base, disabled ? disabledCls : activeCls)}
-    >
-      {children}
-    </button>
-  );
-}
+import { ActionButton } from "@/components/ui/ActionButton";
 
 type HeaderEntryActionsBarProps = {
   isEditing: boolean;

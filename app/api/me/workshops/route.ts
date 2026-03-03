@@ -23,6 +23,7 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
 type FileMeta = {
   fileName: string;
@@ -70,6 +71,8 @@ type WorkshopEntry = {
   coCoordinators: FacultySelection[];
   participants?: number | null;
   pdfMeta?: PdfMeta | null;
+  pdfSourceHash?: string | null;
+  pdfStale?: boolean;
   uploads: Uploads;
   streak?: StreakState;
   createdAt: string;
@@ -234,7 +237,7 @@ function normalizeEntry(value: unknown): WorkshopEntry | null {
     ? record.coCoordinators.map(normalizeFacultySelection).filter((item) => item.name || item.email)
     : [];
 
-  return {
+  const normalized: WorkshopEntry = {
     id: String(record.id ?? "").trim(),
     sharedEntryId: String(record.sharedEntryId ?? "").trim() || undefined,
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
@@ -263,11 +266,24 @@ function normalizeEntry(value: unknown): WorkshopEntry | null {
     pdfMeta: isValidPdfMeta((record.pdfMeta as PdfMeta | null) ?? null)
       ? ((record.pdfMeta as PdfMeta | null) ?? null)
       : null,
+    pdfSourceHash: typeof record.pdfSourceHash === "string" ? record.pdfSourceHash : "",
+    pdfStale: record.pdfStale === true,
     uploads: normalizeUploads(record.uploads),
     streak: normalizeStreakState(record.streak),
     createdAt: String(record.createdAt ?? "").trim(),
     updatedAt: String(record.updatedAt ?? "").trim(),
   };
+
+  if (normalized.pdfMeta && !normalized.pdfSourceHash) {
+    normalized.pdfSourceHash = hashPrePdfFields(normalized, "workshops");
+  }
+
+  normalized.pdfStale =
+    !!normalized.pdfMeta &&
+    !!normalized.pdfSourceHash &&
+    hashPrePdfFields(normalized, "workshops") !== normalized.pdfSourceHash;
+
+  return normalized;
 }
 
 function buildSavedStreak(
@@ -531,6 +547,11 @@ export async function POST(request: Request) {
       })),
       participants,
       pdfMeta: entry.status === "final" ? entry.pdfMeta ?? null : null,
+      pdfSourceHash:
+        entry.status === "final"
+          ? entry.pdfSourceHash || existing?.pdfSourceHash || ""
+          : "",
+      pdfStale: entry.status === "final" ? entry.pdfStale === true : false,
       uploads: entry.uploads,
       streak: buildSavedStreak({
         status: entry.status === "final" ? "final" : "draft",
@@ -543,6 +564,11 @@ export async function POST(request: Request) {
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
+
+    savedEntry.pdfStale =
+      !!savedEntry.pdfMeta &&
+      !!savedEntry.pdfSourceHash &&
+      hashPrePdfFields(savedEntry, "workshops") !== savedEntry.pdfSourceHash;
 
     if (existing) {
       for (const slot of REQUIRED_SINGLE_SLOTS) {
@@ -762,6 +788,8 @@ export async function PATCH(request: Request) {
         coCoordinators: [],
         participants: null,
         pdfMeta: null,
+        pdfSourceHash: "",
+        pdfStale: false,
         uploads: normalizeUploads(null),
         streak: normalizeStreakState(null),
         academicYear: "",
@@ -804,6 +832,18 @@ export async function PATCH(request: Request) {
         entry.status === "final"
           ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
           : null,
+      pdfSourceHash:
+        entry.status === "final"
+          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash")
+              ? (entry.pdfSourceHash ?? "")
+              : (existing?.pdfSourceHash ?? ""))
+          : "",
+      pdfStale:
+        entry.status === "final"
+          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale")
+              ? entry.pdfStale === true
+              : existing?.pdfStale === true)
+          : false,
       uploads: nextUploads,
       streak: buildSavedStreak({
         status: entry.status === "final" ? "final" : existing?.status ?? "draft",
@@ -819,6 +859,11 @@ export async function PATCH(request: Request) {
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
+
+    savedEntry.pdfStale =
+      !!savedEntry.pdfMeta &&
+      !!savedEntry.pdfSourceHash &&
+      hashPrePdfFields(savedEntry, "workshops") !== savedEntry.pdfSourceHash;
 
     await writeList(
       email,

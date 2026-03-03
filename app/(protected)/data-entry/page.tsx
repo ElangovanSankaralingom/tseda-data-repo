@@ -1,4 +1,6 @@
 import Link from "next/link";
+import EntryPageHeader from "@/components/entry/EntryPageHeader";
+import { getDataEntryNavigation } from "@/lib/navigationStack";
 
 type EntryItem = {
   title: string;
@@ -39,16 +41,17 @@ function cx(...classes: Array<string | false | null | undefined>) {
 }
 
 export default function DataEntryHomePage() {
+  const navigation = getDataEntryNavigation();
+
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Data Entry</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Choose a category to record faculty activities and supporting documents.
-          </p>
-        </div>
-      </div>
+      <EntryPageHeader
+        title="Data Entry"
+        subtitle="Choose a category to record faculty activities and supporting documents."
+        isViewMode={false}
+        backHref={navigation.backHref}
+        backDisabled={navigation.backDisabled}
+      />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {ITEMS.map((it) => (

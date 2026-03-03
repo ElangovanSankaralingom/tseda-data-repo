@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionButton } from "@/components/ui/ActionButton";
+
 type EntryPdfMeta = {
   url: string;
   fileName?: string;
@@ -25,13 +27,9 @@ export default function EntryPdfActions({ pdfMeta, disabled = false }: EntryPdfA
           Preview Entry
         </a>
       ) : (
-        <button
-          type="button"
-          disabled
-          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-        >
+        <ActionButton variant="ghost" disabled>
           Preview Entry
-        </button>
+        </ActionButton>
       )}
 
       {hasPdf ? (
@@ -43,13 +41,9 @@ export default function EntryPdfActions({ pdfMeta, disabled = false }: EntryPdfA
           Download Entry
         </a>
       ) : (
-        <button
-          type="button"
-          disabled
-          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-        >
+        <ActionButton variant="ghost" disabled>
           Download Entry
-        </button>
+        </ActionButton>
       )}
     </div>
   );

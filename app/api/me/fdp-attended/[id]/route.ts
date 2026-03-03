@@ -4,11 +4,8 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
-  isEntryLockedByStreak,
-  isFutureDatedEntry,
-  isNonStreakEntryLocked,
+  getEditLockState,
   isWithinRequestEditWindow,
-  normalizeStreakState,
   nowISTTimestampISO,
 } from "@/lib/gamification";
 
@@ -39,13 +36,7 @@ function normalizeRequestEditStatus(value: unknown): RequestEditStatus {
 }
 
 function isLockedEntry(entry: FdpAttendedRecord) {
-  const eligible = isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "");
-
-  if (eligible && entry.status === "final") {
-    return isEntryLockedByStreak(normalizeStreakState(entry.streak));
-  }
-
-  return !eligible && !!entry.createdAt && isNonStreakEntryLocked(entry.createdAt);
+  return getEditLockState(entry).isLocked;
 }
 
 async function getAuthorizedEmail() {

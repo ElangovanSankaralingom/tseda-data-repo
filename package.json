@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "sh -c 'next build --webpack >/dev/null && npx tsc -p tsconfig.json --noEmit'",
+    "test": "node --test --experimental-strip-types tests/entries/*.test.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { ActionButton } from "@/components/ui/ActionButton";
 
 type FileMetaLike = {
   fileName: string;
@@ -29,42 +30,6 @@ type UploadFieldProps = {
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
-}
-
-function ActionButton({
-  children,
-  disabled,
-  danger = false,
-  dark = false,
-  onClick,
-}: {
-  children: React.ReactNode;
-  disabled?: boolean;
-  danger?: boolean;
-  dark?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cx(
-        "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
-        disabled
-          ? dark
-            ? "pointer-events-none cursor-not-allowed border-neutral-300 bg-neutral-300 text-neutral-500 opacity-100"
-            : "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60"
-          : dark
-            ? "border-black bg-black text-white transition-colors hover:bg-neutral-800"
-          : danger
-            ? "border-border text-red-600 transition hover:bg-red-50"
-            : "border-border transition hover:bg-muted"
-      )}
-    >
-      {children}
-    </button>
-  );
 }
 
 function ProgressBar({ value }: { value: number }) {
@@ -162,7 +127,7 @@ export default function UploadField({
                 >
                   Preview
                 </a>
-                <ActionButton danger disabled={!canDelete} onClick={onDelete}>
+                <ActionButton variant="danger" disabled={!canDelete} onClick={onDelete}>
                   Delete
                 </ActionButton>
               </>
@@ -190,7 +155,7 @@ export default function UploadField({
               />
             </label>
 
-            <ActionButton dark disabled={!canUpload} onClick={onUpload}>
+            <ActionButton variant="dark" disabled={!canUpload} onClick={onUpload}>
               {meta && !pendingFile ? "Uploaded" : "Upload & Save"}
             </ActionButton>
           </div>

@@ -8,13 +8,7 @@ import {
   storeEntryPdf,
   type PdfMeta,
 } from "@/lib/entry-pdf";
-import {
-  computeDueAtISO,
-  isFutureDatedEntry,
-  isWithinDueWindow,
-  normalizeStreakState,
-  nowISTTimestampISO,
-} from "@/lib/gamification";
+import { normalizeStreakState } from "@/lib/gamification";
 
 const STORE_ROOT = path.join(process.cwd(), "data", "fdp-attended");
 
@@ -73,10 +67,6 @@ async function writeList(email: string, list: EntryRecord[]) {
   await fs.mkdir(STORE_ROOT, { recursive: true });
   const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
   await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
-}
-
-function hasCompletedUploads(entry: EntryRecord) {
-  return !!entry.permissionLetter?.storedPath && !!entry.completionCertificate?.storedPath;
 }
 
 function getPrePdfFieldsHash(entry: EntryRecord) {
@@ -154,28 +144,13 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     bytes,
   });
 
-  const eligible = isFutureDatedEntry(startDate, endDate);
-  const normalizedStreak = normalizeStreakState(entry.streak);
-  const dueAtISO = eligible ? normalizedStreak.dueAtISO ?? computeDueAtISO(endDate) : null;
-  const updatedStreak = eligible
-    ? {
-        ...normalizedStreak,
-        activatedAtISO: normalizedStreak.activatedAtISO ?? nowISTTimestampISO(),
-        dueAtISO,
-        completedAtISO:
-          hasCompletedUploads(entry) && dueAtISO && isWithinDueWindow(dueAtISO)
-            ? normalizedStreak.completedAtISO ?? nowISTTimestampISO()
-            : normalizedStreak.completedAtISO ?? null,
-      }
-    : normalizeStreakState(null);
-
   const updatedEntry: EntryRecord = {
     ...entry,
-    status: "final",
+    status: entry.status === "final" ? "final" : "draft",
     pdfMeta,
     pdfSourceHash: getPrePdfFieldsHash(entry),
     pdfStale: false,
-    streak: updatedStreak,
+    streak: normalizeStreakState(entry.streak),
     updatedAt: new Date().toISOString(),
   };
 
