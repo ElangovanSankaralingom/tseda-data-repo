@@ -24,6 +24,7 @@ type MultiPhotoUploadProps = {
   requiredErrorText?: string;
   onStatusChange?: (status: { hasPending: boolean; busy: boolean }) => void;
   disabled?: boolean;
+  viewOnly?: boolean;
 };
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -97,6 +98,7 @@ export default function MultiPhotoUpload({
   requiredErrorText,
   onStatusChange,
   disabled = false,
+  viewOnly = false,
 }: MultiPhotoUploadProps) {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -210,38 +212,46 @@ export default function MultiPhotoUpload({
                 >
                   Preview
                 </a>
-                <button
-                  type="button"
-                  onClick={() => void deletePhoto(meta)}
-                  disabled={busy || disabled}
-                  className={cx(
-                    "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
-                    busy || disabled
-                      ? "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60"
-                      : "border-border text-red-600 transition hover:bg-red-50"
-                  )}
-                >
-                  Delete
-                </button>
+                {!viewOnly ? (
+                  <button
+                    type="button"
+                    onClick={() => void deletePhoto(meta)}
+                    disabled={busy || disabled}
+                    className={cx(
+                      "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
+                      busy || disabled
+                        ? "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60"
+                        : "border-border text-red-600 transition hover:bg-red-50"
+                    )}
+                  >
+                    Delete
+                  </button>
+                ) : null}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className={cx("text-xs", showRequiredError ? "text-red-600" : "text-muted-foreground")}>
-          {showRequiredError ? requiredErrorText || "At least one geotagged photo is required." : "No geotagged photos uploaded yet."}
+        <div className={cx("text-xs", viewOnly ? "text-muted-foreground" : showRequiredError ? "text-red-600" : "text-muted-foreground")}>
+          {viewOnly
+            ? "Not uploaded"
+            : showRequiredError
+              ? requiredErrorText || "At least one geotagged photo is required."
+              : "No geotagged photos uploaded yet."}
         </div>
       )}
 
-      <div className="text-xs text-muted-foreground">
-        {hasPending
-          ? `${pendingFiles.length} file${pendingFiles.length === 1 ? "" : "s"} selected`
-          : value.length > 0
-            ? "Choose more files to add additional photos."
-            : "Choose one or more files to enable upload."}
-      </div>
+      {!viewOnly ? (
+        <div className="text-xs text-muted-foreground">
+          {hasPending
+            ? `${pendingFiles.length} file${pendingFiles.length === 1 ? "" : "s"} selected`
+            : value.length > 0
+              ? "Choose more files to add additional photos."
+              : "Choose one or more files to enable upload."}
+        </div>
+      ) : null}
 
-      {busy ? (
+      {!viewOnly && busy ? (
         <div className="space-y-2">
           <ProgressBar value={overallProgress} />
           <div className="text-xs text-muted-foreground">
@@ -250,48 +260,50 @@ export default function MultiPhotoUpload({
         </div>
       ) : null}
 
-      {error ? <div className="text-xs text-red-600">{error}</div> : null}
+      {!viewOnly && error ? <div className="text-xs text-red-600">{error}</div> : null}
 
-      <div className="flex flex-wrap gap-2">
-        <label
-          className={cx(
-            "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-            busy || disabled
-              ? "pointer-events-none cursor-not-allowed opacity-60"
-              : "cursor-pointer transition hover:bg-muted"
-          )}
-        >
-          Choose files
-          <input
-            type="file"
-            multiple
-            className="hidden"
-            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-            onChange={(event) => {
-              const selected = Array.from(event.target.files ?? []);
-              event.currentTarget.value = "";
-              setPendingFiles((current) => [...current, ...selected]);
-              setError(null);
-              setCompletedCount(0);
-              setCurrentProgress(0);
-            }}
-          />
-        </label>
+      {!viewOnly ? (
+        <div className="flex flex-wrap gap-2">
+          <label
+            className={cx(
+              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
+              busy || disabled
+                ? "pointer-events-none cursor-not-allowed opacity-60"
+                : "cursor-pointer transition hover:bg-muted"
+            )}
+          >
+            Choose files
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+              onChange={(event) => {
+                const selected = Array.from(event.target.files ?? []);
+                event.currentTarget.value = "";
+                setPendingFiles((current) => [...current, ...selected]);
+                setError(null);
+                setCompletedCount(0);
+                setCurrentProgress(0);
+              }}
+            />
+          </label>
 
-        <button
-          type="button"
-          onClick={() => void uploadSelected()}
-          disabled={!hasPending || busy || disabled}
-          className={cx(
-            "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
-            !hasPending || busy || disabled
-              ? "pointer-events-none cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60"
-              : "border-foreground bg-foreground text-background transition hover:opacity-90"
-          )}
-        >
-          Upload Selected
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => void uploadSelected()}
+            disabled={!hasPending || busy || disabled}
+            className={cx(
+              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
+              !hasPending || busy || disabled
+                ? "pointer-events-none cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60"
+                : "border-foreground bg-foreground text-background transition hover:opacity-90"
+            )}
+          >
+            Upload Selected
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -28,6 +28,12 @@ export type GlobalWinsAggregate = {
   winsCount: number;
 };
 
+export type EditLockState = {
+  isLocked: boolean;
+  expiresAtISO: string | null;
+  daysRemaining: number;
+};
+
 type PendingCapableStreakEntry = {
   id: string;
   streak: StreakState;
@@ -256,7 +262,6 @@ export function markCompleted(state: StreakState | undefined) {
 
 export function isEntryLockedByStreak(state: StreakState | undefined) {
   const normalized = normalizeStreakState(state);
-  if (normalized.completedAtISO) return true;
   return !!normalized.dueAtISO && isOverdue(normalized.dueAtISO);
 }
 
@@ -269,13 +274,36 @@ export function isRequestEditApproved(value: string | null | undefined) {
   return value === "approved";
 }
 
-export function isEntryLockedState(entry: LockableEntryLike) {
+export function getEditLockState(entry: LockableEntryLike): EditLockState {
   const eligible = isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "");
-  if (eligible && entry.status === "final") {
-    return isEntryLockedByStreak(normalizeStreakState(entry.streak));
+  if (eligible) {
+    const normalized = normalizeStreakState(entry.streak);
+    const expiresAtISO = normalized.dueAtISO || (entry.endDate ? computeDueAtISO(entry.endDate) : null);
+    return {
+      isLocked: expiresAtISO ? isOverdue(expiresAtISO) : false,
+      expiresAtISO,
+      daysRemaining: remainingDaysFromDueAtISO(expiresAtISO),
+    };
   }
 
-  return !eligible && !!entry.createdAt && isNonStreakEntryLocked(entry.createdAt);
+  if (entry.createdAt) {
+    const expiresAtISO = computeEditableUntilISO(entry.createdAt);
+    return {
+      isLocked: expiresAtISO ? !isWithinDueWindow(expiresAtISO) : false,
+      expiresAtISO,
+      daysRemaining: remainingDaysFromDueAtISO(expiresAtISO),
+    };
+  }
+
+  return {
+    isLocked: false,
+    expiresAtISO: null,
+    daysRemaining: 0,
+  };
+}
+
+export function isEntryLockedState(entry: LockableEntryLike) {
+  return getEditLockState(entry).isLocked;
 }
 
 export function isEntryEditable(entry: LockableEntryLike) {

@@ -6,7 +6,7 @@
   "customPhotoURL": null,
   "personal": {
     "dob": "1993-07-29",
-    "bloodGroup": "O+",
+    "bloodGroup": "B+",
     "aadharNumber": "6555 6688 9999",
     "panCardNumber": ""
   },
@@ -31,7 +31,7 @@
     "theme": "light"
   },
   "createdAt": "2026-02-28T19:29:48.469Z",
-  "updatedAt": "2026-03-03T10:09:40.557Z",
+  "updatedAt": "2026-03-03T12:57:59.540Z",
   "facultyId": "senarch@tce.edu",
   "isFacultyListed": true,
   "officialName": "Ar. S. Elangovan"

@@ -44,6 +44,8 @@ type EntryRecord = {
   coordinatorEmail?: string;
   coCoordinators?: FacultySelection[];
   pdfMeta?: PdfMeta | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string | null;
   permissionLetter?: FileMeta | null;
   geotaggedPhotos?: FileMeta[];
   streak?: unknown;
@@ -81,6 +83,22 @@ async function writeList(email: string, list: EntryRecord[]) {
 
 function hasCompletedUploads(entry: EntryRecord) {
   return !!entry.permissionLetter?.storedPath && Array.isArray(entry.geotaggedPhotos) && entry.geotaggedPhotos.length > 0;
+}
+
+function getPrePdfFieldsHash(entry: EntryRecord) {
+  return JSON.stringify({
+    academicYear: String(entry.academicYear ?? "").trim(),
+    semesterType: String(entry.semesterType ?? "").trim(),
+    startDate: String(entry.startDate ?? "").trim(),
+    endDate: String(entry.endDate ?? "").trim(),
+    eventName: String(entry.eventName ?? "").trim(),
+    coCoordinators: Array.isArray(entry.coCoordinators)
+      ? entry.coCoordinators.map((item) => ({
+          id: String((item as { id?: unknown })?.id ?? ""),
+          email: String(item?.email ?? "").trim().toLowerCase(),
+        }))
+      : [],
+  });
 }
 
 export async function POST(_: Request, context: { params: Promise<{ id: string }> }) {
@@ -170,6 +188,8 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     ...entry,
     status: "final",
     pdfMeta,
+    pdfSourceHash: getPrePdfFieldsHash(entry),
+    pdfStale: false,
     streak: updatedStreak,
     updatedAt: new Date().toISOString(),
   };
