@@ -3,13 +3,25 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+import { isEntryEditable } from "@/lib/gamification";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
+const STORE_ROOT = path.join(process.cwd(), "data", "fdp-attended");
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
 const ALLOWED_SLOTS = new Set(["permissionLetter", "completionCertificate"]);
+
+type FdpAttendedRecord = {
+  id: string;
+  status?: "draft" | "final";
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+  streak?: unknown;
+  requestEditStatus?: string | null;
+};
 
 function sanitizeSegment(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
@@ -17,6 +29,18 @@ function sanitizeSegment(value: string) {
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+async function readList(email: string): Promise<FdpAttendedRecord[]> {
+  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as FdpAttendedRecord[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 async function getAuthorizedEmail() {
@@ -57,6 +81,22 @@ function resolveOwnedStoredPath(email: string, storedPath: string) {
   };
 }
 
+async function getEntryForRecordId(email: string, recordId: string) {
+  const safeRecordId = sanitizeSegment(recordId);
+  const list = await readList(email);
+  return list.find((item) => sanitizeSegment(String(item?.id ?? "")) === safeRecordId) ?? null;
+}
+
+function getRecordIdFromStoredPath(storedPath: string) {
+  const normalized = path.posix.normalize(storedPath).replace(/^\/+/, "");
+  const parts = normalized.split("/");
+
+  if (parts.length < 4) return null;
+  if (parts[1] !== "fdp-attended") return null;
+
+  return parts[2] ?? null;
+}
+
 export async function POST(request: Request) {
   const email = await getAuthorizedEmail();
   if (!email) {
@@ -70,6 +110,11 @@ export async function POST(request: Request) {
 
   if (!recordId) {
     return NextResponse.json({ error: "recordId required" }, { status: 400 });
+  }
+
+  const existing = await getEntryForRecordId(email, recordId);
+  if (existing && !isEntryEditable(existing)) {
+    return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
   }
 
   if (!ALLOWED_SLOTS.has(slot)) {
@@ -130,6 +175,14 @@ export async function DELETE(request: Request) {
   }
 
   try {
+    const recordId = getRecordIdFromStoredPath(storedPath);
+    if (recordId) {
+      const existing = await getEntryForRecordId(email, recordId);
+      if (existing && !isEntryEditable(existing)) {
+        return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+      }
+    }
+
     const resolved = resolveOwnedStoredPath(email, storedPath);
     await fs.unlink(resolved.absolutePath).catch(() => null);
     return NextResponse.json({ ok: true, storedPath: resolved.normalized });

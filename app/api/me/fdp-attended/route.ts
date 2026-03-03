@@ -2,7 +2,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+import {
+  computeDueAtISO,
+  ensureActivated,
+  isEntryEditable,
+  isFutureDatedEntry,
+  markCompleted,
+  normalizeStreakState,
+  type StreakState,
+} from "@/lib/gamification";
 
 type FileMeta = {
   fileName: string;
@@ -15,6 +24,10 @@ type FileMeta = {
 
 type FdpAttended = {
   id: string;
+  status: "draft" | "final";
+  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
   academicYear: string;
   semesterType: string;
   startDate: string;
@@ -24,6 +37,7 @@ type FdpAttended = {
   supportAmount: number | null;
   permissionLetter: FileMeta | null;
   completionCertificate: FileMeta | null;
+  streak: StreakState;
   createdAt: string;
   updatedAt: string;
 };
@@ -40,6 +54,87 @@ const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
 
 function sanitizeSegment(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
+}
+
+function isISODate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+}
+
+function getAcademicYearRange(academicYear: string) {
+  const match = academicYear.match(/^Academic Year (\d{4})-(\d{4})$/);
+  if (!match) return null;
+
+  const startYear = match[1];
+  const endYear = match[2];
+
+  return {
+    start: `${startYear}-07-01`,
+    end: `${endYear}-06-30`,
+    label: `Jul 1, ${startYear} to Jun 30, ${endYear}`,
+  };
+}
+
+function isValidFileMeta(meta: FileMeta | null): meta is FileMeta {
+  return !!(
+    meta &&
+    meta.fileName &&
+    meta.mimeType &&
+    typeof meta.size === "number" &&
+    meta.uploadedAt &&
+    meta.url &&
+    meta.storedPath
+  );
+}
+
+function normalizeStatus(value: unknown, fallback: "draft" | "final" = "draft") {
+  return value === "final" ? "final" : value === "draft" ? "draft" : fallback;
+}
+
+function normalizeRequestEditStatus(
+  value: unknown,
+  fallback: "none" | "pending" | "approved" | "rejected" = "none"
+) {
+  return value === "pending" || value === "approved" || value === "rejected" || value === "none"
+    ? value
+    : fallback;
+}
+
+function normalizeEntry(value: unknown): FdpAttended | null {
+  if (!value || typeof value !== "object") return null;
+
+  const record = value as Record<string, unknown>;
+  return {
+    id: String(record.id ?? "").trim(),
+    status: normalizeStatus(record.status),
+    requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
+    requestEditRequestedAtISO:
+      typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
+        ? record.requestEditRequestedAtISO.trim()
+        : null,
+    requestEditMessage:
+      typeof record.requestEditMessage === "string" && record.requestEditMessage.trim()
+        ? record.requestEditMessage.trim()
+        : "",
+    academicYear: String(record.academicYear ?? "").trim(),
+    semesterType: String(record.semesterType ?? "").trim(),
+    startDate: String(record.startDate ?? "").trim(),
+    endDate: String(record.endDate ?? "").trim(),
+    programName: String(record.programName ?? "").trim(),
+    organisingBody: String(record.organisingBody ?? "").trim(),
+    supportAmount:
+      typeof record.supportAmount === "number" && Number.isFinite(record.supportAmount)
+        ? record.supportAmount
+        : null,
+    permissionLetter: isValidFileMeta((record.permissionLetter as FileMeta | null) ?? null)
+      ? ((record.permissionLetter as FileMeta | null) ?? null)
+      : null,
+    completionCertificate: isValidFileMeta((record.completionCertificate as FileMeta | null) ?? null)
+      ? ((record.completionCertificate as FileMeta | null) ?? null)
+      : null,
+    streak: normalizeStreakState(record.streak),
+    createdAt: String(record.createdAt ?? "").trim(),
+    updatedAt: String(record.updatedAt ?? "").trim(),
+  };
 }
 
 async function getAuthorizedEmail() {
@@ -59,7 +154,9 @@ async function readList(email: string): Promise<FdpAttended[]> {
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as FdpAttended[]) : [];
+    return Array.isArray(parsed)
+      ? parsed.map(normalizeEntry).filter((entry): entry is FdpAttended => !!entry)
+      : [];
   } catch {
     return [];
   }
@@ -106,33 +203,63 @@ async function deleteStoredFile(email: string, meta: FileMeta | null) {
   }
 }
 
-function isValidFileMeta(meta: FileMeta | null) {
-  return !!(
-    meta &&
-    meta.fileName &&
-    meta.mimeType &&
-    typeof meta.size === "number" &&
-    meta.uploadedAt &&
-    meta.url &&
-    meta.storedPath
-  );
+function canEditEntry(entry: FdpAttended) {
+  return isEntryEditable(entry);
 }
 
-function isISODate(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
-}
+function validateCoreFields(entry: FdpAttended) {
+  const programName = entry.programName.trim();
+  const organisingBody = entry.organisingBody.trim();
+  const academicYear = entry.academicYear.trim();
+  const semesterType = entry.semesterType.trim();
+  const startDate = entry.startDate.trim();
+  const endDate = entry.endDate.trim();
+  const supportAmount =
+    typeof entry.supportAmount === "number" && Number.isFinite(entry.supportAmount) && entry.supportAmount >= 0
+      ? entry.supportAmount
+      : null;
 
-function getAcademicYearRange(academicYear: string) {
-  const match = academicYear.match(/^Academic Year (\d{4})-(\d{4})$/);
-  if (!match) return null;
+  if (!ACADEMIC_YEAR_OPTIONS.has(academicYear)) {
+    return { error: "academicYear required" };
+  }
 
-  const startYear = match[1];
-  const endYear = match[2];
+  if (!SEMESTER_TYPE_OPTIONS.has(semesterType)) {
+    return { error: "semesterType required" };
+  }
+
+  if (!isISODate(startDate)) {
+    return { error: "startDate required" };
+  }
+
+  const academicYearRange = getAcademicYearRange(academicYear);
+  if (academicYearRange && (startDate < academicYearRange.start || startDate > academicYearRange.end)) {
+    return { error: `startDate must fall within ${academicYear} (${academicYearRange.label})` };
+  }
+
+  if (!isISODate(endDate)) {
+    return { error: "endDate required" };
+  }
+
+  if (endDate < startDate) {
+    return { error: "endDate must be on or after startDate" };
+  }
+
+  if (!programName) {
+    return { error: "programName required" };
+  }
+
+  if (!organisingBody) {
+    return { error: "organisingBody required" };
+  }
 
   return {
-    start: `${startYear}-07-01`,
-    end: `${endYear}-06-30`,
-    label: `Jul 1, ${startYear} to Jun 30, ${endYear}`,
+    academicYear,
+    semesterType,
+    startDate,
+    endDate,
+    programName,
+    organisingBody,
+    supportAmount,
   };
 }
 
@@ -142,8 +269,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const list = await readList(email);
-  return NextResponse.json(list, { status: 200 });
+  return NextResponse.json(await readList(email), { status: 200 });
 }
 
 export async function POST(request: Request) {
@@ -153,86 +279,86 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { entry?: FdpAttended };
-    const entry = body?.entry;
+    const body = (await request.json()) as { entry?: unknown };
+    const entry = normalizeEntry(body?.entry);
 
     if (!entry?.id) {
       return NextResponse.json({ error: "entry.id required" }, { status: 400 });
     }
 
-    const programName = String(entry.programName ?? "").trim();
-    const organisingBody = String(entry.organisingBody ?? "").trim();
-    const academicYear = String(entry.academicYear ?? "").trim();
-    const semesterType = String(entry.semesterType ?? "").trim();
-    const startDate = String(entry.startDate ?? "").trim();
-    const endDate = String(entry.endDate ?? "").trim();
-    const supportAmount =
-      typeof entry.supportAmount === "number" && Number.isFinite(entry.supportAmount) && entry.supportAmount >= 0
-        ? entry.supportAmount
-        : null;
-
-    if (!ACADEMIC_YEAR_OPTIONS.has(academicYear)) {
-      return NextResponse.json({ error: "academicYear required" }, { status: 400 });
-    }
-
-    if (!SEMESTER_TYPE_OPTIONS.has(semesterType)) {
-      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
-    }
-
-    if (!isISODate(startDate)) {
-      return NextResponse.json({ error: "startDate required" }, { status: 400 });
-    }
-
-    const academicYearRange = getAcademicYearRange(academicYear);
-    if (academicYearRange && (startDate < academicYearRange.start || startDate > academicYearRange.end)) {
-      return NextResponse.json(
-        { error: `startDate must fall within ${academicYear} (${academicYearRange.label})` },
-        { status: 400 }
-      );
-    }
-
-    if (!isISODate(endDate)) {
-      return NextResponse.json({ error: "endDate required" }, { status: 400 });
-    }
-
-    if (endDate < startDate) {
-      return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
-    }
-
-    if (!programName) {
-      return NextResponse.json({ error: "programName required" }, { status: 400 });
-    }
-
-    if (!organisingBody) {
-      return NextResponse.json({ error: "organisingBody required" }, { status: 400 });
+    const validated = validateCoreFields(entry);
+    if ("error" in validated) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
     if (!isValidFileMeta(entry.permissionLetter)) {
       return NextResponse.json({ error: "permissionLetter required" }, { status: 400 });
     }
 
-    if (!isValidFileMeta(entry.completionCertificate)) {
-      return NextResponse.json({ error: "completionCertificate required" }, { status: 400 });
-    }
-
     resolveOwnedStoredPath(email, entry.permissionLetter.storedPath);
-    resolveOwnedStoredPath(email, entry.completionCertificate.storedPath);
+    if (entry.completionCertificate?.storedPath) {
+      resolveOwnedStoredPath(email, entry.completionCertificate.storedPath);
+    }
 
     const currentList = await readList(email);
     const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    if (existing && !canEditEntry(existing)) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+    }
+
     const now = new Date().toISOString();
+    const eligible = isFutureDatedEntry(validated.startDate, validated.endDate);
+    const requestedStatus = normalizeStatus(entry.status, "draft");
+    const nextStatus: "draft" | "final" = requestedStatus === "final" ? "final" : "draft";
+    const existingStreak = normalizeStreakState(existing?.streak ?? entry.streak);
+    let streak = normalizeStreakState(existingStreak);
+
+    if (nextStatus === "final") {
+      streak = eligible
+        ? ensureActivated(existingStreak, validated.endDate)
+        : {
+            ...existingStreak,
+            activatedAtISO: null,
+            dueAtISO: null,
+            completedAtISO: null,
+          };
+
+      if (eligible) {
+        streak.dueAtISO = streak.dueAtISO || computeDueAtISO(validated.endDate);
+        if (
+          isValidFileMeta(entry.completionCertificate) &&
+          streak.dueAtISO &&
+          !streak.completedAtISO &&
+          Date.now() <= new Date(streak.dueAtISO).getTime()
+        ) {
+          streak = markCompleted(streak);
+        }
+      }
+    } else {
+      streak = {
+        ...existingStreak,
+        activatedAtISO: null,
+        dueAtISO: null,
+        completedAtISO: null,
+      };
+    }
 
     const savedEntry: FdpAttended = {
       id: entry.id,
-      academicYear,
-      semesterType,
-      startDate,
-      endDate,
-      programName,
-      organisingBody,
-      supportAmount,
+      status: nextStatus,
+      requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
+      requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
+      requestEditMessage: entry.requestEditMessage ?? existing?.requestEditMessage ?? "",
+      academicYear: validated.academicYear,
+      semesterType: validated.semesterType,
+      startDate: validated.startDate,
+      endDate: validated.endDate,
+      programName: validated.programName,
+      organisingBody: validated.organisingBody,
+      supportAmount: validated.supportAmount,
       permissionLetter: entry.permissionLetter,
       completionCertificate: entry.completionCertificate,
+      streak,
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
@@ -258,6 +384,142 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  const email = await getAuthorizedEmail();
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = (await request.json()) as { entry?: unknown };
+    const entryRecord =
+      body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
+    const entry = normalizeEntry(body?.entry);
+
+    if (!entry?.id) {
+      return NextResponse.json({ error: "entry.id required" }, { status: 400 });
+    }
+
+    const hasRequestEditStatus =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "requestEditStatus");
+
+    if (entry.permissionLetter?.storedPath) {
+      resolveOwnedStoredPath(email, entry.permissionLetter.storedPath);
+    }
+
+    if (entry.completionCertificate?.storedPath) {
+      resolveOwnedStoredPath(email, entry.completionCertificate.storedPath);
+    }
+
+    if (entry.academicYear && !ACADEMIC_YEAR_OPTIONS.has(entry.academicYear)) {
+      return NextResponse.json({ error: "academicYear invalid" }, { status: 400 });
+    }
+
+    if (entry.semesterType && !SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
+      return NextResponse.json({ error: "semesterType invalid" }, { status: 400 });
+    }
+
+    if (entry.startDate && !isISODate(entry.startDate)) {
+      return NextResponse.json({ error: "startDate invalid" }, { status: 400 });
+    }
+
+    if (entry.endDate && !isISODate(entry.endDate)) {
+      return NextResponse.json({ error: "endDate invalid" }, { status: 400 });
+    }
+
+    if (entry.startDate && entry.endDate && entry.endDate < entry.startDate) {
+      return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
+    }
+
+    const academicYearRange = entry.academicYear ? getAcademicYearRange(entry.academicYear) : null;
+    if (
+      academicYearRange &&
+      entry.startDate &&
+      (entry.startDate < academicYearRange.start || entry.startDate > academicYearRange.end)
+    ) {
+      return NextResponse.json(
+        { error: `startDate must fall within ${entry.academicYear} (${academicYearRange.label})` },
+        { status: 400 }
+      );
+    }
+
+    const currentList = await readList(email);
+    const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    if (existing && !canEditEntry(existing) && !hasRequestEditStatus) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+    }
+
+    const now = new Date().toISOString();
+    const requestedStatus = normalizeStatus(entry.status, existing?.status ?? "draft");
+    const savedEntry: FdpAttended = {
+      ...(existing ?? {
+        id: entry.id,
+        status: "draft",
+        requestEditStatus: "none",
+        requestEditRequestedAtISO: null,
+        requestEditMessage: "",
+        academicYear: "",
+        semesterType: "",
+        startDate: "",
+        endDate: "",
+        programName: "",
+        organisingBody: "",
+        supportAmount: null,
+        permissionLetter: null,
+        completionCertificate: null,
+        streak: normalizeStreakState(null),
+        createdAt: now,
+        updatedAt: now,
+      }),
+      id: entry.id,
+      status: existing?.status === "final" ? "final" : requestedStatus,
+      requestEditStatus: hasRequestEditStatus
+        ? normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none")
+        : existing?.requestEditStatus ?? "none",
+      requestEditRequestedAtISO:
+        !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "requestEditRequestedAtISO")
+          ? entry.requestEditRequestedAtISO ?? null
+          : existing?.requestEditRequestedAtISO ?? null,
+      requestEditMessage:
+        !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "requestEditMessage")
+          ? entry.requestEditMessage ?? ""
+          : existing?.requestEditMessage ?? "",
+      academicYear: entry.academicYear || existing?.academicYear || "",
+      semesterType: entry.semesterType || existing?.semesterType || "",
+      startDate: entry.startDate || existing?.startDate || "",
+      endDate: entry.endDate || existing?.endDate || "",
+      programName: entry.programName || existing?.programName || "",
+      organisingBody: entry.organisingBody || existing?.organisingBody || "",
+      supportAmount: entry.supportAmount ?? existing?.supportAmount ?? null,
+      permissionLetter: entry.permissionLetter || existing?.permissionLetter || null,
+      completionCertificate: entry.completionCertificate || existing?.completionCertificate || null,
+      streak:
+        existing?.status === "final"
+          ? normalizeStreakState(existing.streak)
+          : {
+              ...normalizeStreakState(entry.streak),
+              activatedAtISO: null,
+              dueAtISO: null,
+              completedAtISO: null,
+            },
+      createdAt: existing?.createdAt || entry.createdAt || now,
+      updatedAt: now,
+    };
+
+    await writeList(
+      email,
+      existing
+        ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
+        : [savedEntry, ...currentList]
+    );
+
+    return NextResponse.json(savedEntry, { status: 200 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Save failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   const email = await getAuthorizedEmail();
   if (!email) {
@@ -274,6 +536,9 @@ export async function DELETE(request: Request) {
 
     const currentList = await readList(email);
     const target = currentList.find((item) => item.id === id) ?? null;
+    if (target && !canEditEntry(target)) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+    }
 
     await writeList(
       email,

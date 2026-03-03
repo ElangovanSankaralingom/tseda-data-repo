@@ -24,13 +24,14 @@
   "uploads": {
     "appointmentLetter": null,
     "joiningLetter": null,
-    "aadhar": null
+    "aadhar": null,
+    "panCard": null
   },
   "settings": {
     "theme": "light"
   },
   "createdAt": "2026-02-28T19:29:48.469Z",
-  "updatedAt": "2026-03-02T01:29:54.329Z",
+  "updatedAt": "2026-03-03T08:31:21.804Z",
   "facultyId": "senarch@tce.edu",
   "isFacultyListed": true,
   "officialName": "Ar. S. Elangovan"

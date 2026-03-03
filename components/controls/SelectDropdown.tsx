@@ -11,7 +11,7 @@ export type SelectDropdownOption = {
 type SelectDropdownProps = {
   value: string;
   onChange: (value: string) => void;
-  options: SelectDropdownOption[];
+  options: readonly SelectDropdownOption[];
   placeholder?: string;
   disabled?: boolean;
   error?: boolean;

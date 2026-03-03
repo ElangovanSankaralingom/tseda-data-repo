@@ -74,8 +74,18 @@ type SaveTabOptions = {
   draftOverride?: Profile;
 };
 
+type ExperienceCategory = "academicOutsideTCE" | "industry";
+type ExperienceEntryByCategory = {
+  academicOutsideTCE: Experience["academicOutsideTCE"][number];
+  industry: Experience["industry"][number];
+};
+
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 function formatAadharNumber(value: string) {
@@ -91,6 +101,17 @@ function normalizePanCardNumber(value: string) {
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 10);
+}
+
+function getInitials(value: string) {
+  const parts = value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (parts.length === 0) return "?";
+  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("") || "?";
 }
 
 function stableStringify(value: unknown): string {
@@ -122,7 +143,7 @@ function createTabState() {
 function normalizePersonal(personal?: Profile["personal"]) {
   return {
     dob: personal?.dob ?? "",
-    bloodGroup: personal?.bloodGroup ?? "",
+    bloodGroup: personal?.bloodGroup,
     aadharNumber: personal?.aadharNumber ?? "",
     panCardNumber: personal?.panCardNumber ?? "",
   };
@@ -132,8 +153,8 @@ function normalizeAcademic(academic?: Profile["academic"]) {
   return {
     employeeId: academic?.employeeId ?? "",
     dateOfJoiningTCE: academic?.dateOfJoiningTCE ?? "",
-    designation: academic?.designation ?? "",
-    phdStatus: academic?.phdStatus ?? "",
+    designation: academic?.designation,
+    phdStatus: academic?.phdStatus,
   };
 }
 
@@ -228,6 +249,30 @@ function buildPatchForTab(tab: TabKey, draft: Profile) {
   }
 }
 
+function findExperienceEntry<K extends ExperienceCategory>(
+  experience: Experience,
+  category: K,
+  entryId: string
+): ExperienceEntryByCategory[K] | undefined {
+  return experience[category].find((entry) => entry.id === entryId) as ExperienceEntryByCategory[K] | undefined;
+}
+
+function updateExperienceCategoryCertificate<K extends ExperienceCategory>(
+  experience: Experience,
+  category: K,
+  entryId: string,
+  certificate: FileMeta | null
+): Experience {
+  const updatedEntries = experience[category].map((entry) =>
+    entry.id === entryId ? { ...entry, certificate } : entry
+  ) as ExperienceEntryByCategory[K][];
+
+  return {
+    ...experience,
+    [category]: updatedEntries,
+  } as Experience;
+}
+
 function getTabForErrorKey(key: string): TabKey | null {
   if (key === "email") return "profile";
   if (key === "dob" || key === "aadharNumber" || key === "panCardNumber") return "personal";
@@ -248,7 +293,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-white/70 dark:bg-black/20 p-5">
+    <div className="rounded-2xl border border-border bg-white/70 p-5">
       <div>
         <h2 className="text-base font-semibold">{title}</h2>
         {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
@@ -297,7 +342,7 @@ function MiniButton({
   const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
   const activeCls =
     variant === "danger"
-      ? "border-border text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
+      ? "border-border text-red-600 transition hover:bg-red-50"
       : variant === "ghost"
       ? "border-border transition hover:bg-muted"
       : "border-foreground bg-foreground text-background transition hover:opacity-90";
@@ -420,6 +465,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
 
   // certificate upload UI state
   const [pendingCertFile, setPendingCertFile] = useState<Record<string, File | null>>({});
@@ -703,8 +749,8 @@ export default function AccountPage() {
       setDraft((current) => applySavedTabToDraft(draftOverride ?? current, updated, tab));
       setSaveAttemptedTabs((current) => ({ ...current, [tab]: false }));
       setToast({ type: "ok", msg: "Saved." });
-    } catch (e: any) {
-      setToast({ type: "err", msg: e?.message || "Save failed. Try again." });
+    } catch (error: unknown) {
+      setToast({ type: "err", msg: getErrorMessage(error, "Save failed. Try again.") });
     } finally {
       setSaving(false);
       saveLockRef.current = false;
@@ -723,7 +769,7 @@ export default function AccountPage() {
   async function deleteCertificate(category: "academicOutsideTCE" | "industry", entryId: string) {
     try {
       const e = draft.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
-      const entry = (e[category] as any[]).find((x) => x.id === entryId);
+      const entry = findExperienceEntry(e, category, entryId);
       const meta: FileMeta | null | undefined = entry?.certificate;
 
       if (!meta?.storedPath) {
@@ -740,8 +786,10 @@ export default function AccountPage() {
       if (!r.ok) throw new Error(j?.error || "Delete failed");
 
       const e2 = draft.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
-      const list = (e2[category] as any[]).map((x) => (x.id === entryId ? { ...x, certificate: null } : x));
-      const nextDraft = { ...draft, experience: { ...e2, [category]: list } as any };
+      const nextDraft = {
+        ...draft,
+        experience: updateExperienceCategoryCertificate(e2, category, entryId, null),
+      };
 
       setDraft(nextDraft);
 
@@ -753,8 +801,8 @@ export default function AccountPage() {
       setCertError((m) => ({ ...m, [key]: null }));
 
       await saveCurrentTab({ tab: "experience", draftOverride: nextDraft });
-    } catch (e: any) {
-      setToast({ type: "err", msg: e?.message || "Delete failed." });
+    } catch (error: unknown) {
+      setToast({ type: "err", msg: getErrorMessage(error, "Delete failed.") });
     }
   }
 
@@ -794,8 +842,10 @@ export default function AccountPage() {
       });
 
       const e = draft.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
-      const list = (e[category] as any[]).map((x) => (x.id === entryId ? { ...x, certificate: meta } : x));
-      const nextDraft = { ...draft, experience: { ...e, [category]: list } as any };
+      const nextDraft = {
+        ...draft,
+        experience: updateExperienceCategoryCertificate(e, category, entryId, meta),
+      };
 
       setDraft(nextDraft);
 
@@ -804,9 +854,9 @@ export default function AccountPage() {
       setCertProgress((m) => ({ ...m, [key]: 100 }));
 
       await saveCurrentTab({ tab: "experience", draftOverride: nextDraft });
-    } catch (e: any) {
+    } catch (error: unknown) {
       setCertBusy((m) => ({ ...m, [key]: false }));
-      setCertError((m) => ({ ...m, [key]: e?.message || "Upload failed." }));
+      setCertError((m) => ({ ...m, [key]: getErrorMessage(error, "Upload failed.") }));
     }
   }
 
@@ -858,9 +908,9 @@ export default function AccountPage() {
       setDocProgress((m) => ({ ...m, [key]: 100 }));
 
       await saveCurrentTab({ tab: "uploads", draftOverride: nextDraft });
-    } catch (e: any) {
+    } catch (error: unknown) {
       setDocBusy((m) => ({ ...m, [key]: false }));
-      setDocError((m) => ({ ...m, [key]: e?.message || "Upload failed." }));
+      setDocError((m) => ({ ...m, [key]: getErrorMessage(error, "Upload failed.") }));
     }
   }
 
@@ -898,8 +948,8 @@ export default function AccountPage() {
       setDraft(nextDraft);
 
       await saveCurrentTab({ tab: "uploads", draftOverride: nextDraft });
-    } catch (e: any) {
-      setToast({ type: "err", msg: e?.message || "Delete failed." });
+    } catch (error: unknown) {
+      setToast({ type: "err", msg: getErrorMessage(error, "Delete failed.") });
     }
   }
 
@@ -917,6 +967,11 @@ export default function AccountPage() {
   }, [draft.officialName, draft.userPreferredName, draft.email]);
 
   const photo = draft.googlePhotoURL || "";
+  const avatarFallback = getInitials(employeeLabel || draft.email || "");
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [photo]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
@@ -994,10 +1049,24 @@ export default function AccountPage() {
                 <div className="flex h-full min-h-[280px] flex-col items-center justify-start text-center md:-translate-y-6 md:justify-center">
                   <div className="flex items-center justify-center">
                     <div className="h-28 w-28 overflow-hidden rounded-full border border-border bg-muted shadow-sm">
-                      {photo ? <img src={photo} alt="Profile" className="h-full w-full object-cover" /> : null}
+                      {photo && !avatarLoadFailed ? (
+                        <img
+                          src={photo}
+                          alt="Profile"
+                          className="h-full w-full object-cover"
+                          onError={() => setAvatarLoadFailed(true)}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-muted-foreground">
+                          {avatarFallback}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4 text-base font-semibold text-center">{employeeLabel}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Debug: photoURL: {photo ? "present" : "missing"}
+                  </div>
                 </div>
               </div>
 
@@ -1304,7 +1373,7 @@ export default function AccountPage() {
                       ...e,
                       academicOutsideTCE: [
                         ...e.academicOutsideTCE,
-                        { id: uuid(), institution: "", startDate: todayISO(), endDate: todayISO(), certificate: null as any },
+                        { id: uuid(), institution: "", startDate: todayISO(), endDate: todayISO(), certificate: null },
                       ],
                     }))
                   }
@@ -1507,7 +1576,7 @@ export default function AccountPage() {
                       ...e,
                       industry: [
                         ...e.industry,
-                        { id: uuid(), organization: "", role: "", startDate: todayISO(), endDate: todayISO(), certificate: null as any },
+                        { id: uuid(), organization: "", role: "", startDate: todayISO(), endDate: todayISO(), certificate: null },
                       ],
                     }))
                   }

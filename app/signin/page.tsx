@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { signIn, useSession } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -40,11 +40,11 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function SignInPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
-  const params = useSearchParams();
 
   const [busy, setBusy] = useState(false);
+  const [errorText, setErrorText] = useState("");
 
   // If already signed in, go to dashboard (or your protected home)
   useEffect(() => {
@@ -53,22 +53,29 @@ export default function SignInPage() {
     }
   }, [status, router]);
 
-  const errorText = useMemo(() => {
-    const e = params.get("error");
-    if (!e) return "";
-    // Keep it user-friendly; avoid technical codes.
-    if (e.toLowerCase().includes("accessdenied")) {
-      return "Access denied. Your tce.edu account is not listed in the faculty directory.";
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+
+    if (!error) {
+      setErrorText("");
+      return;
     }
-    return "Sign-in failed. Please try again.";
-  }, [params]);
+
+    if (error.toLowerCase().includes("accessdenied")) {
+      setErrorText("Access denied. Your tce.edu account is not listed in the faculty directory.");
+      return;
+    }
+
+    setErrorText("Sign-in failed. Please try again.");
+  }, []);
 
   return (
     <div className="min-h-[calc(100vh-0px)] w-full bg-background">
       {/* Subtle neutral background */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 opacity-60 dark:opacity-40"
+        className="pointer-events-none fixed inset-0 opacity-60"
         style={{
           background:
             "radial-gradient(900px 500px at 50% 20%, rgba(0,0,0,0.06), transparent 60%), radial-gradient(700px 420px at 20% 80%, rgba(0,0,0,0.05), transparent 60%)",
@@ -78,7 +85,7 @@ export default function SignInPage() {
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-5 py-10">
         <div className="w-full max-w-lg">
           {/* Card */}
-          <div className="rounded-3xl border border-border bg-white/70 p-6 shadow-sm backdrop-blur-md dark:bg-black/20 sm:p-7">
+          <div className="rounded-3xl border border-border bg-white/70 p-6 shadow-sm backdrop-blur-md sm:p-7">
             {/* Logos row */}
             <div className="flex items-center justify-center">
               <div className="flex items-center justify-center gap-3">
@@ -121,7 +128,7 @@ export default function SignInPage() {
 
             {/* Error */}
             {errorText ? (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
                 {errorText}
               </div>
             ) : null}
@@ -142,9 +149,12 @@ export default function SignInPage() {
                 disabled={busy || status === "loading"}
                 className={cx(
                   "group flex w-full items-center justify-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium",
-                  "bg-foreground text-background shadow-sm transition",
-                  "hover:opacity-95 active:opacity-90",
-                  "disabled:cursor-not-allowed disabled:opacity-60 disabled:pointer-events-none"
+                  "bg-foreground text-background shadow-sm cursor-pointer transition-all duration-200 ease-out",
+                  "hover:opacity-95 hover:shadow-md hover:-translate-y-[1px]",
+                  "active:translate-y-0 active:scale-[0.99]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20",
+                  "disabled:cursor-not-allowed disabled:opacity-60 disabled:pointer-events-none",
+                  "disabled:hover:shadow-none disabled:hover:translate-y-0 disabled:active:scale-100"
                 )}
               >
                 <span className="inline-flex items-center justify-center rounded-full bg-background/90 p-1">
