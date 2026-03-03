@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import AvatarMenu from "@/components/AvatarMenu";
+
+const ENABLE_RESET = true;
 
 export default function ShellClient({
   children,
@@ -14,13 +16,46 @@ export default function ShellClient({
   title?: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
+  const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
 
   const nav = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/data-entry", label: "Data Entry" },
     { href: "/account", label: "My Account" },
   ];
+
+  async function handleResetConfirm() {
+    if (resetBusy) return;
+
+    try {
+      setResetBusy(true);
+      const response = await fetch("/api/me/reset", { method: "POST" });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Reset failed.");
+      }
+
+      setResetOpen(false);
+      setOpen(false);
+      setAvatarRefreshKey((value) => value + 1);
+      setToast({ type: "ok", msg: "Account reset successfully" });
+      setTimeout(() => setToast(null), 2200);
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Reset failed.";
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 2200);
+    } finally {
+      setResetBusy(false);
+    }
+  }
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -48,10 +83,35 @@ export default function ShellClient({
           </div>
 
           <div className="flex items-center gap-2">
-            <AvatarMenu />
+            {ENABLE_RESET ? (
+              <button
+                type="button"
+                onClick={() => setResetOpen(true)}
+                disabled={resetBusy}
+                className="rounded-full border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground disabled:opacity-60"
+              >
+                Reset Account
+              </button>
+            ) : null}
+            <AvatarMenu refreshKey={avatarRefreshKey} />
           </div>
         </div>
       </header>
+
+      {toast ? (
+        <div className="fixed right-4 top-20 z-50">
+          <div
+            className={[
+              "rounded-xl border px-3 py-2 text-sm shadow-sm",
+              toast.type === "ok"
+                ? "border-green-200 bg-green-50 text-green-800"
+                : "border-red-200 bg-red-50 text-red-800",
+            ].join(" ")}
+          >
+            {toast.msg}
+          </div>
+        </div>
+      ) : null}
 
       {/* Drawer overlay */}
       {open ? (
@@ -102,6 +162,46 @@ export default function ShellClient({
               </button>
             </div>
           </aside>
+        </div>
+      ) : null}
+
+      {ENABLE_RESET && resetOpen ? (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              if (!resetBusy) setResetOpen(false);
+            }}
+          />
+          <div className="absolute left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4">
+            <div className="rounded-2xl border border-border bg-background p-5 shadow-sm">
+              <h2 className="text-base font-semibold">Reset Account</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                This will permanently delete all your entries and uploads. This
+                cannot be undone.
+              </p>
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResetOpen(false)}
+                  disabled={resetBusy}
+                  className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleResetConfirm();
+                  }}
+                  disabled={resetBusy}
+                  className="rounded-lg border border-red-600 bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60"
+                >
+                  {resetBusy ? "Resetting..." : "Confirm Reset"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
 
