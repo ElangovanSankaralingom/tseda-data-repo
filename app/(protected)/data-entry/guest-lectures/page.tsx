@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import DateField from "@/components/controls/DateField";
+import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
 import MultiPhotoUpload from "@/components/uploads/MultiPhotoUpload";
 import { FACULTY } from "@/lib/facultyDirectory";
+import { isEntryLockedState, nowISTTimestampISO } from "@/lib/gamification";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -35,6 +38,8 @@ type GuestLectureEntry = {
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
   status?: "draft" | "final";
+  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  requestEditRequestedAtISO?: string | null;
   academicYear: string;
   semesterType: "Odd" | "Even" | "";
   startDate: string;
@@ -89,6 +94,21 @@ const FACULTY_OPTIONS = FACULTY;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+
+  return `{${Object.entries(value)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, entryValue]) => `${JSON.stringify(key)}:${stableStringify(entryValue)}`)
+    .join(",")}}`;
 }
 
 function uuid() {
@@ -156,6 +176,8 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): GuestLectureEntry {
   return {
     id: uuid(),
     status: "draft",
+    requestEditStatus: "none",
+    requestEditRequestedAtISO: null,
     academicYear: "",
     semesterType: "",
     startDate: "",
@@ -177,6 +199,14 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): GuestLectureEntry {
     createdAt: "",
     updatedAt: "",
   };
+}
+
+function isEntryLocked(entry: GuestLectureEntry) {
+  if (entry.requestEditStatus === "approved") {
+    return false;
+  }
+
+  return isEntryLockedState(entry);
 }
 
 function SectionCard({
@@ -312,16 +342,23 @@ function uploadGuestLecturesFileXHR(opts: {
   });
 }
 
-export default function GuestLecturesPage() {
+type GuestLecturesPageProps = {
+  viewEntryId?: string;
+};
+
+export function GuestLecturesPage({ viewEntryId }: GuestLecturesPageProps = {}) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [email, setEmail] = useState("");
   const [currentFaculty, setCurrentFaculty] = useState<FacultyRowValue>(emptyFacultySelection);
   const [list, setList] = useState<GuestLectureEntry[]>([]);
+  const [requestingEditIds, setRequestingEditIds] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState<GuestLectureEntry>(() => createEmptyForm());
+  const [lastPersistedSnapshot, setLastPersistedSnapshot] = useState(() => stableStringify(createEmptyForm()));
   const [pending, setPending] = useState<Record<UploadSlot, File | null>>({
     permissionLetter: null,
     brochure: null,
@@ -348,6 +385,11 @@ export default function GuestLecturesPage() {
   });
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
+  const isViewMode = !!viewEntryId;
+  const viewedEntry = useMemo(
+    () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
+    [list, viewEntryId]
+  );
 
   useEffect(() => {
     (async () => {
@@ -366,8 +408,10 @@ export default function GuestLecturesPage() {
           email: nextEmail,
           name: String(me?.officialName ?? me?.userPreferredName ?? nextEmail.split("@")[0]).trim(),
         };
+        const nextForm = createEmptyForm(nextFaculty);
         setCurrentFaculty(nextFaculty);
-        setForm(createEmptyForm(nextFaculty));
+        setForm(nextForm);
+        setLastPersistedSnapshot(stableStringify(nextForm));
 
         const listResponse = await fetch(`/api/me/guest-lectures?email=${encodeURIComponent(nextEmail)}`, {
           cache: "no-store",
@@ -387,6 +431,40 @@ export default function GuestLecturesPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!viewedEntry) return;
+
+    setForm(viewedEntry);
+    setLastPersistedSnapshot(stableStringify(viewedEntry));
+    setSubmitted(false);
+    setSubmitAttemptedFinal(false);
+    setPending({
+      permissionLetter: null,
+      brochure: null,
+      attendance: null,
+      speakerProfile: null,
+    });
+    setBusy({
+      permissionLetter: false,
+      brochure: false,
+      attendance: false,
+      speakerProfile: false,
+    });
+    setProgress({
+      permissionLetter: 0,
+      brochure: 0,
+      attendance: 0,
+      speakerProfile: 0,
+    });
+    setUploadError({
+      permissionLetter: null,
+      brochure: null,
+      attendance: null,
+      speakerProfile: null,
+    });
+    setPhotoUploadStatus({ hasPending: false, busy: false });
+  }, [viewedEntry]);
 
   const errors = useMemo(() => {
     const nextErrors: Record<string, string> = {};
@@ -472,6 +550,7 @@ export default function GuestLecturesPage() {
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const hasPendingFiles = Object.values(pending).some(Boolean) || photoUploadStatus.hasPending;
   const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
+  const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const generateReady =
     !!form.academicYear &&
     !!form.semesterType &&
@@ -484,6 +563,17 @@ export default function GuestLecturesPage() {
     !!normalizedStudentYear &&
     isSemesterAllowed(normalizedStudentYear, form.semesterNumber ?? undefined);
   const uploadsVisible = !!form.pdfMeta;
+  const requiredUploadsComplete =
+    !!form.uploads.permissionLetter &&
+    !!form.uploads.brochure &&
+    !!form.uploads.attendance &&
+    !!form.uploads.speakerProfile &&
+    form.uploads.geotaggedPhotos.length > 0;
+  const isComplete = uploadsVisible && generateReady && requiredUploadsComplete;
+  const isDirty = formDirty || hasPendingFiles;
+  const showForm = formOpen || (isViewMode && !!viewedEntry);
+  const isLocked = !!form.createdAt && isEntryLocked(form);
+  const controlsDisabled = isViewMode || isLocked;
 
   async function parseApiError(response: Response, fallback: string) {
     const text = await response.text();
@@ -509,7 +599,10 @@ export default function GuestLecturesPage() {
 
   function resetForm() {
     setSubmitted(false);
-    setForm(createEmptyForm(currentFaculty));
+    setSubmitAttemptedFinal(false);
+    const nextForm = createEmptyForm(currentFaculty);
+    setForm(nextForm);
+    setLastPersistedSnapshot(stableStringify(nextForm));
     setPending({
       permissionLetter: null,
       brochure: null,
@@ -704,19 +797,11 @@ export default function GuestLecturesPage() {
     }
   }
 
-  async function saveEntry() {
-    if (saveLockRef.current) return;
+  async function saveDraftChanges(options?: { closeAfterSave?: boolean }) {
+    if (saveLockRef.current || !isDirty) return;
     saveLockRef.current = true;
 
     try {
-      setSubmitted(true);
-
-      if (Object.keys(errors).length > 0) {
-        setToast({ type: "err", msg: "Complete all mandatory fields before saving." });
-        setTimeout(() => setToast(null), 1800);
-        return;
-      }
-
       if (hasPendingFiles || hasBusyUploads) {
         setToast({ type: "err", msg: "Finish the current uploads before saving." });
         setTimeout(() => setToast(null), 1800);
@@ -729,12 +814,17 @@ export default function GuestLecturesPage() {
         status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
-      await persistProgress(entryToSave);
+      const persisted = await persistProgress(entryToSave);
+      setForm(persisted);
+      setLastPersistedSnapshot(stableStringify(persisted));
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
       await refreshList(email);
-      setToast({ type: "ok", msg: "Guest Lecture saved." });
+      setToast({ type: "ok", msg: "Saved" });
       setTimeout(() => setToast(null), 1400);
-      resetForm();
-      setFormOpen(false);
+      if (options?.closeAfterSave) {
+        closeForm();
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Save failed.";
       setToast({ type: "err", msg: message });
@@ -743,6 +833,29 @@ export default function GuestLecturesPage() {
       setSaving(false);
       saveLockRef.current = false;
     }
+  }
+
+  async function handleDone() {
+    setSubmitAttemptedFinal(true);
+
+    if (hasBusyUploads) {
+      setToast({ type: "err", msg: "Finish the current uploads before continuing." });
+      setTimeout(() => setToast(null), 1800);
+      return;
+    }
+
+    if (!isComplete) {
+      setToast({ type: "err", msg: "Complete all required uploads before finishing." });
+      setTimeout(() => setToast(null), 1800);
+      return;
+    }
+
+    if (!isDirty) {
+      closeForm();
+      return;
+    }
+
+    await saveDraftChanges({ closeAfterSave: true });
   }
 
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
@@ -807,6 +920,9 @@ export default function GuestLecturesPage() {
           : persistedDraft;
 
       setForm(nextEntry);
+      setLastPersistedSnapshot(stableStringify(nextEntry));
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
       await refreshList(email);
       setToast({ type: "ok", msg: "Entry generated." });
       setTimeout(() => setToast(null), 1400);
@@ -843,6 +959,79 @@ export default function GuestLecturesPage() {
     }
   }
 
+  async function requestEdit(entry: GuestLectureEntry) {
+    if (requestingEditIds[entry.id] || entry.requestEditStatus === "pending") {
+      return;
+    }
+
+    const optimisticEntry: GuestLectureEntry = {
+      ...entry,
+      requestEditStatus: "pending",
+      requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
+    };
+
+    setRequestingEditIds((current) => ({ ...current, [entry.id]: true }));
+    setList((current) => current.map((item) => (item.id === entry.id ? optimisticEntry : item)));
+
+    try {
+      const persisted = await persistProgress(optimisticEntry);
+      setList((current) => current.map((item) => (item.id === entry.id ? persisted : item)));
+      setToast({ type: "ok", msg: "Request sent." });
+      setTimeout(() => setToast(null), 1400);
+    } catch (error) {
+      setList((current) => current.map((item) => (item.id === entry.id ? entry : item)));
+      const message = error instanceof Error ? error.message : "Request failed.";
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
+    } finally {
+      setRequestingEditIds((current) => ({ ...current, [entry.id]: false }));
+    }
+  }
+
+  function renderCompletedRequestAction(entry: GuestLectureEntry) {
+    const currentStatus = entry.requestEditStatus ?? "none";
+    const isRequesting = requestingEditIds[entry.id];
+
+    if (currentStatus === "approved") {
+      return (
+        <button
+          type="button"
+          disabled
+          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
+        >
+          Approved
+        </button>
+      );
+    }
+
+    if (currentStatus === "pending" || isRequesting) {
+      return (
+        <button
+          type="button"
+          disabled
+          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
+        >
+          Request Sent
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void requestEdit(entry)}
+          className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+        >
+          Request Edit
+        </button>
+        {currentStatus === "rejected" ? (
+          <span className="text-xs text-muted-foreground">Request was rejected</span>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-5xl">
       <div className="flex items-start justify-between gap-4">
@@ -854,16 +1043,29 @@ export default function GuestLecturesPage() {
         </div>
 
         <div className="flex gap-2">
-          {formOpen ? (
+          {showForm && !isViewMode ? (
             <>
-              <MiniButton variant="ghost" onClick={() => void closeForm()} disabled={saving || loading || hasBusyUploads}>
+              <MiniButton
+                variant="ghost"
+                onClick={() => void closeForm()}
+                disabled={isViewMode || saving || loading || hasBusyUploads || isComplete}
+              >
                 Cancel
               </MiniButton>
-              <MiniButton onClick={() => void saveEntry()} disabled={saving || loading || hasBusyUploads}>
+              <MiniButton
+                onClick={() => void saveDraftChanges()}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !isDirty || isComplete}
+              >
                 {saving ? "Saving..." : "Save"}
               </MiniButton>
+              <MiniButton
+                onClick={() => void handleDone()}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !isComplete}
+              >
+                {saving ? "Saving..." : "Done"}
+              </MiniButton>
             </>
-          ) : (
+          ) : !isViewMode ? (
             <MiniButton
               onClick={() => {
                 resetForm();
@@ -873,7 +1075,7 @@ export default function GuestLecturesPage() {
             >
               + Add Guest Lecture
             </MiniButton>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -895,9 +1097,9 @@ export default function GuestLecturesPage() {
           <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">Loading...</div>
         ) : null}
 
-        {!loading && formOpen ? (
+        {!loading && showForm ? (
           <SectionCard
-            title="New Guest Lecture Entry"
+            title={isViewMode ? "Guest Lecture Entry" : "New Guest Lecture Entry"}
             subtitle="Add the entry details and generate the entry to unlock uploads."
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -907,6 +1109,7 @@ export default function GuestLecturesPage() {
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.academicYear}
                 />
               </Field>
@@ -922,6 +1125,7 @@ export default function GuestLecturesPage() {
                   }
                   options={SEMESTER_TYPE_OPTIONS}
                   placeholder="Select semester type"
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.semesterType}
                 />
               </Field>
@@ -934,6 +1138,7 @@ export default function GuestLecturesPage() {
                 <DateField
                   value={form.startDate}
                   onChange={(next) => setForm((current) => ({ ...current, startDate: next }))}
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.startDate}
                 />
               </Field>
@@ -946,6 +1151,7 @@ export default function GuestLecturesPage() {
                 <DateField
                   value={form.endDate}
                   onChange={(next) => setForm((current) => ({ ...current, endDate: next }))}
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.endDate}
                 />
               </Field>
@@ -954,6 +1160,7 @@ export default function GuestLecturesPage() {
                 <input
                   value={form.eventName}
                   onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
+                  disabled={controlsDisabled}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.eventName
@@ -967,6 +1174,7 @@ export default function GuestLecturesPage() {
                 <input
                   value={form.speakerName}
                   onChange={(event) => setForm((current) => ({ ...current, speakerName: event.target.value }))}
+                  disabled={controlsDisabled}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.speakerName
@@ -980,6 +1188,7 @@ export default function GuestLecturesPage() {
                 <input
                   value={form.organizationName}
                   onChange={(event) => setForm((current) => ({ ...current, organizationName: event.target.value }))}
+                  disabled={controlsDisabled}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.organizationName
@@ -1006,6 +1215,8 @@ export default function GuestLecturesPage() {
                 onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
                 facultyOptions={FACULTY_OPTIONS}
                 disableEmails={[currentFaculty.email || form.coordinator.email]}
+                parentLocked={controlsDisabled}
+                viewOnly={isViewMode}
                 sectionError={errors.coCoordinators}
                 showSectionError={submitted}
                 emptyStateText="No co-coordinators added."
@@ -1041,6 +1252,7 @@ export default function GuestLecturesPage() {
                   }
                   options={STUDENT_YEAR_OPTIONS}
                   placeholder="Select year"
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.studentYear}
                 />
               </Field>
@@ -1052,7 +1264,7 @@ export default function GuestLecturesPage() {
               >
                 <SelectDropdown
                   value={form.semesterNumber === null ? "" : String(form.semesterNumber)}
-                  disabled={!normalizedStudentYear}
+                  disabled={controlsDisabled || !normalizedStudentYear}
                   onChange={(value) =>
                     setForm((current) => ({
                       ...current,
@@ -1079,6 +1291,7 @@ export default function GuestLecturesPage() {
                       participants: digits === "" ? null : Number(digits),
                     }));
                   }}
+                  disabled={controlsDisabled}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.participants
@@ -1091,26 +1304,15 @@ export default function GuestLecturesPage() {
 
             <div className="mt-5 space-y-4">
               <div className="flex flex-wrap gap-2">
-                <MiniButton
-                  onClick={() => void generateEntry()}
-                  disabled={saving || loading || hasBusyUploads || hasPendingFiles || !generateReady}
-                >
-                  {saving ? "Generating..." : "Generate Entry"}
-                </MiniButton>
-                {form.pdfMeta?.url ? (
-                  <a
-                    href={form.pdfMeta.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+                {!isViewMode ? (
+                  <MiniButton
+                    onClick={() => void generateEntry()}
+                    disabled={controlsDisabled || saving || loading || hasBusyUploads || hasPendingFiles || !generateReady}
                   >
-                    Download Entry
-                  </a>
-                ) : (
-                  <MiniButton variant="ghost" disabled>
-                    Download Entry
+                    {saving ? "Generating..." : "Generate Entry"}
                   </MiniButton>
-                )}
+                ) : null}
+                <EntryPdfActions pdfMeta={form.pdfMeta ?? null} />
               </div>
 
               {uploadsVisible ? (
@@ -1121,85 +1323,112 @@ export default function GuestLecturesPage() {
                 const currentBusy = busy[slot];
                 const currentProgress = progress[slot];
                 const currentUploadError = uploadError[slot];
-                const canUpload = !!currentPending && !currentBusy && !meta;
+                const canUpload = !!currentPending && !currentBusy;
                 const showUploaded = !!meta && !currentPending;
 
                 return (
                   <div key={slot} className="rounded-xl border border-border p-4 space-y-3">
                     <div className="text-sm font-semibold">{label}</div>
 
-                    {meta ? (
-                      <div className="text-xs text-muted-foreground">
-                        <a className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                          {meta.fileName}
-                        </a>{" "}
-                        • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
-                      </div>
+                    {isViewMode ? (
+                      meta ? (
+                        <div className="space-y-3">
+                          <div className="text-xs text-muted-foreground">
+                            {meta.fileName} • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <a
+                              href={meta.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                            >
+                              Preview
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">Not uploaded</div>
+                      )
                     ) : (
-                      <div className="text-xs text-muted-foreground">No file uploaded yet.</div>
-                    )}
-
-                    <div className="text-xs text-muted-foreground">
-                      {currentPending
-                        ? `Selected: ${currentPending.name}`
-                        : meta
-                          ? "Uploaded. Choose a new file only if you want to replace it after deleting."
-                          : "Select a file to enable Upload & Save."}
-                    </div>
-
-                    {currentBusy ? (
-                      <div className="space-y-2">
-                        <ProgressBar value={currentProgress} />
-                        <div className="text-xs text-muted-foreground">{currentProgress}% uploading...</div>
-                      </div>
-                    ) : null}
-
-                    {currentUploadError ? <div className="text-xs text-red-600">{currentUploadError}</div> : null}
-
-                    <div className="flex flex-wrap gap-2">
-                      {meta ? (
-                        <>
-                          <a
-                            href={meta.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
-                          >
-                            Preview
-                          </a>
-                          <MiniButton variant="danger" onClick={() => void deleteSlot(slot)} disabled={currentBusy}>
-                            Delete
-                          </MiniButton>
-                        </>
-                      ) : null}
-
-                      <label
-                        className={cx(
-                          "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-                          currentBusy
-                            ? "pointer-events-none cursor-not-allowed opacity-60"
-                            : "cursor-pointer transition hover:bg-muted"
+                      <>
+                        {meta ? (
+                          <div className="text-xs text-muted-foreground">
+                            <a className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                              {meta.fileName}
+                            </a>{" "}
+                            • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
+                          </div>
+                        ) : (
+                          <div className={cx("text-xs", submitAttemptedFinal ? "text-red-600" : "text-muted-foreground")}>
+                            {submitAttemptedFinal ? "This upload is mandatory." : "No file uploaded yet."}
+                          </div>
                         )}
-                      >
-                        Choose file
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] || null;
-                            event.currentTarget.value = "";
-                            setPending((current) => ({ ...current, [slot]: file }));
-                            setUploadError((current) => ({ ...current, [slot]: null }));
-                            setProgress((current) => ({ ...current, [slot]: 0 }));
-                          }}
-                        />
-                      </label>
 
-                      <MiniButton onClick={() => void uploadSlot(slot)} disabled={!canUpload || showUploaded}>
-                        {showUploaded ? "Uploaded" : "Upload & Save"}
-                      </MiniButton>
-                    </div>
+                        <div className="text-xs text-muted-foreground">
+                          {currentPending
+                            ? `Selected: ${currentPending.name}`
+                            : meta
+                              ? "Uploaded. Choose a new file and upload to replace it."
+                              : "Select a file to enable Upload & Save."}
+                        </div>
+
+                        {currentBusy ? (
+                          <div className="space-y-2">
+                            <ProgressBar value={currentProgress} />
+                            <div className="text-xs text-muted-foreground">{currentProgress}% uploading...</div>
+                          </div>
+                        ) : null}
+
+                        {currentUploadError ? <div className="text-xs text-red-600">{currentUploadError}</div> : null}
+
+                        <div className="flex flex-wrap gap-2">
+                          {meta ? (
+                            <>
+                              <a
+                                href={meta.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                              >
+                                Preview
+                              </a>
+                              <MiniButton variant="danger" onClick={() => void deleteSlot(slot)} disabled={currentBusy || controlsDisabled}>
+                                Delete
+                              </MiniButton>
+                            </>
+                          ) : null}
+
+                          <label
+                            className={cx(
+                              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
+                              currentBusy || controlsDisabled
+                                ? "pointer-events-none cursor-not-allowed opacity-60"
+                                : "cursor-pointer transition hover:bg-muted"
+                            )}
+                          >
+                            Choose file
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                              disabled={controlsDisabled}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0] || null;
+                                event.currentTarget.value = "";
+                                setPending((current) => ({ ...current, [slot]: file }));
+                                setUploadError((current) => ({ ...current, [slot]: null }));
+                                setProgress((current) => ({ ...current, [slot]: 0 }));
+                              }}
+                            />
+                          </label>
+
+                          <MiniButton onClick={() => void uploadSlot(slot)} disabled={controlsDisabled || !canUpload}>
+                            {showUploaded ? "Uploaded" : "Upload & Save"}
+                          </MiniButton>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -1238,7 +1467,10 @@ export default function GuestLecturesPage() {
                 email={email}
                 recordId={form.id}
                 slotName="geotaggedPhotos"
-                showRequiredError={false}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText="At least one geotagged photo is required."
                 onStatusChange={setPhotoUploadStatus}
               />
                 </div>
@@ -1247,7 +1479,7 @@ export default function GuestLecturesPage() {
           </SectionCard>
         ) : null}
 
-        {!loading ? (
+        {!loading && !isViewMode ? (
           <SectionCard
             title="Saved Guest Lecture Entries"
             subtitle="Your saved guest lecture records are stored locally and keyed to your signed-in email."
@@ -1258,12 +1490,16 @@ export default function GuestLecturesPage() {
               <div className="space-y-3">
                 {list.map((entry) => {
                   const days = getInclusiveDays(entry.startDate, entry.endDate);
+                  const completedEntry = entry.status === "final";
+                  const entryLocked = isEntryLocked(entry);
                   return (
                     <div key={entry.id} className="rounded-xl border border-border p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <div className="text-sm font-semibold">
-                            {entry.eventName}
+                            <Link href={`/data-entry/guest-lectures/${entry.id}`} className="hover:underline">
+                              {entry.eventName}
+                            </Link>
                           </div>
                           <div className="mt-1 text-sm text-muted-foreground">
                             {entry.academicYear} • {entry.semesterType} Semester
@@ -1312,9 +1548,35 @@ export default function GuestLecturesPage() {
                           </div>
                         </div>
 
-                        <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
-                          Delete Entry
-                        </MiniButton>
+                        <div className="flex items-center gap-2">
+                          {completedEntry ? (
+                            entry.pdfMeta?.url ? (
+                              <a
+                                href={entry.pdfMeta.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
+                              >
+                                Preview
+                              </a>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled
+                                className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
+                              >
+                                Preview
+                              </button>
+                            )
+                          ) : null}
+                          {completedEntry ? (
+                            renderCompletedRequestAction(entry)
+                          ) : (
+                            <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                              Delete Entry
+                            </MiniButton>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1326,4 +1588,8 @@ export default function GuestLecturesPage() {
       </div>
     </div>
   );
+}
+
+export default function GuestLecturesPageRoute() {
+  return <GuestLecturesPage />;
 }

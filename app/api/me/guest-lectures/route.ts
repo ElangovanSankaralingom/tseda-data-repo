@@ -17,6 +17,7 @@ import {
 } from "@/lib/facultyDirectory";
 import {
   computeDueAtISO,
+  isEntryEditable,
   isFutureDatedEntry,
   isWithinDueWindow,
   normalizeStreakState,
@@ -45,6 +46,8 @@ type FacultySelection = {
   savedAtISO?: string | null;
 };
 
+type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
+
 type UploadSlot =
   | "permissionLetter"
   | "brochure"
@@ -66,6 +69,8 @@ type GuestLectureEntry = {
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
   status?: "draft" | "final";
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
   academicYear: string;
   semesterType: string;
   startDate: string;
@@ -220,6 +225,15 @@ function normalizeUploads(value: unknown): Uploads {
   };
 }
 
+function normalizeRequestEditStatus(
+  value: unknown,
+  fallback: RequestEditStatus = "none"
+): RequestEditStatus {
+  return value === "pending" || value === "approved" || value === "rejected" || value === "none"
+    ? value
+    : fallback;
+}
+
 function normalizeEntry(value: unknown): GuestLectureEntry | null {
   if (!value || typeof value !== "object") return null;
 
@@ -258,6 +272,11 @@ function normalizeEntry(value: unknown): GuestLectureEntry | null {
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
     sharedRole: record.sharedRole === "coCoordinator" ? "coCoordinator" : undefined,
     status: record.status === "final" ? "final" : "draft",
+    requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
+    requestEditRequestedAtISO:
+      typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
+        ? record.requestEditRequestedAtISO.trim()
+        : null,
     academicYear: String(record.academicYear ?? "").trim(),
     semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
@@ -519,6 +538,9 @@ export async function POST(request: Request) {
 
     const currentList = await readList(email);
     const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    if (existing && !isEntryEditable(existing)) {
+      return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
+    }
     const now = new Date().toISOString();
     const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
 
@@ -677,6 +699,9 @@ export async function PATCH(request: Request) {
 
     const currentList = await readList(email);
     const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    if (existing && !isEntryEditable(existing)) {
+      return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
+    }
     const now = new Date().toISOString();
 
     const hasAcademicYear = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "academicYear");
@@ -767,6 +792,8 @@ export async function PATCH(request: Request) {
       ...(existing ?? {
         id: entry.id,
         status: "draft",
+        requestEditStatus: "none",
+        requestEditRequestedAtISO: null,
         coordinator,
         coCoordinators: [],
         pdfMeta: null,
@@ -787,6 +814,8 @@ export async function PATCH(request: Request) {
       }),
       id: entry.id,
       status: entry.status === "final" ? "final" : existing?.status ?? "draft",
+      requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
+      requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       academicYear: hasAcademicYear ? entry.academicYear : existing?.academicYear ?? "",
       semesterType: hasSemesterType ? entry.semesterType : existing?.semesterType ?? "",
       startDate: hasStartDate ? entry.startDate : existing?.startDate ?? "",
@@ -867,6 +896,9 @@ export async function DELETE(request: Request) {
 
     const currentList = await readList(email);
     const target = currentList.find((item) => item.id === id) ?? null;
+    if (target && !isEntryEditable(target)) {
+      return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
+    }
 
     await writeList(
       email,

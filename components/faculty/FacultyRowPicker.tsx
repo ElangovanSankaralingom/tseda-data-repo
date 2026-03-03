@@ -34,6 +34,7 @@ type FacultyRowPickerProps = {
   ) => Promise<FacultyRowValue[] | void>;
   facultyOptions: FacultyOption[];
   parentLocked?: boolean;
+  viewOnly?: boolean;
   disableEmails?: string[];
   sectionError?: string;
   showSectionError?: boolean;
@@ -117,6 +118,7 @@ export default function FacultyRowPicker({
   onPersistRow,
   facultyOptions,
   parentLocked = false,
+  viewOnly = false,
   disableEmails = [],
   sectionError,
   showSectionError = false,
@@ -162,10 +164,12 @@ export default function FacultyRowPicker({
   }
 
   function handleAddRow() {
+    if (viewOnly) return;
     updateRows((current) => [...current, createEmptyRow()]);
   }
 
   function handleChangeRow(index: number, nextSelection: FacultySelection) {
+    if (viewOnly) return;
     const rowId = normalizedRows[index]?.id ?? "";
     updateRows((current) =>
       current.map((row, rowIndex) =>
@@ -188,10 +192,12 @@ export default function FacultyRowPicker({
   }
 
   function handleDeleteRow(index: number) {
+    if (viewOnly) return;
     updateRows((current) => current.filter((_, rowIndex) => rowIndex !== index));
   }
 
   async function handleSaveRow(index: number) {
+    if (viewOnly) return;
     const currentRows = normalizeRows(rows);
     const row = currentRows[index];
     const rowId = row?.id ?? "";
@@ -265,9 +271,11 @@ export default function FacultyRowPicker({
           <div className="text-sm font-semibold">{title}</div>
           {helperText ? <div className="mt-1 text-xs text-muted-foreground">{helperText}</div> : null}
         </div>
-        <ActionButton onClick={handleAddRow} disabled={parentLocked}>
-          {addLabel}
-        </ActionButton>
+        {!viewOnly ? (
+          <ActionButton onClick={handleAddRow} disabled={parentLocked}>
+            {addLabel}
+          </ActionButton>
+        ) : null}
       </div>
 
       {showSectionError && sectionError ? <div className="mt-2 text-xs text-red-600">{sectionError}</div> : null}
@@ -283,13 +291,14 @@ export default function FacultyRowPicker({
             const isSaving = !!rowSaving[rowId];
             const isSaved = !!row.isLocked;
             const saveDisabled = parentLocked || !rowEmail || isSaving || isSaved || duplicateCount > 0;
-            const deleteDisabled = parentLocked;
+            const deleteDisabled = parentLocked || viewOnly;
 
             return (
               <div
                 key={rowId}
                 className={cx(
-                  "grid gap-2 rounded-xl px-3 py-2 sm:grid-cols-[1fr_auto_auto] sm:items-end",
+                  "grid gap-2 rounded-xl px-3 py-2",
+                  viewOnly ? "sm:grid-cols-[1fr]" : "sm:grid-cols-[1fr_auto_auto] sm:items-end",
                   row.isLocked && "bg-muted/30 opacity-70"
                 )}
               >
@@ -304,23 +313,27 @@ export default function FacultyRowPicker({
                       options={facultyOptions}
                       disabledEmails={getDisabledEmailsForRow(index)}
                       placeholder={`Search or type ${rowLabelPrefix.toLowerCase()}`}
-                      disabled={parentLocked || !!row.isLocked}
+                      disabled={viewOnly || parentLocked || !!row.isLocked}
                       error={attemptedRowSave[rowId] && !!rowSaveErrors[rowId]}
                     />
                   </div>
                 </div>
 
-                <ActionButton onClick={() => void handleSaveRow(index)} disabled={saveDisabled}>
-                  {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
-                </ActionButton>
+                {!viewOnly ? (
+                  <>
+                    <ActionButton onClick={() => void handleSaveRow(index)} disabled={saveDisabled}>
+                      {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
+                    </ActionButton>
 
-                <ActionButton
-                  variant="danger"
-                  onClick={() => handleDeleteRow(index)}
-                  disabled={deleteDisabled}
-                >
-                  Delete
-                </ActionButton>
+                    <ActionButton
+                      variant="danger"
+                      onClick={() => handleDeleteRow(index)}
+                      disabled={deleteDisabled}
+                    >
+                      Delete
+                    </ActionButton>
+                  </>
+                ) : null}
 
                 {attemptedRowSave[rowId] && rowSaveErrors[rowId] ? (
                   <div className="sm:col-span-3 text-xs text-red-600">{rowSaveErrors[rowId]}</div>

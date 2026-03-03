@@ -17,6 +17,7 @@ import {
 } from "@/lib/facultyDirectory";
 import {
   computeDueAtISO,
+  isEntryEditable,
   isFutureDatedEntry,
   isWithinDueWindow,
   normalizeStreakState,
@@ -45,12 +46,16 @@ type StaffSelection = {
   savedAtISO?: string | null;
 };
 
+type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
+
 type CaseStudyEntry = {
   id: string;
   sharedEntryId?: string;
   sourceEmail?: string;
   sharedRole?: "staffAccompanying";
   status?: "draft" | "final";
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
   academicYear: string;
   semesterType: string;
   startDate: string;
@@ -196,6 +201,15 @@ function buildStaffKey(selection: StaffSelection) {
   return `name:${selection.name.trim().toLowerCase()}`;
 }
 
+function normalizeRequestEditStatus(
+  value: unknown,
+  fallback: RequestEditStatus = "none"
+): RequestEditStatus {
+  return value === "pending" || value === "approved" || value === "rejected" || value === "none"
+    ? value
+    : fallback;
+}
+
 function normalizeEntry(value: unknown): CaseStudyEntry | null {
   if (!value || typeof value !== "object") return null;
 
@@ -239,6 +253,11 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
     sharedRole: record.sharedRole === "staffAccompanying" ? "staffAccompanying" : undefined,
     status: record.status === "final" ? "final" : "draft",
+    requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
+    requestEditRequestedAtISO:
+      typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
+        ? record.requestEditRequestedAtISO.trim()
+        : null,
     academicYear: String(record.academicYear ?? "").trim(),
     semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
@@ -383,7 +402,7 @@ async function upsertSharedTargets(savedEntry: CaseStudyEntry, creatorEmail: str
             sharedEntryId,
             "permissionLetter"
           )
-        : existingTarget?.permissionLetter ?? null;
+        : null;
 
     const travelPlan =
       savedEntry.travelPlan
@@ -394,7 +413,7 @@ async function upsertSharedTargets(savedEntry: CaseStudyEntry, creatorEmail: str
             sharedEntryId,
             "travelPlan"
           )
-        : existingTarget?.travelPlan ?? null;
+        : null;
 
     const geotaggedPhotos =
       savedEntry.geotaggedPhotos.length > 0
@@ -405,7 +424,7 @@ async function upsertSharedTargets(savedEntry: CaseStudyEntry, creatorEmail: str
             sharedEntryId,
             "geotaggedPhotos"
           )
-        : existingTarget?.geotaggedPhotos ?? [];
+        : [];
 
     const clonedEntry: CaseStudyEntry = {
       ...(existingTarget ?? savedEntry),
@@ -572,6 +591,9 @@ export async function POST(request: Request) {
 
     const currentList = await readList(email);
     const existing = currentList.find((item) => item.id === entry.id) ?? null;
+    if (existing && !isEntryEditable(existing)) {
+      return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
+    }
     const now = new Date().toISOString();
     const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
 
@@ -658,6 +680,8 @@ export async function PATCH(request: Request) {
   try {
     const body = (await request.json()) as { email?: string; entry?: unknown };
     const email = normalizeEmail(String(body?.email ?? ""));
+    const entryRecord =
+      body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
     const entry = normalizeEntry(body?.entry);
 
     if (!email) {
@@ -723,17 +747,37 @@ export async function PATCH(request: Request) {
     const currentList = await readList(email);
     const existing =
       currentList.find((item) => item.id === entry.id || item.sharedEntryId === entry.sharedEntryId) ?? null;
+    if (existing && !isEntryEditable(existing)) {
+      return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
+    }
     const now = new Date().toISOString();
     const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
+    const hasPermissionLetter =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "permissionLetter");
+    const hasTravelPlan =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "travelPlan");
+    const hasGeotaggedPhotos =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "geotaggedPhotos");
     const coordinator: StaffSelection = {
       email,
       name: getCanonicalName(email) ?? email.split("@")[0],
     };
+    const nextPermissionLetter = hasPermissionLetter
+      ? (isValidFileMeta(entry.permissionLetter) ? entry.permissionLetter : null)
+      : existing?.permissionLetter ?? null;
+    const nextTravelPlan = hasTravelPlan
+      ? (isValidFileMeta(entry.travelPlan) ? entry.travelPlan : null)
+      : existing?.travelPlan ?? null;
+    const nextGeotaggedPhotos = hasGeotaggedPhotos
+      ? (Array.isArray(entry.geotaggedPhotos) ? entry.geotaggedPhotos : [])
+      : existing?.geotaggedPhotos ?? [];
 
     const savedEntry: CaseStudyEntry = {
       ...(existing ?? {
         id: entry.id,
         status: "draft",
+        requestEditStatus: "none",
+        requestEditRequestedAtISO: null,
         academicYear: "",
         semesterType: "",
         startDate: "",
@@ -758,6 +802,8 @@ export async function PATCH(request: Request) {
       sharedEntryId,
       sourceEmail: email,
       status: entry.status === "final" ? "final" : existing?.status ?? "draft",
+      requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
+      requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       academicYear: entry.academicYear,
       semesterType: entry.semesterType,
       startDate: entry.startDate,
@@ -783,10 +829,9 @@ export async function PATCH(request: Request) {
         entry.status === "final"
           ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
           : null,
-      permissionLetter: isValidFileMeta(entry.permissionLetter) ? entry.permissionLetter : existing?.permissionLetter ?? null,
-      travelPlan: isValidFileMeta(entry.travelPlan) ? entry.travelPlan : existing?.travelPlan ?? null,
-      geotaggedPhotos:
-        entry.geotaggedPhotos.length > 0 ? entry.geotaggedPhotos : existing?.geotaggedPhotos ?? [],
+      permissionLetter: nextPermissionLetter,
+      travelPlan: nextTravelPlan,
+      geotaggedPhotos: nextGeotaggedPhotos,
       streak: buildSavedStreak({
         status: entry.status === "final" ? "final" : existing?.status ?? "draft",
         pdfMeta:
@@ -796,12 +841,9 @@ export async function PATCH(request: Request) {
         startDate: entry.startDate || existing?.startDate || "",
         endDate: entry.endDate || existing?.endDate || "",
         streak: entry.streak ?? existing?.streak,
-        permissionLetter: isValidFileMeta(entry.permissionLetter)
-          ? entry.permissionLetter
-          : existing?.permissionLetter ?? null,
-        travelPlan: isValidFileMeta(entry.travelPlan) ? entry.travelPlan : existing?.travelPlan ?? null,
-        geotaggedPhotos:
-          entry.geotaggedPhotos.length > 0 ? entry.geotaggedPhotos : existing?.geotaggedPhotos ?? [],
+        permissionLetter: nextPermissionLetter,
+        travelPlan: nextTravelPlan,
+        geotaggedPhotos: nextGeotaggedPhotos,
       }),
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
@@ -848,6 +890,9 @@ export async function DELETE(request: Request) {
 
     const currentList = await readList(email);
     const target = currentList.find((item) => item.id === id) ?? null;
+    if (target && !isEntryEditable(target)) {
+      return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
+    }
 
     await writeList(
       email,

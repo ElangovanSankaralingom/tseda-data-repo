@@ -11,9 +11,13 @@ type CaseStudyRecord = {
   id: string;
   status?: "draft" | "final";
   pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
+  permissionLetter?: unknown;
+  travelPlan?: unknown;
+  geotaggedPhotos?: unknown;
   startDate?: string;
   endDate?: string;
   createdAt?: string;
+  updatedAt?: string;
   streak?: unknown;
   requestEditStatus?: string | null;
 };
@@ -45,6 +49,12 @@ async function readList(email: string): Promise<CaseStudyRecord[]> {
   }
 }
 
+async function writeList(email: string, list: CaseStudyRecord[]) {
+  const filePath = getStoreFile(email);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+}
+
 async function getEntryForRecordId(email: string, recordId: string) {
   const safeRecordId = safeName(recordId);
   const list = await readList(email);
@@ -59,6 +69,17 @@ function getRecordIdFromStoredPath(storedPath: string) {
   if (parts[0] !== "uploads" || parts[2] !== "case-studies") return null;
 
   return parts[3] ?? null;
+}
+
+function getSlotFromStoredPath(storedPath: string): Slot | null {
+  const normalized = normalizeStoredPath(storedPath);
+  const parts = normalized.split("/");
+
+  if (parts.length < 6) return null;
+  if (parts[0] !== "uploads" || parts[2] !== "case-studies") return null;
+
+  const slot = parts[4] ?? null;
+  return slot === "permissionLetter" || slot === "travelPlan" || slot === "geotaggedPhotos" ? slot : null;
 }
 
 async function getAuthorizedEmail() {
@@ -179,6 +200,7 @@ export async function DELETE(request: Request) {
     }
 
     const recordId = getRecordIdFromStoredPath(storedPath);
+    const slot = getSlotFromStoredPath(storedPath);
     if (recordId) {
       const existing = await getEntryForRecordId(authorizedEmail, recordId);
       if (existing && !isEntryEditable(existing)) {
@@ -187,6 +209,19 @@ export async function DELETE(request: Request) {
     }
 
     await fs.unlink(path.join(process.cwd(), "public", storedPath)).catch(() => null);
+    if (recordId && slot) {
+      const list = await readList(authorizedEmail);
+      const nextList = list.map((item) =>
+        safeName(String(item?.id ?? "")) === safeName(recordId)
+          ? {
+              ...item,
+              [slot]: slot === "geotaggedPhotos" ? [] : null,
+              updatedAt: new Date().toISOString(),
+            }
+          : item
+      );
+      await writeList(authorizedEmail, nextList);
+    }
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Delete failed";

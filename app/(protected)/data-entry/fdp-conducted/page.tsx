@@ -1,18 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import DateField from "@/components/controls/DateField";
+import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
+import FinalisationBadge from "@/components/entry/FinalisationBadge";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
 import MultiPhotoUpload, { type FileMeta } from "@/components/uploads/MultiPhotoUpload";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
 import {
+  getEditLockState,
   isEntryLockedState,
   isFutureDatedEntry,
-  isNonStreakEntryLocked,
   isWithinRequestEditWindow,
-  remainingEditableDays,
-  remainingDaysFromDueAtISO,
   status as getStreakStatus,
   type StreakState,
 } from "@/lib/gamification";
@@ -37,6 +38,8 @@ type FdpConducted = {
     fileName: string;
     generatedAtISO: string;
   } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
   permissionLetter: FileMeta | null;
   geotaggedPhotos: FileMeta[];
   streak: StreakState;
@@ -167,6 +170,22 @@ function formatFacultyDisplay(selection: FacultyRowValue) {
   return selection.name || selection.email || "-";
 }
 
+function getPrePdfFieldsHash(
+  entry: Pick<FdpConducted, "academicYear" | "semesterType" | "startDate" | "endDate" | "eventName" | "coCoordinators">
+) {
+  return JSON.stringify({
+    academicYear: String(entry.academicYear ?? "").trim(),
+    semesterType: String(entry.semesterType ?? "").trim(),
+    startDate: String(entry.startDate ?? "").trim(),
+    endDate: String(entry.endDate ?? "").trim(),
+    eventName: String(entry.eventName ?? "").trim(),
+    coCoordinators: entry.coCoordinators.map((value) => ({
+      id: String(value.id ?? ""),
+      email: String(value.email ?? "").trim().toLowerCase(),
+    })),
+  });
+}
+
 function getConductedEntryStatus(entry: FdpConducted): FdpConductedEntryStatus {
   const streakStatus = getStreakStatus(entry.streak);
 
@@ -197,6 +216,8 @@ function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
     coordinatorEmail: currentFaculty?.email ?? "",
     coCoordinators: [],
     pdfMeta: null,
+    pdfStale: false,
+    pdfSourceHash: "",
     permissionLetter: null,
     geotaggedPhotos: [],
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
@@ -211,20 +232,6 @@ function isEntryLocked(entry: FdpConducted) {
   }
 
   return isEntryLockedState(entry);
-}
-
-function getNonStreakEditLabel(entry: FdpConducted) {
-  if (isFutureDatedEntry(entry.startDate, entry.endDate) || !entry.createdAt) return null;
-  if (isNonStreakEntryLocked(entry.createdAt)) return "Locked";
-
-  const daysLeft = remainingEditableDays(entry.createdAt);
-  return `Editable for ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
-}
-
-function getRemainingDaysChipClass(remainingDays: number) {
-  if (remainingDays <= 2) return "bg-red-50 text-red-700";
-  if (remainingDays <= 5) return "bg-amber-50 text-amber-700";
-  return "bg-muted text-muted-foreground";
 }
 
 function FlameStatusIcon({ tone }: { tone: "gray" | "color" }) {
@@ -403,12 +410,17 @@ function uploadConductedFileXHR(opts: {
   });
 }
 
-export default function FdpConductedPage() {
+type FdpConductedPageProps = {
+  viewEntryId?: string;
+};
+
+export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [email, setEmail] = useState("");
   const [currentFaculty, setCurrentFaculty] = useState<CurrentFaculty | null>(null);
@@ -430,7 +442,9 @@ export default function FdpConductedPage() {
   });
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
+  const hasHydratedPdfRef = useRef(false);
   const formRef = useRef(form);
+  const isViewMode = !!viewEntryId;
 
   useEffect(() => {
     formRef.current = form;
@@ -533,7 +547,8 @@ export default function FdpConductedPage() {
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const hasPendingFiles = !!pending.permissionLetter || photoUploadStatus.hasPending;
   const hasBusyUploads = busy.permissionLetter || photoUploadStatus.busy;
-  const isDirty = stableStringify(form) !== lastPersistedSnapshot;
+  const prePdfFieldsHash = useMemo(() => getPrePdfFieldsHash(form), [form]);
+  const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const isLocked = !!form.createdAt && isEntryLocked(form);
   const generateReady =
     !!form.academicYear &&
@@ -543,7 +558,25 @@ export default function FdpConductedPage() {
     form.endDate >= form.startDate &&
     !!form.eventName.trim() &&
     !form.coCoordinators.some((value) => !value.isLocked || !value.email.trim());
+  const pdfStale = !!form.pdfMeta && !!form.pdfStale;
+  const canGenerate = form.pdfMeta
+    ? generateReady && !isLocked && pdfStale
+    : generateReady && !isLocked;
   const uploadsVisible = !!form.pdfMeta;
+  const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0;
+  const isComplete = uploadsVisible && generateReady && requiredUploadsComplete;
+  const isDirty = formDirty || hasPendingFiles;
+  useEffect(() => {
+    if (!hasHydratedPdfRef.current) return;
+    const nextPdfStale = !!form.pdfMeta && !!form.pdfSourceHash && prePdfFieldsHash !== form.pdfSourceHash;
+    if ((form.pdfStale ?? false) === nextPdfStale) return;
+    setForm((current) => ({ ...current, pdfStale: nextPdfStale }));
+  }, [form.pdfMeta, form.pdfSourceHash, form.pdfStale, prePdfFieldsHash]);
+  const controlsDisabled = isViewMode || isLocked;
+  const viewedEntry = useMemo(
+    () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
+    [list, viewEntryId]
+  );
   const groupedEntries = useMemo(() => {
     const indexedEntries = list.map((entry, index) => ({ entry, index }));
     const sortChronologically = (
@@ -603,16 +636,38 @@ export default function FdpConductedPage() {
 
   function resetForm() {
     setSubmitted(false);
+    setSubmitAttemptedFinal(false);
     const nextForm = emptyForm(currentFaculty ?? undefined);
+    hasHydratedPdfRef.current = false;
     setForm(nextForm);
     setLastPersistedSnapshot(stableStringify(nextForm));
     resetUploadState();
   }
 
+  function hydrateLoadedEntry(entry: FdpConducted) {
+    const currentHash = getPrePdfFieldsHash(entry);
+
+    if (!entry.pdfMeta) {
+      return {
+        ...entry,
+        pdfStale: false,
+      };
+    }
+
+    return {
+      ...entry,
+      pdfSourceHash: entry.pdfSourceHash || currentHash,
+      pdfStale: false,
+    };
+  }
+
   function openEntry(entry: FdpConducted) {
     setSubmitted(false);
-    setForm(entry);
-    setLastPersistedSnapshot(stableStringify(entry));
+    setSubmitAttemptedFinal(false);
+    const nextEntry = hydrateLoadedEntry(entry);
+    hasHydratedPdfRef.current = false;
+    setForm(nextEntry);
+    setLastPersistedSnapshot(stableStringify(nextEntry));
     resetUploadState();
     setFormOpen(true);
   }
@@ -621,6 +676,23 @@ export default function FdpConductedPage() {
     resetForm();
     setFormOpen(false);
   }
+
+  useEffect(() => {
+    if (loading || !viewedEntry) return;
+
+    setSubmitted(false);
+    setSubmitAttemptedFinal(false);
+    const nextEntry = hydrateLoadedEntry(viewedEntry);
+    hasHydratedPdfRef.current = false;
+    setForm(nextEntry);
+    setLastPersistedSnapshot(stableStringify(nextEntry));
+    resetUploadState();
+  }, [loading, viewedEntry]);
+
+  useEffect(() => {
+    if (!formOpen || isViewMode) return;
+    hasHydratedPdfRef.current = true;
+  }, [formOpen, isViewMode, form.id]);
 
   async function handleCancel() {
     if (hasBusyUploads) {
@@ -686,7 +758,6 @@ export default function FdpConductedPage() {
         coCoordinators: nextRows,
       });
       setForm(persisted);
-      setLastPersistedSnapshot(stableStringify(persisted));
       await refreshList();
       return persisted.coCoordinators;
     } finally {
@@ -703,6 +774,8 @@ export default function FdpConductedPage() {
   }
 
   async function handleDone() {
+    setSubmitAttemptedFinal(true);
+
     if (hasBusyUploads) {
       setToast({ type: "err", msg: "Please wait for upload to finish." });
       setTimeout(() => setToast(null), 1800);
@@ -711,6 +784,12 @@ export default function FdpConductedPage() {
 
     if (hasPendingFiles) {
       setToast({ type: "err", msg: "Please upload the selected file(s) first." });
+      setTimeout(() => setToast(null), 1800);
+      return;
+    }
+
+    if (!isComplete) {
+      setToast({ type: "err", msg: "Complete all required uploads before finishing." });
       setTimeout(() => setToast(null), 1800);
       return;
     }
@@ -727,7 +806,7 @@ export default function FdpConductedPage() {
       return;
     }
 
-    await saveDraftChanges({ closeAfterSave: true });
+    await saveDraftChanges({ closeAfterSave: true, intent: "done" });
   }
 
   async function uploadSlot(slot: "permissionLetter") {
@@ -775,7 +854,6 @@ export default function FdpConductedPage() {
 
       const persisted = await persistProgress(nextForm);
       setForm(persisted);
-      setLastPersistedSnapshot(stableStringify(persisted));
       setPending({ permissionLetter: null });
       setBusy({ permissionLetter: false });
       setProgress({ permissionLetter: 100 });
@@ -815,7 +893,6 @@ export default function FdpConductedPage() {
       };
       const persisted = await persistProgress(nextForm);
       setForm(persisted);
-      setLastPersistedSnapshot(stableStringify(persisted));
       setPending({ permissionLetter: null });
       setBusy({ permissionLetter: false });
       setProgress({ permissionLetter: 0 });
@@ -831,7 +908,7 @@ export default function FdpConductedPage() {
     }
   }
 
-  async function saveDraftChanges(options?: { closeAfterSave?: boolean }) {
+  async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
     if (saveLockRef.current || !isDirty || isLocked) return;
     saveLockRef.current = true;
 
@@ -843,7 +920,7 @@ export default function FdpConductedPage() {
       }
 
       setSaving(true);
-      setSaveIntent("save");
+      setSaveIntent(options?.intent ?? "save");
       const persisted = await persistProgress({
         ...form,
         status: form.status === "final" ? "final" : "draft",
@@ -851,6 +928,7 @@ export default function FdpConductedPage() {
       setForm(persisted);
       setLastPersistedSnapshot(stableStringify(persisted));
       setSubmitted(false);
+      setSubmitAttemptedFinal(false);
       await refreshList();
       if (options?.closeAfterSave) {
         closeForm();
@@ -875,13 +953,13 @@ export default function FdpConductedPage() {
     try {
       setSubmitted(true);
 
-      if (Object.keys(errors).length > 0 || !generateReady) {
+      if (Object.keys(errors).length > 0 || !canGenerate) {
         setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
         setTimeout(() => setToast(null), 1800);
         return;
       }
 
-      if (hasPendingFiles || hasBusyUploads) {
+      if (hasBusyUploads) {
         setToast({ type: "err", msg: "Finish the current uploads before saving." });
         setTimeout(() => setToast(null), 1800);
         return;
@@ -894,6 +972,8 @@ export default function FdpConductedPage() {
         status: form.status === "final" ? "final" : "draft",
         coordinatorName: currentFaculty?.name ?? form.coordinatorName,
         coordinatorEmail: currentFaculty?.email ?? form.coordinatorEmail,
+        pdfStale,
+        pdfSourceHash: form.pdfSourceHash || "",
       };
       const persisted = await persistProgress(draftEntry);
       const response = await fetch(`/api/me/fdp-conducted/${encodeURIComponent(persisted.id)}/pdf`, {
@@ -917,9 +997,15 @@ export default function FdpConductedPage() {
         throw new Error(message);
       }
 
-      const nextEntry = payload?.entry ?? persisted;
+      const nextEntry = {
+        ...(payload?.entry ?? persisted),
+        pdfSourceHash: prePdfFieldsHash,
+        pdfStale: false,
+      };
       setForm(nextEntry);
       setLastPersistedSnapshot(stableStringify(nextEntry));
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
       await refreshList();
       setToast({ type: "ok", msg: "Entry generated." });
       setTimeout(() => setToast(null), 1400);
@@ -1154,26 +1240,30 @@ export default function FdpConductedPage() {
         </div>
 
         <div className="flex gap-2">
-          {formOpen ? (
+          {formOpen && !isViewMode ? (
             <>
-              <MiniButton variant="ghost" onClick={() => void handleCancel()}>
+              <MiniButton
+                variant="ghost"
+                onClick={() => void handleCancel()}
+                disabled={isViewMode || saving || loading || hasBusyUploads || isComplete}
+              >
                 Cancel
               </MiniButton>
               <MiniButton
                 variant="ghost"
                 onClick={() => void saveDraftChanges()}
-                disabled={saving || loading || hasBusyUploads || hasPendingFiles || !isDirty || isLocked}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !isDirty || isComplete || isLocked}
               >
                 {saving && saveIntent === "save" ? "Saving..." : "Save"}
               </MiniButton>
               <MiniButton
                 onClick={() => void handleDone()}
-                disabled={saving || loading || hasBusyUploads || hasPendingFiles || isLocked}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !isComplete || isLocked}
               >
                 {saving && saveIntent === "done" ? "Saving..." : "Done"}
               </MiniButton>
             </>
-          ) : (
+          ) : !isViewMode ? (
             <MiniButton
               onClick={() => {
                 resetForm();
@@ -1183,7 +1273,7 @@ export default function FdpConductedPage() {
             >
               + Add FDP Entry
             </MiniButton>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -1205,9 +1295,9 @@ export default function FdpConductedPage() {
           <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">Loading...</div>
         ) : null}
 
-        {!loading && formOpen ? (
+        {!loading && (formOpen || (isViewMode && !!viewedEntry)) ? (
           <SectionCard
-            title="New FDP Entry"
+            title={isViewMode ? "FDP Entry" : "New FDP Entry"}
             subtitle="Add the entry details and generate the entry to unlock uploads."
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1217,6 +1307,7 @@ export default function FdpConductedPage() {
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.academicYear}
                 />
               </Field>
@@ -1227,6 +1318,7 @@ export default function FdpConductedPage() {
                   onChange={(value) => setForm((current) => ({ ...current, semesterType: value }))}
                   options={SEMESTER_TYPE_DROPDOWN_OPTIONS}
                   placeholder="Select semester type"
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.semesterType}
                 />
               </Field>
@@ -1235,6 +1327,7 @@ export default function FdpConductedPage() {
                 <DateField
                   value={form.startDate}
                   onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.startDate}
                 />
               </Field>
@@ -1247,6 +1340,7 @@ export default function FdpConductedPage() {
                 <DateField
                   value={form.endDate}
                   onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.endDate}
                 />
               </Field>
@@ -1261,11 +1355,13 @@ export default function FdpConductedPage() {
                 <input
                   value={form.eventName}
                   onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
+                  disabled={controlsDisabled}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.eventName
                       ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20",
+                    controlsDisabled && "cursor-not-allowed opacity-60"
                   )}
                 />
               </Field>
@@ -1285,7 +1381,8 @@ export default function FdpConductedPage() {
                 onRowsChange={(rows) => setForm((current) => ({ ...current, coCoordinators: rows }))}
                 onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
                 facultyOptions={FACULTY_OPTIONS}
-                parentLocked={isLocked}
+                parentLocked={controlsDisabled}
+                viewOnly={isViewMode}
                 disableEmails={[form.coordinatorEmail]}
                 sectionError={errors.coCoordinators}
                 showSectionError={submitted}
@@ -1306,27 +1403,21 @@ export default function FdpConductedPage() {
 
             <div className="mt-5 space-y-4">
               <div className="flex flex-wrap gap-2">
-                <MiniButton
-                  onClick={() => void generateEntry()}
-                  disabled={saving || loading || hasBusyUploads || hasPendingFiles || !generateReady || isLocked}
-                >
-                  {saving && saveIntent === "save" ? "Generating..." : "Generate Entry"}
-                </MiniButton>
-                {form.pdfMeta?.url ? (
-                  <a
-                    href={form.pdfMeta.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+                {!isViewMode ? (
+                  <MiniButton
+                    onClick={() => void generateEntry()}
+                    disabled={saving || loading || hasBusyUploads || !canGenerate}
                   >
-                    Download Entry
-                  </a>
-                ) : (
-                  <MiniButton variant="ghost" disabled>
-                    Download Entry
+                    {saving && saveIntent === "save" ? "Generating..." : "Generate Entry"}
                   </MiniButton>
-                )}
+                ) : null}
+                <EntryPdfActions pdfMeta={form.pdfMeta ?? null} disabled={pdfStale} />
               </div>
+              {pdfStale ? (
+                <p className="text-sm text-muted-foreground">
+                  Entry changed. Regenerate PDF to update Preview/Download.
+                </p>
+              ) : null}
               <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
 
               {uploadsVisible ? (
@@ -1334,93 +1425,119 @@ export default function FdpConductedPage() {
                 <div className="space-y-3 rounded-xl border border-border p-4">
                   <div className="text-sm font-semibold">Upload Permission Letter</div>
 
-                  {form.permissionLetter ? (
-                    <div className="text-xs text-muted-foreground">
-                      <a className="underline" href={form.permissionLetter.url} target="_blank" rel="noreferrer">
-                        {form.permissionLetter.fileName}
-                      </a>{" "}
-                      • {(form.permissionLetter.size / (1024 * 1024)).toFixed(2)} MB •{" "}
-                      {new Date(form.permissionLetter.uploadedAt).toLocaleString()}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-muted-foreground">No file uploaded yet.</div>
-                  )}
-
-                  <div className="text-xs text-muted-foreground">
-                    {pending.permissionLetter
-                      ? `Selected: ${pending.permissionLetter.name}`
-                      : form.permissionLetter
-                        ? "Uploaded. Choose a new file only if you want to replace."
-                        : "Select a file to enable Upload & Save."}
-                  </div>
-
-                  {busy.permissionLetter ? (
-                    <div className="space-y-2">
-                      <ProgressBar value={progress.permissionLetter ?? 0} />
-                      <div className="text-xs text-muted-foreground">
-                        {progress.permissionLetter ?? 0}% uploading...
+                  {isViewMode ? (
+                    form.permissionLetter ? (
+                      <div className="space-y-3">
+                        <div className="text-xs text-muted-foreground">
+                          {form.permissionLetter.fileName} • {(form.permissionLetter.size / (1024 * 1024)).toFixed(2)} MB •{" "}
+                          {new Date(form.permissionLetter.uploadedAt).toLocaleString()}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={form.permissionLetter.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                          >
+                            Preview
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  ) : null}
-
-                  {uploadError.permissionLetter ? (
-                    <div className="text-xs text-red-600">{uploadError.permissionLetter}</div>
-                  ) : null}
-
-                  <div className="flex flex-wrap gap-2">
-                    {form.permissionLetter ? (
-                      <>
-                        <a
-                          href={form.permissionLetter.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
-                        >
-                          Preview
-                        </a>
-                        <MiniButton
-                          variant="danger"
-                          onClick={() => void deleteSlot("permissionLetter")}
-                          disabled={busy.permissionLetter || isLocked}
-                        >
-                          Delete
-                        </MiniButton>
-                      </>
-                    ) : null}
-
-                    <label
-                      className={cx(
-                        "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-                        busy.permissionLetter || isLocked
-                          ? "pointer-events-none cursor-not-allowed opacity-60"
-                          : "cursor-pointer transition hover:bg-muted"
+                    ) : (
+                      <div className="text-xs text-muted-foreground">Not uploaded</div>
+                    )
+                  ) : (
+                    <>
+                      {form.permissionLetter ? (
+                        <div className="text-xs text-muted-foreground">
+                          <a className="underline" href={form.permissionLetter.url} target="_blank" rel="noreferrer">
+                            {form.permissionLetter.fileName}
+                          </a>{" "}
+                          • {(form.permissionLetter.size / (1024 * 1024)).toFixed(2)} MB •{" "}
+                          {new Date(form.permissionLetter.uploadedAt).toLocaleString()}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">No file uploaded yet.</div>
                       )}
-                    >
-                      Choose file
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                        onChange={(event) => {
-                          const nextFile = event.target.files?.[0] || null;
-                          event.currentTarget.value = "";
-                          setPending({ permissionLetter: nextFile });
-                          setUploadError({ permissionLetter: null });
-                          setProgress({ permissionLetter: 0 });
-                        }}
-                      />
-                    </label>
 
-                    <MiniButton
-                      onClick={() => void uploadSlot("permissionLetter")}
-                      disabled={!pending.permissionLetter || busy.permissionLetter || isLocked}
-                    >
-                      {form.permissionLetter && !pending.permissionLetter ? "Uploaded" : "Upload & Save"}
-                    </MiniButton>
-                  </div>
+                      <div className="text-xs text-muted-foreground">
+                        {pending.permissionLetter
+                          ? `Selected: ${pending.permissionLetter.name}`
+                          : form.permissionLetter
+                            ? "Uploaded. Choose a new file only if you want to replace."
+                            : "Select a file to enable Upload & Save."}
+                      </div>
+
+                      {busy.permissionLetter ? (
+                        <div className="space-y-2">
+                          <ProgressBar value={progress.permissionLetter ?? 0} />
+                          <div className="text-xs text-muted-foreground">
+                            {progress.permissionLetter ?? 0}% uploading...
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {uploadError.permissionLetter ? (
+                        <div className="text-xs text-red-600">{uploadError.permissionLetter}</div>
+                      ) : null}
+
+                      <div className="flex flex-wrap gap-2">
+                        {form.permissionLetter ? (
+                          <>
+                            <a
+                              href={form.permissionLetter.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                            >
+                              Preview
+                            </a>
+                            <MiniButton
+                              variant="danger"
+                              onClick={() => void deleteSlot("permissionLetter")}
+                              disabled={busy.permissionLetter || isLocked}
+                            >
+                              Delete
+                            </MiniButton>
+                          </>
+                        ) : null}
+
+                        <label
+                          className={cx(
+                            "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
+                            busy.permissionLetter || isLocked
+                              ? "pointer-events-none cursor-not-allowed opacity-60"
+                              : "cursor-pointer transition hover:bg-muted"
+                          )}
+                        >
+                          Choose file
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                            disabled={controlsDisabled}
+                            onChange={(event) => {
+                              const nextFile = event.target.files?.[0] || null;
+                              event.currentTarget.value = "";
+                              setPending({ permissionLetter: nextFile });
+                              setUploadError({ permissionLetter: null });
+                              setProgress({ permissionLetter: 0 });
+                            }}
+                          />
+                        </label>
+
+                        <MiniButton
+                          onClick={() => void uploadSlot("permissionLetter")}
+                          disabled={!pending.permissionLetter || busy.permissionLetter || isLocked}
+                        >
+                          {form.permissionLetter && !pending.permissionLetter ? "Uploaded" : "Upload & Save"}
+                        </MiniButton>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                <MultiPhotoUpload
+              <MultiPhotoUpload
                   key={form.id}
                   title="Geotagged Photos"
                   value={form.geotaggedPhotos}
@@ -1454,10 +1571,11 @@ export default function FdpConductedPage() {
                   email={email}
                   recordId={form.id}
                   slotName="geotaggedPhotos"
-                  showRequiredError={submitted && !!errors.geotaggedPhotos}
+                  showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
                   requiredErrorText={errors.geotaggedPhotos}
                   onStatusChange={setPhotoUploadStatus}
-                  disabled={isLocked}
+                  disabled={controlsDisabled}
+                  viewOnly={isViewMode}
                 />
               </div>
               ) : null}
@@ -1465,7 +1583,7 @@ export default function FdpConductedPage() {
           </SectionCard>
         ) : null}
 
-        {!loading && !formOpen ? (
+        {!loading && !formOpen && !isViewMode ? (
           <SectionCard
             title="Saved FDP Conducted Entries"
             subtitle="Your saved records are stored locally and keyed by your signed-in email."
@@ -1484,8 +1602,7 @@ export default function FdpConductedPage() {
                         !Number.isNaN(createdTime) &&
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
-                      const entryLocked = isEntryLocked(entry);
-                      const editLabel = getNonStreakEditLabel(entry);
+                      const lockState = getEditLockState(entry);
 
                       return (
                         <div key={entry.id} className="rounded-xl border border-border p-4">
@@ -1494,10 +1611,12 @@ export default function FdpConductedPage() {
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`D${index + 1}`}</span>
-                                  <div className="text-base font-semibold">{formatFacultyDisplay({
+                                  <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {formatFacultyDisplay({
                                     name: entry.coordinatorName,
                                     email: entry.coordinatorEmail,
-                                  })}</div>
+                                  })}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">
                                   {entry.coCoordinators.length > 0
@@ -1507,16 +1626,32 @@ export default function FdpConductedPage() {
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  {editLabel ? <span>{editLabel}</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
-                                <MiniButton onClick={() => openEntry(entry)} disabled={entryLocked}>Edit</MiniButton>
-                                <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                  Delete entry
-                                </MiniButton>
-                                {renderLockedRequestAction(entry)}
+                              <div className="flex shrink-0 flex-col items-end gap-2">
+                                <FinalisationBadge lockState={lockState} />
+                                <div className="flex items-center gap-2">
+                                  {entry.pdfMeta?.url ? (
+                                    <a
+                                      href={entry.pdfMeta.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
+                                    >
+                                      Preview
+                                    </a>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
+                                    >
+                                      Preview
+                                    </button>
+                                  )}
+                                  {renderLockedRequestAction(entry)}
+                                </div>
                               </div>
                             </div>
 
@@ -1560,8 +1695,8 @@ export default function FdpConductedPage() {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
+                      const lockState = getEditLockState(entry);
                       const entryLocked = isEntryLocked(entry);
-                      const remainingDays = remainingDaysFromDueAtISO(entry.streak.dueAtISO);
 
                       return (
                         <div key={entry.id} className="rounded-xl border border-border p-4">
@@ -1571,10 +1706,12 @@ export default function FdpConductedPage() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`P${index + 1}`}</span>
                                   <FlameStatusIcon tone="gray" />
-                                  <div className="text-base font-semibold">{formatFacultyDisplay({
+                                  <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {formatFacultyDisplay({
                                     name: entry.coordinatorName,
                                     email: entry.coordinatorEmail,
-                                  })}</div>
+                                  })}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">
                                   {entry.coCoordinators.length > 0
@@ -1584,24 +1721,18 @@ export default function FdpConductedPage() {
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  <span
-                                    className={cx(
-                                      "rounded-full px-2 py-0.5 font-medium",
-                                      getRemainingDaysChipClass(remainingDays)
-                                    )}
-                                  >
-                                    {remainingDays} days left
-                                  </span>
-                                  {entryLocked ? <span>Locked</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
-                                <MiniButton onClick={() => openEntry(entry)} disabled={entryLocked}>Edit</MiniButton>
-                                <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                  Delete entry
-                                </MiniButton>
-                                {renderLockedRequestAction(entry)}
+                              <div className="flex shrink-0 flex-col items-end gap-2">
+                                <FinalisationBadge lockState={lockState} />
+                                <div className="flex items-center gap-2">
+                                  <MiniButton onClick={() => openEntry(entry)} disabled={entryLocked}>Edit</MiniButton>
+                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                    Delete entry
+                                  </MiniButton>
+                                  {renderLockedRequestAction(entry)}
+                                </div>
                               </div>
                             </div>
 
@@ -1651,6 +1782,7 @@ export default function FdpConductedPage() {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
+                      const lockState = getEditLockState(entry);
                       const entryLocked = isEntryLocked(entry);
 
                       return (
@@ -1661,10 +1793,12 @@ export default function FdpConductedPage() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`C${index + 1}`}</span>
                                   <FlameStatusIcon tone="color" />
-                                  <div className="text-base font-semibold">{formatFacultyDisplay({
+                                  <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {formatFacultyDisplay({
                                     name: entry.coordinatorName,
                                     email: entry.coordinatorEmail,
-                                  })}</div>
+                                  })}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">
                                   {entry.coCoordinators.length > 0
@@ -1674,16 +1808,18 @@ export default function FdpConductedPage() {
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  {entryLocked ? <span>Locked</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
-                                <MiniButton onClick={() => openEntry(entry)} disabled={entryLocked}>Edit</MiniButton>
-                                <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                  Delete entry
-                                </MiniButton>
-                                {renderLockedRequestAction(entry)}
+                              <div className="flex shrink-0 flex-col items-end gap-2">
+                                <FinalisationBadge lockState={lockState} />
+                                <div className="flex items-center gap-2">
+                                  <MiniButton onClick={() => openEntry(entry)} disabled={entryLocked}>Edit</MiniButton>
+                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                    Delete entry
+                                  </MiniButton>
+                                  {renderLockedRequestAction(entry)}
+                                </div>
                               </div>
                             </div>
 
@@ -1733,8 +1869,8 @@ export default function FdpConductedPage() {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
+                      const lockState = getEditLockState(entry);
                       const entryLocked = isEntryLocked(entry);
-                      const editLabel = getNonStreakEditLabel(entry);
 
                       return (
                         <div key={entry.id} className="rounded-xl border border-border p-4">
@@ -1744,10 +1880,12 @@ export default function FdpConductedPage() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`G${index + 1}`}</span>
                                   <SlashedFireIcon />
-                                  <div className="text-base font-semibold">{formatFacultyDisplay({
+                                  <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {formatFacultyDisplay({
                                     name: entry.coordinatorName,
                                     email: entry.coordinatorEmail,
-                                  })}</div>
+                                  })}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">
                                   {entry.coCoordinators.length > 0
@@ -1757,16 +1895,18 @@ export default function FdpConductedPage() {
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  {editLabel ? <span>{editLabel}</span> : null}
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
-                                <MiniButton onClick={() => openEntry(entry)} disabled={entryLocked}>Edit</MiniButton>
-                                <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                  Delete entry
-                                </MiniButton>
-                                {renderLockedRequestAction(entry)}
+                              <div className="flex shrink-0 flex-col items-end gap-2">
+                                <FinalisationBadge lockState={lockState} />
+                                <div className="flex items-center gap-2">
+                                  <MiniButton onClick={() => openEntry(entry)} disabled={entryLocked}>Edit</MiniButton>
+                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                    Delete entry
+                                  </MiniButton>
+                                  {renderLockedRequestAction(entry)}
+                                </div>
                               </div>
                             </div>
 
@@ -1811,4 +1951,8 @@ export default function FdpConductedPage() {
       </div>
     </div>
   );
+}
+
+export default function FdpConductedPageRoute() {
+  return <FdpConductedPage />;
 }

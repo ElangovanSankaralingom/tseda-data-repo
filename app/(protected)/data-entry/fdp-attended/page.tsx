@@ -1,17 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CurrencyField from "@/components/controls/CurrencyField";
+import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import DateField from "@/components/controls/DateField";
+import FinalisationBadge from "@/components/entry/FinalisationBadge";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import {
+  getEditLockState,
   isEntryLockedState,
   isFutureDatedEntry,
-  isNonStreakEntryLocked,
   isWithinRequestEditWindow,
-  remainingEditableDays,
-  remainingDaysFromDueAtISO,
   status as getStreakStatus,
   type StreakState,
 } from "@/lib/gamification";
@@ -44,6 +45,8 @@ type FdpAttended = {
     fileName: string;
     generatedAtISO: string;
   } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
   permissionLetter: FileMeta | null;
   completionCertificate: FileMeta | null;
   streak: StreakState;
@@ -102,6 +105,8 @@ function emptyForm(): FdpAttended {
     organisingBody: "",
     supportAmount: null,
     pdfMeta: null,
+    pdfStale: false,
+    pdfSourceHash: "",
     permissionLetter: null,
     completionCertificate: null,
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
@@ -155,6 +160,28 @@ function getInclusiveDays(startDate: string, endDate: string) {
   return Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
 }
 
+function getPrePdfFieldsHash(entry: Pick<
+  FdpAttended,
+  | "academicYear"
+  | "semesterType"
+  | "startDate"
+  | "endDate"
+  | "programName"
+  | "organisingBody"
+  | "supportAmount"
+>) {
+  return JSON.stringify({
+    academicYear: String(entry.academicYear ?? "").trim(),
+    semesterType: String(entry.semesterType ?? "").trim(),
+    startDate: String(entry.startDate ?? "").trim(),
+    endDate: String(entry.endDate ?? "").trim(),
+    programName: String(entry.programName ?? "").trim(),
+    organisingBody: String(entry.organisingBody ?? "").trim(),
+    supportAmount:
+      typeof entry.supportAmount === "number" && Number.isFinite(entry.supportAmount) ? entry.supportAmount : null,
+  });
+}
+
 function formatDisplayDate(value: string) {
   if (!isISODate(value)) return "-";
   return new Date(`${value}T00:00:00Z`).toLocaleDateString();
@@ -205,20 +232,6 @@ function isEntryLocked(entry: FdpAttended) {
   }
 
   return isEntryLockedState(entry);
-}
-
-function getNonStreakEditLabel(entry: FdpAttended) {
-  if (isFutureDatedEntry(entry.startDate, entry.endDate) || !entry.createdAt) return null;
-  if (isNonStreakEntryLocked(entry.createdAt)) return "Locked";
-
-  const daysLeft = remainingEditableDays(entry.createdAt);
-  return `Editable for ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
-}
-
-function getRemainingDaysChipClass(remainingDays: number) {
-  if (remainingDays <= 2) return "bg-red-50 text-red-700";
-  if (remainingDays <= 5) return "bg-amber-50 text-amber-700";
-  return "bg-muted text-muted-foreground";
 }
 
 function FlameStatusIcon({ tone }: { tone: "gray" | "color" }) {
@@ -400,7 +413,11 @@ function uploadFdpFileXHR(opts: {
   });
 }
 
-export default function FdpAttendedPage() {
+type FdpAttendedPageProps = {
+  viewEntryId?: string;
+};
+
+export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -409,6 +426,7 @@ export default function FdpAttendedPage() {
   const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [list, setList] = useState<FdpAttended[]>([]);
   const [form, setForm] = useState<FdpAttended>(emptyForm);
@@ -431,8 +449,16 @@ export default function FdpAttendedPage() {
     completionCertificate: null,
   });
   const saveLockRef = useRef(false);
-  const entryId = searchParams.get("id")?.trim() ?? "";
-  const isEditing = formOpen || !!entryId;
+  const hasHydratedPdfRef = useRef(false);
+  const queryEntryId = searchParams.get("id")?.trim() ?? "";
+  const activeEntryId = viewEntryId?.trim() || queryEntryId;
+  const isViewMode = !!viewEntryId;
+  const viewedEntry = useMemo(
+    () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
+    [activeEntryId, list]
+  );
+  const isEditing = formOpen || !!activeEntryId;
+  const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
 
   useEffect(() => {
     (async () => {
@@ -504,13 +530,15 @@ export default function FdpAttendedPage() {
     return nextErrors;
   }, [form]);
 
-  const isEligibleFuture = isFutureDatedEntry(form.startDate, form.endDate);
   const hasPendingFiles = !!pending.permissionLetter || !!pending.completionCertificate;
   const hasBusyUploads = busy.permissionLetter || busy.completionCertificate;
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
+  const prePdfFieldsHash = useMemo(() => getPrePdfFieldsHash(form), [form]);
+  const pdfStale = !!form.pdfMeta && !!form.pdfStale;
   const uploadsVisible = !!form.pdfMeta;
-  const isDirty = stableStringify(form) !== lastPersistedSnapshot;
+  const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const isLocked = !!form.createdAt && isEntryLocked(form);
+  const controlsDisabled = isViewMode || isLocked;
   const generateReady =
     !!form.academicYear &&
     !!form.semesterType &&
@@ -519,6 +547,18 @@ export default function FdpAttendedPage() {
     form.endDate >= form.startDate &&
     !!form.programName.trim() &&
     !!form.organisingBody.trim();
+  const canGenerate = form.pdfMeta
+    ? generateReady && !isLocked && pdfStale
+    : generateReady && !isLocked;
+  const requiredUploadsComplete = !!form.permissionLetter && !!form.completionCertificate;
+  const isComplete = uploadsVisible && generateReady && requiredUploadsComplete;
+  const isDirty = formDirty || hasPendingFiles;
+  useEffect(() => {
+    if (!hasHydratedPdfRef.current) return;
+    const nextPdfStale = !!form.pdfMeta && !!form.pdfSourceHash && prePdfFieldsHash !== form.pdfSourceHash;
+    if ((form.pdfStale ?? false) === nextPdfStale) return;
+    setForm((current) => ({ ...current, pdfStale: nextPdfStale }));
+  }, [form.pdfMeta, form.pdfSourceHash, form.pdfStale, prePdfFieldsHash]);
   const groupedEntries = useMemo(() => {
     const indexedEntries = list.map((entry, index) => ({ entry, index }));
     const sortChronologically = (
@@ -620,16 +660,38 @@ export default function FdpAttendedPage() {
 
   function resetForm() {
     setSubmitted(false);
+    setSubmitAttemptedFinal(false);
     const nextForm = emptyForm();
+    hasHydratedPdfRef.current = false;
     setForm(nextForm);
     setLastPersistedSnapshot(stableStringify(nextForm));
     resetUploadState();
   }
 
+  function hydrateLoadedEntry(entry: FdpAttended) {
+    const currentHash = getPrePdfFieldsHash(entry);
+
+    if (!entry.pdfMeta) {
+      return {
+        ...entry,
+        pdfStale: false,
+      };
+    }
+
+    return {
+      ...entry,
+      pdfSourceHash: entry.pdfSourceHash || currentHash,
+      pdfStale: false,
+    };
+  }
+
   function openEntry(entry: FdpAttended) {
     setSubmitted(false);
-    setForm(entry);
-    setLastPersistedSnapshot(stableStringify(entry));
+    setSubmitAttemptedFinal(false);
+    const nextEntry = hydrateLoadedEntry(entry);
+    hasHydratedPdfRef.current = false;
+    setForm(nextEntry);
+    setLastPersistedSnapshot(stableStringify(nextEntry));
     resetUploadState();
     setFormOpen(true);
   }
@@ -651,6 +713,8 @@ export default function FdpAttendedPage() {
   }
 
   async function handleDone() {
+    setSubmitAttemptedFinal(true);
+
     if (hasBusyUploads) {
       setToast({ type: "err", msg: "Please wait for upload to finish." });
       setTimeout(() => setToast(null), 1800);
@@ -659,6 +723,12 @@ export default function FdpAttendedPage() {
 
     if (hasPendingFiles) {
       setToast({ type: "err", msg: "Please upload the selected file(s) first." });
+      setTimeout(() => setToast(null), 1800);
+      return;
+    }
+
+    if (!isComplete) {
+      setToast({ type: "err", msg: "Complete all required uploads before finishing." });
       setTimeout(() => setToast(null), 1800);
       return;
     }
@@ -674,22 +744,30 @@ export default function FdpAttendedPage() {
       return;
     }
 
-    await saveDraftChanges({ closeAfterSave: true });
+    await saveDraftChanges({ closeAfterSave: true, intent: "done" });
   }
 
   useEffect(() => {
     if (loading) return;
-    if (!entryId) return;
+    if (!activeEntryId) return;
 
-    const nextEntry = list.find((item) => item.id === entryId);
-    if (!nextEntry) return;
+    const loadedEntry = list.find((item) => item.id === activeEntryId);
+    if (!loadedEntry) return;
 
     setSubmitted(false);
+    setSubmitAttemptedFinal(false);
+    const nextEntry = hydrateLoadedEntry(loadedEntry);
+    hasHydratedPdfRef.current = false;
     setForm(nextEntry);
     setLastPersistedSnapshot(stableStringify(nextEntry));
     resetUploadState();
     setFormOpen(true);
-  }, [entryId, list, loading]);
+  }, [activeEntryId, list, loading]);
+
+  useEffect(() => {
+    if (!formOpen || isViewMode) return;
+    hasHydratedPdfRef.current = true;
+  }, [formOpen, isViewMode, form.id]);
 
   async function deleteStoredFile(storedPath: string) {
     await fetch("/api/me/fdp-file", {
@@ -749,7 +827,6 @@ export default function FdpAttendedPage() {
       const persisted = await persistProgress(nextForm);
 
       setForm(persisted);
-      setLastPersistedSnapshot(stableStringify(persisted));
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
       setProgress((current) => ({ ...current, [slot]: 100 }));
@@ -795,7 +872,7 @@ export default function FdpAttendedPage() {
     }
   }
 
-  async function saveDraftChanges(options?: { closeAfterSave?: boolean }) {
+  async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
     if (saveLockRef.current || !isDirty || isLocked) return;
     saveLockRef.current = true;
 
@@ -807,7 +884,7 @@ export default function FdpAttendedPage() {
       }
 
       setSaving(true);
-      setSaveIntent("save");
+      setSaveIntent(options?.intent ?? "save");
       const persisted = await persistProgress({
         ...form,
         status: form.status === "final" ? "final" : "draft",
@@ -815,6 +892,7 @@ export default function FdpAttendedPage() {
       setForm(persisted);
       setLastPersistedSnapshot(stableStringify(persisted));
       setSubmitted(false);
+      setSubmitAttemptedFinal(false);
       await refreshList();
       if (options?.closeAfterSave) {
         closeForm();
@@ -841,13 +919,13 @@ export default function FdpAttendedPage() {
     try {
       setSubmitted(true);
 
-      if (Object.keys(errors).length > 0 || !generateReady) {
+      if (Object.keys(errors).length > 0 || !canGenerate) {
         setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
         setTimeout(() => setToast(null), 1800);
         return;
       }
 
-      if (hasPendingFiles || hasBusyUploads) {
+      if (hasBusyUploads) {
         setToast({ type: "err", msg: "Finish the current uploads before saving." });
         setTimeout(() => setToast(null), 1800);
         return;
@@ -858,6 +936,8 @@ export default function FdpAttendedPage() {
       const draftEntry: FdpAttended = {
         ...form,
         status: form.status === "final" ? "final" : "draft",
+        pdfStale,
+        pdfSourceHash: form.pdfSourceHash || "",
       };
       const persisted = await persistProgress(draftEntry);
       const response = await fetch(`/api/me/fdp-attended/${encodeURIComponent(persisted.id)}/pdf`, {
@@ -881,9 +961,15 @@ export default function FdpAttendedPage() {
         throw new Error(message);
       }
 
-      const nextEntry = payload?.entry ?? persisted;
+      const nextEntry = {
+        ...(payload?.entry ?? persisted),
+        pdfSourceHash: prePdfFieldsHash,
+        pdfStale: false,
+      };
       setForm(nextEntry);
       setLastPersistedSnapshot(stableStringify(nextEntry));
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
       setToast({ type: "ok", msg: "Entry generated." });
       await refreshList();
       setTimeout(() => setToast(null), 1400);
@@ -911,7 +997,7 @@ export default function FdpAttendedPage() {
       }
 
       setList((current) => current.filter((item) => item.id !== id));
-      if (entryId === id) {
+      if (activeEntryId === id) {
         closeForm();
       }
       setToast({ type: "ok", msg: "Entry deleted." });
@@ -1120,26 +1206,30 @@ export default function FdpAttendedPage() {
         </div>
 
         <div className="flex gap-2">
-          {formOpen ? (
+          {showForm && !isViewMode ? (
             <>
-              <MiniButton variant="ghost" onClick={() => void handleCancel()}>
+              <MiniButton
+                variant="ghost"
+                onClick={() => void handleCancel()}
+                disabled={isViewMode || saving || loading || hasBusyUploads || isComplete}
+              >
                 Cancel
               </MiniButton>
               <MiniButton
                 variant="ghost"
                 onClick={() => void saveDraftChanges()}
-                disabled={saving || loading || hasBusyUploads || hasPendingFiles || !isDirty || isLocked}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !isDirty || isComplete || isLocked}
               >
                 {saving && saveIntent === "save" ? "Saving..." : "Save"}
               </MiniButton>
               <MiniButton
                 onClick={() => void handleDone()}
-                disabled={saving || loading || hasBusyUploads || hasPendingFiles || isLocked}
+                disabled={isViewMode || saving || loading || hasBusyUploads || !isComplete || isLocked}
               >
-                {saving && saveIntent === "save" ? "Saving..." : "Done"}
+                {saving && saveIntent === "done" ? "Saving..." : "Done"}
               </MiniButton>
             </>
-          ) : (
+          ) : !showForm ? (
             <MiniButton
               onClick={() => {
                 resetForm();
@@ -1150,7 +1240,7 @@ export default function FdpAttendedPage() {
             >
               + Add FDP Entry
             </MiniButton>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -1172,9 +1262,9 @@ export default function FdpAttendedPage() {
           <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">Loading...</div>
         ) : null}
 
-        {!loading && formOpen ? (
+        {!loading && showForm ? (
           <SectionCard
-            title="New FDP Entry"
+            title={isViewMode ? "FDP Entry" : "New FDP Entry"}
             subtitle="Add the entry details and upload the required documents."
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1184,6 +1274,7 @@ export default function FdpAttendedPage() {
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.academicYear}
                 />
               </Field>
@@ -1194,6 +1285,7 @@ export default function FdpAttendedPage() {
                   onChange={(value) => setForm((current) => ({ ...current, semesterType: value }))}
                   options={SEMESTER_TYPE_DROPDOWN_OPTIONS}
                   placeholder="Select semester type"
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.semesterType}
                 />
               </Field>
@@ -1202,6 +1294,7 @@ export default function FdpAttendedPage() {
                 <DateField
                   value={form.startDate}
                   onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.startDate}
                 />
               </Field>
@@ -1214,6 +1307,7 @@ export default function FdpAttendedPage() {
                 <DateField
                   value={form.endDate}
                   onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.endDate}
                 />
               </Field>
@@ -1228,9 +1322,11 @@ export default function FdpAttendedPage() {
                 <input
                   value={form.programName}
                   onChange={(event) => setForm((current) => ({ ...current, programName: event.target.value }))}
+                  disabled={controlsDisabled}
                   className={cx(
                     "w-full rounded-lg border px-3 py-2 text-sm",
-                    submitted && errors.programName ? "border-red-300" : "border-border"
+                    submitted && errors.programName ? "border-red-300" : "border-border",
+                    controlsDisabled && "cursor-not-allowed opacity-60"
                   )}
                 />
               </Field>
@@ -1239,9 +1335,11 @@ export default function FdpAttendedPage() {
                 <input
                   value={form.organisingBody}
                   onChange={(event) => setForm((current) => ({ ...current, organisingBody: event.target.value }))}
+                  disabled={controlsDisabled}
                   className={cx(
                     "w-full rounded-lg border px-3 py-2 text-sm",
-                    submitted && errors.organisingBody ? "border-red-300" : "border-border"
+                    submitted && errors.organisingBody ? "border-red-300" : "border-border",
+                    controlsDisabled && "cursor-not-allowed opacity-60"
                   )}
                 />
               </Field>
@@ -1259,6 +1357,7 @@ export default function FdpAttendedPage() {
                       supportAmount: value === "" ? null : Number(value),
                     }))
                   }
+                  disabled={controlsDisabled}
                   error={submitted && !!errors.supportAmount}
                   placeholder="15000"
                 />
@@ -1267,27 +1366,21 @@ export default function FdpAttendedPage() {
 
             <div className="mt-5 space-y-4">
               <div className="flex flex-wrap gap-2">
-                <MiniButton
-                  onClick={() => void generateEntry()}
-                  disabled={saving || loading || hasBusyUploads || hasPendingFiles || !generateReady || isLocked}
-                >
-                  {saving && saveIntent === "save" ? "Generating..." : "Generate Entry"}
-                </MiniButton>
-                {form.pdfMeta?.url ? (
-                  <a
-                    href={form.pdfMeta.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+                {!isViewMode ? (
+                  <MiniButton
+                    onClick={() => void generateEntry()}
+                    disabled={saving || loading || hasBusyUploads || !canGenerate}
                   >
-                    Download Entry
-                  </a>
-                ) : (
-                  <MiniButton variant="ghost" disabled>
-                    Download Entry
+                    {saving && saveIntent === "save" ? "Generating..." : "Generate Entry"}
                   </MiniButton>
-                )}
+                ) : null}
+                <EntryPdfActions pdfMeta={form.pdfMeta ?? null} disabled={pdfStale} />
               </div>
+              {pdfStale ? (
+                <p className="text-sm text-muted-foreground">
+                  Entry changed. Regenerate PDF to update Preview/Download.
+                </p>
+              ) : null}
               <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
               {uploadsVisible ? (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1303,90 +1396,111 @@ export default function FdpAttendedPage() {
                 const slotProgress = progress[slot] ?? 0;
                 const slotError = uploadError[slot];
                 const showUploaded = !!meta && !pendingFile;
-                const canUploadAndSave = !!pendingFile && !slotBusy && !showUploaded && !isLocked;
+                const canUploadAndSave = !!pendingFile && !slotBusy && !isLocked && !isViewMode;
 
                 return (
                   <div key={slot} className="space-y-3 rounded-xl border border-border p-4">
                     <div className="text-sm font-semibold">{label}</div>
 
-                    {meta ? (
-                      <div className="text-xs text-muted-foreground">
-                        <a className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                          {meta.fileName}
-                        </a>{" "}
-                        • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
-                      </div>
+                    {isViewMode ? (
+                      meta ? (
+                        <div className="space-y-3">
+                          <div className="text-xs text-muted-foreground">
+                            {meta.fileName} • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <a
+                              href={meta.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                            >
+                              Preview
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">Not uploaded</div>
+                      )
                     ) : (
-                      <div className={cx("text-xs", submitted ? "text-red-600" : "text-muted-foreground")}>
-                        {submitted ? (
-                          errors[slot] || "This upload is mandatory."
+                      <>
+                        {meta ? (
+                          <div className="text-xs text-muted-foreground">
+                            <a className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                              {meta.fileName}
+                            </a>{" "}
+                            • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
+                          </div>
                         ) : (
-                          "No file uploaded yet."
+                          <div className={cx("text-xs", submitAttemptedFinal ? "text-red-600" : "text-muted-foreground")}>
+                            {submitAttemptedFinal ? errors[slot] || "This upload is mandatory." : "No file uploaded yet."}
+                          </div>
                         )}
-                      </div>
-                    )}
 
-                    <div className="text-xs text-muted-foreground">
-                      {pendingFile
-                        ? `Selected: ${pendingFile.name}`
-                        : meta
-                        ? "Uploaded. Choose a new file only if you want to replace."
-                        : "Select a file to enable Upload & Save."}
-                    </div>
+                        <div className="text-xs text-muted-foreground">
+                          {pendingFile
+                            ? `Selected: ${pendingFile.name}`
+                            : meta
+                              ? "Uploaded. Choose a new file and upload to replace it."
+                              : "Select a file to enable Upload & Save."}
+                        </div>
 
-                    {slotBusy ? (
-                      <div className="space-y-2">
-                        <ProgressBar value={slotProgress} />
-                        <div className="text-xs text-muted-foreground">{slotProgress}% uploading...</div>
-                      </div>
-                    ) : null}
+                        {slotBusy ? (
+                          <div className="space-y-2">
+                            <ProgressBar value={slotProgress} />
+                            <div className="text-xs text-muted-foreground">{slotProgress}% uploading...</div>
+                          </div>
+                        ) : null}
 
-                    {slotError ? <div className="text-xs text-red-600">{slotError}</div> : null}
+                        {slotError ? <div className="text-xs text-red-600">{slotError}</div> : null}
 
-                    <div className="flex flex-wrap gap-2">
-                      {meta ? (
-                        <>
-                          <a
-                            href={meta.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                        <div className="flex flex-wrap gap-2">
+                          {meta ? (
+                            <>
+                              <a
+                                href={meta.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                              >
+                                Preview
+                              </a>
+                              <MiniButton variant="danger" onClick={() => void deleteSlot(slot)} disabled={slotBusy || isLocked}>
+                                Delete
+                              </MiniButton>
+                            </>
+                          ) : null}
+
+                          <label
+                            className={cx(
+                              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
+                              slotBusy || isLocked
+                                ? "pointer-events-none cursor-not-allowed opacity-60"
+                                : "cursor-pointer transition hover:bg-muted"
+                            )}
                           >
-                            Preview
-                          </a>
-                          <MiniButton variant="danger" onClick={() => void deleteSlot(slot)} disabled={slotBusy || isLocked}>
-                            Delete
+                            Choose file
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                              disabled={controlsDisabled}
+                              onChange={(event) => {
+                                const nextFile = event.target.files?.[0] || null;
+                                event.currentTarget.value = "";
+                                setPending((current) => ({ ...current, [slot]: nextFile }));
+                                setUploadError((current) => ({ ...current, [slot]: null }));
+                                setProgress((current) => ({ ...current, [slot]: 0 }));
+                              }}
+                            />
+                          </label>
+
+                          <MiniButton onClick={() => void uploadSlot(slot)} disabled={!canUploadAndSave}>
+                            {showUploaded ? "Uploaded" : "Upload & Save"}
                           </MiniButton>
-                        </>
-                      ) : null}
-
-                      <label
-                        className={cx(
-                          "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-                          slotBusy || isLocked
-                            ? "pointer-events-none cursor-not-allowed opacity-60"
-                            : "cursor-pointer transition hover:bg-muted"
-                        )}
-                      >
-                        Choose file
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                          onChange={(event) => {
-                            const nextFile = event.target.files?.[0] || null;
-                            event.currentTarget.value = "";
-                            setPending((current) => ({ ...current, [slot]: nextFile }));
-                            setUploadError((current) => ({ ...current, [slot]: null }));
-                            setProgress((current) => ({ ...current, [slot]: 0 }));
-                          }}
-                        />
-                      </label>
-
-                      <MiniButton onClick={() => void uploadSlot(slot)} disabled={!canUploadAndSave}>
-                        {showUploaded ? "Uploaded" : "Upload & Save"}
-                      </MiniButton>
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -1415,8 +1529,7 @@ export default function FdpAttendedPage() {
                         !Number.isNaN(createdTime) &&
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
-                      const entryLocked = isEntryLocked(entry);
-                      const editLabel = getNonStreakEditLabel(entry);
+                      const lockState = getEditLockState(entry);
 
                       return (
                         <div key={entry.id} className="rounded-xl border border-border p-4">
@@ -1425,31 +1538,41 @@ export default function FdpAttendedPage() {
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`D${index + 1}`}</span>
-                                  <div className="text-base font-semibold">{entry.programName}</div>
+                                  <Link href={`/data-entry/fdp-attended/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {entry.programName}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{entry.organisingBody}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  {editLabel ? <span>{editLabel}</span> : null}
                                 </div>
                               </div>
 
-                              {!(entryId && entry.id === entryId) ? (
-                                <div className="flex items-center gap-2">
-                                  <MiniButton
-                                    onClick={() => {
-                                      openEntry(entry);
-                                      router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                    }}
-                                    disabled={entryLocked}
-                                  >
-                                    Edit
-                                  </MiniButton>
-                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                    Delete entry
-                                  </MiniButton>
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    {entry.pdfMeta?.url ? (
+                                      <a
+                                        href={entry.pdfMeta.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
+                                      >
+                                        Preview
+                                      </a>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
+                                      >
+                                        Preview
+                                      </button>
+                                    )}
+                                    {renderLockedRequestAction(entry)}
+                                  </div>
                                 </div>
                               ) : null}
                             </div>
@@ -1499,8 +1622,8 @@ export default function FdpAttendedPage() {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
+                      const lockState = getEditLockState(entry);
                       const entryLocked = isEntryLocked(entry);
-                      const remainingDays = remainingDaysFromDueAtISO(entry.streak.dueAtISO);
 
                       return (
                         <div key={entry.id} className="rounded-xl border border-border p-4">
@@ -1510,39 +1633,35 @@ export default function FdpAttendedPage() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`P${index + 1}`}</span>
                                   <FlameStatusIcon tone="gray" />
-                                  <div className="text-base font-semibold">{entry.programName}</div>
+                                  <Link href={`/data-entry/fdp-attended/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {entry.programName}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{entry.organisingBody}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  <span
-                                    className={cx(
-                                      "rounded-full px-2 py-0.5 font-medium",
-                                      getRemainingDaysChipClass(remainingDays)
-                                    )}
-                                  >
-                                    {remainingDays} days left
-                                  </span>
-                                  {entryLocked ? <span>Locked</span> : null}
                                 </div>
                               </div>
 
-                              {!(entryId && entry.id === entryId) ? (
-                                <div className="flex items-center gap-2">
-                                  <MiniButton
-                                    onClick={() => {
-                                      openEntry(entry);
-                                      router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                    }}
-                                    disabled={entryLocked}
-                                  >
-                                    Edit
-                                  </MiniButton>
-                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                    Delete entry
-                                  </MiniButton>
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    <MiniButton
+                                      onClick={() => {
+                                        openEntry(entry);
+                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                      }}
+                                      disabled={entryLocked}
+                                    >
+                                      Edit
+                                    </MiniButton>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                      Delete entry
+                                    </MiniButton>
+                                    {renderLockedRequestAction(entry)}
+                                  </div>
                                 </div>
                               ) : null}
                             </div>
@@ -1602,6 +1721,7 @@ export default function FdpAttendedPage() {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
+                      const lockState = getEditLockState(entry);
                       const entryLocked = isEntryLocked(entry);
 
                       return (
@@ -1612,31 +1732,35 @@ export default function FdpAttendedPage() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`C${index + 1}`}</span>
                                   <FlameStatusIcon tone="color" />
-                                  <div className="text-base font-semibold">{entry.programName}</div>
+                                  <Link href={`/data-entry/fdp-attended/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {entry.programName}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{entry.organisingBody}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  {entryLocked ? <span>Locked</span> : null}
                                 </div>
                               </div>
 
-                              {!(entryId && entry.id === entryId) ? (
-                                <div className="flex items-center gap-2">
-                                  <MiniButton
-                                    onClick={() => {
-                                      openEntry(entry);
-                                      router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                    }}
-                                    disabled={entryLocked}
-                                  >
-                                    Edit
-                                  </MiniButton>
-                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                    Delete entry
-                                  </MiniButton>
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    <MiniButton
+                                      onClick={() => {
+                                        openEntry(entry);
+                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                      }}
+                                      disabled={entryLocked}
+                                    >
+                                      Edit
+                                    </MiniButton>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                      Delete entry
+                                    </MiniButton>
+                                    {renderLockedRequestAction(entry)}
+                                  </div>
                                 </div>
                               ) : null}
                             </div>
@@ -1696,8 +1820,8 @@ export default function FdpAttendedPage() {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
+                      const lockState = getEditLockState(entry);
                       const entryLocked = isEntryLocked(entry);
-                      const editLabel = getNonStreakEditLabel(entry);
 
                       return (
                         <div key={entry.id} className="rounded-xl border border-border p-4">
@@ -1707,31 +1831,35 @@ export default function FdpAttendedPage() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-mono text-muted-foreground">{`G${index + 1}`}</span>
                                   <SlashedFireIcon />
-                                  <div className="text-base font-semibold">{entry.programName}</div>
+                                  <Link href={`/data-entry/fdp-attended/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                    {entry.programName}
+                                  </Link>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{entry.organisingBody}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                   <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
                                   {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                  {editLabel ? <span>{editLabel}</span> : null}
                                 </div>
                               </div>
 
-                              {!(entryId && entry.id === entryId) ? (
-                                <div className="flex items-center gap-2">
-                                  <MiniButton
-                                    onClick={() => {
-                                      openEntry(entry);
-                                      router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                    }}
-                                    disabled={entryLocked}
-                                  >
-                                    Edit
-                                  </MiniButton>
-                                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                                    Delete entry
-                                  </MiniButton>
-                                  {renderLockedRequestAction(entry)}
+                              {!(activeEntryId && entry.id === activeEntryId) ? (
+                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                  <FinalisationBadge lockState={lockState} />
+                                  <div className="flex items-center gap-2">
+                                    <MiniButton
+                                      onClick={() => {
+                                        openEntry(entry);
+                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                      }}
+                                      disabled={entryLocked}
+                                    >
+                                      Edit
+                                    </MiniButton>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                      Delete entry
+                                    </MiniButton>
+                                    {renderLockedRequestAction(entry)}
+                                  </div>
                                 </div>
                               ) : null}
                             </div>
@@ -1786,4 +1914,8 @@ export default function FdpAttendedPage() {
       </div>
     </div>
   );
+}
+
+export default function FdpAttendedPageRoute() {
+  return <FdpAttendedPage />;
 }

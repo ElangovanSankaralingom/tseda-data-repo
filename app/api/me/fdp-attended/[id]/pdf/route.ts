@@ -38,6 +38,8 @@ type EntryRecord = {
   organisingBody?: string;
   supportAmount?: number | null;
   pdfMeta?: PdfMeta | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string | null;
   permissionLetter?: FileMeta | null;
   completionCertificate?: FileMeta | null;
   streak?: unknown;
@@ -75,6 +77,19 @@ async function writeList(email: string, list: EntryRecord[]) {
 
 function hasCompletedUploads(entry: EntryRecord) {
   return !!entry.permissionLetter?.storedPath && !!entry.completionCertificate?.storedPath;
+}
+
+function getPrePdfFieldsHash(entry: EntryRecord) {
+  return JSON.stringify({
+    academicYear: String(entry.academicYear ?? "").trim(),
+    semesterType: String(entry.semesterType ?? "").trim(),
+    startDate: String(entry.startDate ?? "").trim(),
+    endDate: String(entry.endDate ?? "").trim(),
+    programName: String(entry.programName ?? "").trim(),
+    organisingBody: String(entry.organisingBody ?? "").trim(),
+    supportAmount:
+      typeof entry.supportAmount === "number" && Number.isFinite(entry.supportAmount) ? entry.supportAmount : null,
+  });
 }
 
 export async function POST(_: Request, context: { params: Promise<{ id: string }> }) {
@@ -158,6 +173,8 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     ...entry,
     status: "final",
     pdfMeta,
+    pdfSourceHash: getPrePdfFieldsHash(entry),
+    pdfStale: false,
     streak: updatedStreak,
     updatedAt: new Date().toISOString(),
   };

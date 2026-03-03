@@ -17,9 +17,12 @@ type FdpAttendedRecord = {
   id: string;
   status?: "draft" | "final";
   pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
+  permissionLetter?: unknown;
+  completionCertificate?: unknown;
   startDate?: string;
   endDate?: string;
   createdAt?: string;
+  updatedAt?: string;
   streak?: unknown;
   requestEditStatus?: string | null;
 };
@@ -42,6 +45,12 @@ async function readList(email: string): Promise<FdpAttendedRecord[]> {
   } catch {
     return [];
   }
+}
+
+async function writeList(email: string, list: FdpAttendedRecord[]) {
+  await fs.mkdir(STORE_ROOT, { recursive: true });
+  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
 }
 
 async function getAuthorizedEmail() {
@@ -96,6 +105,17 @@ function getRecordIdFromStoredPath(storedPath: string) {
   if (parts[1] !== "fdp-attended") return null;
 
   return parts[2] ?? null;
+}
+
+function getSlotFromStoredPath(storedPath: string) {
+  const normalized = path.posix.normalize(storedPath).replace(/^\/+/, "");
+  const parts = normalized.split("/");
+
+  if (parts.length < 5) return null;
+  if (parts[1] !== "fdp-attended") return null;
+
+  const slot = parts[3] ?? null;
+  return slot === "permissionLetter" || slot === "completionCertificate" ? slot : null;
 }
 
 export async function POST(request: Request) {
@@ -183,6 +203,7 @@ export async function DELETE(request: Request) {
 
   try {
     const recordId = getRecordIdFromStoredPath(storedPath);
+    const slot = getSlotFromStoredPath(storedPath);
     if (recordId) {
       const existing = await getEntryForRecordId(email, recordId);
       if (existing && !isEntryEditable(existing)) {
@@ -192,6 +213,19 @@ export async function DELETE(request: Request) {
 
     const resolved = resolveOwnedStoredPath(email, storedPath);
     await fs.unlink(resolved.absolutePath).catch(() => null);
+    if (recordId && slot) {
+      const list = await readList(email);
+      const nextList = list.map((item) =>
+        sanitizeSegment(String(item?.id ?? "")) === sanitizeSegment(recordId)
+          ? {
+              ...item,
+              [slot]: null,
+              updatedAt: new Date().toISOString(),
+            }
+          : item
+      );
+      await writeList(email, nextList);
+    }
     return NextResponse.json({ ok: true, storedPath: resolved.normalized });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid storedPath";
