@@ -1,6 +1,7 @@
 "use client";
 
-import { isWithinRequestEditWindow } from "@/lib/entryLock";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { isWithinRequestEditWindow } from "@/lib/entries/lock";
 
 type RequestEditStatus = "none" | "pending" | "approved" | "rejected" | undefined;
 
@@ -29,26 +30,18 @@ export default function RequestEditAction({
 
   if (currentStatus === "approved") {
     return (
-      <button
-        type="button"
-        disabled
-        className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-      >
+      <ActionButton disabled>
         Approved
-      </button>
+      </ActionButton>
     );
   }
 
   if (currentStatus === "pending" || requesting) {
     return (
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          disabled
-          className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border px-3 text-sm opacity-60"
-        >
+        <ActionButton disabled>
           Request Sent
-        </button>
+        </ActionButton>
         {canCancelRequest ? (
           <button
             type="button"
@@ -64,13 +57,9 @@ export default function RequestEditAction({
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={onRequest}
-        className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
-      >
+      <ActionButton variant="ghost" onClick={onRequest}>
         Request Edit
-      </button>
+      </ActionButton>
       {currentStatus === "rejected" ? (
         <span className="text-xs text-muted-foreground">Request was rejected</span>
       ) : null}

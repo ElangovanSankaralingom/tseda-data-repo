@@ -1,0 +1,94 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { nowISTTimestampISO } from "@/lib/gamification";
+import type { RequestEditableEntry } from "@/lib/entries/types";
+
+type UseRequestEditOptions<TEntry extends RequestEditableEntry> = {
+  setItems: Dispatch<SetStateAction<TEntry[]>>;
+  persistRequest: (entry: TEntry) => Promise<TEntry>;
+  persistCancel: (entry: TEntry) => Promise<TEntry>;
+  onSuccess?: (message: string) => void;
+  onError?: (message: string) => void;
+};
+
+export function useRequestEdit<TEntry extends RequestEditableEntry>({
+  setItems,
+  persistRequest,
+  persistCancel,
+  onSuccess,
+  onError,
+}: UseRequestEditOptions<TEntry>) {
+  const [requestingIds, setRequestingIds] = useState<Record<string, boolean>>({});
+  const requestingIdsRef = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    requestingIdsRef.current = requestingIds;
+  }, [requestingIds]);
+
+  const requestEdit = useCallback(
+    async (entry: TEntry) => {
+      if (requestingIdsRef.current[entry.id] || entry.requestEditStatus === "pending") {
+        return;
+      }
+
+      const optimisticEntry = {
+        ...entry,
+        requestEditStatus: "pending" as const,
+        requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
+      };
+
+      setRequestingIds((current) => ({ ...current, [entry.id]: true }));
+      setItems((current) => current.map((item) => (item.id === entry.id ? optimisticEntry : item)));
+
+      try {
+        const persisted = await persistRequest(optimisticEntry);
+        setItems((current) => current.map((item) => (item.id === entry.id ? persisted : item)));
+        onSuccess?.("Request sent.");
+      } catch (error) {
+        setItems((current) => current.map((item) => (item.id === entry.id ? entry : item)));
+        const message = error instanceof Error ? error.message : "Request failed.";
+        onError?.(message);
+      } finally {
+        setRequestingIds((current) => ({ ...current, [entry.id]: false }));
+      }
+    },
+    [onError, onSuccess, persistRequest, setItems]
+  );
+
+  const cancelRequestEdit = useCallback(
+    async (entry: TEntry) => {
+      if (requestingIdsRef.current[entry.id]) {
+        return;
+      }
+
+      const optimisticEntry = {
+        ...entry,
+        requestEditStatus: "none" as const,
+        requestEditRequestedAtISO: null,
+      };
+
+      setRequestingIds((current) => ({ ...current, [entry.id]: true }));
+      setItems((current) => current.map((item) => (item.id === entry.id ? optimisticEntry : item)));
+
+      try {
+        const persisted = await persistCancel(entry);
+        setItems((current) => current.map((item) => (item.id === entry.id ? persisted : item)));
+        onSuccess?.("Request cancelled.");
+      } catch (error) {
+        setItems((current) => current.map((item) => (item.id === entry.id ? entry : item)));
+        const message = error instanceof Error ? error.message : "Cancel request failed.";
+        onError?.(message);
+      } finally {
+        setRequestingIds((current) => ({ ...current, [entry.id]: false }));
+      }
+    },
+    [onError, onSuccess, persistCancel, setItems]
+  );
+
+  return {
+    requestingIds,
+    requestEdit,
+    cancelRequestEdit,
+  };
+}
