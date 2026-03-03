@@ -3,6 +3,7 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   generateEntryPdfBytes,
   storeEntryPdf,
@@ -15,8 +16,6 @@ import {
   normalizeStreakState,
   nowISTTimestampISO,
 } from "@/lib/gamification";
-
-const STORE_ROOT = path.join(process.cwd(), "data", "fdp-conducted");
 
 type FileMeta = {
   fileName: string;
@@ -53,19 +52,19 @@ type EntryRecord = {
   updatedAt?: string;
 };
 
-function sanitizeSegment(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
+function safeEmailDir(email: string) {
+  return normalizeEmail(email).replace(/[^a-z0-9@._-]/g, "_");
 }
 
 async function getAuthorizedEmail() {
   const session = await getServerSession(authOptions);
-  const email = session?.user?.email?.toLowerCase() ?? "";
+  const email = normalizeEmail(session?.user?.email ?? "");
   if (!email.endsWith("@tce.edu")) return null;
   return email;
 }
 
 async function readList(email: string): Promise<EntryRecord[]> {
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = path.join(process.cwd(), ".data", "users", safeEmailDir(email), "fdp-conducted.json");
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = JSON.parse(raw);
@@ -76,8 +75,8 @@ async function readList(email: string): Promise<EntryRecord[]> {
 }
 
 async function writeList(email: string, list: EntryRecord[]) {
-  await fs.mkdir(STORE_ROOT, { recursive: true });
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = path.join(process.cwd(), ".data", "users", safeEmailDir(email), "fdp-conducted.json");
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
 }
 
