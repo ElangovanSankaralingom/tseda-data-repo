@@ -7,6 +7,7 @@ import FacultySelect, { type FacultySelection } from "@/components/controls/Facu
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import MultiPhotoUpload from "@/components/uploads/MultiPhotoUpload";
 import { FACULTY } from "@/lib/facultyDirectory";
+import { nowISTTimestampISO } from "@/lib/gamification";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -25,14 +26,20 @@ type FileMeta = {
 };
 
 type StaffSelection = {
+  id?: string;
   name: string;
   email: string;
+  isLocked?: boolean;
+  savedAtISO?: string | null;
 };
 
 type UploadSlot = "permissionLetter" | "travelPlan";
 
 type CaseStudyEntry = {
   id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: "staffAccompanying";
   academicYear: string;
   semesterType: "Odd" | "Even" | "";
   startDate: string;
@@ -67,6 +74,7 @@ const SEMESTER_TYPE_OPTIONS = [
 ] as const;
 
 const FACULTY_OPTIONS = FACULTY;
+const DEBUG_SAVE_FACULTY = false;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -126,7 +134,7 @@ function buildStaffKey(selection: StaffSelection) {
 }
 
 function emptyStaff(): StaffSelection {
-  return { name: "", email: "" };
+  return { id: uuid(), name: "", email: "", isLocked: false, savedAtISO: null };
 }
 
 function emptyForm(currentFaculty?: FacultySelection): CaseStudyEntry {
@@ -161,7 +169,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-white/70 p-5 dark:bg-black/20">
+    <div className="rounded-2xl border border-border bg-white/70 p-5">
       <div>
         <h2 className="text-base font-semibold">{title}</h2>
         {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
@@ -210,7 +218,7 @@ function MiniButton({
   const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
   const activeCls =
     variant === "danger"
-      ? "border-border text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
+      ? "border-border text-red-600 transition hover:bg-red-50"
       : variant === "ghost"
       ? "border-border transition hover:bg-muted"
       : "border-foreground bg-foreground text-background transition hover:opacity-90";
@@ -288,7 +296,9 @@ export default function CaseStudiesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [attemptedSectionSave, setAttemptedSectionSave] = useState(false);
+  const [attemptedRowSave, setAttemptedRowSave] = useState<Record<string, boolean>>({});
+  const [rowSaveErrors, setRowSaveErrors] = useState<Record<string, string | null>>({});
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [email, setEmail] = useState("");
   const [currentFaculty, setCurrentFaculty] = useState<FacultySelection>(emptyStaff);
@@ -311,6 +321,7 @@ export default function CaseStudiesPage() {
     travelPlan: null,
   });
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
+  const [staffRowStatus, setStaffRowStatus] = useState<Record<string, { saving: boolean }>>({});
   const saveLockRef = useRef(false);
 
   useEffect(() => {
@@ -352,53 +363,53 @@ export default function CaseStudiesPage() {
     })();
   }, []);
 
-  const errors = useMemo(() => {
+  function buildEntryErrors(entry: CaseStudyEntry) {
     const nextErrors: Record<string, string> = {};
 
-    if (!ACADEMIC_YEAR_OPTIONS.includes(form.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
+    if (!ACADEMIC_YEAR_OPTIONS.includes(entry.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
       nextErrors.academicYear = "Academic year is required.";
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.some((option) => option.value === form.semesterType)) {
+    if (!SEMESTER_TYPE_OPTIONS.some((option) => option.value === entry.semesterType)) {
       nextErrors.semesterType = "Semester type is required.";
     }
 
-    if (!isISODate(form.startDate)) {
+    if (!isISODate(entry.startDate)) {
       nextErrors.startDate = "Starting date is required.";
     } else {
-      const academicYearRange = getAcademicYearRange(form.academicYear);
-      if (academicYearRange && (form.startDate < academicYearRange.start || form.startDate > academicYearRange.end)) {
-        nextErrors.startDate = `Starting date must fall within ${form.academicYear} (${academicYearRange.label}).`;
+      const academicYearRange = getAcademicYearRange(entry.academicYear);
+      if (academicYearRange && (entry.startDate < academicYearRange.start || entry.startDate > academicYearRange.end)) {
+        nextErrors.startDate = `Starting date must fall within ${entry.academicYear} (${academicYearRange.label}).`;
       }
     }
 
-    if (!isISODate(form.endDate)) {
+    if (!isISODate(entry.endDate)) {
       nextErrors.endDate = "Ending date is required.";
-    } else if (isISODate(form.startDate) && form.endDate < form.startDate) {
+    } else if (isISODate(entry.startDate) && entry.endDate < entry.startDate) {
       nextErrors.endDate = "Ending date must be on or after starting date.";
     }
 
-    if (!form.placeOfVisit.trim()) {
+    if (!entry.placeOfVisit.trim()) {
       nextErrors.placeOfVisit = "Place of visit is required.";
     }
 
-    if (!form.purposeOfVisit.trim()) {
+    if (!entry.purposeOfVisit.trim()) {
       nextErrors.purposeOfVisit = "Purpose of visit is required.";
     }
 
-    if (form.staffAccompanying.length === 0) {
+    if (entry.staffAccompanying.length === 0) {
       nextErrors.staffAccompanying = "Add at least one staff member.";
     }
 
     const duplicateKeys = new Map<string, number>();
-    form.staffAccompanying.forEach((staff) => {
+    entry.staffAccompanying.forEach((staff) => {
       const key = buildStaffKey(staff);
       if (key !== "name:") {
         duplicateKeys.set(key, (duplicateKeys.get(key) ?? 0) + 1);
       }
     });
 
-    form.staffAccompanying.forEach((staff, index) => {
+    entry.staffAccompanying.forEach((staff, index) => {
       if (!staff.name.trim()) {
         nextErrors[`staffAccompanying.${index}`] = "Staff member is required.";
         return;
@@ -410,35 +421,37 @@ export default function CaseStudiesPage() {
       }
     });
 
-    const normalizedStudentYear = normalizeStudentYear(form.studentYear);
+    const normalizedStudentYear = normalizeStudentYear(entry.studentYear);
     if (!normalizedStudentYear) {
       nextErrors.studentYear = "Year is required.";
     }
 
-    if (normalizedStudentYear && !isSemesterAllowed(normalizedStudentYear, form.semesterNumber ?? undefined)) {
+    if (normalizedStudentYear && !isSemesterAllowed(normalizedStudentYear, entry.semesterNumber ?? undefined)) {
       nextErrors.semesterNumber = "Semester is required.";
     }
 
-    if (form.amountSupport !== null) {
-      if (!Number.isFinite(form.amountSupport) || form.amountSupport < 0) {
+    if (entry.amountSupport !== null) {
+      if (!Number.isFinite(entry.amountSupport) || entry.amountSupport < 0) {
         nextErrors.amountSupport = "Invalid amount.";
       }
     }
 
-    if (!form.permissionLetter) {
+    if (!entry.permissionLetter) {
       nextErrors.permissionLetter = "Permission letter is mandatory.";
     }
 
-    if (!form.travelPlan) {
+    if (!entry.travelPlan) {
       nextErrors.travelPlan = "Travel plan is mandatory.";
     }
 
-    if (form.geotaggedPhotos.length === 0) {
+    if (entry.geotaggedPhotos.length === 0) {
       nextErrors.geotaggedPhotos = "At least one geotagged photo is mandatory.";
     }
 
     return nextErrors;
-  }, [form]);
+  }
+
+  const errors = useMemo(() => buildEntryErrors(form), [form]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeStudentYear(form.studentYear);
@@ -463,8 +476,11 @@ export default function CaseStudiesPage() {
   }
 
   function resetForm() {
-    setSubmitted(false);
+    setAttemptedSectionSave(false);
+    setAttemptedRowSave({});
+    setRowSaveErrors({});
     setForm(emptyForm(currentFaculty));
+    setStaffRowStatus({});
     setPending({
       permissionLetter: null,
       travelPlan: null,
@@ -519,6 +535,57 @@ export default function CaseStudiesPage() {
     }
 
     setList(Array.isArray(items) ? (items as CaseStudyEntry[]) : []);
+  }
+
+  async function parseApiError(response: Response, fallback: string) {
+    const text = await response.text();
+    let message = `${fallback} (${response.status})`;
+    let payload: unknown = null;
+
+    try {
+      payload = text ? JSON.parse(text) : null;
+      if (
+        payload &&
+        typeof payload === "object" &&
+        "error" in payload &&
+        typeof (payload as { error?: unknown }).error === "string"
+      ) {
+        message = `${(payload as { error: string }).error} (${response.status})`;
+      }
+    } catch {
+      payload = null;
+    }
+
+    return { message, payload };
+  }
+
+  function buildRowSaveEntry(index: number) {
+    const savedRows = form.staffAccompanying.filter((staff, staffIndex) => {
+      if (staffIndex === index) return false;
+      const rowEmail = staff.email.trim().toLowerCase();
+      return !!(staff.isLocked && rowEmail);
+    });
+
+    const currentRow = form.staffAccompanying[index];
+    const included = new Map<string, StaffSelection>();
+    const savedAtISO = nowISTTimestampISO();
+
+    for (const staff of [...savedRows, currentRow]) {
+      const rowEmail = staff?.email?.trim().toLowerCase() ?? "";
+      if (!rowEmail) continue;
+      included.set(rowEmail, {
+        ...staff,
+        email: rowEmail,
+        isLocked: true,
+        savedAtISO: staff.savedAtISO ?? savedAtISO,
+      });
+    }
+
+    return {
+      ...form,
+      coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
+      staffAccompanying: Array.from(included.values()),
+    };
   }
 
   async function uploadSlot(slot: UploadSlot) {
@@ -609,7 +676,7 @@ export default function CaseStudiesPage() {
     saveLockRef.current = true;
 
     try {
-      setSubmitted(true);
+      setAttemptedSectionSave(true);
 
       if (Object.keys(errors).length > 0) {
         setToast({ type: "err", msg: "Complete all mandatory fields before saving." });
@@ -633,10 +700,10 @@ export default function CaseStudiesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, entry: entryToSave }),
       });
-      const payload = await response.json();
+      const { message } = await parseApiError(response, "Save failed");
 
       if (!response.ok) {
-        throw new Error(payload?.error || "Save failed.");
+        throw new Error(message);
       }
 
       await refreshList(email);
@@ -646,6 +713,175 @@ export default function CaseStudiesPage() {
       setFormOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Save failed.";
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
+    } finally {
+      setSaving(false);
+      saveLockRef.current = false;
+    }
+  }
+
+  function validateRowForFacultySave(entryDraft: CaseStudyEntry, row: StaffSelection) {
+    const selectedEmail = row.email.trim().toLowerCase();
+    if (!selectedEmail) {
+      return { ok: false, error: "Select a faculty member first." };
+    }
+
+    const matchingFaculty = FACULTY_OPTIONS.find((faculty) => faculty.email.trim().toLowerCase() === selectedEmail);
+    if (!matchingFaculty) {
+      return { ok: false, error: "Select a listed faculty member." };
+    }
+
+    const duplicateCount = entryDraft.staffAccompanying.filter(
+      (staff) => staff.email.trim().toLowerCase() === selectedEmail
+    ).length;
+    if (duplicateCount > 1) {
+      return { ok: false, error: "This faculty is already selected in another row." };
+    }
+
+    if (!ACADEMIC_YEAR_OPTIONS.includes(entryDraft.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
+      return { ok: false, error: "Select academic year first." };
+    }
+
+    if (!SEMESTER_TYPE_OPTIONS.some((option) => option.value === entryDraft.semesterType)) {
+      return { ok: false, error: "Select semester type first." };
+    }
+
+    if (!isISODate(entryDraft.startDate)) {
+      return { ok: false, error: "Select a valid starting date first." };
+    }
+
+    const academicYearRange = getAcademicYearRange(entryDraft.academicYear);
+    if (
+      academicYearRange &&
+      (entryDraft.startDate < academicYearRange.start || entryDraft.startDate > academicYearRange.end)
+    ) {
+      return { ok: false, error: `Starting date must fall within ${entryDraft.academicYear}.` };
+    }
+
+    if (!isISODate(entryDraft.endDate) || entryDraft.endDate < entryDraft.startDate) {
+      return { ok: false, error: "Select a valid ending date first." };
+    }
+
+    return { ok: true, error: null };
+  }
+
+  async function saveFacultyRow(rowId: string, index: number) {
+    const staff = form.staffAccompanying[index];
+    const selectedEmail = staff?.email?.trim().toLowerCase() ?? "";
+
+    if (!rowId || !selectedEmail) {
+      return;
+    }
+
+    const entryToSave = buildRowSaveEntry(index);
+    const rowValidation = validateRowForFacultySave(entryToSave, staff);
+    setAttemptedRowSave((current) => ({ ...current, [rowId]: true }));
+
+    if (DEBUG_SAVE_FACULTY) {
+      console.log("[case-studies][save-faculty]", {
+        rowId,
+        selectedEmail,
+        selectedName: staff.name,
+        entryId: form.id,
+        sharedEntryId: form.sharedEntryId ?? null,
+        disabled:
+          !selectedEmail ||
+          !!staffRowStatus[rowId]?.saving ||
+          !!staff.isLocked,
+        payload: {
+          id: entryToSave.id,
+          sharedEntryId: entryToSave.sharedEntryId ?? null,
+          academicYear: entryToSave.academicYear,
+          semesterType: entryToSave.semesterType,
+          startDate: entryToSave.startDate,
+          endDate: entryToSave.endDate,
+          staffAccompanying: entryToSave.staffAccompanying.map((item) => ({
+            name: item.name,
+            email: item.email,
+          })),
+        },
+      });
+    }
+
+    if (!rowValidation.ok) {
+      setRowSaveErrors((current) => ({ ...current, [rowId]: rowValidation.error }));
+      return;
+    }
+
+    setRowSaveErrors((current) => ({ ...current, [rowId]: null }));
+
+    if (saveLockRef.current) return;
+    saveLockRef.current = true;
+
+    setStaffRowStatus((current) => ({
+      ...current,
+      [rowId]: {
+        ...(current[rowId] ?? { saved: false }),
+        saving: true,
+      },
+    }));
+
+    try {
+      setSaving(true);
+      const response = await fetch("/api/me/case-studies", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, entry: entryToSave }),
+      });
+      const { payload, message } = await parseApiError(response, "Save faculty failed");
+
+      if (!response.ok) {
+        throw new Error(message);
+      }
+
+      const savedEntry = payload as CaseStudyEntry;
+      await refreshList(email);
+      setForm((current) => ({
+        ...current,
+        sharedEntryId: savedEntry.sharedEntryId,
+        sourceEmail: savedEntry.sourceEmail,
+        coordinator: savedEntry.coordinator,
+        createdAt: savedEntry.createdAt,
+        updatedAt: savedEntry.updatedAt,
+        staffAccompanying: current.staffAccompanying.map((item) => {
+          const savedStaff =
+            savedEntry.staffAccompanying.find(
+              (candidate) => candidate.email.trim().toLowerCase() === item.email.trim().toLowerCase()
+            ) ?? null;
+
+          return savedStaff
+            ? {
+                ...item,
+                id: savedStaff.id ?? item.id,
+                name: savedStaff.name,
+                email: savedStaff.email,
+                isLocked: !!savedStaff.isLocked,
+                savedAtISO: savedStaff.savedAtISO ?? null,
+              }
+            : item;
+        }),
+      }));
+
+      setStaffRowStatus((current) => ({
+        ...current,
+        [rowId]: {
+          saving: false,
+        },
+      }));
+      setRowSaveErrors((current) => ({ ...current, [rowId]: null }));
+
+      setToast({ type: "ok", msg: `Saved for ${staff.name}.` });
+      setTimeout(() => setToast(null), 1400);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Save failed.";
+      setStaffRowStatus((current) => ({
+        ...current,
+        [rowId]: {
+          ...(current[rowId] ?? { saved: false }),
+          saving: false,
+        },
+      }));
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
     } finally {
@@ -735,17 +971,17 @@ export default function CaseStudiesPage() {
             subtitle="Add the entry details and upload the required documents."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
+              <Field label="Academic Year" error={attemptedSectionSave ? errors.academicYear : undefined}>
                 <SelectDropdown
                   value={form.academicYear}
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
-                  error={submitted && !!errors.academicYear}
+                  error={attemptedSectionSave && !!errors.academicYear}
                 />
               </Field>
 
-              <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+              <Field label="Semester Type" error={attemptedSectionSave ? errors.semesterType : undefined}>
                 <SelectDropdown
                   value={form.semesterType}
                   onChange={(value) =>
@@ -756,13 +992,13 @@ export default function CaseStudiesPage() {
                   }
                   options={SEMESTER_TYPE_OPTIONS}
                   placeholder="Select semester type"
-                  error={submitted && !!errors.semesterType}
+                  error={attemptedSectionSave && !!errors.semesterType}
                 />
               </Field>
 
               <Field
                 label="Starting Date"
-                error={submitted ? errors.startDate : undefined}
+                error={attemptedSectionSave ? errors.startDate : undefined}
                 hint={
                   form.academicYear
                     ? getAcademicYearRange(form.academicYear)?.label
@@ -772,52 +1008,52 @@ export default function CaseStudiesPage() {
                 <DateField
                   value={form.startDate}
                   onChange={(next) => setForm((current) => ({ ...current, startDate: next }))}
-                  error={submitted && !!errors.startDate}
+                  error={attemptedSectionSave && !!errors.startDate}
                 />
               </Field>
 
               <Field
                 label="Ending Date"
-                error={submitted ? errors.endDate : undefined}
+                error={attemptedSectionSave ? errors.endDate : undefined}
                 hint={inclusiveDays ? `Number of Days: ${inclusiveDays}` : "Number of Days will be calculated automatically."}
               >
                 <DateField
                   value={form.endDate}
                   onChange={(next) => setForm((current) => ({ ...current, endDate: next }))}
-                  error={submitted && !!errors.endDate}
+                  error={attemptedSectionSave && !!errors.endDate}
                 />
               </Field>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label="Place of Visit" error={submitted ? errors.placeOfVisit : undefined}>
+              <Field label="Place of Visit" error={attemptedSectionSave ? errors.placeOfVisit : undefined}>
                 <input
                   value={form.placeOfVisit}
                   onChange={(event) => setForm((current) => ({ ...current, placeOfVisit: event.target.value }))}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
-                    submitted && errors.placeOfVisit
+                    attemptedSectionSave && errors.placeOfVisit
                       ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
                       : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
                   )}
                 />
               </Field>
 
-              <Field label="Purpose of Visit" error={submitted ? errors.purposeOfVisit : undefined}>
+              <Field label="Purpose of Visit" error={attemptedSectionSave ? errors.purposeOfVisit : undefined}>
                 <textarea
                   value={form.purposeOfVisit}
                   onChange={(event) => setForm((current) => ({ ...current, purposeOfVisit: event.target.value }))}
                   rows={4}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
-                    submitted && errors.purposeOfVisit
+                    attemptedSectionSave && errors.purposeOfVisit
                       ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
                       : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
                   )}
                 />
               </Field>
 
-              <Field label="Year (Students)" error={submitted ? errors.studentYear : undefined}>
+              <Field label="Year (Students)" error={attemptedSectionSave ? errors.studentYear : undefined}>
                 <SelectDropdown
                   value={form.studentYear}
                   onChange={(value) =>
@@ -836,13 +1072,13 @@ export default function CaseStudiesPage() {
                   }
                   options={STUDENT_YEAR_OPTIONS}
                   placeholder="Select year"
-                  error={submitted && !!errors.studentYear}
+                  error={attemptedSectionSave && !!errors.studentYear}
                 />
               </Field>
 
               <Field
                 label="Semester"
-                error={submitted ? errors.semesterNumber : undefined}
+                error={attemptedSectionSave ? errors.semesterNumber : undefined}
                 hint={normalizedStudentYear ? "Select semester (based on year)" : "Select student year first"}
               >
                 <SelectDropdown
@@ -859,13 +1095,13 @@ export default function CaseStudiesPage() {
                     value: String(option),
                   }))}
                   placeholder={normalizedStudentYear ? "Select semester (based on year)" : "Select student year first"}
-                  error={submitted && !!errors.semesterNumber}
+                  error={attemptedSectionSave && !!errors.semesterNumber}
                 />
               </Field>
 
               <Field
                 label="Amount of Support"
-                error={submitted ? errors.amountSupport : undefined}
+                error={attemptedSectionSave ? errors.amountSupport : undefined}
                 hint="Optional. Digits only"
               >
                 <CurrencyField
@@ -876,7 +1112,7 @@ export default function CaseStudiesPage() {
                       amountSupport: value === "" ? null : Number(value),
                     }))
                   }
-                  error={submitted && !!errors.amountSupport}
+                  error={attemptedSectionSave && !!errors.amountSupport}
                   placeholder="Enter amount"
                 />
               </Field>
@@ -910,11 +1146,28 @@ export default function CaseStudiesPage() {
 
               <div className="mt-4 space-y-3">
                 {form.staffAccompanying.map((staff, index) => (
-                  <div key={`${form.id}-staff-${index}`} className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <div
+                    key={staff.id ?? `${form.id}-staff-${index}`}
+                    className={cx(
+                      "grid gap-2 rounded-xl px-3 py-2 sm:grid-cols-[1fr_auto_auto] sm:items-end",
+                      staff.isLocked && "bg-muted/30 opacity-70"
+                    )}
+                  >
+                    {(() => {
+                      const rowId = staff.id ?? "";
+                      const rowStatus = staffRowStatus[rowId];
+                      const rowEmail = staff.email.trim().toLowerCase();
+                      const hasSelection = Boolean(rowEmail);
+                      const rowIsSaved = !!staff.isLocked;
+                      const rowDisabled = !hasSelection || !!rowStatus?.saving || rowIsSaved;
+                      const showRowSaveAction = hasSelection || !!rowStatus?.saving || rowIsSaved;
+
+                      return (
+                        <>
                     <Field
                       label={`Staff ${index + 1}`}
                       error={
-                        submitted
+                        attemptedSectionSave
                           ? errors[`staffAccompanying.${index}`] || (index === 0 ? errors.staffAccompanying : undefined)
                           : undefined
                       }
@@ -922,19 +1175,56 @@ export default function CaseStudiesPage() {
                       <FacultySelect
                         value={staff}
                         onChange={(next) =>
-                          setForm((current) => ({
-                            ...current,
-                            staffAccompanying: current.staffAccompanying.map((item, itemIndex) =>
-                              itemIndex === index ? next : item
-                            ),
-                          }))
+                          setForm((current) => {
+                            const rowId = current.staffAccompanying[index]?.id ?? "";
+                            setStaffRowStatus((status) =>
+                              rowId && status[rowId]
+                                ? {
+                                    ...status,
+                                    [rowId]: {
+                                      saving: false,
+                                    },
+                                  }
+                                : status
+                            );
+                            setAttemptedRowSave((currentAttempted) => ({ ...currentAttempted, [rowId]: false }));
+                            setRowSaveErrors((currentErrors) => ({ ...currentErrors, [rowId]: null }));
+
+                            return {
+                              ...current,
+                              staffAccompanying: current.staffAccompanying.map((item, itemIndex) =>
+                                itemIndex === index
+                                  ? {
+                                      ...next,
+                                      id: item.id ?? rowId,
+                                      isLocked: false,
+                                      savedAtISO: null,
+                                    }
+                                  : item
+                              ),
+                            };
+                          })
                         }
                         options={FACULTY_OPTIONS}
                         disabledEmails={getDisabledEmailsForStaffRow(index)}
                         placeholder="Search or type staff name"
-                        error={submitted && !!(errors[`staffAccompanying.${index}`] || (index === 0 ? errors.staffAccompanying : undefined))}
+                        disabled={!!staff.isLocked}
+                        error={attemptedSectionSave && !!(errors[`staffAccompanying.${index}`] || (index === 0 ? errors.staffAccompanying : undefined))}
                       />
                     </Field>
+
+                    {showRowSaveAction ? (
+                      <MiniButton
+                        onClick={() => void saveFacultyRow(rowId, index)}
+                        disabled={rowDisabled}
+                      >
+                        {rowStatus?.saving
+                          ? "Saving..."
+                          : rowIsSaved
+                            ? "Saved"
+                            : "Save faculty"}
+                      </MiniButton>
+                    ) : null}
 
                     <MiniButton
                       variant="danger"
@@ -950,9 +1240,18 @@ export default function CaseStudiesPage() {
                     >
                       Delete
                     </MiniButton>
+                    {attemptedRowSave[rowId] && rowSaveErrors[rowId] ? (
+                      <div className="sm:col-span-3 text-xs text-red-600">{rowSaveErrors[rowId]}</div>
+                    ) : null}
+                        </>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
+              {form.staffAccompanying.some((staff) => staff.email.trim() && !staff.isLocked) ? (
+                <div className="mt-3 text-xs text-muted-foreground">Save selected faculty rows to lock them.</div>
+              ) : null}
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -982,8 +1281,8 @@ export default function CaseStudiesPage() {
                         • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
                       </div>
                     ) : (
-                      <div className={cx("text-xs", submitted ? "text-red-600" : "text-muted-foreground")}>
-                        {submitted ? (errors[slot] || "This upload is mandatory.") : "No file uploaded yet."}
+                      <div className={cx("text-xs", attemptedSectionSave ? "text-red-600" : "text-muted-foreground")}>
+                        {attemptedSectionSave ? (errors[slot] || "This upload is mandatory.") : "No file uploaded yet."}
                       </div>
                     )}
 
@@ -1072,7 +1371,7 @@ export default function CaseStudiesPage() {
                 email={email}
                 recordId={form.id}
                 slotName="geotaggedPhotos"
-                showRequiredError={submitted && !!errors.geotaggedPhotos}
+                showRequiredError={attemptedSectionSave && !!errors.geotaggedPhotos}
                 requiredErrorText={errors.geotaggedPhotos}
                 onStatusChange={setPhotoUploadStatus}
               />

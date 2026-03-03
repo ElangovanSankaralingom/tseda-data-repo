@@ -5,6 +5,26 @@ import path from "path";
 import crypto from "crypto";
 
 type Category = "academic_outside" | "industry";
+type ExperienceCertificate = {
+  fileId?: string;
+  fileName?: string;
+  mime?: string;
+  size?: number;
+  uploadedAt?: string;
+  storagePath?: string;
+  downloadUrl?: string;
+} | null;
+type ExperienceEntryRecord = {
+  id: string;
+  certificate?: ExperienceCertificate;
+};
+type ExperienceProfile = {
+  email?: string;
+  experience?: {
+    academicOutside?: ExperienceEntryRecord[];
+    industry?: ExperienceEntryRecord[];
+  };
+};
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const ALLOWED_MIME = new Set(["application/pdf", "image/jpeg", "image/png"]);
@@ -24,7 +44,7 @@ function extFromMime(mime: string) {
   return "bin";
 }
 
-async function readProfile(email: string) {
+async function readProfile(email: string): Promise<ExperienceProfile> {
   const base = path.join(process.cwd(), "data", "profiles");
   await ensureDir(base);
   const file = path.join(base, `${safeEmailDir(email)}.json`);
@@ -38,22 +58,22 @@ async function readProfile(email: string) {
   }
 }
 
-async function writeProfile(email: string, profile: any) {
+async function writeProfile(email: string, profile: ExperienceProfile) {
   const base = path.join(process.cwd(), "data", "profiles");
   await ensureDir(base);
   const file = path.join(base, `${safeEmailDir(email)}.json`);
   await fs.writeFile(file, JSON.stringify(profile, null, 2), "utf8");
 }
 
-function findEntry(profile: any, category: Category, entryId: string) {
+function findEntry(profile: ExperienceProfile, category: Category, entryId: string) {
   const exp = profile?.experience || {};
   if (category === "academic_outside") {
     const list = exp.academicOutside || [];
-    const idx = list.findIndex((x: any) => x.id === entryId);
+    const idx = list.findIndex((x) => x.id === entryId);
     return { list, idx, key: "academicOutside" as const };
   }
   const list = exp.industry || [];
-  const idx = list.findIndex((x: any) => x.id === entryId);
+  const idx = list.findIndex((x) => x.id === entryId);
   return { list, idx, key: "industry" as const };
 }
 
@@ -75,8 +95,9 @@ export async function POST(req: Request) {
   try {
     category = requireQuery(req, "category");
     entryId = requireQuery(req, "entryId");
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Invalid request";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   if (category !== "academic_outside" && category !== "industry") {
@@ -149,8 +170,9 @@ export async function DELETE(req: Request) {
   try {
     category = requireQuery(req, "category");
     entryId = requireQuery(req, "entryId");
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Invalid request";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   if (category !== "academic_outside" && category !== "industry") {
@@ -186,8 +208,9 @@ export async function GET(req: Request) {
   try {
     category = requireQuery(req, "category");
     entryId = requireQuery(req, "entryId");
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Invalid request";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   if (category !== "academic_outside" && category !== "industry") {

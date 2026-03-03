@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+import { isEntryEditable } from "@/lib/gamification";
 
 type Slot = "permissionLetter" | "geotaggedPhotos";
 
@@ -11,12 +12,36 @@ const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
 const ALLOWED_SLOTS = new Set<Slot>(["permissionLetter", "geotaggedPhotos"]);
 
+type FdpConductedRecord = {
+  id: string;
+  status?: "draft" | "final";
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+  streak?: unknown;
+  requestEditStatus?: string | null;
+};
+
 function safeEmailDir(email: string) {
   return email.toLowerCase().replace(/[^a-z0-9@._-]/g, "_");
 }
 
 function safeName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+function getStoreFile(email: string) {
+  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "fdp-conducted.json");
+}
+
+async function readList(email: string): Promise<FdpConductedRecord[]> {
+  try {
+    const raw = await fs.readFile(getStoreFile(email), "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as FdpConductedRecord[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 async function getAuthorizedEmail() {
@@ -38,6 +63,22 @@ function normalizeStoredPath(storedPath: string) {
   }
 
   return normalized;
+}
+
+async function getEntryForRecordId(email: string, recordId: string) {
+  const safeRecordId = safeName(recordId);
+  const list = await readList(email);
+  return list.find((item) => safeName(String(item?.id ?? "")) === safeRecordId) ?? null;
+}
+
+function getRecordIdFromStoredPath(storedPath: string) {
+  const normalized = normalizeStoredPath(storedPath);
+  const parts = normalized.split("/");
+
+  if (parts.length < 5) return null;
+  if (parts[0] !== "uploads" || parts[2] !== "fdp-conducted") return null;
+
+  return parts[3] ?? null;
 }
 
 export async function POST(request: Request) {
@@ -63,6 +104,11 @@ export async function POST(request: Request) {
 
     if (!recordId) {
       return NextResponse.json({ error: "recordId required" }, { status: 400 });
+    }
+
+    const existing = await getEntryForRecordId(email, recordId);
+    if (existing && !isEntryEditable(existing)) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
     }
 
     if (!ALLOWED_SLOTS.has(slot)) {
@@ -123,6 +169,14 @@ export async function DELETE(request: Request) {
 
     if (!storedPath.startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const recordId = getRecordIdFromStoredPath(storedPath);
+    if (recordId) {
+      const existing = await getEntryForRecordId(authorizedEmail, recordId);
+      if (existing && !isEntryEditable(existing)) {
+        return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+      }
     }
 
     const absPath = path.join(process.cwd(), "public", storedPath);

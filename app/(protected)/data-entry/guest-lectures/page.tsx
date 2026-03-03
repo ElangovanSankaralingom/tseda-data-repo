@@ -173,7 +173,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-white/70 p-5 dark:bg-black/20">
+    <div className="rounded-2xl border border-border bg-white/70 p-5">
       <div>
         <h2 className="text-base font-semibold">{title}</h2>
         {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
@@ -222,7 +222,7 @@ function MiniButton({
   const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
   const activeCls =
     variant === "danger"
-      ? "border-border text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
+      ? "border-border text-red-600 transition hover:bg-red-50"
       : variant === "ghost"
         ? "border-border transition hover:bg-muted"
         : "border-foreground bg-foreground text-background transition hover:opacity-90";

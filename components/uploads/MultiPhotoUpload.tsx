@@ -14,8 +14,8 @@ export type FileMeta = {
 type MultiPhotoUploadProps = {
   title: string;
   value: FileMeta[];
-  onUploaded: (meta: FileMeta) => void;
-  onDeleted: (meta: FileMeta) => void;
+  onUploaded: (meta: FileMeta) => void | Promise<void>;
+  onDeleted: (meta: FileMeta) => void | Promise<void>;
   uploadEndpoint: string;
   email: string;
   recordId: string;
@@ -23,6 +23,7 @@ type MultiPhotoUploadProps = {
   showRequiredError?: boolean;
   requiredErrorText?: string;
   onStatusChange?: (status: { hasPending: boolean; busy: boolean }) => void;
+  disabled?: boolean;
 };
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -95,6 +96,7 @@ export default function MultiPhotoUpload({
   showRequiredError,
   requiredErrorText,
   onStatusChange,
+  disabled = false,
 }: MultiPhotoUploadProps) {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -114,6 +116,8 @@ export default function MultiPhotoUpload({
   const hasPending = pendingFiles.length > 0;
 
   async function deletePhoto(meta: FileMeta) {
+    if (disabled) return;
+
     try {
       const response = await fetch(uploadEndpoint, {
         method: "DELETE",
@@ -126,7 +130,7 @@ export default function MultiPhotoUpload({
         throw new Error(payload?.error || "Delete failed.");
       }
 
-      onDeleted(meta);
+      await Promise.resolve(onDeleted(meta));
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : "Delete failed.";
       setError(message);
@@ -134,7 +138,7 @@ export default function MultiPhotoUpload({
   }
 
   async function uploadSelected() {
-    if (!pendingFiles.length || busy) return;
+    if (!pendingFiles.length || busy || disabled) return;
 
     try {
       setError(null);
@@ -164,7 +168,7 @@ export default function MultiPhotoUpload({
           onProgress: (pct) => setCurrentProgress(pct),
         });
 
-        onUploaded(meta);
+        await Promise.resolve(onUploaded(meta));
         setCompletedCount(index + 1);
         setCurrentProgress(0);
       }
@@ -209,12 +213,12 @@ export default function MultiPhotoUpload({
                 <button
                   type="button"
                   onClick={() => void deletePhoto(meta)}
-                  disabled={busy}
+                  disabled={busy || disabled}
                   className={cx(
                     "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
-                    busy
+                    busy || disabled
                       ? "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60"
-                      : "border-border text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
+                      : "border-border text-red-600 transition hover:bg-red-50"
                   )}
                 >
                   Delete
@@ -252,7 +256,7 @@ export default function MultiPhotoUpload({
         <label
           className={cx(
             "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-            busy
+            busy || disabled
               ? "pointer-events-none cursor-not-allowed opacity-60"
               : "cursor-pointer transition hover:bg-muted"
           )}
@@ -277,10 +281,10 @@ export default function MultiPhotoUpload({
         <button
           type="button"
           onClick={() => void uploadSelected()}
-          disabled={!hasPending || busy}
+          disabled={!hasPending || busy || disabled}
           className={cx(
             "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
-            !hasPending || busy
+            !hasPending || busy || disabled
               ? "pointer-events-none cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60"
               : "border-foreground bg-foreground text-background transition hover:opacity-90"
           )}

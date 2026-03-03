@@ -18,6 +18,7 @@ type FacultySelectProps = {
   options: FacultyOption[];
   disabledEmails: Set<string>;
   placeholder?: string;
+  disabled?: boolean;
   error?: boolean;
 };
 
@@ -31,6 +32,7 @@ export default function FacultySelect({
   options,
   disabledEmails,
   placeholder,
+  disabled,
   error,
 }: FacultySelectProps) {
   const [open, setOpen] = useState(false);
@@ -68,6 +70,7 @@ export default function FacultySelect({
   }, [open]);
 
   function chooseOption(option: FacultyOption) {
+    if (disabled) return;
     onChange({ name: option.name, email: option.email.toLowerCase() });
     setOpen(false);
     setHighlightedIndex(-1);
@@ -91,15 +94,18 @@ export default function FacultySelect({
       <input
         value={inputValue}
         onFocus={() => {
+          if (disabled) return;
           setOpen(true);
           setHighlightedIndex(firstEnabledIndex);
         }}
         onChange={(event) => {
+          if (disabled) return;
           onChange({ name: event.target.value, email: "" });
           setOpen(true);
           setHighlightedIndex(firstEnabledIndex);
         }}
         onKeyDown={(event) => {
+          if (disabled) return;
           if (event.key === "ArrowDown") {
             event.preventDefault();
             if (!open) {
@@ -128,11 +134,13 @@ export default function FacultySelect({
           }
         }}
         placeholder={placeholder ?? "Search or type staff name"}
+        readOnly={disabled}
         className={cx(
           "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
           error
             ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20",
+          disabled && "pointer-events-none cursor-not-allowed opacity-60"
         )}
       />
 
