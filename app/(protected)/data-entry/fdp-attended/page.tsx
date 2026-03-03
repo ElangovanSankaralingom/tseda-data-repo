@@ -1,21 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CurrencyField from "@/components/controls/CurrencyField";
-import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import DateField from "@/components/controls/DateField";
+import { HeaderEntryActionsBar, PdfEntryActionsBar } from "@/components/entry/EntryActionsBar";
 import FinalisationBadge from "@/components/entry/FinalisationBadge";
+import UploadField from "@/components/entry/UploadField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import {
+  status as getStreakStatus,
+  type StreakState,
+} from "@/lib/gamification";
 import {
   getEditLockState,
   isEntryLockedState,
   isFutureDatedEntry,
   isWithinRequestEditWindow,
-  status as getStreakStatus,
-  type StreakState,
-} from "@/lib/gamification";
+} from "@/lib/entryLock";
+import { useEntryEditor } from "@/hooks/useEntryEditor";
+import { useSeedEntry } from "@/hooks/useSeedEntry";
+import { useUploadController } from "@/hooks/useUploadController";
 
 type FileMeta = {
   fileName: string;
@@ -115,23 +121,6 @@ function emptyForm(): FdpAttended {
   };
 }
 
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-
-  const entries = Object.entries(value as Record<string, unknown>).sort(([left], [right]) =>
-    left.localeCompare(right)
-  );
-  return `{${entries
-    .map(([key, entryValue]) => `${JSON.stringify(key)}:${stableStringify(entryValue)}`)
-    .join(",")}}`;
-}
-
 function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
 }
@@ -158,28 +147,6 @@ function getInclusiveDays(startDate: string, endDate: string) {
   const start = new Date(`${startDate}T00:00:00Z`);
   const end = new Date(`${endDate}T00:00:00Z`);
   return Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
-}
-
-function getPrePdfFieldsHash(entry: Pick<
-  FdpAttended,
-  | "academicYear"
-  | "semesterType"
-  | "startDate"
-  | "endDate"
-  | "programName"
-  | "organisingBody"
-  | "supportAmount"
->) {
-  return JSON.stringify({
-    academicYear: String(entry.academicYear ?? "").trim(),
-    semesterType: String(entry.semesterType ?? "").trim(),
-    startDate: String(entry.startDate ?? "").trim(),
-    endDate: String(entry.endDate ?? "").trim(),
-    programName: String(entry.programName ?? "").trim(),
-    organisingBody: String(entry.organisingBody ?? "").trim(),
-    supportAmount:
-      typeof entry.supportAmount === "number" && Number.isFinite(entry.supportAmount) ? entry.supportAmount : null,
-  });
 }
 
 function formatDisplayDate(value: string) {
@@ -362,15 +329,6 @@ function MiniButton({
   );
 }
 
-function ProgressBar({ value }: { value: number }) {
-  const pct = Math.max(0, Math.min(100, value));
-  return (
-    <div className="h-2 w-full overflow-hidden rounded-full border border-border bg-muted">
-      <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
 function uploadFdpFileXHR(opts: {
   recordId: string;
   slot: "permissionLetter" | "completionCertificate";
@@ -429,34 +387,39 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [list, setList] = useState<FdpAttended[]>([]);
-  const [form, setForm] = useState<FdpAttended>(emptyForm);
-  const [lastPersistedSnapshot, setLastPersistedSnapshot] = useState(() => stableStringify(emptyForm()));
-  const [pending, setPending] = useState<Record<"permissionLetter" | "completionCertificate", File | null>>({
-    permissionLetter: null,
-    completionCertificate: null,
-  });
+  const [editorSeed, setEditorSeed] = useState<FdpAttended>(() => emptyForm());
   const [requestingEditIds, setRequestingEditIds] = useState<Record<string, boolean>>({});
-  const [busy, setBusy] = useState<Record<"permissionLetter" | "completionCertificate", boolean>>({
-    permissionLetter: false,
-    completionCertificate: false,
-  });
-  const [progress, setProgress] = useState<Record<"permissionLetter" | "completionCertificate", number>>({
-    permissionLetter: 0,
-    completionCertificate: 0,
-  });
-  const [uploadError, setUploadError] = useState<Record<"permissionLetter" | "completionCertificate", string | null>>({
-    permissionLetter: null,
-    completionCertificate: null,
-  });
   const saveLockRef = useRef(false);
-  const hasHydratedPdfRef = useRef(false);
   const queryEntryId = searchParams.get("id")?.trim() ?? "";
   const activeEntryId = viewEntryId?.trim() || queryEntryId;
   const isViewMode = !!viewEntryId;
+  const {
+    draft: form,
+    setDraft: setForm,
+    dirty: formDirty,
+    lockState,
+    pdfState,
+    currentHash: prePdfFieldsHash,
+    fieldsGateOk: generateReady,
+    actions: editorActions,
+  } = useEntryEditor<FdpAttended>({
+    initialEntry: editorSeed,
+    category: "fdp-attended",
+    validatePrePdfFields: (draft) =>
+      !!draft.academicYear &&
+      !!draft.semesterType &&
+      isISODate(draft.startDate) &&
+      isISODate(draft.endDate) &&
+      draft.endDate >= draft.startDate &&
+      !!draft.programName.trim() &&
+      !!draft.organisingBody.trim(),
+  });
   const viewedEntry = useMemo(
     () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
     [activeEntryId, list]
   );
+  const loadedEntryId = viewedEntry?.id ?? null;
+  const loadEditorEntry = editorActions.loadEntry;
   const isEditing = formOpen || !!activeEntryId;
   const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
 
@@ -530,35 +493,59 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
     return nextErrors;
   }, [form]);
 
-  const hasPendingFiles = !!pending.permissionLetter || !!pending.completionCertificate;
-  const hasBusyUploads = busy.permissionLetter || busy.completionCertificate;
-  const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const prePdfFieldsHash = useMemo(() => getPrePdfFieldsHash(form), [form]);
-  const pdfStale = !!form.pdfMeta && !!form.pdfStale;
-  const uploadsVisible = !!form.pdfMeta;
-  const formDirty = stableStringify(form) !== lastPersistedSnapshot;
-  const isLocked = !!form.createdAt && isEntryLocked(form);
+  const isLocked = !!form.createdAt && lockState.isLocked;
   const controlsDisabled = isViewMode || isLocked;
-  const generateReady =
-    !!form.academicYear &&
-    !!form.semesterType &&
-    isISODate(form.startDate) &&
-    isISODate(form.endDate) &&
-    form.endDate >= form.startDate &&
-    !!form.programName.trim() &&
-    !!form.organisingBody.trim();
-  const canGenerate = form.pdfMeta
-    ? generateReady && !isLocked && pdfStale
-    : generateReady && !isLocked;
+  const permissionController = useUploadController<FileMeta>({
+    locked: controlsDisabled,
+    upload: (file, onProgress) =>
+      uploadFdpFileXHR({
+        recordId: form.id,
+        slot: "permissionLetter",
+        file,
+        onProgress,
+      }),
+    remove: async (meta) => {
+      const response = await fetch("/api/me/fdp-file", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storedPath: meta.storedPath }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || "Delete failed.");
+      }
+    },
+  });
+  const completionController = useUploadController<FileMeta>({
+    locked: controlsDisabled,
+    upload: (file, onProgress) =>
+      uploadFdpFileXHR({
+        recordId: form.id,
+        slot: "completionCertificate",
+        file,
+        onProgress,
+      }),
+    remove: async (meta) => {
+      const response = await fetch("/api/me/fdp-file", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storedPath: meta.storedPath }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || "Delete failed.");
+      }
+    },
+  });
+  const hasPendingFiles = !!permissionController.pendingFile || !!completionController.pendingFile;
+  const hasBusyUploads = permissionController.busy || completionController.busy;
+  const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
+  const pdfStale = pdfState.pdfStale;
+  const uploadsVisible = !!form.pdfMeta;
+  const canGenerate = pdfState.canGenerate;
   const requiredUploadsComplete = !!form.permissionLetter && !!form.completionCertificate;
   const isComplete = uploadsVisible && generateReady && requiredUploadsComplete;
   const isDirty = formDirty || hasPendingFiles;
-  useEffect(() => {
-    if (!hasHydratedPdfRef.current) return;
-    const nextPdfStale = !!form.pdfMeta && !!form.pdfSourceHash && prePdfFieldsHash !== form.pdfSourceHash;
-    if ((form.pdfStale ?? false) === nextPdfStale) return;
-    setForm((current) => ({ ...current, pdfStale: nextPdfStale }));
-  }, [form.pdfMeta, form.pdfSourceHash, form.pdfStale, prePdfFieldsHash]);
   const groupedEntries = useMemo(() => {
     const indexedEntries = list.map((entry, index) => ({ entry, index }));
     const sortChronologically = (
@@ -603,24 +590,10 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
     return { drafts, pending, completed, nonStreak };
   }, [list]);
 
-  function resetUploadState() {
-    setPending({
-      permissionLetter: null,
-      completionCertificate: null,
-    });
-    setBusy({
-      permissionLetter: false,
-      completionCertificate: false,
-    });
-    setProgress({
-      permissionLetter: 0,
-      completionCertificate: 0,
-    });
-    setUploadError({
-      permissionLetter: null,
-      completionCertificate: null,
-    });
-  }
+  const resetUploadState = useCallback(() => {
+    permissionController.reset();
+    completionController.reset();
+  }, [completionController, permissionController]);
 
   async function refreshList() {
     const listResponse = await fetch("/api/me/fdp-attended", { cache: "no-store" });
@@ -662,36 +635,16 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
     setSubmitted(false);
     setSubmitAttemptedFinal(false);
     const nextForm = emptyForm();
-    hasHydratedPdfRef.current = false;
-    setForm(nextForm);
-    setLastPersistedSnapshot(stableStringify(nextForm));
+    setEditorSeed(nextForm);
+    loadEditorEntry(nextForm);
     resetUploadState();
-  }
-
-  function hydrateLoadedEntry(entry: FdpAttended) {
-    const currentHash = getPrePdfFieldsHash(entry);
-
-    if (!entry.pdfMeta) {
-      return {
-        ...entry,
-        pdfStale: false,
-      };
-    }
-
-    return {
-      ...entry,
-      pdfSourceHash: entry.pdfSourceHash || currentHash,
-      pdfStale: false,
-    };
   }
 
   function openEntry(entry: FdpAttended) {
     setSubmitted(false);
     setSubmitAttemptedFinal(false);
-    const nextEntry = hydrateLoadedEntry(entry);
-    hasHydratedPdfRef.current = false;
-    setForm(nextEntry);
-    setLastPersistedSnapshot(stableStringify(nextEntry));
+    setEditorSeed(entry);
+    loadEditorEntry(entry);
     resetUploadState();
     setFormOpen(true);
   }
@@ -747,27 +700,25 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
     await saveDraftChanges({ closeAfterSave: true, intent: "done" });
   }
 
-  useEffect(() => {
-    if (loading) return;
-    if (!activeEntryId) return;
+  const seedLoadedEntry = useCallback(
+    (loadedEntry: FdpAttended) => {
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
+      setEditorSeed(loadedEntry);
+      loadEditorEntry(loadedEntry);
+      resetUploadState();
+      setFormOpen(true);
+    },
+    [loadEditorEntry, resetUploadState]
+  );
 
-    const loadedEntry = list.find((item) => item.id === activeEntryId);
-    if (!loadedEntry) return;
-
-    setSubmitted(false);
-    setSubmitAttemptedFinal(false);
-    const nextEntry = hydrateLoadedEntry(loadedEntry);
-    hasHydratedPdfRef.current = false;
-    setForm(nextEntry);
-    setLastPersistedSnapshot(stableStringify(nextEntry));
-    resetUploadState();
-    setFormOpen(true);
-  }, [activeEntryId, list, loading]);
-
-  useEffect(() => {
-    if (!formOpen || isViewMode) return;
-    hasHydratedPdfRef.current = true;
-  }, [formOpen, isViewMode, form.id]);
+  useSeedEntry({
+    loading,
+    loadedEntry: viewedEntry,
+    loadedEntryId,
+    editorSeedId: editorSeed?.id ?? null,
+    onSeed: seedLoadedEntry,
+  });
 
   async function deleteStoredFile(storedPath: string) {
     await fetch("/api/me/fdp-file", {
@@ -778,63 +729,26 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
   }
 
   async function uploadSlot(slot: "permissionLetter" | "completionCertificate") {
-    const file = pending[slot];
-    if (!file) {
-      setUploadError((current) => ({ ...current, [slot]: "Select a file first." }));
-      return;
-    }
-
-    const allowed = file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg";
-    if (!allowed) {
-      setUploadError((current) => ({ ...current, [slot]: "Only PDF/JPG/PNG allowed." }));
-      return;
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      setUploadError((current) => ({ ...current, [slot]: "Max file size is 20MB." }));
-      return;
-    }
-
+    const controller = slot === "permissionLetter" ? permissionController : completionController;
     const previousMeta = form[slot];
 
     try {
-      setUploadError((current) => ({ ...current, [slot]: null }));
-      setBusy((current) => ({ ...current, [slot]: true }));
-      setProgress((current) => ({ ...current, [slot]: 0 }));
-
-      const meta = await uploadFdpFileXHR({
-        recordId: form.id,
-        slot,
-        file,
-        onProgress: (pct) => setProgress((current) => ({ ...current, [slot]: pct })),
-      });
+      const meta = await controller.uploadAndSave();
+      if (!meta) return;
 
       if (previousMeta?.storedPath && previousMeta.storedPath !== meta.storedPath) {
         void deleteStoredFile(previousMeta.storedPath);
       }
 
-      const nextForm =
-        slot === "permissionLetter"
-          ? {
-              ...form,
-              permissionLetter: meta,
-            }
-          : {
-              ...form,
-              completionCertificate: meta,
-            };
-
+      const nextForm = { ...form, [slot]: meta } as FdpAttended;
       const persisted = await persistProgress(nextForm);
-
-      setForm(persisted);
-      setPending((current) => ({ ...current, [slot]: null }));
-      setBusy((current) => ({ ...current, [slot]: false }));
-      setProgress((current) => ({ ...current, [slot]: 100 }));
+      setEditorSeed(persisted);
+      editorActions.saveDraft(persisted);
       await refreshList();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Upload failed.";
-      setBusy((current) => ({ ...current, [slot]: false }));
-      setUploadError((current) => ({ ...current, [slot]: message }));
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
     }
   }
 
@@ -847,21 +761,10 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
     }
 
     try {
-      const response = await fetch("/api/me/fdp-file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload?.error || "Delete failed.");
-      }
-
+      const controller = slot === "permissionLetter" ? permissionController : completionController;
+      const deleted = await controller.deleteFile(meta);
+      if (!deleted) return;
       setForm((current) => ({ ...current, [slot]: null }));
-      setPending((current) => ({ ...current, [slot]: null }));
-      setBusy((current) => ({ ...current, [slot]: false }));
-      setProgress((current) => ({ ...current, [slot]: 0 }));
-      setUploadError((current) => ({ ...current, [slot]: null }));
 
       setToast({ type: "ok", msg: "File deleted." });
       setTimeout(() => setToast(null), 1200);
@@ -889,8 +792,8 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
         ...form,
         status: form.status === "final" ? "final" : "draft",
       });
-      setForm(persisted);
-      setLastPersistedSnapshot(stableStringify(persisted));
+      setEditorSeed(persisted);
+      editorActions.saveDraft(persisted);
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
       await refreshList();
@@ -966,8 +869,8 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
         pdfSourceHash: prePdfFieldsHash,
         pdfStale: false,
       };
-      setForm(nextEntry);
-      setLastPersistedSnapshot(stableStringify(nextEntry));
+      setEditorSeed(nextEntry);
+      editorActions.generatePdf(nextEntry);
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
       setToast({ type: "ok", msg: "Entry generated." });
@@ -1206,41 +1109,25 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
         </div>
 
         <div className="flex gap-2">
-          {showForm && !isViewMode ? (
-            <>
-              <MiniButton
-                variant="ghost"
-                onClick={() => void handleCancel()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || isComplete}
-              >
-                Cancel
-              </MiniButton>
-              <MiniButton
-                variant="ghost"
-                onClick={() => void saveDraftChanges()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !isDirty || isComplete || isLocked}
-              >
-                {saving && saveIntent === "save" ? "Saving..." : "Save"}
-              </MiniButton>
-              <MiniButton
-                onClick={() => void handleDone()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !isComplete || isLocked}
-              >
-                {saving && saveIntent === "done" ? "Saving..." : "Done"}
-              </MiniButton>
-            </>
-          ) : !showForm ? (
-            <MiniButton
-              onClick={() => {
-                resetForm();
-                setFormOpen(true);
-                router.replace(pathname, { scroll: false });
-              }}
-              disabled={loading}
-            >
-              + Add FDP Entry
-            </MiniButton>
-          ) : null}
+          <HeaderEntryActionsBar
+            isEditing={showForm}
+            isViewMode={isViewMode}
+            loading={loading}
+            onAdd={() => {
+              resetForm();
+              setFormOpen(true);
+              router.replace(pathname, { scroll: false });
+            }}
+            addLabel="+ Add FDP Entry"
+            onCancel={() => void handleCancel()}
+            cancelDisabled={isViewMode || saving || loading || hasBusyUploads || isComplete}
+            onSave={() => void saveDraftChanges()}
+            saveDisabled={isViewMode || saving || loading || hasBusyUploads || !isDirty || isComplete || isLocked}
+            onDone={() => void handleDone()}
+            doneDisabled={isViewMode || saving || loading || hasBusyUploads || !isComplete || isLocked}
+            saving={saving}
+            saveIntent={saveIntent}
+          />
         </div>
       </div>
 
@@ -1365,17 +1252,14 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
             </div>
 
             <div className="mt-5 space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {!isViewMode ? (
-                  <MiniButton
-                    onClick={() => void generateEntry()}
-                    disabled={saving || loading || hasBusyUploads || !canGenerate}
-                  >
-                    {saving && saveIntent === "save" ? "Generating..." : "Generate Entry"}
-                  </MiniButton>
-                ) : null}
-                <EntryPdfActions pdfMeta={form.pdfMeta ?? null} disabled={pdfStale} />
-              </div>
+              <PdfEntryActionsBar
+                isViewMode={isViewMode}
+                canGenerate={canGenerate}
+                onGenerate={() => void generateEntry()}
+                generating={saving && saveIntent === "save"}
+                pdfMeta={form.pdfMeta ?? null}
+                pdfDisabled={!pdfState.canPreviewDownload}
+              />
               {pdfStale ? (
                 <p className="text-sm text-muted-foreground">
                   Entry changed. Regenerate PDF to update Preview/Download.
@@ -1383,128 +1267,42 @@ export function FdpAttendedPage({ viewEntryId }: FdpAttendedPageProps = {}) {
               ) : null}
               <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
               {uploadsVisible ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-              {(
-                [
-                  ["permissionLetter", "Upload Permission Letter"],
-                  ["completionCertificate", "Upload Completion Certificate"],
-                ] as const
-              ).map(([slot, label]) => {
-                const meta = form[slot];
-                const pendingFile = pending[slot];
-                const slotBusy = busy[slot];
-                const slotProgress = progress[slot] ?? 0;
-                const slotError = uploadError[slot];
-                const showUploaded = !!meta && !pendingFile;
-                const canUploadAndSave = !!pendingFile && !slotBusy && !isLocked && !isViewMode;
-
-                return (
-                  <div key={slot} className="space-y-3 rounded-xl border border-border p-4">
-                    <div className="text-sm font-semibold">{label}</div>
-
-                    {isViewMode ? (
-                      meta ? (
-                        <div className="space-y-3">
-                          <div className="text-xs text-muted-foreground">
-                            {meta.fileName} • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <a
-                              href={meta.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
-                            >
-                              Preview
-                            </a>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground">Not uploaded</div>
-                      )
-                    ) : (
-                      <>
-                        {meta ? (
-                          <div className="text-xs text-muted-foreground">
-                            <a className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                              {meta.fileName}
-                            </a>{" "}
-                            • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
-                          </div>
-                        ) : (
-                          <div className={cx("text-xs", submitAttemptedFinal ? "text-red-600" : "text-muted-foreground")}>
-                            {submitAttemptedFinal ? errors[slot] || "This upload is mandatory." : "No file uploaded yet."}
-                          </div>
-                        )}
-
-                        <div className="text-xs text-muted-foreground">
-                          {pendingFile
-                            ? `Selected: ${pendingFile.name}`
-                            : meta
-                              ? "Uploaded. Choose a new file and upload to replace it."
-                              : "Select a file to enable Upload & Save."}
-                        </div>
-
-                        {slotBusy ? (
-                          <div className="space-y-2">
-                            <ProgressBar value={slotProgress} />
-                            <div className="text-xs text-muted-foreground">{slotProgress}% uploading...</div>
-                          </div>
-                        ) : null}
-
-                        {slotError ? <div className="text-xs text-red-600">{slotError}</div> : null}
-
-                        <div className="flex flex-wrap gap-2">
-                          {meta ? (
-                            <>
-                              <a
-                                href={meta.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
-                              >
-                                Preview
-                              </a>
-                              <MiniButton variant="danger" onClick={() => void deleteSlot(slot)} disabled={slotBusy || isLocked}>
-                                Delete
-                              </MiniButton>
-                            </>
-                          ) : null}
-
-                          <label
-                            className={cx(
-                              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-                              slotBusy || isLocked
-                                ? "pointer-events-none cursor-not-allowed opacity-60"
-                                : "cursor-pointer transition hover:bg-muted"
-                            )}
-                          >
-                            Choose file
-                            <input
-                              type="file"
-                              className="hidden"
-                              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                              disabled={controlsDisabled}
-                              onChange={(event) => {
-                                const nextFile = event.target.files?.[0] || null;
-                                event.currentTarget.value = "";
-                                setPending((current) => ({ ...current, [slot]: nextFile }));
-                                setUploadError((current) => ({ ...current, [slot]: null }));
-                                setProgress((current) => ({ ...current, [slot]: 0 }));
-                              }}
-                            />
-                          </label>
-
-                          <MiniButton onClick={() => void uploadSlot(slot)} disabled={!canUploadAndSave}>
-                            {showUploaded ? "Uploaded" : "Upload & Save"}
-                          </MiniButton>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <UploadField
+                    title="Upload Permission Letter"
+                    mode={isViewMode ? "view" : "edit"}
+                    meta={form.permissionLetter}
+                    pendingFile={permissionController.pendingFile}
+                    progress={permissionController.progress}
+                    busy={permissionController.busy}
+                    error={permissionController.error}
+                    canChoose={permissionController.canChoose}
+                    canUpload={permissionController.canUpload}
+                    canDelete={permissionController.canDelete}
+                    onSelectFile={permissionController.selectFile}
+                    onUpload={() => void uploadSlot("permissionLetter")}
+                    onDelete={() => void deleteSlot("permissionLetter")}
+                    showValidationError={submitAttemptedFinal}
+                    validationMessage={errors.permissionLetter}
+                  />
+                  <UploadField
+                    title="Upload Completion Certificate"
+                    mode={isViewMode ? "view" : "edit"}
+                    meta={form.completionCertificate}
+                    pendingFile={completionController.pendingFile}
+                    progress={completionController.progress}
+                    busy={completionController.busy}
+                    error={completionController.error}
+                    canChoose={completionController.canChoose}
+                    canUpload={completionController.canUpload}
+                    canDelete={completionController.canDelete}
+                    onSelectFile={completionController.selectFile}
+                    onUpload={() => void uploadSlot("completionCertificate")}
+                    onDelete={() => void deleteSlot("completionCertificate")}
+                    showValidationError={submitAttemptedFinal}
+                    validationMessage={errors.completionCertificate}
+                  />
+                </div>
               ) : null}
             </div>
           </SectionCard>

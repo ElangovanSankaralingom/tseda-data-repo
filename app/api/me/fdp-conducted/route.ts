@@ -10,6 +10,7 @@ import {
   getCanonicalName,
   normalizeEmail,
 } from "@/lib/facultyDirectory";
+import { mergeWithNulls } from "@/lib/mergeWithNulls";
 import {
   computeDueAtISO,
   isEntryEditable,
@@ -663,7 +664,7 @@ export async function PATCH(request: Request) {
     const coordinatorName =
       getCanonicalName(email) ?? existing?.coordinatorName ?? entry.coordinatorName ?? email.split("@")[0];
 
-    const savedEntry: FdpConducted = {
+    const savedEntryBase: FdpConducted = {
       ...(existing ?? {
         id: entry.id,
         status: "draft",
@@ -708,15 +709,32 @@ export async function PATCH(request: Request) {
       coCoordinators: hasCoCoordinators
         ? entry.coCoordinators.map(canonicalizeFacultySelection)
         : existing?.coCoordinators || [],
-      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
-      pdfSourceHash: entry.pdfSourceHash || existing?.pdfSourceHash || "",
-      pdfStale: entry.pdfStale === true,
-      permissionLetter: hasPermissionLetter ? entry.permissionLetter : existing?.permissionLetter || null,
-      geotaggedPhotos: hasGeotaggedPhotos ? entry.geotaggedPhotos : existing?.geotaggedPhotos || [],
+      pdfMeta: existing?.pdfMeta ?? null,
+      pdfSourceHash: existing?.pdfSourceHash ?? "",
+      pdfStale: existing?.pdfStale === true,
+      permissionLetter: existing?.permissionLetter ?? null,
+      geotaggedPhotos: existing?.geotaggedPhotos ?? [],
       streak: normalizeStreakState(existing?.streak ?? entry.streak),
       createdAt: existing?.createdAt || entry.createdAt || now,
       updatedAt: now,
     };
+    const savedEntry = mergeWithNulls(
+      savedEntryBase,
+      {
+        ...(entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfMeta")
+          ? { pdfMeta: entry.pdfMeta }
+          : {}),
+        ...(entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash")
+          ? { pdfSourceHash: entry.pdfSourceHash }
+          : {}),
+        ...(entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale")
+          ? { pdfStale: entry.pdfStale === true }
+          : {}),
+        ...(hasPermissionLetter ? { permissionLetter: entry.permissionLetter } : {}),
+        ...(hasGeotaggedPhotos ? { geotaggedPhotos: entry.geotaggedPhotos } : {}),
+      },
+      ["pdfMeta", "pdfSourceHash", "pdfStale", "permissionLetter", "geotaggedPhotos"] as const
+    );
 
     savedEntry.pdfStale =
       !!savedEntry.pdfMeta &&

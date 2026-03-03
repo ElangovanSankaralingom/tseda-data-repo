@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
+import { mergeWithNulls } from "@/lib/mergeWithNulls";
 import {
   computeDueAtISO,
   isEntryEditable,
@@ -496,7 +497,7 @@ export async function PATCH(request: Request) {
     const hasCompletionCertificate =
       !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "completionCertificate");
     const requestedStatus = normalizeStatus(entry.status, existing?.status ?? "draft");
-    const savedEntry: FdpAttended = {
+    const savedEntryBase: FdpAttended = {
       ...(existing ?? {
         id: entry.id,
         status: "draft",
@@ -537,17 +538,32 @@ export async function PATCH(request: Request) {
       programName: entry.programName || existing?.programName || "",
       organisingBody: entry.organisingBody || existing?.organisingBody || "",
       supportAmount: entry.supportAmount ?? existing?.supportAmount ?? null,
-      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
-      pdfSourceHash: entry.pdfSourceHash || existing?.pdfSourceHash || "",
-      pdfStale: entry.pdfStale === true,
-      permissionLetter: hasPermissionLetter ? entry.permissionLetter : existing?.permissionLetter ?? null,
-      completionCertificate: hasCompletionCertificate
-        ? entry.completionCertificate
-        : existing?.completionCertificate ?? null,
+      pdfMeta: existing?.pdfMeta ?? null,
+      pdfSourceHash: existing?.pdfSourceHash ?? "",
+      pdfStale: existing?.pdfStale === true,
+      permissionLetter: existing?.permissionLetter ?? null,
+      completionCertificate: existing?.completionCertificate ?? null,
       streak: normalizeStreakState(existing?.streak ?? entry.streak),
       createdAt: existing?.createdAt || entry.createdAt || now,
       updatedAt: now,
     };
+    const savedEntry = mergeWithNulls(
+      savedEntryBase,
+      {
+        ...(entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfMeta")
+          ? { pdfMeta: entry.pdfMeta }
+          : {}),
+        ...(entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash")
+          ? { pdfSourceHash: entry.pdfSourceHash }
+          : {}),
+        ...(entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale")
+          ? { pdfStale: entry.pdfStale === true }
+          : {}),
+        ...(hasPermissionLetter ? { permissionLetter: entry.permissionLetter } : {}),
+        ...(hasCompletionCertificate ? { completionCertificate: entry.completionCertificate } : {}),
+      },
+      ["pdfMeta", "pdfSourceHash", "pdfStale", "permissionLetter", "completionCertificate"] as const
+    );
 
     savedEntry.pdfStale =
       !!savedEntry.pdfMeta &&
