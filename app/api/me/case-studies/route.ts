@@ -7,6 +7,7 @@ import {
   cloneFileMetaArrayToTarget,
   cloneFileMetaToTarget,
 } from "@/lib/crosspost.server";
+import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import {
   findFacultyByEmail,
   findFacultyByName,
@@ -14,6 +15,13 @@ import {
   normalizeEmail,
   type Faculty,
 } from "@/lib/facultyDirectory";
+import {
+  computeDueAtISO,
+  isFutureDatedEntry,
+  isWithinDueWindow,
+  normalizeStreakState,
+  type StreakState,
+} from "@/lib/gamification";
 import {
   isSemesterAllowed,
   normalizeStudentYear,
@@ -42,6 +50,7 @@ type CaseStudyEntry = {
   sharedEntryId?: string;
   sourceEmail?: string;
   sharedRole?: "staffAccompanying";
+  status?: "draft" | "final";
   academicYear: string;
   semesterType: string;
   startDate: string;
@@ -52,10 +61,13 @@ type CaseStudyEntry = {
   staffAccompanying: StaffSelection[];
   studentYear: StudentYear | "";
   semesterNumber: number | null;
+  participants: number | null;
   amountSupport: number | null;
+  pdfMeta?: PdfMeta | null;
   permissionLetter: FileMeta | null;
   travelPlan: FileMeta | null;
   geotaggedPhotos: FileMeta[];
+  streak?: StreakState;
   createdAt: string;
   updatedAt: string;
 };
@@ -213,11 +225,20 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
     amountSupport = Number.isFinite(parsed) ? parsed : null;
   }
 
+  let participants: number | null = null;
+  if (typeof record.participants === "number" && Number.isFinite(record.participants)) {
+    participants = record.participants;
+  } else if (typeof record.participants === "string" && record.participants.trim()) {
+    const parsed = Number(record.participants);
+    participants = Number.isFinite(parsed) ? parsed : null;
+  }
+
   return {
     id: String(record.id ?? "").trim(),
     sharedEntryId: String(record.sharedEntryId ?? "").trim() || undefined,
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
     sharedRole: record.sharedRole === "staffAccompanying" ? "staffAccompanying" : undefined,
+    status: record.status === "final" ? "final" : "draft",
     academicYear: String(record.academicYear ?? "").trim(),
     semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
@@ -228,12 +249,49 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
     staffAccompanying,
     studentYear: normalizeStudentYear(String(record.studentYear ?? "").trim()) ?? "",
     semesterNumber,
+    participants,
     amountSupport,
+    pdfMeta: isValidPdfMeta((record.pdfMeta as PdfMeta | null) ?? null)
+      ? ((record.pdfMeta as PdfMeta | null) ?? null)
+      : null,
     permissionLetter: (record.permissionLetter as FileMeta | null) ?? null,
     travelPlan: (record.travelPlan as FileMeta | null) ?? null,
     geotaggedPhotos: normalizeFileMetaArray(record.geotaggedPhotos, record.geotaggedPhoto),
+    streak: normalizeStreakState(record.streak),
     createdAt: String(record.createdAt ?? "").trim(),
     updatedAt: String(record.updatedAt ?? "").trim(),
+  };
+}
+
+function buildSavedStreak(
+  entry: Pick<
+    CaseStudyEntry,
+    "status" | "pdfMeta" | "startDate" | "endDate" | "streak" | "permissionLetter" | "travelPlan" | "geotaggedPhotos"
+  >
+) {
+  const normalized = normalizeStreakState(entry.streak);
+  const eligible = isFutureDatedEntry(entry.startDate, entry.endDate);
+  const uploadsComplete =
+    isValidFileMeta(entry.permissionLetter) &&
+    isValidFileMeta(entry.travelPlan) &&
+    entry.geotaggedPhotos.length > 0;
+
+  if (entry.status !== "final" || !entry.pdfMeta || !eligible) {
+    return normalizeStreakState(null);
+  }
+
+  const activatedAtISO = normalized.activatedAtISO ?? null;
+  const dueAtISO = normalized.dueAtISO ?? computeDueAtISO(entry.endDate);
+  const completedAtISO =
+    uploadsComplete && dueAtISO && isWithinDueWindow(dueAtISO)
+      ? normalized.completedAtISO ?? new Date().toISOString()
+      : normalized.completedAtISO ?? null;
+
+  return {
+    ...normalized,
+    activatedAtISO,
+    dueAtISO,
+    completedAtISO,
   };
 }
 
@@ -489,26 +547,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "amountSupport invalid" }, { status: 400 });
     }
 
-    if (!isValidFileMeta(entry.permissionLetter)) {
-      return NextResponse.json({ error: "permissionLetter required" }, { status: 400 });
-    }
-
-    if (!isValidFileMeta(entry.travelPlan)) {
-      return NextResponse.json({ error: "travelPlan required" }, { status: 400 });
-    }
-
-    if (!Array.isArray(entry.geotaggedPhotos) || entry.geotaggedPhotos.length === 0) {
-      return NextResponse.json({ error: "geotaggedPhotos required" }, { status: 400 });
-    }
-
-    const permissionLetter = entry.permissionLetter;
-    const travelPlan = entry.travelPlan;
-    const geotaggedPhotos = entry.geotaggedPhotos;
+    const permissionLetter = isValidFileMeta(entry.permissionLetter) ? entry.permissionLetter : null;
+    const travelPlan = isValidFileMeta(entry.travelPlan) ? entry.travelPlan : null;
+    const geotaggedPhotos = Array.isArray(entry.geotaggedPhotos) ? entry.geotaggedPhotos : [];
     const ownerPrefix = path.posix.join("uploads", safeEmailDir(email), "case-studies") + "/";
-    if (!normalizeStoredPath(permissionLetter.storedPath).startsWith(ownerPrefix)) {
+    if (permissionLetter && !normalizeStoredPath(permissionLetter.storedPath).startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "permissionLetter invalid" }, { status: 400 });
     }
-    if (!normalizeStoredPath(travelPlan.storedPath).startsWith(ownerPrefix)) {
+    if (travelPlan && !normalizeStoredPath(travelPlan.storedPath).startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "travelPlan invalid" }, { status: 400 });
     }
     if (
@@ -533,6 +579,7 @@ export async function POST(request: Request) {
       id: entry.id,
       sharedEntryId,
       sourceEmail: email,
+      status: entry.status === "final" ? "final" : "draft",
       academicYear: entry.academicYear,
       semesterType: entry.semesterType,
       startDate: entry.startDate,
@@ -549,10 +596,25 @@ export async function POST(request: Request) {
       })),
       studentYear: entry.studentYear,
       semesterNumber: entry.semesterNumber,
+      participants:
+        typeof entry.participants === "number" && Number.isFinite(entry.participants) && entry.participants > 0
+          ? entry.participants
+          : null,
       amountSupport,
+      pdfMeta: entry.status === "final" && entry.pdfMeta ? entry.pdfMeta : null,
       permissionLetter,
       travelPlan,
       geotaggedPhotos,
+      streak: buildSavedStreak({
+        status: entry.status === "final" ? "final" : "draft",
+        pdfMeta: entry.status === "final" ? entry.pdfMeta ?? null : null,
+        startDate: entry.startDate,
+        endDate: entry.endDate,
+        streak: entry.streak,
+        permissionLetter,
+        travelPlan,
+        geotaggedPhotos,
+      }),
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };
@@ -671,6 +733,7 @@ export async function PATCH(request: Request) {
     const savedEntry: CaseStudyEntry = {
       ...(existing ?? {
         id: entry.id,
+        status: "draft",
         academicYear: "",
         semesterType: "",
         startDate: "",
@@ -681,16 +744,20 @@ export async function PATCH(request: Request) {
         staffAccompanying: [],
         studentYear: "",
         semesterNumber: null,
+        participants: null,
         amountSupport: null,
+        pdfMeta: null,
         permissionLetter: null,
         travelPlan: null,
         geotaggedPhotos: [],
+        streak: normalizeStreakState(null),
         createdAt: now,
         updatedAt: now,
       }),
       id: entry.id,
       sharedEntryId,
       sourceEmail: email,
+      status: entry.status === "final" ? "final" : existing?.status ?? "draft",
       academicYear: entry.academicYear,
       semesterType: entry.semesterType,
       startDate: entry.startDate,
@@ -707,11 +774,35 @@ export async function PATCH(request: Request) {
       })),
       studentYear: entry.studentYear || existing?.studentYear || "",
       semesterNumber: entry.semesterNumber ?? existing?.semesterNumber ?? null,
+      participants:
+        typeof entry.participants === "number" && Number.isFinite(entry.participants) && entry.participants > 0
+          ? entry.participants
+          : existing?.participants ?? null,
       amountSupport: entry.amountSupport ?? existing?.amountSupport ?? null,
+      pdfMeta:
+        entry.status === "final"
+          ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
+          : null,
       permissionLetter: isValidFileMeta(entry.permissionLetter) ? entry.permissionLetter : existing?.permissionLetter ?? null,
       travelPlan: isValidFileMeta(entry.travelPlan) ? entry.travelPlan : existing?.travelPlan ?? null,
       geotaggedPhotos:
         entry.geotaggedPhotos.length > 0 ? entry.geotaggedPhotos : existing?.geotaggedPhotos ?? [],
+      streak: buildSavedStreak({
+        status: entry.status === "final" ? "final" : existing?.status ?? "draft",
+        pdfMeta:
+          entry.status === "final"
+            ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
+            : null,
+        startDate: entry.startDate || existing?.startDate || "",
+        endDate: entry.endDate || existing?.endDate || "",
+        streak: entry.streak ?? existing?.streak,
+        permissionLetter: isValidFileMeta(entry.permissionLetter)
+          ? entry.permissionLetter
+          : existing?.permissionLetter ?? null,
+        travelPlan: isValidFileMeta(entry.travelPlan) ? entry.travelPlan : existing?.travelPlan ?? null,
+        geotaggedPhotos:
+          entry.geotaggedPhotos.length > 0 ? entry.geotaggedPhotos : existing?.geotaggedPhotos ?? [],
+      }),
       createdAt: existing?.createdAt ?? entry.createdAt ?? now,
       updatedAt: now,
     };

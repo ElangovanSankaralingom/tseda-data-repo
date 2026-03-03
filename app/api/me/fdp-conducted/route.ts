@@ -3,6 +3,7 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import {
   findFacultyByEmail,
   findFacultyByName,
@@ -11,7 +12,6 @@ import {
 } from "@/lib/facultyDirectory";
 import {
   computeDueAtISO,
-  ensureActivated,
   isEntryEditable,
   isFutureDatedEntry,
   markCompleted,
@@ -29,8 +29,11 @@ type FileMeta = {
 };
 
 type FacultySelection = {
+  id?: string;
   name: string;
   email: string;
+  isLocked?: boolean;
+  savedAtISO?: string | null;
 };
 
 type FdpConducted = {
@@ -43,9 +46,11 @@ type FdpConducted = {
   semesterType: string;
   startDate: string;
   endDate: string;
+  eventName: string;
   coordinatorName: string;
   coordinatorEmail: string;
   coCoordinators: FacultySelection[];
+  pdfMeta?: PdfMeta | null;
   permissionLetter: FileMeta | null;
   geotaggedPhotos: FileMeta[];
   streak: StreakState;
@@ -120,35 +125,59 @@ function parseNameEmail(text: string): FacultySelection {
 
 function normalizeFacultySelection(value: unknown): FacultySelection {
   if (typeof value === "string") {
-    return parseNameEmail(value);
+    return { ...parseNameEmail(value), id: undefined, isLocked: false, savedAtISO: null };
   }
 
   if (value && typeof value === "object") {
-    const record = value as { name?: unknown; email?: unknown };
+    const record = value as {
+      id?: unknown;
+      name?: unknown;
+      email?: unknown;
+      isLocked?: unknown;
+      savedAtISO?: unknown;
+    };
     return {
+      id: String(record.id ?? "").trim() || undefined,
       name: String(record.name ?? "").trim(),
       email: normalizeEmail(String(record.email ?? "")),
+      isLocked: record.isLocked === true,
+      savedAtISO: typeof record.savedAtISO === "string" && record.savedAtISO.trim() ? record.savedAtISO : null,
     };
   }
 
-  return { name: "", email: "" };
+  return { id: undefined, name: "", email: "", isLocked: false, savedAtISO: null };
 }
 
 function canonicalizeFacultySelection(value: FacultySelection) {
   const normalizedEmail = value.email ? normalizeEmail(value.email) : "";
   const byEmail = normalizedEmail ? findFacultyByEmail(normalizedEmail) : null;
   if (byEmail) {
-    return { name: byEmail.name, email: byEmail.email };
+    return {
+      id: value.id,
+      name: byEmail.name,
+      email: byEmail.email,
+      isLocked: value.isLocked === true,
+      savedAtISO: value.savedAtISO ?? null,
+    };
   }
 
   const byName = value.name ? findFacultyByName(value.name) : null;
   if (byName) {
-    return { name: byName.name, email: byName.email };
+    return {
+      id: value.id,
+      name: byName.name,
+      email: byName.email,
+      isLocked: value.isLocked === true,
+      savedAtISO: value.savedAtISO ?? null,
+    };
   }
 
   return {
+    id: value.id,
     name: value.name.trim(),
     email: normalizedEmail,
+    isLocked: value.isLocked === true,
+    savedAtISO: value.savedAtISO ?? null,
   };
 }
 
@@ -195,9 +224,13 @@ function normalizeEntry(value: unknown): FdpConducted | null {
     semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
     endDate: String(record.endDate ?? "").trim(),
+    eventName: String(record.eventName ?? "").trim(),
     coordinatorName: coordinator.name,
     coordinatorEmail: coordinator.email,
     coCoordinators,
+    pdfMeta: isValidPdfMeta((record.pdfMeta as PdfMeta | null) ?? null)
+      ? ((record.pdfMeta as PdfMeta | null) ?? null)
+      : null,
     permissionLetter: (record.permissionLetter as FileMeta | null) ?? null,
     geotaggedPhotos: normalizeFileMetaArray(record.geotaggedPhotos, record.geotaggedPhoto),
     streak: normalizeStreakState(record.streak),
@@ -271,11 +304,16 @@ function canEditEntry(entry: FdpConducted) {
   return isEntryEditable(entry);
 }
 
+function hasCompletedUploads(entry: Pick<FdpConducted, "permissionLetter" | "geotaggedPhotos">) {
+  return isValidFileMeta(entry.permissionLetter) && entry.geotaggedPhotos.length > 0;
+}
+
 function validateCoreFields(entry: FdpConducted) {
   const startDate = String(entry.startDate ?? "").trim();
   const endDate = String(entry.endDate ?? "").trim();
   const academicYear = String(entry.academicYear ?? "").trim();
   const semesterType = String(entry.semesterType ?? "").trim();
+  const eventName = String(entry.eventName ?? "").trim();
 
   if (!ACADEMIC_YEAR_OPTIONS.has(academicYear)) {
     return { error: "academicYear required" };
@@ -302,7 +340,11 @@ function validateCoreFields(entry: FdpConducted) {
     return { error: "endDate must be on or after startDate" };
   }
 
-  return { academicYear, semesterType, startDate, endDate };
+  if (!eventName) {
+    return { error: "eventName required" };
+  }
+
+  return { academicYear, semesterType, startDate, endDate, eventName };
 }
 
 export async function GET(request: Request) {
@@ -385,12 +427,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "duplicate faculty selection" }, { status: 400 });
     }
 
-    if (!isValidFileMeta(entry.permissionLetter)) {
-      return NextResponse.json({ error: "permissionLetter required" }, { status: 400 });
-    }
-
     const ownerPrefix = path.posix.join("uploads", safeEmailDir(email), "fdp-conducted") + "/";
-    if (!normalizeStoredPath(entry.permissionLetter.storedPath).startsWith(ownerPrefix)) {
+    if (
+      entry.permissionLetter?.storedPath &&
+      !normalizeStoredPath(entry.permissionLetter.storedPath).startsWith(ownerPrefix)
+    ) {
       return NextResponse.json({ error: "permissionLetter invalid" }, { status: 400 });
     }
     if (
@@ -414,34 +455,28 @@ export async function POST(request: Request) {
     const existingStreak = normalizeStreakState(existing?.streak ?? entry.streak);
     let streak = normalizeStreakState(existingStreak);
 
-    if (nextStatus === "final") {
-      streak = eligible
-        ? ensureActivated(existingStreak, validated.endDate)
-        : {
-            ...existingStreak,
-            activatedAtISO: null,
-            dueAtISO: null,
-            completedAtISO: null,
-          };
-
-      if (eligible) {
-        streak.dueAtISO = streak.dueAtISO || computeDueAtISO(validated.endDate);
-        if (
-          entry.geotaggedPhotos.length > 0 &&
-          streak.dueAtISO &&
-          !streak.completedAtISO &&
-          Date.now() <= new Date(streak.dueAtISO).getTime()
-        ) {
-          streak = markCompleted(streak);
-        }
-      }
-    } else {
+    if (nextStatus !== "final" || !entry.pdfMeta || !eligible) {
       streak = {
         ...existingStreak,
         activatedAtISO: null,
         dueAtISO: null,
         completedAtISO: null,
       };
+    } else {
+      streak = {
+        ...existingStreak,
+        dueAtISO: existingStreak.dueAtISO || computeDueAtISO(validated.endDate),
+      };
+
+      if (
+        hasCompletedUploads(entry) &&
+        streak.activatedAtISO &&
+        streak.dueAtISO &&
+        !streak.completedAtISO &&
+        Date.now() <= new Date(streak.dueAtISO).getTime()
+      ) {
+        streak = markCompleted(streak);
+      }
     }
 
     const savedEntry: FdpConducted = {
@@ -454,12 +489,17 @@ export async function POST(request: Request) {
       semesterType: validated.semesterType,
       startDate: validated.startDate,
       endDate: validated.endDate,
+      eventName: validated.eventName,
       coordinatorName: coordinator.email ? (getCanonicalName(coordinator.email) ?? coordinator.name) : coordinator.name,
       coordinatorEmail: coordinator.email,
       coCoordinators: coCoordinators.map((value) => ({
+        id: value.id,
         name: value.email ? (getCanonicalName(value.email) ?? value.name) : value.name,
         email: value.email,
+        isLocked: value.isLocked === true,
+        savedAtISO: value.savedAtISO ?? null,
       })),
+      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
       permissionLetter: entry.permissionLetter,
       geotaggedPhotos: entry.geotaggedPhotos,
       streak,
@@ -596,9 +636,11 @@ export async function PATCH(request: Request) {
         semesterType: "",
         startDate: "",
         endDate: "",
+        eventName: "",
         coordinatorName,
         coordinatorEmail: email,
         coCoordinators: [],
+        pdfMeta: null,
         permissionLetter: null,
         geotaggedPhotos: [],
         streak: normalizeStreakState(null),
@@ -622,25 +664,44 @@ export async function PATCH(request: Request) {
       semesterType: entry.semesterType || existing?.semesterType || "",
       startDate: entry.startDate || existing?.startDate || "",
       endDate: entry.endDate || existing?.endDate || "",
+      eventName: entry.eventName || existing?.eventName || "",
       coordinatorName,
       coordinatorEmail: email,
       coCoordinators: hasCoCoordinators
         ? entry.coCoordinators.map(canonicalizeFacultySelection)
         : existing?.coCoordinators || [],
+      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
       permissionLetter: hasPermissionLetter ? entry.permissionLetter : existing?.permissionLetter || null,
       geotaggedPhotos: hasGeotaggedPhotos ? entry.geotaggedPhotos : existing?.geotaggedPhotos || [],
-      streak:
-        existing?.status === "final"
-          ? normalizeStreakState(existing.streak)
-          : {
-              ...normalizeStreakState(entry.streak),
-              activatedAtISO: null,
-              dueAtISO: null,
-              completedAtISO: null,
-            },
+      streak: normalizeStreakState(existing?.streak ?? entry.streak),
       createdAt: existing?.createdAt || entry.createdAt || now,
       updatedAt: now,
     };
+
+    const eligible = isFutureDatedEntry(savedEntry.startDate, savedEntry.endDate);
+    if (savedEntry.status !== "final" || !savedEntry.pdfMeta || !eligible) {
+      savedEntry.streak = {
+        ...savedEntry.streak,
+        activatedAtISO: null,
+        dueAtISO: null,
+        completedAtISO: null,
+      };
+    } else {
+      savedEntry.streak = {
+        ...savedEntry.streak,
+        dueAtISO: savedEntry.streak.dueAtISO || computeDueAtISO(savedEntry.endDate),
+      };
+
+      if (
+        hasCompletedUploads(savedEntry) &&
+        savedEntry.streak.activatedAtISO &&
+        savedEntry.streak.dueAtISO &&
+        !savedEntry.streak.completedAtISO &&
+        Date.now() <= new Date(savedEntry.streak.dueAtISO).getTime()
+      ) {
+        savedEntry.streak = markCompleted(savedEntry.streak);
+      }
+    }
 
     await writeList(
       email,

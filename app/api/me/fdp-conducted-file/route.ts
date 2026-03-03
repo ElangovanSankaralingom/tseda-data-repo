@@ -15,6 +15,7 @@ const ALLOWED_SLOTS = new Set<Slot>(["permissionLetter", "geotaggedPhotos"]);
 type FdpConductedRecord = {
   id: string;
   status?: "draft" | "final";
+  pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
   startDate?: string;
   endDate?: string;
   createdAt?: string;
@@ -107,6 +108,12 @@ export async function POST(request: Request) {
     }
 
     const existing = await getEntryForRecordId(email, recordId);
+    if (!existing) {
+      return NextResponse.json({ error: "Generate the entry first." }, { status: 400 });
+    }
+    if (!existing.pdfMeta?.storedPath || !existing.pdfMeta?.url) {
+      return NextResponse.json({ error: "Generate the entry first." }, { status: 400 });
+    }
     if (existing && !isEntryEditable(existing)) {
       return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
     }

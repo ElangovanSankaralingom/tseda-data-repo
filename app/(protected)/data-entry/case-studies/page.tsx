@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import DateField from "@/components/controls/DateField";
-import FacultySelect, { type FacultySelection } from "@/components/controls/FacultySelect";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
 import MultiPhotoUpload from "@/components/uploads/MultiPhotoUpload";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { nowISTTimestampISO } from "@/lib/gamification";
@@ -25,13 +25,7 @@ type FileMeta = {
   storedPath: string;
 };
 
-type StaffSelection = {
-  id?: string;
-  name: string;
-  email: string;
-  isLocked?: boolean;
-  savedAtISO?: string | null;
-};
+type StaffSelection = FacultyRowValue;
 
 type UploadSlot = "permissionLetter" | "travelPlan";
 
@@ -40,20 +34,34 @@ type CaseStudyEntry = {
   sharedEntryId?: string;
   sourceEmail?: string;
   sharedRole?: "staffAccompanying";
+  status?: "draft" | "final";
   academicYear: string;
   semesterType: "Odd" | "Even" | "";
   startDate: string;
   endDate: string;
-  coordinator: FacultySelection;
+  coordinator: FacultyRowValue;
   placeOfVisit: string;
   purposeOfVisit: string;
   staffAccompanying: StaffSelection[];
   studentYear: StudentYear | "";
   semesterNumber: number | null;
+  participants: number | null;
   amountSupport: number | null;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
   permissionLetter: FileMeta | null;
   travelPlan: FileMeta | null;
   geotaggedPhotos: FileMeta[];
+  streak?: {
+    activatedAtISO?: string | null;
+    dueAtISO?: string | null;
+    completedAtISO?: string | null;
+    windowDays?: number;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -137,9 +145,10 @@ function emptyStaff(): StaffSelection {
   return { id: uuid(), name: "", email: "", isLocked: false, savedAtISO: null };
 }
 
-function emptyForm(currentFaculty?: FacultySelection): CaseStudyEntry {
+function emptyForm(currentFaculty?: FacultyRowValue): CaseStudyEntry {
   return {
     id: uuid(),
+    status: "draft",
     academicYear: "",
     semesterType: "",
     startDate: "",
@@ -147,13 +156,16 @@ function emptyForm(currentFaculty?: FacultySelection): CaseStudyEntry {
     coordinator: currentFaculty?.email ? currentFaculty : emptyStaff(),
     placeOfVisit: "",
     purposeOfVisit: "",
-    staffAccompanying: [emptyStaff()],
+    staffAccompanying: [],
     studentYear: "",
     semesterNumber: null,
+    participants: null,
     amountSupport: null,
+    pdfMeta: null,
     permissionLetter: null,
     travelPlan: null,
     geotaggedPhotos: [],
+    streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
   };
@@ -297,11 +309,9 @@ export default function CaseStudiesPage() {
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [attemptedSectionSave, setAttemptedSectionSave] = useState(false);
-  const [attemptedRowSave, setAttemptedRowSave] = useState<Record<string, boolean>>({});
-  const [rowSaveErrors, setRowSaveErrors] = useState<Record<string, string | null>>({});
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [email, setEmail] = useState("");
-  const [currentFaculty, setCurrentFaculty] = useState<FacultySelection>(emptyStaff);
+  const [currentFaculty, setCurrentFaculty] = useState<FacultyRowValue>(emptyStaff);
   const [list, setList] = useState<CaseStudyEntry[]>([]);
   const [form, setForm] = useState<CaseStudyEntry>(() => emptyForm());
   const [pending, setPending] = useState<Record<UploadSlot, File | null>>({
@@ -321,7 +331,6 @@ export default function CaseStudiesPage() {
     travelPlan: null,
   });
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
-  const [staffRowStatus, setStaffRowStatus] = useState<Record<string, { saving: boolean }>>({});
   const saveLockRef = useRef(false);
 
   useEffect(() => {
@@ -436,18 +445,6 @@ export default function CaseStudiesPage() {
       }
     }
 
-    if (!entry.permissionLetter) {
-      nextErrors.permissionLetter = "Permission letter is mandatory.";
-    }
-
-    if (!entry.travelPlan) {
-      nextErrors.travelPlan = "Travel plan is mandatory.";
-    }
-
-    if (entry.geotaggedPhotos.length === 0) {
-      nextErrors.geotaggedPhotos = "At least one geotagged photo is mandatory.";
-    }
-
     return nextErrors;
   }
 
@@ -458,29 +455,21 @@ export default function CaseStudiesPage() {
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const hasPendingFiles = Object.values(pending).some(Boolean) || photoUploadStatus.hasPending;
   const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
-  const selectedFacultyEmails = useMemo(() => {
-    return new Set(
-      form.staffAccompanying
-        .map((staff) => staff.email.trim().toLowerCase())
-        .filter(Boolean)
-    );
-  }, [form.staffAccompanying]);
-
-  function getDisabledEmailsForStaffRow(index: number) {
-    const next = new Set(selectedFacultyEmails);
-    const currentEmail = form.staffAccompanying[index]?.email?.trim().toLowerCase();
-    if (currentEmail) {
-      next.delete(currentEmail);
-    }
-    return next;
-  }
+  const generateReady =
+    !!form.academicYear &&
+    !!form.semesterType &&
+    isISODate(form.startDate) &&
+    isISODate(form.endDate) &&
+    form.endDate >= form.startDate &&
+    !!form.placeOfVisit.trim() &&
+    !!form.purposeOfVisit.trim() &&
+    form.staffAccompanying.length > 0 &&
+    !form.staffAccompanying.some((staff) => !staff.isLocked || !staff.email.trim());
+  const uploadsVisible = !!form.pdfMeta;
 
   function resetForm() {
     setAttemptedSectionSave(false);
-    setAttemptedRowSave({});
-    setRowSaveErrors({});
     setForm(emptyForm(currentFaculty));
-    setStaffRowStatus({});
     setPending({
       permissionLetter: null,
       travelPlan: null,
@@ -517,7 +506,7 @@ export default function CaseStudiesPage() {
   }
 
   async function closeForm() {
-    if (form.permissionLetter || form.travelPlan || form.geotaggedPhotos.length > 0) {
+    if (!form.pdfMeta && (form.permissionLetter || form.travelPlan || form.geotaggedPhotos.length > 0)) {
       await cleanupDraftUploads(form);
     }
     resetForm();
@@ -535,6 +524,21 @@ export default function CaseStudiesPage() {
     }
 
     setList(Array.isArray(items) ? (items as CaseStudyEntry[]) : []);
+  }
+
+  async function persistProgress(nextForm: CaseStudyEntry) {
+    const response = await fetch("/api/me/case-studies", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, entry: nextForm }),
+    });
+    const { message, payload } = await parseApiError(response, "Save failed");
+
+    if (!response.ok) {
+      throw new Error(message);
+    }
+
+    return payload as CaseStudyEntry;
   }
 
   async function parseApiError(response: Response, fallback: string) {
@@ -559,36 +563,24 @@ export default function CaseStudiesPage() {
     return { message, payload };
   }
 
-  function buildRowSaveEntry(index: number) {
-    const savedRows = form.staffAccompanying.filter((staff, staffIndex) => {
-      if (staffIndex === index) return false;
-      const rowEmail = staff.email.trim().toLowerCase();
-      return !!(staff.isLocked && rowEmail);
-    });
-
-    const currentRow = form.staffAccompanying[index];
-    const included = new Map<string, StaffSelection>();
-    const savedAtISO = nowISTTimestampISO();
-
-    for (const staff of [...savedRows, currentRow]) {
-      const rowEmail = staff?.email?.trim().toLowerCase() ?? "";
-      if (!rowEmail) continue;
-      included.set(rowEmail, {
+  function buildRowSaveEntry(rows: StaffSelection[]) {
+    const savedRows = rows
+      .filter((staff) => staff.isLocked && staff.email.trim())
+      .map((staff) => ({
         ...staff,
-        email: rowEmail,
-        isLocked: true,
-        savedAtISO: staff.savedAtISO ?? savedAtISO,
-      });
-    }
+        email: staff.email.trim().toLowerCase(),
+        savedAtISO: staff.savedAtISO ?? nowISTTimestampISO(),
+      }));
 
     return {
       ...form,
       coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
-      staffAccompanying: Array.from(included.values()),
+      staffAccompanying: savedRows,
     };
   }
 
   async function uploadSlot(slot: UploadSlot) {
+    const currentForm = form;
     const file = pending[slot];
     if (!file) {
       setUploadError((current) => ({ ...current, [slot]: "Select a file first." }));
@@ -625,10 +617,13 @@ export default function CaseStudiesPage() {
         void deleteStoredFile(previousMeta.storedPath);
       }
 
-      setForm((current) => ({ ...current, [slot]: meta }));
+      const nextForm = { ...currentForm, [slot]: meta };
+      const persisted = await persistProgress(nextForm);
+      setForm(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
       setProgress((current) => ({ ...current, [slot]: 100 }));
+      await refreshList(email);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Upload failed.";
       setBusy((current) => ({ ...current, [slot]: false }));
@@ -637,7 +632,8 @@ export default function CaseStudiesPage() {
   }
 
   async function deleteSlot(slot: UploadSlot) {
-    const meta = form[slot];
+    const currentForm = form;
+    const meta = currentForm[slot];
     if (!meta?.storedPath) {
       setToast({ type: "err", msg: "File path missing." });
       setTimeout(() => setToast(null), 1500);
@@ -656,11 +652,14 @@ export default function CaseStudiesPage() {
         throw new Error(payload?.error || "Delete failed.");
       }
 
-      setForm((current) => ({ ...current, [slot]: null }));
+      const nextForm = { ...currentForm, [slot]: null };
+      const persisted = await persistProgress(nextForm);
+      setForm(persisted);
       setPending((current) => ({ ...current, [slot]: null }));
       setBusy((current) => ({ ...current, [slot]: false }));
       setProgress((current) => ({ ...current, [slot]: 0 }));
       setUploadError((current) => ({ ...current, [slot]: null }));
+      await refreshList(email);
 
       setToast({ type: "ok", msg: "File deleted." });
       setTimeout(() => setToast(null), 1200);
@@ -693,19 +692,10 @@ export default function CaseStudiesPage() {
       setSaving(true);
       const entryToSave: CaseStudyEntry = {
         ...form,
+        status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
-      const response = await fetch("/api/me/case-studies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, entry: entryToSave }),
-      });
-      const { message } = await parseApiError(response, "Save failed");
-
-      if (!response.ok) {
-        throw new Error(message);
-      }
-
+      await persistProgress(entryToSave);
       await refreshList(email);
       setToast({ type: "ok", msg: "Case Study saved." });
       setTimeout(() => setToast(null), 1400);
@@ -713,6 +703,61 @@ export default function CaseStudiesPage() {
       setFormOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Save failed.";
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
+    } finally {
+      setSaving(false);
+      saveLockRef.current = false;
+    }
+  }
+
+  async function generateEntry() {
+    if (saveLockRef.current) return;
+    saveLockRef.current = true;
+
+    try {
+      setAttemptedSectionSave(true);
+
+      if (Object.keys(errors).length > 0 || !generateReady) {
+        setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
+        setTimeout(() => setToast(null), 1800);
+        return;
+      }
+
+      if (hasPendingFiles || hasBusyUploads) {
+        setToast({ type: "err", msg: "Finish the current uploads before generating the entry." });
+        setTimeout(() => setToast(null), 1800);
+        return;
+      }
+
+      setSaving(true);
+      const draftEntry: CaseStudyEntry = {
+        ...form,
+        status: form.status === "final" ? "final" : "draft",
+        coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
+      };
+      const persistedDraft = await persistProgress(draftEntry);
+      const response = await fetch(`/api/me/case-studies/${encodeURIComponent(persistedDraft.id)}/pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const { message, payload } = await parseApiError(response, "Generate failed");
+
+      if (!response.ok) {
+        throw new Error(message);
+      }
+
+      const nextEntry =
+        payload && typeof payload === "object" && "entry" in payload
+          ? ((payload as { entry?: CaseStudyEntry }).entry ?? persistedDraft)
+          : persistedDraft;
+
+      setForm(nextEntry);
+      await refreshList(email);
+      setToast({ type: "ok", msg: "Entry generated." });
+      setTimeout(() => setToast(null), 1400);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Generate failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
     } finally {
@@ -766,29 +811,26 @@ export default function CaseStudiesPage() {
     return { ok: true, error: null };
   }
 
-  async function saveFacultyRow(rowId: string, index: number) {
-    const staff = form.staffAccompanying[index];
-    const selectedEmail = staff?.email?.trim().toLowerCase() ?? "";
-
-    if (!rowId || !selectedEmail) {
-      return;
+  async function persistStaffRows(
+    nextRows: StaffSelection[],
+    context: {
+      row: StaffSelection;
+      rowId: string;
+      index: number;
+      previousRows: StaffSelection[];
+      savedAtISO: string;
     }
-
-    const entryToSave = buildRowSaveEntry(index);
-    const rowValidation = validateRowForFacultySave(entryToSave, staff);
-    setAttemptedRowSave((current) => ({ ...current, [rowId]: true }));
+  ) {
+    const entryToSave = buildRowSaveEntry(nextRows);
+    const rowValidation = validateRowForFacultySave(entryToSave, context.row);
 
     if (DEBUG_SAVE_FACULTY) {
       console.log("[case-studies][save-faculty]", {
-        rowId,
-        selectedEmail,
-        selectedName: staff.name,
+        rowId: context.rowId,
+        selectedEmail: context.row.email,
+        selectedName: context.row.name,
         entryId: form.id,
         sharedEntryId: form.sharedEntryId ?? null,
-        disabled:
-          !selectedEmail ||
-          !!staffRowStatus[rowId]?.saving ||
-          !!staff.isLocked,
         payload: {
           id: entryToSave.id,
           sharedEntryId: entryToSave.sharedEntryId ?? null,
@@ -799,31 +841,23 @@ export default function CaseStudiesPage() {
           staffAccompanying: entryToSave.staffAccompanying.map((item) => ({
             name: item.name,
             email: item.email,
+            isLocked: item.isLocked,
           })),
         },
       });
     }
 
     if (!rowValidation.ok) {
-      setRowSaveErrors((current) => ({ ...current, [rowId]: rowValidation.error }));
-      return;
+      throw new Error(rowValidation.error ?? "Save faculty failed.");
     }
 
-    setRowSaveErrors((current) => ({ ...current, [rowId]: null }));
+    if (saveLockRef.current) {
+      throw new Error("Please wait for the current save to finish.");
+    }
 
-    if (saveLockRef.current) return;
     saveLockRef.current = true;
 
-    setStaffRowStatus((current) => ({
-      ...current,
-      [rowId]: {
-        ...(current[rowId] ?? { saved: false }),
-        saving: true,
-      },
-    }));
-
     try {
-      setSaving(true);
       const response = await fetch("/api/me/case-studies", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -837,6 +871,24 @@ export default function CaseStudiesPage() {
 
       const savedEntry = payload as CaseStudyEntry;
       await refreshList(email);
+      const mergedRows = nextRows.map((item) => {
+        const savedStaff =
+          savedEntry.staffAccompanying.find(
+            (candidate) => candidate.email.trim().toLowerCase() === item.email.trim().toLowerCase()
+          ) ?? null;
+
+        return savedStaff
+          ? {
+              ...item,
+              id: savedStaff.id ?? item.id,
+              name: savedStaff.name,
+              email: savedStaff.email,
+              isLocked: !!savedStaff.isLocked,
+              savedAtISO: savedStaff.savedAtISO ?? item.savedAtISO ?? null,
+            }
+          : item;
+      });
+
       setForm((current) => ({
         ...current,
         sharedEntryId: savedEntry.sharedEntryId,
@@ -844,48 +896,13 @@ export default function CaseStudiesPage() {
         coordinator: savedEntry.coordinator,
         createdAt: savedEntry.createdAt,
         updatedAt: savedEntry.updatedAt,
-        staffAccompanying: current.staffAccompanying.map((item) => {
-          const savedStaff =
-            savedEntry.staffAccompanying.find(
-              (candidate) => candidate.email.trim().toLowerCase() === item.email.trim().toLowerCase()
-            ) ?? null;
-
-          return savedStaff
-            ? {
-                ...item,
-                id: savedStaff.id ?? item.id,
-                name: savedStaff.name,
-                email: savedStaff.email,
-                isLocked: !!savedStaff.isLocked,
-                savedAtISO: savedStaff.savedAtISO ?? null,
-              }
-            : item;
-        }),
+        staffAccompanying: mergedRows,
       }));
 
-      setStaffRowStatus((current) => ({
-        ...current,
-        [rowId]: {
-          saving: false,
-        },
-      }));
-      setRowSaveErrors((current) => ({ ...current, [rowId]: null }));
-
-      setToast({ type: "ok", msg: `Saved for ${staff.name}.` });
+      setToast({ type: "ok", msg: `Saved for ${context.row.name}.` });
       setTimeout(() => setToast(null), 1400);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Save failed.";
-      setStaffRowStatus((current) => ({
-        ...current,
-        [rowId]: {
-          ...(current[rowId] ?? { saved: false }),
-          saving: false,
-        },
-      }));
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1800);
+      return mergedRows;
     } finally {
-      setSaving(false);
       saveLockRef.current = false;
     }
   }
@@ -968,7 +985,7 @@ export default function CaseStudiesPage() {
         {!loading && formOpen ? (
           <SectionCard
             title="New Case Study Entry"
-            subtitle="Add the entry details and upload the required documents."
+            subtitle="Add the entry details and generate the entry to unlock uploads."
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={attemptedSectionSave ? errors.academicYear : undefined}>
@@ -1122,139 +1139,73 @@ export default function CaseStudiesPage() {
               Coordinator: <span className="font-medium text-foreground">{currentFaculty.name || "-"}</span>
             </div>
 
-            <div className="mt-5 rounded-xl border border-border p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold">Staff Accompanying</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Add at least one staff member. Already selected faculty are disabled in other rows.
-                  </div>
-                </div>
-
-                <MiniButton
-                  variant="ghost"
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      staffAccompanying: [...current.staffAccompanying, emptyStaff()],
-                    }))
-                  }
-                >
-                  + Add Staff
-                </MiniButton>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {form.staffAccompanying.map((staff, index) => (
-                  <div
-                    key={staff.id ?? `${form.id}-staff-${index}`}
-                    className={cx(
-                      "grid gap-2 rounded-xl px-3 py-2 sm:grid-cols-[1fr_auto_auto] sm:items-end",
-                      staff.isLocked && "bg-muted/30 opacity-70"
-                    )}
-                  >
-                    {(() => {
-                      const rowId = staff.id ?? "";
-                      const rowStatus = staffRowStatus[rowId];
-                      const rowEmail = staff.email.trim().toLowerCase();
-                      const hasSelection = Boolean(rowEmail);
-                      const rowIsSaved = !!staff.isLocked;
-                      const rowDisabled = !hasSelection || !!rowStatus?.saving || rowIsSaved;
-                      const showRowSaveAction = hasSelection || !!rowStatus?.saving || rowIsSaved;
-
-                      return (
-                        <>
-                    <Field
-                      label={`Staff ${index + 1}`}
-                      error={
-                        attemptedSectionSave
-                          ? errors[`staffAccompanying.${index}`] || (index === 0 ? errors.staffAccompanying : undefined)
-                          : undefined
-                      }
-                    >
-                      <FacultySelect
-                        value={staff}
-                        onChange={(next) =>
-                          setForm((current) => {
-                            const rowId = current.staffAccompanying[index]?.id ?? "";
-                            setStaffRowStatus((status) =>
-                              rowId && status[rowId]
-                                ? {
-                                    ...status,
-                                    [rowId]: {
-                                      saving: false,
-                                    },
-                                  }
-                                : status
-                            );
-                            setAttemptedRowSave((currentAttempted) => ({ ...currentAttempted, [rowId]: false }));
-                            setRowSaveErrors((currentErrors) => ({ ...currentErrors, [rowId]: null }));
-
-                            return {
-                              ...current,
-                              staffAccompanying: current.staffAccompanying.map((item, itemIndex) =>
-                                itemIndex === index
-                                  ? {
-                                      ...next,
-                                      id: item.id ?? rowId,
-                                      isLocked: false,
-                                      savedAtISO: null,
-                                    }
-                                  : item
-                              ),
-                            };
-                          })
-                        }
-                        options={FACULTY_OPTIONS}
-                        disabledEmails={getDisabledEmailsForStaffRow(index)}
-                        placeholder="Search or type staff name"
-                        disabled={!!staff.isLocked}
-                        error={attemptedSectionSave && !!(errors[`staffAccompanying.${index}`] || (index === 0 ? errors.staffAccompanying : undefined))}
-                      />
-                    </Field>
-
-                    {showRowSaveAction ? (
-                      <MiniButton
-                        onClick={() => void saveFacultyRow(rowId, index)}
-                        disabled={rowDisabled}
-                      >
-                        {rowStatus?.saving
-                          ? "Saving..."
-                          : rowIsSaved
-                            ? "Saved"
-                            : "Save faculty"}
-                      </MiniButton>
-                    ) : null}
-
-                    <MiniButton
-                      variant="danger"
-                      onClick={() =>
-                        setForm((current) => ({
-                          ...current,
-                          staffAccompanying:
-                            current.staffAccompanying.length > 1
-                              ? current.staffAccompanying.filter((_, itemIndex) => itemIndex !== index)
-                              : [emptyStaff()],
-                        }))
-                      }
-                    >
-                      Delete
-                    </MiniButton>
-                    {attemptedRowSave[rowId] && rowSaveErrors[rowId] ? (
-                      <div className="sm:col-span-3 text-xs text-red-600">{rowSaveErrors[rowId]}</div>
-                    ) : null}
-                        </>
-                      );
-                    })()}
-                  </div>
-                ))}
-              </div>
-              {form.staffAccompanying.some((staff) => staff.email.trim() && !staff.isLocked) ? (
-                <div className="mt-3 text-xs text-muted-foreground">Save selected faculty rows to lock them.</div>
-              ) : null}
+            <div className="mt-5">
+              <FacultyRowPicker
+                title="Staff Accompanying"
+                helperText="Add at least one staff member. Already selected faculty are disabled in other rows."
+                addLabel="+ Add Staff"
+                rowLabelPrefix="Staff"
+                rows={form.staffAccompanying}
+                onRowsChange={(rows) => setForm((current) => ({ ...current, staffAccompanying: rows }))}
+                onPersistRow={persistStaffRows}
+                facultyOptions={FACULTY_OPTIONS}
+                sectionError={errors.staffAccompanying}
+                showSectionError={attemptedSectionSave}
+                emptyStateText="No staff added."
+                validateRow={(rows, row) => {
+                  const tempEntry = {
+                    ...form,
+                    coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
+                    staffAccompanying: rows,
+                  };
+                  return validateRowForFacultySave(tempEntry, row).error;
+                }}
+              />
             </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <Field label="Number of Participants" hint="Optional. Digits only">
+                <input
+                  inputMode="numeric"
+                  value={form.participants === null ? "" : String(form.participants)}
+                  onChange={(event) => {
+                    const digits = event.target.value.replace(/\D/g, "");
+                    setForm((current) => ({
+                      ...current,
+                      participants: digits === "" ? null : Number(digits),
+                    }));
+                  }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:border-ring/50 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+                />
+              </Field>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <MiniButton
+                  onClick={() => void generateEntry()}
+                  disabled={saving || loading || hasBusyUploads || hasPendingFiles || !generateReady}
+                >
+                  {saving ? "Generating..." : "Generate Entry"}
+                </MiniButton>
+                {form.pdfMeta?.url ? (
+                  <a
+                    href={form.pdfMeta.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+                  >
+                    Download Entry
+                  </a>
+                ) : (
+                  <MiniButton variant="ghost" disabled>
+                    Download Entry
+                  </MiniButton>
+                )}
+              </div>
+
+              {uploadsVisible ? (
+                <div className="grid gap-4 sm:grid-cols-3">
               {(
                 [
                   ["permissionLetter", "Permission Letter"],
@@ -1281,9 +1232,7 @@ export default function CaseStudiesPage() {
                         • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
                       </div>
                     ) : (
-                      <div className={cx("text-xs", attemptedSectionSave ? "text-red-600" : "text-muted-foreground")}>
-                        {attemptedSectionSave ? (errors[slot] || "This upload is mandatory.") : "No file uploaded yet."}
-                      </div>
+                      <div className="text-xs text-muted-foreground">No file uploaded yet.</div>
                     )}
 
                     <div className="text-xs text-muted-foreground">
@@ -1355,26 +1304,33 @@ export default function CaseStudiesPage() {
                 key={form.id}
                 title="Geotagged Photos"
                 value={form.geotaggedPhotos}
-                onUploaded={(meta) =>
-                  setForm((current) => ({
-                    ...current,
-                    geotaggedPhotos: [...current.geotaggedPhotos, meta],
-                  }))
-                }
-                onDeleted={(meta) =>
-                  setForm((current) => ({
-                    ...current,
-                    geotaggedPhotos: current.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath),
-                  }))
-                }
+                onUploaded={async (meta) => {
+                  const nextForm = {
+                    ...form,
+                    geotaggedPhotos: [...form.geotaggedPhotos, meta],
+                  };
+                  const persisted = await persistProgress(nextForm);
+                  setForm(persisted);
+                  await refreshList(email);
+                }}
+                onDeleted={async (meta) => {
+                  const nextForm = {
+                    ...form,
+                    geotaggedPhotos: form.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath),
+                  };
+                  const persisted = await persistProgress(nextForm);
+                  setForm(persisted);
+                  await refreshList(email);
+                }}
                 uploadEndpoint="/api/me/case-studies-file"
                 email={email}
                 recordId={form.id}
                 slotName="geotaggedPhotos"
-                showRequiredError={attemptedSectionSave && !!errors.geotaggedPhotos}
-                requiredErrorText={errors.geotaggedPhotos}
+                showRequiredError={false}
                 onStatusChange={setPhotoUploadStatus}
               />
+                </div>
+              ) : null}
             </div>
           </SectionCard>
         ) : null}

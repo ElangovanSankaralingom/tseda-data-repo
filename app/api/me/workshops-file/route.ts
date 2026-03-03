@@ -3,6 +3,7 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { isEntryEditable } from "@/lib/gamification";
 
 type Slot =
   | "permissionLetter"
@@ -10,6 +11,17 @@ type Slot =
   | "attendance"
   | "organiserProfile"
   | "geotaggedPhotos";
+
+type WorkshopRecord = {
+  id: string;
+  status?: "draft" | "final";
+  pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+  streak?: unknown;
+  requestEditStatus?: string | null;
+};
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
@@ -28,6 +40,36 @@ function safeEmailDir(email: string) {
 
 function safeName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+function getStoreFile(email: string) {
+  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "workshops.json");
+}
+
+async function readList(email: string): Promise<WorkshopRecord[]> {
+  try {
+    const raw = await fs.readFile(getStoreFile(email), "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as WorkshopRecord[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function getEntryForRecordId(email: string, recordId: string) {
+  const safeRecordId = safeName(recordId);
+  const list = await readList(email);
+  return list.find((item) => safeName(String(item?.id ?? "")) === safeRecordId) ?? null;
+}
+
+function getRecordIdFromStoredPath(storedPath: string) {
+  const normalized = normalizeStoredPath(storedPath);
+  const parts = normalized.split("/");
+
+  if (parts.length < 5) return null;
+  if (parts[0] !== "uploads" || parts[2] !== "workshops") return null;
+
+  return parts[3] ?? null;
 }
 
 async function getAuthorizedEmail() {
@@ -74,6 +116,17 @@ export async function POST(request: Request) {
 
     if (!recordId) {
       return NextResponse.json({ error: "recordId required" }, { status: 400 });
+    }
+
+    const existing = await getEntryForRecordId(email, recordId);
+    if (!existing) {
+      return NextResponse.json({ error: "Generate the entry first." }, { status: 400 });
+    }
+    if (!existing.pdfMeta?.storedPath || !existing.pdfMeta?.url) {
+      return NextResponse.json({ error: "Generate the entry first." }, { status: 400 });
+    }
+    if (!isEntryEditable(existing)) {
+      return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
     }
 
     if (!ALLOWED_SLOTS.has(slot)) {
@@ -134,6 +187,14 @@ export async function DELETE(request: Request) {
 
     if (!storedPath.startsWith(ownerPrefix)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const recordId = getRecordIdFromStoredPath(storedPath);
+    if (recordId) {
+      const existing = await getEntryForRecordId(authorizedEmail, recordId);
+      if (existing && !isEntryEditable(existing)) {
+        return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
+      }
     }
 
     await fs.unlink(path.join(process.cwd(), "public", storedPath)).catch(() => null);

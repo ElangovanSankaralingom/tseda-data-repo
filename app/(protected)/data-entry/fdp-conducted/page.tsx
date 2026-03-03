@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import DateField from "@/components/controls/DateField";
-import FacultySelect from "@/components/controls/FacultySelect";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import FacultyRowPicker, { type FacultyRowValue } from "@/components/faculty/FacultyRowPicker";
 import MultiPhotoUpload, { type FileMeta } from "@/components/uploads/MultiPhotoUpload";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
 import {
@@ -17,11 +17,6 @@ import {
   type StreakState,
 } from "@/lib/gamification";
 
-type FacultySelection = {
-  name: string;
-  email: string;
-};
-
 type FdpConducted = {
   id: string;
   status: "draft" | "final";
@@ -32,9 +27,16 @@ type FdpConducted = {
   semesterType: string;
   startDate: string;
   endDate: string;
+  eventName: string;
   coordinatorName: string;
   coordinatorEmail: string;
-  coCoordinators: FacultySelection[];
+  coCoordinators: FacultyRowValue[];
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
   permissionLetter: FileMeta | null;
   geotaggedPhotos: FileMeta[];
   streak: StreakState;
@@ -161,7 +163,7 @@ function getEntryCreatedSortTime(entry: FdpConducted) {
   return 0;
 }
 
-function formatFacultyDisplay(selection: FacultySelection) {
+function formatFacultyDisplay(selection: FacultyRowValue) {
   return selection.name || selection.email || "-";
 }
 
@@ -190,9 +192,11 @@ function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
     semesterType: "",
     startDate: "",
     endDate: "",
+    eventName: "",
     coordinatorName: currentFaculty?.name ?? "",
     coordinatorEmail: currentFaculty?.email ?? "",
     coCoordinators: [],
+    pdfMeta: null,
     permissionLetter: null,
     geotaggedPhotos: [],
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
@@ -499,6 +503,10 @@ export default function FdpConductedPage() {
       nextErrors.endDate = "Ending date must be on or after starting date.";
     }
 
+    if ((form.eventName || "").trim().length === 0) {
+      nextErrors.eventName = "Event name is required.";
+    }
+
     const hasBlankCoCoordinator = form.coCoordinators.some((value) => value.name.trim().length === 0);
     if (hasBlankCoCoordinator) {
       nextErrors.coCoordinators = "Remove empty co-coordinator rows or fill them in.";
@@ -519,40 +527,23 @@ export default function FdpConductedPage() {
       }
     });
 
-    if (!form.permissionLetter) {
-      nextErrors.permissionLetter = "Permission letter is mandatory.";
-    }
-
     return nextErrors;
   }, [form]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const selectedEmails = useMemo(() => {
-    return new Set(
-      [form.coordinatorEmail, ...form.coCoordinators.map((value) => value.email)]
-        .map((value) => value.trim().toLowerCase())
-        .filter(Boolean)
-    );
-  }, [form.coordinatorEmail, form.coCoordinators]);
   const hasPendingFiles = !!pending.permissionLetter || photoUploadStatus.hasPending;
   const hasBusyUploads = busy.permissionLetter || photoUploadStatus.busy;
   const isDirty = stableStringify(form) !== lastPersistedSnapshot;
-  const isEligibleFuture = isFutureDatedEntry(form.startDate, form.endDate);
   const isLocked = !!form.createdAt && isEntryLocked(form);
-  const doneReady =
+  const generateReady =
     !!form.academicYear &&
     !!form.semesterType &&
     isISODate(form.startDate) &&
     isISODate(form.endDate) &&
     form.endDate >= form.startDate &&
-    !!form.permissionLetter &&
-    !form.coCoordinators.some((value) => value.name.trim().length === 0);
-  const geotagVisible = form.status === "final" && !!form.streak.activatedAtISO;
-  const needsCompletionFinalization =
-    form.status === "final" &&
-    form.geotaggedPhotos.length > 0 &&
-    !!form.streak.activatedAtISO &&
-    !form.streak.completedAtISO;
+    !!form.eventName.trim() &&
+    !form.coCoordinators.some((value) => !value.isLocked || !value.email.trim());
+  const uploadsVisible = !!form.pdfMeta;
   const groupedEntries = useMemo(() => {
     const indexedEntries = list.map((entry, index) => ({ entry, index }));
     const sortChronologically = (
@@ -601,17 +592,6 @@ export default function FdpConductedPage() {
       nonStreak: nonStreakEntries,
     };
   }, [list]);
-
-  function getDisabledForCoCoordinatorRow(index: number) {
-    const next = new Set(selectedEmails);
-    const currentEmail = form.coCoordinators[index]?.email?.toLowerCase();
-
-    if (currentEmail) {
-      next.delete(currentEmail);
-    }
-
-    return next;
-  }
 
   function resetUploadState() {
     setPending({ permissionLetter: null });
@@ -691,6 +671,29 @@ export default function FdpConductedPage() {
     return payload as FdpConducted;
   }
 
+  async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
+    if (saveLockRef.current) {
+      throw new Error("Please wait for the current save to finish.");
+    }
+
+    saveLockRef.current = true;
+
+    try {
+      const persisted = await persistProgress({
+        ...form,
+        coordinatorName: currentFaculty?.name ?? form.coordinatorName,
+        coordinatorEmail: currentFaculty?.email ?? form.coordinatorEmail,
+        coCoordinators: nextRows,
+      });
+      setForm(persisted);
+      setLastPersistedSnapshot(stableStringify(persisted));
+      await refreshList();
+      return persisted.coCoordinators;
+    } finally {
+      saveLockRef.current = false;
+    }
+  }
+
   async function deleteStoredFile(storedPath: string) {
     await fetch("/api/me/fdp-conducted-file", {
       method: "DELETE",
@@ -712,19 +715,19 @@ export default function FdpConductedPage() {
       return;
     }
 
-    if (!doneReady || isLocked) {
+    if (isLocked) {
       setSubmitted(true);
-      setToast({ type: "err", msg: isLocked ? "This entry is locked." : "Complete the required fields first." });
+      setToast({ type: "err", msg: "This entry is locked." });
       setTimeout(() => setToast(null), 1800);
       return;
     }
 
-    if (!isDirty && !needsCompletionFinalization && form.status === "final") {
+    if (!isDirty) {
       closeForm();
       return;
     }
 
-    await finalizeAndExit();
+    await saveDraftChanges({ closeAfterSave: true });
   }
 
   async function uploadSlot(slot: "permissionLetter") {
@@ -828,7 +831,7 @@ export default function FdpConductedPage() {
     }
   }
 
-  async function saveDraftChanges() {
+  async function saveDraftChanges(options?: { closeAfterSave?: boolean }) {
     if (saveLockRef.current || !isDirty || isLocked) return;
     saveLockRef.current = true;
 
@@ -849,6 +852,9 @@ export default function FdpConductedPage() {
       setLastPersistedSnapshot(stableStringify(persisted));
       setSubmitted(false);
       await refreshList();
+      if (options?.closeAfterSave) {
+        closeForm();
+      }
       setToast({ type: "ok", msg: "Saved" });
       setTimeout(() => setToast(null), 1400);
     } catch (error) {
@@ -862,15 +868,15 @@ export default function FdpConductedPage() {
     }
   }
 
-  async function finalizeAndExit() {
+  async function generateEntry() {
     if (saveLockRef.current) return;
     saveLockRef.current = true;
 
     try {
       setSubmitted(true);
 
-      if (Object.keys(errors).length > 0 || !doneReady) {
-        setToast({ type: "err", msg: "Complete all mandatory fields before saving." });
+      if (Object.keys(errors).length > 0 || !generateReady) {
+        setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
         setTimeout(() => setToast(null), 1800);
         return;
       }
@@ -882,23 +888,24 @@ export default function FdpConductedPage() {
       }
 
       setSaving(true);
-      setSaveIntent("done");
-      const entryToSave: FdpConducted = {
+      setSaveIntent("save");
+      const draftEntry: FdpConducted = {
         ...form,
-        status: "final",
+        status: form.status === "final" ? "final" : "draft",
         coordinatorName: currentFaculty?.name ?? form.coordinatorName,
         coordinatorEmail: currentFaculty?.email ?? form.coordinatorEmail,
       };
-      const response = await fetch("/api/me/fdp-conducted", {
+      const persisted = await persistProgress(draftEntry);
+      const response = await fetch(`/api/me/fdp-conducted/${encodeURIComponent(persisted.id)}/pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, entry: entryToSave }),
       });
       const text = await response.text();
       let message = `Save failed (${response.status})`;
+      let payload: { entry?: FdpConducted; error?: string } | null = null;
 
       try {
-        const payload = text ? (JSON.parse(text) as { error?: string }) : null;
+        payload = text ? (JSON.parse(text) as { entry?: FdpConducted; error?: string }) : null;
         if (payload?.error) {
           message = payload.error;
         }
@@ -910,17 +917,12 @@ export default function FdpConductedPage() {
         throw new Error(message);
       }
 
+      const nextEntry = payload?.entry ?? persisted;
+      setForm(nextEntry);
+      setLastPersistedSnapshot(stableStringify(nextEntry));
       await refreshList();
-      if (!isEligibleFuture) {
-        setToast({ type: "ok", msg: "Streak activates only for upcoming FDP dates." });
-      } else if (needsCompletionFinalization && form.geotaggedPhotos.length > 0) {
-        setToast({ type: "ok", msg: "Streak win recorded." });
-      } else {
-        setToast({ type: "ok", msg: "FDP Conducted saved." });
-      }
+      setToast({ type: "ok", msg: "Entry generated." });
       setTimeout(() => setToast(null), 1400);
-      resetForm();
-      setFormOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Save failed.";
       setToast({ type: "err", msg: message });
@@ -1166,7 +1168,7 @@ export default function FdpConductedPage() {
               </MiniButton>
               <MiniButton
                 onClick={() => void handleDone()}
-                disabled={saving || loading || hasBusyUploads || hasPendingFiles || !doneReady || isLocked}
+                disabled={saving || loading || hasBusyUploads || hasPendingFiles || isLocked}
               >
                 {saving && saveIntent === "done" ? "Saving..." : "Done"}
               </MiniButton>
@@ -1206,7 +1208,7 @@ export default function FdpConductedPage() {
         {!loading && formOpen ? (
           <SectionCard
             title="New FDP Entry"
-            subtitle="Add the entry details and upload the required documents."
+            subtitle="Add the entry details and generate the entry to unlock uploads."
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
@@ -1254,90 +1256,80 @@ export default function FdpConductedPage() {
                   {inclusiveDays ?? "-"}
                 </div>
               </Field>
+
+              <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>
+                <input
+                  value={form.eventName}
+                  onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
+                  className={cx(
+                    "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                    submitted && errors.eventName
+                      ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
+                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                  )}
+                />
+              </Field>
             </div>
 
             <div className="mt-5 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
               Coordinator: <span className="font-medium text-foreground">{form.coordinatorName || "-"}</span>
             </div>
 
-            <div className="mt-5 rounded-xl border border-border p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold">Co-coordinator(s)</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Add co-coordinators only when applicable.
-                  </div>
-                </div>
-
-                <MiniButton
-                  variant="ghost"
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      coCoordinators: [...current.coCoordinators, { name: "", email: "" }],
-                    }))
+            <div className="mt-5">
+              <FacultyRowPicker
+                title="Co-coordinator(s)"
+                helperText="Add co-coordinators only when applicable."
+                addLabel="+ Add Co-coordinator"
+                rowLabelPrefix="Co-coordinator"
+                rows={form.coCoordinators}
+                onRowsChange={(rows) => setForm((current) => ({ ...current, coCoordinators: rows }))}
+                onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
+                facultyOptions={FACULTY_OPTIONS}
+                parentLocked={isLocked}
+                disableEmails={[form.coordinatorEmail]}
+                sectionError={errors.coCoordinators}
+                showSectionError={submitted}
+                emptyStateText="No co-coordinators added."
+                validateRow={(rows, row, index) => {
+                  if (!row.email) return "Select a faculty member from the list.";
+                  if (row.email.trim().toLowerCase() === form.coordinatorEmail.trim().toLowerCase()) {
+                    return "This faculty is already selected in another role.";
                   }
-                >
-                  + Add Co-coordinator
-                </MiniButton>
-              </div>
-
-              {submitted && errors.coCoordinators ? (
-                <div className="mt-2 text-xs text-red-600">{errors.coCoordinators}</div>
-              ) : null}
-
-              {form.coCoordinators.length > 0 ? (
-                <div className="mt-4 space-y-3">
-                  {form.coCoordinators.map((value, index) => (
-                    <div
-                      key={`${index}-${value.email || value.name}`}
-                      className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
-                    >
-                      <div>
-                        <Field
-                          label={`Co-coordinator ${index + 1}`}
-                          error={submitted ? errors[`coCoordinators.${index}`] : undefined}
-                        >
-                          <FacultySelect
-                            value={value}
-                            onChange={(next) =>
-                              setForm((current) => ({
-                                ...current,
-                                coCoordinators: current.coCoordinators.map((item, itemIndex) =>
-                                  itemIndex === index ? next : item
-                                ),
-                              }))
-                            }
-                            options={FACULTY_OPTIONS}
-                            disabledEmails={getDisabledForCoCoordinatorRow(index)}
-                            placeholder="Search or type co-coordinator"
-                            error={submitted && !!errors[`coCoordinators.${index}`]}
-                          />
-                        </Field>
-                      </div>
-
-                      <MiniButton
-                        variant="danger"
-                        onClick={() =>
-                          setForm((current) => ({
-                            ...current,
-                            coCoordinators: current.coCoordinators.filter((_, itemIndex) => itemIndex !== index),
-                          }))
-                        }
-                      >
-                        Delete
-                      </MiniButton>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-4 text-sm text-muted-foreground">No co-coordinators added.</div>
-              )}
+                  const duplicates = rows.filter(
+                    (item, itemIndex) =>
+                      itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
+                  ).length;
+                  return duplicates > 0 ? "This faculty is already selected in another role." : null;
+                }}
+              />
             </div>
 
             <div className="mt-5 space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <MiniButton
+                  onClick={() => void generateEntry()}
+                  disabled={saving || loading || hasBusyUploads || hasPendingFiles || !generateReady || isLocked}
+                >
+                  {saving && saveIntent === "save" ? "Generating..." : "Generate Entry"}
+                </MiniButton>
+                {form.pdfMeta?.url ? (
+                  <a
+                    href={form.pdfMeta.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+                  >
+                    Download Entry
+                  </a>
+                ) : (
+                  <MiniButton variant="ghost" disabled>
+                    Download Entry
+                  </MiniButton>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
 
+              {uploadsVisible ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-3 rounded-xl border border-border p-4">
                   <div className="text-sm font-semibold">Upload Permission Letter</div>
@@ -1351,9 +1343,7 @@ export default function FdpConductedPage() {
                       {new Date(form.permissionLetter.uploadedAt).toLocaleString()}
                     </div>
                   ) : (
-                    <div className={cx("text-xs", submitted ? "text-red-600" : "text-muted-foreground")}>
-                      {submitted ? errors.permissionLetter || "This upload is mandatory." : "No file uploaded yet."}
-                    </div>
+                    <div className="text-xs text-muted-foreground">No file uploaded yet.</div>
                   )}
 
                   <div className="text-xs text-muted-foreground">
@@ -1430,7 +1420,6 @@ export default function FdpConductedPage() {
                   </div>
                 </div>
 
-                {geotagVisible ? (
                 <MultiPhotoUpload
                   key={form.id}
                   title="Geotagged Photos"
@@ -1470,12 +1459,8 @@ export default function FdpConductedPage() {
                   onStatusChange={setPhotoUploadStatus}
                   disabled={isLocked}
                 />
-                ) : (
-                  <div className="rounded-xl border border-border p-4 text-sm text-muted-foreground">
-                    Geotagged Photos will be available after the streak is activated.
-                  </div>
-                )}
               </div>
+              ) : null}
             </div>
           </SectionCard>
         ) : null}

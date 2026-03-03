@@ -3,9 +3,9 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import {
   computeDueAtISO,
-  ensureActivated,
   isEntryEditable,
   isFutureDatedEntry,
   markCompleted,
@@ -35,6 +35,7 @@ type FdpAttended = {
   programName: string;
   organisingBody: string;
   supportAmount: number | null;
+  pdfMeta?: PdfMeta | null;
   permissionLetter: FileMeta | null;
   completionCertificate: FileMeta | null;
   streak: StreakState;
@@ -125,6 +126,9 @@ function normalizeEntry(value: unknown): FdpAttended | null {
       typeof record.supportAmount === "number" && Number.isFinite(record.supportAmount)
         ? record.supportAmount
         : null,
+    pdfMeta: isValidPdfMeta((record.pdfMeta as PdfMeta | null) ?? null)
+      ? ((record.pdfMeta as PdfMeta | null) ?? null)
+      : null,
     permissionLetter: isValidFileMeta((record.permissionLetter as FileMeta | null) ?? null)
       ? ((record.permissionLetter as FileMeta | null) ?? null)
       : null,
@@ -205,6 +209,10 @@ async function deleteStoredFile(email: string, meta: FileMeta | null) {
 
 function canEditEntry(entry: FdpAttended) {
   return isEntryEditable(entry);
+}
+
+function hasCompletedUploads(entry: Pick<FdpAttended, "permissionLetter" | "completionCertificate">) {
+  return isValidFileMeta(entry.permissionLetter) && isValidFileMeta(entry.completionCertificate);
 }
 
 function validateCoreFields(entry: FdpAttended) {
@@ -291,11 +299,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    if (!isValidFileMeta(entry.permissionLetter)) {
-      return NextResponse.json({ error: "permissionLetter required" }, { status: 400 });
+    if (entry.permissionLetter?.storedPath) {
+      resolveOwnedStoredPath(email, entry.permissionLetter.storedPath);
     }
-
-    resolveOwnedStoredPath(email, entry.permissionLetter.storedPath);
     if (entry.completionCertificate?.storedPath) {
       resolveOwnedStoredPath(email, entry.completionCertificate.storedPath);
     }
@@ -313,34 +319,28 @@ export async function POST(request: Request) {
     const existingStreak = normalizeStreakState(existing?.streak ?? entry.streak);
     let streak = normalizeStreakState(existingStreak);
 
-    if (nextStatus === "final") {
-      streak = eligible
-        ? ensureActivated(existingStreak, validated.endDate)
-        : {
-            ...existingStreak,
-            activatedAtISO: null,
-            dueAtISO: null,
-            completedAtISO: null,
-          };
-
-      if (eligible) {
-        streak.dueAtISO = streak.dueAtISO || computeDueAtISO(validated.endDate);
-        if (
-          isValidFileMeta(entry.completionCertificate) &&
-          streak.dueAtISO &&
-          !streak.completedAtISO &&
-          Date.now() <= new Date(streak.dueAtISO).getTime()
-        ) {
-          streak = markCompleted(streak);
-        }
-      }
-    } else {
+    if (nextStatus !== "final" || !entry.pdfMeta || !eligible) {
       streak = {
         ...existingStreak,
         activatedAtISO: null,
         dueAtISO: null,
         completedAtISO: null,
       };
+    } else {
+      streak = {
+        ...existingStreak,
+        dueAtISO: existingStreak.dueAtISO || computeDueAtISO(validated.endDate),
+      };
+
+      if (
+        hasCompletedUploads(entry) &&
+        streak.activatedAtISO &&
+        streak.dueAtISO &&
+        !streak.completedAtISO &&
+        Date.now() <= new Date(streak.dueAtISO).getTime()
+      ) {
+        streak = markCompleted(streak);
+      }
     }
 
     const savedEntry: FdpAttended = {
@@ -356,6 +356,7 @@ export async function POST(request: Request) {
       programName: validated.programName,
       organisingBody: validated.organisingBody,
       supportAmount: validated.supportAmount,
+      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
       permissionLetter: entry.permissionLetter,
       completionCertificate: entry.completionCertificate,
       streak,
@@ -465,6 +466,7 @@ export async function PATCH(request: Request) {
         programName: "",
         organisingBody: "",
         supportAmount: null,
+        pdfMeta: null,
         permissionLetter: null,
         completionCertificate: null,
         streak: normalizeStreakState(null),
@@ -491,20 +493,38 @@ export async function PATCH(request: Request) {
       programName: entry.programName || existing?.programName || "",
       organisingBody: entry.organisingBody || existing?.organisingBody || "",
       supportAmount: entry.supportAmount ?? existing?.supportAmount ?? null,
+      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
       permissionLetter: entry.permissionLetter || existing?.permissionLetter || null,
       completionCertificate: entry.completionCertificate || existing?.completionCertificate || null,
-      streak:
-        existing?.status === "final"
-          ? normalizeStreakState(existing.streak)
-          : {
-              ...normalizeStreakState(entry.streak),
-              activatedAtISO: null,
-              dueAtISO: null,
-              completedAtISO: null,
-            },
+      streak: normalizeStreakState(existing?.streak ?? entry.streak),
       createdAt: existing?.createdAt || entry.createdAt || now,
       updatedAt: now,
     };
+
+    const eligible = isFutureDatedEntry(savedEntry.startDate, savedEntry.endDate);
+    if (savedEntry.status !== "final" || !savedEntry.pdfMeta || !eligible) {
+      savedEntry.streak = {
+        ...savedEntry.streak,
+        activatedAtISO: null,
+        dueAtISO: null,
+        completedAtISO: null,
+      };
+    } else {
+      savedEntry.streak = {
+        ...savedEntry.streak,
+        dueAtISO: savedEntry.streak.dueAtISO || computeDueAtISO(savedEntry.endDate),
+      };
+
+      if (
+        hasCompletedUploads(savedEntry) &&
+        savedEntry.streak.activatedAtISO &&
+        savedEntry.streak.dueAtISO &&
+        !savedEntry.streak.completedAtISO &&
+        Date.now() <= new Date(savedEntry.streak.dueAtISO).getTime()
+      ) {
+        savedEntry.streak = markCompleted(savedEntry.streak);
+      }
+    }
 
     await writeList(
       email,
