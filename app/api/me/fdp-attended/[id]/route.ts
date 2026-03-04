@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
-  getEditLockState,
   isWithinRequestEditWindow,
   nowISTTimestampISO,
 } from "@/lib/gamification";
@@ -35,8 +34,8 @@ function normalizeRequestEditStatus(value: unknown): RequestEditStatus {
     : "none";
 }
 
-function isLockedEntry(entry: FdpAttendedRecord) {
-  return getEditLockState(entry).isLocked;
+function canRequestEdit(entry: FdpAttendedRecord) {
+  return entry.status === "final";
 }
 
 async function getAuthorizedEmail() {
@@ -96,8 +95,8 @@ export async function PATCH(
     }
 
     const current = list[index];
-    if (!isLockedEntry(current)) {
-      return NextResponse.json({ error: "Request edit is allowed only for locked entries." }, { status: 400 });
+    if (!canRequestEdit(current)) {
+      return NextResponse.json({ error: "Request edit is allowed only for completed entries." }, { status: 400 });
     }
 
     if (action !== "request_edit" && action !== "cancel_request_edit") {

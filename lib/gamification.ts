@@ -281,29 +281,6 @@ export function isRequestEditApproved(value: string | null | undefined) {
 }
 
 export function getEditLockState(entry: LockableEntryLike): EditLockState {
-  const eligible = isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "");
-  if (eligible) {
-    const normalized = normalizeStreakState(entry.streak);
-    const expiresAtISO = normalized.dueAtISO || (entry.endDate ? computeDueAtISO(entry.endDate) : null);
-    return {
-      isLocked: expiresAtISO ? isOverdue(expiresAtISO) : false,
-      expiresAtISO,
-      daysRemaining: remainingDaysFromDueAtISO(expiresAtISO),
-    };
-  }
-
-  const genericExpiresAtISO =
-    (entry.endDate ? computeGenericDueAtISO(entry.endDate) : null) ||
-    (entry.createdAt ? computeEditableUntilISO(entry.createdAt) : null);
-
-  if (genericExpiresAtISO) {
-    return {
-      isLocked: !isWithinDueWindow(genericExpiresAtISO),
-      expiresAtISO: genericExpiresAtISO,
-      daysRemaining: remainingDaysFromDueAtISO(genericExpiresAtISO),
-    };
-  }
-
   return {
     isLocked: false,
     expiresAtISO: null,
@@ -312,15 +289,11 @@ export function getEditLockState(entry: LockableEntryLike): EditLockState {
 }
 
 export function isEntryLockedState(entry: LockableEntryLike) {
-  return getEditLockState(entry).isLocked;
+  return false;
 }
 
 export function isEntryEditable(entry: LockableEntryLike) {
-  if (isRequestEditApproved(entry.requestEditStatus)) {
-    return true;
-  }
-
-  return !isEntryLockedState(entry);
+  return true;
 }
 
 function isCompletedWithinDueWindow(state: StreakState) {

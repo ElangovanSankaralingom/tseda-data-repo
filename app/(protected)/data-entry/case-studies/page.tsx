@@ -21,12 +21,13 @@ import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { FACULTY } from "@/lib/facultyDirectory";
+import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import {
   getEntryStreakDisplayState,
   type EntryDisplayCategory,
 } from "@/lib/entries/lifecycle";
-import { categorizeEntries } from "@/lib/entryCategorize";
-import { getEditLockState, isEntryLockedState, nowISTTimestampISO } from "@/lib/gamification";
+import { groupEntries } from "@/lib/entryCategorization";
+import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import {
@@ -218,14 +219,6 @@ function emptyForm(currentFaculty?: FacultyRowValue): CaseStudyEntry {
   };
 }
 
-function isEntryLocked(entry: CaseStudyEntry) {
-  if (entry.requestEditStatus === "approved") {
-    return false;
-  }
-
-  return isEntryLockedState(entry);
-}
-
 function hydrateEntry(entry: CaseStudyEntry) {
   return hydratePdfSnapshot(entry, "case-studies");
 }
@@ -375,7 +368,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
     [list, viewEntryId]
   );
-  const groupedEntries = useMemo(() => categorizeEntries(list), [list]);
+  const groupedEntries = useMemo(() => groupEntries(list), [list]);
 
   useEffect(() => {
     (async () => {
@@ -568,8 +561,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeStudentYear(form.studentYear);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
-  const isLocked = !!form.createdAt && isEntryLocked(form);
-  const controlsDisabled = isViewMode || isLocked;
+  const controlsDisabled = isViewMode;
   const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const generateReady = validatePreUploadFields("case-studies", form as Record<string, unknown>);
@@ -583,12 +575,12 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
         pdfSourceHash: form.pdfSourceHash ?? "",
         draftHash: pdfHash,
         fieldsGateOk: generateReady,
-        isLocked,
+        isLocked: false,
       }),
-    [form.pdfMeta, form.pdfSourceHash, generateReady, isLocked, pdfHash]
+    [form.pdfMeta, form.pdfSourceHash, generateReady, pdfHash]
   );
   const workflow = useEntryWorkflow({
-    isLocked,
+    isLocked: false,
     coreValid: generateReady,
     hasPdfSnapshot: uploadsVisible,
     pdfStale: pdfState.pdfStale,
@@ -596,7 +588,11 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     fieldDirty: formDirty,
   });
   const lifecycle = workflow.lifecycle;
-  const generateEntrySnapshot = useGenerateEntry<CaseStudyEntry>("case-studies");
+  const generateEntrySnapshot = useGenerateEntry<CaseStudyEntry>({
+    category: "case-studies",
+    email,
+    hydrateEntry,
+  });
   const showForm = formOpen || (isViewMode && !!viewedEntry);
 
   function resetForm() {
@@ -893,13 +889,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
         status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
-      const persistedDraft = hydrateEntry(await persistProgress(draftEntry));
-      const payload = await generateEntrySnapshot(persistedDraft.id);
-
-      const nextEntry =
-        payload && typeof payload === "object" && "entry" in payload
-          ? hydrateEntry((payload as { entry?: CaseStudyEntry }).entry ?? persistedDraft)
-          : persistedDraft;
+      const { entry: nextEntry } = await generateEntrySnapshot(draftEntry, persistProgress);
 
       applyPersistedEntry(nextEntry);
       setAttemptedSectionSave(false);
@@ -1112,8 +1102,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   }
 
   function renderSavedEntry(entry: CaseStudyEntry, category: EntryDisplayCategory, index: number) {
-    const lockState = getEditLockState(entry);
-    const entryLocked = isEntryLocked(entry);
+    const deadlineState = getStreakDeadlineState(entry);
     const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
     const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
     const showUpdated =
@@ -1121,7 +1110,6 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       !Number.isNaN(updatedTime) &&
       Math.abs(updatedTime - createdTime) > 60 * 1000;
     const completedEntry = entry.status === "final";
-    const showPreviewActions = entryLocked || completedEntry;
     const days = getInclusiveDays(entry.startDate, entry.endDate);
 
     return (
@@ -1138,7 +1126,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                 <Link href={`/data-entry/case-studies/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                   {entry.academicYear} • {entry.semesterType} Semester
                 </Link>
-                <EntryLockBadge lockState={lockState} />
+                <EntryLockBadge deadlineState={deadlineState} />
               </div>
               <div className="mt-1 text-sm text-muted-foreground">
                 {entry.placeOfVisit} • {entry.studentYear || "-"} • Semester {entry.semesterNumber ?? "-"}
@@ -1154,7 +1142,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                 <MiniButton onClick={() => router.push(`/data-entry/case-studies/${entry.id}`)}>
                   View
                 </MiniButton>
-                {showPreviewActions ? (
+                {completedEntry ? (
                   entry.pdfMeta?.url ? (
                     <a
                       href={entry.pdfMeta.url}
@@ -1184,7 +1172,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                   </>
                 )}
                 <RequestEditAction
-                  locked={showPreviewActions}
+                  locked={completedEntry}
                   status={entry.requestEditStatus}
                   requestedAtISO={entry.requestEditRequestedAtISO}
                   requesting={!!requestingEditIds[entry.id]}
@@ -1695,10 +1683,10 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
               <div className="text-sm text-muted-foreground">No entries yet.</div>
             ) : (
               <div className="space-y-3">
-                {groupedEntries.drafts.length > 0 ? (
+                {groupedEntries.draft.length > 0 ? (
                   <div className="space-y-3">
                     <div className="text-sm font-semibold">Drafts</div>
-                    {groupedEntries.drafts.map((entry, index) => renderSavedEntry(entry, "draft", index))}
+                    {groupedEntries.draft.map((entry, index) => renderSavedEntry(entry, "draft", index))}
                   </div>
                 ) : null}
                 {groupedEntries.activated.length > 0 ? (

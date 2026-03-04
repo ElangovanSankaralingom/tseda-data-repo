@@ -239,7 +239,7 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground">Track pending uploads and streak wins.</p>
       </div>
 
-      <div className={cx("grid gap-4", totalActivatedPendingCount > 0 && "lg:grid-cols-2")}>
+      <div className="grid gap-4 lg:grid-cols-2">
         <StreakCardShell
           title="🔥 Streak Wins"
           subtitle="Keep the momentum alive"
@@ -263,51 +263,63 @@ export default function DashboardPage() {
           }
         />
 
-        {!loading && !error && totalActivatedPendingCount > 0 ? (
-          <StreakCardShell
-            title="Streak Activated"
-            subtitle="Active tasks by category"
-            className="border-orange-300/80 shadow-[0_0_18px_rgba(249,115,22,0.08)]"
-            summary={<StreakSummaryCard greyCount={totalActivatedPendingCount} animateGrey />}
-            footer={
-              <div className="space-y-2">
-                {visiblePendingRows.map((row) => (
-                  <div
-                    key={`${row.categoryLabel}-${row.id}`}
-                    className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3"
-                  >
-                    <div className="min-w-0 text-sm text-foreground">
-                      <span className="text-muted-foreground">{row.categoryLabel}</span>
-                      <span className="mx-2 text-muted-foreground">•</span>
-                      <span className="font-mono text-xs text-muted-foreground">{row.tag}</span>
+        <StreakCardShell
+          title="Streak Activated"
+          subtitle="Active tasks by category"
+          className="border-orange-300/80 shadow-[0_0_18px_rgba(249,115,22,0.08)]"
+          summary={
+            loading ? (
+              <div className="text-sm text-muted-foreground">Loading streaks...</div>
+            ) : error ? (
+              <div className="text-sm text-red-600">{error}</div>
+            ) : (
+              <StreakSummaryCard greyCount={totalActivatedPendingCount} animateGrey={totalActivatedPendingCount > 0} />
+            )
+          }
+          footer={
+            !loading && !error ? (
+              totalActivatedPendingCount > 0 ? (
+                <div className="space-y-2">
+                  {visiblePendingRows.map((row) => (
+                    <div
+                      key={`${row.categoryLabel}-${row.id}`}
+                      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3"
+                    >
+                      <div className="min-w-0 text-sm text-foreground">
+                        <span className="text-muted-foreground">{row.categoryLabel}</span>
+                        <span className="mx-2 text-muted-foreground">•</span>
+                        <span className="font-mono text-xs text-muted-foreground">{row.tag}</span>
+                      </div>
+                      <span
+                        className={cx(
+                          "whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium",
+                          row.remainingDays <= 2
+                            ? "bg-red-50 text-red-700"
+                            : row.remainingDays <= 5
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {row.remainingDays} days left
+                      </span>
+                      <Link
+                        href={row.route}
+                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-3 text-sm text-background transition-colors duration-150 hover:bg-foreground/90 hover:shadow-[0_0_16px_rgba(15,23,42,0.18)]"
+                      >
+                        Complete
+                      </Link>
                     </div>
-                    <span
-                      className={cx(
-                        "whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium",
-                        row.remainingDays <= 2
-                          ? "bg-red-50 text-red-700"
-                          : row.remainingDays <= 5
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {row.remainingDays} days left
-                    </span>
-                    <Link
-                      href={row.route}
-                      className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-3 text-sm text-background transition-colors duration-150 hover:bg-foreground/90 hover:shadow-[0_0_16px_rgba(15,23,42,0.18)]"
-                    >
-                      Complete
-                    </Link>
-                  </div>
-                ))}
-                {hiddenPendingCount > 0 ? (
-                  <p className="text-sm text-muted-foreground">+ {hiddenPendingCount} more active tasks</p>
-                ) : null}
-              </div>
-            }
-          />
-        ) : null}
+                  ))}
+                  {hiddenPendingCount > 0 ? (
+                    <p className="text-sm text-muted-foreground">+ {hiddenPendingCount} more active tasks</p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No active streaks</p>
+              )
+            ) : null
+          }
+        />
       </div>
     </div>
   );

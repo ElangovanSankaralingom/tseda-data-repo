@@ -8,15 +8,15 @@ import {
   getTagColor,
   isEditableNow,
 } from "../../lib/entries/lifecycle.ts";
-import { categorizeEntries } from "../../lib/entryCategorize.ts";
-import { addDaysISO, computeDueAtISO, computeGenericDueAtISO, nowISTDateISO } from "../../lib/gamification.ts";
+import { groupEntries } from "../../lib/entryCategorization.ts";
+import { addDaysISO, computeDueAtISO, nowISTDateISO } from "../../lib/gamification.ts";
 
 test("computeCutoffDate uses +8 days for streak entries", () => {
   assert.equal(computeCutoffDate("2026-03-01", true), computeDueAtISO("2026-03-01"));
 });
 
-test("computeCutoffDate uses +2 days for non-streak entries", () => {
-  assert.equal(computeCutoffDate("2026-03-01", false), computeGenericDueAtISO("2026-03-01"));
+test("computeCutoffDate returns no generic cutoff for non-streak entries", () => {
+  assert.equal(computeCutoffDate("2026-03-01", false), null);
 });
 
 test("tag color thresholds are consistent", () => {
@@ -98,11 +98,11 @@ test("entry streak display state only shows flames for actual streak state", () 
   );
 });
 
-test("categorizeEntries groups entries globally and sorts newest first within each group", () => {
+test("groupEntries groups entries globally and sorts newest first within each group", () => {
   const today = nowISTDateISO();
   const futureEnd = addDaysISO(today, 3);
 
-  const grouped = categorizeEntries([
+  const grouped = groupEntries([
     {
       id: "draft-old",
       createdAt: "2026-03-01T10:00:00.000Z",
@@ -138,12 +138,12 @@ test("categorizeEntries groups entries globally and sorts newest first within ea
     },
   ]);
 
-  assert.deepEqual(grouped.drafts.map((entry) => (entry as { id: string }).id), ["draft-new", "draft-old"]);
+  assert.deepEqual(grouped.draft.map((entry) => (entry as { id: string }).id), ["draft-new", "draft-old"]);
   assert.deepEqual(grouped.activated.map((entry) => (entry as { id: string }).id), ["active"]);
   assert.deepEqual(grouped.completed.map((entry) => (entry as { id: string }).id), ["completed"]);
 });
 
-test("isEditableNow stays true until cutoff then becomes false", () => {
+test("isEditableNow is not driven by cutoff timing anymore", () => {
   const today = nowISTDateISO();
   const futureEnd = addDaysISO(today, 1);
   const genericEnd = addDaysISO(today, -3);
@@ -162,6 +162,6 @@ test("isEditableNow stays true until cutoff then becomes false", () => {
       endDate: genericEnd,
       createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     }),
-    false
+    true
   );
 });
