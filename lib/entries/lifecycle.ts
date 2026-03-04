@@ -1,44 +1,38 @@
-import { addDaysISO, endOfDayIST, getEditLockState } from "../gamification.ts";
+import { computeDueAtISO } from "../gamification.ts";
+import { getDaysLeft, getDaysLeftColor } from "../streakDeadline.ts";
 import {
-  categorizeEntries,
+  groupEntries,
   type CategorizableEntry,
   type EntryDisplayCategory,
-} from "../entryCategorize.ts";
+} from "../entryCategorization.ts";
 
 export {
-  categorizeEntries,
+  groupEntries,
   getEntryCategory,
   getEntryCompletionState,
   getEntryStreakDisplayState,
-} from "../entryCategorize.ts";
+} from "../entryCategorization.ts";
 export type {
   EntryDisplayCategory,
   EntryStreakState as EntryStreakDisplayState,
-} from "../entryCategorize.ts";
+} from "../entryCategorization.ts";
 
 export type EntryTagColor = "default" | "yellow" | "red" | "expired";
 
 type LifecycleEntry = CategorizableEntry;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function computeCutoffDate(endDateISO?: string | null, isStreak = false) {
-  if (!endDateISO) return null;
-  const cutoffDayISO = addDaysISO(endDateISO, isStreak ? 8 : 2);
-  return endOfDayIST(cutoffDayISO);
+  if (!isStreak || !endDateISO) return null;
+  return computeDueAtISO(endDateISO);
 }
 
 export function computeDaysLeft(cutoffISO?: string | null) {
-  if (!cutoffISO) return 0;
-  const cutoffTime = Date.parse(cutoffISO);
-  if (Number.isNaN(cutoffTime)) return 0;
-  return Math.ceil((cutoffTime - Date.now()) / DAY_MS);
+  return cutoffISO ? getDaysLeft(cutoffISO) : 0;
 }
 
 export function getTagColor(daysLeft: number): EntryTagColor {
-  if (daysLeft < 0) return "expired";
-  if (daysLeft <= 2) return "red";
-  if (daysLeft <= 5) return "yellow";
-  return "default";
+  const color = getDaysLeftColor(daysLeft);
+  return color === "normal" ? "default" : color;
 }
 
 export function getEntryTag(category: EntryDisplayCategory, index: number) {
@@ -48,13 +42,14 @@ export function getEntryTag(category: EntryDisplayCategory, index: number) {
 }
 
 export function isEditableNow(entry: LifecycleEntry) {
-  return !getEditLockState(entry).isLocked;
+  void entry;
+  return true;
 }
 
 export function groupEntriesByLifecycle<T extends LifecycleEntry>(entries: T[]) {
-  const grouped = categorizeEntries(entries, { sort: "newest" });
+  const grouped = groupEntries(entries, { sort: "newest" });
   return {
-    drafts: grouped.drafts,
+    drafts: grouped.draft,
     pending: grouped.activated,
     completed: grouped.completed,
   };
