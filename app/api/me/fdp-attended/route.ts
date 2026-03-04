@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import { mergeWithNulls } from "@/lib/mergeWithNulls";
 import {
-  computeDueAtISO,
+  ensureActivated,
   isEntryEditable,
   isFutureDatedEntry,
   markCompleted,
@@ -353,7 +353,7 @@ export async function POST(request: Request) {
     const existingStreak = normalizeStreakState(existing?.streak ?? entry.streak);
     let streak = normalizeStreakState(existingStreak);
 
-    if (nextStatus !== "final" || !entry.pdfMeta || !eligible) {
+    if (!entry.pdfMeta || !eligible) {
       streak = {
         ...existingStreak,
         activatedAtISO: null,
@@ -361,12 +361,10 @@ export async function POST(request: Request) {
         completedAtISO: null,
       };
     } else {
-      streak = {
-        ...existingStreak,
-        dueAtISO: existingStreak.dueAtISO || computeDueAtISO(validated.endDate),
-      };
+      streak = ensureActivated(existingStreak, validated.endDate);
 
       if (
+        nextStatus === "final" &&
         hasCompletedUploads(entry) &&
         streak.activatedAtISO &&
         streak.dueAtISO &&
@@ -571,7 +569,7 @@ export async function PATCH(request: Request) {
       getPrePdfFieldsHash(savedEntry) !== savedEntry.pdfSourceHash;
 
     const eligible = isFutureDatedEntry(savedEntry.startDate, savedEntry.endDate);
-    if (savedEntry.status !== "final" || !savedEntry.pdfMeta || !eligible) {
+    if (!savedEntry.pdfMeta || !eligible) {
       savedEntry.streak = {
         ...savedEntry.streak,
         activatedAtISO: null,
@@ -579,12 +577,10 @@ export async function PATCH(request: Request) {
         completedAtISO: null,
       };
     } else {
-      savedEntry.streak = {
-        ...savedEntry.streak,
-        dueAtISO: savedEntry.streak.dueAtISO || computeDueAtISO(savedEntry.endDate),
-      };
+      savedEntry.streak = ensureActivated(savedEntry.streak, savedEntry.endDate);
 
       if (
+        savedEntry.status === "final" &&
         hasCompletedUploads(savedEntry) &&
         savedEntry.streak.activatedAtISO &&
         savedEntry.streak.dueAtISO &&

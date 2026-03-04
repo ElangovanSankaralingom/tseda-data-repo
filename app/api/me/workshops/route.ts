@@ -298,7 +298,7 @@ function buildSavedStreak(
     isValidFileMeta(entry.uploads.organiserProfile) &&
     entry.uploads.geotaggedPhotos.length > 0;
 
-  if (entry.status !== "final" || !entry.pdfMeta || !eligible) {
+  if (!entry.pdfMeta || !eligible) {
     return normalizeStreakState(null);
   }
 
@@ -308,7 +308,11 @@ function buildSavedStreak(
     activatedAtISO: normalized.activatedAtISO ?? null,
     dueAtISO,
     completedAtISO:
-      uploadsComplete && dueAtISO && isWithinDueWindow(dueAtISO)
+      entry.status === "final" &&
+      normalized.activatedAtISO &&
+      uploadsComplete &&
+      dueAtISO &&
+      isWithinDueWindow(dueAtISO)
         ? normalized.completedAtISO ?? new Date().toISOString()
         : normalized.completedAtISO ?? null,
   };

@@ -1,1 +1,112 @@
-[]
+[
+  {
+    "id": "4bf7af16-4e90-40ac-b15e-b874706b0d0d",
+    "status": "final",
+    "requestEditStatus": "none",
+    "requestEditRequestedAtISO": null,
+    "requestEditMessage": "",
+    "academicYear": "Academic Year 2025-2026",
+    "semesterType": "Even Semester",
+    "startDate": "2026-03-06",
+    "endDate": "2026-03-09",
+    "programName": "mmm",
+    "organisingBody": "mnn",
+    "supportAmount": null,
+    "pdfMeta": {
+      "storedPath": "uploads/senarch_tce.edu/fdp-attended/4bf7af16-4e90-40ac-b15e-b874706b0d0d/pdf/1772573838949-mmm.pdf",
+      "url": "/uploads/senarch_tce.edu/fdp-attended/4bf7af16-4e90-40ac-b15e-b874706b0d0d/pdf/1772573838949-mmm.pdf",
+      "fileName": "1772573838949-mmm.pdf",
+      "generatedAtISO": "2026-03-03T21:37:18.949Z"
+    },
+    "pdfStale": true,
+    "pdfSourceHash": "{\"academicYear\":\"Academic Year 2025-2026\",\"endDate\":\"2026-03-09\",\"organisingBody\":\"mnn\",\"programName\":\"mmm\",\"semesterType\":\"Even Semester\",\"startDate\":\"2026-03-06\",\"supportAmount\":null}",
+    "permissionLetter": {
+      "fileName": "Screenshot 2026-02-28 at 5.17.59 PM.png",
+      "mimeType": "image/png",
+      "size": 145381,
+      "uploadedAt": "2026-03-03T21:37:23.366Z",
+      "url": "/uploads/senarch_tce.edu/fdp-attended/4bf7af16-4e90-40ac-b15e-b874706b0d0d/permissionletter/1772573843365_199e5294-5c1b-4644-959a-518027f391c9_Screenshot_2026-02-28_at_5.17.59_PM.png",
+      "storedPath": "senarch_tce.edu/fdp-attended/4bf7af16-4e90-40ac-b15e-b874706b0d0d/permissionletter/1772573843365_199e5294-5c1b-4644-959a-518027f391c9_Screenshot_2026-02-28_at_5.17.59_PM.png"
+    },
+    "completionCertificate": {
+      "fileName": "Screenshot 2026-02-28 at 4.37.54 PM.png",
+      "mimeType": "image/png",
+      "size": 197678,
+      "uploadedAt": "2026-03-03T21:37:29.137Z",
+      "url": "/uploads/senarch_tce.edu/fdp-attended/4bf7af16-4e90-40ac-b15e-b874706b0d0d/completioncertificate/1772573849136_77fe4ab1-6ccf-4600-abfe-4567ac6f92e2_Screenshot_2026-02-28_at_4.37.54_PM.png",
+      "storedPath": "senarch_tce.edu/fdp-attended/4bf7af16-4e90-40ac-b15e-b874706b0d0d/completioncertificate/1772573849136_77fe4ab1-6ccf-4600-abfe-4567ac6f92e2_Screenshot_2026-02-28_at_4.37.54_PM.png"
+    },
+    "streak": {
+      "activatedAtISO": "2026-03-03T21:52:29.712Z",
+      "dueAtISO": "2026-03-17T18:29:59.999Z",
+      "completedAtISO": "2026-03-03T21:52:29.713Z",
+      "windowDays": 5
+    },
+    "createdAt": "2026-03-03T21:37:18.878Z",
+    "updatedAt": "2026-03-03T21:52:29.712Z"
+  },
+  {
+    "id": "13cd9789-19f5-4f7c-986d-f546d4428431",
+    "status": "draft",
+    "requestEditStatus": "none",
+    "requestEditRequestedAtISO": null,
+    "requestEditMessage": "",
+    "academicYear": "Academic Year 2025-2026",
+    "semesterType": "Even Semester",
+    "startDate": "2026-03-06",
+    "endDate": "2026-03-08",
+    "programName": "nnn",
+    "organisingBody": "nnn",
+    "supportAmount": null,
+    "pdfMeta": {
+      "storedPath": "uploads/senarch_tce.edu/fdp-attended/13cd9789-19f5-4f7c-986d-f546d4428431/pdf/1772574999607-nnn.pdf",
+      "url": "/uploads/senarch_tce.edu/fdp-attended/13cd9789-19f5-4f7c-986d-f546d4428431/pdf/1772574999607-nnn.pdf",
+      "fileName": "1772574999607-nnn.pdf",
+      "generatedAtISO": "2026-03-03T21:56:39.607Z"
+    },
+    "pdfStale": false,
+    "pdfSourceHash": "{\"academicYear\":\"Academic Year 2025-2026\",\"semesterType\":\"Even Semester\",\"startDate\":\"2026-03-06\",\"endDate\":\"2026-03-08\",\"programName\":\"nnn\",\"organisingBody\":\"nnn\",\"supportAmount\":null}",
+    "permissionLetter": null,
+    "completionCertificate": null,
+    "streak": {
+      "activatedAtISO": "2026-03-03T21:52:40.280Z",
+      "dueAtISO": "2026-03-16T18:29:59.999Z",
+      "completedAtISO": null,
+      "windowDays": 5
+    },
+    "createdAt": "2026-03-03T21:36:47.200Z",
+    "updatedAt": "2026-03-03T21:56:39.608Z"
+  },
+  {
+    "id": "89c53fb7-1621-4a43-8d5d-f909a1019032",
+    "status": "draft",
+    "requestEditStatus": "none",
+    "requestEditRequestedAtISO": null,
+    "requestEditMessage": "",
+    "academicYear": "Academic Year 2025-2026",
+    "semesterType": "Even Semester",
+    "startDate": "2026-02-18",
+    "endDate": "2026-02-28",
+    "programName": "bbb",
+    "organisingBody": "vvv",
+    "supportAmount": null,
+    "pdfMeta": {
+      "storedPath": "uploads/senarch_tce.edu/fdp-attended/89c53fb7-1621-4a43-8d5d-f909a1019032/pdf/1772573774571-bbb.pdf",
+      "url": "/uploads/senarch_tce.edu/fdp-attended/89c53fb7-1621-4a43-8d5d-f909a1019032/pdf/1772573774571-bbb.pdf",
+      "fileName": "1772573774571-bbb.pdf",
+      "generatedAtISO": "2026-03-03T21:36:14.571Z"
+    },
+    "pdfStale": false,
+    "pdfSourceHash": "{\"academicYear\":\"Academic Year 2025-2026\",\"semesterType\":\"Even Semester\",\"startDate\":\"2026-02-18\",\"endDate\":\"2026-02-28\",\"programName\":\"bbb\",\"organisingBody\":\"vvv\",\"supportAmount\":null}",
+    "permissionLetter": null,
+    "completionCertificate": null,
+    "streak": {
+      "activatedAtISO": null,
+      "dueAtISO": null,
+      "completedAtISO": null,
+      "windowDays": 5
+    },
+    "createdAt": "2026-03-03T21:36:14.487Z",
+    "updatedAt": "2026-03-03T21:43:18.107Z"
+  }
+]

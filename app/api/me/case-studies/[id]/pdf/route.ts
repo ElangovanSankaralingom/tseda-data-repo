@@ -8,7 +8,7 @@ import {
   storeEntryPdf,
   type PdfMeta,
 } from "@/lib/entry-pdf";
-import { normalizeStreakState } from "@/lib/gamification";
+import { ensureActivated, isFutureDatedEntry, normalizeStreakState } from "@/lib/gamification";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
 const STORE_ROOT = path.join(process.cwd(), ".data", "users");
@@ -165,7 +165,9 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     pdfMeta,
     pdfSourceHash: hashPrePdfFields(entry as Record<string, unknown>, "case-studies"),
     pdfStale: false,
-    streak: normalizeStreakState(entry.streak),
+    streak: isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "")
+      ? ensureActivated(normalizeStreakState(entry.streak), entry.endDate)
+      : normalizeStreakState(entry.streak),
     updatedAt: new Date().toISOString(),
   };
 
