@@ -4,9 +4,10 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
-  cloneFileMetaArrayToTarget,
-  cloneFileMetaToTarget,
-} from "@/lib/crosspost.server";
+  cloneOptionalFileArrayToTarget,
+  cloneOptionalFileToTarget,
+  shouldShareEntry,
+} from "@/lib/entrySharing.server";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import {
   findFacultyByEmail,
@@ -24,6 +25,7 @@ import {
   type StreakState,
 } from "@/lib/gamification";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
+import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {
   fileName: string;
@@ -91,10 +93,6 @@ const REQUIRED_SINGLE_SLOTS: Array<keyof Omit<Uploads, "geotaggedPhotos">> = [
   "attendance",
   "organiserProfile",
 ];
-
-function safeEmailDir(email: string) {
-  return normalizeEmail(email).replace(/[^a-z0-9@._-]/g, "_");
-}
 
 function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
@@ -330,7 +328,7 @@ async function getAuthorizedEmail() {
 }
 
 function getStoreFile(email: string) {
-  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "workshops.json");
+  return getUserCategoryStoreFile(email, "workshops.json");
 }
 
 async function readList(email: string): Promise<WorkshopEntry[]> {
@@ -595,61 +593,67 @@ export async function POST(request: Request) {
 
     await writeList(email, next);
 
-    const targets = buildTargetEmails(savedEntry.coCoordinators, email);
-    for (const target of targets) {
-      const targetList = await readList(target.email);
-      if (targetList.some((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId)) {
-        continue;
+    if (shouldShareEntry(savedEntry)) {
+      try {
+        const targets = buildTargetEmails(savedEntry.coCoordinators, email);
+        for (const target of targets) {
+          const targetList = await readList(target.email);
+          if (targetList.some((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId)) {
+            continue;
+          }
+
+          const clonedEntry: WorkshopEntry = {
+            ...savedEntry,
+            id: sharedEntryId,
+            sharedEntryId,
+            sourceEmail: email,
+            sharedRole: "coCoordinator",
+            uploads: {
+              permissionLetter: await cloneOptionalFileToTarget(
+                savedEntry.uploads.permissionLetter,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "permissionLetter"
+              ),
+              brochure: await cloneOptionalFileToTarget(
+                savedEntry.uploads.brochure,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "brochure"
+              ),
+              attendance: await cloneOptionalFileToTarget(
+                savedEntry.uploads.attendance,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "attendance"
+              ),
+              organiserProfile: await cloneOptionalFileToTarget(
+                savedEntry.uploads.organiserProfile,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "organiserProfile"
+              ),
+              geotaggedPhotos: await cloneOptionalFileArrayToTarget(
+                savedEntry.uploads.geotaggedPhotos,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "geotaggedPhotos"
+              ),
+            },
+            createdAt: now,
+            updatedAt: now,
+          };
+
+          await writeList(target.email, [clonedEntry, ...targetList]);
+        }
+      } catch (error) {
+        console.error("Workshops share failed", error);
       }
-
-      const clonedEntry: WorkshopEntry = {
-        ...savedEntry,
-        id: sharedEntryId,
-        sharedEntryId,
-        sourceEmail: email,
-        sharedRole: "coCoordinator",
-        uploads: {
-          permissionLetter: await cloneFileMetaToTarget(
-            savedEntry.uploads.permissionLetter!,
-            target.email,
-            "workshops",
-            sharedEntryId,
-            "permissionLetter"
-          ),
-          brochure: await cloneFileMetaToTarget(
-            savedEntry.uploads.brochure!,
-            target.email,
-            "workshops",
-            sharedEntryId,
-            "brochure"
-          ),
-          attendance: await cloneFileMetaToTarget(
-            savedEntry.uploads.attendance!,
-            target.email,
-            "workshops",
-            sharedEntryId,
-            "attendance"
-          ),
-          organiserProfile: await cloneFileMetaToTarget(
-            savedEntry.uploads.organiserProfile!,
-            target.email,
-            "workshops",
-            sharedEntryId,
-            "organiserProfile"
-          ),
-          geotaggedPhotos: await cloneFileMetaArrayToTarget(
-            savedEntry.uploads.geotaggedPhotos,
-            target.email,
-            "workshops",
-            sharedEntryId,
-            "geotaggedPhotos"
-          ),
-        },
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      await writeList(target.email, [clonedEntry, ...targetList]);
     }
 
     return NextResponse.json(savedEntry, { status: 200 });
@@ -690,6 +694,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
     }
     const now = new Date().toISOString();
+    const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
 
     const hasAcademicYear = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "academicYear");
     const hasSemesterType = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "semesterType");
@@ -875,6 +880,69 @@ export async function PATCH(request: Request) {
         ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
         : [savedEntry, ...currentList]
     );
+
+    if (shouldShareEntry(savedEntry)) {
+      try {
+        const targets = buildTargetEmails(savedEntry.coCoordinators, email);
+        for (const target of targets) {
+          const targetList = await readList(target.email);
+          if (targetList.some((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId)) {
+            continue;
+          }
+
+          const clonedEntry: WorkshopEntry = {
+            ...savedEntry,
+            id: sharedEntryId,
+            sharedEntryId,
+            sourceEmail: email,
+            sharedRole: "coCoordinator",
+            uploads: {
+              permissionLetter: await cloneOptionalFileToTarget(
+                savedEntry.uploads.permissionLetter,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "permissionLetter"
+              ),
+              brochure: await cloneOptionalFileToTarget(
+                savedEntry.uploads.brochure,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "brochure"
+              ),
+              attendance: await cloneOptionalFileToTarget(
+                savedEntry.uploads.attendance,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "attendance"
+              ),
+              organiserProfile: await cloneOptionalFileToTarget(
+                savedEntry.uploads.organiserProfile,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "organiserProfile"
+              ),
+              geotaggedPhotos: await cloneOptionalFileArrayToTarget(
+                savedEntry.uploads.geotaggedPhotos,
+                target.email,
+                "workshops",
+                sharedEntryId,
+                "geotaggedPhotos"
+              ),
+            },
+            createdAt: now,
+            updatedAt: now,
+          };
+
+          await writeList(target.email, [clonedEntry, ...targetList]);
+        }
+      } catch (error) {
+        console.error("Workshops share failed", error);
+      }
+    }
 
     return NextResponse.json(savedEntry, { status: 200 });
   } catch (error) {

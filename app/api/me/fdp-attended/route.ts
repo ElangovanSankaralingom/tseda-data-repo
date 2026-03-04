@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import { mergeWithNulls } from "@/lib/mergeWithNulls";
+import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 import {
   ensureActivated,
   isEntryEditable,
@@ -53,12 +54,7 @@ const ACADEMIC_YEAR_OPTIONS = new Set([
 ]);
 const SEMESTER_TYPE_OPTIONS = new Set(["Odd Semester", "Even Semester"]);
 
-const STORE_ROOT = path.join(process.cwd(), "data", "fdp-attended");
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
-
-function sanitizeSegment(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
-}
 
 function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
@@ -187,7 +183,7 @@ async function getAuthorizedEmail() {
 }
 
 async function readList(email: string): Promise<FdpAttended[]> {
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
 
   try {
     const raw = await fs.readFile(filePath, "utf8");
@@ -201,8 +197,8 @@ async function readList(email: string): Promise<FdpAttended[]> {
 }
 
 async function writeList(email: string, list: FdpAttended[]) {
-  await fs.mkdir(STORE_ROOT, { recursive: true });
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
 }
 
@@ -213,7 +209,7 @@ function resolveOwnedStoredPath(email: string, storedPath: string) {
     throw new Error("Invalid storedPath");
   }
 
-  const safeEmail = sanitizeSegment(email);
+  const safeEmail = safeEmailDir(email);
   const ownerPrefix = `${safeEmail}/fdp-attended/`;
 
   if (!normalized.startsWith(ownerPrefix)) {

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import { safeEmailDir } from "@/lib/userStore";
 import { PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 
 const LEGACY_DATA_DIR = path.join(process.cwd(), "data");
@@ -17,10 +18,6 @@ const LEGACY_CATEGORY_DIRS = [
   "guest-lectures",
   "workshops",
 ];
-
-function safeEmailDir(email: string) {
-  return email.toLowerCase().replace(/[^a-z0-9@._-]/g, "_");
-}
 
 function legacyEmailKey(email: string) {
   return email.toLowerCase().replace(/[^a-z0-9._-]/g, "_");

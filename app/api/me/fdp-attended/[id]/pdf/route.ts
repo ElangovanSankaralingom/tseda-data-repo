@@ -9,8 +9,7 @@ import {
   type PdfMeta,
 } from "@/lib/entry-pdf";
 import { ensureActivated, isFutureDatedEntry, normalizeStreakState } from "@/lib/gamification";
-
-const STORE_ROOT = path.join(process.cwd(), "data", "fdp-attended");
+import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 type FileMeta = {
   fileName: string;
@@ -41,10 +40,6 @@ type EntryRecord = {
   updatedAt?: string;
 };
 
-function sanitizeSegment(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
-}
-
 async function getAuthorizedEmail() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() ?? "";
@@ -53,7 +48,7 @@ async function getAuthorizedEmail() {
 }
 
 async function readList(email: string): Promise<EntryRecord[]> {
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = JSON.parse(raw);
@@ -64,8 +59,8 @@ async function readList(email: string): Promise<EntryRecord[]> {
 }
 
 async function writeList(email: string, list: EntryRecord[]) {
-  await fs.mkdir(STORE_ROOT, { recursive: true });
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
 }
 

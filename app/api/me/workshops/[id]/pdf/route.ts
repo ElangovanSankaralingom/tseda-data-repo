@@ -10,8 +10,7 @@ import {
 } from "@/lib/entry-pdf";
 import { ensureActivated, isFutureDatedEntry, normalizeStreakState } from "@/lib/gamification";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
-
-const STORE_ROOT = path.join(process.cwd(), ".data", "users");
+import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 type FileMeta = {
   fileName: string;
@@ -57,10 +56,6 @@ type EntryRecord = {
   updatedAt?: string;
 };
 
-function sanitizeSegment(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
-}
-
 async function getAuthorizedEmail() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() ?? "";
@@ -69,7 +64,7 @@ async function getAuthorizedEmail() {
 }
 
 function getStoreFile(email: string) {
-  return path.join(STORE_ROOT, sanitizeSegment(email), "workshops.json");
+  return getUserCategoryStoreFile(email, "workshops.json");
 }
 
 async function readList(email: string): Promise<EntryRecord[]> {

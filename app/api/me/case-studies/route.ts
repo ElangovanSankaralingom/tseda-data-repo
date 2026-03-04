@@ -4,9 +4,10 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
-  cloneFileMetaArrayToTarget,
-  cloneFileMetaToTarget,
-} from "@/lib/crosspost.server";
+  cloneOptionalFileArrayToTarget,
+  cloneOptionalFileToTarget,
+  shouldShareEntry,
+} from "@/lib/entrySharing.server";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import {
   findFacultyByEmail,
@@ -28,6 +29,7 @@ import {
   normalizeStudentYear,
   type StudentYear,
 } from "@/lib/student-academic";
+import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
 type FileMeta = {
@@ -86,10 +88,6 @@ const ACADEMIC_YEAR_OPTIONS = new Set([
   "Academic Year 2027-2028",
 ]);
 const SEMESTER_TYPE_OPTIONS = new Set(["Odd", "Even"]);
-
-function safeEmailDir(email: string) {
-  return normalizeEmail(email).replace(/[^a-z0-9@._-]/g, "_");
-}
 
 function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
@@ -346,7 +344,7 @@ async function getAuthorizedEmail() {
 }
 
 function getStoreFile(email: string) {
-  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "case-studies.json");
+  return getUserCategoryStoreFile(email, "case-studies.json");
 }
 
 async function readList(email: string): Promise<CaseStudyEntry[]> {
@@ -414,37 +412,31 @@ async function upsertSharedTargets(savedEntry: CaseStudyEntry, creatorEmail: str
       targetList.find((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId) ?? null;
 
     const permissionLetter =
-      savedEntry.permissionLetter
-        ? await cloneFileMetaToTarget(
-            savedEntry.permissionLetter,
-            target.email,
-            "case-studies",
-            sharedEntryId,
-            "permissionLetter"
-          )
-        : null;
+      await cloneOptionalFileToTarget(
+        savedEntry.permissionLetter,
+        target.email,
+        "case-studies",
+        sharedEntryId,
+        "permissionLetter"
+      );
 
     const travelPlan =
-      savedEntry.travelPlan
-        ? await cloneFileMetaToTarget(
-            savedEntry.travelPlan,
-            target.email,
-            "case-studies",
-            sharedEntryId,
-            "travelPlan"
-          )
-        : null;
+      await cloneOptionalFileToTarget(
+        savedEntry.travelPlan,
+        target.email,
+        "case-studies",
+        sharedEntryId,
+        "travelPlan"
+      );
 
     const geotaggedPhotos =
-      savedEntry.geotaggedPhotos.length > 0
-        ? await cloneFileMetaArrayToTarget(
-            savedEntry.geotaggedPhotos,
-            target.email,
-            "case-studies",
-            sharedEntryId,
-            "geotaggedPhotos"
-          )
-        : [];
+      await cloneOptionalFileArrayToTarget(
+        savedEntry.geotaggedPhotos,
+        target.email,
+        "case-studies",
+        sharedEntryId,
+        "geotaggedPhotos"
+      );
 
     const clonedEntry: CaseStudyEntry = {
       ...(existingTarget ?? savedEntry),
@@ -692,7 +684,13 @@ export async function POST(request: Request) {
 
     await writeList(email, next);
 
-    await upsertSharedTargets(savedEntry, email, now);
+    if (shouldShareEntry(savedEntry)) {
+      try {
+        await upsertSharedTargets(savedEntry, email, now);
+      } catch (error) {
+        console.error("Case studies share failed", error);
+      }
+    }
 
     return NextResponse.json(savedEntry, { status: 200 });
   } catch (error) {
@@ -905,7 +903,13 @@ export async function PATCH(request: Request) {
         : [savedEntry, ...currentList]
     );
 
-    await upsertSharedTargets(savedEntry, email, now);
+    if (shouldShareEntry(savedEntry)) {
+      try {
+        await upsertSharedTargets(savedEntry, email, now);
+      } catch (error) {
+        console.error("Case studies share failed", error);
+      }
+    }
 
     return NextResponse.json(savedEntry, { status: 200 });
   } catch (error) {
