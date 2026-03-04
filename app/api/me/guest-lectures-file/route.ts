@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isEntryEditable } from "@/lib/gamification";
+import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 
 type Slot =
   | "permissionLetter"
@@ -36,16 +37,12 @@ const ALLOWED_SLOTS = new Set<Slot>([
   "geotaggedPhotos",
 ]);
 
-function safeEmailDir(email: string) {
-  return email.toLowerCase().replace(/[^a-z0-9@._-]/g, "_");
-}
-
 function safeName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
 function getStoreFile(email: string) {
-  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "guest-lectures.json");
+  return getUserCategoryStoreFile(email, "guest-lectures.json");
 }
 
 async function readList(email: string): Promise<GuestLectureRecord[]> {

@@ -5,10 +5,10 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isEntryEditable } from "@/lib/gamification";
+import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
-const STORE_ROOT = path.join(process.cwd(), "data", "fdp-attended");
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
 const ALLOWED_SLOTS = new Set(["permissionLetter", "completionCertificate"]);
@@ -36,7 +36,7 @@ function sanitizeFileName(fileName: string) {
 }
 
 async function readList(email: string): Promise<FdpAttendedRecord[]> {
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
 
   try {
     const raw = await fs.readFile(filePath, "utf8");
@@ -48,8 +48,8 @@ async function readList(email: string): Promise<FdpAttendedRecord[]> {
 }
 
 async function writeList(email: string, list: FdpAttendedRecord[]) {
-  await fs.mkdir(STORE_ROOT, { recursive: true });
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
 }
 
@@ -71,7 +71,7 @@ function resolveOwnedStoredPath(email: string, storedPath: string) {
     throw new Error("Invalid storedPath");
   }
 
-  const safeEmail = sanitizeSegment(email);
+  const safeEmail = safeEmailDir(email);
   const ownerPrefix = `${safeEmail}/fdp-attended/`;
 
   if (!normalized.startsWith(ownerPrefix)) {
@@ -161,7 +161,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Only PDF/JPG/PNG allowed." }, { status: 400 });
   }
 
-  const safeEmail = sanitizeSegment(email);
+  const safeEmail = safeEmailDir(email);
   const safeRecordId = sanitizeSegment(recordId);
   const safeSlot = sanitizeSegment(slot);
   const safeOriginalFileName = sanitizeFileName(path.basename(file.name));

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isEntryEditable } from "@/lib/gamification";
+import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 
 type Slot = "permissionLetter" | "travelPlan" | "geotaggedPhotos";
 
@@ -27,16 +28,12 @@ const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
 const ALLOWED_SLOTS = new Set<Slot>(["permissionLetter", "travelPlan", "geotaggedPhotos"]);
 
-function safeEmailDir(email: string) {
-  return email.toLowerCase().replace(/[^a-z0-9@._-]/g, "_");
-}
-
 function safeName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
 function getStoreFile(email: string) {
-  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "case-studies.json");
+  return getUserCategoryStoreFile(email, "case-studies.json");
 }
 
 async function readList(email: string): Promise<CaseStudyRecord[]> {
