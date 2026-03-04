@@ -17,7 +17,7 @@ import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
 import { getEntryStreakDisplayState } from "@/lib/entries/lifecycle";
-import { categorizeEntries } from "@/lib/entryCategorize";
+import { groupEntries } from "@/lib/entryCategorization";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
@@ -26,9 +26,8 @@ import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
+import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import {
-  getEditLockState,
-  isEntryLockedState,
   type StreakState,
 } from "@/lib/gamification";
 
@@ -194,15 +193,6 @@ function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
   };
 }
 
-function isEntryLocked(entry: FdpConducted) {
-  if (entry.requestEditStatus === "approved") {
-    return false;
-  }
-
-  return isEntryLockedState(entry);
-}
-
-
 function SectionCard({
   title,
   subtitle,
@@ -326,7 +316,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
     draft: form,
     setDraft: setForm,
     dirty: formDirty,
-    lockState,
     pdfState,
     currentHash: prePdfFieldsHash,
     fieldsGateOk: generateReady,
@@ -336,7 +325,11 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
     category: "fdp-conducted",
     validatePrePdfFields: (draft) => validatePreUploadFields("fdp-conducted", draft as Record<string, unknown>),
   });
-  const generateEntrySnapshot = useGenerateEntry<FdpConducted>("fdp-conducted");
+  const generateEntrySnapshot = useGenerateEntry<FdpConducted>({
+    category: "fdp-conducted",
+    email,
+    hydrateEntry: (entry) => entry,
+  });
   const viewedEntry = useMemo(
     () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
     [activeEntryId, list]
@@ -446,8 +439,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   }, [form]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const isLocked = !!form.createdAt && lockState.isLocked;
-  const controlsDisabled = isViewMode || isLocked;
+  const controlsDisabled = isViewMode;
   const permissionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
     upload: (file, onProgress) =>
@@ -474,7 +466,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0;
   const workflow = useEntryWorkflow({
-    isLocked,
+    isLocked: false,
     coreValid: generateReady,
     hasPdfSnapshot: uploadsVisible,
     pdfStale: pdfState.pdfStale,
@@ -483,7 +475,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   });
   const lifecycle = workflow.lifecycle;
   const canGenerate = workflow.canGenerate;
-  const groupedEntries = useMemo(() => categorizeEntries(list), [list]);
+  const groupedEntries = useMemo(() => groupEntries(list), [list]);
 
   const resetUploadState = useCallback(() => {
     permissionController.reset();
@@ -631,13 +623,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       return;
     }
 
-    if (isLocked) {
-      setSubmitted(true);
-      setToast({ type: "err", msg: "This entry is locked." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
     await saveDraftChanges({ closeAfterSave: true, intent: "done" });
   }
 
@@ -702,7 +687,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
 
   async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
     const intent = options?.intent ?? "save";
-    if (saveLockRef.current || isLocked) return;
+    if (saveLockRef.current) return;
     if (intent === "save" && !lifecycle.canSave) return;
     if (intent === "done" && !lifecycle.canDone) return;
     saveLockRef.current = true;
@@ -770,21 +755,9 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
         pdfStale: pdfState.pdfStale,
         pdfSourceHash: form.pdfSourceHash || "",
       };
-      const persisted = await persistProgress(draftEntry);
-      const persistedId = String(persisted?.id ?? "").trim();
-      if (!persistedId) {
-        throw new Error("Could not generate the entry because it was not saved correctly.");
-      }
-
-      const refreshedEntries = await refreshList();
-      const confirmedEntry = refreshedEntries.find((item) => item.id === persistedId);
-      if (!confirmedEntry) {
-        throw new Error("Saved entry could not be confirmed before generating. Please click Save and try again.");
-      }
-
-      const payload = await generateEntrySnapshot(persistedId);
+      const { entry: generatedEntry } = await generateEntrySnapshot(draftEntry, persistProgress);
       const nextEntry = {
-        ...(payload?.entry ?? confirmedEntry),
+        ...generatedEntry,
         pdfSourceHash: prePdfFieldsHash,
         pdfStale: false,
       };
@@ -892,9 +865,9 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
             onCancel={() => void handleCancel()}
             cancelDisabled={isViewMode || saving || loading || hasBusyUploads || lifecycle.canDone}
             onSave={() => void saveDraftChanges()}
-            saveDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave || isLocked}
+            saveDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave}
             onDone={() => void handleDone()}
-            doneDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone || isLocked}
+            doneDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone}
             saving={saving}
             saveIntent={saveIntent}
           />
@@ -1116,18 +1089,17 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
               <div className="text-sm text-muted-foreground">No entries yet.</div>
             ) : (
               <div className="space-y-3">
-                {groupedEntries.drafts.length > 0 ? (
+                {groupedEntries.draft.length > 0 ? (
                   <div className="space-y-3">
                     <div className="text-sm font-semibold">Drafts</div>
-                    {groupedEntries.drafts.map((entry, index) => {
+                    {groupedEntries.draft.map((entry, index) => {
                       const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
                       const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
                       const showUpdated =
                         !Number.isNaN(createdTime) &&
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
-                      const lockState = getEditLockState(entry);
-                      const showPreviewActions = isEntryLocked(entry);
+                      const deadlineState = getStreakDeadlineState(entry);
 
                       return (
                         <div key={entry.id} className={getEntryListCardClass("draft")}>
@@ -1143,7 +1115,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                                     {getConductedEntryTitle(entry)}
                                   </Link>
-                                  <EntryLockBadge lockState={lockState} />
+                                  <EntryLockBadge deadlineState={deadlineState} />
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1158,46 +1130,17 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                     <MiniButton onClick={() => router.push(`/data-entry/fdp-conducted/${entry.id}`)}>
                                       View
                                     </MiniButton>
-                                    {!showPreviewActions ? (
-                                      <>
-                                        <MiniButton
-                                          onClick={() => {
-                                            openEntry(entry);
-                                            router.push(`${pathname}?id=${entry.id}`, { scroll: false });
-                                          }}
-                                        >
-                                          Edit
-                                        </MiniButton>
-                                        <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
-                                          Delete entry
-                                        </MiniButton>
-                                      </>
-                                    ) : entry.pdfMeta?.url ? (
-                                      <a
-                                        href={entry.pdfMeta.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
-                                      >
-                                        Preview
-                                      </a>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        disabled
-                                        className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
-                                      >
-                                        Preview
-                                      </button>
-                                    )}
-                                    <RequestEditAction
-                                      locked={showPreviewActions}
-                                      status={entry.requestEditStatus}
-                                      requestedAtISO={entry.requestEditRequestedAtISO}
-                                      requesting={!!requestingEditIds[entry.id]}
-                                      onRequest={() => void requestEdit(entry)}
-                                      onCancel={() => void cancelRequestEdit(entry)}
-                                    />
+                                    <MiniButton
+                                      onClick={() => {
+                                        openEntry(entry);
+                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                      }}
+                                    >
+                                      Edit
+                                    </MiniButton>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
+                                      Delete entry
+                                    </MiniButton>
                                   </div>
                                 </div>
                               ) : null}
@@ -1243,8 +1186,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
-                      const lockState = getEditLockState(entry);
-                      const entryLocked = isEntryLocked(entry);
+                      const deadlineState = getStreakDeadlineState(entry);
 
                       return (
                         <div key={entry.id} className={getEntryListCardClass("streak_active")}>
@@ -1260,7 +1202,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                                     {getConductedEntryTitle(entry)}
                                   </Link>
-                                  <EntryLockBadge lockState={lockState} />
+                                  <EntryLockBadge deadlineState={deadlineState} />
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1280,21 +1222,12 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                         openEntry(entry);
                                         router.push(`${pathname}?id=${entry.id}`, { scroll: false });
                                       }}
-                                      disabled={entryLocked}
                                     >
                                       Edit
                                     </MiniButton>
-                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
+                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
                                       Delete entry
                                     </MiniButton>
-                                    <RequestEditAction
-                                      locked={isEntryLocked(entry)}
-                                      status={entry.requestEditStatus}
-                                      requestedAtISO={entry.requestEditRequestedAtISO}
-                                      requesting={!!requestingEditIds[entry.id]}
-                                      onRequest={() => void requestEdit(entry)}
-                                      onCancel={() => void cancelRequestEdit(entry)}
-                                    />
                                   </div>
                                 </div>
                               ) : null}
@@ -1346,8 +1279,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
 
-                      const lockState = getEditLockState(entry);
-                      const showPreviewActions = true;
+                      const deadlineState = getStreakDeadlineState(entry);
 
                       return (
                         <div key={entry.id} className={getEntryListCardClass("completed")}>
@@ -1363,7 +1295,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                   <Link href={`/data-entry/fdp-conducted/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                                     {getConductedEntryTitle(entry)}
                                   </Link>
-                                  <EntryLockBadge lockState={lockState} />
+                                  <EntryLockBadge deadlineState={deadlineState} />
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1397,7 +1329,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                       </button>
                                     )}
                                     <RequestEditAction
-                                      locked={showPreviewActions}
+                                      locked
                                       status={entry.requestEditStatus}
                                       requestedAtISO={entry.requestEditRequestedAtISO}
                                       requesting={!!requestingEditIds[entry.id]}

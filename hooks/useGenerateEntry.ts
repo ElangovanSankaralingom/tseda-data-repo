@@ -1,20 +1,26 @@
 "use client";
 
 import { useCallback } from "react";
-import { generateEntrySnapshot } from "@/lib/entries/generate";
+import { runGenerateEntryPipeline } from "@/lib/generateEntryPipeline";
 import type { CategoryKey } from "@/lib/entries/types";
 
-export function useGenerateEntry<TEntry>(category: CategoryKey) {
+type EntryWithId = { id?: string | null };
+
+export function useGenerateEntry<TEntry extends EntryWithId>(args: {
+  category: CategoryKey;
+  email?: string;
+  hydrateEntry: (entry: TEntry) => TEntry;
+}) {
   return useCallback(
-    async (entryId: string) => {
-      const persistedEntryId = String(entryId ?? "").trim();
-
-      if (!persistedEntryId) {
-        throw new Error("Could not generate the entry because it was not saved yet.");
-      }
-
-      return generateEntrySnapshot<TEntry>(category, persistedEntryId);
+    async (draftEntry: TEntry, persistDraft: (entry: TEntry) => Promise<TEntry>) => {
+      return runGenerateEntryPipeline<TEntry>({
+        category: args.category,
+        email: args.email,
+        draftEntry,
+        persistDraft,
+        hydrateEntry: args.hydrateEntry,
+      });
     },
-    [category]
+    [args.category, args.email, args.hydrateEntry]
   );
 }

@@ -6,10 +6,18 @@ type GeneratePdfResult<TEntry> = {
   error?: string;
 };
 
-export async function generateEntrySnapshot<TEntry>(category: CategoryKey, entryId: string) {
-  const response = await fetch(`/api/me/entries/${encodeURIComponent(category)}/${encodeURIComponent(entryId)}/generate`, {
+export async function generateEntrySnapshot<TEntry extends { id?: string | null }>(
+  category: CategoryKey,
+  entry: TEntry
+) {
+  const response = await fetch("/api/me/entry/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      categoryKey: category,
+      id: String(entry?.id ?? "").trim(),
+      draft: entry,
+    }),
   });
 
   const text = await response.text();

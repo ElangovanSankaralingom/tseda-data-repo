@@ -21,12 +21,13 @@ import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { FACULTY } from "@/lib/facultyDirectory";
+import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import {
   getEntryStreakDisplayState,
   type EntryDisplayCategory,
 } from "@/lib/entries/lifecycle";
-import { categorizeEntries } from "@/lib/entryCategorize";
-import { getEditLockState, isEntryLockedState, nowISTTimestampISO } from "@/lib/gamification";
+import { groupEntries } from "@/lib/entryCategorization";
+import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 
 type FileMeta = {
@@ -213,14 +214,6 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): WorkshopEntry {
   };
 }
 
-function isEntryLocked(entry: WorkshopEntry) {
-  if (entry.requestEditStatus === "approved") {
-    return false;
-  }
-
-  return isEntryLockedState(entry);
-}
-
 function hydrateEntry(entry: WorkshopEntry) {
   return hydratePdfSnapshot(entry, "workshops");
 }
@@ -378,7 +371,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
     [list, viewEntryId]
   );
-  const groupedEntries = useMemo(() => categorizeEntries(list), [list]);
+  const groupedEntries = useMemo(() => groupEntries(list), [list]);
 
   useEffect(() => {
     (async () => {
@@ -586,8 +579,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     !!form.uploads.organiserProfile &&
     form.uploads.geotaggedPhotos.length > 0;
   const showForm = formOpen || (isViewMode && !!viewedEntry);
-  const isLocked = !!form.createdAt && isEntryLocked(form);
-  const controlsDisabled = isViewMode || isLocked;
+  const controlsDisabled = isViewMode;
   const pdfHash = useMemo(() => hashPrePdfFields(form, "workshops"), [form]);
   const pdfState = useMemo(
     () =>
@@ -596,12 +588,12 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
         pdfSourceHash: form.pdfSourceHash ?? "",
         draftHash: pdfHash,
         fieldsGateOk: generateReady,
-        isLocked,
+        isLocked: false,
       }),
-    [form.pdfMeta, form.pdfSourceHash, generateReady, isLocked, pdfHash]
+    [form.pdfMeta, form.pdfSourceHash, generateReady, pdfHash]
   );
   const workflow = useEntryWorkflow({
-    isLocked,
+    isLocked: false,
     coreValid: generateReady,
     hasPdfSnapshot: uploadsVisible,
     pdfStale: pdfState.pdfStale,
@@ -609,7 +601,11 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     fieldDirty: formDirty,
   });
   const lifecycle = workflow.lifecycle;
-  const generateEntrySnapshot = useGenerateEntry<WorkshopEntry>("workshops");
+  const generateEntrySnapshot = useGenerateEntry<WorkshopEntry>({
+    category: "workshops",
+    email,
+    hydrateEntry,
+  });
   async function parseApiError(response: Response, fallback: string) {
     const text = await response.text();
     let message = `${fallback} (${response.status})`;
@@ -942,13 +938,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
         pdfStale: pdfState.pdfStale,
         pdfSourceHash: form.pdfSourceHash || "",
       };
-      const persistedDraft = hydrateEntry(await persistProgress(draftEntry));
-      const payload = await generateEntrySnapshot(persistedDraft.id);
-
-      const nextEntry =
-        payload && typeof payload === "object" && "entry" in payload
-          ? hydrateEntry((payload as { entry?: WorkshopEntry }).entry ?? persistedDraft)
-          : persistedDraft;
+      const { entry: nextEntry } = await generateEntrySnapshot(draftEntry, persistProgress);
 
       setForm(nextEntry);
       setLastPersistedSnapshot(stableStringify(nextEntry));
@@ -1021,8 +1011,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
   }
 
   function renderSavedEntry(entry: WorkshopEntry, category: EntryDisplayCategory, index: number) {
-    const lockState = getEditLockState(entry);
-    const entryLocked = isEntryLocked(entry);
+    const deadlineState = getStreakDeadlineState(entry);
     const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
     const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
     const showUpdated =
@@ -1030,7 +1019,6 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
       !Number.isNaN(updatedTime) &&
       Math.abs(updatedTime - createdTime) > 60 * 1000;
     const completedEntry = entry.status === "final";
-    const showPreviewActions = entryLocked || completedEntry;
     const days = getInclusiveDays(entry.startDate, entry.endDate);
 
     return (
@@ -1047,7 +1035,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                 <Link href={`/data-entry/workshops/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                   {entry.eventName}
                 </Link>
-                <EntryLockBadge lockState={lockState} />
+                <EntryLockBadge deadlineState={deadlineState} />
               </div>
               <div className="mt-1 text-sm text-muted-foreground">
                 Speaker: {entry.speakerName} • {entry.organisationName}
@@ -1063,7 +1051,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                 <MiniButton onClick={() => router.push(`/data-entry/workshops/${entry.id}`)}>
                   View
                 </MiniButton>
-                {showPreviewActions ? (
+                {completedEntry ? (
                   entry.pdfMeta?.url ? (
                     <a
                       href={entry.pdfMeta.url}
@@ -1093,7 +1081,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                   </>
                 )}
                 <RequestEditAction
-                  locked={showPreviewActions}
+                  locked={completedEntry}
                   status={entry.requestEditStatus}
                   requestedAtISO={entry.requestEditRequestedAtISO}
                   requesting={!!requestingEditIds[entry.id]}
@@ -1564,10 +1552,10 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
               <div className="text-sm text-muted-foreground">No entries yet.</div>
             ) : (
               <div className="space-y-3">
-                {groupedEntries.drafts.length > 0 ? (
+                {groupedEntries.draft.length > 0 ? (
                   <div className="space-y-3">
                     <div className="text-sm font-semibold">Drafts</div>
-                    {groupedEntries.drafts.map((entry, index) => renderSavedEntry(entry, "draft", index))}
+                    {groupedEntries.draft.map((entry, index) => renderSavedEntry(entry, "draft", index))}
                   </div>
                 ) : null}
                 {groupedEntries.activated.length > 0 ? (
