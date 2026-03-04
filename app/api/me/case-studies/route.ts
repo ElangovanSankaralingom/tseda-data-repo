@@ -311,14 +311,18 @@ function buildSavedStreak(
     isValidFileMeta(entry.travelPlan) &&
     entry.geotaggedPhotos.length > 0;
 
-  if (entry.status !== "final" || !entry.pdfMeta || !eligible) {
+  if (!entry.pdfMeta || !eligible) {
     return normalizeStreakState(null);
   }
 
   const activatedAtISO = normalized.activatedAtISO ?? null;
   const dueAtISO = normalized.dueAtISO ?? computeDueAtISO(entry.endDate);
   const completedAtISO =
-    uploadsComplete && dueAtISO && isWithinDueWindow(dueAtISO)
+    entry.status === "final" &&
+    activatedAtISO &&
+    uploadsComplete &&
+    dueAtISO &&
+    isWithinDueWindow(dueAtISO)
       ? normalized.completedAtISO ?? new Date().toISOString()
       : normalized.completedAtISO ?? null;
 

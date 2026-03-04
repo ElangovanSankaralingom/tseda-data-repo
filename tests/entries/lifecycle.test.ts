@@ -4,16 +4,18 @@ import {
   computeCutoffDate,
   computeDaysLeft,
   getEntryCategory,
+  getEntryStreakDisplayState,
   getTagColor,
   isEditableNow,
 } from "../../lib/entries/lifecycle.ts";
+import { categorizeEntries } from "../../lib/entryCategorize.ts";
 import { addDaysISO, computeDueAtISO, computeGenericDueAtISO, nowISTDateISO } from "../../lib/gamification.ts";
 
 test("computeCutoffDate uses +8 days for streak entries", () => {
   assert.equal(computeCutoffDate("2026-03-01", true), computeDueAtISO("2026-03-01"));
 });
 
-test("computeCutoffDate uses +2 days for generic entries", () => {
+test("computeCutoffDate uses +2 days for non-streak entries", () => {
   assert.equal(computeCutoffDate("2026-03-01", false), computeGenericDueAtISO("2026-03-01"));
 });
 
@@ -61,7 +63,84 @@ test("entry category derives from stored state", () => {
     }),
     "completed"
   );
-  assert.equal(getEntryCategory({ startDate: pastStart, endDate: pastEnd, streak: {} }), "generic");
+  assert.equal(getEntryCategory({ startDate: pastStart, endDate: pastEnd, streak: {} }), "draft");
+  assert.equal(
+    getEntryCategory({
+      startDate: pastStart,
+      endDate: pastEnd,
+      status: "final",
+      streak: {},
+    }),
+    "completed"
+  );
+});
+
+test("entry streak display state only shows flames for actual streak state", () => {
+  const today = nowISTDateISO();
+  const futureEnd = addDaysISO(today, 3);
+
+  assert.equal(getEntryStreakDisplayState({ startDate: today, endDate: futureEnd, streak: {} }), "none");
+  assert.equal(
+    getEntryStreakDisplayState({
+      startDate: today,
+      endDate: futureEnd,
+      streak: { activatedAtISO: new Date().toISOString() },
+    }),
+    "activated"
+  );
+  assert.equal(
+    getEntryStreakDisplayState({
+      startDate: today,
+      endDate: futureEnd,
+      streak: { completedAtISO: new Date().toISOString() },
+    }),
+    "completed"
+  );
+});
+
+test("categorizeEntries groups entries globally and sorts newest first within each group", () => {
+  const today = nowISTDateISO();
+  const futureEnd = addDaysISO(today, 3);
+
+  const grouped = categorizeEntries([
+    {
+      id: "draft-old",
+      createdAt: "2026-03-01T10:00:00.000Z",
+      updatedAt: "2026-03-01T10:00:00.000Z",
+      startDate: today,
+      endDate: futureEnd,
+      streak: {},
+    },
+    {
+      id: "draft-new",
+      createdAt: "2026-03-02T10:00:00.000Z",
+      updatedAt: "2026-03-02T10:00:00.000Z",
+      startDate: today,
+      endDate: futureEnd,
+      streak: {},
+    },
+    {
+      id: "active",
+      createdAt: "2026-03-03T10:00:00.000Z",
+      updatedAt: "2026-03-03T10:00:00.000Z",
+      startDate: today,
+      endDate: futureEnd,
+      streak: { activatedAtISO: "2026-03-03T10:00:00.000Z" },
+    },
+    {
+      id: "completed",
+      createdAt: "2026-03-04T10:00:00.000Z",
+      updatedAt: "2026-03-04T10:00:00.000Z",
+      startDate: today,
+      endDate: futureEnd,
+      status: "final",
+      streak: {},
+    },
+  ]);
+
+  assert.deepEqual(grouped.drafts.map((entry) => (entry as { id: string }).id), ["draft-new", "draft-old"]);
+  assert.deepEqual(grouped.activated.map((entry) => (entry as { id: string }).id), ["active"]);
+  assert.deepEqual(grouped.completed.map((entry) => (entry as { id: string }).id), ["completed"]);
 });
 
 test("isEditableNow stays true until cutoff then becomes false", () => {

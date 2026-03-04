@@ -1,22 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import DateField from "@/components/controls/DateField";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
+import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import EntryPageHeader from "@/components/entry/EntryPageHeader";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
+import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { FACULTY } from "@/lib/facultyDirectory";
-import { groupEntriesByLifecycle, type EntryDisplayCategory } from "@/lib/entries/lifecycle";
+import {
+  getEntryStreakDisplayState,
+  type EntryDisplayCategory,
+} from "@/lib/entries/lifecycle";
+import { categorizeEntries } from "@/lib/entryCategorize";
 import { getEditLockState, isEntryLockedState, nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 
@@ -321,6 +330,8 @@ type WorkshopsPageProps = {
 };
 
 export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
+  const router = useRouter();
+  const categoryPath = "/data-entry/workshops";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -367,7 +378,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
     [list, viewEntryId]
   );
-  const groupedEntries = useMemo(() => groupEntriesByLifecycle(list), [list]);
+  const groupedEntries = useMemo(() => categorizeEntries(list), [list]);
 
   useEffect(() => {
     (async () => {
@@ -454,6 +465,40 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     setPhotoUploadStatus({ hasPending: false, busy: false });
   }, [list, viewEntryId]);
 
+  function openEntry(nextViewedEntry: WorkshopEntry) {
+    const hydratedEntry = hydrateEntry(nextViewedEntry);
+    setForm(hydratedEntry);
+    setLastPersistedSnapshot(stableStringify(hydratedEntry));
+    setSubmitted(false);
+    setSubmitAttemptedFinal(false);
+    setPending({
+      permissionLetter: null,
+      brochure: null,
+      attendance: null,
+      organiserProfile: null,
+    });
+    setBusy({
+      permissionLetter: false,
+      brochure: false,
+      attendance: false,
+      organiserProfile: false,
+    });
+    setProgress({
+      permissionLetter: 0,
+      brochure: 0,
+      attendance: 0,
+      organiserProfile: 0,
+    });
+    setUploadError({
+      permissionLetter: null,
+      brochure: null,
+      attendance: null,
+      organiserProfile: null,
+    });
+    setPhotoUploadStatus({ hasPending: false, busy: false });
+    setFormOpen(true);
+  }
+
   function applyPersistedEntry(nextEntry: WorkshopEntry) {
     setForm(nextEntry);
     setLastPersistedSnapshot(stableStringify(nextEntry));
@@ -532,16 +577,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
-  const generateReady =
-    !!form.academicYear &&
-    !!form.semesterType &&
-    isISODate(form.startDate) &&
-    isISODate(form.endDate) &&
-    form.endDate >= form.startDate &&
-    !!form.eventName.trim() &&
-    !!form.speakerName.trim() &&
-    !!form.organisationName.trim() &&
-    !form.coCoordinators.some((value) => !value.isLocked || !value.email.trim());
+  const generateReady = validatePreUploadFields("workshops", form as Record<string, unknown>);
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete =
     !!form.uploads.permissionLetter &&
@@ -573,6 +609,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     fieldDirty: formDirty,
   });
   const lifecycle = workflow.lifecycle;
+  const generateEntrySnapshot = useGenerateEntry<WorkshopEntry>("workshops");
   async function parseApiError(response: Response, fallback: string) {
     const text = await response.text();
     let message = `${fallback} (${response.status})`;
@@ -663,7 +700,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     await Promise.all(metas.map((meta) => deleteStoredFile(meta.storedPath)));
   }
 
-  async function closeForm() {
+  async function closeForm(targetHref?: string) {
     if (
       !form.pdfMeta &&
       (
@@ -679,6 +716,9 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
 
     resetForm();
     setFormOpen(false);
+    if (targetHref) {
+      router.push(targetHref);
+    }
   }
 
   async function refreshList(nextEmail = email) {
@@ -797,8 +837,11 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     }
   }
 
-  async function saveDraftChanges(options?: { closeAfterSave?: boolean }) {
-    if (saveLockRef.current || !lifecycle.canSave) return;
+  async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
+    const intent = options?.intent ?? "save";
+    if (saveLockRef.current) return;
+    if (intent === "save" && !lifecycle.canSave) return;
+    if (intent === "done" && !lifecycle.canDone) return;
     saveLockRef.current = true;
 
     try {
@@ -811,7 +854,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
       setSaving(true);
       const entryToSave: WorkshopEntry = {
         ...form,
-        status: form.status === "final" ? "final" : "draft",
+        status: intent === "done" || form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
       const persisted = hydrateEntry(await persistProgress(entryToSave));
@@ -849,12 +892,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
       return;
     }
 
-    if (!lifecycle.canSave) {
-      closeForm();
-      return;
-    }
-
-    await saveDraftChanges({ closeAfterSave: true });
+    await saveDraftChanges({ closeAfterSave: true, intent: "done" });
   }
 
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
@@ -905,15 +943,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
         pdfSourceHash: form.pdfSourceHash || "",
       };
       const persistedDraft = hydrateEntry(await persistProgress(draftEntry));
-      const response = await fetch(`/api/me/workshops/${encodeURIComponent(persistedDraft.id)}/pdf`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const { message, payload } = await parseApiError(response, "Generate failed");
-
-      if (!response.ok) {
-        throw new Error(message);
-      }
+      const payload = await generateEntrySnapshot(persistedDraft.id);
 
       const nextEntry =
         payload && typeof payload === "object" && "entry" in payload
@@ -1000,15 +1030,20 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
       !Number.isNaN(updatedTime) &&
       Math.abs(updatedTime - createdTime) > 60 * 1000;
     const completedEntry = entry.status === "final";
+    const showPreviewActions = entryLocked || completedEntry;
     const days = getInclusiveDays(entry.startDate, entry.endDate);
 
     return (
-      <div key={entry.id} className="rounded-xl border border-border p-4">
+      <div key={entry.id} className={getEntryListCardClass(category)}>
         <div className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <EntryCategoryMarker category={category} index={index} />
+                <EntryCategoryMarker
+                  category={category}
+                  index={index}
+                  streakState={getEntryStreakDisplayState(entry)}
+                />
                 <Link href={`/data-entry/workshops/${entry.id}`} className="text-base font-semibold hover:opacity-80">
                   {entry.eventName}
                 </Link>
@@ -1025,7 +1060,10 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
 
             <div className="flex shrink-0 flex-col items-end gap-2">
               <div className="flex items-center gap-2">
-                {completedEntry ? (
+                <MiniButton onClick={() => router.push(`/data-entry/workshops/${entry.id}`)}>
+                  View
+                </MiniButton>
+                {showPreviewActions ? (
                   entry.pdfMeta?.url ? (
                     <a
                       href={entry.pdfMeta.url}
@@ -1044,14 +1082,18 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                       Preview
                     </button>
                   )
-                ) : null}
-                {!completedEntry ? (
-                  <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)} disabled={entryLocked}>
-                    Delete Entry
-                  </MiniButton>
-                ) : null}
+                ) : (
+                  <>
+                    <MiniButton onClick={() => openEntry(entry)}>
+                      Edit
+                    </MiniButton>
+                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
+                      Delete Entry
+                    </MiniButton>
+                  </>
+                )}
                 <RequestEditAction
-                  locked={entryLocked}
+                  locked={showPreviewActions}
                   status={entry.requestEditStatus}
                   requestedAtISO={entry.requestEditRequestedAtISO}
                   requesting={!!requestingEditIds[entry.id]}
@@ -1115,6 +1157,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
         isViewMode={isViewMode}
         backHref={backHref}
         backDisabled={backDisabled}
+        onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
         actions={
           showForm && !isViewMode ? (
             <>
@@ -1125,12 +1168,12 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
               >
                 Cancel
               </MiniButton>
-              <MiniButton
+              <SaveButton
                 onClick={() => void saveDraftChanges()}
                 disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave}
               >
                 {saving ? "Saving..." : "Save"}
-              </MiniButton>
+              </SaveButton>
               <MiniButton
                 onClick={() => void handleDone()}
                 disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone}
@@ -1337,7 +1380,10 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                     {saving ? "Generating..." : "Generate Entry"}
                   </MiniButton>
                 ) : null}
-                <EntryPdfActions pdfMeta={form.pdfMeta ?? null} disabled={!lifecycle.canPreview} />
+                <EntryPdfActions
+                  pdfMeta={form.pdfMeta ?? null}
+                  disabled={isViewMode ? !form.pdfMeta?.url : !lifecycle.canPreview}
+                />
               </div>
               {pdfState.pdfStale ? (
                 <p className="text-sm text-muted-foreground">
@@ -1524,22 +1570,16 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                     {groupedEntries.drafts.map((entry, index) => renderSavedEntry(entry, "draft", index))}
                   </div>
                 ) : null}
-                {groupedEntries.pending.length > 0 ? (
+                {groupedEntries.activated.length > 0 ? (
                   <div className="space-y-3">
-                    <div className="text-sm font-semibold">Pending (Streak Activated)</div>
-                    {groupedEntries.pending.map((entry, index) => renderSavedEntry(entry, "streak_active", index))}
+                    <div className="text-sm font-semibold">Streak Activated</div>
+                    {groupedEntries.activated.map((entry, index) => renderSavedEntry(entry, "streak_active", index))}
                   </div>
                 ) : null}
                 {groupedEntries.completed.length > 0 ? (
                   <div className="space-y-3">
                     <div className="text-sm font-semibold">Completed</div>
                     {groupedEntries.completed.map((entry, index) => renderSavedEntry(entry, "completed", index))}
-                  </div>
-                ) : null}
-                {groupedEntries.nonStreak.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold">Non-Streak Entries</div>
-                    {groupedEntries.nonStreak.map((entry, index) => renderSavedEntry(entry, "generic", index))}
                   </div>
                 ) : null}
               </div>

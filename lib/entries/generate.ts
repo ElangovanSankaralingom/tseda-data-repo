@@ -7,14 +7,14 @@ type GeneratePdfResult<TEntry> = {
 };
 
 export async function generateEntrySnapshot<TEntry>(category: CategoryKey, entryId: string) {
-  const response = await fetch(`/api/me/${encodeURIComponent(category)}/${encodeURIComponent(entryId)}/pdf`, {
+  const response = await fetch(`/api/me/entries/${encodeURIComponent(category)}/${encodeURIComponent(entryId)}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
 
   const text = await response.text();
   let payload: GeneratePdfResult<TEntry> | null = null;
-  let message = `Save failed (${response.status})`;
+  let message = `Generate failed (${response.status})`;
 
   try {
     payload = text ? (JSON.parse(text) as GeneratePdfResult<TEntry>) : null;

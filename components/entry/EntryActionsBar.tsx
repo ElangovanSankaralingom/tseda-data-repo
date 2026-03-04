@@ -2,6 +2,7 @@
 
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { SaveButton } from "@/components/ui/SaveButton";
 
 type HeaderEntryActionsBarProps = {
   isEditing: boolean;
@@ -40,9 +41,9 @@ export function HeaderEntryActionsBar({
         <ActionButton variant="ghost" onClick={onCancel} disabled={cancelDisabled}>
           Cancel
         </ActionButton>
-        <ActionButton variant="ghost" onClick={onSave} disabled={saveDisabled}>
+        <SaveButton onClick={onSave} disabled={saveDisabled}>
           {saving && saveIntent === "save" ? "Saving..." : "Save"}
-        </ActionButton>
+        </SaveButton>
         <ActionButton onClick={onDone} disabled={doneDisabled}>
           {saving && saveIntent === "done" ? "Saving..." : "Done"}
         </ActionButton>
@@ -85,6 +86,7 @@ export function PdfEntryActionsBar({
           fileName: pdfMeta.fileName,
         }
       : null;
+  const actionsDisabled = isViewMode ? !normalizedPdfMeta : pdfDisabled;
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -93,7 +95,7 @@ export function PdfEntryActionsBar({
           {generating ? "Generating..." : "Generate Entry"}
         </ActionButton>
       ) : null}
-      <EntryPdfActions pdfMeta={normalizedPdfMeta} disabled={pdfDisabled} />
+      <EntryPdfActions pdfMeta={normalizedPdfMeta} disabled={actionsDisabled} />
     </div>
   );
 }
