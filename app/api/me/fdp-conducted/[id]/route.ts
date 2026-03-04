@@ -8,6 +8,7 @@ import {
   isWithinRequestEditWindow,
   nowISTTimestampISO,
 } from "@/lib/gamification";
+import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
 
@@ -23,10 +24,6 @@ type FdpConductedRecord = {
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
 };
-
-function safeEmailDir(email: string) {
-  return normalizeEmail(email).replace(/[^a-z0-9@._-]/g, "_");
-}
 
 function normalizeRequestEditStatus(value: unknown): RequestEditStatus {
   return value === "pending" || value === "approved" || value === "rejected" || value === "none"
@@ -50,7 +47,7 @@ async function getAuthorizedEmail() {
 }
 
 function getStoreFile(email: string) {
-  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "fdp-conducted.json");
+  return getUserCategoryStoreFile(email, "fdp-conducted.json");
 }
 
 async function readList(email: string): Promise<FdpConductedRecord[]> {

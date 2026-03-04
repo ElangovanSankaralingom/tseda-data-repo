@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { safeEmailDir } from "@/lib/userStore";
 
 export type PdfMeta = {
   storedPath: string;
@@ -25,10 +26,6 @@ function sanitizeSegment(value: string) {
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-}
-
-export function safeEmailDir(email: string) {
-  return sanitizeSegment(email);
 }
 
 export function isValidPdfMeta(meta: PdfMeta | null | undefined): meta is PdfMeta {

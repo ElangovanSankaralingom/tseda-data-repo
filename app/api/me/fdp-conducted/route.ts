@@ -19,6 +19,7 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
+import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {
   fileName: string;
@@ -67,10 +68,6 @@ const ACADEMIC_YEAR_OPTIONS = new Set([
   "Academic Year 2027-2028",
 ]);
 const SEMESTER_TYPE_OPTIONS = new Set(["Odd Semester", "Even Semester"]);
-
-function safeEmailDir(email: string) {
-  return normalizeEmail(email).replace(/[^a-z0-9@._-]/g, "_");
-}
 
 function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
@@ -294,7 +291,7 @@ async function getAuthorizedEmail() {
 }
 
 function getStoreFile(email: string) {
-  return path.join(process.cwd(), ".data", "users", safeEmailDir(email), "fdp-conducted.json");
+  return getUserCategoryStoreFile(email, "fdp-conducted.json");
 }
 
 async function readList(email: string): Promise<FdpConducted[]> {

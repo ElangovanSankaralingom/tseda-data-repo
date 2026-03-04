@@ -7,6 +7,7 @@ import {
   isWithinRequestEditWindow,
   nowISTTimestampISO,
 } from "@/lib/gamification";
+import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
 
@@ -22,11 +23,6 @@ type FdpAttendedRecord = {
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
 };
-
-const STORE_ROOT = path.join(process.cwd(), "data", "fdp-attended");
-function sanitizeSegment(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
-}
 
 function normalizeRequestEditStatus(value: unknown): RequestEditStatus {
   return value === "pending" || value === "approved" || value === "rejected" || value === "none"
@@ -50,7 +46,7 @@ async function getAuthorizedEmail() {
 }
 
 async function readList(email: string): Promise<FdpAttendedRecord[]> {
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
 
   try {
     const raw = await fs.readFile(filePath, "utf8");
@@ -62,8 +58,8 @@ async function readList(email: string): Promise<FdpAttendedRecord[]> {
 }
 
 async function writeList(email: string, list: FdpAttendedRecord[]) {
-  await fs.mkdir(STORE_ROOT, { recursive: true });
-  const filePath = path.join(STORE_ROOT, `${sanitizeSegment(email)}.json`);
+  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
 }
 
