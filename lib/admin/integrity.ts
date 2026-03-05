@@ -5,6 +5,8 @@ import type { Dirent } from "node:fs";
 import path from "node:path";
 import { CATEGORY_KEYS, isCategoryKey } from "@/lib/categories";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
+import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { withUserDataLock } from "@/lib/data/locks";
 import {
   rebuildUserIndex as rebuildUserIndexFromStore,
   type UserIndex,
@@ -1159,7 +1161,7 @@ async function repairCategoryStoreInternal(
             backupsCreated.push(backupPath);
           }
         }
-        await fs.writeFile(filePath, JSON.stringify(repairedStore, null, 2), "utf8");
+        await atomicWriteTextFile(filePath, JSON.stringify(repairedStore, null, 2));
         filesTouched.push(filePath);
       }
 
@@ -1274,7 +1276,9 @@ export async function repairUserCategoryStore(
     if (!isCategoryKey(category)) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid category." });
     }
-    return repairCategoryStoreInternal(normalizedUserEmail, category, options);
+    return withUserDataLock(normalizedUserEmail, async () =>
+      repairCategoryStoreInternal(normalizedUserEmail, category, options)
+    );
   }, { context: `admin.integrity.repairUserCategoryStore.${category}` });
 }
 
@@ -1284,26 +1288,27 @@ export async function rebuildUserIndex(userEmail: string): Promise<Result<UserIn
     if (!normalizedUserEmail.endsWith("@tce.edu")) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid user email." });
     }
+    return withUserDataLock(normalizedUserEmail, async () => {
+      const rebuiltFromStore = await rebuildUserIndexFromStore(normalizedUserEmail);
+      if (rebuiltFromStore.ok) {
+        logger.info({
+          event: "admin.integrity.index.rebuild.from-store",
+          userEmail: normalizedUserEmail,
+        });
+        return rebuiltFromStore.data;
+      }
 
-    const rebuiltFromStore = await rebuildUserIndexFromStore(normalizedUserEmail);
-    if (rebuiltFromStore.ok) {
-      logger.info({
-        event: "admin.integrity.index.rebuild.from-store",
-        userEmail: normalizedUserEmail,
-      });
-      return rebuiltFromStore.data;
-    }
+      const rebuiltFromWal = await rebuildUserIndexFromWal(normalizedUserEmail);
+      if (rebuiltFromWal.ok) {
+        logger.warn({
+          event: "admin.integrity.index.rebuild.from-wal",
+          userEmail: normalizedUserEmail,
+        });
+        return rebuiltFromWal.data;
+      }
 
-    const rebuiltFromWal = await rebuildUserIndexFromWal(normalizedUserEmail);
-    if (rebuiltFromWal.ok) {
-      logger.warn({
-        event: "admin.integrity.index.rebuild.from-wal",
-        userEmail: normalizedUserEmail,
-      });
-      return rebuiltFromWal.data;
-    }
-
-    throw rebuiltFromStore.error;
+      throw rebuiltFromStore.error;
+    });
   }, { context: "admin.integrity.rebuildUserIndex" });
 }
 
@@ -1314,59 +1319,60 @@ export async function migrateUserData(userEmail: string): Promise<Result<Migrati
     if (!normalizedUserEmail.endsWith("@tce.edu")) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid user email." });
     }
+    return withUserDataLock(normalizedUserEmail, async () => {
+      const categories = new Array<MigrationResult["categories"][number]>();
+      const backupsCreated = new Array<string>();
+      const filesTouched = new Array<string>();
 
-    const categories = new Array<MigrationResult["categories"][number]>();
-    const backupsCreated = new Array<string>();
-    const filesTouched = new Array<string>();
+      for (const category of CATEGORY_KEYS) {
+        const repaired = await repairCategoryStoreInternal(normalizedUserEmail, category, { backup: true });
+        categories.push({
+          category,
+          fixedIssues: repaired.fixedIssues,
+          filesTouched: repaired.filesTouched,
+        });
+        backupsCreated.push(...repaired.backupsCreated);
+        filesTouched.push(...repaired.filesTouched);
+      }
 
-    for (const category of CATEGORY_KEYS) {
-      const repaired = await repairCategoryStoreInternal(normalizedUserEmail, category, { backup: true });
-      categories.push({
-        category,
-        fixedIssues: repaired.fixedIssues,
-        filesTouched: repaired.filesTouched,
-      });
-      backupsCreated.push(...repaired.backupsCreated);
-      filesTouched.push(...repaired.filesTouched);
-    }
-
-    const indexPath = path.join(getUserStoreDir(normalizedUserEmail), INDEX_FILE_NAME);
-    let indexMigrated = false;
-    try {
-      const rawIndexText = await fs.readFile(indexPath, "utf8");
-      const parsedIndex = rawIndexText.trim() ? (JSON.parse(rawIndexText) as unknown) : null;
-      const migratedIndex = migrateUserIndex(parsedIndex);
-      if (migratedIndex.ok) {
-        const changed = JSON.stringify(parsedIndex) !== JSON.stringify(migratedIndex.data);
-        if (changed) {
-          const backupPath = await createBackup(indexPath);
-          if (backupPath) backupsCreated.push(backupPath);
-          await fs.writeFile(indexPath, JSON.stringify(migratedIndex.data, null, 2), "utf8");
-          filesTouched.push(indexPath);
-          indexMigrated = true;
+      const indexPath = path.join(getUserStoreDir(normalizedUserEmail), INDEX_FILE_NAME);
+      let indexMigrated = false;
+      try {
+        const rawIndexText = await fs.readFile(indexPath, "utf8");
+        const parsedIndex = rawIndexText.trim() ? (JSON.parse(rawIndexText) as unknown) : null;
+        const migratedIndex = migrateUserIndex(parsedIndex);
+        if (migratedIndex.ok) {
+          const changed = JSON.stringify(parsedIndex) !== JSON.stringify(migratedIndex.data);
+          if (changed) {
+            const backupPath = await createBackup(indexPath);
+            if (backupPath) backupsCreated.push(backupPath);
+            await atomicWriteTextFile(indexPath, JSON.stringify(migratedIndex.data, null, 2));
+            filesTouched.push(indexPath);
+            indexMigrated = true;
+          }
+        }
+      } catch (error) {
+        const code = (error as { code?: string } | null)?.code;
+        if (code !== "ENOENT") {
+          throw error;
         }
       }
-    } catch (error) {
-      const code = (error as { code?: string } | null)?.code;
-      if (code !== "ENOENT") {
-        throw error;
-      }
-    }
 
-    const result = {
-      userEmail: normalizedUserEmail,
-      categories,
-      indexMigrated,
-      backupsCreated,
-      filesTouched,
-    };
-    logger.info({
-      event: "admin.integrity.migrate-user",
-      userEmail: normalizedUserEmail,
-      count: result.filesTouched.length,
-      backups: result.backupsCreated.length,
-      durationMs: Date.now() - startedAt,
+      const result = {
+        userEmail: normalizedUserEmail,
+        categories,
+        indexMigrated,
+        backupsCreated,
+        filesTouched,
+      };
+      logger.info({
+        event: "admin.integrity.migrate-user",
+        userEmail: normalizedUserEmail,
+        count: result.filesTouched.length,
+        backups: result.backupsCreated.length,
+        durationMs: Date.now() - startedAt,
+      });
+      return result;
     });
-    return result;
   }, { context: "admin.integrity.migrateUserData" });
 }

@@ -12,6 +12,7 @@ import {
   sendForConfirmation,
   updateEntry,
 } from "../../lib/entryEngine.ts";
+import { readEvents } from "../../lib/data/wal.ts";
 import type { CategoryKey } from "../../lib/entries/types.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
@@ -224,5 +225,35 @@ test("commitDraft blocks incomplete entries and sets status final when complete"
     const committed = await commitDraft(ownerEmail, category, String(complete.id));
     assert.equal(String(committed.status), "final");
     assert.equal(getEntryWorkflowStatus(committed), "DRAFT");
+  });
+});
+
+test("concurrent updates are serialized without lost writes", async () => {
+  await withSandbox("entry-engine-concurrent-updates", async () => {
+    const created = await createEntry(ownerEmail, category, {
+      eventName: "Concurrent Workshop",
+    });
+
+    const entryId = String(created.id);
+    await Promise.all([
+      updateEntry(ownerEmail, category, entryId, {
+        speakerName: "Speaker A",
+      }),
+      updateEntry(ownerEmail, category, entryId, {
+        organisationName: "TCE Concurrent Org",
+      }),
+    ]);
+
+    const list = await listEntriesForCategory(ownerEmail, category);
+    assert.equal(list.length, 1);
+    assert.equal(String(list[0]?.id ?? ""), entryId);
+    assert.equal(String(list[0]?.speakerName ?? ""), "Speaker A");
+    assert.equal(String(list[0]?.organisationName ?? ""), "TCE Concurrent Org");
+
+    const eventsResult = await readEvents(ownerEmail);
+    assert.equal(eventsResult.ok, true);
+    if (!eventsResult.ok) return;
+    const matching = eventsResult.data.filter((event) => event.entryId === entryId);
+    assert.ok(matching.length >= 3);
   });
 });

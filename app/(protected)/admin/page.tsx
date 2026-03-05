@@ -7,6 +7,7 @@ import {
   adminConfirmations,
   adminExport,
   adminSettings,
+  adminMaintenance,
   adminIntegrity,
   adminUsers,
   dashboard,
@@ -53,6 +54,11 @@ const ADMIN_CARDS: AdminCard[] = [
     title: "Backups",
     href: adminBackups(),
     description: "Create, download, and retain secure zipped backups of the .data store.",
+  },
+  {
+    title: "Maintenance",
+    href: adminMaintenance(),
+    description: "Run nightly maintenance jobs now and monitor recent job outcomes.",
   },
 ];
 

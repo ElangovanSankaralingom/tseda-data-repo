@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import DateField from "@/components/controls/DateField";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
+import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import EntryShell from "@/components/entry/EntryShell";
@@ -22,6 +23,7 @@ import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import {
   canSendForConfirmation,
@@ -52,6 +54,7 @@ import {
   optimisticRemove,
   optimisticUpsert,
 } from "@/lib/ui/optimistic";
+import { ok } from "@/lib/result";
 
 type FileMeta = {
   fileName: string;
@@ -405,6 +408,7 @@ export function GuestLecturesPage({
   function applyPersistedEntry(nextEntry: GuestLectureEntry) {
     setForm(nextEntry);
     setLastPersistedSnapshot(stableStringify(nextEntry));
+    markAutoSaveSaved(nextEntry);
   }
 
   const errors = useMemo(() => {
@@ -536,6 +540,29 @@ export function GuestLecturesPage({
     hydrateEntry,
   });
   const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
+  const {
+    status: autoSaveStatus,
+    markSaved: markAutoSaveSaved,
+  } = useAutoSave<GuestLectureEntry>({
+    enabled: showForm && !isViewMode && !entryLocked && !saving && !hasBusyUploads && lifecycle.canSave,
+    value: form,
+    debounceMs: 15000,
+    onSave: async () => {
+      if (saveLockRef.current || hasBusyUploads || saving) return null;
+      const persisted = await saveDraftChanges({
+        intent: "save",
+        source: "autosave",
+        throwOnError: true,
+      });
+      if (!persisted) return null;
+      return ok(persisted);
+    },
+  });
+  useEffect(() => {
+    if (stableStringify(form) === lastPersistedSnapshot) {
+      markAutoSaveSaved(form);
+    }
+  }, [form, lastPersistedSnapshot, markAutoSaveSaved]);
 
   async function parseApiError(response: Response, fallback: string) {
     const text = await response.text();
@@ -634,20 +661,29 @@ export function GuestLecturesPage({
     setList(Array.isArray(items) ? (items as GuestLectureEntry[]).map((entry) => hydrateEntry(entry)) : []);
   }
 
-  async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
+  async function saveDraftChanges(options?: {
+    closeAfterSave?: boolean;
+    intent?: "save" | "done";
+    source?: "manual" | "autosave";
+    throwOnError?: boolean;
+  }): Promise<GuestLectureEntry | null> {
     const intent = options?.intent ?? "save";
-    if (saveLockRef.current) return;
-    if (intent === "save" && !lifecycle.canSave) return;
-    if (intent === "done" && !lifecycle.canDone) return;
+    const source = options?.source ?? "manual";
+    const showToast = source !== "autosave";
+    if (saveLockRef.current) return null;
+    if (intent === "save" && !lifecycle.canSave) return null;
+    if (intent === "done" && !lifecycle.canDone) return null;
     saveLockRef.current = true;
     let rollbackSnapshot: GuestLectureEntry[] | null = null;
     let lastPersistedEntry: GuestLectureEntry | null = null;
 
     try {
       if (hasBusyUploads) {
-        setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
-        setTimeout(() => setToast(null), 1800);
-        return;
+        if (showToast) {
+          setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
+          setTimeout(() => setToast(null), 1800);
+        }
+        return null;
       }
 
       setSaving(true);
@@ -679,11 +715,14 @@ export function GuestLecturesPage({
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
       void refreshList(email);
-      setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
-      setTimeout(() => setToast(null), 1400);
+      if (showToast) {
+        setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
+        setTimeout(() => setToast(null), 1400);
+      }
       if (options?.closeAfterSave) {
         closeForm();
       }
+      return finalEntry;
     } catch (error) {
       const persistedEntry = lastPersistedEntry;
       if (persistedEntry) {
@@ -691,9 +730,15 @@ export function GuestLecturesPage({
       } else if (rollbackSnapshot) {
         setList(rollbackSnapshot);
       }
-      const message = error instanceof Error ? error.message : "Save failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1800);
+      if (showToast) {
+        const message = error instanceof Error ? error.message : "Save failed.";
+        setToast({ type: "err", msg: message });
+        setTimeout(() => setToast(null), 1800);
+      }
+      if (options?.throwOnError) {
+        throw error;
+      }
+      return null;
     } finally {
       setSaving(false);
       saveLockRef.current = false;
@@ -1007,6 +1052,7 @@ export function GuestLecturesPage({
       title="Guest Lectures"
       subtitle="Record event details, student participation, and the required supporting documents."
       status={showForm ? getEntryApprovalStatus(form) : undefined}
+      meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
       backHref={backHref}
       backDisabled={backDisabled}
       onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}

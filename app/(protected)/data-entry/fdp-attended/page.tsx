@@ -7,6 +7,7 @@ import CurrencyField from "@/components/controls/CurrencyField";
 import DateField from "@/components/controls/DateField";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import { EntryHeaderActionsBar, EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
+import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import EntryShell from "@/components/entry/EntryShell";
@@ -35,6 +36,7 @@ import { useSeedEntry } from "@/hooks/useSeedEntry";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { entryDetail, entryList, entryNew } from "@/lib/navigation";
 import { canEditField } from "@/lib/pendingImmutability";
@@ -43,6 +45,7 @@ import {
   optimisticRemove,
   optimisticUpsert,
 } from "@/lib/ui/optimistic";
+import { ok } from "@/lib/result";
 import { uploadFile } from "@/lib/upload/uploadService";
 
 type FileMeta = {
@@ -443,6 +446,35 @@ export function FdpAttendedPage({
   const lifecycle = workflow.lifecycle;
   const canGenerate = workflow.canGenerate;
   const groupedEntries = useMemo(() => groupEntries(list), [list]);
+  const {
+    status: autoSaveStatus,
+    markSaved: markAutoSaveSaved,
+  } = useAutoSave<FdpAttended>({
+    enabled:
+      showForm &&
+      !isViewMode &&
+      !isEntryLockedFromStatus(form) &&
+      !saving &&
+      !hasBusyUploads &&
+      lifecycle.canSave,
+    value: form,
+    debounceMs: 15000,
+    onSave: async () => {
+      if (saveLockRef.current || hasBusyUploads || saving) return null;
+      const persisted = await saveDraftChanges({
+        intent: "save",
+        source: "autosave",
+        throwOnError: true,
+      });
+      if (!persisted) return null;
+      return ok(persisted);
+    },
+  });
+  useEffect(() => {
+    if (!formDirty) {
+      markAutoSaveSaved(form);
+    }
+  }, [form, formDirty, markAutoSaveSaved]);
 
   const resetUploadState = useCallback(() => {
     permissionController.reset();
@@ -491,6 +523,7 @@ export function FdpAttendedPage({
     const nextForm = emptyForm();
     setEditorSeed(nextForm);
     loadEditorEntry(nextForm);
+    markAutoSaveSaved(nextForm);
     resetUploadState();
   }
 
@@ -534,10 +567,11 @@ export function FdpAttendedPage({
       setSubmitAttemptedFinal(false);
       setEditorSeed(loadedEntry);
       loadEditorEntry(loadedEntry);
+      markAutoSaveSaved(loadedEntry);
       resetUploadState();
       setFormOpen(true);
     },
-    [loadEditorEntry, resetUploadState]
+    [loadEditorEntry, markAutoSaveSaved, resetUploadState]
   );
 
   useSeedEntry({
@@ -572,6 +606,7 @@ export function FdpAttendedPage({
       const persisted = await persistProgress(nextForm);
       setEditorSeed(persisted);
       editorActions.saveDraft(persisted);
+      markAutoSaveSaved(persisted);
       await refreshList();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Upload failed.";
@@ -603,20 +638,29 @@ export function FdpAttendedPage({
     }
   }
 
-  async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
+  async function saveDraftChanges(options?: {
+    closeAfterSave?: boolean;
+    intent?: "save" | "done";
+    source?: "manual" | "autosave";
+    throwOnError?: boolean;
+  }): Promise<FdpAttended | null> {
     const intent = options?.intent ?? "save";
-    if (saveLockRef.current) return;
-    if (intent === "save" && !lifecycle.canSave) return;
-    if (intent === "done" && !lifecycle.canDone) return;
+    const source = options?.source ?? "manual";
+    const showToast = source !== "autosave";
+    if (saveLockRef.current) return null;
+    if (intent === "save" && !lifecycle.canSave) return null;
+    if (intent === "done" && !lifecycle.canDone) return null;
     saveLockRef.current = true;
     let rollbackSnapshot: FdpAttended[] | null = null;
     let lastPersistedEntry: FdpAttended | null = null;
 
     try {
       if (hasBusyUploads) {
-        setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
-        setTimeout(() => setToast(null), 1800);
-        return;
+        if (showToast) {
+          setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
+          setTimeout(() => setToast(null), 1800);
+        }
+        return null;
       }
 
       setSaving(true);
@@ -647,16 +691,24 @@ export function FdpAttendedPage({
 
       setEditorSeed(finalEntry);
       editorActions.saveDraft(finalEntry);
+      markAutoSaveSaved(finalEntry);
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
       void refreshList();
       if (options?.closeAfterSave) {
         closeForm();
-        setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
+        if (showToast) {
+          setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
+        }
       } else {
-        setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
+        if (showToast) {
+          setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
+        }
       }
-      setTimeout(() => setToast(null), 1400);
+      if (showToast) {
+        setTimeout(() => setToast(null), 1400);
+      }
+      return finalEntry;
     } catch (error) {
       const persistedEntry = lastPersistedEntry;
       if (persistedEntry) {
@@ -664,9 +716,15 @@ export function FdpAttendedPage({
       } else if (rollbackSnapshot) {
         setList(rollbackSnapshot);
       }
-      const message = error instanceof Error ? error.message : "Save failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1800);
+      if (showToast) {
+        const message = error instanceof Error ? error.message : "Save failed.";
+        setToast({ type: "err", msg: message });
+        setTimeout(() => setToast(null), 1800);
+      }
+      if (options?.throwOnError) {
+        throw error;
+      }
+      return null;
     } finally {
       setSaving(false);
       setSaveIntent(null);
@@ -710,6 +768,7 @@ export function FdpAttendedPage({
       };
       setEditorSeed(nextEntry);
       editorActions.generatePdf(nextEntry);
+      markAutoSaveSaved(nextEntry);
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
       setToast({ type: "ok", msg: "Entry generated." });
@@ -821,6 +880,7 @@ export function FdpAttendedPage({
       title="FDP — Attended"
       subtitle="Record faculty development programmes attended, along with support amount and the two required supporting documents."
       status={showForm ? getEntryApprovalStatus(form) : undefined}
+      meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
       backHref={backHref}
       backDisabled={backDisabled}
       onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}

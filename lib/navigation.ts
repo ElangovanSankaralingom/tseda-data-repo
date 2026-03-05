@@ -60,6 +60,10 @@ export function adminBackups() {
   return "/admin/backups";
 }
 
+export function adminMaintenance() {
+  return "/admin/maintenance";
+}
+
 export function adminIntegrity() {
   return "/admin/integrity";
 }

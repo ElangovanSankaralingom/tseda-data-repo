@@ -187,3 +187,24 @@ test("DataStore readEntryById resolves directly from byId in V2 files", async ()
     assert.equal(String(list[0]?.id ?? ""), "direct-1");
   });
 });
+
+test("DataStore serializes concurrent upserts for the same user/category", async () => {
+  await withSandbox("datastore-concurrent-upserts", async (store) => {
+    await Promise.all([
+      store.upsertCategoryEntry(email, "workshops", {
+        id: "concurrent-1",
+        status: "draft",
+        eventName: "Concurrent 1",
+      }),
+      store.upsertCategoryEntry(email, "workshops", {
+        id: "concurrent-2",
+        status: "draft",
+        eventName: "Concurrent 2",
+      }),
+    ]);
+
+    const loaded = await store.readCategory(email, "workshops");
+    const ids = loaded.map((entry) => String(entry.id ?? "")).sort();
+    assert.deepEqual(ids, ["concurrent-1", "concurrent-2"]);
+  });
+});
