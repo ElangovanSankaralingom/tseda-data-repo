@@ -5,6 +5,7 @@ import {
   adminAudit,
   adminConfirmations,
   adminSettings,
+  adminIntegrity,
   adminUsers,
   dashboard,
 } from "@/lib/navigation";
@@ -35,6 +36,11 @@ const ADMIN_CARDS: AdminCard[] = [
     title: "Audit",
     href: adminAudit(),
     description: "Inspect approval/rejection audit history across all users and categories.",
+  },
+  {
+    title: "Integrity",
+    href: adminIntegrity(),
+    description: "Run integrity checks and repair category stores, index, and migration drift.",
   },
 ];
 
