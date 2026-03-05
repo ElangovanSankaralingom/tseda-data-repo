@@ -2,8 +2,8 @@ import {
   isEntryLocked,
   normalizeEntryStatus,
   type EntryStateLike,
-  type EntryStatus as EntryApprovalStatus,
 } from "./entryStateMachine.ts";
+import type { EntryStatus as EntryApprovalStatus } from "./types/entry.ts";
 
 export type ConfirmationStatus = "none" | "pending" | "approved" | "rejected";
 

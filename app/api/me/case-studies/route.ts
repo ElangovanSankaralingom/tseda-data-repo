@@ -31,12 +31,13 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus, type EntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus } from "@/lib/entryStateMachine";
 import {
   isSemesterAllowed,
   normalizeStudentYear,
   type StudentYear,
 } from "@/lib/student-academic";
+import type { EntryStatus } from "@/lib/types/entry";
 import { safeEmailDir } from "@/lib/userStore";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
@@ -357,8 +358,11 @@ async function readList(email: string): Promise<CaseStudyEntry[]> {
   return listEntriesForCategory(email, "case-studies", normalizeEntry);
 }
 
-async function writeList(email: string, list: CaseStudyEntry[]) {
-  await replaceEntriesForCategory(email, "case-studies", list);
+async function writeList(email: string, list: CaseStudyEntry[], actorEmail?: string) {
+  await replaceEntriesForCategory(email, "case-studies", list, {
+    actorEmail,
+    actorRole: actorEmail ? "user" : undefined,
+  });
 }
 
 async function deleteStoredFile(email: string, meta: FileMeta | null) {
@@ -450,7 +454,8 @@ async function upsertSharedTargets(savedEntry: CaseStudyEntry, creatorEmail: str
       target.email,
       existingTarget
         ? targetList.map((item) => (item.id === existingTarget.id ? clonedEntry : item))
-        : [clonedEntry, ...targetList]
+        : [clonedEntry, ...targetList],
+      creatorEmail
     );
   }
 }
