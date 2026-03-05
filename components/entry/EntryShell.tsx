@@ -22,6 +22,7 @@ type EntryShellProps = {
   title?: string;
   subtitle?: string;
   status?: string | null;
+  meta?: React.ReactNode;
   actions?: React.ReactNode;
   children: React.ReactNode;
   backHref: string;
@@ -44,6 +45,7 @@ export default function EntryShell({
   title,
   subtitle,
   status,
+  meta,
   actions,
   children,
   backHref,
@@ -80,6 +82,7 @@ export default function EntryShell({
             <p className="mt-1 text-xs text-muted-foreground">Entry ID: {entryId}</p>
           ) : null}
           {resolvedSubtitle ? <p className="mt-2 text-sm text-muted-foreground">{resolvedSubtitle}</p> : null}
+          {meta ? <div className="mt-2">{meta}</div> : null}
         </div>
 
         {actions ? (

@@ -7,6 +7,7 @@ import CurrencyField from "@/components/controls/CurrencyField";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import DateField from "@/components/controls/DateField";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
+import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import EntryShell from "@/components/entry/EntryShell";
@@ -22,6 +23,7 @@ import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import {
   canSendForConfirmation,
@@ -53,6 +55,7 @@ import {
   optimisticRemove,
   optimisticUpsert,
 } from "@/lib/ui/optimistic";
+import { ok } from "@/lib/result";
 
 type FileMeta = {
   fileName: string;
@@ -405,6 +408,7 @@ export function CaseStudiesPage({
   function applyPersistedEntry(nextEntry: CaseStudyEntry) {
     setForm(nextEntry);
     setLastPersistedSnapshot(stableStringify(nextEntry));
+    markAutoSaveSaved(nextEntry);
   }
 
   function buildEntryErrors(entry: CaseStudyEntry) {
@@ -530,6 +534,29 @@ export function CaseStudiesPage({
     hydrateEntry,
   });
   const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
+  const {
+    status: autoSaveStatus,
+    markSaved: markAutoSaveSaved,
+  } = useAutoSave<CaseStudyEntry>({
+    enabled: showForm && !isViewMode && !entryLocked && !saving && !hasBusyUploads && lifecycle.canSave,
+    value: form,
+    debounceMs: 15000,
+    onSave: async () => {
+      if (saveLockRef.current || hasBusyUploads || saving) return null;
+      const persisted = await saveDraftChanges({
+        intent: "save",
+        source: "autosave",
+        throwOnError: true,
+      });
+      if (!persisted) return null;
+      return ok(persisted);
+    },
+  });
+  useEffect(() => {
+    if (stableStringify(form) === lastPersistedSnapshot) {
+      markAutoSaveSaved(form);
+    }
+  }, [form, lastPersistedSnapshot, markAutoSaveSaved]);
 
   function resetForm() {
     setAttemptedSectionSave(false);
@@ -537,6 +564,7 @@ export function CaseStudiesPage({
     const nextForm = emptyForm(currentFaculty);
     setForm(nextForm);
     setLastPersistedSnapshot(stableStringify(nextForm));
+    markAutoSaveSaved(nextForm);
     setSingleUploadStatus({ ...EMPTY_UPLOAD_STATUS });
     setPhotoUploadStatus({ hasPending: false, busy: false });
   }
@@ -634,20 +662,29 @@ export function CaseStudiesPage({
     };
   }
 
-  async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
-    if (saveLockRef.current) return;
+  async function saveDraftChanges(options?: {
+    closeAfterSave?: boolean;
+    intent?: "save" | "done";
+    source?: "manual" | "autosave";
+    throwOnError?: boolean;
+  }): Promise<CaseStudyEntry | null> {
     const intent = options?.intent ?? "save";
-    if (intent === "save" && !lifecycle.canSave) return;
-    if (intent === "done" && !lifecycle.canDone) return;
+    const source = options?.source ?? "manual";
+    const showToast = source !== "autosave";
+    if (saveLockRef.current) return null;
+    if (intent === "save" && !lifecycle.canSave) return null;
+    if (intent === "done" && !lifecycle.canDone) return null;
     saveLockRef.current = true;
     let rollbackSnapshot: CaseStudyEntry[] | null = null;
     let lastPersistedEntry: CaseStudyEntry | null = null;
 
     try {
       if (hasBusyUploads) {
-        setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
-        setTimeout(() => setToast(null), 1800);
-        return;
+        if (showToast) {
+          setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
+          setTimeout(() => setToast(null), 1800);
+        }
+        return null;
       }
 
       setSaving(true);
@@ -679,11 +716,14 @@ export function CaseStudiesPage({
       setAttemptedSectionSave(false);
       setSubmitAttemptedFinal(false);
       void refreshList(email);
-      setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved." });
-      setTimeout(() => setToast(null), 1400);
+      if (showToast) {
+        setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved." });
+        setTimeout(() => setToast(null), 1400);
+      }
       if (options?.closeAfterSave) {
         await closeForm();
       }
+      return finalEntry;
     } catch (error) {
       const persistedEntry = lastPersistedEntry;
       if (persistedEntry) {
@@ -691,9 +731,15 @@ export function CaseStudiesPage({
       } else if (rollbackSnapshot) {
         setList(rollbackSnapshot);
       }
-      const message = error instanceof Error ? error.message : "Save failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1800);
+      if (showToast) {
+        const message = error instanceof Error ? error.message : "Save failed.";
+        setToast({ type: "err", msg: message });
+        setTimeout(() => setToast(null), 1800);
+      }
+      if (options?.throwOnError) {
+        throw error;
+      }
+      return null;
     } finally {
       setSaving(false);
       saveLockRef.current = false;
@@ -1117,6 +1163,7 @@ export function CaseStudiesPage({
       title="Case Studies"
       subtitle="Record case study visits with academic context, staff involvement, dates, and the required supporting documents."
       status={showForm ? getEntryApprovalStatus(form) : undefined}
+      meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
       backHref={backHref}
       backDisabled={backDisabled}
       onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}

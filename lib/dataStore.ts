@@ -16,6 +16,8 @@ import {
   type CategoryStoreV2,
   migrateEntry,
 } from "@/lib/migrations";
+import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { withUserDataLock } from "@/lib/data/locks";
 import { logger } from "@/lib/logger";
 import { normalizeEntry } from "@/lib/normalize";
 import type { Entry } from "@/lib/types/entry";
@@ -105,7 +107,7 @@ export class DataStore {
     meta?: { userEmail: string; category: CategoryKey; source: string }
   ) {
     const payload = JSON.stringify(store, null, 2);
-    await fs.writeFile(filePath, payload, "utf8");
+    await atomicWriteTextFile(filePath, payload);
     if (meta) {
       logger.info({
         event: "datastore.category.write",
@@ -205,17 +207,20 @@ export class DataStore {
     email: string,
     category: CategoryKey
   ): Promise<EntryEngineRecord[]> {
-    const { store } = await this.readCategoryStore(email, category, {
-      persistMigration: true,
+    const normalizedEmail = normalizeEmail(email);
+    return withUserDataLock(normalizedEmail, async () => {
+      const { store } = await this.readCategoryStore(normalizedEmail, category, {
+        persistMigration: true,
+      });
+      const entries = this.toEntries(store, category);
+      logger.debug({
+        event: "datastore.category.read",
+        userEmail: normalizedEmail,
+        category,
+        count: entries.length,
+      });
+      return entries;
     });
-    const entries = this.toEntries(store, category);
-    logger.debug({
-      event: "datastore.category.read",
-      userEmail: normalizeEmail(email),
-      category,
-      count: entries.length,
-    });
-    return entries;
   }
 
   async writeCategory(
@@ -223,14 +228,17 @@ export class DataStore {
     category: CategoryKey,
     entries: EntryEngineRecord[]
   ) {
-    const filePath = this.categoryFilePath(email, category);
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    const normalizedEmail = normalizeEmail(email);
+    await withUserDataLock(normalizedEmail, async () => {
+      const filePath = this.categoryFilePath(normalizedEmail, category);
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
 
-    const store = this.toStoreFromEntries(entries, category);
-    await this.writeCategoryStore(filePath, store, {
-      userEmail: normalizeEmail(email),
-      category,
-      source: "writeCategory",
+      const store = this.toStoreFromEntries(entries, category);
+      await this.writeCategoryStore(filePath, store, {
+        userEmail: normalizedEmail,
+        category,
+        source: "writeCategory",
+      });
     });
   }
 
@@ -241,21 +249,23 @@ export class DataStore {
   ): Promise<EntryEngineRecord | null> {
     const id = normalizeEntryId(entryId);
     if (!id) return null;
-
-    const { store } = await this.readCategoryStore(email, category, {
-      persistMigration: true,
+    const normalizedEmail = normalizeEmail(email);
+    return withUserDataLock(normalizedEmail, async () => {
+      const { store } = await this.readCategoryStore(normalizedEmail, category, {
+        persistMigration: true,
+      });
+      const raw = store.byId[id];
+      if (!raw) return null;
+      const normalized = normalizeDataStoreEntry(raw, category);
+      if (!normalized) return null;
+      logger.debug({
+        event: "datastore.entry.read",
+        userEmail: normalizedEmail,
+        category,
+        entryId: id,
+      });
+      return normalized;
     });
-    const raw = store.byId[id];
-    if (!raw) return null;
-    const normalized = normalizeDataStoreEntry(raw, category);
-    if (!normalized) return null;
-    logger.debug({
-      event: "datastore.entry.read",
-      userEmail: normalizeEmail(email),
-      category,
-      entryId: id,
-    });
-    return normalized;
   }
 
   async upsertCategoryEntry(
@@ -264,43 +274,46 @@ export class DataStore {
     entry: EntryEngineRecord,
     options?: { insertPosition?: "start" | "end" }
   ): Promise<EntryEngineRecord> {
-    const normalized = normalizeDataStoreEntry(entry, category);
-    if (!normalized) {
-      throw new Error("Invalid entry payload");
-    }
-
-    const id = normalizeEntryId(normalized.id);
-    if (!id) {
-      throw new Error("Entry ID is required");
-    }
-
-    const { filePath, store } = await this.readCategoryStore(email, category, {
-      persistMigration: true,
-    });
-    const exists = !!store.byId[id];
-
-    store.byId[id] = { ...normalized, id } as EntryEngineRecord;
-    if (!exists) {
-      if (options?.insertPosition === "end") {
-        store.order.push(id);
-      } else {
-        store.order.unshift(id);
+    const normalizedEmail = normalizeEmail(email);
+    return withUserDataLock(normalizedEmail, async () => {
+      const normalized = normalizeDataStoreEntry(entry, category);
+      if (!normalized) {
+        throw new Error("Invalid entry payload");
       }
-    }
 
-    await this.writeCategoryStore(filePath, store, {
-      userEmail: normalizeEmail(email),
-      category,
-      source: "upsertCategoryEntry",
+      const id = normalizeEntryId(normalized.id);
+      if (!id) {
+        throw new Error("Entry ID is required");
+      }
+
+      const { filePath, store } = await this.readCategoryStore(normalizedEmail, category, {
+        persistMigration: true,
+      });
+      const exists = !!store.byId[id];
+
+      store.byId[id] = { ...normalized, id } as EntryEngineRecord;
+      if (!exists) {
+        if (options?.insertPosition === "end") {
+          store.order.push(id);
+        } else {
+          store.order.unshift(id);
+        }
+      }
+
+      await this.writeCategoryStore(filePath, store, {
+        userEmail: normalizedEmail,
+        category,
+        source: "upsertCategoryEntry",
+      });
+      logger.info({
+        event: exists ? "datastore.entry.update" : "datastore.entry.create",
+        userEmail: normalizedEmail,
+        category,
+        entryId: id,
+        count: store.order.length,
+      });
+      return store.byId[id] as EntryEngineRecord;
     });
-    logger.info({
-      event: exists ? "datastore.entry.update" : "datastore.entry.create",
-      userEmail: normalizeEmail(email),
-      category,
-      entryId: id,
-      count: store.order.length,
-    });
-    return store.byId[id] as EntryEngineRecord;
   }
 
   async deleteCategoryEntry(
@@ -310,30 +323,32 @@ export class DataStore {
   ): Promise<EntryEngineRecord | null> {
     const id = normalizeEntryId(entryId);
     if (!id) return null;
+    const normalizedEmail = normalizeEmail(email);
+    return withUserDataLock(normalizedEmail, async () => {
+      const { filePath, store } = await this.readCategoryStore(normalizedEmail, category, {
+        persistMigration: true,
+      });
+      const existing = store.byId[id];
+      if (!existing) return null;
 
-    const { filePath, store } = await this.readCategoryStore(email, category, {
-      persistMigration: true,
-    });
-    const existing = store.byId[id];
-    if (!existing) return null;
+      delete store.byId[id];
+      store.order = store.order.filter((value) => normalizeEntryId(value) !== id);
+      await this.writeCategoryStore(filePath, store, {
+        userEmail: normalizedEmail,
+        category,
+        source: "deleteCategoryEntry",
+      });
+      logger.info({
+        event: "datastore.entry.delete",
+        userEmail: normalizedEmail,
+        category,
+        entryId: id,
+        count: store.order.length,
+      });
 
-    delete store.byId[id];
-    store.order = store.order.filter((value) => normalizeEntryId(value) !== id);
-    await this.writeCategoryStore(filePath, store, {
-      userEmail: normalizeEmail(email),
-      category,
-      source: "deleteCategoryEntry",
+      const normalized = normalizeDataStoreEntry(existing, category);
+      return normalized ?? null;
     });
-    logger.info({
-      event: "datastore.entry.delete",
-      userEmail: normalizeEmail(email),
-      category,
-      entryId: id,
-      count: store.order.length,
-    });
-
-    const normalized = normalizeDataStoreEntry(existing, category);
-    return normalized ?? null;
   }
 }
 

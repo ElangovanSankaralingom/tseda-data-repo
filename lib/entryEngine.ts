@@ -4,6 +4,7 @@ import { ENTRY_SCHEMAS, type SchemaValidationMode } from "@/data/schemas";
 import { isMasterAdmin } from "@/lib/admin";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { rebuildUserIndex, updateIndexForEntryMutation } from "@/lib/data/indexStore";
+import { withUserDataLock } from "@/lib/data/locks";
 import {
   deleteCategoryEntry as deleteCategoryEntryInStore,
   readCategoryEntries,
@@ -448,54 +449,56 @@ export async function replaceEntriesForCategory(
   );
   const actorEmail = getWalActorEmail(options?.actorEmail ?? normalizedOwner, normalizedOwner);
   const actorRole = options?.actorRole ?? "user";
-  const currentList = await readListRaw(normalizedOwner, category);
-  const normalizedEntries = entries.map((entry) =>
-    normalizeEntry(entry as Entry, ENTRY_SCHEMAS[category]) as EntryEngineRecord
-  );
-  const beforeById = new Map<string, EntryEngineRecord>();
-  for (const currentEntry of currentList) {
-    const currentId = normalizeId(currentEntry.id);
-    if (!currentId) continue;
-    beforeById.set(currentId, currentEntry);
-  }
-  for (const nextEntry of normalizedEntries) {
-    const nextId = normalizeId(nextEntry.id);
-    if (!nextId) continue;
-    const beforeEntry = beforeById.get(nextId);
-    if (!beforeEntry) continue;
-
-    const changedFields = getChangedImmutableFieldsWhenPending(
-      category,
-      beforeEntry as EntryLike,
-      nextEntry as EntryLike
+  await withUserDataLock(normalizedOwner, async () => {
+    const currentList = await readListRaw(normalizedOwner, category);
+    const normalizedEntries = entries.map((entry) =>
+      normalizeEntry(entry as Entry, ENTRY_SCHEMAS[category]) as EntryEngineRecord
     );
-    if (changedFields.length > 0) {
-      throwPendingImmutableError(changedFields);
+    const beforeById = new Map<string, EntryEngineRecord>();
+    for (const currentEntry of currentList) {
+      const currentId = normalizeId(currentEntry.id);
+      if (!currentId) continue;
+      beforeById.set(currentId, currentEntry);
     }
-  }
-  const walEvents = buildWalEventsForReplace(
-    actorEmail,
-    actorRole,
-    normalizedOwner,
-    category,
-    currentList,
-    normalizedEntries
-  );
-  await appendWalEventsOrThrow(normalizedOwner, walEvents);
+    for (const nextEntry of normalizedEntries) {
+      const nextId = normalizeId(nextEntry.id);
+      if (!nextId) continue;
+      const beforeEntry = beforeById.get(nextId);
+      if (!beforeEntry) continue;
 
-  await writeListRaw(normalizedOwner, category, normalizedEntries);
-  const rebuildResult = await rebuildUserIndex(normalizedOwner);
-  if (!rebuildResult.ok) {
-    logError(rebuildResult.error, "entryEngine.replaceEntriesForCategory.rebuildUserIndex");
-  }
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "replace",
-    userEmail: normalizedOwner,
-    category,
-    count: normalizedEntries.length,
-    durationMs: Date.now() - startedAt,
+      const changedFields = getChangedImmutableFieldsWhenPending(
+        category,
+        beforeEntry as EntryLike,
+        nextEntry as EntryLike
+      );
+      if (changedFields.length > 0) {
+        throwPendingImmutableError(changedFields);
+      }
+    }
+    const walEvents = buildWalEventsForReplace(
+      actorEmail,
+      actorRole,
+      normalizedOwner,
+      category,
+      currentList,
+      normalizedEntries
+    );
+    await appendWalEventsOrThrow(normalizedOwner, walEvents);
+
+    await writeListRaw(normalizedOwner, category, normalizedEntries);
+    const rebuildResult = await rebuildUserIndex(normalizedOwner);
+    if (!rebuildResult.ok) {
+      logError(rebuildResult.error, "entryEngine.replaceEntriesForCategory.rebuildUserIndex");
+    }
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "replace",
+      userEmail: normalizedOwner,
+      category,
+      count: normalizedEntries.length,
+      durationMs: Date.now() - startedAt,
+    });
   });
 }
 
@@ -515,61 +518,62 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
   });
   enforceEntryMutationGuards(normalizedOwner, `entry.create.${category}`, nextPayload);
   validatePayload(category, nextPayload, "create");
+  return withUserDataLock(normalizedOwner, async () => {
+    const nowISO = new Date().toISOString();
+    const id = normalizeId(nextPayload.id) || randomUUID();
+    const existing = await readEntryRaw(normalizedOwner, category, id);
+    if (existing) {
+      throw new Error("Entry already exists");
+    }
 
-  const nowISO = new Date().toISOString();
-  const id = normalizeId(nextPayload.id) || randomUUID();
-  const existing = await readEntryRaw(normalizedOwner, category, id);
-  if (existing) {
-    throw new Error("Entry already exists");
-  }
+    const base: EntryLike = {
+      ...nextPayload,
+      id,
+      status:
+        typeof nextPayload.status === "string" && nextPayload.status.trim()
+          ? nextPayload.status
+          : "draft",
+      createdAt:
+        typeof nextPayload.createdAt === "string" && nextPayload.createdAt
+          ? nextPayload.createdAt
+          : nowISO,
+      updatedAt: nowISO,
+    };
+    const entry = normalizeEntry(
+      transitionEntry(base as WorkflowEntryLike, "createEntry", { nowISO }) as Entry,
+      ENTRY_SCHEMAS[category]
+    ) as EntryLike;
 
-  const base: EntryLike = {
-    ...nextPayload,
-    id,
-    status:
-      typeof nextPayload.status === "string" && nextPayload.status.trim()
-        ? nextPayload.status
-        : "draft",
-    createdAt:
-      typeof nextPayload.createdAt === "string" && nextPayload.createdAt
-        ? nextPayload.createdAt
-        : nowISO,
-    updatedAt: nowISO,
-  };
-  const entry = normalizeEntry(
-    transitionEntry(base as WorkflowEntryLike, "createEntry", { nowISO }) as Entry,
-    ENTRY_SCHEMAS[category]
-  ) as EntryLike;
+    await appendWalEventOrThrow(
+      normalizedOwner,
+      buildEvent({
+        actorEmail: normalizedOwner,
+        actorRole: "user",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        action: "CREATE",
+        before: null,
+        after: entry as EntryEngineRecord,
+      })
+    );
 
-  await appendWalEventOrThrow(
-    normalizedOwner,
-    buildEvent({
-      actorEmail: normalizedOwner,
-      actorRole: "user",
+    await upsertEntryRaw(normalizedOwner, category, entry as EntryEngineRecord, {
+      insertPosition: "start",
+    });
+    await refreshIndexForMutation(normalizedOwner, category, null, entry as EntryEngineRecord);
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "create",
       userEmail: normalizedOwner,
       category,
       entryId: id,
-      action: "CREATE",
-      before: null,
-      after: entry as EntryEngineRecord,
-    })
-  );
-
-  await upsertEntryRaw(normalizedOwner, category, entry as EntryEngineRecord, {
-    insertPosition: "start",
+      status: String(entry.confirmationStatus ?? ""),
+      durationMs: Date.now() - startedAt,
+    });
+    return entry as T;
   });
-  await refreshIndexForMutation(normalizedOwner, category, null, entry as EntryEngineRecord);
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "create",
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-    status: String(entry.confirmationStatus ?? ""),
-    durationMs: Date.now() - startedAt,
-  });
-  return entry as T;
 }
 
 export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -595,68 +599,69 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
   if (!id) {
     throw new Error("Entry ID is required");
   }
+  return withUserDataLock(normalizedOwner, async () => {
+    const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+    if (!existingEntry) {
+      throw new Error("Entry not found");
+    }
 
-  const existingEntry = await readEntryRaw(normalizedOwner, category, id);
-  if (!existingEntry) {
-    throw new Error("Entry not found");
-  }
+    const nowISO = new Date().toISOString();
+    const existing = existingEntry as EntryLike;
+    const next: EntryLike = {
+      ...existing,
+    };
 
-  const nowISO = new Date().toISOString();
-  const existing = existingEntry as EntryLike;
-  const next: EntryLike = {
-    ...existing,
-  };
+    for (const [key, value] of Object.entries(nextPayload)) {
+      if (key === "id" || key === "createdAt" || key === "confirmationStatus") continue;
+      next[key] = value;
+    }
 
-  for (const [key, value] of Object.entries(nextPayload)) {
-    if (key === "id" || key === "createdAt" || key === "confirmationStatus") continue;
-    next[key] = value;
-  }
+    next.id = id;
+    next.createdAt =
+      typeof existing.createdAt === "string" && existing.createdAt.trim()
+        ? existing.createdAt
+        : nowISO;
+    next.updatedAt = nowISO;
+    next.confirmationStatus = getWorkflowStatus(existing);
+    const updated = prepareEntryForWrite(next, nowISO, category);
+    const changedImmutableFields = getChangedImmutableFieldsWhenPending(category, existing, updated);
+    if (changedImmutableFields.length > 0) {
+      throwPendingImmutableError(changedImmutableFields);
+    }
 
-  next.id = id;
-  next.createdAt =
-    typeof existing.createdAt === "string" && existing.createdAt.trim()
-      ? existing.createdAt
-      : nowISO;
-  next.updatedAt = nowISO;
-  next.confirmationStatus = getWorkflowStatus(existing);
-  const updated = prepareEntryForWrite(next, nowISO, category);
-  const changedImmutableFields = getChangedImmutableFieldsWhenPending(category, existing, updated);
-  if (changedImmutableFields.length > 0) {
-    throwPendingImmutableError(changedImmutableFields);
-  }
+    await appendWalEventOrThrow(
+      normalizedOwner,
+      buildEvent({
+        actorEmail: normalizedOwner,
+        actorRole: "user",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        action: inferWalUpdateAction(existing as EntryEngineRecord, updated as EntryEngineRecord),
+        before: existing as EntryEngineRecord,
+        after: updated as EntryEngineRecord,
+      })
+    );
 
-  await appendWalEventOrThrow(
-    normalizedOwner,
-    buildEvent({
-      actorEmail: normalizedOwner,
-      actorRole: "user",
+    await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+    await refreshIndexForMutation(
+      normalizedOwner,
+      category,
+      existing as EntryEngineRecord,
+      updated as EntryEngineRecord
+    );
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "update",
       userEmail: normalizedOwner,
       category,
       entryId: id,
-      action: inferWalUpdateAction(existing as EntryEngineRecord, updated as EntryEngineRecord),
-      before: existing as EntryEngineRecord,
-      after: updated as EntryEngineRecord,
-    })
-  );
-
-  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
-  await refreshIndexForMutation(
-    normalizedOwner,
-    category,
-    existing as EntryEngineRecord,
-    updated as EntryEngineRecord
-  );
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "update",
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-    status: String(updated.confirmationStatus ?? ""),
-    durationMs: Date.now() - startedAt,
+      status: String(updated.confirmationStatus ?? ""),
+      durationMs: Date.now() - startedAt,
+    });
+    return updated as T;
   });
-  return updated as T;
 }
 
 export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -681,68 +686,69 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       message: "Entry ID is required.",
     });
   }
+  return withUserDataLock(normalizedOwner, async () => {
+    const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+    if (!existingEntry) {
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Entry not found",
+      });
+    }
 
-  const existingEntry = await readEntryRaw(normalizedOwner, category, id);
-  if (!existingEntry) {
-    throw new AppError({
-      code: "NOT_FOUND",
-      message: "Entry not found",
-    });
-  }
+    const existing = existingEntry as EntryLike;
+    const missingFields = getCommitMissingFields(category, existing);
+    if (missingFields.length > 0) {
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: `Commit blocked. Complete required fields: ${missingFields.join(", ")}.`,
+        details: { missingFields },
+      });
+    }
 
-  const existing = existingEntry as EntryLike;
-  const missingFields = getCommitMissingFields(category, existing);
-  if (missingFields.length > 0) {
-    throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: `Commit blocked. Complete required fields: ${missingFields.join(", ")}.`,
-      details: { missingFields },
-    });
-  }
+    const nowISO = new Date().toISOString();
+    const updated = prepareEntryForWrite(
+      {
+        ...existing,
+        status: "final",
+        committedAtISO: nowISO,
+      },
+      nowISO,
+      category
+    );
 
-  const nowISO = new Date().toISOString();
-  const updated = prepareEntryForWrite(
-    {
-      ...existing,
-      status: "final",
-      committedAtISO: nowISO,
-    },
-    nowISO,
-    category
-  );
+    await appendWalEventOrThrow(
+      normalizedOwner,
+      buildEvent({
+        actorEmail: normalizedOwner,
+        actorRole: "user",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        action: inferWalUpdateAction(existing as EntryEngineRecord, updated as EntryEngineRecord),
+        before: existing as EntryEngineRecord,
+        after: updated as EntryEngineRecord,
+      })
+    );
 
-  await appendWalEventOrThrow(
-    normalizedOwner,
-    buildEvent({
-      actorEmail: normalizedOwner,
-      actorRole: "user",
+    await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+    await refreshIndexForMutation(
+      normalizedOwner,
+      category,
+      existing as EntryEngineRecord,
+      updated as EntryEngineRecord
+    );
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "commitDraft",
       userEmail: normalizedOwner,
       category,
       entryId: id,
-      action: inferWalUpdateAction(existing as EntryEngineRecord, updated as EntryEngineRecord),
-      before: existing as EntryEngineRecord,
-      after: updated as EntryEngineRecord,
-    })
-  );
-
-  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
-  await refreshIndexForMutation(
-    normalizedOwner,
-    category,
-    existing as EntryEngineRecord,
-    updated as EntryEngineRecord
-  );
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "commitDraft",
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-    status: String(updated.confirmationStatus ?? ""),
-    durationMs: Date.now() - startedAt,
+      status: String(updated.confirmationStatus ?? ""),
+      durationMs: Date.now() - startedAt,
+    });
+    return updated as T;
   });
-  return updated as T;
 }
 
 export async function deleteEntry(
@@ -764,38 +770,39 @@ export async function deleteEntry(
   if (!id) {
     throw new Error("Entry ID is required");
   }
+  return withUserDataLock(normalizedOwner, async () => {
+    const existing = await readEntryRaw(normalizedOwner, category, id);
+    if (!existing) {
+      return null;
+    }
 
-  const existing = await readEntryRaw(normalizedOwner, category, id);
-  if (!existing) {
-    return null;
-  }
+    await appendWalEventOrThrow(
+      normalizedOwner,
+      buildEvent({
+        actorEmail: normalizedOwner,
+        actorRole: "user",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        action: "DELETE",
+        before: existing,
+        after: null,
+      })
+    );
 
-  await appendWalEventOrThrow(
-    normalizedOwner,
-    buildEvent({
-      actorEmail: normalizedOwner,
-      actorRole: "user",
+    await deleteEntryRaw(normalizedOwner, category, id);
+    await refreshIndexForMutation(normalizedOwner, category, existing, null);
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "delete",
       userEmail: normalizedOwner,
       category,
       entryId: id,
-      action: "DELETE",
-      before: existing,
-      after: null,
-    })
-  );
-
-  await deleteEntryRaw(normalizedOwner, category, id);
-  await refreshIndexForMutation(normalizedOwner, category, existing, null);
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "delete",
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-    durationMs: Date.now() - startedAt,
+      durationMs: Date.now() - startedAt,
+    });
+    return existing;
   });
-  return existing;
 }
 
 export async function sendForConfirmation<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -814,55 +821,57 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
     entryId: id,
   });
   enforceEntryMutationGuards(normalizedOwner, `entry.confirmation.send.${category}`, { entryId: id });
-  const existingEntry = await readEntryRaw(normalizedOwner, category, id);
-  if (!existingEntry) {
-    throw new Error("Entry not found");
-  }
+  return withUserDataLock(normalizedOwner, async () => {
+    const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+    if (!existingEntry) {
+      throw new Error("Entry not found");
+    }
 
-  const existing = existingEntry as EntryLike;
-  if (String(existing.status ?? "draft") !== "final") {
-    throw new Error("Complete the entry with Done before confirmation.");
-  }
+    const existing = existingEntry as EntryLike;
+    if (String(existing.status ?? "draft") !== "final") {
+      throw new Error("Complete the entry with Done before confirmation.");
+    }
 
-  const nowISO = new Date().toISOString();
-  const updated = normalizeEntry(
-    transitionEntry(existing as WorkflowEntryLike, "sendForConfirmation", {
-      nowISO,
-    }) as Entry,
-    ENTRY_SCHEMAS[category]
-  ) as EntryLike;
-  await appendWalEventOrThrow(
-    normalizedOwner,
-    buildEvent({
-      actorEmail: normalizedOwner,
-      actorRole: "user",
+    const nowISO = new Date().toISOString();
+    const updated = normalizeEntry(
+      transitionEntry(existing as WorkflowEntryLike, "sendForConfirmation", {
+        nowISO,
+      }) as Entry,
+      ENTRY_SCHEMAS[category]
+    ) as EntryLike;
+    await appendWalEventOrThrow(
+      normalizedOwner,
+      buildEvent({
+        actorEmail: normalizedOwner,
+        actorRole: "user",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        action: "SEND_FOR_CONFIRMATION",
+        before: existing as EntryEngineRecord,
+        after: updated as EntryEngineRecord,
+      })
+    );
+
+    await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+    await refreshIndexForMutation(
+      normalizedOwner,
+      category,
+      existing as EntryEngineRecord,
+      updated as EntryEngineRecord
+    );
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "sendForConfirmation",
       userEmail: normalizedOwner,
       category,
       entryId: id,
-      action: "SEND_FOR_CONFIRMATION",
-      before: existing as EntryEngineRecord,
-      after: updated as EntryEngineRecord,
-    })
-  );
-
-  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
-  await refreshIndexForMutation(
-    normalizedOwner,
-    category,
-    existing as EntryEngineRecord,
-    updated as EntryEngineRecord
-  );
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "sendForConfirmation",
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-    status: String(updated.confirmationStatus ?? ""),
-    durationMs: Date.now() - startedAt,
+      status: String(updated.confirmationStatus ?? ""),
+      durationMs: Date.now() - startedAt,
+    });
+    return updated as T;
   });
-  return updated as T;
 }
 
 export async function approveEntry<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -891,54 +900,55 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     ownerEmail: normalizedOwner,
     entryId,
   });
-
   const id = normalizeId(entryId);
-  const existing = await readEntryRaw(normalizedOwner, category, id);
-  if (!existing) {
-    throw new Error("Entry not found");
-  }
+  return withUserDataLock(normalizedOwner, async () => {
+    const existing = await readEntryRaw(normalizedOwner, category, id);
+    if (!existing) {
+      throw new Error("Entry not found");
+    }
 
-  const nowISO = new Date().toISOString();
-  const updated = normalizeEntry(
-    transitionEntry(existing as WorkflowEntryLike, "adminApprove", {
-      nowISO,
-      adminEmail: normalizedAdmin,
-    }) as Entry,
-    ENTRY_SCHEMAS[category]
-  ) as EntryLike;
-  await appendWalEventOrThrow(
-    normalizedOwner,
-    buildEvent({
+    const nowISO = new Date().toISOString();
+    const updated = normalizeEntry(
+      transitionEntry(existing as WorkflowEntryLike, "adminApprove", {
+        nowISO,
+        adminEmail: normalizedAdmin,
+      }) as Entry,
+      ENTRY_SCHEMAS[category]
+    ) as EntryLike;
+    await appendWalEventOrThrow(
+      normalizedOwner,
+      buildEvent({
+        actorEmail: normalizedAdmin,
+        actorRole: "admin",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        action: "APPROVE",
+        before: existing,
+        after: updated as EntryEngineRecord,
+      })
+    );
+
+    await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+    await refreshIndexForMutation(
+      normalizedOwner,
+      category,
+      existing,
+      updated as EntryEngineRecord
+    );
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "approve",
       actorEmail: normalizedAdmin,
-      actorRole: "admin",
       userEmail: normalizedOwner,
       category,
       entryId: id,
-      action: "APPROVE",
-      before: existing,
-      after: updated as EntryEngineRecord,
-    })
-  );
-
-  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
-  await refreshIndexForMutation(
-    normalizedOwner,
-    category,
-    existing,
-    updated as EntryEngineRecord
-  );
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "approve",
-    actorEmail: normalizedAdmin,
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-    status: String(updated.confirmationStatus ?? ""),
-    durationMs: Date.now() - startedAt,
+      status: String(updated.confirmationStatus ?? ""),
+      durationMs: Date.now() - startedAt,
+    });
+    return updated as T;
   });
-  return updated as T;
 }
 
 export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -969,56 +979,57 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
     entryId,
     reason: reason?.trim() ?? "",
   });
-
   const id = normalizeId(entryId);
-  const existing = await readEntryRaw(normalizedOwner, category, id);
-  if (!existing) {
-    throw new Error("Entry not found");
-  }
+  return withUserDataLock(normalizedOwner, async () => {
+    const existing = await readEntryRaw(normalizedOwner, category, id);
+    if (!existing) {
+      throw new Error("Entry not found");
+    }
 
-  const nowISO = new Date().toISOString();
-  const updated = normalizeEntry(
-    transitionEntry(existing as WorkflowEntryLike, "adminReject", {
-      nowISO,
-      adminEmail: normalizedAdmin,
-      rejectionReason: reason?.trim(),
-    }) as Entry,
-    ENTRY_SCHEMAS[category]
-  ) as EntryLike;
-  await appendWalEventOrThrow(
-    normalizedOwner,
-    buildEvent({
+    const nowISO = new Date().toISOString();
+    const updated = normalizeEntry(
+      transitionEntry(existing as WorkflowEntryLike, "adminReject", {
+        nowISO,
+        adminEmail: normalizedAdmin,
+        rejectionReason: reason?.trim(),
+      }) as Entry,
+      ENTRY_SCHEMAS[category]
+    ) as EntryLike;
+    await appendWalEventOrThrow(
+      normalizedOwner,
+      buildEvent({
+        actorEmail: normalizedAdmin,
+        actorRole: "admin",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        action: "REJECT",
+        before: existing,
+        after: updated as EntryEngineRecord,
+        meta: reason?.trim() ? { reason: reason.trim() } : undefined,
+      })
+    );
+
+    await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+    await refreshIndexForMutation(
+      normalizedOwner,
+      category,
+      existing,
+      updated as EntryEngineRecord
+    );
+    revalidateDashboardSummary(normalizedOwner);
+    logger.info({
+      event: "entry.mutation.end",
+      action: "reject",
       actorEmail: normalizedAdmin,
-      actorRole: "admin",
       userEmail: normalizedOwner,
       category,
       entryId: id,
-      action: "REJECT",
-      before: existing,
-      after: updated as EntryEngineRecord,
-      meta: reason?.trim() ? { reason: reason.trim() } : undefined,
-    })
-  );
-
-  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
-  await refreshIndexForMutation(
-    normalizedOwner,
-    category,
-    existing,
-    updated as EntryEngineRecord
-  );
-  revalidateDashboardSummary(normalizedOwner);
-  logger.info({
-    event: "entry.mutation.end",
-    action: "reject",
-    actorEmail: normalizedAdmin,
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-    status: String(updated.confirmationStatus ?? ""),
-    durationMs: Date.now() - startedAt,
+      status: String(updated.confirmationStatus ?? ""),
+      durationMs: Date.now() - startedAt,
+    });
+    return updated as T;
   });
-  return updated as T;
 }
 
 export async function computeStreak(
