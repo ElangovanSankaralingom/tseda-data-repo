@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
+import { signin } from "@/lib/navigation";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -11,7 +12,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/signin",
+    signIn: signin(),
   },
   callbacks: {
     async signIn({ profile }) {

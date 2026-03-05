@@ -5,10 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
 import { sendForConfirmation } from "@/lib/entryEngine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-
-function categoryPath(category: string) {
-  return `/data-entry/${category}`;
-}
+import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -36,10 +33,10 @@ export async function POST(request: Request) {
     }
 
     const updatedEntry = await sendForConfirmation(email, categoryKey, entryId);
-    revalidatePath("/dashboard");
-    revalidatePath("/data-entry");
-    revalidatePath(categoryPath(categoryKey));
-    revalidatePath(`${categoryPath(categoryKey)}/${entryId}`);
+    revalidatePath(dashboard());
+    revalidatePath(dataEntryHome());
+    revalidatePath(entryList(categoryKey));
+    revalidatePath(entryDetail(categoryKey, entryId));
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to send for confirmation.";

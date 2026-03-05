@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { profile as profileRoute, signin } from "@/lib/navigation";
 
 type ProfileSummary = {
   email?: string;
@@ -116,8 +117,8 @@ export default function AvatarMenu({ refreshKey = 0 }: { refreshKey?: number }) 
           role="menu"
           className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-border bg-background p-1 shadow-sm"
         >
-          <Link
-            href="/account"
+            <Link
+            href={profileRoute()}
             role="menuitem"
             onClick={() => setOpen(false)}
             className="block rounded-lg px-3 py-2 text-sm transition hover:bg-muted"
@@ -129,7 +130,7 @@ export default function AvatarMenu({ refreshKey = 0 }: { refreshKey?: number }) 
             role="menuitem"
             onClick={() => {
               setOpen(false);
-              void signOut({ callbackUrl: "/signin" });
+              void signOut({ callbackUrl: signin() });
             }}
             className="block w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-muted"
           >

@@ -34,7 +34,7 @@ import {
   type EntryDisplayCategory,
 } from "@/lib/entries/lifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
-import { toEntryEdit, toEntryList, toEntryNew } from "@/lib/entryNavigation";
+import { entryDetail, entryList, entryNew } from "@/lib/navigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
@@ -350,7 +350,7 @@ export function GuestLecturesPage({
   startInNewMode = false,
 }: GuestLecturesPageProps = {}) {
   const router = useRouter();
-  const categoryPath = toEntryList("guest-lectures");
+  const categoryPath = entryList("guest-lectures");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(startInNewMode);
@@ -1048,7 +1048,7 @@ export function GuestLecturesPage({
                   index={index}
                   streakState={getEntryStreakDisplayState(entry)}
                 />
-                <Link href={`/data-entry/guest-lectures/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                <Link href={entryDetail("guest-lectures", entry.id)} className="text-base font-semibold hover:opacity-80">
                   {entry.eventName}
                 </Link>
                 <EntryLockBadge deadlineState={deadlineState} />
@@ -1067,7 +1067,7 @@ export function GuestLecturesPage({
 
             <div className="flex shrink-0 flex-col items-end gap-2">
               <div className="flex items-center gap-2">
-                <MiniButton onClick={() => router.push(`/data-entry/guest-lectures/${entry.id}`)}>
+                <MiniButton onClick={() => router.push(entryDetail("guest-lectures", entry.id))}>
                   View
                 </MiniButton>
                 {lockApproved ? (
@@ -1091,7 +1091,7 @@ export function GuestLecturesPage({
                   )
                 ) : (
                   <>
-                    <MiniButton onClick={() => router.push(toEntryEdit("guest-lectures", entry.id))}>
+                    <MiniButton onClick={() => router.push(entryDetail("guest-lectures", entry.id))}>
                       Edit
                     </MiniButton>
                     <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
@@ -1206,7 +1206,7 @@ export function GuestLecturesPage({
             <MiniButton
               onClick={() => {
                 resetForm();
-                router.push(toEntryNew("guest-lectures"), { scroll: false });
+                router.push(entryNew("guest-lectures"), { scroll: false });
               }}
               disabled={loading}
             >
