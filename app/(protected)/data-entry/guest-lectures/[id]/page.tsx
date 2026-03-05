@@ -9,5 +9,5 @@ type GuestLecturesViewPageProps = {
 export default async function GuestLecturesViewPage({ params }: GuestLecturesViewPageProps) {
   const { id } = await params;
 
-  return <GuestLecturesPage viewEntryId={id} />;
+  return <GuestLecturesPage editEntryId={id} />;
 }

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import AvatarMenu from "@/components/AvatarMenu";
+import { isMasterAdmin } from "@/lib/admin";
 
 const ENABLE_RESET = true;
 
@@ -17,6 +18,8 @@ export default function ShellClient({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session } = useSession();
+  const canAccessAdmin = isMasterAdmin(session?.user?.email);
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
@@ -28,6 +31,9 @@ export default function ShellClient({
     { href: "/data-entry", label: "Data Entry" },
     { href: "/account", label: "My Account" },
   ];
+  const drawerNav = canAccessAdmin
+    ? [...nav, { href: "/admin", label: "⚙️ Admin Console" }]
+    : nav;
 
   async function handleResetConfirm() {
     if (resetBusy) return;
@@ -93,6 +99,15 @@ export default function ShellClient({
                 Reset Account
               </button>
             ) : null}
+            {canAccessAdmin ? (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-2 rounded-full border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+              >
+                <span aria-hidden="true">⚙️</span>
+                <span>Admin Console</span>
+              </Link>
+            ) : null}
             <AvatarMenu refreshKey={avatarRefreshKey} />
           </div>
         </div>
@@ -133,7 +148,7 @@ export default function ShellClient({
             </div>
 
             <nav className="mt-4 flex-1 space-y-1">
-              {nav.map((n) => {
+              {drawerNav.map((n) => {
                 const active = pathname === n.href || pathname?.startsWith(n.href + "/");
                 return (
                   <Link

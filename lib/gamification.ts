@@ -1,3 +1,5 @@
+import { isEntryLockedFromStatus } from "./confirmation.ts";
+
 export type StreakState = {
   activatedAtISO?: string | null;
   dueAtISO?: string | null;
@@ -281,22 +283,20 @@ export function isRequestEditApproved(value: string | null | undefined) {
 }
 
 export function getEditLockState(entry: LockableEntryLike): EditLockState {
-  void entry;
+  const isLocked = isEntryLockedFromStatus(entry);
   return {
-    isLocked: false,
+    isLocked,
     expiresAtISO: null,
     daysRemaining: 0,
   };
 }
 
 export function isEntryLockedState(entry: LockableEntryLike) {
-  void entry;
-  return false;
+  return isEntryLockedFromStatus(entry);
 }
 
 export function isEntryEditable(entry: LockableEntryLike) {
-  void entry;
-  return true;
+  return !isEntryLockedFromStatus(entry);
 }
 
 function isCompletedWithinDueWindow(state: StreakState) {

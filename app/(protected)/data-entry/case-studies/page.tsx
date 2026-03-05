@@ -17,9 +17,16 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
+import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
+import {
+  canSendForConfirmation,
+  getConfirmationStatusLabel,
+  isEntryLockedFromStatus,
+  normalizeConfirmationStatus,
+} from "@/lib/confirmation";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import {
@@ -27,6 +34,7 @@ import {
   type EntryDisplayCategory,
 } from "@/lib/entries/lifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
+import { toEntryEdit, toEntryList, toEntryNew } from "@/lib/entryNavigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
@@ -325,14 +333,20 @@ function uploadCaseStudiesFileXHR(opts: {
 
 type CaseStudiesPageProps = {
   viewEntryId?: string;
+  editEntryId?: string;
+  startInNewMode?: boolean;
 };
 
-export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
+export function CaseStudiesPage({
+  viewEntryId,
+  editEntryId,
+  startInNewMode = false,
+}: CaseStudiesPageProps = {}) {
   const router = useRouter();
-  const categoryPath = "/data-entry/case-studies";
+  const categoryPath = toEntryList("case-studies");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(startInNewMode);
   const [attemptedSectionSave, setAttemptedSectionSave] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
@@ -360,13 +374,14 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
   const seededViewEntryIdRef = useRef<string | null>(null);
+  const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
-    "/data-entry/case-studies",
+    categoryPath,
     viewEntryId
   );
   const viewedEntry = useMemo(
-    () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
-    [list, viewEntryId]
+    () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
+    [activeEntryId, list]
   );
   const groupedEntries = useMemo(() => groupEntries(list), [list]);
 
@@ -414,17 +429,17 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   }, []);
 
   useEffect(() => {
-    if (!viewEntryId) {
+    if (!activeEntryId) {
       seededViewEntryIdRef.current = null;
       return;
     }
 
-    if (seededViewEntryIdRef.current === viewEntryId) return;
+    if (seededViewEntryIdRef.current === activeEntryId) return;
 
-    const nextViewedEntry = list.find((item) => item.id === viewEntryId);
+    const nextViewedEntry = list.find((item) => item.id === activeEntryId);
     if (!nextViewedEntry) return;
 
-    seededViewEntryIdRef.current = viewEntryId;
+    seededViewEntryIdRef.current = activeEntryId;
     const hydratedEntry = hydrateEntry(nextViewedEntry);
     setForm(hydratedEntry);
     setLastPersistedSnapshot(stableStringify(hydratedEntry));
@@ -447,33 +462,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       travelPlan: null,
     });
     setPhotoUploadStatus({ hasPending: false, busy: false });
-  }, [list, viewEntryId]);
-
-  function openEntry(nextViewedEntry: CaseStudyEntry) {
-    const hydratedEntry = hydrateEntry(nextViewedEntry);
-    setForm(hydratedEntry);
-    setLastPersistedSnapshot(stableStringify(hydratedEntry));
-    setAttemptedSectionSave(false);
-    setSubmitAttemptedFinal(false);
-    setPending({
-      permissionLetter: null,
-      travelPlan: null,
-    });
-    setBusy({
-      permissionLetter: false,
-      travelPlan: false,
-    });
-    setProgress({
-      permissionLetter: 0,
-      travelPlan: 0,
-    });
-    setUploadError({
-      permissionLetter: null,
-      travelPlan: null,
-    });
-    setPhotoUploadStatus({ hasPending: false, busy: false });
-    setFormOpen(true);
-  }
+  }, [activeEntryId, list]);
 
   function applyPersistedEntry(nextEntry: CaseStudyEntry) {
     setForm(nextEntry);
@@ -561,7 +550,8 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeStudentYear(form.studentYear);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
-  const controlsDisabled = isViewMode;
+  const entryLocked = isEntryLockedFromStatus(form);
+  const controlsDisabled = isViewMode || entryLocked;
   const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const generateReady = validatePreUploadFields("case-studies", form as Record<string, unknown>);
@@ -575,12 +565,12 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
         pdfSourceHash: form.pdfSourceHash ?? "",
         draftHash: pdfHash,
         fieldsGateOk: generateReady,
-        isLocked: false,
+        isLocked: entryLocked,
       }),
-    [form.pdfMeta, form.pdfSourceHash, generateReady, pdfHash]
+    [entryLocked, form.pdfMeta, form.pdfSourceHash, generateReady, pdfHash]
   );
   const workflow = useEntryWorkflow({
-    isLocked: false,
+    isLocked: entryLocked,
     coreValid: generateReady,
     hasPdfSnapshot: uploadsVisible,
     pdfStale: pdfState.pdfStale,
@@ -593,7 +583,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     email,
     hydrateEntry,
   });
-  const showForm = formOpen || (isViewMode && !!viewedEntry);
+  const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
 
   function resetForm() {
     setAttemptedSectionSave(false);
@@ -636,15 +626,13 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
     await Promise.all(metas.map((meta) => deleteStoredFile(meta.storedPath)));
   }
 
-  async function closeForm(targetHref?: string) {
+  async function closeForm(targetHref = categoryPath) {
     if (!form.pdfMeta && (form.permissionLetter || form.travelPlan || form.geotaggedPhotos.length > 0)) {
       await cleanupDraftUploads(form);
     }
     resetForm();
     setFormOpen(false);
-    if (targetHref) {
-      router.push(targetHref);
-    }
+    router.replace(targetHref, { scroll: false });
   }
 
   async function refreshList(nextEmail = email) {
@@ -1094,6 +1082,18 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       setTimeout(() => setToast(null), 1800);
     },
   });
+  const { sendingIds: sendingConfirmationIds, sendForConfirmation } = useEntryConfirmation<CaseStudyEntry>({
+    category: "case-studies",
+    setItems: setList,
+    onSuccess: (message) => {
+      setToast({ type: "ok", msg: message });
+      setTimeout(() => setToast(null), 1400);
+    },
+    onError: (message) => {
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
+    },
+  });
 
   function formatEntryTimestamp(value?: string) {
     if (!value) return "-";
@@ -1110,6 +1110,10 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
       !Number.isNaN(updatedTime) &&
       Math.abs(updatedTime - createdTime) > 60 * 1000;
     const completedEntry = entry.status === "final";
+    const confirmationStatus = normalizeConfirmationStatus(entry.requestEditStatus);
+    const lockApproved = isEntryLockedFromStatus(entry);
+    const canSendConfirmation = canSendForConfirmation(entry);
+    const sendingConfirmation = !!sendingConfirmationIds[entry.id];
     const days = getInclusiveDays(entry.startDate, entry.endDate);
 
     return (
@@ -1127,6 +1131,9 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                   {entry.academicYear} • {entry.semesterType} Semester
                 </Link>
                 <EntryLockBadge deadlineState={deadlineState} />
+                <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                  {getConfirmationStatusLabel(confirmationStatus)}
+                </span>
               </div>
               <div className="mt-1 text-sm text-muted-foreground">
                 {entry.placeOfVisit} • {entry.studentYear || "-"} • Semester {entry.semesterNumber ?? "-"}
@@ -1142,7 +1149,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                 <MiniButton onClick={() => router.push(`/data-entry/case-studies/${entry.id}`)}>
                   View
                 </MiniButton>
-                {completedEntry ? (
+                {lockApproved ? (
                   entry.pdfMeta?.url ? (
                     <a
                       href={entry.pdfMeta.url}
@@ -1163,16 +1170,28 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
                   )
                 ) : (
                   <>
-                    <MiniButton onClick={() => openEntry(entry)}>
+                    <MiniButton onClick={() => router.push(toEntryEdit("case-studies", entry.id))}>
                       Edit
                     </MiniButton>
                     <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
                       Delete Entry
                     </MiniButton>
+                    {completedEntry ? (
+                      <MiniButton
+                        onClick={() => void sendForConfirmation(entry)}
+                        disabled={!canSendConfirmation || sendingConfirmation}
+                      >
+                        {sendingConfirmation
+                          ? "Sending..."
+                          : confirmationStatus === "pending"
+                            ? "Pending Confirmation"
+                            : "Send for Confirmation"}
+                      </MiniButton>
+                    ) : null}
                   </>
                 )}
                 <RequestEditAction
-                  locked={completedEntry}
+                  locked={lockApproved}
                   status={entry.requestEditStatus}
                   requestedAtISO={entry.requestEditRequestedAtISO}
                   requesting={!!requestingEditIds[entry.id]}
@@ -1235,19 +1254,19 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
               <MiniButton
                 variant="ghost"
                 onClick={() => void closeForm()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || lifecycle.canDone}
+                disabled={controlsDisabled || saving || loading || hasBusyUploads}
               >
                 Cancel
               </MiniButton>
               <SaveButton
                 onClick={() => void saveDraftChanges()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave}
+                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
               >
                 {saving ? "Saving..." : "Save"}
               </SaveButton>
               <MiniButton
                 onClick={() => void handleDone()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone}
+                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
               >
                 {saving ? "Saving..." : "Done"}
               </MiniButton>
@@ -1256,7 +1275,7 @@ export function CaseStudiesPage({ viewEntryId }: CaseStudiesPageProps = {}) {
             <MiniButton
               onClick={() => {
                 resetForm();
-                setFormOpen(true);
+                router.push(toEntryNew("case-studies"), { scroll: false });
               }}
               disabled={loading}
             >

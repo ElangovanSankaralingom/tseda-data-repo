@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import DateField from "@/components/controls/DateField";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import { EntryHeaderActionsBar, EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
@@ -15,7 +15,14 @@ import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldM
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
+import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
+import {
+  canSendForConfirmation,
+  getConfirmationStatusLabel,
+  isEntryLockedFromStatus,
+  normalizeConfirmationStatus,
+} from "@/lib/confirmation";
 import { getEntryStreakDisplayState } from "@/lib/entries/lifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
@@ -27,6 +34,7 @@ import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
+import { toEntryEdit, toEntryList, toEntryNew } from "@/lib/entryNavigation";
 import {
   type StreakState,
 } from "@/lib/gamification";
@@ -286,17 +294,21 @@ function uploadConductedFileXHR(opts: {
 
 type FdpConductedPageProps = {
   viewEntryId?: string;
+  editEntryId?: string;
+  startInNewMode?: boolean;
 };
 
-export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
+export function FdpConductedPage({
+  viewEntryId,
+  editEntryId,
+  startInNewMode = false,
+}: FdpConductedPageProps = {}) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const categoryPath = "/data-entry/fdp-conducted";
+  const categoryPath = toEntryList("fdp-conducted");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(startInNewMode);
   const [submitted, setSubmitted] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
@@ -306,10 +318,9 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   const [editorSeed, setEditorSeed] = useState<FdpConducted>(() => emptyForm());
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
-  const queryEntryId = searchParams.get("id")?.trim() ?? "";
-  const activeEntryId = viewEntryId?.trim() || queryEntryId;
+  const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
-    "/data-entry/fdp-conducted",
+    categoryPath,
     viewEntryId
   );
   const {
@@ -434,7 +445,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   }, [form]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const controlsDisabled = isViewMode;
+  const controlsDisabled = isViewMode || isEntryLockedFromStatus(form);
   const permissionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
     upload: (file, onProgress) =>
@@ -461,7 +472,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0;
   const workflow = useEntryWorkflow({
-    isLocked: false,
+    isLocked: isEntryLockedFromStatus(form),
     coreValid: generateReady,
     hasPdfSnapshot: uploadsVisible,
     pdfStale: pdfState.pdfStale,
@@ -486,16 +497,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
     resetUploadState();
   }
 
-  function openEntry(entry: FdpConducted) {
-    setSubmitted(false);
-    setSubmitAttemptedFinal(false);
-    setEditorSeed(entry);
-    loadEditorEntry(entry);
-    resetUploadState();
-    setFormOpen(true);
-  }
-
-  function closeForm(targetHref = pathname) {
+  function closeForm(targetHref = categoryPath) {
     resetForm();
     setFormOpen(false);
     router.replace(targetHref, { scroll: false });
@@ -521,7 +523,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
     onSeed: seedLoadedEntry,
   });
 
-  async function handleCancel(targetHref = pathname) {
+  async function handleCancel(targetHref = categoryPath) {
     if (hasBusyUploads) {
       setToast({ type: "err", msg: "Please wait for upload to finish." });
       setTimeout(() => setToast(null), 1800);
@@ -836,6 +838,18 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       setTimeout(() => setToast(null), 1800);
     },
   });
+  const { sendingIds: sendingConfirmationIds, sendForConfirmation } = useEntryConfirmation<FdpConducted>({
+    category: "fdp-conducted",
+    setItems: setList,
+    onSuccess: (message) => {
+      setToast({ type: "ok", msg: message });
+      setTimeout(() => setToast(null), 1400);
+    },
+    onError: (message) => {
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
+    },
+  });
 
   return (
     <div className="mx-auto w-full max-w-5xl">
@@ -854,15 +868,15 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
             onAdd={() => {
               resetForm();
               setFormOpen(true);
-              router.replace(pathname, { scroll: false });
+              router.push(toEntryNew("fdp-conducted"), { scroll: false });
             }}
             addLabel="+ Add FDP Entry"
             onCancel={() => void handleCancel()}
-            cancelDisabled={isViewMode || saving || loading || hasBusyUploads || lifecycle.canDone}
+            cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
             onSave={() => void saveDraftChanges()}
-            saveDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave}
+            saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
             onDone={() => void handleDone()}
-            doneDisabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone}
+            doneDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
             saving={saving}
             saveIntent={saveIntent}
           />
@@ -1127,8 +1141,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                     </MiniButton>
                                     <MiniButton
                                       onClick={() => {
-                                        openEntry(entry);
-                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                        router.push(toEntryEdit("fdp-conducted", entry.id), { scroll: false });
                                       }}
                                     >
                                       Edit
@@ -1214,8 +1227,7 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                     </MiniButton>
                                     <MiniButton
                                       onClick={() => {
-                                        openEntry(entry);
-                                        router.push(`${pathname}?id=${entry.id}`, { scroll: false });
+                                        router.push(toEntryEdit("fdp-conducted", entry.id), { scroll: false });
                                       }}
                                     >
                                       Edit
@@ -1273,6 +1285,10 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                         !Number.isNaN(createdTime) &&
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
+                      const confirmationStatus = normalizeConfirmationStatus(entry.requestEditStatus);
+                      const lockApproved = isEntryLockedFromStatus(entry);
+                      const canSendConfirmation = canSendForConfirmation(entry);
+                      const sendingConfirmation = !!sendingConfirmationIds[entry.id];
 
                       const deadlineState = getStreakDeadlineState(entry);
 
@@ -1291,6 +1307,9 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                     {getConductedEntryTitle(entry)}
                                   </Link>
                                   <EntryLockBadge deadlineState={deadlineState} />
+                                  <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                                    {getConfirmationStatusLabel(confirmationStatus)}
+                                  </span>
                                 </div>
                                 <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1305,32 +1324,59 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
                                     <MiniButton onClick={() => router.push(`/data-entry/fdp-conducted/${entry.id}`)}>
                                       View
                                     </MiniButton>
-                                    {entry.pdfMeta?.url ? (
-                                      <a
-                                        href={entry.pdfMeta.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
-                                      >
-                                        Preview
-                                      </a>
+                                    {lockApproved ? (
+                                      <>
+                                        {entry.pdfMeta?.url ? (
+                                          <a
+                                            href={entry.pdfMeta.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
+                                          >
+                                            Preview
+                                          </a>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            disabled
+                                            className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
+                                          >
+                                            Preview
+                                          </button>
+                                        )}
+                                        <RequestEditAction
+                                          locked
+                                          status={entry.requestEditStatus}
+                                          requestedAtISO={entry.requestEditRequestedAtISO}
+                                          requesting={!!requestingEditIds[entry.id]}
+                                          onRequest={() => void requestEdit(entry)}
+                                          onCancel={() => void cancelRequestEdit(entry)}
+                                        />
+                                      </>
                                     ) : (
-                                      <button
-                                        type="button"
-                                        disabled
-                                        className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
-                                      >
-                                        Preview
-                                      </button>
+                                      <>
+                                        <MiniButton
+                                          onClick={() => {
+                                            router.push(toEntryEdit("fdp-conducted", entry.id), { scroll: false });
+                                          }}
+                                        >
+                                          Edit
+                                        </MiniButton>
+                                        <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
+                                          Delete entry
+                                        </MiniButton>
+                                        <MiniButton
+                                          onClick={() => void sendForConfirmation(entry)}
+                                          disabled={!canSendConfirmation || sendingConfirmation}
+                                        >
+                                          {sendingConfirmation
+                                            ? "Sending..."
+                                            : confirmationStatus === "pending"
+                                              ? "Pending Confirmation"
+                                              : "Send for Confirmation"}
+                                        </MiniButton>
+                                      </>
                                     )}
-                                    <RequestEditAction
-                                      locked
-                                      status={entry.requestEditStatus}
-                                      requestedAtISO={entry.requestEditRequestedAtISO}
-                                      requesting={!!requestingEditIds[entry.id]}
-                                      onRequest={() => void requestEdit(entry)}
-                                      onCancel={() => void cancelRequestEdit(entry)}
-                                    />
                                   </div>
                                 </div>
                               ) : null}

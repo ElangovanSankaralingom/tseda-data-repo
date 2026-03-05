@@ -1,4 +1,4 @@
-import { computeDueAtISO, normalizeStreakState } from "@/lib/gamification";
+import { computeDueAtISO, normalizeStreakState } from "./gamification.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

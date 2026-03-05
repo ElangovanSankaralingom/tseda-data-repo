@@ -9,5 +9,5 @@ type WorkshopsViewPageProps = {
 export default async function WorkshopsViewPage({ params }: WorkshopsViewPageProps) {
   const { id } = await params;
 
-  return <WorkshopsPage viewEntryId={id} />;
+  return <WorkshopsPage editEntryId={id} />;
 }
