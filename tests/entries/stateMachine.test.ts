@@ -101,7 +101,7 @@ test("post-stage dirty after generate enables save but not done", () => {
   assert.equal(state.canDone, false);
 });
 
-test("complete and saved post-stage enables done and disables save", () => {
+test("complete and saved post-stage enables done and keeps save disabled", () => {
   const state = computeEntryLifecycle({
     isLocked: false,
     hasPdfSnapshot: true,
@@ -115,7 +115,7 @@ test("complete and saved post-stage enables done and disables save", () => {
   assert.equal(state.canSave, false);
 });
 
-test("complete but unsaved post-stage keeps done disabled", () => {
+test("complete but unsaved post-stage keeps done enabled for finalize-save flow", () => {
   const state = computeEntryLifecycle({
     isLocked: false,
     hasPdfSnapshot: true,
@@ -125,11 +125,11 @@ test("complete but unsaved post-stage keeps done disabled", () => {
     postStageDirty: true,
   });
 
-  assert.equal(state.canDone, false);
+  assert.equal(state.canDone, true);
   assert.equal(state.canSave, true);
 });
 
-test("lock flag does not force-disable actions", () => {
+test("lock flag force-disables editing actions", () => {
   const state = computeEntryLifecycle({
     isLocked: true,
     hasPdfSnapshot: true,
@@ -140,8 +140,8 @@ test("lock flag does not force-disable actions", () => {
   });
 
   assert.equal(state.stage, "post");
-  assert.equal(state.canSave, true);
-  assert.equal(state.canGenerate, true);
+  assert.equal(state.canSave, false);
+  assert.equal(state.canGenerate, false);
   assert.equal(state.canPreview, false);
   assert.equal(state.canDownload, false);
   assert.equal(state.canDone, false);

@@ -36,15 +36,13 @@ export function computeEntryLifecycle({
   streakActivated,
   streakCompleted,
 }: EntryLifecycleInput): EntryLifecycleState {
-  void isLocked;
   const dirty = preStageDirty || postStageDirty;
   const stage: EntryLifecycleStage = hasPdfSnapshot ? "post" : "pre";
-  const canGenerate = preStageValid && preStageDirty;
+  const canGenerate = !isLocked && preStageValid && preStageDirty;
   const canPreview = hasPdfSnapshot && preStageValid && !preStageDirty;
   const canDownload = canPreview;
-  const canDone =
-    hasPdfSnapshot && preStageValid && postStageValid && !preStageDirty && !postStageDirty;
-  const canSave = dirty && !canDone;
+  const canDone = !isLocked && hasPdfSnapshot && preStageValid && postStageValid && !preStageDirty;
+  const canSave = !isLocked && dirty;
 
   return {
     stage,

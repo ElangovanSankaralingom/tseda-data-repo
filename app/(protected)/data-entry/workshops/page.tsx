@@ -15,11 +15,18 @@ import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
+import {
+  canSendForConfirmation,
+  getConfirmationStatusLabel,
+  isEntryLockedFromStatus,
+  normalizeConfirmationStatus,
+} from "@/lib/confirmation";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import {
@@ -27,6 +34,7 @@ import {
   type EntryDisplayCategory,
 } from "@/lib/entries/lifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
+import { toEntryEdit, toEntryList, toEntryNew } from "@/lib/entryNavigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 
@@ -320,14 +328,20 @@ function uploadWorkshopFileXHR(opts: {
 
 type WorkshopsPageProps = {
   viewEntryId?: string;
+  editEntryId?: string;
+  startInNewMode?: boolean;
 };
 
-export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
+export function WorkshopsPage({
+  viewEntryId,
+  editEntryId,
+  startInNewMode = false,
+}: WorkshopsPageProps = {}) {
   const router = useRouter();
-  const categoryPath = "/data-entry/workshops";
+  const categoryPath = toEntryList("workshops");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(startInNewMode);
   const [submitted, setSubmitted] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
@@ -363,13 +377,14 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
   const seededViewEntryIdRef = useRef<string | null>(null);
+  const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
-    "/data-entry/workshops",
+    categoryPath,
     viewEntryId
   );
   const viewedEntry = useMemo(
-    () => (viewEntryId ? list.find((item) => item.id === viewEntryId) ?? null : null),
-    [list, viewEntryId]
+    () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
+    [activeEntryId, list]
   );
   const groupedEntries = useMemo(() => groupEntries(list), [list]);
 
@@ -415,17 +430,17 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
   }, []);
 
   useEffect(() => {
-    if (!viewEntryId) {
+    if (!activeEntryId) {
       seededViewEntryIdRef.current = null;
       return;
     }
 
-    if (seededViewEntryIdRef.current === viewEntryId) return;
+    if (seededViewEntryIdRef.current === activeEntryId) return;
 
-    const nextViewedEntry = list.find((item) => item.id === viewEntryId);
+    const nextViewedEntry = list.find((item) => item.id === activeEntryId);
     if (!nextViewedEntry) return;
 
-    seededViewEntryIdRef.current = viewEntryId;
+    seededViewEntryIdRef.current = activeEntryId;
     const hydratedEntry = hydrateEntry(nextViewedEntry);
     setForm(hydratedEntry);
     setLastPersistedSnapshot(stableStringify(hydratedEntry));
@@ -456,41 +471,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
       organiserProfile: null,
     });
     setPhotoUploadStatus({ hasPending: false, busy: false });
-  }, [list, viewEntryId]);
-
-  function openEntry(nextViewedEntry: WorkshopEntry) {
-    const hydratedEntry = hydrateEntry(nextViewedEntry);
-    setForm(hydratedEntry);
-    setLastPersistedSnapshot(stableStringify(hydratedEntry));
-    setSubmitted(false);
-    setSubmitAttemptedFinal(false);
-    setPending({
-      permissionLetter: null,
-      brochure: null,
-      attendance: null,
-      organiserProfile: null,
-    });
-    setBusy({
-      permissionLetter: false,
-      brochure: false,
-      attendance: false,
-      organiserProfile: false,
-    });
-    setProgress({
-      permissionLetter: 0,
-      brochure: 0,
-      attendance: 0,
-      organiserProfile: 0,
-    });
-    setUploadError({
-      permissionLetter: null,
-      brochure: null,
-      attendance: null,
-      organiserProfile: null,
-    });
-    setPhotoUploadStatus({ hasPending: false, busy: false });
-    setFormOpen(true);
-  }
+  }, [activeEntryId, list]);
 
   function applyPersistedEntry(nextEntry: WorkshopEntry) {
     setForm(nextEntry);
@@ -578,8 +559,9 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     !!form.uploads.attendance &&
     !!form.uploads.organiserProfile &&
     form.uploads.geotaggedPhotos.length > 0;
-  const showForm = formOpen || (isViewMode && !!viewedEntry);
-  const controlsDisabled = isViewMode;
+  const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
+  const entryLocked = isEntryLockedFromStatus(form);
+  const controlsDisabled = isViewMode || entryLocked;
   const pdfHash = useMemo(() => hashPrePdfFields(form, "workshops"), [form]);
   const pdfState = useMemo(
     () =>
@@ -588,12 +570,12 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
         pdfSourceHash: form.pdfSourceHash ?? "",
         draftHash: pdfHash,
         fieldsGateOk: generateReady,
-        isLocked: false,
+        isLocked: entryLocked,
       }),
-    [form.pdfMeta, form.pdfSourceHash, generateReady, pdfHash]
+    [entryLocked, form.pdfMeta, form.pdfSourceHash, generateReady, pdfHash]
   );
   const workflow = useEntryWorkflow({
-    isLocked: false,
+    isLocked: entryLocked,
     coreValid: generateReady,
     hasPdfSnapshot: uploadsVisible,
     pdfStale: pdfState.pdfStale,
@@ -696,7 +678,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
     await Promise.all(metas.map((meta) => deleteStoredFile(meta.storedPath)));
   }
 
-  async function closeForm(targetHref?: string) {
+  async function closeForm(targetHref = categoryPath) {
     if (
       !form.pdfMeta &&
       (
@@ -712,9 +694,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
 
     resetForm();
     setFormOpen(false);
-    if (targetHref) {
-      router.push(targetHref);
-    }
+    router.replace(targetHref, { scroll: false });
   }
 
   async function refreshList(nextEmail = email) {
@@ -1003,6 +983,18 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
       setTimeout(() => setToast(null), 1800);
     },
   });
+  const { sendingIds: sendingConfirmationIds, sendForConfirmation } = useEntryConfirmation<WorkshopEntry>({
+    category: "workshops",
+    setItems: setList,
+    onSuccess: (message) => {
+      setToast({ type: "ok", msg: message });
+      setTimeout(() => setToast(null), 1400);
+    },
+    onError: (message) => {
+      setToast({ type: "err", msg: message });
+      setTimeout(() => setToast(null), 1800);
+    },
+  });
 
   function formatEntryTimestamp(value?: string) {
     if (!value) return "-";
@@ -1019,6 +1011,10 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
       !Number.isNaN(updatedTime) &&
       Math.abs(updatedTime - createdTime) > 60 * 1000;
     const completedEntry = entry.status === "final";
+    const confirmationStatus = normalizeConfirmationStatus(entry.requestEditStatus);
+    const lockApproved = isEntryLockedFromStatus(entry);
+    const canSendConfirmation = canSendForConfirmation(entry);
+    const sendingConfirmation = !!sendingConfirmationIds[entry.id];
     const days = getInclusiveDays(entry.startDate, entry.endDate);
 
     return (
@@ -1036,6 +1032,9 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                   {entry.eventName}
                 </Link>
                 <EntryLockBadge deadlineState={deadlineState} />
+                <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                  {getConfirmationStatusLabel(confirmationStatus)}
+                </span>
               </div>
               <div className="mt-1 text-sm text-muted-foreground">
                 Speaker: {entry.speakerName} • {entry.organisationName}
@@ -1051,7 +1050,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                 <MiniButton onClick={() => router.push(`/data-entry/workshops/${entry.id}`)}>
                   View
                 </MiniButton>
-                {completedEntry ? (
+                {lockApproved ? (
                   entry.pdfMeta?.url ? (
                     <a
                       href={entry.pdfMeta.url}
@@ -1072,16 +1071,28 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
                   )
                 ) : (
                   <>
-                    <MiniButton onClick={() => openEntry(entry)}>
+                    <MiniButton onClick={() => router.push(toEntryEdit("workshops", entry.id))}>
                       Edit
                     </MiniButton>
                     <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
                       Delete Entry
                     </MiniButton>
+                    {completedEntry ? (
+                      <MiniButton
+                        onClick={() => void sendForConfirmation(entry)}
+                        disabled={!canSendConfirmation || sendingConfirmation}
+                      >
+                        {sendingConfirmation
+                          ? "Sending..."
+                          : confirmationStatus === "pending"
+                            ? "Pending Confirmation"
+                            : "Send for Confirmation"}
+                      </MiniButton>
+                    ) : null}
                   </>
                 )}
                 <RequestEditAction
-                  locked={completedEntry}
+                  locked={lockApproved}
                   status={entry.requestEditStatus}
                   requestedAtISO={entry.requestEditRequestedAtISO}
                   requesting={!!requestingEditIds[entry.id]}
@@ -1152,19 +1163,19 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
               <MiniButton
                 variant="ghost"
                 onClick={() => void closeForm()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || lifecycle.canDone}
+                disabled={controlsDisabled || saving || loading || hasBusyUploads}
               >
                 Cancel
               </MiniButton>
               <SaveButton
                 onClick={() => void saveDraftChanges()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canSave}
+                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
               >
                 {saving ? "Saving..." : "Save"}
               </SaveButton>
               <MiniButton
                 onClick={() => void handleDone()}
-                disabled={isViewMode || saving || loading || hasBusyUploads || !lifecycle.canDone}
+                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
               >
                 {saving ? "Saving..." : "Done"}
               </MiniButton>
@@ -1173,7 +1184,7 @@ export function WorkshopsPage({ viewEntryId }: WorkshopsPageProps = {}) {
             <MiniButton
               onClick={() => {
                 resetForm();
-                setFormOpen(true);
+                router.push(toEntryNew("workshops"), { scroll: false });
               }}
               disabled={loading}
             >

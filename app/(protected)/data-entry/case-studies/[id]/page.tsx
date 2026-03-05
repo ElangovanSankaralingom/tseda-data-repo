@@ -9,5 +9,5 @@ type CaseStudiesViewPageProps = {
 export default async function CaseStudiesViewPage({ params }: CaseStudiesViewPageProps) {
   const { id } = await params;
 
-  return <CaseStudiesPage viewEntryId={id} />;
+  return <CaseStudiesPage editEntryId={id} />;
 }

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { readJson } from "@/lib/storage";
+import { authOptions } from "@/lib/auth";
+import { isMasterAdmin } from "@/lib/admin";
 import { getAllProfiles } from "@/lib/profileStore";
-
-type AdminsFile = { admins: string[] };
 
 function csvEscape(s: string) {
   const v = String(s ?? "");
@@ -12,12 +11,9 @@ function csvEscape(s: string) {
 }
 
 export async function GET() {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
-  if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const admins = await readJson<AdminsFile>("admins.json", { admins: [] });
-  if (!admins.admins.map((x) => x.toLowerCase()).includes(email)) {
+  if (!isMasterAdmin(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
