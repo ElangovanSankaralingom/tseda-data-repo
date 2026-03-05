@@ -1,8 +1,10 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import {
+  listEntriesForCategory,
+  updateEntry,
+} from "@/lib/entryEngine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   generateEntryPdfBytes,
@@ -10,7 +12,6 @@ import {
   type PdfMeta,
 } from "@/lib/entry-pdf";
 import { ensureActivated, isFutureDatedEntry, normalizeStreakState } from "@/lib/gamification";
-import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 type FileMeta = {
   fileName: string;
@@ -55,20 +56,7 @@ async function getAuthorizedEmail() {
 }
 
 async function readList(email: string): Promise<EntryRecord[]> {
-  const filePath = getUserCategoryStoreFile(email, "fdp-conducted.json");
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as EntryRecord[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeList(email: string, list: EntryRecord[]) {
-  const filePath = getUserCategoryStoreFile(email, "fdp-conducted.json");
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+  return listEntriesForCategory(email, "fdp-conducted");
 }
 
 function getPrePdfFieldsHash(entry: EntryRecord) {
@@ -167,8 +155,12 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     updatedAt: new Date().toISOString(),
   };
 
-  list[index] = updatedEntry;
-  await writeList(email, list);
+  const persisted = await updateEntry<EntryRecord>(
+    email,
+    "fdp-conducted",
+    entryId,
+    updatedEntry
+  );
 
-  return NextResponse.json({ pdfMeta, entry: updatedEntry }, { status: 200 });
+  return NextResponse.json({ pdfMeta, entry: persisted }, { status: 200 });
 }

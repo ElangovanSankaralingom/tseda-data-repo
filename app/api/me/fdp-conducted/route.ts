@@ -3,6 +3,12 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import {
+  createEntry,
+  deleteEntry as deleteEngineEntry,
+  listEntriesForCategory,
+  updateEntry,
+} from "@/lib/entryEngine";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import {
   findFacultyByEmail,
@@ -19,7 +25,7 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
+import { safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {
   fileName: string;
@@ -301,26 +307,8 @@ async function getAuthorizedEmail() {
   return normalizedEmail;
 }
 
-function getStoreFile(email: string) {
-  return getUserCategoryStoreFile(email, "fdp-conducted.json");
-}
-
 async function readList(email: string): Promise<FdpConducted[]> {
-  const filePath = getStoreFile(email);
-
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.map(normalizeEntry).filter((item): item is FdpConducted => !!item) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeList(email: string, list: FdpConducted[]) {
-  const filePath = getStoreFile(email);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+  return listEntriesForCategory(email, "fdp-conducted", normalizeEntry);
 }
 
 async function deleteStoredFile(email: string, meta: FileMeta | null) {
@@ -559,12 +547,10 @@ export async function POST(request: Request) {
       }
     }
 
-    const next = existing
-      ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
-      : [savedEntry, ...currentList];
-
-    await writeList(email, next);
-    return NextResponse.json(savedEntry, { status: 200 });
+    const persisted = existing
+      ? await updateEntry<FdpConducted>(email, "fdp-conducted", savedEntry.id, savedEntry)
+      : await createEntry<FdpConducted>(email, "fdp-conducted", savedEntry);
+    return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Save failed";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -765,14 +751,11 @@ export async function PATCH(request: Request) {
       }
     }
 
-    await writeList(
-      email,
-      existing
-        ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
-        : [savedEntry, ...currentList]
-    );
+    const persisted = existing
+      ? await updateEntry<FdpConducted>(email, "fdp-conducted", savedEntry.id, savedEntry)
+      : await createEntry<FdpConducted>(email, "fdp-conducted", savedEntry);
 
-    return NextResponse.json(savedEntry, { status: 200 });
+    return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Save failed";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -808,10 +791,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "This entry is locked." }, { status: 403 });
     }
 
-    await writeList(
-      email,
-      currentList.filter((item) => item.id !== id)
-    );
+    await deleteEngineEntry(email, "fdp-conducted", id);
 
     if (target) {
       await deleteStoredFile(email, target.permissionLetter);

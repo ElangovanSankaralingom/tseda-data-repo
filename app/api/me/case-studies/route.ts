@@ -4,6 +4,13 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
+  createEntry,
+  deleteEntry as deleteEngineEntry,
+  listEntriesForCategory,
+  replaceEntriesForCategory,
+  updateEntry,
+} from "@/lib/entryEngine";
+import {
   cloneOptionalFileArrayToTarget,
   cloneOptionalFileToTarget,
   shouldShareEntry,
@@ -29,7 +36,7 @@ import {
   normalizeStudentYear,
   type StudentYear,
 } from "@/lib/student-academic";
-import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
+import { safeEmailDir } from "@/lib/userStore";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
 type FileMeta = {
@@ -343,28 +350,12 @@ async function getAuthorizedEmail() {
   return email;
 }
 
-function getStoreFile(email: string) {
-  return getUserCategoryStoreFile(email, "case-studies.json");
-}
-
 async function readList(email: string): Promise<CaseStudyEntry[]> {
-  const filePath = getStoreFile(email);
-
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.map(normalizeEntry).filter((entry): entry is CaseStudyEntry => !!entry)
-      : [];
-  } catch {
-    return [];
-  }
+  return listEntriesForCategory(email, "case-studies", normalizeEntry);
 }
 
 async function writeList(email: string, list: CaseStudyEntry[]) {
-  const filePath = getStoreFile(email);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+  await replaceEntriesForCategory(email, "case-studies", list);
 }
 
 async function deleteStoredFile(email: string, meta: FileMeta | null) {
@@ -675,21 +666,19 @@ export async function POST(request: Request) {
       }
     }
 
-    const next = existing
-      ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
-      : [savedEntry, ...currentList];
+    const persisted = existing
+      ? await updateEntry<CaseStudyEntry>(email, "case-studies", savedEntry.id, savedEntry)
+      : await createEntry<CaseStudyEntry>(email, "case-studies", savedEntry);
 
-    await writeList(email, next);
-
-    if (shouldShareEntry(savedEntry)) {
+    if (shouldShareEntry(persisted)) {
       try {
-        await upsertSharedTargets(savedEntry, email, now);
+        await upsertSharedTargets(persisted, email, now);
       } catch (error) {
         console.error("Case studies share failed", error);
       }
     }
 
-    return NextResponse.json(savedEntry, { status: 200 });
+    return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Save failed";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -881,22 +870,19 @@ export async function PATCH(request: Request) {
       !!savedEntry.pdfSourceHash &&
       hashPrePdfFields(savedEntry, "case-studies") !== savedEntry.pdfSourceHash;
 
-    await writeList(
-      email,
-      existing
-        ? currentList.map((item) => (item.id === existing.id ? savedEntry : item))
-        : [savedEntry, ...currentList]
-    );
+    const persisted = existing
+      ? await updateEntry<CaseStudyEntry>(email, "case-studies", savedEntry.id, savedEntry)
+      : await createEntry<CaseStudyEntry>(email, "case-studies", savedEntry);
 
-    if (shouldShareEntry(savedEntry)) {
+    if (shouldShareEntry(persisted)) {
       try {
-        await upsertSharedTargets(savedEntry, email, now);
+        await upsertSharedTargets(persisted, email, now);
       } catch (error) {
         console.error("Case studies share failed", error);
       }
     }
 
-    return NextResponse.json(savedEntry, { status: 200 });
+    return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Save failed";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -932,10 +918,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
     }
 
-    await writeList(
-      email,
-      currentList.filter((item) => item.id !== id)
-    );
+    await deleteEngineEntry(email, "case-studies", id);
 
     if (target) {
       await deleteStoredFile(email, target.permissionLetter);
