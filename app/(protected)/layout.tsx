@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import ShellClient from "@/app/ShellClient";
 import { authOptions } from "@/lib/auth";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
+import { signin } from "@/lib/navigation";
 
 export default async function ProtectedLayout({
   children,
@@ -11,11 +12,11 @@ export default async function ProtectedLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) redirect("/signin");
+  if (!session?.user?.email) redirect(signin());
 
   const email = session.user.email.toLowerCase();
   if (!email.endsWith("@tce.edu") || !findFacultyByEmail(email)) {
-    redirect("/signin?error=AccessDenied");
+    redirect(`${signin()}?error=AccessDenied`);
   }
 
   return <ShellClient>{children}</ShellClient>;

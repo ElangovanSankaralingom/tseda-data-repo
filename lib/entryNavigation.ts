@@ -1,13 +1,15 @@
+import { entryDetail, entryList, entryNew } from "@/lib/navigation";
 import type { CategoryKey } from "@/lib/entries/types";
 
+// Compatibility layer; use "@/lib/navigation" in new code.
 export function toEntryList(category: CategoryKey) {
-  return `/data-entry/${category}`;
+  return entryList(category);
 }
 
 export function toEntryNew(category: CategoryKey) {
-  return `${toEntryList(category)}/new`;
+  return entryNew(category);
 }
 
 export function toEntryEdit(category: CategoryKey, id: string) {
-  return `${toEntryList(category)}/${encodeURIComponent(id)}`;
+  return entryDetail(category, id);
 }

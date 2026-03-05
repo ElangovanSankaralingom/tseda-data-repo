@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
+import { dashboard, profile, signin } from "@/lib/navigation";
 
 const nav = [
-  { href: "/", label: "Dashboard" },
-  { href: "/account", label: "My Account" },
-  { href: "/account/print", label: "Print Profile" },
+  { href: dashboard(), label: "Dashboard" },
+  { href: profile(), label: "My Account" },
+  { href: `${profile()}/print`, label: "Print Profile" },
 ];
 
 export default function AppShell({
@@ -40,7 +41,7 @@ export default function AppShell({
 
         <div className="flex items-center gap-3">
           <Link
-            href="/account"
+            href={profile()}
             className="text-sm px-3 py-1 border rounded"
           >
             My Account
@@ -89,7 +90,7 @@ export default function AppShell({
           {/* Bottom Section */}
           <div className="p-3 border-t border-gray-200 space-y-1">
             <Link
-              href="/account"
+              href={profile()}
               onClick={() => setDrawerOpen(false)}
               className="block px-3 py-2 rounded text-sm hover:bg-gray-100"
             >
@@ -97,7 +98,7 @@ export default function AppShell({
             </Link>
 
             <button
-              onClick={() => signOut({ callbackUrl: "/signin" })}
+              onClick={() => signOut({ callbackUrl: signin() })}
               className="w-full text-left px-3 py-2 rounded text-sm text-red-600 hover:bg-red-50"
             >
               Sign Out

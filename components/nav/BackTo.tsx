@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { safeBack } from "@/lib/navigation";
 
 function ArrowLeftIcon({ className }: { className?: string }) {
   return (
@@ -44,7 +45,7 @@ export default function BackTo({
       void onClick();
       return;
     }
-    router.push(href);
+    safeBack(router, href);
   };
 
   if (compact) {

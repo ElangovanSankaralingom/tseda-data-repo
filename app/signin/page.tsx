@@ -4,6 +4,7 @@ import Image from "next/image";
 import { signIn, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { dashboard } from "@/lib/navigation";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -49,7 +50,7 @@ export default function SignInPage() {
   // If already signed in, go to dashboard (or your protected home)
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/dashboard");
+      router.replace(dashboard());
     }
   }, [status, router]);
 
@@ -141,7 +142,7 @@ export default function SignInPage() {
                   try {
                     setBusy(true);
                     // Keep callbackUrl consistent with your app routing
-                    await signIn("google", { callbackUrl: "/dashboard" });
+                    await signIn("google", { callbackUrl: dashboard() });
                   } finally {
                     setBusy(false);
                   }

@@ -1,5 +1,11 @@
 import Link from "next/link";
 import BackTo from "@/components/nav/BackTo";
+import {
+  adminConfirmations,
+  adminSettings,
+  adminUsers,
+  dashboard,
+} from "@/lib/navigation";
 
 type AdminCard = {
   title: string;
@@ -10,17 +16,17 @@ type AdminCard = {
 const ADMIN_CARDS: AdminCard[] = [
   {
     title: "Confirmations",
-    href: "/admin/confirmations",
+    href: adminConfirmations(),
     description: "Review pending entry confirmations and approve or reject requests.",
   },
   {
     title: "Users",
-    href: "/admin/users",
+    href: adminUsers(),
     description: "Manage user-level admin tools and account controls.",
   },
   {
     title: "Settings",
-    href: "/admin/settings",
+    href: adminSettings(),
     description: "Configure admin-level settings for the data-entry workflow.",
   },
 ];
@@ -29,7 +35,7 @@ export default function AdminConsolePage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center gap-3">
-        <BackTo href="/dashboard" compact />
+        <BackTo href={dashboard()} compact />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Admin Console</h1>
           <p className="mt-1 text-sm text-muted-foreground">Master-admin controls for confirmations and system management.</p>

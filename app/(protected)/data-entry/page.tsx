@@ -9,6 +9,7 @@ import {
   getUnfinishedCountByCategory,
   type DataEntrySummary,
 } from "@/lib/entries/summary";
+import { entryList } from "@/lib/navigation";
 import { getDataEntryNavigation } from "@/lib/navigationStack";
 
 type EntryItem = {
@@ -23,31 +24,31 @@ const ITEMS: EntryItem[] = [
     key: "fdpAttended",
     title: "FDP — Attended",
     subtitle: "Record FDPs you attended with support amount and required supporting documents.",
-    href: "/data-entry/fdp-attended",
+    href: entryList("fdp-attended"),
   },
   {
     key: "fdpConducted",
     title: "FDP — Conducted",
     subtitle: "Capture FDPs conducted with coordinator details, dates, and required supporting documents.",
-    href: "/data-entry/fdp-conducted",
+    href: entryList("fdp-conducted"),
   },
   {
     key: "caseStudies",
     title: "Case Studies",
     subtitle: "Maintain case study records with academic context, outcomes, and supporting material.",
-    href: "/data-entry/case-studies",
+    href: entryList("case-studies"),
   },
   {
     key: "guestLectures",
     title: "Guest Lectures",
     subtitle: "Record event details and supporting documents.",
-    href: "/data-entry/guest-lectures",
+    href: entryList("guest-lectures"),
   },
   {
     key: "workshops",
     title: "Workshops",
     subtitle: "Record workshop details and supporting documents.",
-    href: "/data-entry/workshops",
+    href: entryList("workshops"),
   },
 ];
 

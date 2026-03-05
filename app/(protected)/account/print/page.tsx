@@ -1,13 +1,14 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getProfileByEmail } from "@/lib/profileStore";
+import { profile as profileRoute, signin } from "@/lib/navigation";
 
 export default async function PrintProfile() {
   const session = await getServerSession();
   const email = session?.user?.email;
-  if (!email) redirect("/signin");
+  if (!email) redirect(signin());
   const profile = await getProfileByEmail(email);
-  if (!profile) redirect("/account");
+  if (!profile) redirect(profileRoute());
 
   return (
     <div className="mx-auto max-w-3xl bg-white text-black p-8 print:p-0">

@@ -1,18 +1,21 @@
+import { dataEntryHome } from "@/lib/navigation";
+
 export function getCategoryNavigation(categoryPath: string, viewEntryId?: string) {
   const isPreviewMode = Boolean(viewEntryId);
+  const dataEntryHref = dataEntryHome();
 
   return {
     isPreviewMode,
-    dataEntryHref: "/data-entry",
+    dataEntryHref,
     categoryHref: categoryPath,
-    backHref: isPreviewMode ? categoryPath : "/data-entry",
+    backHref: isPreviewMode ? categoryPath : dataEntryHref,
     backDisabled: false,
   };
 }
 
 export function getDataEntryNavigation() {
   return {
-    backHref: "/data-entry",
+    backHref: dataEntryHome(),
     backDisabled: true,
   };
 }
