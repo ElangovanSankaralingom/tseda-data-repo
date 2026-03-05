@@ -20,6 +20,7 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
+import { normalizeEntryStatus, type EntryStatus } from "@/lib/entryStateMachine";
 
 type FileMeta = {
   fileName: string;
@@ -33,6 +34,7 @@ type FileMeta = {
 type FdpAttended = {
   id: string;
   status: "draft" | "final";
+  confirmationStatus?: EntryStatus;
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
@@ -130,6 +132,7 @@ function normalizeEntry(value: unknown): FdpAttended | null {
   const normalized: FdpAttended = {
     id: String(record.id ?? "").trim(),
     status: normalizeStatus(record.status),
+    confirmationStatus: normalizeEntryStatus(record as Record<string, unknown>),
     requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
     requestEditRequestedAtISO:
       typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()

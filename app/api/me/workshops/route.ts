@@ -31,6 +31,7 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
+import { normalizeEntryStatus, type EntryStatus } from "@/lib/entryStateMachine";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import { safeEmailDir } from "@/lib/userStore";
 
@@ -67,6 +68,7 @@ type WorkshopEntry = {
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
   status?: "draft" | "final";
+  confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
@@ -248,6 +250,7 @@ function normalizeEntry(value: unknown): WorkshopEntry | null {
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
     sharedRole: record.sharedRole === "coCoordinator" ? "coCoordinator" : undefined,
     status: record.status === "final" ? "final" : "draft",
+    confirmationStatus: normalizeEntryStatus(record as Record<string, unknown>),
     requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
     requestEditRequestedAtISO:
       typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
