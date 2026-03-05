@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { ensureUserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -88,6 +89,35 @@ export async function getPendingConfirmations(): Promise<PendingConfirmationRow[
 }
 
 export async function getPendingConfirmationsCount() {
-  const rows = await getPendingConfirmations();
-  return rows.length;
+  const usersRoot = getUsersRootDir();
+  let total = 0;
+
+  try {
+    const userDirs = await fs.readdir(usersRoot, { withFileTypes: true });
+    for (const userDir of userDirs) {
+      if (!userDir.isDirectory()) continue;
+      const ownerEmail = normalizeEmail(userDir.name);
+      if (!ownerEmail.endsWith("@tce.edu")) continue;
+
+      const ensured = await ensureUserIndex(ownerEmail);
+      if (ensured.ok) {
+        total += ensured.data.countsByStatus.PENDING_CONFIRMATION ?? 0;
+        continue;
+      }
+
+      // Rare fallback path when index read/rebuild fails.
+      for (const categoryKey of CATEGORY_KEYS) {
+        const list = await listEntriesForCategory(ownerEmail, categoryKey);
+        for (const entry of list) {
+          if (getEntryWorkflowStatus(entry) === "PENDING_CONFIRMATION") {
+            total += 1;
+          }
+        }
+      }
+    }
+  } catch {
+    return 0;
+  }
+
+  return total;
 }
