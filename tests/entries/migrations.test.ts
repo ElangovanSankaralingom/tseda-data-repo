@@ -15,6 +15,9 @@ test("migrateEntry upgrades legacy entries to canonical format", () => {
   const legacy = {
     id: "legacy-1",
     finalised: true,
+    eventName: "  Legacy Event  ",
+    speakerName: "   ",
+    startDate: "2026-02-05T09:30:00.000Z",
     attachments: null,
     createdAt: "invalid-date",
   };
@@ -26,6 +29,9 @@ test("migrateEntry upgrades legacy entries to canonical format", () => {
   assert.equal(migrated.data.schemaVersion, ENTRY_SCHEMA_VERSION);
   assert.equal(migrated.data.status, "final");
   assert.equal(migrated.data.confirmationStatus, "APPROVED");
+  assert.equal(migrated.data.eventName, "Legacy Event");
+  assert.equal(migrated.data.speakerName, null);
+  assert.equal(migrated.data.startDate, "2026-02-05");
   assert.deepEqual(migrated.data.attachments, []);
   assert.equal(typeof migrated.data.createdAt, "string");
   assert.equal(typeof migrated.data.updatedAt, "string");

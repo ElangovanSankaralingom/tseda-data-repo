@@ -74,6 +74,32 @@ test("createEntry stores entry in DRAFT workflow state", async () => {
   });
 });
 
+test("entryEngine normalizes payload values on create and update", async () => {
+  await withSandbox("entry-engine-normalize", async () => {
+    const created = await createEntry(ownerEmail, category, {
+      eventName: "  Normalize Workshop  ",
+      speakerName: "   ",
+      startDate: "2026-03-10T09:00:00.000Z",
+    });
+
+    assert.equal(String(created.eventName ?? ""), "Normalize Workshop");
+    assert.equal(created.speakerName, null);
+    assert.equal(String(created.startDate ?? ""), "2026-03-10");
+    assert.deepEqual(created.attachments, []);
+
+    const updated = await updateEntry(ownerEmail, category, String(created.id), {
+      eventName: "\n Updated Workshop ",
+      organisationName: "   ",
+      endDate: new Date("2026-03-12T12:00:00.000Z"),
+    });
+
+    assert.equal(String(updated.eventName ?? ""), "Updated Workshop");
+    assert.equal(updated.organisationName, null);
+    assert.equal(String(updated.endDate ?? ""), "2026-03-12");
+    assert.deepEqual(updated.attachments, []);
+  });
+});
+
 test("sendForConfirmation then approve moves to APPROVED and locks entry", async () => {
   await withSandbox("entry-engine-approve", async () => {
     const created = await createEntry(ownerEmail, category, {

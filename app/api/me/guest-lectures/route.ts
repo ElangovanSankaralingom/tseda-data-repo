@@ -24,6 +24,7 @@ import {
   type Faculty,
 } from "@/lib/facultyDirectory";
 import { normalizeError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import {
   computeDueAtISO,
   isEntryEditable,
@@ -709,7 +710,16 @@ export async function POST(request: Request) {
           await writeList(target.email, [clonedEntry, ...targetList], email);
         }
       } catch (error) {
-        console.error("Guest lectures share failed", error);
+        const normalized = normalizeError(error);
+        logger.error(
+          {
+            event: "entry.share.failed",
+            category: "guest-lectures",
+            userEmail: email,
+            errorCode: normalized.code,
+          },
+          normalized.message
+        );
       }
     }
 
@@ -975,7 +985,16 @@ export async function PATCH(request: Request) {
           await writeList(target.email, [clonedEntry, ...targetList], email);
         }
       } catch (error) {
-        console.error("Guest lectures share failed", error);
+        const normalized = normalizeError(error);
+        logger.error(
+          {
+            event: "entry.share.failed",
+            category: "guest-lectures",
+            userEmail: email,
+            errorCode: normalized.code,
+          },
+          normalized.message
+        );
       }
     }
 

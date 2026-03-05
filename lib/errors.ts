@@ -102,19 +102,26 @@ export function toUserMessage(error: unknown): string {
 
 export function logError(error: unknown, context = "app"): AppError {
   const appError = normalizeError(error);
+  const details =
+    appError.details === undefined
+      ? undefined
+      : Array.isArray(appError.details)
+        ? { type: "array", count: appError.details.length }
+        : typeof appError.details === "object" && appError.details !== null
+          ? { type: "object", keys: Object.keys(appError.details as Record<string, unknown>).slice(0, 20) }
+          : appError.details;
+
   const payload = {
+    level: "error",
+    ts: new Date().toISOString(),
+    event: "app.error",
     context,
-    code: appError.code,
-    message: appError.message,
-    details: appError.details,
+    errorCode: appError.code,
+    msg: appError.message,
+    details,
   };
 
-  if (process.env.NODE_ENV !== "production") {
-    // Keep logs concise and structured for local debugging.
-    console.error("[app-error]", payload);
-  } else {
-    console.error(`[app-error] ${context}:${appError.code}`);
-  }
+  console.error(JSON.stringify(payload));
 
   return appError;
 }

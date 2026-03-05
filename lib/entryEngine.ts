@@ -29,10 +29,12 @@ import {
 } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeStreakState } from "@/lib/gamification";
+import { normalizeEntry, normalizePayload } from "@/lib/normalize";
 import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import type { Entry, EntryStatus as EntryWorkflowStatus } from "@/lib/types/entry";
+import { logger, withTimer } from "@/lib/logger";
 
 export type EntryEngineRecord = Entry;
 
@@ -200,14 +202,37 @@ async function refreshIndexForMutation(
   beforeEntry: EntryEngineRecord | null,
   afterEntry: EntryEngineRecord | null
 ) {
+  const startedAt = Date.now();
   const indexResult = await updateIndexForEntryMutation(userEmail, category, beforeEntry, afterEntry);
-  if (indexResult.ok) return;
+  if (indexResult.ok) {
+    logger.debug({
+      event: "entry.index.refresh.success",
+      userEmail,
+      category,
+      durationMs: Date.now() - startedAt,
+    });
+    return;
+  }
 
   logError(indexResult.error, "entryEngine.refreshIndexForMutation");
   const rebuildResult = await rebuildUserIndex(userEmail);
   if (!rebuildResult.ok) {
     logError(rebuildResult.error, "entryEngine.rebuildUserIndex");
+    logger.error({
+      event: "entry.index.refresh.rebuild-failed",
+      userEmail,
+      category,
+      errorCode: rebuildResult.error.code,
+      durationMs: Date.now() - startedAt,
+    });
+    return;
   }
+  logger.warn({
+    event: "entry.index.refresh.rebuilt",
+    userEmail,
+    category,
+    durationMs: Date.now() - startedAt,
+  });
 }
 
 function normalizeId(value: unknown) {
@@ -332,6 +357,13 @@ async function appendWalEventOrThrow(userEmail: string, event: ReturnType<typeof
   if (!walResult.ok) {
     throw walResult.error;
   }
+  logger.debug({
+    event: "entry.wal.append",
+    userEmail,
+    category: event.category,
+    entryId: event.entryId,
+    action: event.action,
+  });
 }
 
 async function appendWalEventsOrThrow(userEmail: string, events: Array<ReturnType<typeof buildEvent>>) {
@@ -340,9 +372,14 @@ async function appendWalEventsOrThrow(userEmail: string, events: Array<ReturnTyp
   if (!walResult.ok) {
     throw walResult.error;
   }
+  logger.debug({
+    event: "entry.wal.append.batch",
+    userEmail,
+    count: events.length,
+  });
 }
 
-function prepareEntryForWrite(entry: EntryLike, nowISO: string) {
+function prepareEntryForWrite(entry: EntryLike, nowISO: string, category: CategoryKey) {
   const existingStatus = getWorkflowStatus(entry);
   const base: EntryLike = {
     ...entry,
@@ -353,7 +390,7 @@ function prepareEntryForWrite(entry: EntryLike, nowISO: string) {
     updatedAt: nowISO,
     confirmationStatus: existingStatus,
   };
-  return base;
+  return normalizeEntry(base as Entry, ENTRY_SCHEMAS[category]) as EntryLike;
 }
 
 function throwPendingImmutableError(changedFields: string[]) {
@@ -392,6 +429,14 @@ export async function replaceEntriesForCategory(
   }
 ) {
   const normalizedOwner = normalizeEmail(userEmail);
+  const startedAt = Date.now();
+  logger.info({
+    event: "entry.mutation.start",
+    action: "replace",
+    userEmail: normalizedOwner,
+    category,
+    count: entries.length,
+  });
   enforceRateLimitOrThrow(
     `user:${normalizedOwner}:action:entry.replace.${category}`,
     RATE_LIMIT_PRESETS.entryMutations
@@ -404,13 +449,16 @@ export async function replaceEntriesForCategory(
   const actorEmail = getWalActorEmail(options?.actorEmail ?? normalizedOwner, normalizedOwner);
   const actorRole = options?.actorRole ?? "user";
   const currentList = await readListRaw(normalizedOwner, category);
+  const normalizedEntries = entries.map((entry) =>
+    normalizeEntry(entry as Entry, ENTRY_SCHEMAS[category]) as EntryEngineRecord
+  );
   const beforeById = new Map<string, EntryEngineRecord>();
   for (const currentEntry of currentList) {
     const currentId = normalizeId(currentEntry.id);
     if (!currentId) continue;
     beforeById.set(currentId, currentEntry);
   }
-  for (const nextEntry of entries) {
+  for (const nextEntry of normalizedEntries) {
     const nextId = normalizeId(nextEntry.id);
     if (!nextId) continue;
     const beforeEntry = beforeById.get(nextId);
@@ -431,16 +479,24 @@ export async function replaceEntriesForCategory(
     normalizedOwner,
     category,
     currentList,
-    entries
+    normalizedEntries
   );
   await appendWalEventsOrThrow(normalizedOwner, walEvents);
 
-  await writeListRaw(normalizedOwner, category, entries);
+  await writeListRaw(normalizedOwner, category, normalizedEntries);
   const rebuildResult = await rebuildUserIndex(normalizedOwner);
   if (!rebuildResult.ok) {
     logError(rebuildResult.error, "entryEngine.replaceEntriesForCategory.rebuildUserIndex");
   }
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "replace",
+    userEmail: normalizedOwner,
+    category,
+    count: normalizedEntries.length,
+    durationMs: Date.now() - startedAt,
+  });
 }
 
 export async function createEntry<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -449,7 +505,14 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
   payload: EntryEngineRecord
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
-  const nextPayload = ensureRecord(payload);
+  const startedAt = Date.now();
+  const nextPayload = normalizePayload(ensureRecord(payload), ENTRY_SCHEMAS[category]);
+  logger.info({
+    event: "entry.mutation.start",
+    action: "create",
+    userEmail: normalizedOwner,
+    category,
+  });
   enforceEntryMutationGuards(normalizedOwner, `entry.create.${category}`, nextPayload);
   validatePayload(category, nextPayload, "create");
 
@@ -473,7 +536,10 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
         : nowISO,
     updatedAt: nowISO,
   };
-  const entry = transitionEntry(base as WorkflowEntryLike, "createEntry", { nowISO }) as EntryLike;
+  const entry = normalizeEntry(
+    transitionEntry(base as WorkflowEntryLike, "createEntry", { nowISO }) as Entry,
+    ENTRY_SCHEMAS[category]
+  ) as EntryLike;
 
   await appendWalEventOrThrow(
     normalizedOwner,
@@ -494,6 +560,15 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
   });
   await refreshIndexForMutation(normalizedOwner, category, null, entry as EntryEngineRecord);
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "create",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+    status: String(entry.confirmationStatus ?? ""),
+    durationMs: Date.now() - startedAt,
+  });
   return entry as T;
 }
 
@@ -504,7 +579,15 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
   payload: EntryEngineRecord
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
-  const nextPayload = ensureRecord(payload);
+  const startedAt = Date.now();
+  const nextPayload = normalizePayload(ensureRecord(payload), ENTRY_SCHEMAS[category]);
+  logger.info({
+    event: "entry.mutation.start",
+    action: "update",
+    userEmail: normalizedOwner,
+    category,
+    entryId: normalizeId(entryId),
+  });
   enforceEntryMutationGuards(normalizedOwner, `entry.update.${category}`, nextPayload);
   validatePayload(category, nextPayload, "update");
 
@@ -536,7 +619,7 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
       : nowISO;
   next.updatedAt = nowISO;
   next.confirmationStatus = getWorkflowStatus(existing);
-  const updated = prepareEntryForWrite(next, nowISO);
+  const updated = prepareEntryForWrite(next, nowISO, category);
   const changedImmutableFields = getChangedImmutableFieldsWhenPending(category, existing, updated);
   if (changedImmutableFields.length > 0) {
     throwPendingImmutableError(changedImmutableFields);
@@ -564,6 +647,15 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
     updated as EntryEngineRecord
   );
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "update",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+    status: String(updated.confirmationStatus ?? ""),
+    durationMs: Date.now() - startedAt,
+  });
   return updated as T;
 }
 
@@ -574,6 +666,14 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const id = normalizeId(entryId);
+  const startedAt = Date.now();
+  logger.info({
+    event: "entry.mutation.start",
+    action: "commitDraft",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+  });
   enforceEntryMutationGuards(normalizedOwner, `entry.commit.${category}`, { entryId: id });
   if (!id) {
     throw new AppError({
@@ -607,7 +707,8 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       status: "final",
       committedAtISO: nowISO,
     },
-    nowISO
+    nowISO,
+    category
   );
 
   await appendWalEventOrThrow(
@@ -632,6 +733,15 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
     updated as EntryEngineRecord
   );
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "commitDraft",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+    status: String(updated.confirmationStatus ?? ""),
+    durationMs: Date.now() - startedAt,
+  });
   return updated as T;
 }
 
@@ -642,6 +752,14 @@ export async function deleteEntry(
 ) {
   const normalizedOwner = normalizeEmail(userEmail);
   const id = normalizeId(entryId);
+  const startedAt = Date.now();
+  logger.info({
+    event: "entry.mutation.start",
+    action: "delete",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+  });
   enforceEntryMutationGuards(normalizedOwner, `entry.delete.${category}`, { entryId: id });
   if (!id) {
     throw new Error("Entry ID is required");
@@ -669,6 +787,14 @@ export async function deleteEntry(
   await deleteEntryRaw(normalizedOwner, category, id);
   await refreshIndexForMutation(normalizedOwner, category, existing, null);
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "delete",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+    durationMs: Date.now() - startedAt,
+  });
   return existing;
 }
 
@@ -679,6 +805,14 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const id = normalizeId(entryId);
+  const startedAt = Date.now();
+  logger.info({
+    event: "entry.mutation.start",
+    action: "sendForConfirmation",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+  });
   enforceEntryMutationGuards(normalizedOwner, `entry.confirmation.send.${category}`, { entryId: id });
   const existingEntry = await readEntryRaw(normalizedOwner, category, id);
   if (!existingEntry) {
@@ -691,9 +825,12 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   }
 
   const nowISO = new Date().toISOString();
-  const updated = transitionEntry(existing as WorkflowEntryLike, "sendForConfirmation", {
-    nowISO,
-  }) as EntryLike;
+  const updated = normalizeEntry(
+    transitionEntry(existing as WorkflowEntryLike, "sendForConfirmation", {
+      nowISO,
+    }) as Entry,
+    ENTRY_SCHEMAS[category]
+  ) as EntryLike;
   await appendWalEventOrThrow(
     normalizedOwner,
     buildEvent({
@@ -716,6 +853,15 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
     updated as EntryEngineRecord
   );
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "sendForConfirmation",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+    status: String(updated.confirmationStatus ?? ""),
+    durationMs: Date.now() - startedAt,
+  });
   return updated as T;
 }
 
@@ -727,6 +873,15 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
 ): Promise<T> {
   const normalizedAdmin = normalizeEmail(adminEmail);
   const normalizedOwner = normalizeEmail(ownerEmail);
+  const startedAt = Date.now();
+  logger.info({
+    event: "entry.mutation.start",
+    action: "approve",
+    actorEmail: normalizedAdmin,
+    userEmail: normalizedOwner,
+    category,
+    entryId: normalizeId(entryId),
+  });
   if (!isMasterAdmin(normalizedAdmin)) {
     throw new Error("Forbidden");
   }
@@ -744,10 +899,13 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
   }
 
   const nowISO = new Date().toISOString();
-  const updated = transitionEntry(existing as WorkflowEntryLike, "adminApprove", {
-    nowISO,
-    adminEmail: normalizedAdmin,
-  }) as EntryLike;
+  const updated = normalizeEntry(
+    transitionEntry(existing as WorkflowEntryLike, "adminApprove", {
+      nowISO,
+      adminEmail: normalizedAdmin,
+    }) as Entry,
+    ENTRY_SCHEMAS[category]
+  ) as EntryLike;
   await appendWalEventOrThrow(
     normalizedOwner,
     buildEvent({
@@ -770,6 +928,16 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     updated as EntryEngineRecord
   );
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "approve",
+    actorEmail: normalizedAdmin,
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+    status: String(updated.confirmationStatus ?? ""),
+    durationMs: Date.now() - startedAt,
+  });
   return updated as T;
 }
 
@@ -782,6 +950,15 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
 ): Promise<T> {
   const normalizedAdmin = normalizeEmail(adminEmail);
   const normalizedOwner = normalizeEmail(ownerEmail);
+  const startedAt = Date.now();
+  logger.info({
+    event: "entry.mutation.start",
+    action: "reject",
+    actorEmail: normalizedAdmin,
+    userEmail: normalizedOwner,
+    category,
+    entryId: normalizeId(entryId),
+  });
   if (!isMasterAdmin(normalizedAdmin)) {
     throw new Error("Forbidden");
   }
@@ -800,11 +977,14 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
   }
 
   const nowISO = new Date().toISOString();
-  const updated = transitionEntry(existing as WorkflowEntryLike, "adminReject", {
-    nowISO,
-    adminEmail: normalizedAdmin,
-    rejectionReason: reason?.trim(),
-  }) as EntryLike;
+  const updated = normalizeEntry(
+    transitionEntry(existing as WorkflowEntryLike, "adminReject", {
+      nowISO,
+      adminEmail: normalizedAdmin,
+      rejectionReason: reason?.trim(),
+    }) as Entry,
+    ENTRY_SCHEMAS[category]
+  ) as EntryLike;
   await appendWalEventOrThrow(
     normalizedOwner,
     buildEvent({
@@ -828,12 +1008,23 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
     updated as EntryEngineRecord
   );
   revalidateDashboardSummary(normalizedOwner);
+  logger.info({
+    event: "entry.mutation.end",
+    action: "reject",
+    actorEmail: normalizedAdmin,
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+    status: String(updated.confirmationStatus ?? ""),
+    durationMs: Date.now() - startedAt,
+  });
   return updated as T;
 }
 
 export async function computeStreak(
   userEmail: string
 ): Promise<EntryStreakSummary> {
+  const normalizedOwner = normalizeEmail(userEmail);
   const summary: EntryStreakSummary = {
     activated: 0,
     completed: 0,
@@ -843,22 +1034,29 @@ export async function computeStreak(
     }, {} as EntryStreakSummary["byCategory"]),
   };
 
-  for (const category of CATEGORY_KEYS) {
-    const list = await readListRaw(userEmail, category);
-    for (const entry of list) {
-      const streak = normalizeStreakState((entry as EntryLike).streak);
-      if (streak.completedAtISO) {
-        summary.completed += 1;
-        summary.byCategory[category].completed += 1;
-        continue;
-      }
-      if (streak.activatedAtISO) {
-        summary.activated += 1;
-        summary.byCategory[category].activated += 1;
+  await withTimer("entry.streak.compute", async () => {
+    for (const category of CATEGORY_KEYS) {
+      const list = await readListRaw(normalizedOwner, category);
+      for (const entry of list) {
+        const streak = normalizeStreakState((entry as EntryLike).streak);
+        if (streak.completedAtISO) {
+          summary.completed += 1;
+          summary.byCategory[category].completed += 1;
+          continue;
+        }
+        if (streak.activatedAtISO) {
+          summary.activated += 1;
+          summary.byCategory[category].activated += 1;
+        }
       }
     }
-  }
-
+  }, { userEmail: normalizedOwner });
+  logger.info({
+    event: "entry.streak.summary",
+    userEmail: normalizedOwner,
+    activated: summary.activated,
+    completed: summary.completed,
+  });
   return summary;
 }
 
@@ -868,5 +1066,9 @@ export function getEntryWorkflowStatus(entry: EntryEngineRecord) {
 
 export function normalizeEntryForWorkflow(entry: EntryEngineRecord) {
   const nowISO = new Date().toISOString();
-  return prepareEntryForWrite(entry as EntryLike, nowISO) as EntryEngineRecord;
+  const category = String(entry.category ?? "").trim().toLowerCase() as CategoryKey;
+  if (CATEGORY_KEYS.includes(category)) {
+    return prepareEntryForWrite(entry as EntryLike, nowISO, category) as EntryEngineRecord;
+  }
+  return normalizeEntry(entry as Entry, undefined) as EntryEngineRecord;
 }

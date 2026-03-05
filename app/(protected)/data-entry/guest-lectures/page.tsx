@@ -8,7 +8,7 @@ import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
-import EntryPageHeader from "@/components/entry/EntryPageHeader";
+import EntryShell from "@/components/entry/EntryShell";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
@@ -1000,50 +1000,52 @@ export function GuestLecturesPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <EntryPageHeader
-        title="Guest Lectures"
-        subtitle="Record event details, student participation, and the required supporting documents."
-        isViewMode={isViewMode}
-        backHref={backHref}
-        backDisabled={backDisabled}
-        onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
-        actions={
-          showForm && !isViewMode ? (
-            <>
-              <MiniButton
-                role="context"
-                onClick={() => void closeForm()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads}
-              >
-                Cancel
-              </MiniButton>
-              <SaveButton
-                onClick={() => void saveDraftChanges()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
-              >
-                {saving ? "Saving..." : "Save"}
-              </SaveButton>
-              <MiniButton
-                onClick={() => void handleDone()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
-              >
-                {saving ? "Saving..." : "Done"}
-              </MiniButton>
-            </>
-          ) : !isViewMode ? (
+    <EntryShell
+      category="guest-lectures"
+      mode={isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview"}
+      entry={showForm ? (form as Record<string, unknown>) : null}
+      title="Guest Lectures"
+      subtitle="Record event details, student participation, and the required supporting documents."
+      status={showForm ? getEntryApprovalStatus(form) : undefined}
+      backHref={backHref}
+      backDisabled={backDisabled}
+      onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
+      actions={
+        showForm && !isViewMode ? (
+          <>
             <MiniButton
-              onClick={() => {
-                resetForm();
-                router.push(entryNew("guest-lectures"), { scroll: false });
-              }}
-              disabled={loading}
+              role="context"
+              onClick={() => void closeForm()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads}
             >
-              + Add Guest Lecture
+              Cancel
             </MiniButton>
-          ) : null
-        }
-      />
+            <SaveButton
+              onClick={() => void saveDraftChanges()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+            >
+              {saving ? "Saving..." : "Save"}
+            </SaveButton>
+            <MiniButton
+              onClick={() => void handleDone()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
+            >
+              {saving ? "Saving..." : "Done"}
+            </MiniButton>
+          </>
+        ) : !isViewMode ? (
+          <MiniButton
+            onClick={() => {
+              resetForm();
+              router.push(entryNew("guest-lectures"), { scroll: false });
+            }}
+            disabled={loading}
+          >
+            + Add Guest Lecture
+          </MiniButton>
+        ) : null
+      }
+    >
 
       {toast ? (
         <div
@@ -1419,7 +1421,7 @@ export function GuestLecturesPage({
           </SectionCard>
         ) : null}
       </div>
-    </div>
+    </EntryShell>
   );
 }
 

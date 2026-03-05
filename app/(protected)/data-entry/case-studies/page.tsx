@@ -9,7 +9,7 @@ import DateField from "@/components/controls/DateField";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
-import EntryPageHeader from "@/components/entry/EntryPageHeader";
+import EntryShell from "@/components/entry/EntryShell";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
@@ -1110,50 +1110,52 @@ export function CaseStudiesPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <EntryPageHeader
-        title="Case Studies"
-        subtitle="Record case study visits with academic context, staff involvement, dates, and the required supporting documents."
-        isViewMode={isViewMode}
-        backHref={backHref}
-        backDisabled={backDisabled}
-        onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
-        actions={
-          showForm && !isViewMode ? (
-            <>
-              <MiniButton
-                role="context"
-                onClick={() => void closeForm()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads}
-              >
-                Cancel
-              </MiniButton>
-              <SaveButton
-                onClick={() => void saveDraftChanges()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
-              >
-                {saving ? "Saving..." : "Save"}
-              </SaveButton>
-              <MiniButton
-                onClick={() => void handleDone()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
-              >
-                {saving ? "Saving..." : "Done"}
-              </MiniButton>
-            </>
-          ) : !isViewMode ? (
+    <EntryShell
+      category="case-studies"
+      mode={isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview"}
+      entry={showForm ? (form as Record<string, unknown>) : null}
+      title="Case Studies"
+      subtitle="Record case study visits with academic context, staff involvement, dates, and the required supporting documents."
+      status={showForm ? getEntryApprovalStatus(form) : undefined}
+      backHref={backHref}
+      backDisabled={backDisabled}
+      onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
+      actions={
+        showForm && !isViewMode ? (
+          <>
             <MiniButton
-              onClick={() => {
-                resetForm();
-                router.push(entryNew("case-studies"), { scroll: false });
-              }}
-              disabled={loading}
+              role="context"
+              onClick={() => void closeForm()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads}
             >
-              + Add Case Study
+              Cancel
             </MiniButton>
-          ) : null
-        }
-      />
+            <SaveButton
+              onClick={() => void saveDraftChanges()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+            >
+              {saving ? "Saving..." : "Save"}
+            </SaveButton>
+            <MiniButton
+              onClick={() => void handleDone()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
+            >
+              {saving ? "Saving..." : "Done"}
+            </MiniButton>
+          </>
+        ) : !isViewMode ? (
+          <MiniButton
+            onClick={() => {
+              resetForm();
+              router.push(entryNew("case-studies"), { scroll: false });
+            }}
+            disabled={loading}
+          >
+            + Add Case Study
+          </MiniButton>
+        ) : null
+      }
+    >
 
       {toast ? (
         <div
@@ -1512,7 +1514,7 @@ export function CaseStudiesPage({
           </SectionCard>
         ) : null}
       </div>
-    </div>
+    </EntryShell>
   );
 }
 

@@ -7,6 +7,7 @@ import type { WalAction, WalActorRole, WalEvent } from "@/lib/data/wal";
 import { normalizeEntryStatus } from "@/lib/entryStateMachine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
@@ -203,6 +204,7 @@ export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Pr
     const limit = Number.isFinite(options.limit)
       ? Math.max(1, Math.min(500, Number(options.limit)))
       : 100;
+    const startedAt = Date.now();
 
     const ownerFilter = toLowerTrimmed(options.userEmail);
     const actionFilter = options.action;
@@ -275,10 +277,22 @@ export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Pr
 
     parsedEvents.sort((left, right) => right.eventTimeMs - left.eventTimeMs);
 
-    if (skippedLines > 0 && process.env.NODE_ENV !== "production") {
-      console.warn(`[admin-audit] skipped ${skippedLines} invalid WAL lines`);
+    if (skippedLines > 0) {
+      logger.warn({
+        event: "admin.audit.invalid-wal-lines",
+        count: skippedLines,
+      });
     }
-
-    return parsedEvents.slice(0, limit).map((item) => item.event);
+    const events = parsedEvents.slice(0, limit).map((item) => item.event);
+    logger.info({
+      event: "admin.audit.query",
+      count: events.length,
+      limit,
+      durationMs: Date.now() - startedAt,
+      ownerFilter: ownerFilter || undefined,
+      category: categoryFilter ?? undefined,
+      action: actionFilter ?? undefined,
+    });
+    return events;
   }, { context: "admin.audit.getRecentAuditEvents" });
 }

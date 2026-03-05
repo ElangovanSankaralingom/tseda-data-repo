@@ -24,6 +24,7 @@ import {
   type Faculty,
 } from "@/lib/facultyDirectory";
 import { normalizeError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import {
   computeDueAtISO,
   isEntryEditable,
@@ -703,7 +704,16 @@ export async function POST(request: Request) {
       try {
         await upsertSharedTargets(persisted, email, now);
       } catch (error) {
-        console.error("Case studies share failed", error);
+        const normalized = normalizeError(error);
+        logger.error(
+          {
+            event: "entry.share.failed",
+            category: "case-studies",
+            userEmail: email,
+            errorCode: normalized.code,
+          },
+          normalized.message
+        );
       }
     }
 
@@ -906,7 +916,16 @@ export async function PATCH(request: Request) {
       try {
         await upsertSharedTargets(persisted, email, now);
       } catch (error) {
-        console.error("Case studies share failed", error);
+        const normalized = normalizeError(error);
+        logger.error(
+          {
+            event: "entry.share.failed",
+            category: "case-studies",
+            userEmail: email,
+            errorCode: normalized.code,
+          },
+          normalized.message
+        );
       }
     }
 

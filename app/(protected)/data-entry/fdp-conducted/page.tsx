@@ -8,7 +8,7 @@ import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import { EntryHeaderActionsBar, EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
-import EntryPageHeader from "@/components/entry/EntryPageHeader";
+import EntryShell from "@/components/entry/EntryShell";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import UploadField from "@/components/entry/UploadField";
 import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldMulti";
@@ -881,36 +881,38 @@ export function FdpConductedPage({
   });
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <EntryPageHeader
-        title="FDP — Conducted"
-        subtitle="Record FDPs conducted with duration and the required supporting documents."
-        isViewMode={isViewMode}
-        backHref={backHref}
-        backDisabled={backDisabled}
-        onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
-        actions={
-          <EntryHeaderActionsBar
-            isEditing={showForm}
-            isViewMode={isViewMode}
-            loading={loading}
-            onAdd={() => {
-              resetForm();
-              setFormOpen(true);
-              router.push(entryNew("fdp-conducted"), { scroll: false });
-            }}
-            addLabel="+ Add FDP Entry"
-            onCancel={() => void handleCancel()}
-            cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
-            onSave={() => void saveDraftChanges()}
-            saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
-            onDone={() => void handleDone()}
-            doneDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
-            saving={saving}
-            saveIntent={saveIntent}
-          />
-        }
-      />
+    <EntryShell
+      category="fdp-conducted"
+      mode={isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview"}
+      entry={showForm ? (form as Record<string, unknown>) : null}
+      title="FDP — Conducted"
+      subtitle="Record FDPs conducted with duration and the required supporting documents."
+      status={showForm ? getEntryApprovalStatus(form) : undefined}
+      backHref={backHref}
+      backDisabled={backDisabled}
+      onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
+      actions={
+        <EntryHeaderActionsBar
+          isEditing={showForm}
+          isViewMode={isViewMode}
+          loading={loading}
+          onAdd={() => {
+            resetForm();
+            setFormOpen(true);
+            router.push(entryNew("fdp-conducted"), { scroll: false });
+          }}
+          addLabel="+ Add FDP Entry"
+          onCancel={() => void handleCancel()}
+          cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          onSave={() => void saveDraftChanges()}
+          saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+          onDone={() => void handleDone()}
+          doneDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
+          saving={saving}
+          saveIntent={saveIntent}
+        />
+      }
+    >
 
       {toast ? (
         <div
@@ -1452,7 +1454,7 @@ export function FdpConductedPage({
           </SectionCard>
         ) : null}
       </div>
-    </div>
+    </EntryShell>
   );
 }
 

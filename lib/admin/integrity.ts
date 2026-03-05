@@ -26,6 +26,7 @@ import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import type { Entry, EntryStatus, UploadedFile } from "@/lib/types/entry";
 import { getUserCategoryStoreFile, getUsersRootDir, getUserStoreDir } from "@/lib/userStore";
+import { logger, withTimer } from "@/lib/logger";
 
 type IssueSeverity = "info" | "warn" | "error";
 
@@ -920,6 +921,11 @@ async function checkUserIntegrityInternal(userEmail: string): Promise<IntegrityR
       message: "Invalid user email for integrity checks.",
     });
   }
+  const startedAt = Date.now();
+  logger.debug({
+    event: "admin.integrity.user.check.start",
+    userEmail: normalizedUserEmail,
+  });
 
   const perCategory = {} as Record<CategoryKey, CategoryIntegrityReport>;
   const categoryStats = {} as Record<CategoryKey, CategoryDerivedStats>;
@@ -937,7 +943,7 @@ async function checkUserIntegrityInternal(userEmail: string): Promise<IntegrityR
   const walReport = await checkWalIntegrity(normalizedUserEmail);
   allIssues.push(...indexReport.issues, ...walReport.issues);
 
-  return {
+  const report = {
     userEmail: normalizedUserEmail,
     checkedAtISO: new Date().toISOString(),
     perCategory,
@@ -945,6 +951,13 @@ async function checkUserIntegrityInternal(userEmail: string): Promise<IntegrityR
     walReport,
     issues: allIssues,
   };
+  logger.info({
+    event: "admin.integrity.user.check.end",
+    userEmail: normalizedUserEmail,
+    count: report.issues.length,
+    durationMs: Date.now() - startedAt,
+  });
+  return report;
 }
 
 function toSummary(report: IntegrityReport): IntegritySummary {
@@ -1044,116 +1057,133 @@ async function repairCategoryStoreInternal(
   category: CategoryKey,
   options?: { backup?: boolean }
 ): Promise<RepairResult> {
-  const normalizedUserEmail = normalizeEmail(userEmail);
-  const nowISO = new Date().toISOString();
-  const filePath = getUserCategoryStoreFile(normalizedUserEmail, CATEGORY_STORE_FILES[category]);
-  const read = await readJsonFileDetailed(filePath);
-  const raw = read.parseError ? [] : read.parsed;
-  const migrated = migrateCategoryStore(raw);
-  if (!migrated.ok) {
-    throw migrated.error;
-  }
-
-  const store = migrated.data;
-  const fixedIssues = new Array<string>();
-  const backupsCreated = new Array<string>();
-  const filesTouched = new Array<string>();
-
-  const seen = new Set<string>();
-  const nextOrder = new Array<string>();
-  const duplicatesRemoved = new Set<string>();
-  const orphansRemoved = new Set<string>();
-
-  for (const rawId of store.order) {
-    const id = normalizeId(rawId);
-    if (!id) continue;
-    if (!store.byId[id]) {
-      orphansRemoved.add(id);
-      continue;
-    }
-    if (seen.has(id)) {
-      duplicatesRemoved.add(id);
-      continue;
-    }
-    seen.add(id);
-    nextOrder.push(id);
-  }
-
-  if (duplicatesRemoved.size > 0) {
-    fixedIssues.push(`Removed duplicate IDs from order: ${[...duplicatesRemoved].join(", ")}.`);
-  }
-  if (orphansRemoved.size > 0) {
-    fixedIssues.push(`Removed orphan IDs from order: ${[...orphansRemoved].join(", ")}.`);
-  }
-
-  const nextById: Record<string, Entry> = {};
-  const removedInvalid = new Array<string>();
-  for (const id of nextOrder) {
-    const rawEntry = store.byId[id];
-    const normalized = normalizeEntryForRepair(rawEntry, id, category, normalizedUserEmail, nowISO);
-    fixedIssues.push(...normalized.fixed);
-    if (!normalized.entry) {
-      removedInvalid.push(id);
-      continue;
-    }
-    nextById[id] = normalized.entry;
-  }
-
-  if (removedInvalid.length > 0) {
-    fixedIssues.push(`Dropped invalid entries: ${removedInvalid.join(", ")}.`);
-  }
-
-  for (const rawKey of Object.keys(store.byId)) {
-    const id = normalizeId(rawKey);
-    if (!id) continue;
-    if (nextById[id]) continue;
-
-    const normalized = normalizeEntryForRepair(store.byId[id], id, category, normalizedUserEmail, nowISO);
-    fixedIssues.push(...normalized.fixed);
-    if (!normalized.entry) {
-      continue;
-    }
-    nextById[id] = normalized.entry;
-    nextOrder.push(id);
-    fixedIssues.push(`Added missing order ID: ${id}.`);
-  }
-
-  const dedupedOrder = new Array<string>();
-  const seenOrder = new Set<string>();
-  for (const id of nextOrder) {
-    if (!nextById[id]) continue;
-    if (seenOrder.has(id)) continue;
-    seenOrder.add(id);
-    dedupedOrder.push(id);
-  }
-
-  const repairedStore = {
-    version: CATEGORY_STORE_SCHEMA_VERSION,
-    byId: nextById,
-    order: dedupedOrder,
-  };
-
-  const previousComparable = read.exists && !read.parseError ? read.parsed : null;
-  const changed = JSON.stringify(previousComparable) !== JSON.stringify(repairedStore);
-  if (changed || !read.exists) {
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    if (options?.backup !== false && read.exists) {
-      const backupPath = await createBackup(filePath);
-      if (backupPath) {
-        backupsCreated.push(backupPath);
+  return withTimer(
+    "admin.integrity.repair.category",
+    async () => {
+      const normalizedUserEmail = normalizeEmail(userEmail);
+      const nowISO = new Date().toISOString();
+      const filePath = getUserCategoryStoreFile(normalizedUserEmail, CATEGORY_STORE_FILES[category]);
+      const read = await readJsonFileDetailed(filePath);
+      const raw = read.parseError ? [] : read.parsed;
+      const migrated = migrateCategoryStore(raw);
+      if (!migrated.ok) {
+        throw migrated.error;
       }
-    }
-    await fs.writeFile(filePath, JSON.stringify(repairedStore, null, 2), "utf8");
-    filesTouched.push(filePath);
-  }
 
-  return {
-    userEmail: normalizedUserEmail,
-    category,
-    fixedIssues,
-    backupsCreated,
-    filesTouched,
-  };
+      const store = migrated.data;
+      const fixedIssues = new Array<string>();
+      const backupsCreated = new Array<string>();
+      const filesTouched = new Array<string>();
+
+      const seen = new Set<string>();
+      const nextOrder = new Array<string>();
+      const duplicatesRemoved = new Set<string>();
+      const orphansRemoved = new Set<string>();
+
+      for (const rawId of store.order) {
+        const id = normalizeId(rawId);
+        if (!id) continue;
+        if (!store.byId[id]) {
+          orphansRemoved.add(id);
+          continue;
+        }
+        if (seen.has(id)) {
+          duplicatesRemoved.add(id);
+          continue;
+        }
+        seen.add(id);
+        nextOrder.push(id);
+      }
+
+      if (duplicatesRemoved.size > 0) {
+        fixedIssues.push(`Removed duplicate IDs from order: ${[...duplicatesRemoved].join(", ")}.`);
+      }
+      if (orphansRemoved.size > 0) {
+        fixedIssues.push(`Removed orphan IDs from order: ${[...orphansRemoved].join(", ")}.`);
+      }
+
+      const nextById: Record<string, Entry> = {};
+      const removedInvalid = new Array<string>();
+      for (const id of nextOrder) {
+        const rawEntry = store.byId[id];
+        const normalized = normalizeEntryForRepair(rawEntry, id, category, normalizedUserEmail, nowISO);
+        fixedIssues.push(...normalized.fixed);
+        if (!normalized.entry) {
+          removedInvalid.push(id);
+          continue;
+        }
+        nextById[id] = normalized.entry;
+      }
+
+      if (removedInvalid.length > 0) {
+        fixedIssues.push(`Dropped invalid entries: ${removedInvalid.join(", ")}.`);
+      }
+
+      for (const rawKey of Object.keys(store.byId)) {
+        const id = normalizeId(rawKey);
+        if (!id) continue;
+        if (nextById[id]) continue;
+
+        const normalized = normalizeEntryForRepair(store.byId[id], id, category, normalizedUserEmail, nowISO);
+        fixedIssues.push(...normalized.fixed);
+        if (!normalized.entry) {
+          continue;
+        }
+        nextById[id] = normalized.entry;
+        nextOrder.push(id);
+        fixedIssues.push(`Added missing order ID: ${id}.`);
+      }
+
+      const dedupedOrder = new Array<string>();
+      const seenOrder = new Set<string>();
+      for (const id of nextOrder) {
+        if (!nextById[id]) continue;
+        if (seenOrder.has(id)) continue;
+        seenOrder.add(id);
+        dedupedOrder.push(id);
+      }
+
+      const repairedStore = {
+        version: CATEGORY_STORE_SCHEMA_VERSION,
+        byId: nextById,
+        order: dedupedOrder,
+      };
+
+      const previousComparable = read.exists && !read.parseError ? read.parsed : null;
+      const changed = JSON.stringify(previousComparable) !== JSON.stringify(repairedStore);
+      if (changed || !read.exists) {
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        if (options?.backup !== false && read.exists) {
+          const backupPath = await createBackup(filePath);
+          if (backupPath) {
+            backupsCreated.push(backupPath);
+          }
+        }
+        await fs.writeFile(filePath, JSON.stringify(repairedStore, null, 2), "utf8");
+        filesTouched.push(filePath);
+      }
+
+      logger.info({
+        event: "admin.integrity.repair.category.result",
+        userEmail: normalizedUserEmail,
+        category,
+        count: fixedIssues.length,
+        filesTouched: filesTouched.length,
+      });
+
+      return {
+        userEmail: normalizedUserEmail,
+        category,
+        fixedIssues,
+        backupsCreated,
+        filesTouched,
+      };
+    },
+    {
+      userEmail: normalizeEmail(userEmail),
+      category,
+    }
+  );
 }
 
 export async function listUsers(): Promise<Result<string[]>> {
@@ -1168,11 +1198,16 @@ export async function listUsers(): Promise<Result<string[]>> {
       throw error;
     }
 
-    return entries
+    const users = entries
       .filter((entry) => entry.isDirectory())
       .map((entry) => normalizeEmail(entry.name))
       .filter((email) => email.endsWith("@tce.edu"))
       .sort((left, right) => left.localeCompare(right));
+    logger.info({
+      event: "admin.integrity.users.list",
+      count: users.length,
+    });
+    return users;
   }, { context: "admin.integrity.listUsers" });
 }
 
@@ -1185,6 +1220,7 @@ export async function checkUserIntegrity(userEmail: string): Promise<Result<Inte
 
 export async function checkAllUsersIntegrity(): Promise<Result<IntegritySummary[]>> {
   return safeAction(async () => {
+    const startedAt = Date.now();
     const usersResult = await listUsers();
     if (!usersResult.ok) {
       throw usersResult.error;
@@ -1210,12 +1246,18 @@ export async function checkAllUsersIntegrity(): Promise<Result<IntegritySummary[
       summaries.push(toSummary(reportResult.data));
     }
 
-    return summaries.sort((left, right) => {
+    const sorted = summaries.sort((left, right) => {
       if (left.checkFailed !== right.checkFailed) return left.checkFailed ? -1 : 1;
       if (left.errorCount !== right.errorCount) return right.errorCount - left.errorCount;
       if (left.warnCount !== right.warnCount) return right.warnCount - left.warnCount;
       return left.userEmail.localeCompare(right.userEmail);
     });
+    logger.info({
+      event: "admin.integrity.all-users.check",
+      count: sorted.length,
+      durationMs: Date.now() - startedAt,
+    });
+    return sorted;
   }, { context: "admin.integrity.checkAllUsersIntegrity" });
 }
 
@@ -1245,11 +1287,19 @@ export async function rebuildUserIndex(userEmail: string): Promise<Result<UserIn
 
     const rebuiltFromStore = await rebuildUserIndexFromStore(normalizedUserEmail);
     if (rebuiltFromStore.ok) {
+      logger.info({
+        event: "admin.integrity.index.rebuild.from-store",
+        userEmail: normalizedUserEmail,
+      });
       return rebuiltFromStore.data;
     }
 
     const rebuiltFromWal = await rebuildUserIndexFromWal(normalizedUserEmail);
     if (rebuiltFromWal.ok) {
+      logger.warn({
+        event: "admin.integrity.index.rebuild.from-wal",
+        userEmail: normalizedUserEmail,
+      });
       return rebuiltFromWal.data;
     }
 
@@ -1259,6 +1309,7 @@ export async function rebuildUserIndex(userEmail: string): Promise<Result<UserIn
 
 export async function migrateUserData(userEmail: string): Promise<Result<MigrationResult>> {
   return safeAction(async () => {
+    const startedAt = Date.now();
     const normalizedUserEmail = normalizeEmail(userEmail);
     if (!normalizedUserEmail.endsWith("@tce.edu")) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid user email." });
@@ -1302,12 +1353,20 @@ export async function migrateUserData(userEmail: string): Promise<Result<Migrati
       }
     }
 
-    return {
+    const result = {
       userEmail: normalizedUserEmail,
       categories,
       indexMigrated,
       backupsCreated,
       filesTouched,
     };
+    logger.info({
+      event: "admin.integrity.migrate-user",
+      userEmail: normalizedUserEmail,
+      count: result.filesTouched.length,
+      backups: result.backupsCreated.length,
+      durationMs: Date.now() - startedAt,
+    });
+    return result;
   }, { context: "admin.integrity.migrateUserData" });
 }
