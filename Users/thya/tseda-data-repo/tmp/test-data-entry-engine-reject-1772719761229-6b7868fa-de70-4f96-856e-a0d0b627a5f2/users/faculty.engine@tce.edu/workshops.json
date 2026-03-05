@@ -1,0 +1,15 @@
+[
+  {
+    "eventName": "Reject Workshop",
+    "status": "final",
+    "id": "ef4e89c2-871f-406c-964d-15d219aa93ff",
+    "createdAt": "2026-03-05T14:09:21.229Z",
+    "updatedAt": "2026-03-05T14:09:21.235Z",
+    "confirmationStatus": "REJECTED",
+    "sentForConfirmationAtISO": "2026-03-05T14:09:21.234Z",
+    "confirmedAtISO": null,
+    "confirmedBy": null,
+    "confirmationRejectedReason": "Need corrections",
+    "attachments": []
+  }
+]

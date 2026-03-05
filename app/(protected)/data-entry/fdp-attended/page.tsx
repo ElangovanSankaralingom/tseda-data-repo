@@ -28,6 +28,7 @@ import {
 } from "@/lib/gamification";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
+import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
@@ -36,6 +37,12 @@ import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { entryDetail, entryList, entryNew } from "@/lib/navigation";
+import { canEditField } from "@/lib/pendingImmutability";
+import {
+  createOptimisticSnapshot,
+  optimisticRemove,
+  optimisticUpsert,
+} from "@/lib/ui/optimistic";
 import { uploadFile } from "@/lib/upload/uploadService";
 
 type FileMeta = {
@@ -292,6 +299,10 @@ export function FdpAttendedPage({
     category: "fdp-attended",
     hydrateEntry: (entry) => entry,
   });
+  const commitDraftEntry = useCommitDraft<FdpAttended>({
+    category: "fdp-attended",
+    hydrateEntry: (entry) => entry,
+  });
   const viewedEntry = useMemo(
     () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
     [activeEntryId, list]
@@ -372,6 +383,9 @@ export function FdpAttendedPage({
   }, [form]);
 
   const controlsDisabled = isViewMode || isEntryLockedFromStatus(form);
+  const pendingCoreLocked = getEntryApprovalStatus(form) === "PENDING_CONFIRMATION";
+  const coreFieldDisabled = (fieldKey: string) =>
+    controlsDisabled || !canEditField(form, "fdp-attended", fieldKey);
   const permissionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
     upload: (file, onProgress) =>
@@ -595,6 +609,8 @@ export function FdpAttendedPage({
     if (intent === "save" && !lifecycle.canSave) return;
     if (intent === "done" && !lifecycle.canDone) return;
     saveLockRef.current = true;
+    let rollbackSnapshot: FdpAttended[] | null = null;
+    let lastPersistedEntry: FdpAttended | null = null;
 
     try {
       if (hasBusyUploads) {
@@ -605,23 +621,49 @@ export function FdpAttendedPage({
 
       setSaving(true);
       setSaveIntent(intent);
-      const persisted = await persistProgress({
+      const entryToSave: FdpAttended = {
         ...form,
-        status: intent === "done" || form.status === "final" ? "final" : "draft",
+        status: form.status === "final" ? "final" : "draft",
+      };
+      const optimisticEntry: FdpAttended = {
+        ...entryToSave,
+        updatedAt: new Date().toISOString(),
+      };
+      setList((current) => {
+        rollbackSnapshot = createOptimisticSnapshot(current);
+        return optimisticUpsert(current, optimisticEntry);
       });
-      setEditorSeed(persisted);
-      editorActions.saveDraft(persisted);
+
+      const persisted = await persistProgress(entryToSave);
+      lastPersistedEntry = persisted;
+      setList((current) => optimisticUpsert(current, persisted));
+
+      const finalEntry: FdpAttended =
+        intent === "done" ? await commitDraftEntry(String(persisted.id)) : persisted;
+      if (intent === "done") {
+        lastPersistedEntry = finalEntry;
+        setList((current) => optimisticUpsert<FdpAttended>(current, finalEntry));
+      }
+
+      setEditorSeed(finalEntry);
+      editorActions.saveDraft(finalEntry);
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
-      await refreshList();
+      void refreshList();
       if (options?.closeAfterSave) {
         closeForm();
-        setToast({ type: "ok", msg: "Saved" });
+        setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
       } else {
-        setToast({ type: "ok", msg: "Saved" });
+        setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
       }
       setTimeout(() => setToast(null), 1400);
     } catch (error) {
+      const persistedEntry = lastPersistedEntry;
+      if (persistedEntry) {
+        setList((current) => optimisticUpsert<FdpAttended>(current, persistedEntry));
+      } else if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Save failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
@@ -685,6 +727,12 @@ export function FdpAttendedPage({
   }
 
   async function deleteEntry(id: string) {
+    let rollbackSnapshot: FdpAttended[] | null = null;
+    setList((current) => {
+      rollbackSnapshot = createOptimisticSnapshot(current);
+      return optimisticRemove(current, id);
+    });
+
     try {
       const response = await fetch("/api/me/fdp-attended", {
         method: "DELETE",
@@ -696,13 +744,17 @@ export function FdpAttendedPage({
         throw new Error(payload?.error || "Delete failed.");
       }
 
-      setList((current) => current.filter((item) => item.id !== id));
+      setList((current) => optimisticRemove(current, id));
+      void refreshList();
       if (activeEntryId === id) {
         closeForm();
       }
       setToast({ type: "ok", msg: "Entry deleted." });
       setTimeout(() => setToast(null), 1200);
     } catch (error) {
+      if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Delete failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1500);
@@ -816,6 +868,11 @@ export function FdpAttendedPage({
             title={isViewMode ? "FDP Entry" : "New FDP Entry"}
             subtitle="Add the entry details and upload the required documents."
           >
+            {pendingCoreLocked ? (
+              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Pending confirmation — core fields cannot be edited.
+              </p>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
                 <SelectDropdown
@@ -823,7 +880,7 @@ export function FdpAttendedPage({
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("academicYear")}
                   error={submitted && !!errors.academicYear}
                 />
               </Field>
@@ -834,7 +891,7 @@ export function FdpAttendedPage({
                   onChange={(value) => setForm((current) => ({ ...current, semesterType: value }))}
                   options={SEMESTER_TYPE_DROPDOWN_OPTIONS}
                   placeholder="Select semester type"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("semesterType")}
                   error={submitted && !!errors.semesterType}
                 />
               </Field>
@@ -843,7 +900,7 @@ export function FdpAttendedPage({
                 <DateField
                   value={form.startDate}
                   onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("startDate")}
                   error={submitted && !!errors.startDate}
                 />
               </Field>
@@ -856,7 +913,7 @@ export function FdpAttendedPage({
                 <DateField
                   value={form.endDate}
                   onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("endDate")}
                   error={submitted && !!errors.endDate}
                 />
               </Field>
@@ -871,11 +928,11 @@ export function FdpAttendedPage({
                 <input
                   value={form.programName}
                   onChange={(event) => setForm((current) => ({ ...current, programName: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("programName")}
                   className={cx(
                     "w-full rounded-lg border px-3 py-2 text-sm",
                     submitted && errors.programName ? "border-red-300" : "border-border",
-                    controlsDisabled && "cursor-not-allowed opacity-60"
+                    coreFieldDisabled("programName") && "cursor-not-allowed opacity-60"
                   )}
                 />
               </Field>
@@ -884,11 +941,11 @@ export function FdpAttendedPage({
                 <input
                   value={form.organisingBody}
                   onChange={(event) => setForm((current) => ({ ...current, organisingBody: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("organisingBody")}
                   className={cx(
                     "w-full rounded-lg border px-3 py-2 text-sm",
                     submitted && errors.organisingBody ? "border-red-300" : "border-border",
-                    controlsDisabled && "cursor-not-allowed opacity-60"
+                    coreFieldDisabled("organisingBody") && "cursor-not-allowed opacity-60"
                   )}
                 />
               </Field>
@@ -906,7 +963,7 @@ export function FdpAttendedPage({
                       supportAmount: value === "" ? null : Number(value),
                     }))
                   }
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("supportAmount")}
                   error={submitted && !!errors.supportAmount}
                   placeholder="15000"
                 />

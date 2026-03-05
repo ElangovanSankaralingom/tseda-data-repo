@@ -21,6 +21,32 @@ const fields = [
 export const workshopsSchema: EntrySchema = {
   category: "workshops",
   fields,
+  immutableWhenPending: [
+    "academicYear",
+    "semesterType",
+    "startDate",
+    "endDate",
+    "eventName",
+    "speakerName",
+    "organisationName",
+    "coordinator",
+    "coCoordinators",
+    "participants",
+  ],
+  requiredForCommit: [
+    "academicYear",
+    "semesterType",
+    "startDate",
+    "endDate",
+    "eventName",
+    "speakerName",
+    "organisationName",
+    "uploads.permissionLetter",
+    "uploads.brochure",
+    "uploads.attendance",
+    "uploads.organiserProfile",
+    "uploads.geotaggedPhotos",
+  ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);
   },

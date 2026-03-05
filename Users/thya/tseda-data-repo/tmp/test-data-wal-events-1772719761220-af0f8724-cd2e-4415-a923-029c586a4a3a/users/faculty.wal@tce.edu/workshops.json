@@ -1,0 +1,15 @@
+[
+  {
+    "eventName": "WAL Workshop Updated",
+    "status": "final",
+    "id": "42ad6bcc-680d-4a48-912b-aca7ce3b747a",
+    "createdAt": "2026-03-05T14:09:21.221Z",
+    "updatedAt": "2026-03-05T14:09:21.232Z",
+    "confirmationStatus": "APPROVED",
+    "sentForConfirmationAtISO": "2026-03-05T14:09:21.231Z",
+    "confirmedAtISO": "2026-03-05T14:09:21.232Z",
+    "confirmedBy": "senarch@tce.edu",
+    "confirmationRejectedReason": "",
+    "attachments": []
+  }
+]

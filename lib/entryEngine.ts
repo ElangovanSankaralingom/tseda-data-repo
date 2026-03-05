@@ -13,7 +13,7 @@ import {
 } from "@/lib/data/wal";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { CategoryKey } from "@/lib/entries/types";
-import { logError } from "@/lib/errors";
+import { AppError, logError } from "@/lib/errors";
 import {
   isEntryLocked,
   normalizeEntryStatus,
@@ -22,6 +22,7 @@ import {
 } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeStreakState } from "@/lib/gamification";
+import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
 import type { Entry, EntryStatus as EntryWorkflowStatus } from "@/lib/types/entry";
 
 export type EntryEngineRecord = Entry;
@@ -69,6 +70,63 @@ function validatePayload(
 
   const message = errors.map((error) => error.message).join("; ");
   throw new Error(message);
+}
+
+function getValueAtPath(record: Record<string, unknown>, fieldPath: string): unknown {
+  const parts = fieldPath.split(".").filter(Boolean);
+  if (!parts.length) return undefined;
+
+  let current: unknown = record;
+  for (const part of parts) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+}
+
+function hasCommittedValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return true;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if (typeof record.storedPath === "string" && record.storedPath.trim()) return true;
+    if (typeof record.url === "string" && record.url.trim()) return true;
+    return Object.keys(record).length > 0;
+  }
+  return false;
+}
+
+function getCommitMissingFields(category: CategoryKey, entry: EntryLike) {
+  const schema = ENTRY_SCHEMAS[category];
+  const requiredFields =
+    (schema.requiredForCommit ?? schema.fields.filter((field) => field.required).map((field) => field.key)).slice();
+
+  const missing = new Array<string>();
+  for (const requiredField of requiredFields) {
+    const value = getValueAtPath(entry as Record<string, unknown>, requiredField);
+    if (!hasCommittedValue(value)) {
+      missing.push(requiredField);
+    }
+  }
+
+  if (
+    typeof schema.minAttachmentsForCommit === "number" &&
+    Number.isFinite(schema.minAttachmentsForCommit) &&
+    schema.minAttachmentsForCommit > 0
+  ) {
+    const attachments = entry.attachments;
+    const attachmentCount = Array.isArray(attachments) ? attachments.length : 0;
+    if (attachmentCount < schema.minAttachmentsForCommit) {
+      missing.push("attachments");
+    }
+  }
+
+  return missing;
 }
 
 function revalidateDashboardSummary(userEmail: string) {
@@ -234,6 +292,14 @@ function prepareEntryForWrite(entry: EntryLike, nowISO: string) {
   return base;
 }
 
+function throwPendingImmutableError(changedFields: string[]) {
+  throw new AppError({
+    code: "FORBIDDEN",
+    message: `Pending confirmation — core fields cannot be edited. Remove changes to: ${changedFields.join(", ")}.`,
+    details: { changedFields },
+  });
+}
+
 export function isLockedFromApproval(entry: EntryEngineRecord) {
   return isEntryLocked(entry as EntryLike);
 }
@@ -265,6 +331,27 @@ export async function replaceEntriesForCategory(
   const actorEmail = getWalActorEmail(options?.actorEmail ?? normalizedOwner, normalizedOwner);
   const actorRole = options?.actorRole ?? "user";
   const currentList = await readListRaw(normalizedOwner, category);
+  const beforeById = new Map<string, EntryEngineRecord>();
+  for (const currentEntry of currentList) {
+    const currentId = normalizeId(currentEntry.id);
+    if (!currentId) continue;
+    beforeById.set(currentId, currentEntry);
+  }
+  for (const nextEntry of entries) {
+    const nextId = normalizeId(nextEntry.id);
+    if (!nextId) continue;
+    const beforeEntry = beforeById.get(nextId);
+    if (!beforeEntry) continue;
+
+    const changedFields = getChangedImmutableFieldsWhenPending(
+      category,
+      beforeEntry as EntryLike,
+      nextEntry as EntryLike
+    );
+    if (changedFields.length > 0) {
+      throwPendingImmutableError(changedFields);
+    }
+  }
   const walEvents = buildWalEventsForReplace(
     actorEmail,
     actorRole,
@@ -376,6 +463,79 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
   next.updatedAt = nowISO;
   next.confirmationStatus = getWorkflowStatus(existing);
   const updated = prepareEntryForWrite(next, nowISO);
+  const changedImmutableFields = getChangedImmutableFieldsWhenPending(category, existing, updated);
+  if (changedImmutableFields.length > 0) {
+    throwPendingImmutableError(changedImmutableFields);
+  }
+
+  await appendWalEventOrThrow(
+    normalizedOwner,
+    buildEvent({
+      actorEmail: normalizedOwner,
+      actorRole: "user",
+      userEmail: normalizedOwner,
+      category,
+      entryId: id,
+      action: inferWalUpdateAction(existing as EntryEngineRecord, updated as EntryEngineRecord),
+      before: existing as EntryEngineRecord,
+      after: updated as EntryEngineRecord,
+    })
+  );
+
+  list[index] = updated;
+  await writeListRaw(normalizedOwner, category, list);
+  await refreshIndexForMutation(
+    normalizedOwner,
+    category,
+    existing as EntryEngineRecord,
+    updated as EntryEngineRecord
+  );
+  revalidateDashboardSummary(normalizedOwner);
+  return updated as T;
+}
+
+export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecord>(
+  userEmail: string,
+  category: CategoryKey,
+  entryId: string
+): Promise<T> {
+  const normalizedOwner = normalizeEmail(userEmail);
+  const id = normalizeId(entryId);
+  if (!id) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Entry ID is required.",
+    });
+  }
+
+  const list = await readListRaw(normalizedOwner, category);
+  const index = list.findIndex((entry) => normalizeId(entry.id) === id);
+  if (index < 0) {
+    throw new AppError({
+      code: "NOT_FOUND",
+      message: "Entry not found",
+    });
+  }
+
+  const existing = list[index] as EntryLike;
+  const missingFields = getCommitMissingFields(category, existing);
+  if (missingFields.length > 0) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: `Commit blocked. Complete required fields: ${missingFields.join(", ")}.`,
+      details: { missingFields },
+    });
+  }
+
+  const nowISO = new Date().toISOString();
+  const updated = prepareEntryForWrite(
+    {
+      ...existing,
+      status: "final",
+      committedAtISO: nowISO,
+    },
+    nowISO
+  );
 
   await appendWalEventOrThrow(
     normalizedOwner,
