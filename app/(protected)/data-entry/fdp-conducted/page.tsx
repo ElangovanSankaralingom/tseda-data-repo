@@ -20,8 +20,8 @@ import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-dir
 import {
   canSendForConfirmation,
   getConfirmationStatusLabel,
+  getEntryApprovalStatus,
   isEntryLockedFromStatus,
-  normalizeConfirmationStatus,
 } from "@/lib/confirmation";
 import { getEntryStreakDisplayState } from "@/lib/entries/lifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
@@ -42,6 +42,7 @@ import {
 type FdpConducted = {
   id: string;
   status: "draft" | "final";
+  confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
@@ -1285,7 +1286,7 @@ export function FdpConductedPage({
                         !Number.isNaN(createdTime) &&
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
-                      const confirmationStatus = normalizeConfirmationStatus(entry.requestEditStatus);
+                      const confirmationStatus = getEntryApprovalStatus(entry);
                       const lockApproved = isEntryLockedFromStatus(entry);
                       const canSendConfirmation = canSendForConfirmation(entry);
                       const sendingConfirmation = !!sendingConfirmationIds[entry.id];
@@ -1371,7 +1372,7 @@ export function FdpConductedPage({
                                         >
                                           {sendingConfirmation
                                             ? "Sending..."
-                                            : confirmationStatus === "pending"
+                                            : confirmationStatus === "PENDING_CONFIRMATION"
                                               ? "Pending Confirmation"
                                               : "Send for Confirmation"}
                                         </MiniButton>
