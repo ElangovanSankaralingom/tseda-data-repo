@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import BackTo from "@/components/nav/BackTo";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { toUserMessage } from "@/lib/errors";
+import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { adminHome } from "@/lib/navigation";
+import { safeAction } from "@/lib/safeAction";
 
 type PendingConfirmationRow = {
   ownerEmail: string;
@@ -34,16 +37,25 @@ export default function AdminConfirmationsPage() {
   const loadQueue = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
+    const result = await safeAction(async () => {
       const response = await fetch("/api/admin/confirmations", { cache: "no-store" });
-      const payload = await response.json();
+      const payload = (await response.json()) as PendingConfirmationRow[] | { error?: string };
       if (!response.ok) {
-        throw new Error(payload?.error || "Failed to load confirmation queue.");
+        throw new Error((payload as { error?: string })?.error || "Failed to load confirmation queue.");
       }
-      setRows(Array.isArray(payload) ? (payload as PendingConfirmationRow[]) : []);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Failed to load confirmation queue.");
-      setRows([]);
+      return Array.isArray(payload) ? payload : [];
+    }, {
+      context: "admin.confirmations.loadQueue",
+    });
+
+    try {
+      if (!result.ok) {
+        setError(toUserMessage(result.error));
+        setRows([]);
+        return;
+      }
+
+      setRows(result.data as PendingConfirmationRow[]);
     } finally {
       setLoading(false);
     }
@@ -60,7 +72,7 @@ export default function AdminConfirmationsPage() {
     setBusyKey(key);
     setError(null);
 
-    try {
+    const result = await safeAction(async () => {
       const response = await fetch("/api/admin/confirmations", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -71,14 +83,21 @@ export default function AdminConfirmationsPage() {
           decision,
         }),
       });
-      const payload = await response.json();
+      const payload = (await response.json()) as { error?: string };
       if (!response.ok) {
         throw new Error(payload?.error || `Failed to ${decision}.`);
       }
+    }, {
+      context: `admin.confirmations.${decision}`,
+    });
+
+    try {
+      if (!result.ok) {
+        setError(toUserMessage(result.error));
+        return;
+      }
 
       setRows((current) => current.filter((item) => !(item.categoryKey === row.categoryKey && item.entryId === row.entryId)));
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : `Failed to ${decision}.`);
     } finally {
       setBusyKey(null);
     }
@@ -126,16 +145,16 @@ export default function AdminConfirmationsPage() {
                     <div className="flex items-center gap-2">
                       <Link
                         href={row.entryHref}
-                        className="inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium transition hover:bg-muted"
+                        className={getButtonClass("context")}
                         target="_blank"
                         rel="noreferrer"
                       >
                         View
                       </Link>
-                      <ActionButton onClick={() => void resolve(row, "approve")} disabled={busy}>
+                      <ActionButton role="context" onClick={() => void resolve(row, "approve")} disabled={busy}>
                         {busy ? "Saving..." : "Approve"}
                       </ActionButton>
-                      <ActionButton variant="danger" onClick={() => void resolve(row, "reject")} disabled={busy}>
+                      <ActionButton role="destructive" onClick={() => void resolve(row, "reject")} disabled={busy}>
                         Reject
                       </ActionButton>
                     </div>

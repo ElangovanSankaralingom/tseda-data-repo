@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type FileMetaLike = {
   fileName: string;
@@ -81,7 +82,7 @@ export default function UploadField({
                 href={meta.url}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                className={getButtonClass("context")}
               >
                 Preview
               </a>
@@ -123,11 +124,11 @@ export default function UploadField({
                   href={meta.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                  className={getButtonClass("context")}
                 >
                   Preview
                 </a>
-                <ActionButton variant="danger" disabled={!canDelete} onClick={onDelete}>
+                <ActionButton role="destructive" disabled={!canDelete} onClick={onDelete}>
                   Delete
                 </ActionButton>
               </>
@@ -135,10 +136,9 @@ export default function UploadField({
 
             <label
               className={cx(
-                "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
                 canChoose
-                  ? "cursor-pointer transition hover:bg-muted"
-                  : "pointer-events-none cursor-not-allowed opacity-60"
+                  ? `${getButtonClass("context")} cursor-pointer`
+                  : getButtonClass("context", { disabled: true })
               )}
             >
               Choose file
@@ -155,7 +155,7 @@ export default function UploadField({
               />
             </label>
 
-            <ActionButton variant="dark" disabled={!canUpload} onClick={onUpload}>
+            <ActionButton role="context" disabled={!canUpload} onClick={onUpload}>
               {meta && !pendingFile ? "Uploaded" : "Upload & Save"}
             </ActionButton>
           </div>

@@ -5,6 +5,7 @@ import FacultySelect, {
   type FacultyOption,
   type FacultySelection,
 } from "@/components/controls/FacultySelect";
+import { RoleButton } from "@/components/ui/RoleButton";
 import { nowISTTimestampISO } from "@/lib/gamification";
 
 export type FacultyRowValue = {
@@ -73,39 +74,6 @@ function normalizeRows(rows: FacultyRowValue[]) {
 
 function createEmptyRow(): FacultyRowValue {
   return { id: uuid(), name: "", email: "", isLocked: false, savedAtISO: null };
-}
-
-function ActionButton({
-  children,
-  onClick,
-  variant = "default",
-  disabled,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  variant?: "default" | "danger";
-  disabled?: boolean;
-}) {
-  const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
-  const activeCls =
-    variant === "danger"
-      ? "border-border text-red-600 transition hover:bg-red-50"
-      : "border-foreground bg-foreground text-background transition hover:opacity-90";
-  const disabledCls =
-    variant === "default"
-      ? "pointer-events-none cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60"
-      : "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cx(base, disabled ? disabledCls : activeCls)}
-    >
-      {children}
-    </button>
-  );
 }
 
 export default function FacultyRowPicker({
@@ -272,9 +240,9 @@ export default function FacultyRowPicker({
           {helperText ? <div className="mt-1 text-xs text-muted-foreground">{helperText}</div> : null}
         </div>
         {!viewOnly ? (
-          <ActionButton onClick={handleAddRow} disabled={parentLocked}>
+          <RoleButton role="context" onClick={handleAddRow} disabled={parentLocked}>
             {addLabel}
-          </ActionButton>
+          </RoleButton>
         ) : null}
       </div>
 
@@ -321,17 +289,17 @@ export default function FacultyRowPicker({
 
                 {!viewOnly ? (
                   <>
-                    <ActionButton onClick={() => void handleSaveRow(index)} disabled={saveDisabled}>
+                    <RoleButton role="context" onClick={() => void handleSaveRow(index)} disabled={saveDisabled}>
                       {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
-                    </ActionButton>
+                    </RoleButton>
 
-                    <ActionButton
-                      variant="danger"
+                    <RoleButton
+                      role="destructive"
                       onClick={() => handleDeleteRow(index)}
                       disabled={deleteDisabled}
                     >
                       Delete
-                    </ActionButton>
+                    </RoleButton>
                   </>
                 ) : null}
 

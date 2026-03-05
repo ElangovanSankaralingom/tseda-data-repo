@@ -1,5 +1,9 @@
 "use client";
 
+import { AppError } from "@/lib/errors";
+import { safeAction } from "@/lib/safeAction";
+import type { Result } from "@/lib/result";
+
 export type UploadedFile = {
   id: string;
   fileName: string;
@@ -54,7 +58,7 @@ export function normalizeUploadedFile(result: unknown): UploadedFile {
   const id = asNonEmptyString(raw.id) || storedPath || `${uploadedAt}:${fileName}`;
 
   if (!fileName || !mimeType || !url || !storedPath) {
-    throw new Error("Upload failed (bad response).");
+    throw new AppError({ code: "UPLOAD_FAILED", message: "Upload failed (bad response)." });
   }
 
   return {
@@ -89,8 +93,8 @@ export function uploadFile({
       onProgress?.(pct);
     };
 
-    xhr.onerror = () => reject(new Error("Upload failed (network)."));
-    xhr.onabort = () => reject(new Error("Upload cancelled."));
+    xhr.onerror = () => reject(new AppError({ code: "NETWORK_ERROR", message: "Upload failed (network)." }));
+    xhr.onabort = () => reject(new AppError({ code: "UPLOAD_FAILED", message: "Upload cancelled." }));
 
     xhr.onload = () => {
       try {
@@ -106,9 +110,9 @@ export function uploadFile({
           payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
             ? payload.error
             : `Upload failed (${xhr.status}).`;
-        reject(new Error(message));
+        reject(new AppError({ code: "UPLOAD_FAILED", message }));
       } catch {
-        reject(new Error("Upload failed (bad response)."));
+        reject(new AppError({ code: "UPLOAD_FAILED", message: "Upload failed (bad response)." }));
       }
     };
 
@@ -145,6 +149,18 @@ export async function deleteFile({ endpoint, storedPath }: DeleteFileOptions): P
       typeof (payload as { error?: unknown }).error === "string"
         ? (payload as { error: string }).error
         : "Delete failed.";
-    throw new Error(message);
+    throw new AppError({ code: "IO_ERROR", message });
   }
+}
+
+export async function uploadFileSafe(options: UploadFileOptions): Promise<Result<UploadedFile>> {
+  return safeAction(() => uploadFile(options), {
+    context: "uploadService.uploadFile",
+  });
+}
+
+export async function deleteFileSafe(options: DeleteFileOptions): Promise<Result<void>> {
+  return safeAction(() => deleteFile(options), {
+    context: "uploadService.deleteFile",
+  });
 }

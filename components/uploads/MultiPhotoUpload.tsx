@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RoleButton } from "@/components/ui/RoleButton";
+import { AppError, toUserMessage } from "@/lib/errors";
+import { safeAction } from "@/lib/safeAction";
+import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { deleteFile, uploadFile } from "@/lib/upload/uploadService";
 
 export type FileMeta = {
@@ -76,58 +80,78 @@ export default function MultiPhotoUpload({
   async function deletePhoto(meta: FileMeta) {
     if (disabled) return;
 
-    try {
+    const result = await safeAction(async () => {
       await deleteFile({
         endpoint: uploadEndpoint,
         storedPath: meta.storedPath,
       });
       await Promise.resolve(onDeleted(meta));
-    } catch (uploadError) {
-      const message = uploadError instanceof Error ? uploadError.message : "Delete failed.";
-      setError(message);
+    }, {
+      context: "MultiPhotoUpload.deletePhoto",
+    });
+
+    if (!result.ok) {
+      setError(toUserMessage(result.error));
     }
   }
 
   async function uploadSelected() {
     if (!pendingFiles.length || busy || disabled) return;
 
-    try {
-      setError(null);
-      setBusy(true);
-      setCurrentProgress(0);
-      setCompletedCount(0);
+    setError(null);
+    setBusy(true);
+    setCurrentProgress(0);
+    setCompletedCount(0);
 
+    try {
       for (let index = 0; index < pendingFiles.length; index += 1) {
         const file = pendingFiles[index];
         const allowed =
           file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg";
 
         if (!allowed) {
-          throw new Error("Only PDF/JPG/PNG allowed.");
+          setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: "Only PDF/JPG/PNG allowed." })));
+          return;
         }
 
         if (file.size > 20 * 1024 * 1024) {
-          throw new Error("Max file size is 20MB.");
+          setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: "Max file size is 20MB." })));
+          return;
         }
 
-        const meta = await uploadFile({
-          endpoint: uploadEndpoint,
-          email,
-          recordId,
-          slot: slotName,
-          file,
-          onProgress: (pct) => setCurrentProgress(pct),
-        });
+        const uploadResult = await safeAction(
+          () =>
+            uploadFile({
+              endpoint: uploadEndpoint,
+              email,
+              recordId,
+              slot: slotName,
+              file,
+              onProgress: (pct) => setCurrentProgress(pct),
+            }),
+          { context: "MultiPhotoUpload.uploadFile" }
+        );
 
-        await Promise.resolve(onUploaded(meta));
+        if (!uploadResult.ok) {
+          setError(toUserMessage(uploadResult.error));
+          return;
+        }
+
+        const persistResult = await safeAction(
+          () => Promise.resolve(onUploaded(uploadResult.data)),
+          { context: "MultiPhotoUpload.onUploaded" }
+        );
+
+        if (!persistResult.ok) {
+          setError(toUserMessage(persistResult.error));
+          return;
+        }
+
         setCompletedCount(index + 1);
         setCurrentProgress(0);
       }
 
       setPendingFiles([]);
-    } catch (uploadError) {
-      const message = uploadError instanceof Error ? uploadError.message : "Upload failed.";
-      setError(message);
     } finally {
       setBusy(false);
       setCurrentProgress(0);
@@ -215,10 +239,9 @@ export default function MultiPhotoUpload({
         <div className="flex flex-wrap gap-2">
           <label
             className={cx(
-              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
               busy || disabled
-                ? "pointer-events-none cursor-not-allowed opacity-60"
-                : "cursor-pointer transition hover:bg-muted"
+                ? getButtonClass("context", { disabled: true })
+                : `${getButtonClass("context")} cursor-pointer`
             )}
           >
             Choose files
@@ -238,19 +261,13 @@ export default function MultiPhotoUpload({
             />
           </label>
 
-          <button
-            type="button"
+          <RoleButton
+            role="context"
             onClick={() => void uploadSelected()}
             disabled={!hasPending || busy || disabled}
-            className={cx(
-              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
-              !hasPending || busy || disabled
-                ? "pointer-events-none cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60"
-                : "border-foreground bg-foreground text-background transition hover:opacity-90"
-            )}
           >
             Upload Selected
-          </button>
+          </RoleButton>
         </div>
       ) : null}
     </div>
