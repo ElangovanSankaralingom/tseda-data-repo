@@ -20,8 +20,8 @@ import { groupEntries } from "@/lib/entryCategorization";
 import {
   canSendForConfirmation,
   getConfirmationStatusLabel,
+  getEntryApprovalStatus,
   isEntryLockedFromStatus,
-  normalizeConfirmationStatus,
 } from "@/lib/confirmation";
 import {
   type StreakState,
@@ -49,6 +49,7 @@ type FileMeta = {
 type FdpAttended = {
   id: string;
   status: "draft" | "final";
+  confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
@@ -1203,7 +1204,7 @@ export function FdpAttendedPage({
                         !Number.isNaN(createdTime) &&
                         !Number.isNaN(updatedTime) &&
                         Math.abs(updatedTime - createdTime) > 60 * 1000;
-                      const confirmationStatus = normalizeConfirmationStatus(entry.requestEditStatus);
+                      const confirmationStatus = getEntryApprovalStatus(entry);
                       const lockApproved = isEntryLockedFromStatus(entry);
                       const canSendConfirmation = canSendForConfirmation(entry);
                       const sendingConfirmation = !!sendingConfirmationIds[entry.id];
@@ -1289,7 +1290,7 @@ export function FdpAttendedPage({
                                         >
                                           {sendingConfirmation
                                             ? "Sending..."
-                                            : confirmationStatus === "pending"
+                                            : confirmationStatus === "PENDING_CONFIRMATION"
                                               ? "Pending Confirmation"
                                               : "Send for Confirmation"}
                                         </MiniButton>

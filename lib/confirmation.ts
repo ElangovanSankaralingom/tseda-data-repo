@@ -1,11 +1,13 @@
-export type ConfirmationStatus = "none" | "pending" | "approved" | "rejected";
-export type EntryApprovalStatus =
-  | "DRAFT"
-  | "PENDING_CONFIRMATION"
-  | "APPROVED"
-  | "REJECTED";
+import {
+  isEntryLocked,
+  normalizeEntryStatus,
+  type EntryStateLike,
+  type EntryStatus as EntryApprovalStatus,
+} from "./entryStateMachine.ts";
 
-type ConfirmationEntryLike = {
+export type ConfirmationStatus = "none" | "pending" | "approved" | "rejected";
+
+type ConfirmationEntryLike = EntryStateLike & {
   status?: string | null;
   requestEditStatus?: string | null;
   confirmationStatus?: string | null;
@@ -15,9 +17,16 @@ export function normalizeConfirmationStatus(
   value: unknown,
   fallback: ConfirmationStatus = "none"
 ): ConfirmationStatus {
-  return value === "pending" || value === "approved" || value === "rejected" || value === "none"
-    ? value
-    : fallback;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === "none" || normalized === "pending" || normalized === "approved" || normalized === "rejected") {
+    return normalized;
+  }
+
+  const approvalStatus = normalizeEntryApprovalStatus(value, "DRAFT");
+  if (approvalStatus === "APPROVED") return "approved";
+  if (approvalStatus === "PENDING_CONFIRMATION") return "pending";
+  if (approvalStatus === "REJECTED") return "rejected";
+  return fallback;
 }
 
 export function getConfirmationStatus(entry: ConfirmationEntryLike): ConfirmationStatus {
@@ -28,31 +37,22 @@ export function normalizeEntryApprovalStatus(
   value: unknown,
   fallback: EntryApprovalStatus = "DRAFT"
 ): EntryApprovalStatus {
-  const normalized = String(value ?? "").trim().toUpperCase();
-  if (normalized === "APPROVED") return "APPROVED";
-  if (normalized === "REJECTED") return "REJECTED";
-  if (normalized === "PENDING_CONFIRMATION" || normalized === "PENDING") {
-    return "PENDING_CONFIRMATION";
-  }
-  if (normalized === "DRAFT") return "DRAFT";
-
-  const legacy = normalizeConfirmationStatus(value, "none");
-  if (legacy === "approved") return "APPROVED";
-  if (legacy === "pending") return "PENDING_CONFIRMATION";
-  if (legacy === "rejected") return "REJECTED";
-  if (legacy === "none") return "DRAFT";
-  return fallback;
+  return normalizeEntryStatus(
+    {
+      confirmationStatus: value,
+      requestEditStatus: value,
+      status: value,
+    },
+    fallback
+  );
 }
 
 export function getEntryApprovalStatus(entry: ConfirmationEntryLike) {
-  if (entry.confirmationStatus) {
-    return normalizeEntryApprovalStatus(entry.confirmationStatus);
-  }
-  return normalizeEntryApprovalStatus(entry.requestEditStatus);
+  return normalizeEntryStatus(entry);
 }
 
 export function isEntryLockedFromStatus(entry: ConfirmationEntryLike) {
-  return getEntryApprovalStatus(entry) === "APPROVED";
+  return isEntryLocked(entry);
 }
 
 export function canSendForConfirmation(entry: ConfirmationEntryLike) {

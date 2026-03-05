@@ -149,6 +149,9 @@ export async function PATCH(request: Request) {
     if (message === "Forbidden") {
       return NextResponse.json({ error: message }, { status: 403 });
     }
+    if (message.startsWith("Invalid status transition:")) {
+      return NextResponse.json({ error: "Invalid confirmation state transition." }, { status: 400 });
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

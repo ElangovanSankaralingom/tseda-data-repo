@@ -49,6 +49,12 @@ export async function POST(request: Request) {
     if (message === "Complete the entry with Done before confirmation.") {
       return NextResponse.json({ error: message }, { status: 400 });
     }
+    if (message.startsWith("Invalid status transition:")) {
+      return NextResponse.json(
+        { error: "Entry cannot be sent for confirmation in the current state." },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

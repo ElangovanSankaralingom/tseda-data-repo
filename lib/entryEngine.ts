@@ -6,15 +6,16 @@ import { isMasterAdmin } from "@/lib/admin";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
+import {
+  isEntryLocked,
+  normalizeEntryStatus,
+  transitionEntry,
+  type EntryStateLike,
+  type EntryStatus as EntryWorkflowStatus,
+} from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeStreakState } from "@/lib/gamification";
 import { getUserCategoryStoreFile } from "@/lib/userStore";
-
-export type EntryWorkflowStatus =
-  | "DRAFT"
-  | "PENDING_CONFIRMATION"
-  | "APPROVED"
-  | "REJECTED";
 
 export type EntryEngineRecord = Record<string, unknown>;
 
@@ -37,94 +38,10 @@ type EntryLike = EntryEngineRecord & {
   confirmedBy?: unknown;
   confirmationRejectedReason?: unknown;
 };
-
-type UpdateStatusOptions = {
-  nowISO: string;
-  adminEmail?: string;
-  rejectionReason?: string;
-};
-
-function normalizeWorkflowStatus(
-  value: unknown,
-  fallback: EntryWorkflowStatus = "DRAFT"
-): EntryWorkflowStatus {
-  const raw = String(value ?? "").trim().toUpperCase();
-
-  if (raw === "APPROVED") return "APPROVED";
-  if (raw === "PENDING_CONFIRMATION" || raw === "PENDING") return "PENDING_CONFIRMATION";
-  if (raw === "REJECTED") return "REJECTED";
-  if (raw === "DRAFT") return "DRAFT";
-
-  const legacy = String(value ?? "").trim().toLowerCase();
-  if (legacy === "approved") return "APPROVED";
-  if (legacy === "pending") return "PENDING_CONFIRMATION";
-  if (legacy === "rejected") return "REJECTED";
-  if (legacy === "none") return "DRAFT";
-
-  return fallback;
-}
+type WorkflowEntryLike = EntryLike & EntryStateLike;
 
 function getWorkflowStatus(entry: EntryLike): EntryWorkflowStatus {
-  if (entry.confirmationStatus !== undefined) {
-    return normalizeWorkflowStatus(entry.confirmationStatus);
-  }
-
-  return normalizeWorkflowStatus(entry.requestEditStatus, "DRAFT");
-}
-
-function toLegacyRequestEditStatus(status: EntryWorkflowStatus) {
-  if (status === "APPROVED") return "approved";
-  if (status === "PENDING_CONFIRMATION") return "pending";
-  if (status === "REJECTED") return "rejected";
-  return "none";
-}
-
-function applyWorkflowStatus(
-  entry: EntryLike,
-  status: EntryWorkflowStatus,
-  options: UpdateStatusOptions
-) {
-  const next: EntryLike = {
-    ...entry,
-    confirmationStatus: status,
-    requestEditStatus: toLegacyRequestEditStatus(status),
-    updatedAt: options.nowISO,
-  };
-
-  if (status === "DRAFT") {
-    next.requestEditRequestedAtISO = null;
-    next.confirmedAtISO = null;
-    next.confirmedBy = null;
-    next.confirmationRejectedReason = "";
-    return next;
-  }
-
-  if (status === "PENDING_CONFIRMATION") {
-    next.sentForConfirmationAtISO =
-      typeof next.sentForConfirmationAtISO === "string" && next.sentForConfirmationAtISO.trim()
-        ? next.sentForConfirmationAtISO
-        : options.nowISO;
-    next.requestEditRequestedAtISO =
-      typeof next.requestEditRequestedAtISO === "string" && next.requestEditRequestedAtISO.trim()
-        ? next.requestEditRequestedAtISO
-        : options.nowISO;
-    next.confirmedAtISO = null;
-    next.confirmedBy = null;
-    next.confirmationRejectedReason = "";
-    return next;
-  }
-
-  if (status === "APPROVED") {
-    next.confirmedAtISO = options.nowISO;
-    next.confirmedBy = options.adminEmail ?? next.confirmedBy ?? null;
-    next.confirmationRejectedReason = "";
-    return next;
-  }
-
-  next.confirmedAtISO = null;
-  next.confirmedBy = null;
-  next.confirmationRejectedReason = options.rejectionReason ?? "";
-  return next;
+  return normalizeEntryStatus(entry);
 }
 
 function ensureRecord(value: unknown): EntryEngineRecord {
@@ -196,12 +113,13 @@ function prepareEntryForWrite(entry: EntryLike, nowISO: string) {
         ? entry.createdAt
         : nowISO,
     updatedAt: nowISO,
+    confirmationStatus: existingStatus,
   };
-  return applyWorkflowStatus(base, existingStatus, { nowISO });
+  return base;
 }
 
 export function isLockedFromApproval(entry: EntryEngineRecord) {
-  return getWorkflowStatus(entry as EntryLike) === "APPROVED";
+  return isEntryLocked(entry as EntryLike);
 }
 
 export async function listEntriesForCategory<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -254,9 +172,8 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
         ? nextPayload.createdAt
         : nowISO,
     updatedAt: nowISO,
-    confirmationStatus: normalizeWorkflowStatus(nextPayload.confirmationStatus, "DRAFT"),
   };
-  const entry = applyWorkflowStatus(base, getWorkflowStatus(base), { nowISO });
+  const entry = transitionEntry(base as WorkflowEntryLike, "createEntry", { nowISO }) as EntryLike;
 
   list.unshift(entry);
   await writeListRaw(userEmail, category, list);
@@ -290,7 +207,7 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
   };
 
   for (const [key, value] of Object.entries(nextPayload)) {
-    if (key === "id" || key === "createdAt") continue;
+    if (key === "id" || key === "createdAt" || key === "confirmationStatus") continue;
     next[key] = value;
   }
 
@@ -300,15 +217,8 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
       ? existing.createdAt
       : nowISO;
   next.updatedAt = nowISO;
-
-  const status =
-    Object.prototype.hasOwnProperty.call(nextPayload, "confirmationStatus") ||
-    Object.prototype.hasOwnProperty.call(nextPayload, "requestEditStatus")
-      ? normalizeWorkflowStatus(
-          nextPayload.confirmationStatus ?? nextPayload.requestEditStatus
-        )
-      : getWorkflowStatus(next);
-  const updated = applyWorkflowStatus(next, status, { nowISO });
+  next.confirmationStatus = getWorkflowStatus(existing);
+  const updated = prepareEntryForWrite(next, nowISO);
 
   list[index] = updated;
   await writeListRaw(userEmail, category, list);
@@ -354,7 +264,9 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   }
 
   const nowISO = new Date().toISOString();
-  const updated = applyWorkflowStatus(existing, "PENDING_CONFIRMATION", { nowISO });
+  const updated = transitionEntry(existing as WorkflowEntryLike, "sendForConfirmation", {
+    nowISO,
+  }) as EntryLike;
   list[index] = updated;
   await writeListRaw(userEmail, category, list);
   return updated as T;
@@ -379,10 +291,10 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
   }
 
   const nowISO = new Date().toISOString();
-  const updated = applyWorkflowStatus(list[index] as EntryLike, "APPROVED", {
+  const updated = transitionEntry(list[index] as WorkflowEntryLike, "adminApprove", {
     nowISO,
     adminEmail: normalizedAdmin,
-  });
+  }) as EntryLike;
   list[index] = updated;
   await writeListRaw(ownerEmail, category, list);
   return updated as T;
@@ -408,11 +320,11 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
   }
 
   const nowISO = new Date().toISOString();
-  const updated = applyWorkflowStatus(list[index] as EntryLike, "REJECTED", {
+  const updated = transitionEntry(list[index] as WorkflowEntryLike, "adminReject", {
     nowISO,
     adminEmail: normalizedAdmin,
     rejectionReason: reason?.trim(),
-  });
+  }) as EntryLike;
   list[index] = updated;
   await writeListRaw(ownerEmail, category, list);
   return updated as T;

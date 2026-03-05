@@ -24,8 +24,8 @@ import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import {
   canSendForConfirmation,
   getConfirmationStatusLabel,
+  getEntryApprovalStatus,
   isEntryLockedFromStatus,
-  normalizeConfirmationStatus,
 } from "@/lib/confirmation";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
@@ -65,6 +65,7 @@ type CaseStudyEntry = {
   sourceEmail?: string;
   sharedRole?: "staffAccompanying";
   status?: "draft" | "final";
+  confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
@@ -1110,7 +1111,7 @@ export function CaseStudiesPage({
       !Number.isNaN(updatedTime) &&
       Math.abs(updatedTime - createdTime) > 60 * 1000;
     const completedEntry = entry.status === "final";
-    const confirmationStatus = normalizeConfirmationStatus(entry.requestEditStatus);
+    const confirmationStatus = getEntryApprovalStatus(entry);
     const lockApproved = isEntryLockedFromStatus(entry);
     const canSendConfirmation = canSendForConfirmation(entry);
     const sendingConfirmation = !!sendingConfirmationIds[entry.id];
@@ -1183,7 +1184,7 @@ export function CaseStudiesPage({
                       >
                         {sendingConfirmation
                           ? "Sending..."
-                          : confirmationStatus === "pending"
+                          : confirmationStatus === "PENDING_CONFIRMATION"
                             ? "Pending Confirmation"
                             : "Send for Confirmation"}
                       </MiniButton>

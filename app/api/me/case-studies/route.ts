@@ -31,6 +31,7 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
+import { normalizeEntryStatus, type EntryStatus } from "@/lib/entryStateMachine";
 import {
   isSemesterAllowed,
   normalizeStudentYear,
@@ -64,6 +65,7 @@ type CaseStudyEntry = {
   sourceEmail?: string;
   sharedRole?: "staffAccompanying";
   status?: "draft" | "final";
+  confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
@@ -261,6 +263,7 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
     sharedRole: record.sharedRole === "staffAccompanying" ? "staffAccompanying" : undefined,
     status: record.status === "final" ? "final" : "draft",
+    confirmationStatus: normalizeEntryStatus(record as Record<string, unknown>),
     requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
     requestEditRequestedAtISO:
       typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
