@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DateField from "@/components/controls/DateField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import { RoleButton } from "@/components/ui/RoleButton";
 import {
   computeExperienceTotals,
   durationInclusive,
@@ -339,26 +340,22 @@ function MiniButton({
   disabled?: boolean;
   type?: "button" | "submit";
 }) {
-  const base = "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm";
-  const activeCls =
+  const role =
     variant === "danger"
-      ? "border-border text-red-600 transition hover:bg-red-50"
+      ? "destructive"
       : variant === "ghost"
-      ? "border-border transition hover:bg-muted"
-      : "border-foreground bg-foreground text-background transition hover:opacity-90";
-  const disabledCls =
-    variant === "default"
-      ? "border-border bg-muted text-muted-foreground pointer-events-none cursor-not-allowed opacity-60"
-      : "border-border text-muted-foreground bg-transparent pointer-events-none cursor-not-allowed opacity-60";
+        ? "ghost"
+        : "context";
+
   return (
-    <button
+    <RoleButton
+      role={role}
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={cx(base, disabled ? disabledCls : activeCls)}
     >
       {children}
-    </button>
+    </RoleButton>
   );
 }
 

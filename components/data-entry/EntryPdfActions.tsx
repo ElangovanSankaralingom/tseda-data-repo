@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionButton } from "@/components/ui/ActionButton";
+import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type EntryPdfMeta = {
   url: string;
@@ -22,12 +23,12 @@ export default function EntryPdfActions({ pdfMeta, disabled = false }: EntryPdfA
           href={pdfMeta.url}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+          className={getButtonClass("context")}
         >
           Preview Entry
         </a>
       ) : (
-        <ActionButton variant="ghost" disabled>
+        <ActionButton role="context" disabled>
           Preview Entry
         </ActionButton>
       )}
@@ -36,12 +37,12 @@ export default function EntryPdfActions({ pdfMeta, disabled = false }: EntryPdfA
         <a
           href={pdfMeta.url}
           download={pdfMeta.fileName || true}
-          className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm transition hover:bg-muted"
+          className={getButtonClass("context")}
         >
           Download Entry
         </a>
       ) : (
-        <ActionButton variant="ghost" disabled>
+        <ActionButton role="context" disabled>
           Download Entry
         </ActionButton>
       )}

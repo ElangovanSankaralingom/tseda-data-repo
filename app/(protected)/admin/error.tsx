@@ -1,0 +1,41 @@
+"use client";
+
+import Link from "next/link";
+import { toUserMessage } from "@/lib/errors";
+import { adminHome, dashboard } from "@/lib/navigation";
+
+export default function AdminError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div className="mx-auto flex min-h-[50vh] w-full max-w-3xl flex-col items-center justify-center gap-4 px-4 py-10 text-center">
+      <h2 className="text-2xl font-semibold">Admin action failed</h2>
+      <p className="max-w-xl text-sm text-muted-foreground">{toUserMessage(error)}</p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={reset}
+          className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Try again
+        </button>
+        <Link
+          href={adminHome()}
+          className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Back to Admin
+        </Link>
+        <Link
+          href={dashboard()}
+          className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Dashboard
+        </Link>
+      </div>
+    </div>
+  );
+}

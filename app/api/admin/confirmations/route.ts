@@ -9,6 +9,7 @@ import {
   approveEntry,
   rejectEntry,
 } from "@/lib/entryEngine";
+import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { type CategoryKey } from "@/lib/entries/types";
 import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
@@ -76,16 +77,22 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to update confirmation.";
-    if (message === "Entry not found") {
-      return NextResponse.json({ error: message }, { status: 404 });
+    const appError = normalizeError(error);
+    logError(appError, "api.admin.confirmations.PATCH");
+
+    if (appError.code === "NOT_FOUND" || appError.message === "Entry not found") {
+      return NextResponse.json({ error: appError.message || "Entry not found" }, { status: 404 });
     }
-    if (message === "Forbidden") {
-      return NextResponse.json({ error: message }, { status: 403 });
+    if (appError.code === "FORBIDDEN" || appError.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    if (message.startsWith("Invalid status transition:")) {
+    if (appError.message.startsWith("Invalid status transition:")) {
       return NextResponse.json({ error: "Invalid confirmation state transition." }, { status: 400 });
     }
-    return NextResponse.json({ error: message }, { status: 500 });
+    if (appError.code === "VALIDATION_ERROR") {
+      return NextResponse.json({ error: appError.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: appError.message || "Failed to update confirmation." }, { status: 500 });
   }
 }

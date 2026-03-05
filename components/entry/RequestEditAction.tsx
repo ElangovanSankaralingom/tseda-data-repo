@@ -30,7 +30,7 @@ export default function RequestEditAction({
 
   if (currentStatus === "approved") {
     return (
-      <ActionButton disabled>
+      <ActionButton role="context" disabled>
         Approved
       </ActionButton>
     );
@@ -39,7 +39,7 @@ export default function RequestEditAction({
   if (currentStatus === "pending" || requesting) {
     return (
       <div className="flex items-center gap-2">
-        <ActionButton disabled>
+        <ActionButton role="context" disabled>
           Request Sent
         </ActionButton>
         {canCancelRequest ? (
@@ -57,7 +57,7 @@ export default function RequestEditAction({
 
   return (
     <div className="flex items-center gap-2">
-      <ActionButton variant="ghost" onClick={onRequest}>
+      <ActionButton role="context" onClick={onRequest}>
         Request Edit
       </ActionButton>
       {currentStatus === "rejected" ? (

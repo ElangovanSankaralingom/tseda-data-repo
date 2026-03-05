@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { AppError, toUserMessage } from "@/lib/errors";
+import { safeAction } from "@/lib/safeAction";
 
 type UploadFileMeta = {
   fileName?: string;
@@ -39,26 +41,33 @@ export function useUploadController<TMeta extends UploadFileMeta>({
     }
 
     if (!ALLOWED_MIME_TYPES.has(pendingFile.type)) {
-      setError("Only PDF/JPG/PNG allowed.");
+      setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: "Only PDF/JPG/PNG allowed." })));
       return null;
     }
 
     if (pendingFile.size > MAX_BYTES) {
-      setError("Max file size is 20MB.");
+      setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: "Max file size is 20MB." })));
       return null;
     }
 
+    setBusy(true);
+    setError(null);
+    setProgress(0);
+
     try {
-      setBusy(true);
-      setError(null);
-      setProgress(0);
-      const meta = await upload(pendingFile, (pct) => setProgress(pct));
+      const result = await safeAction(
+        () => upload(pendingFile, (pct) => setProgress(pct)),
+        { context: "useUploadController.uploadAndSave" }
+      );
+
+      if (!result.ok) {
+        setError(toUserMessage(result.error));
+        return null;
+      }
+
       setPendingFile(null);
       setProgress(100);
-      return meta;
-    } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
-      return null;
+      return result.data;
     } finally {
       setBusy(false);
     }
@@ -68,16 +77,22 @@ export function useUploadController<TMeta extends UploadFileMeta>({
     async (meta: TMeta | null) => {
       if (!meta) return false;
 
+      setBusy(true);
+      setError(null);
+
       try {
-        setBusy(true);
-        setError(null);
-        await remove(meta);
+        const result = await safeAction(() => remove(meta), {
+          context: "useUploadController.deleteFile",
+        });
+
+        if (!result.ok) {
+          setError(toUserMessage(result.error));
+          return false;
+        }
+
         setPendingFile(null);
         setProgress(0);
         return true;
-      } catch (deleteError) {
-        setError(deleteError instanceof Error ? deleteError.message : "Delete failed.");
-        return false;
       } finally {
         setBusy(false);
       }

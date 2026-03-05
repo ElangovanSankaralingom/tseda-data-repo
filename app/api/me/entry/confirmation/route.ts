@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
 import { sendForConfirmation } from "@/lib/entryEngine";
+import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
 
@@ -39,19 +40,31 @@ export async function POST(request: Request) {
     revalidatePath(entryDetail(categoryKey, entryId));
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to send for confirmation.";
-    if (message === "Entry not found") {
-      return NextResponse.json({ error: message }, { status: 404 });
+    const appError = normalizeError(error);
+    logError(appError, "api.me.entry.confirmation.POST");
+
+    if (appError.code === "NOT_FOUND" || appError.message === "Entry not found") {
+      return NextResponse.json({ error: appError.message || "Entry not found" }, { status: 404 });
     }
-    if (message === "Complete the entry with Done before confirmation.") {
-      return NextResponse.json({ error: message }, { status: 400 });
+    if (
+      appError.code === "VALIDATION_ERROR" ||
+      appError.message === "Complete the entry with Done before confirmation."
+    ) {
+      return NextResponse.json({ error: appError.message }, { status: 400 });
     }
-    if (message.startsWith("Invalid status transition:")) {
+    if (appError.message.startsWith("Invalid status transition:")) {
       return NextResponse.json(
         { error: "Entry cannot be sent for confirmation in the current state." },
         { status: 400 }
       );
     }
-    return NextResponse.json({ error: message }, { status: 500 });
+    if (appError.code === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (appError.code === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    return NextResponse.json({ error: appError.message }, { status: 500 });
   }
 }
