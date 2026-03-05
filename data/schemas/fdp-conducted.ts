@@ -20,6 +20,25 @@ const fields = [
 export const fdpConductedSchema: EntrySchema = {
   category: "fdp-conducted",
   fields,
+  immutableWhenPending: [
+    "academicYear",
+    "semesterType",
+    "startDate",
+    "endDate",
+    "eventName",
+    "coordinatorName",
+    "coordinatorEmail",
+    "coCoordinators",
+  ],
+  requiredForCommit: [
+    "academicYear",
+    "semesterType",
+    "startDate",
+    "endDate",
+    "eventName",
+    "permissionLetter",
+    "geotaggedPhotos",
+  ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);
   },

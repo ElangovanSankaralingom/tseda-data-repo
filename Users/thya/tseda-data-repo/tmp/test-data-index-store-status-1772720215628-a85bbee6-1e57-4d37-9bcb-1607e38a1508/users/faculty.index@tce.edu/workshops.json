@@ -1,0 +1,15 @@
+[
+  {
+    "eventName": "Index Confirmation Entry",
+    "status": "final",
+    "id": "ffeaf704-6271-46da-8eb5-44f14614e938",
+    "createdAt": "2026-03-05T14:16:55.629Z",
+    "updatedAt": "2026-03-05T14:16:55.633Z",
+    "confirmationStatus": "APPROVED",
+    "sentForConfirmationAtISO": "2026-03-05T14:16:55.632Z",
+    "confirmedAtISO": "2026-03-05T14:16:55.633Z",
+    "confirmedBy": "senarch@tce.edu",
+    "confirmationRejectedReason": "",
+    "attachments": []
+  }
+]

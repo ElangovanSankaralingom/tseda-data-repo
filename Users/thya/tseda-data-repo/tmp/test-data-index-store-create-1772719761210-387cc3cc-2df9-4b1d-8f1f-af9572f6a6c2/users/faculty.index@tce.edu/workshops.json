@@ -1,0 +1,15 @@
+[
+  {
+    "eventName": "Index Seed Entry",
+    "id": "7112afd3-7ae2-4b62-bf78-afb7da2d1b7e",
+    "status": "draft",
+    "createdAt": "2026-03-05T14:09:21.212Z",
+    "updatedAt": "2026-03-05T14:09:21.212Z",
+    "confirmationStatus": "DRAFT",
+    "sentForConfirmationAtISO": null,
+    "confirmedAtISO": null,
+    "confirmedBy": null,
+    "confirmationRejectedReason": "",
+    "attachments": []
+  }
+]

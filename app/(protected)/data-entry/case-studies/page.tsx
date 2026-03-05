@@ -17,6 +17,7 @@ import EntryUploader from "@/components/upload/EntryUploader";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
@@ -46,6 +47,12 @@ import {
   STUDENT_YEAR_OPTIONS,
   type StudentYear,
 } from "@/lib/student-academic";
+import { canEditField } from "@/lib/pendingImmutability";
+import {
+  createOptimisticSnapshot,
+  optimisticRemove,
+  optimisticUpsert,
+} from "@/lib/ui/optimistic";
 
 type FileMeta = {
   fileName: string;
@@ -240,8 +247,8 @@ function emptyForm(currentFaculty?: FacultyRowValue): CaseStudyEntry {
   };
 }
 
-function hydrateEntry(entry: CaseStudyEntry) {
-  return hydratePdfSnapshot(entry, "case-studies");
+function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
+  return hydratePdfSnapshot(entry, "case-studies") as CaseStudyEntry;
 }
 
 function SectionCard({
@@ -483,6 +490,9 @@ export function CaseStudiesPage({
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const entryLocked = isEntryLockedFromStatus(form);
   const controlsDisabled = isViewMode || entryLocked;
+  const pendingCoreLocked = getEntryApprovalStatus(form) === "PENDING_CONFIRMATION";
+  const coreFieldDisabled = (fieldKey: string) =>
+    controlsDisabled || !canEditField(form, "case-studies", fieldKey);
   const hasBusyUploads =
     Object.values(singleUploadStatus).some((status) => status.busy) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
@@ -513,6 +523,10 @@ export function CaseStudiesPage({
   const generateEntrySnapshot = useGenerateEntry<CaseStudyEntry>({
     category: "case-studies",
     email,
+    hydrateEntry,
+  });
+  const commitDraftEntry = useCommitDraft<CaseStudyEntry>({
+    category: "case-studies",
     hydrateEntry,
   });
   const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
@@ -626,6 +640,8 @@ export function CaseStudiesPage({
     if (intent === "save" && !lifecycle.canSave) return;
     if (intent === "done" && !lifecycle.canDone) return;
     saveLockRef.current = true;
+    let rollbackSnapshot: CaseStudyEntry[] | null = null;
+    let lastPersistedEntry: CaseStudyEntry | null = null;
 
     try {
       if (hasBusyUploads) {
@@ -637,20 +653,44 @@ export function CaseStudiesPage({
       setSaving(true);
       const entryToSave: CaseStudyEntry = {
         ...form,
-        status: intent === "done" || form.status === "final" ? "final" : "draft",
+        status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
+      const optimisticEntry = hydrateEntry({
+        ...entryToSave,
+        updatedAt: new Date().toISOString(),
+      });
+      setList((current) => {
+        rollbackSnapshot = createOptimisticSnapshot(current);
+        return optimisticUpsert(current, optimisticEntry);
+      });
       const persisted = hydrateEntry(await persistProgress(entryToSave));
-      applyPersistedEntry(persisted);
+      lastPersistedEntry = persisted;
+      setList((current) => optimisticUpsert(current, persisted));
+
+      const finalEntry: CaseStudyEntry =
+        intent === "done" ? await commitDraftEntry(String(persisted.id)) : persisted;
+      if (intent === "done") {
+        lastPersistedEntry = finalEntry;
+        setList((current) => optimisticUpsert<CaseStudyEntry>(current, finalEntry));
+      }
+
+      applyPersistedEntry(finalEntry);
       setAttemptedSectionSave(false);
       setSubmitAttemptedFinal(false);
-      await refreshList(email);
-      setToast({ type: "ok", msg: "Saved." });
+      void refreshList(email);
+      setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved." });
       setTimeout(() => setToast(null), 1400);
       if (options?.closeAfterSave) {
         await closeForm();
       }
     } catch (error) {
+      const persistedEntry = lastPersistedEntry;
+      if (persistedEntry) {
+        setList((current) => optimisticUpsert<CaseStudyEntry>(current, persistedEntry));
+      } else if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Save failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
@@ -863,6 +903,12 @@ export function CaseStudiesPage({
   }
 
   async function deleteEntry(id: string) {
+    let rollbackSnapshot: CaseStudyEntry[] | null = null;
+    setList((current) => {
+      rollbackSnapshot = createOptimisticSnapshot(current);
+      return optimisticRemove(current, id);
+    });
+
     try {
       const response = await fetch("/api/me/case-studies", {
         method: "DELETE",
@@ -875,10 +921,14 @@ export function CaseStudiesPage({
         throw new Error(payload?.error || "Delete failed.");
       }
 
-      setList((current) => current.filter((item) => item.id !== id));
+      setList((current) => optimisticRemove(current, id));
+      void refreshList(email);
       setToast({ type: "ok", msg: "Entry deleted." });
       setTimeout(() => setToast(null), 1200);
     } catch (error) {
+      if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Delete failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1500);
@@ -1128,6 +1178,11 @@ export function CaseStudiesPage({
             title={isViewMode ? "Case Study Entry" : "New Case Study Entry"}
             subtitle="Add the entry details and generate the entry to unlock uploads."
           >
+            {pendingCoreLocked ? (
+              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Pending confirmation — core fields cannot be edited.
+              </p>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={attemptedSectionSave ? errors.academicYear : undefined}>
                 <SelectDropdown
@@ -1135,7 +1190,7 @@ export function CaseStudiesPage({
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("academicYear")}
                   error={attemptedSectionSave && !!errors.academicYear}
                 />
               </Field>
@@ -1151,7 +1206,7 @@ export function CaseStudiesPage({
                   }
                   options={SEMESTER_TYPE_OPTIONS}
                   placeholder="Select semester type"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("semesterType")}
                   error={attemptedSectionSave && !!errors.semesterType}
                 />
               </Field>
@@ -1168,7 +1223,7 @@ export function CaseStudiesPage({
                 <DateField
                   value={form.startDate}
                   onChange={(next) => setForm((current) => ({ ...current, startDate: next }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("startDate")}
                   error={attemptedSectionSave && !!errors.startDate}
                 />
               </Field>
@@ -1181,7 +1236,7 @@ export function CaseStudiesPage({
                 <DateField
                   value={form.endDate}
                   onChange={(next) => setForm((current) => ({ ...current, endDate: next }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("endDate")}
                   error={attemptedSectionSave && !!errors.endDate}
                 />
               </Field>
@@ -1192,7 +1247,7 @@ export function CaseStudiesPage({
                 <input
                   value={form.placeOfVisit}
                   onChange={(event) => setForm((current) => ({ ...current, placeOfVisit: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("placeOfVisit")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     attemptedSectionSave && errors.placeOfVisit
@@ -1207,7 +1262,7 @@ export function CaseStudiesPage({
                   value={form.purposeOfVisit}
                   onChange={(event) => setForm((current) => ({ ...current, purposeOfVisit: event.target.value }))}
                   rows={4}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("purposeOfVisit")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     attemptedSectionSave && errors.purposeOfVisit
@@ -1236,7 +1291,7 @@ export function CaseStudiesPage({
                   }
                   options={STUDENT_YEAR_OPTIONS}
                   placeholder="Select year"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("studentYear")}
                   error={attemptedSectionSave && !!errors.studentYear}
                 />
               </Field>
@@ -1248,7 +1303,7 @@ export function CaseStudiesPage({
               >
                 <SelectDropdown
                   value={form.semesterNumber === null ? "" : String(form.semesterNumber)}
-                  disabled={controlsDisabled || !normalizedStudentYear}
+                  disabled={coreFieldDisabled("semesterNumber") || !normalizedStudentYear}
                   onChange={(value) =>
                     setForm((current) => ({
                       ...current,
@@ -1277,7 +1332,7 @@ export function CaseStudiesPage({
                       amountSupport: value === "" ? null : Number(value),
                     }))
                   }
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("amountSupport")}
                   error={attemptedSectionSave && !!errors.amountSupport}
                   placeholder="Enter amount"
                 />
@@ -1298,7 +1353,7 @@ export function CaseStudiesPage({
                 onRowsChange={(rows) => setForm((current) => ({ ...current, staffAccompanying: rows }))}
                 onPersistRow={persistStaffRows}
                 facultyOptions={FACULTY_OPTIONS}
-                parentLocked={controlsDisabled}
+                parentLocked={coreFieldDisabled("staffAccompanying")}
                 viewOnly={isViewMode}
                 sectionError={errors.staffAccompanying}
                 showSectionError={attemptedSectionSave}
@@ -1326,7 +1381,7 @@ export function CaseStudiesPage({
                       participants: digits === "" ? null : Number(digits),
                     }));
                   }}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("participants")}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:border-ring/50 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
                 />
               </Field>

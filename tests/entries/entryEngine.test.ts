@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   approveEntry,
+  commitDraft,
   createEntry,
   deleteEntry,
   getEntryWorkflowStatus,
@@ -9,6 +10,7 @@ import {
   listEntriesForCategory,
   rejectEntry,
   sendForConfirmation,
+  updateEntry,
 } from "../../lib/entryEngine.ts";
 import type { CategoryKey } from "../../lib/entries/types.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
@@ -16,6 +18,36 @@ import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 const category: CategoryKey = "workshops";
 const ownerEmail = "faculty.engine@tce.edu";
 const adminEmail = "senarch@tce.edu";
+
+function buildUploadedFile(seed: string) {
+  return {
+    fileName: `${seed}.pdf`,
+    mimeType: "application/pdf",
+    size: 100,
+    uploadedAt: new Date().toISOString(),
+    url: `/uploads/${seed}.pdf`,
+    storedPath: `${seed}.pdf`,
+  };
+}
+
+function buildCompleteWorkshopPayload() {
+  return {
+    academicYear: "Academic Year 2025-2026",
+    semesterType: "Odd",
+    startDate: "2025-08-10",
+    endDate: "2025-08-12",
+    eventName: "Commit Ready Workshop",
+    speakerName: "Speaker",
+    organisationName: "TCE",
+    uploads: {
+      permissionLetter: buildUploadedFile("permission"),
+      brochure: buildUploadedFile("brochure"),
+      attendance: buildUploadedFile("attendance"),
+      organiserProfile: buildUploadedFile("organiser-profile"),
+      geotaggedPhotos: [buildUploadedFile("photo-1")],
+    },
+  };
+}
 
 async function withSandbox<T>(label: string, run: () => Promise<T>): Promise<T> {
   const sandbox = await createTestDataRoot(label);
@@ -45,11 +77,13 @@ test("createEntry stores entry in DRAFT workflow state", async () => {
 test("sendForConfirmation then approve moves to APPROVED and locks entry", async () => {
   await withSandbox("entry-engine-approve", async () => {
     const created = await createEntry(ownerEmail, category, {
+      ...buildCompleteWorkshopPayload(),
       eventName: "Approval Workshop",
-      status: "final",
     });
+    const committed = await commitDraft(ownerEmail, category, String(created.id));
+    assert.equal(String(committed.status), "final");
 
-    const pending = await sendForConfirmation(ownerEmail, category, String(created.id));
+    const pending = await sendForConfirmation(ownerEmail, category, String(committed.id));
     assert.equal(getEntryWorkflowStatus(pending), "PENDING_CONFIRMATION");
 
     const approved = await approveEntry(
@@ -66,10 +100,11 @@ test("sendForConfirmation then approve moves to APPROVED and locks entry", async
 test("rejectEntry moves pending entries to REJECTED and keeps them editable", async () => {
   await withSandbox("entry-engine-reject", async () => {
     const created = await createEntry(ownerEmail, category, {
+      ...buildCompleteWorkshopPayload(),
       eventName: "Reject Workshop",
-      status: "final",
     });
 
+    await commitDraft(ownerEmail, category, String(created.id));
     await sendForConfirmation(ownerEmail, category, String(created.id));
     const rejected = await rejectEntry(
       adminEmail,
@@ -95,5 +130,73 @@ test("deleteEntry removes persisted records", async () => {
 
     const list = await listEntriesForCategory(ownerEmail, category);
     assert.equal(list.length, 0);
+  });
+});
+
+test("pending entries reject immutable core field updates", async () => {
+  await withSandbox("entry-engine-pending-core-block", async () => {
+    const created = await createEntry(ownerEmail, category, {
+      ...buildCompleteWorkshopPayload(),
+      eventName: "Pending Workshop",
+    });
+    await commitDraft(ownerEmail, category, String(created.id));
+    await sendForConfirmation(ownerEmail, category, String(created.id));
+
+    await assert.rejects(
+      () =>
+        updateEntry(ownerEmail, category, String(created.id), {
+          eventName: "Changed While Pending",
+        }),
+      /Pending confirmation — core fields cannot be edited\./
+    );
+  });
+});
+
+test("pending entries allow attachment updates", async () => {
+  await withSandbox("entry-engine-pending-upload-allow", async () => {
+    const created = await createEntry(ownerEmail, category, {
+      ...buildCompleteWorkshopPayload(),
+      eventName: "Pending Workshop Upload",
+    });
+    await commitDraft(ownerEmail, category, String(created.id));
+    await sendForConfirmation(ownerEmail, category, String(created.id));
+
+    const updated = await updateEntry(ownerEmail, category, String(created.id), {
+      uploads: {
+        permissionLetter: {
+          fileName: "permission.pdf",
+          mimeType: "application/pdf",
+          size: 100,
+          uploadedAt: new Date().toISOString(),
+          url: "/uploads/permission.pdf",
+          storedPath: "permission.pdf",
+        },
+        brochure: null,
+        attendance: null,
+        organiserProfile: null,
+        geotaggedPhotos: [],
+      },
+    });
+
+    assert.equal(getEntryWorkflowStatus(updated), "PENDING_CONFIRMATION");
+    assert.ok(updated.uploads);
+  });
+});
+
+test("commitDraft blocks incomplete entries and sets status final when complete", async () => {
+  await withSandbox("entry-engine-commit-draft", async () => {
+    const incomplete = await createEntry(ownerEmail, category, {
+      eventName: "Incomplete workshop",
+    });
+
+    await assert.rejects(
+      () => commitDraft(ownerEmail, category, String(incomplete.id)),
+      /Commit blocked\. Complete required fields:/
+    );
+
+    const complete = await createEntry(ownerEmail, category, buildCompleteWorkshopPayload());
+    const committed = await commitDraft(ownerEmail, category, String(complete.id));
+    assert.equal(String(committed.status), "final");
+    assert.equal(getEntryWorkflowStatus(committed), "DRAFT");
   });
 });
