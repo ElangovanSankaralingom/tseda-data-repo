@@ -1,31 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import StreakSummaryCard from "@/components/gamification/StreakSummaryCard";
 import {
   aggregateGlobalWins,
   isFutureDatedEntry,
-  isWithinDueWindow,
+  normalizeStreakState,
   remainingDaysFromDueAtISO,
+  status as getStreakStatus,
   type StreakState,
 } from "@/lib/gamification";
 
-type FdpAttendedEntry = {
-  id: string;
-  programName: string;
-  startDate: string;
-  endDate: string;
-  status?: string;
-  streak: StreakState;
-  createdAt?: string;
-  updatedAt?: string;
-  completionCertificate?: {
-    storedPath: string;
-  } | null;
-};
-
-type FdpConductedEntry = {
+type DashboardEntry = {
   id: string;
   startDate: string;
   endDate: string;
@@ -33,10 +20,6 @@ type FdpConductedEntry = {
   streak: StreakState;
   createdAt?: string;
   updatedAt?: string;
-  coordinatorName?: string;
-  geotaggedPhotos?: Array<{
-    storedPath: string;
-  }> | null;
 };
 
 type PendingEntryRow = {
@@ -120,113 +103,178 @@ function getEntrySortTime(primary?: string, fallback?: string) {
   return getSortTime(fallback);
 }
 
+type DashboardEntriesByCategory = {
+  fdpAttended: DashboardEntry[];
+  fdpConducted: DashboardEntry[];
+  caseStudies: DashboardEntry[];
+  guestLectures: DashboardEntry[];
+  workshops: DashboardEntry[];
+};
+
+const EMPTY_ENTRIES_BY_CATEGORY: DashboardEntriesByCategory = {
+  fdpAttended: [],
+  fdpConducted: [],
+  caseStudies: [],
+  guestLectures: [],
+  workshops: [],
+};
+
+const CATEGORY_PENDING_CONFIG: Array<{
+  key: keyof DashboardEntriesByCategory;
+  categoryLabel: string;
+  route: string;
+}> = [
+  { key: "fdpAttended", categoryLabel: "FDP - Attended", route: "/data-entry/fdp-attended" },
+  { key: "fdpConducted", categoryLabel: "FDP - Conducted", route: "/data-entry/fdp-conducted" },
+  { key: "caseStudies", categoryLabel: "Case Studies", route: "/data-entry/case-studies" },
+  { key: "guestLectures", categoryLabel: "Guest Lectures", route: "/data-entry/guest-lectures" },
+  { key: "workshops", categoryLabel: "Workshops", route: "/data-entry/workshops" },
+];
+
+function parseEntryList(payload: unknown): DashboardEntry[] {
+  return Array.isArray(payload) ? (payload as DashboardEntry[]) : [];
+}
+
+function isActiveStreakEntry(entry: DashboardEntry): boolean {
+  const streak = normalizeStreakState(entry.streak);
+  return (
+    isFutureDatedEntry(entry.startDate, entry.endDate) &&
+    getStreakStatus(streak) === "active"
+  );
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [attendedEntries, setAttendedEntries] = useState<FdpAttendedEntry[]>([]);
-  const [conductedEntries, setConductedEntries] = useState<FdpConductedEntry[]>([]);
+  const [entriesByCategory, setEntriesByCategory] = useState<DashboardEntriesByCategory>(
+    EMPTY_ENTRIES_BY_CATEGORY
+  );
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const meResponse = await fetch("/api/me", { cache: "no-store" });
-        const mePayload = await meResponse.json();
+  const loadDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const meResponse = await fetch("/api/me", { cache: "no-store" });
+      const mePayload = await meResponse.json();
 
-        if (!meResponse.ok || !String(mePayload?.email ?? "").trim()) {
-          throw new Error(mePayload?.error || "Failed to load streaks.");
-        }
-
-        const email = String(mePayload.email).trim();
-        const [attendedResponse, conductedResponse] = await Promise.all([
-          fetch("/api/me/fdp-attended", { cache: "no-store" }),
-          fetch(`/api/me/fdp-conducted?email=${encodeURIComponent(email)}`, { cache: "no-store" }),
-        ]);
-
-        const [attendedPayload, conductedPayload] = await Promise.all([
-          attendedResponse.json(),
-          conductedResponse.json(),
-        ]);
-
-        if (!attendedResponse.ok) {
-          throw new Error(attendedPayload?.error || "Failed to load streaks.");
-        }
-
-        if (!conductedResponse.ok) {
-          throw new Error(conductedPayload?.error || "Failed to load streaks.");
-        }
-
-        setAttendedEntries(Array.isArray(attendedPayload) ? (attendedPayload as FdpAttendedEntry[]) : []);
-        setConductedEntries(Array.isArray(conductedPayload) ? (conductedPayload as FdpConductedEntry[]) : []);
-        setError(null);
-      } catch (nextError) {
-        const message = nextError instanceof Error ? nextError.message : "Failed to load streaks.";
-        setError(message);
-      } finally {
-        setLoading(false);
+      if (!meResponse.ok || !String(mePayload?.email ?? "").trim()) {
+        throw new Error(mePayload?.error || "Failed to load streaks.");
       }
-    })();
+
+      const email = String(mePayload.email).trim();
+      const [
+        attendedResponse,
+        conductedResponse,
+        caseStudiesResponse,
+        guestLecturesResponse,
+        workshopsResponse,
+      ] = await Promise.all([
+        fetch("/api/me/fdp-attended", { cache: "no-store" }),
+        fetch(`/api/me/fdp-conducted?email=${encodeURIComponent(email)}`, { cache: "no-store" }),
+        fetch(`/api/me/case-studies?email=${encodeURIComponent(email)}`, { cache: "no-store" }),
+        fetch(`/api/me/guest-lectures?email=${encodeURIComponent(email)}`, { cache: "no-store" }),
+        fetch(`/api/me/workshops?email=${encodeURIComponent(email)}`, { cache: "no-store" }),
+      ]);
+
+      const [
+        attendedPayload,
+        conductedPayload,
+        caseStudiesPayload,
+        guestLecturesPayload,
+        workshopsPayload,
+      ] = await Promise.all([
+        attendedResponse.json(),
+        conductedResponse.json(),
+        caseStudiesResponse.json(),
+        guestLecturesResponse.json(),
+        workshopsResponse.json(),
+      ]);
+
+      if (!attendedResponse.ok) {
+        throw new Error(attendedPayload?.error || "Failed to load streaks.");
+      }
+      if (!conductedResponse.ok) {
+        throw new Error(conductedPayload?.error || "Failed to load streaks.");
+      }
+      if (!caseStudiesResponse.ok) {
+        throw new Error(caseStudiesPayload?.error || "Failed to load streaks.");
+      }
+      if (!guestLecturesResponse.ok) {
+        throw new Error(guestLecturesPayload?.error || "Failed to load streaks.");
+      }
+      if (!workshopsResponse.ok) {
+        throw new Error(workshopsPayload?.error || "Failed to load streaks.");
+      }
+
+      setEntriesByCategory({
+        fdpAttended: parseEntryList(attendedPayload),
+        fdpConducted: parseEntryList(conductedPayload),
+        caseStudies: parseEntryList(caseStudiesPayload),
+        guestLectures: parseEntryList(guestLecturesPayload),
+        workshops: parseEntryList(workshopsPayload),
+      });
+      setError(null);
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : "Failed to load streaks.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadDashboardData();
+  }, [loadDashboardData]);
+
+  useEffect(() => {
+    const onFocus = () => {
+      void loadDashboardData();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadDashboardData();
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [loadDashboardData]);
 
   const globalWins = useMemo(
     () =>
       aggregateGlobalWins({
-        fdpAttended: attendedEntries,
-        fdpConducted: conductedEntries,
+        fdpAttended: entriesByCategory.fdpAttended,
+        fdpConducted: entriesByCategory.fdpConducted,
+        caseStudies: entriesByCategory.caseStudies,
+        guestLectures: entriesByCategory.guestLectures,
+        workshops: entriesByCategory.workshops,
       }),
-    [attendedEntries, conductedEntries]
-  );
-  const pendingAttendedRows = useMemo(
-    (): PendingEntryRow[] =>
-      attendedEntries
-        .filter(
-          (entry) =>
-            isFutureDatedEntry(entry.startDate, entry.endDate) &&
-            entry.status === "final" &&
-            !!entry.streak.activatedAtISO &&
-            !entry.completionCertificate &&
-            isWithinDueWindow(entry.streak.dueAtISO)
-        )
-        .sort(
-          (left, right) =>
-            getEntrySortTime(left.createdAt, left.updatedAt) - getEntrySortTime(right.createdAt, right.updatedAt)
-        )
-        .map((entry, index) => ({
-          id: entry.id,
-          categoryLabel: "FDP - Attended",
-          tag: `P${index + 1}`,
-          route: "/data-entry/fdp-attended",
-          remainingDays: remainingDaysFromDueAtISO(entry.streak.dueAtISO),
-        })),
-    [attendedEntries]
-  );
-  const pendingConductedRows = useMemo(
-    (): PendingEntryRow[] =>
-      conductedEntries
-        .filter(
-          (entry) =>
-            isFutureDatedEntry(entry.startDate, entry.endDate) &&
-            entry.status === "final" &&
-            !!entry.streak.activatedAtISO &&
-            (!Array.isArray(entry.geotaggedPhotos) || entry.geotaggedPhotos.length === 0) &&
-            isWithinDueWindow(entry.streak.dueAtISO)
-        )
-        .sort(
-          (left, right) =>
-            getEntrySortTime(left.createdAt, left.updatedAt) - getEntrySortTime(right.createdAt, right.updatedAt)
-        )
-        .map((entry, index) => ({
-          id: entry.id,
-          categoryLabel: "FDP - Conducted",
-          tag: `P${index + 1}`,
-          route: "/data-entry/fdp-conducted",
-          remainingDays: remainingDaysFromDueAtISO(entry.streak.dueAtISO),
-        })),
-    [conductedEntries]
+    [entriesByCategory]
   );
   const orderedPendingRows = useMemo(
-    () => [...pendingAttendedRows, ...pendingConductedRows],
-    [pendingAttendedRows, pendingConductedRows]
+    (): PendingEntryRow[] =>
+      CATEGORY_PENDING_CONFIG.flatMap((config) => {
+        const categoryEntries = entriesByCategory[config.key];
+
+        return categoryEntries
+          .filter((entry) => isActiveStreakEntry(entry))
+          .sort(
+            (left, right) =>
+              getEntrySortTime(left.createdAt, left.updatedAt) - getEntrySortTime(right.createdAt, right.updatedAt)
+          )
+          .map((entry, index) => ({
+            id: entry.id,
+            categoryLabel: config.categoryLabel,
+            tag: `P${index + 1}`,
+            route: config.route,
+            remainingDays: remainingDaysFromDueAtISO(normalizeStreakState(entry.streak).dueAtISO),
+          }));
+      }),
+    [entriesByCategory]
   );
   const totalActivatedPendingCount = orderedPendingRows.length;
   const visiblePendingRows = orderedPendingRows.slice(0, 5);

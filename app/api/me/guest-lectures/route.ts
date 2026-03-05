@@ -588,16 +588,13 @@ export async function POST(request: Request) {
       studentYear: entry.studentYear,
       semesterNumber: entry.semesterNumber,
       participants,
-      pdfMeta: entry.status === "final" ? entry.pdfMeta ?? null : null,
-      pdfSourceHash:
-        entry.status === "final"
-          ? entry.pdfSourceHash || existing?.pdfSourceHash || ""
-          : "",
-      pdfStale: entry.status === "final" ? entry.pdfStale === true : false,
+      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
+      pdfSourceHash: entry.pdfSourceHash || existing?.pdfSourceHash || "",
+      pdfStale: entry.pdfStale === true,
       uploads: entry.uploads,
       streak: buildSavedStreak({
         status: entry.status === "final" ? "final" : "draft",
-        pdfMeta: entry.status === "final" ? entry.pdfMeta ?? null : null,
+        pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
         startDate: entry.startDate,
         endDate: entry.endDate,
         streak: entry.streak,
@@ -752,6 +749,10 @@ export async function PATCH(request: Request) {
     const hasSemesterNumber = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "semesterNumber");
     const hasParticipants = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "participants");
     const hasUploads = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "uploads");
+    const hasPdfMeta = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfMeta");
+    const hasPdfSourceHash =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash");
+    const hasPdfStale = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale");
 
     if (hasAcademicYear && entry.academicYear && !ACADEMIC_YEAR_OPTIONS.has(entry.academicYear)) {
       return NextResponse.json({ error: "academicYear invalid" }, { status: 400 });
@@ -874,29 +875,13 @@ export async function PATCH(request: Request) {
       studentYear: hasStudentYear ? entry.studentYear : existing?.studentYear ?? "",
       semesterNumber: hasSemesterNumber ? entry.semesterNumber : existing?.semesterNumber ?? null,
       participants: hasParticipants ? entry.participants : existing?.participants ?? null,
-      pdfMeta:
-        entry.status === "final"
-          ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
-          : null,
-      pdfSourceHash:
-        entry.status === "final"
-          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash")
-              ? (entry.pdfSourceHash ?? "")
-              : (existing?.pdfSourceHash ?? ""))
-          : "",
-      pdfStale:
-        entry.status === "final"
-          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale")
-              ? entry.pdfStale === true
-              : existing?.pdfStale === true)
-          : false,
+      pdfMeta: hasPdfMeta ? (entry.pdfMeta ?? null) : existing?.pdfMeta ?? null,
+      pdfSourceHash: hasPdfSourceHash ? (entry.pdfSourceHash ?? "") : existing?.pdfSourceHash ?? "",
+      pdfStale: hasPdfStale ? entry.pdfStale === true : existing?.pdfStale === true,
       uploads: nextUploads,
       streak: buildSavedStreak({
         status: entry.status === "final" ? "final" : existing?.status ?? "draft",
-        pdfMeta:
-          entry.status === "final"
-            ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
-            : null,
+        pdfMeta: hasPdfMeta ? (entry.pdfMeta ?? null) : existing?.pdfMeta ?? null,
         startDate: hasStartDate ? entry.startDate : existing?.startDate ?? "",
         endDate: hasEndDate ? entry.endDate : existing?.endDate ?? "",
         streak: entry.streak ?? existing?.streak,
