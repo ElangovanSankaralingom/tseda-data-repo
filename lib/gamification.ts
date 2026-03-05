@@ -281,6 +281,7 @@ export function isRequestEditApproved(value: string | null | undefined) {
 }
 
 export function getEditLockState(entry: LockableEntryLike): EditLockState {
+  void entry;
   return {
     isLocked: false,
     expiresAtISO: null,
@@ -289,10 +290,12 @@ export function getEditLockState(entry: LockableEntryLike): EditLockState {
 }
 
 export function isEntryLockedState(entry: LockableEntryLike) {
+  void entry;
   return false;
 }
 
 export function isEntryEditable(entry: LockableEntryLike) {
+  void entry;
   return true;
 }
 

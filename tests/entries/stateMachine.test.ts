@@ -129,7 +129,7 @@ test("complete but unsaved post-stage keeps done disabled", () => {
   assert.equal(state.canSave, true);
 });
 
-test("locked entries disable all actions", () => {
+test("lock flag does not force-disable actions", () => {
   const state = computeEntryLifecycle({
     isLocked: true,
     hasPdfSnapshot: true,
@@ -139,9 +139,9 @@ test("locked entries disable all actions", () => {
     postStageDirty: true,
   });
 
-  assert.equal(state.stage, "locked");
-  assert.equal(state.canSave, false);
-  assert.equal(state.canGenerate, false);
+  assert.equal(state.stage, "post");
+  assert.equal(state.canSave, true);
+  assert.equal(state.canGenerate, true);
   assert.equal(state.canPreview, false);
   assert.equal(state.canDownload, false);
   assert.equal(state.canDone, false);
