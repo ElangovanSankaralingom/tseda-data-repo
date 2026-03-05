@@ -415,11 +415,6 @@ export function FdpConductedPage({ viewEntryId }: FdpConductedPageProps = {}) {
       nextErrors.eventName = "Event name is required.";
     }
 
-    const hasBlankCoCoordinator = form.coCoordinators.some((value) => value.name.trim().length === 0);
-    if (hasBlankCoCoordinator) {
-      nextErrors.coCoordinators = "Remove empty co-coordinator rows or fill them in.";
-    }
-
     const emailCounts = new Map<string, number>();
     const selectedEmails = [form.coordinatorEmail, ...form.coCoordinators.map((value) => value.email)]
       .map((value) => value.trim().toLowerCase())
