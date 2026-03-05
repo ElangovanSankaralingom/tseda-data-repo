@@ -4,6 +4,13 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
+  createEntry,
+  deleteEntry as deleteEngineEntry,
+  listEntriesForCategory,
+  replaceEntriesForCategory,
+  updateEntry,
+} from "@/lib/entryEngine";
+import {
   cloneOptionalFileArrayToTarget,
   cloneOptionalFileToTarget,
   shouldShareEntry,
@@ -30,7 +37,7 @@ import {
   type StudentYear,
 } from "@/lib/student-academic";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
-import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
+import { safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {
   fileName: string;
@@ -356,28 +363,12 @@ async function getAuthorizedEmail() {
   return email;
 }
 
-function getStoreFile(email: string) {
-  return getUserCategoryStoreFile(email, "guest-lectures.json");
-}
-
 async function readList(email: string): Promise<GuestLectureEntry[]> {
-  const filePath = getStoreFile(email);
-
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.map(normalizeEntry).filter((entry): entry is GuestLectureEntry => !!entry)
-      : [];
-  } catch {
-    return [];
-  }
+  return listEntriesForCategory(email, "guest-lectures", normalizeEntry);
 }
 
 async function writeList(email: string, list: GuestLectureEntry[]) {
-  const filePath = getStoreFile(email);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+  await replaceEntriesForCategory(email, "guest-lectures", list);
 }
 
 async function deleteStoredFile(email: string, meta: FileMeta | null) {
@@ -627,15 +618,13 @@ export async function POST(request: Request) {
       }
     }
 
-    const next = existing
-      ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
-      : [savedEntry, ...currentList];
+    const persisted = existing
+      ? await updateEntry<GuestLectureEntry>(email, "guest-lectures", savedEntry.id, savedEntry)
+      : await createEntry<GuestLectureEntry>(email, "guest-lectures", savedEntry);
 
-    await writeList(email, next);
-
-    if (shouldShareEntry(savedEntry)) {
+    if (shouldShareEntry(persisted)) {
       try {
-        const targets = buildTargetEmails(savedEntry.coCoordinators, email);
+        const targets = buildTargetEmails(persisted.coCoordinators, email);
         for (const target of targets) {
           const targetList = await readList(target.email);
           if (targetList.some((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId)) {
@@ -643,42 +632,42 @@ export async function POST(request: Request) {
           }
 
           const clonedEntry: GuestLectureEntry = {
-            ...savedEntry,
+            ...persisted,
             id: sharedEntryId,
             sharedEntryId,
             sourceEmail: email,
             sharedRole: "coCoordinator",
             uploads: {
               permissionLetter: await cloneOptionalFileToTarget(
-                savedEntry.uploads.permissionLetter,
+                persisted.uploads.permissionLetter,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "permissionLetter"
               ),
               brochure: await cloneOptionalFileToTarget(
-                savedEntry.uploads.brochure,
+                persisted.uploads.brochure,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "brochure"
               ),
               attendance: await cloneOptionalFileToTarget(
-                savedEntry.uploads.attendance,
+                persisted.uploads.attendance,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "attendance"
               ),
               speakerProfile: await cloneOptionalFileToTarget(
-                savedEntry.uploads.speakerProfile,
+                persisted.uploads.speakerProfile,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "speakerProfile"
               ),
               geotaggedPhotos: await cloneOptionalFileArrayToTarget(
-                savedEntry.uploads.geotaggedPhotos,
+                persisted.uploads.geotaggedPhotos,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
@@ -696,7 +685,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(savedEntry, { status: 200 });
+    return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Save failed";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -896,16 +885,13 @@ export async function PATCH(request: Request) {
       !!savedEntry.pdfSourceHash &&
       hashPrePdfFields(savedEntry, "guest-lectures") !== savedEntry.pdfSourceHash;
 
-    await writeList(
-      email,
-      existing
-        ? currentList.map((item) => (item.id === savedEntry.id ? savedEntry : item))
-        : [savedEntry, ...currentList]
-    );
+    const persisted = existing
+      ? await updateEntry<GuestLectureEntry>(email, "guest-lectures", savedEntry.id, savedEntry)
+      : await createEntry<GuestLectureEntry>(email, "guest-lectures", savedEntry);
 
-    if (shouldShareEntry(savedEntry)) {
+    if (shouldShareEntry(persisted)) {
       try {
-        const targets = buildTargetEmails(savedEntry.coCoordinators, email);
+        const targets = buildTargetEmails(persisted.coCoordinators, email);
         for (const target of targets) {
           const targetList = await readList(target.email);
           if (targetList.some((item) => item.sharedEntryId === sharedEntryId || item.id === sharedEntryId)) {
@@ -913,42 +899,42 @@ export async function PATCH(request: Request) {
           }
 
           const clonedEntry: GuestLectureEntry = {
-            ...savedEntry,
+            ...persisted,
             id: sharedEntryId,
             sharedEntryId,
             sourceEmail: email,
             sharedRole: "coCoordinator",
             uploads: {
               permissionLetter: await cloneOptionalFileToTarget(
-                savedEntry.uploads.permissionLetter,
+                persisted.uploads.permissionLetter,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "permissionLetter"
               ),
               brochure: await cloneOptionalFileToTarget(
-                savedEntry.uploads.brochure,
+                persisted.uploads.brochure,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "brochure"
               ),
               attendance: await cloneOptionalFileToTarget(
-                savedEntry.uploads.attendance,
+                persisted.uploads.attendance,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "attendance"
               ),
               speakerProfile: await cloneOptionalFileToTarget(
-                savedEntry.uploads.speakerProfile,
+                persisted.uploads.speakerProfile,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
                 "speakerProfile"
               ),
               geotaggedPhotos: await cloneOptionalFileArrayToTarget(
-                savedEntry.uploads.geotaggedPhotos,
+                persisted.uploads.geotaggedPhotos,
                 target.email,
                 "guest-lectures",
                 sharedEntryId,
@@ -966,7 +952,7 @@ export async function PATCH(request: Request) {
       }
     }
 
-    return NextResponse.json(savedEntry, { status: 200 });
+    return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Save failed";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -1002,10 +988,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Entry locked; request edit." }, { status: 403 });
     }
 
-    await writeList(
-      email,
-      currentList.filter((item) => item.id !== id)
-    );
+    await deleteEngineEntry(email, "guest-lectures", id);
 
     if (target) {
       for (const slot of REQUIRED_SLOTS) {

@@ -1,13 +1,14 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
+  listEntriesForCategory,
+  updateEntry,
+} from "@/lib/entryEngine";
+import {
   isWithinRequestEditWindow,
   nowISTTimestampISO,
 } from "@/lib/gamification";
-import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
 
@@ -46,21 +47,7 @@ async function getAuthorizedEmail() {
 }
 
 async function readList(email: string): Promise<FdpAttendedRecord[]> {
-  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
-
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as FdpAttendedRecord[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeList(email: string, list: FdpAttendedRecord[]) {
-  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+  return listEntriesForCategory(email, "fdp-attended");
 }
 
 export async function PATCH(
@@ -113,9 +100,13 @@ export async function PATCH(
         updatedAt: new Date().toISOString(),
       };
 
-      list[index] = updated;
-      await writeList(email, list);
-      return NextResponse.json(updated, { status: 200 });
+      const persisted = await updateEntry<FdpAttendedRecord>(
+        email,
+        "fdp-attended",
+        entryId,
+        updated
+      );
+      return NextResponse.json(persisted, { status: 200 });
     }
 
     if (currentStatus !== "pending") {
@@ -133,9 +124,13 @@ export async function PATCH(
       updatedAt: new Date().toISOString(),
     };
 
-    list[index] = updated;
-    await writeList(email, list);
-    return NextResponse.json(updated, { status: 200 });
+    const persisted = await updateEntry<FdpAttendedRecord>(
+      email,
+      "fdp-attended",
+      entryId,
+      updated
+    );
+    return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Request failed";
     return NextResponse.json({ error: message }, { status: 500 });

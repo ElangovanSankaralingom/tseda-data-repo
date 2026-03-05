@@ -5,12 +5,15 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isMasterAdmin } from "@/lib/admin";
-import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
-import { normalizeConfirmationStatus } from "@/lib/confirmation";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import {
+  approveEntry,
+  getEntryWorkflowStatus,
+  listEntriesForCategory,
+  rejectEntry,
+} from "@/lib/entryEngine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { type CategoryKey } from "@/lib/entries/types";
-import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 type PendingConfirmationRow = {
   ownerEmail: string;
@@ -55,19 +58,9 @@ export async function GET() {
       if (!ownerEmail.endsWith("@tce.edu")) continue;
 
       for (const categoryKey of CATEGORY_KEYS) {
-        const filePath = getUserCategoryStoreFile(ownerEmail, CATEGORY_STORE_FILES[categoryKey]);
-        let list: Array<Record<string, unknown>> = [];
-        try {
-          const raw = await fs.readFile(filePath, "utf8");
-          const parsed = JSON.parse(raw);
-          list = Array.isArray(parsed) ? parsed : [];
-        } catch {
-          list = [];
-        }
-
+        const list = await listEntriesForCategory(ownerEmail, categoryKey);
         for (const entry of list) {
-          const confirmationStatus = normalizeConfirmationStatus(entry.requestEditStatus);
-          if (confirmationStatus !== "pending") continue;
+          if (getEntryWorkflowStatus(entry) !== "PENDING_CONFIRMATION") continue;
           rows.push({
             ownerEmail,
             categoryKey,
@@ -130,35 +123,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "decision required" }, { status: 400 });
     }
 
-    const filePath = getUserCategoryStoreFile(ownerEmail, CATEGORY_STORE_FILES[categoryKey as CategoryKey]);
-    let list: Array<Record<string, unknown>> = [];
-    try {
-      const raw = await fs.readFile(filePath, "utf8");
-      const parsed = JSON.parse(raw);
-      list = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return NextResponse.json({ error: "Entry store not found." }, { status: 404 });
-    }
-
-    const index = list.findIndex((item) => String(item?.id ?? "").trim() === entryId);
-    if (index < 0) {
-      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-    }
-
-    const entry = list[index];
-    const now = new Date().toISOString();
-    const updatedEntry = {
-      ...entry,
-      requestEditStatus: decision === "approve" ? "approved" : "rejected",
-      confirmedAtISO: decision === "approve" ? now : null,
-      confirmedBy: decision === "approve" ? adminEmail : null,
-      confirmationRejectedReason: decision === "reject" ? String(body.rejectionReason ?? "").trim() : "",
-      updatedAt: now,
-    };
-
-    list[index] = updatedEntry;
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+    const updatedEntry =
+      decision === "approve"
+        ? await approveEntry(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId)
+        : await rejectEntry(
+            adminEmail,
+            categoryKey as CategoryKey,
+            ownerEmail,
+            entryId,
+            String(body.rejectionReason ?? "")
+          );
 
     const categoryRoute = categoryPath(categoryKey);
     revalidatePath("/dashboard");
@@ -169,6 +143,12 @@ export async function PATCH(request: Request) {
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update confirmation.";
+    if (message === "Entry not found") {
+      return NextResponse.json({ error: message }, { status: 404 });
+    }
+    if (message === "Forbidden") {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
