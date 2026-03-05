@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs"];
+const SERVER_ONLY_STUB = path.join(process.cwd(), "tests", "helpers", "serverOnlyStub.mjs");
 
 function resolveAliasToFile(specifier) {
   const withoutPrefix = specifier.slice(2);
@@ -30,6 +31,13 @@ function resolveAliasToFile(specifier) {
 }
 
 export async function resolve(specifier, context, defaultResolve) {
+  if (specifier === "server-only") {
+    return {
+      url: pathToFileURL(SERVER_ONLY_STUB).href,
+      shortCircuit: true,
+    };
+  }
+
   if (specifier.startsWith("@/")) {
     const filePath = resolveAliasToFile(specifier);
     if (filePath) {

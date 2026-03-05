@@ -4,6 +4,9 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { normalizeError } from "@/lib/errors";
+import { assertUploadMetadataInput } from "@/lib/security/limits";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -119,6 +122,20 @@ async function removeEmptyParentDirs(startDir: string, stopDir: string) {
   }
 }
 
+function toLimitErrorResponse(error: unknown) {
+  const appError = normalizeError(error);
+  if (appError.code === "RATE_LIMITED") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+  }
+  if (appError.code === "PAYLOAD_TOO_LARGE") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
+  }
+  if (appError.code === "VALIDATION_ERROR") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 400 });
+  }
+  return NextResponse.json({ error: appError.message }, { status: 500 });
+}
+
 export async function GET(request: Request) {
   const email = await getAuthorizedEmail();
   if (!email) {
@@ -166,75 +183,97 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const form = await request.formData();
-  const kind = String(form.get("kind") ?? "");
-  const file = form.get("file");
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "upload.me-file.post",
+      options: RATE_LIMIT_PRESETS.uploadOps,
+    });
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "file is required" }, { status: 400 });
-  }
-
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Max 20MB allowed" }, { status: 400 });
-  }
-
-  const extension = path.extname(file.name).toLowerCase();
-  if (!ALLOWED_MIME_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.has(extension)) {
-    return NextResponse.json({ error: "Only PDF/JPG/PNG allowed" }, { status: 400 });
-  }
-
-  const safeEmail = sanitizeSegment(email);
-  const safeOriginalFileName = sanitizeFileName(path.basename(file.name));
-  const uniqueFileName = `${Date.now()}_${randomUUID()}_${safeOriginalFileName}`;
-
-  let storedPath: string;
-
-  if (kind === "certificate") {
+    const form = await request.formData();
+    const kind = String(form.get("kind") ?? "");
+    const file = form.get("file");
     const category = String(form.get("category") ?? "");
     const entryId = String(form.get("entryId") ?? "");
-
-    if (!CERTIFICATE_CATEGORIES.has(category)) {
-      return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-    }
-
-    if (!entryId) {
-      return NextResponse.json({ error: "entryId required" }, { status: 400 });
-    }
-
-    storedPath = path.posix.join(
-      safeEmail,
-      "certificate",
-      sanitizeSegment(category),
-      sanitizeSegment(entryId),
-      uniqueFileName
-    );
-  } else if (kind === "doc") {
     const docType = String(form.get("docType") ?? "");
 
-    if (!DOC_TYPES.has(docType)) {
-      return NextResponse.json({ error: "Invalid docType" }, { status: 400 });
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "file is required" }, { status: 400 });
     }
 
-    storedPath = path.posix.join(safeEmail, "doc", sanitizeSegment(docType), uniqueFileName);
-  } else {
-    return NextResponse.json({ error: "Invalid kind" }, { status: 400 });
+    assertUploadMetadataInput(
+      {
+        kind,
+        category,
+        entryId,
+        docType,
+        fileName: file.name,
+        mimeType: file.type,
+        size: file.size,
+      },
+      "account upload request"
+    );
+
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json({ error: "Max 20MB allowed" }, { status: 400 });
+    }
+
+    const extension = path.extname(file.name).toLowerCase();
+    if (!ALLOWED_MIME_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.has(extension)) {
+      return NextResponse.json({ error: "Only PDF/JPG/PNG allowed" }, { status: 400 });
+    }
+
+    const safeEmail = sanitizeSegment(email);
+    const safeOriginalFileName = sanitizeFileName(path.basename(file.name));
+    const uniqueFileName = `${Date.now()}_${randomUUID()}_${safeOriginalFileName}`;
+
+    let storedPath: string;
+
+    if (kind === "certificate") {
+      if (!CERTIFICATE_CATEGORIES.has(category)) {
+        return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+      }
+
+      if (!entryId) {
+        return NextResponse.json({ error: "entryId required" }, { status: 400 });
+      }
+
+      storedPath = path.posix.join(
+        safeEmail,
+        "certificate",
+        sanitizeSegment(category),
+        sanitizeSegment(entryId),
+        uniqueFileName
+      );
+    } else if (kind === "doc") {
+      if (!DOC_TYPES.has(docType)) {
+        return NextResponse.json({ error: "Invalid docType" }, { status: 400 });
+      }
+
+      storedPath = path.posix.join(safeEmail, "doc", sanitizeSegment(docType), uniqueFileName);
+    } else {
+      return NextResponse.json({ error: "Invalid kind" }, { status: 400 });
+    }
+
+    const destination = path.join(UPLOADS_ROOT, storedPath);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await fs.writeFile(destination, Buffer.from(await file.arrayBuffer()));
+
+    const uploadedAt = new Date().toISOString();
+    const url = buildPreviewUrl(storedPath);
+
+    return NextResponse.json({
+      url,
+      fileName: file.name,
+      size: file.size,
+      uploadedAt,
+      storedPath,
+      mimeType: file.type,
+    });
+  } catch (error) {
+    return toLimitErrorResponse(error);
   }
-
-  const destination = path.join(UPLOADS_ROOT, storedPath);
-  await fs.mkdir(path.dirname(destination), { recursive: true });
-  await fs.writeFile(destination, Buffer.from(await file.arrayBuffer()));
-
-  const uploadedAt = new Date().toISOString();
-  const url = buildPreviewUrl(storedPath);
-
-  return NextResponse.json({
-    url,
-    fileName: file.name,
-    size: file.size,
-    uploadedAt,
-    storedPath,
-    mimeType: file.type,
-  });
 }
 
 export async function DELETE(request: Request) {
@@ -243,30 +282,45 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as { storedPath?: string };
-  const storedPath = String(body?.storedPath ?? "");
-
-  if (!storedPath) {
-    return NextResponse.json({ error: "storedPath required" }, { status: 400 });
-  }
-
-  let resolved;
   try {
-    resolved = getOwnedFileCandidates(email, storedPath);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid storedPath";
-    return NextResponse.json({ error: message }, { status: message === "Forbidden" ? 403 : 400 });
-  }
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "upload.me-file.delete",
+      options: RATE_LIMIT_PRESETS.uploadOps,
+    });
 
-  for (const candidate of resolved.candidates) {
-    try {
-      await fs.unlink(candidate.filePath);
-      await removeEmptyParentDirs(path.dirname(candidate.filePath), candidate.cleanupRoot);
-      return NextResponse.json({ ok: true, storedPath: resolved.normalized });
-    } catch {
-      continue;
+    const body = (await request.json()) as { storedPath?: string };
+    assertUploadMetadataInput(
+      { storedPath: body?.storedPath ?? "" },
+      "account upload delete request"
+    );
+    const storedPath = String(body?.storedPath ?? "");
+
+    if (!storedPath) {
+      return NextResponse.json({ error: "storedPath required" }, { status: 400 });
     }
-  }
 
-  return NextResponse.json({ error: "File not found" }, { status: 404 });
+    let resolved;
+    try {
+      resolved = getOwnedFileCandidates(email, storedPath);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid storedPath";
+      return NextResponse.json({ error: message }, { status: message === "Forbidden" ? 403 : 400 });
+    }
+
+    for (const candidate of resolved.candidates) {
+      try {
+        await fs.unlink(candidate.filePath);
+        await removeEmptyParentDirs(path.dirname(candidate.filePath), candidate.cleanupRoot);
+        return NextResponse.json({ ok: true, storedPath: resolved.normalized });
+      } catch {
+        continue;
+      }
+    }
+
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
+  } catch (error) {
+    return toLimitErrorResponse(error);
+  }
 }

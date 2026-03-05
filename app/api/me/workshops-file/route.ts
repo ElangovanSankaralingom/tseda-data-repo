@@ -3,7 +3,10 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { normalizeError } from "@/lib/errors";
 import { isEntryEditable } from "@/lib/gamification";
+import { assertUploadMetadataInput } from "@/lib/security/limits";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
 
 type Slot =
@@ -116,11 +119,34 @@ export async function POST(request: Request) {
   }
 
   try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: authorizedEmail,
+      action: "upload.workshops.post",
+      options: RATE_LIMIT_PRESETS.uploadOps,
+    });
+
     const form = await request.formData();
     const email = String(form.get("email") ?? "").trim().toLowerCase();
     const recordId = String(form.get("recordId") ?? "").trim();
     const slot = String(form.get("slot") ?? "").trim() as Slot;
     const file = form.get("file");
+
+    if (file instanceof File) {
+      assertUploadMetadataInput(
+        {
+          email,
+          recordId,
+          slot,
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size,
+        },
+        "workshops upload request"
+      );
+    } else {
+      assertUploadMetadataInput({ email, recordId, slot }, "workshops upload request");
+    }
 
     if (!email) {
       return NextResponse.json({ error: "email required" }, { status: 400 });
@@ -185,8 +211,17 @@ export async function POST(request: Request) {
       storedPath,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Upload failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    if (appError.code === "PAYLOAD_TOO_LARGE") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
+    }
+    if (appError.code === "VALIDATION_ERROR") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 400 });
+    }
+    return NextResponse.json({ error: appError.message || "Upload failed" }, { status: 500 });
   }
 }
 
@@ -197,7 +232,18 @@ export async function DELETE(request: Request) {
   }
 
   try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: authorizedEmail,
+      action: "upload.workshops.delete",
+      options: RATE_LIMIT_PRESETS.uploadOps,
+    });
+
     const body = (await request.json()) as { storedPath?: string };
+    assertUploadMetadataInput(
+      { storedPath: body?.storedPath ?? "" },
+      "workshops upload delete request"
+    );
     const storedPath = normalizeStoredPath(String(body?.storedPath ?? "").trim());
     const ownerPrefix = path.posix.join("uploads", safeEmailDir(authorizedEmail), "workshops") + "/";
 
@@ -234,7 +280,16 @@ export async function DELETE(request: Request) {
     }
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Delete failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    if (appError.code === "PAYLOAD_TOO_LARGE") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
+    }
+    if (appError.code === "VALIDATION_ERROR") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 400 });
+    }
+    return NextResponse.json({ error: appError.message || "Delete failed" }, { status: 500 });
   }
 }

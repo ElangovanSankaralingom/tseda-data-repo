@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "byId": {
+    "4da8a455-ee12-4346-80fd-aec266373b03": {
+      "eventName": "FDP completed streak",
+      "streak": {
+        "activatedAtISO": "2026-03-04T08:00:00.000Z",
+        "completedAtISO": "2026-03-04T09:00:00.000Z"
+      },
+      "id": "4da8a455-ee12-4346-80fd-aec266373b03",
+      "status": "draft",
+      "createdAt": "2026-03-05T15:27:55.856Z",
+      "updatedAt": "2026-03-05T15:27:55.856Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": "",
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "4da8a455-ee12-4346-80fd-aec266373b03"
+  ]
+}

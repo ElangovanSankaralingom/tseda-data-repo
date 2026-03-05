@@ -10,6 +10,7 @@ import {
   updateEntry,
 } from "@/lib/entryEngine";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
+import { normalizeError } from "@/lib/errors";
 import { mergeWithNulls } from "@/lib/mergeWithNulls";
 import { safeEmailDir } from "@/lib/userStore";
 import {
@@ -190,6 +191,26 @@ async function getAuthorizedEmail() {
   }
 
   return email;
+}
+
+function mutationErrorResponse(error: unknown, fallbackMessage: string) {
+  const appError = normalizeError(error);
+  if (appError.code === "RATE_LIMITED") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+  }
+  if (appError.code === "PAYLOAD_TOO_LARGE") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
+  }
+  if (appError.code === "VALIDATION_ERROR") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 400 });
+  }
+  if (appError.code === "FORBIDDEN") {
+    return NextResponse.json({ error: appError.message || "Forbidden" }, { status: 403 });
+  }
+  if (appError.code === "NOT_FOUND") {
+    return NextResponse.json({ error: appError.message || "Entry not found" }, { status: 404 });
+  }
+  return NextResponse.json({ error: appError.message || fallbackMessage }, { status: 500 });
 }
 
 async function readList(email: string): Promise<FdpAttended[]> {
@@ -407,8 +428,7 @@ export async function POST(request: Request) {
       : await createEntry<FdpAttended>(email, "fdp-attended", savedEntry);
     return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Save failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return mutationErrorResponse(error, "Save failed");
   }
 }
 
@@ -585,8 +605,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Save failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return mutationErrorResponse(error, "Save failed");
   }
 }
 
@@ -619,7 +638,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Delete failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return mutationErrorResponse(error, "Delete failed");
   }
 }

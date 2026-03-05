@@ -1,14 +1,19 @@
+import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
+import {
+  migrateWalEvent,
+  WAL_EVENT_SCHEMA_VERSION,
+} from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import type { Entry } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 
 const WAL_FILE_NAME = "events.log";
-const WAL_VERSION = 1;
+const WAL_VERSION = WAL_EVENT_SCHEMA_VERSION;
 const MAX_STRING_LENGTH = 8_192;
 const MAX_DEPTH = 10;
 
@@ -217,8 +222,13 @@ export async function appendEvent(userEmail: string, event: WalEvent): Promise<R
       throw ensured.error;
     }
 
+    const migrated = migrateWalEvent(event);
+    if (!migrated.ok) {
+      throw migrated.error;
+    }
+
     const walFilePath = getWalFilePath(userEmail);
-    await fs.appendFile(walFilePath, `${JSON.stringify(event)}\n`, "utf8");
+    await fs.appendFile(walFilePath, `${JSON.stringify(migrated.data)}\n`, "utf8");
   }, { context: "wal.appendEvent" });
 }
 
@@ -231,8 +241,18 @@ export async function appendEvents(userEmail: string, events: WalEvent[]): Promi
       throw ensured.error;
     }
 
+    const migratedResults = events.map((event) => migrateWalEvent(event));
+    const failed = migratedResults.find((result) => !result.ok);
+    if (failed && !failed.ok) {
+      throw failed.error;
+    }
+    const migratedEvents = migratedResults
+      .filter((result): result is { ok: true; data: WalEvent } => result.ok)
+      .map((result) => result.data);
+    if (!migratedEvents.length) return;
+
     const walFilePath = getWalFilePath(userEmail);
-    const payload = events.map((event) => JSON.stringify(event)).join("\n");
+    const payload = migratedEvents.map((event) => JSON.stringify(event)).join("\n");
     await fs.appendFile(walFilePath, `${payload}\n`, "utf8");
   }, { context: "wal.appendEvents" });
 }
@@ -263,13 +283,15 @@ export async function readEvents(
       const trimmed = line.trim();
       if (!trimmed) continue;
       try {
-        const parsed = JSON.parse(trimmed) as WalEvent;
-        if (parsed?.v !== WAL_VERSION) continue;
+        const parsed = JSON.parse(trimmed) as unknown;
+        const migrated = migrateWalEvent(parsed);
+        if (!migrated.ok) continue;
+        const event = migrated.data;
         if (options?.sinceTs && !Number.isNaN(sinceTime)) {
-          const eventTime = Date.parse(parsed.ts);
+          const eventTime = Date.parse(event.ts);
           if (Number.isNaN(eventTime) || eventTime < sinceTime) continue;
         }
-        events.push(parsed);
+        events.push(event);
       } catch {
         continue;
       }

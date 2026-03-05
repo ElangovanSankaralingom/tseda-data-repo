@@ -1,11 +1,7 @@
 import type { Entry, EntryStatus, UploadedFile } from "@/lib/types/entry";
+import type { CategorySlug } from "@/data/categoryRegistry";
 
-export type CategoryKey =
-  | "fdp-attended"
-  | "fdp-conducted"
-  | "case-studies"
-  | "guest-lectures"
-  | "workshops";
+export type CategoryKey = CategorySlug;
 
 export type { Entry, EntryStatus, UploadedFile };
 export type UploadMeta = UploadedFile;
