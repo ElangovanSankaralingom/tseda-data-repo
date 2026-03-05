@@ -20,7 +20,7 @@ type PdfStateInput = {
   pdfSourceHash?: string | null;
   draftHash: string;
   fieldsGateOk: boolean;
-  isLocked: boolean;
+  isLocked?: boolean;
 };
 
 type PdfStateOutput = {
@@ -148,14 +148,13 @@ export function computePdfState({
   pdfSourceHash,
   draftHash,
   fieldsGateOk,
-  isLocked,
 }: PdfStateInput): PdfStateOutput {
   const hasPdf = !!pdfMeta?.url && !!pdfMeta?.storedPath;
   const pdfStale = hasPdf && !!pdfSourceHash && draftHash !== pdfSourceHash;
 
   return {
     pdfStale,
-    canGenerate: fieldsGateOk && !isLocked && (!hasPdf || pdfStale),
+    canGenerate: fieldsGateOk && (!hasPdf || pdfStale),
     canPreviewDownload: hasPdf && !pdfStale,
   };
 }

@@ -1,4 +1,4 @@
-export type EntryLifecycleStage = "pre" | "post" | "locked";
+export type EntryLifecycleStage = "pre" | "post";
 
 export type EntryLifecycleInput = {
   isLocked: boolean;
@@ -36,19 +36,15 @@ export function computeEntryLifecycle({
   streakActivated,
   streakCompleted,
 }: EntryLifecycleInput): EntryLifecycleState {
+  void isLocked;
   const dirty = preStageDirty || postStageDirty;
-  const stage: EntryLifecycleStage = isLocked ? "locked" : hasPdfSnapshot ? "post" : "pre";
-  const canGenerate = !isLocked && preStageValid && preStageDirty;
+  const stage: EntryLifecycleStage = hasPdfSnapshot ? "post" : "pre";
+  const canGenerate = preStageValid && preStageDirty;
   const canPreview = hasPdfSnapshot && preStageValid && !preStageDirty;
   const canDownload = canPreview;
   const canDone =
-    !isLocked &&
-    hasPdfSnapshot &&
-    preStageValid &&
-    postStageValid &&
-    !preStageDirty &&
-    !postStageDirty;
-  const canSave = !isLocked && dirty && !canDone;
+    hasPdfSnapshot && preStageValid && postStageValid && !preStageDirty && !postStageDirty;
+  const canSave = dirty && !canDone;
 
   return {
     stage,
@@ -90,7 +86,7 @@ export function markSaved(
 
 export function markGenerated(current: EntryLifecycleState): EntryLifecycleState {
   return computeEntryLifecycle({
-    isLocked: current.stage === "locked",
+    isLocked: false,
     hasPdfSnapshot: true,
     preStageValid: true,
     postStageValid: current.canDone,

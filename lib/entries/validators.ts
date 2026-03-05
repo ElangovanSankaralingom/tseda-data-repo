@@ -5,17 +5,18 @@ export function canSaveEntryDraft(args: {
   hasPendingUploads?: boolean;
   hasBusyUploads?: boolean;
 }) {
+  void args.isLocked;
   return (
     args.dirty &&
     !args.isComplete &&
-    !args.isLocked &&
     !args.hasPendingUploads &&
     !args.hasBusyUploads
   );
 }
 
 export function canDoneEntry(args: { isComplete: boolean; isLocked: boolean }) {
-  return args.isComplete && !args.isLocked;
+  void args.isLocked;
+  return args.isComplete;
 }
 
 export function canGenerateEntry(args: {
@@ -24,6 +25,6 @@ export function canGenerateEntry(args: {
   hasPdf: boolean;
   pdfStale: boolean;
 }) {
-  if (!args.fieldsGateOk || args.isLocked) return false;
+  if (!args.fieldsGateOk) return false;
   return !args.hasPdf || args.pdfStale;
 }

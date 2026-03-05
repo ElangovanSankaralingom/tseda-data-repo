@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState, type SetStateAction } from "react";
 import { createDirtySnapshot, isDirtySnapshot } from "@/lib/entries/dirty";
-import { getEditLockState } from "@/lib/entries/lock";
 import {
   computePdfState,
   hashPrePdfFields,
@@ -69,7 +68,14 @@ export function useEntryEditor<T extends EntryEditorLike>({
   const draft = draftState;
 
   const currentHash = useMemo(() => hashPrePdfFields(draft, category), [category, draft]);
-  const lockState = useMemo(() => getEditLockState(draft), [draft]);
+  const lockState = useMemo(
+    () => ({
+      isLocked: false,
+      expiresAtISO: null,
+      daysRemaining: 0,
+    }),
+    []
+  );
   const fieldsGateOk = useMemo(() => validatePrePdfFields(draft), [draft, validatePrePdfFields]);
 
   const pdfState = useMemo(
@@ -79,9 +85,8 @@ export function useEntryEditor<T extends EntryEditorLike>({
         pdfSourceHash: draft.pdfSourceHash ?? "",
         draftHash: currentHash,
         fieldsGateOk,
-        isLocked: lockState.isLocked,
       }),
-    [currentHash, draft.pdfMeta, draft.pdfSourceHash, fieldsGateOk, lockState.isLocked]
+    [currentHash, draft.pdfMeta, draft.pdfSourceHash, fieldsGateOk]
   );
 
   const dirty = useMemo(() => isDirtySnapshot(draft, lastSavedSnapshot), [draft, lastSavedSnapshot]);
