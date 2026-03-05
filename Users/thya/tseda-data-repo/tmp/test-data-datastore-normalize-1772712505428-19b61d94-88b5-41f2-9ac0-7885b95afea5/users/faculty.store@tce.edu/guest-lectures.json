@@ -1,0 +1,11 @@
+[
+  {
+    "id": "legacy-1",
+    "eventName": "Legacy no status",
+    "attachments": null
+  },
+  {
+    "id": "legacy-2",
+    "requestEditStatus": "pending"
+  }
+]

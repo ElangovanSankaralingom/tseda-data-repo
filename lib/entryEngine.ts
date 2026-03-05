@@ -1,13 +1,11 @@
 import { randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
-import { revalidateTag } from "next/cache";
 import { ENTRY_SCHEMAS, type SchemaValidationMode } from "@/data/schemas";
 import { isMasterAdmin } from "@/lib/admin";
-import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { readCategoryEntries, writeCategoryEntries } from "@/lib/dataStore";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { CategoryKey } from "@/lib/entries/types";
+import { logError } from "@/lib/errors";
 import {
   isEntryLocked,
   normalizeEntryStatus,
@@ -17,7 +15,6 @@ import {
 } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeStreakState } from "@/lib/gamification";
-import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 export type EntryEngineRecord = Record<string, unknown>;
 
@@ -66,35 +63,27 @@ function validatePayload(
   throw new Error(message);
 }
 
-function categoryStoreFile(category: CategoryKey) {
-  return CATEGORY_STORE_FILES[category];
-}
-
 function revalidateDashboardSummary(userEmail: string) {
   const normalizedEmail = normalizeEmail(userEmail);
   if (!normalizedEmail) return;
-  revalidateTag(getDashboardTag(normalizedEmail), "max");
+  if (process.env.NODE_ENV === "test") return;
+  const dashboardTag = getDashboardTag(normalizedEmail);
+  void import("next/cache.js")
+    .then((module) => {
+      if (typeof module.revalidateTag === "function") {
+        module.revalidateTag(dashboardTag, "max");
+      }
+    })
+    .catch((error) => {
+      logError(error, "entryEngine.revalidateDashboardSummary");
+    });
 }
 
 async function readListRaw(
   userEmail: string,
   category: CategoryKey
 ): Promise<EntryEngineRecord[]> {
-  const normalizedEmail = normalizeEmail(userEmail);
-  const filePath = getUserCategoryStoreFile(normalizedEmail, categoryStoreFile(category));
-
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed
-      .filter((value) => !!value && typeof value === "object" && !Array.isArray(value))
-      .map((value) => value as EntryEngineRecord);
-  } catch {
-    return [];
-  }
+  return readCategoryEntries(userEmail, category);
 }
 
 async function writeListRaw(
@@ -102,10 +91,7 @@ async function writeListRaw(
   category: CategoryKey,
   list: EntryEngineRecord[]
 ) {
-  const normalizedEmail = normalizeEmail(userEmail);
-  const filePath = getUserCategoryStoreFile(normalizedEmail, categoryStoreFile(category));
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+  await writeCategoryEntries(userEmail, category, list);
 }
 
 function normalizeId(value: unknown) {
