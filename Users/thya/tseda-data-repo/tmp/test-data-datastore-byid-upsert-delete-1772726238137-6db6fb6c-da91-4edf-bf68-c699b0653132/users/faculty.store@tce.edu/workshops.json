@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "byId": {
+    "a-1": {
+      "id": "a-1",
+      "status": "draft",
+      "eventName": "A1 Updated",
+      "confirmationStatus": "DRAFT",
+      "attachments": [],
+      "createdAt": "2026-03-05T15:57:18.139Z",
+      "updatedAt": "2026-03-05T15:57:18.139Z",
+      "schemaVersion": 1
+    },
+    "a-3": {
+      "id": "a-3",
+      "status": "draft",
+      "eventName": "A3",
+      "confirmationStatus": "DRAFT",
+      "attachments": [],
+      "createdAt": "2026-03-05T15:57:18.140Z",
+      "updatedAt": "2026-03-05T15:57:18.140Z",
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "a-1",
+    "a-3"
+  ]
+}
