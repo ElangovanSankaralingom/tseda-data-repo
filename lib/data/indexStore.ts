@@ -2,6 +2,8 @@ import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { withUserDataLock } from "@/lib/data/locks";
 import { readCategoryEntries } from "@/lib/dataStore";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
@@ -311,7 +313,7 @@ async function writeIndexFile(userEmail: string, index: UserIndex) {
   const filePath = getIndexFilePath(userEmail);
   const payload = JSON.stringify(migrated.data, null, 2);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, payload, "utf8");
+  await atomicWriteTextFile(filePath, payload);
   logger.info({
     event: "index.write",
     userEmail,
@@ -450,15 +452,16 @@ export async function rebuildUserIndex(userEmail: string): Promise<Result<UserIn
     if (!normalizedEmail) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid email" });
     }
-
-    const rebuilt = await buildUserIndex(normalizedEmail);
-    await writeIndexFile(normalizedEmail, rebuilt);
-    logger.info({
-      event: "index.rebuild",
-      userEmail: normalizedEmail,
-      count: Object.values(rebuilt.totalsByCategory).reduce((sum, value) => sum + value, 0),
+    return withUserDataLock(normalizedEmail, async () => {
+      const rebuilt = await buildUserIndex(normalizedEmail);
+      await writeIndexFile(normalizedEmail, rebuilt);
+      logger.info({
+        event: "index.rebuild",
+        userEmail: normalizedEmail,
+        count: Object.values(rebuilt.totalsByCategory).reduce((sum, value) => sum + value, 0),
+      });
+      return rebuilt;
     });
-    return rebuilt;
   }, { context: "indexStore.rebuildUserIndex" });
 }
 
@@ -468,44 +471,45 @@ export async function ensureUserIndex(userEmail: string): Promise<Result<UserInd
     if (!normalizedEmail) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid email" });
     }
+    return withUserDataLock(normalizedEmail, async () => {
+      const raw = await readIndexRaw(normalizedEmail);
+      if (raw === null) {
+        const rebuilt = await buildUserIndex(normalizedEmail);
+        await writeIndexFile(normalizedEmail, rebuilt);
+        logger.info({
+          event: "index.ensure.rebuilt-missing",
+          userEmail: normalizedEmail,
+          count: Object.values(rebuilt.totalsByCategory).reduce((sum, value) => sum + value, 0),
+        });
+        return rebuilt;
+      }
 
-    const raw = await readIndexRaw(normalizedEmail);
-    if (raw === null) {
-      const rebuilt = await buildUserIndex(normalizedEmail);
-      await writeIndexFile(normalizedEmail, rebuilt);
-      logger.info({
-        event: "index.ensure.rebuilt-missing",
-        userEmail: normalizedEmail,
-        count: Object.values(rebuilt.totalsByCategory).reduce((sum, value) => sum + value, 0),
-      });
-      return rebuilt;
-    }
+      const hydrated = hydrateIndex(raw, normalizedEmail);
+      if (hydrated.rebuildRequired) {
+        const rebuilt = await buildUserIndex(normalizedEmail);
+        await writeIndexFile(normalizedEmail, rebuilt);
+        logger.info({
+          event: "index.ensure.rebuilt-invalid",
+          userEmail: normalizedEmail,
+          count: Object.values(rebuilt.totalsByCategory).reduce((sum, value) => sum + value, 0),
+        });
+        return rebuilt;
+      }
 
-    const hydrated = hydrateIndex(raw, normalizedEmail);
-    if (hydrated.rebuildRequired) {
-      const rebuilt = await buildUserIndex(normalizedEmail);
-      await writeIndexFile(normalizedEmail, rebuilt);
-      logger.info({
-        event: "index.ensure.rebuilt-invalid",
+      if (hydrated.migrated) {
+        await writeIndexFile(normalizedEmail, hydrated.index);
+        logger.info({
+          event: "index.ensure.migrated",
+          userEmail: normalizedEmail,
+        });
+      }
+      logger.debug({
+        event: "index.ensure.hit",
         userEmail: normalizedEmail,
-        count: Object.values(rebuilt.totalsByCategory).reduce((sum, value) => sum + value, 0),
+        count: Object.values(hydrated.index.totalsByCategory).reduce((sum, value) => sum + value, 0),
       });
-      return rebuilt;
-    }
-
-    if (hydrated.migrated) {
-      await writeIndexFile(normalizedEmail, hydrated.index);
-      logger.info({
-        event: "index.ensure.migrated",
-        userEmail: normalizedEmail,
-      });
-    }
-    logger.debug({
-      event: "index.ensure.hit",
-      userEmail: normalizedEmail,
-      count: Object.values(hydrated.index.totalsByCategory).reduce((sum, value) => sum + value, 0),
+      return hydrated.index;
     });
-    return hydrated.index;
   }, { context: "indexStore.ensureUserIndex" });
 }
 
@@ -514,51 +518,57 @@ export async function applyIndexDelta(
   delta: UserIndexDelta
 ): Promise<Result<UserIndex>> {
   return safeAction(async () => {
-    const ensured = await ensureUserIndex(userEmail);
-    if (!ensured.ok) {
-      throw ensured.error;
+    const normalizedEmail = normalizeEmail(userEmail);
+    if (!normalizedEmail) {
+      throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid email" });
     }
-
-    const next = cloneIndex(ensured.data);
-    for (const category of CATEGORY_KEYS) {
-      const totalDelta = delta.totalsByCategory?.[category] ?? 0;
-      const pendingDelta = delta.pendingByCategory?.[category] ?? 0;
-      const approvedDelta = delta.approvedByCategory?.[category] ?? 0;
-
-      next.totalsByCategory[category] = clampCount(next.totalsByCategory[category] + totalDelta);
-      next.pendingByCategory[category] = clampCount(next.pendingByCategory[category] + pendingDelta);
-      next.approvedByCategory[category] = clampCount(next.approvedByCategory[category] + approvedDelta);
-
-      if (Object.prototype.hasOwnProperty.call(delta.lastEntryAtByCategory ?? {}, category)) {
-        next.lastEntryAtByCategory[category] = delta.lastEntryAtByCategory?.[category] ?? null;
+    return withUserDataLock(normalizedEmail, async () => {
+      const ensured = await ensureUserIndex(normalizedEmail);
+      if (!ensured.ok) {
+        throw ensured.error;
       }
-    }
 
-    for (const status of ENTRY_STATUS_KEYS) {
-      const statusDelta = delta.countsByStatus?.[status] ?? 0;
-      next.countsByStatus[status] = clampCount(next.countsByStatus[status] + statusDelta);
-    }
+      const next = cloneIndex(ensured.data);
+      for (const category of CATEGORY_KEYS) {
+        const totalDelta = delta.totalsByCategory?.[category] ?? 0;
+        const pendingDelta = delta.pendingByCategory?.[category] ?? 0;
+        const approvedDelta = delta.approvedByCategory?.[category] ?? 0;
 
-    if (typeof delta.streakActivatedCount === "number") {
-      next.streakSnapshot.streakActivatedCount = clampCount(
-        next.streakSnapshot.streakActivatedCount + delta.streakActivatedCount
-      );
-    }
-    if (typeof delta.streakWinsCount === "number") {
-      next.streakSnapshot.streakWinsCount = clampCount(
-        next.streakSnapshot.streakWinsCount + delta.streakWinsCount
-      );
-    }
+        next.totalsByCategory[category] = clampCount(next.totalsByCategory[category] + totalDelta);
+        next.pendingByCategory[category] = clampCount(next.pendingByCategory[category] + pendingDelta);
+        next.approvedByCategory[category] = clampCount(next.approvedByCategory[category] + approvedDelta);
 
-    next.updatedAt = new Date().toISOString();
-    await writeIndexFile(normalizeEmail(userEmail), next);
-    logger.info({
-      event: "index.delta.applied",
-      userEmail: normalizeEmail(userEmail),
-      count: Object.values(next.totalsByCategory).reduce((sum, value) => sum + value, 0),
-      deltaCategoryCount: Object.keys(delta.totalsByCategory ?? {}).length,
+        if (Object.prototype.hasOwnProperty.call(delta.lastEntryAtByCategory ?? {}, category)) {
+          next.lastEntryAtByCategory[category] = delta.lastEntryAtByCategory?.[category] ?? null;
+        }
+      }
+
+      for (const status of ENTRY_STATUS_KEYS) {
+        const statusDelta = delta.countsByStatus?.[status] ?? 0;
+        next.countsByStatus[status] = clampCount(next.countsByStatus[status] + statusDelta);
+      }
+
+      if (typeof delta.streakActivatedCount === "number") {
+        next.streakSnapshot.streakActivatedCount = clampCount(
+          next.streakSnapshot.streakActivatedCount + delta.streakActivatedCount
+        );
+      }
+      if (typeof delta.streakWinsCount === "number") {
+        next.streakSnapshot.streakWinsCount = clampCount(
+          next.streakSnapshot.streakWinsCount + delta.streakWinsCount
+        );
+      }
+
+      next.updatedAt = new Date().toISOString();
+      await writeIndexFile(normalizedEmail, next);
+      logger.info({
+        event: "index.delta.applied",
+        userEmail: normalizedEmail,
+        count: Object.values(next.totalsByCategory).reduce((sum, value) => sum + value, 0),
+        deltaCategoryCount: Object.keys(delta.totalsByCategory ?? {}).length,
+      });
+      return next;
     });
-    return next;
   }, { context: "indexStore.applyIndexDelta" });
 }
 
@@ -589,117 +599,118 @@ export async function updateIndexForEntryMutation(
     if (!normalizedEmail) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid email" });
     }
+    return withUserDataLock(normalizedEmail, async () => {
+      const current = await getUserIndex(normalizedEmail);
+      if (!current.ok) {
+        throw current.error;
+      }
 
-    const current = await getUserIndex(normalizedEmail);
-    if (!current.ok) {
-      throw current.error;
-    }
+      const nowISO = new Date().toISOString();
+      if (current.data === null) {
+        const rebuilt = await buildUserIndex(normalizedEmail);
+        await writeIndexFile(normalizedEmail, rebuilt);
+        return rebuilt;
+      }
 
-    const nowISO = new Date().toISOString();
-    if (current.data === null) {
-      const rebuilt = await buildUserIndex(normalizedEmail);
-      await writeIndexFile(normalizedEmail, rebuilt);
-      return rebuilt;
-    }
+      const next = cloneIndex(current.data);
+      const before = toContribution(beforeEntry as EntryLike | null);
+      const after = toContribution(afterEntry as EntryLike | null);
 
-    const next = cloneIndex(current.data);
-    const before = toContribution(beforeEntry as EntryLike | null);
-    const after = toContribution(afterEntry as EntryLike | null);
+      if (!before && !after) {
+        logger.debug({
+          event: "index.entryMutation.noop",
+          userEmail: normalizedEmail,
+          category,
+        });
+        return next;
+      }
 
-    if (!before && !after) {
-      logger.debug({
-        event: "index.entryMutation.noop",
+      const currentLastForCategory = next.lastEntryAtByCategory[category];
+      const requiresRebuildForLastEntry =
+        !!before?.sortAtISO &&
+        currentLastForCategory === before.sortAtISO &&
+        (!after?.sortAtISO || toSortTime(after.sortAtISO) < toSortTime(before.sortAtISO));
+
+      if (requiresRebuildForLastEntry) {
+        const rebuilt = await buildUserIndex(normalizedEmail);
+        await writeIndexFile(normalizedEmail, rebuilt);
+        logger.warn({
+          event: "index.entryMutation.rebuild-last-entry",
+          userEmail: normalizedEmail,
+          category,
+        });
+        return rebuilt;
+      }
+
+      if (before) {
+        next.totalsByCategory[category] -= 1;
+        next.countsByStatus[before.status] -= 1;
+        next.pendingByCategory[category] -= before.pending;
+        next.approvedByCategory[category] -= before.approved;
+        next.streakSnapshot.streakActivatedCount -= before.streakActive;
+        next.streakSnapshot.streakWinsCount -= before.streakWin;
+        next.streakSnapshot.byCategory[category].activated -= before.streakActive;
+        next.streakSnapshot.byCategory[category].wins -= before.streakWin;
+      }
+
+      if (after) {
+        next.totalsByCategory[category] += 1;
+        next.countsByStatus[after.status] += 1;
+        next.pendingByCategory[category] += after.pending;
+        next.approvedByCategory[category] += after.approved;
+        next.streakSnapshot.streakActivatedCount += after.streakActive;
+        next.streakSnapshot.streakWinsCount += after.streakWin;
+        next.streakSnapshot.byCategory[category].activated += after.streakActive;
+        next.streakSnapshot.byCategory[category].wins += after.streakWin;
+      }
+
+      next.streakSnapshot.activeEntries = next.streakSnapshot.activeEntries.filter((entry) => {
+        if (entry.categoryKey !== category) return true;
+        if (before?.id && entry.id === before.id) return false;
+        if (after?.id && entry.id === after.id) return false;
+        return true;
+      });
+
+      if (after?.streakActive && after.id) {
+        next.streakSnapshot.activeEntries.push({
+          id: after.id,
+          categoryKey: category,
+          dueAtISO: after.dueAtISO,
+          sortAtISO: after.sortAtISO,
+        });
+      }
+
+      next.streakSnapshot.activeEntries = sortActiveEntries(next.streakSnapshot.activeEntries);
+
+      const currentLastTime = toSortTime(next.lastEntryAtByCategory[category]);
+      const afterTime = toSortTime(after?.sortAtISO);
+      if (after?.sortAtISO && afterTime < Number.POSITIVE_INFINITY && afterTime >= currentLastTime) {
+        next.lastEntryAtByCategory[category] = after.sortAtISO;
+      }
+
+      if (isInvalidCountMap(next)) {
+        const rebuilt = await buildUserIndex(normalizedEmail);
+        await writeIndexFile(normalizedEmail, rebuilt);
+        logger.warn({
+          event: "index.entryMutation.rebuild-invalid-counts",
+          userEmail: normalizedEmail,
+          category,
+        });
+        return rebuilt;
+      }
+
+      next.updatedAt = nowISO;
+      next.streakSnapshot.lastComputedAt = nowISO;
+      await writeIndexFile(normalizedEmail, next);
+      logger.info({
+        event: "index.entryMutation.applied",
         userEmail: normalizedEmail,
         category,
+        count: next.totalsByCategory[category],
+        beforeStatus: before?.status ?? undefined,
+        status: after?.status ?? undefined,
       });
       return next;
-    }
-
-    const currentLastForCategory = next.lastEntryAtByCategory[category];
-    const requiresRebuildForLastEntry =
-      !!before?.sortAtISO &&
-      currentLastForCategory === before.sortAtISO &&
-      (!after?.sortAtISO || toSortTime(after.sortAtISO) < toSortTime(before.sortAtISO));
-
-    if (requiresRebuildForLastEntry) {
-      const rebuilt = await buildUserIndex(normalizedEmail);
-      await writeIndexFile(normalizedEmail, rebuilt);
-      logger.warn({
-        event: "index.entryMutation.rebuild-last-entry",
-        userEmail: normalizedEmail,
-        category,
-      });
-      return rebuilt;
-    }
-
-    if (before) {
-      next.totalsByCategory[category] -= 1;
-      next.countsByStatus[before.status] -= 1;
-      next.pendingByCategory[category] -= before.pending;
-      next.approvedByCategory[category] -= before.approved;
-      next.streakSnapshot.streakActivatedCount -= before.streakActive;
-      next.streakSnapshot.streakWinsCount -= before.streakWin;
-      next.streakSnapshot.byCategory[category].activated -= before.streakActive;
-      next.streakSnapshot.byCategory[category].wins -= before.streakWin;
-    }
-
-    if (after) {
-      next.totalsByCategory[category] += 1;
-      next.countsByStatus[after.status] += 1;
-      next.pendingByCategory[category] += after.pending;
-      next.approvedByCategory[category] += after.approved;
-      next.streakSnapshot.streakActivatedCount += after.streakActive;
-      next.streakSnapshot.streakWinsCount += after.streakWin;
-      next.streakSnapshot.byCategory[category].activated += after.streakActive;
-      next.streakSnapshot.byCategory[category].wins += after.streakWin;
-    }
-
-    next.streakSnapshot.activeEntries = next.streakSnapshot.activeEntries.filter((entry) => {
-      if (entry.categoryKey !== category) return true;
-      if (before?.id && entry.id === before.id) return false;
-      if (after?.id && entry.id === after.id) return false;
-      return true;
     });
-
-    if (after?.streakActive && after.id) {
-      next.streakSnapshot.activeEntries.push({
-        id: after.id,
-        categoryKey: category,
-        dueAtISO: after.dueAtISO,
-        sortAtISO: after.sortAtISO,
-      });
-    }
-
-    next.streakSnapshot.activeEntries = sortActiveEntries(next.streakSnapshot.activeEntries);
-
-    const currentLastTime = toSortTime(next.lastEntryAtByCategory[category]);
-    const afterTime = toSortTime(after?.sortAtISO);
-    if (after?.sortAtISO && afterTime < Number.POSITIVE_INFINITY && afterTime >= currentLastTime) {
-      next.lastEntryAtByCategory[category] = after.sortAtISO;
-    }
-
-    if (isInvalidCountMap(next)) {
-      const rebuilt = await buildUserIndex(normalizedEmail);
-      await writeIndexFile(normalizedEmail, rebuilt);
-      logger.warn({
-        event: "index.entryMutation.rebuild-invalid-counts",
-        userEmail: normalizedEmail,
-        category,
-      });
-      return rebuilt;
-    }
-
-    next.updatedAt = nowISO;
-    next.streakSnapshot.lastComputedAt = nowISO;
-    await writeIndexFile(normalizedEmail, next);
-    logger.info({
-      event: "index.entryMutation.applied",
-      userEmail: normalizedEmail,
-      category,
-      count: next.totalsByCategory[category],
-      beforeStatus: before?.status ?? undefined,
-      status: after?.status ?? undefined,
-    });
-    return next;
   }, { context: "indexStore.updateIndexForEntryMutation" });
 }
