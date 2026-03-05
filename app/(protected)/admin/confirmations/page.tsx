@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import BackTo from "@/components/nav/BackTo";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -11,7 +12,10 @@ type PendingConfirmationRow = {
   entryId: string;
   title: string;
   sentForConfirmationAtISO: string | null;
+  createdAtISO?: string | null;
+  updatedAtISO?: string | null;
   status: string;
+  entryHref: string;
 };
 
 function formatTimestamp(value: string | null) {
@@ -120,6 +124,14 @@ export default function AdminConfirmationsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Link
+                        href={row.entryHref}
+                        className="inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium transition hover:bg-muted"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View
+                      </Link>
                       <ActionButton onClick={() => void resolve(row, "approve")} disabled={busy}>
                         {busy ? "Saving..." : "Approve"}
                       </ActionButton>

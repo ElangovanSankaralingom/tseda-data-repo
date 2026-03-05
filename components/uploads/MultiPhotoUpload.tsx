@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { deleteFile, uploadFile } from "@/lib/upload/uploadService";
 
 export type FileMeta = {
   fileName: string;
@@ -40,51 +41,6 @@ function ProgressBar({ value }: { value: number }) {
   );
 }
 
-function uploadFileXHR(opts: {
-  email: string;
-  recordId: string;
-  slot: "geotaggedPhotos";
-  file: File;
-  uploadEndpoint: string;
-  onProgress: (pct: number) => void;
-}): Promise<FileMeta> {
-  const { email, recordId, slot, file, uploadEndpoint, onProgress } = opts;
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", uploadEndpoint, true);
-
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) return;
-      onProgress(Math.round((event.loaded / event.total) * 100));
-    };
-
-    xhr.onerror = () => reject(new Error("Upload failed (network)."));
-
-    xhr.onload = () => {
-      try {
-        const isJSON = (xhr.getResponseHeader("content-type") || "").includes("application/json");
-        const data = isJSON ? JSON.parse(xhr.responseText || "{}") : {};
-
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(data as FileMeta);
-        } else {
-          reject(new Error(data?.error || `Upload failed (${xhr.status}).`));
-        }
-      } catch {
-        reject(new Error("Upload failed (bad response)."));
-      }
-    };
-
-    const body = new FormData();
-    body.set("email", email);
-    body.set("recordId", recordId);
-    body.set("slot", slot);
-    body.set("file", file);
-    xhr.send(body);
-  });
-}
-
 export default function MultiPhotoUpload({
   title,
   value,
@@ -121,17 +77,10 @@ export default function MultiPhotoUpload({
     if (disabled) return;
 
     try {
-      const response = await fetch(uploadEndpoint, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
+      await deleteFile({
+        endpoint: uploadEndpoint,
+        storedPath: meta.storedPath,
       });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload?.error || "Delete failed.");
-      }
-
       await Promise.resolve(onDeleted(meta));
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : "Delete failed.";
@@ -161,12 +110,12 @@ export default function MultiPhotoUpload({
           throw new Error("Max file size is 20MB.");
         }
 
-        const meta = await uploadFileXHR({
+        const meta = await uploadFile({
+          endpoint: uploadEndpoint,
           email,
           recordId,
           slot: slotName,
           file,
-          uploadEndpoint,
           onProgress: (pct) => setCurrentProgress(pct),
         });
 
