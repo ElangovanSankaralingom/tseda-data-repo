@@ -33,6 +33,23 @@ function hasFacultyRows(value: unknown, { requireAtLeastOne = false, requireLock
   });
 }
 
+function hasOptionalFacultyRows(value: unknown, { requireLocked = false } = {}) {
+  if (!Array.isArray(value)) {
+    return true;
+  }
+
+  const populatedRows = value.filter((row) => {
+    const item = (row ?? {}) as { email?: unknown; name?: unknown };
+    return isNonEmptyString(item.email) || isNonEmptyString(item.name);
+  });
+
+  if (populatedRows.length === 0) {
+    return true;
+  }
+
+  return hasFacultyRows(populatedRows, { requireLocked });
+}
+
 function getWorkshopOrganization(entry: Record<string, unknown>) {
   return entry.organizationName ?? entry.organisationName;
 }
@@ -57,7 +74,7 @@ export const CATEGORY_REQUIREMENTS: Record<
       isNonEmptyString(entry.semesterType) &&
       isValidDateRange(entry.startDate, entry.endDate) &&
       isNonEmptyString(entry.eventName) &&
-      hasFacultyRows(entry.coCoordinators, { requireLocked: true }),
+      hasOptionalFacultyRows(entry.coCoordinators, { requireLocked: true }),
   },
   "case-studies": {
     validatePreUploadRequired: (entry) =>
