@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BackTo from "@/components/nav/BackTo";
+import { getPendingConfirmationsCount } from "@/lib/admin/pendingConfirmations";
 import {
   adminConfirmations,
   adminSettings,
@@ -31,7 +32,9 @@ const ADMIN_CARDS: AdminCard[] = [
   },
 ];
 
-export default function AdminConsolePage() {
+export default async function AdminConsolePage() {
+  const pendingCount = await getPendingConfirmationsCount();
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center gap-3">
@@ -49,7 +52,14 @@ export default function AdminConsolePage() {
             href={card.href}
             className="rounded-2xl border border-border bg-card p-5 transition hover:border-foreground/30 hover:bg-muted/20"
           >
-            <div className="text-lg font-semibold tracking-tight">{card.title}</div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-lg font-semibold tracking-tight">{card.title}</div>
+              {card.href === adminConfirmations() ? (
+                <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                  {pendingCount}
+                </span>
+              ) : null}
+            </div>
             <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
           </Link>
         ))}

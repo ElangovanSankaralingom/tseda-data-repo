@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { revalidateTag } from "next/cache";
 import { ENTRY_SCHEMAS, type SchemaValidationMode } from "@/data/schemas";
 import { isMasterAdmin } from "@/lib/admin";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { CategoryKey } from "@/lib/entries/types";
 import {
   isEntryLocked,
@@ -66,6 +68,12 @@ function validatePayload(
 
 function categoryStoreFile(category: CategoryKey) {
   return CATEGORY_STORE_FILES[category];
+}
+
+function revalidateDashboardSummary(userEmail: string) {
+  const normalizedEmail = normalizeEmail(userEmail);
+  if (!normalizedEmail) return;
+  revalidateTag(getDashboardTag(normalizedEmail), "max");
 }
 
 async function readListRaw(
@@ -142,6 +150,7 @@ export async function replaceEntriesForCategory(
   entries: EntryEngineRecord[]
 ) {
   await writeListRaw(userEmail, category, entries);
+  revalidateDashboardSummary(userEmail);
 }
 
 export async function createEntry<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -177,6 +186,7 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
 
   list.unshift(entry);
   await writeListRaw(userEmail, category, list);
+  revalidateDashboardSummary(userEmail);
   return entry as T;
 }
 
@@ -222,6 +232,7 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
 
   list[index] = updated;
   await writeListRaw(userEmail, category, list);
+  revalidateDashboardSummary(userEmail);
   return updated as T;
 }
 
@@ -243,6 +254,7 @@ export async function deleteEntry(
 
   const [removed] = list.splice(index, 1);
   await writeListRaw(userEmail, category, list);
+  revalidateDashboardSummary(userEmail);
   return removed;
 }
 
@@ -269,6 +281,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   }) as EntryLike;
   list[index] = updated;
   await writeListRaw(userEmail, category, list);
+  revalidateDashboardSummary(userEmail);
   return updated as T;
 }
 
@@ -297,6 +310,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
   }) as EntryLike;
   list[index] = updated;
   await writeListRaw(ownerEmail, category, list);
+  revalidateDashboardSummary(ownerEmail);
   return updated as T;
 }
 
@@ -327,6 +341,7 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
   }) as EntryLike;
   list[index] = updated;
   await writeListRaw(ownerEmail, category, list);
+  revalidateDashboardSummary(ownerEmail);
   return updated as T;
 }
 
