@@ -1,3 +1,4 @@
+import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CATEGORY_KEYS } from "@/lib/categories";
@@ -7,13 +8,17 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isFutureDatedEntry, normalizeStreakState, status as getStreakStatus } from "@/lib/gamification";
+import {
+  migrateUserIndex,
+  USER_INDEX_SCHEMA_VERSION,
+} from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 
 const INDEX_FILE_NAME = "index.json";
-const USER_INDEX_VERSION = 1;
+const USER_INDEX_VERSION = USER_INDEX_SCHEMA_VERSION;
 
 const ENTRY_STATUS_KEYS: readonly EntryStatus[] = [
   "DRAFT",
@@ -211,13 +216,16 @@ function hydrateIndex(
 ): { index: UserIndex; rebuildRequired: boolean; migrated: boolean } {
   const nowISO = new Date().toISOString();
   const base = createEmptyUserIndex(userEmail, nowISO);
-  if (!isRecord(raw)) {
+  const migratedResult = migrateUserIndex(raw);
+  if (!migratedResult.ok || !isRecord(migratedResult.data)) {
     return { index: base, rebuildRequired: true, migrated: true };
   }
 
-  const version = Number(raw.version ?? 0);
+  const migratedRaw = migratedResult.data as unknown as Record<string, unknown>;
+  const migrationChanged = JSON.stringify(raw) !== JSON.stringify(migratedRaw);
+  const version = Number(migratedRaw.version ?? 0);
   const rebuildRequired = version !== USER_INDEX_VERSION;
-  const migrated = rebuildRequired;
+  const migrated = migrationChanged || rebuildRequired;
   if (rebuildRequired) {
     return { index: base, rebuildRequired, migrated };
   }
@@ -227,15 +235,17 @@ function hydrateIndex(
     ...base,
     version: USER_INDEX_VERSION,
     userEmail,
-    updatedAt: toOptionalISO(raw.updatedAt) ?? nowISO,
+    updatedAt: toOptionalISO(migratedRaw.updatedAt) ?? nowISO,
   };
 
-  const totalsByCategory = isRecord(raw.totalsByCategory) ? raw.totalsByCategory : null;
-  const pendingByCategory = isRecord(raw.pendingByCategory) ? raw.pendingByCategory : null;
-  const approvedByCategory = isRecord(raw.approvedByCategory) ? raw.approvedByCategory : null;
-  const lastEntryAtByCategory = isRecord(raw.lastEntryAtByCategory) ? raw.lastEntryAtByCategory : null;
-  const countsByStatus = isRecord(raw.countsByStatus) ? raw.countsByStatus : null;
-  const streakSnapshot = isRecord(raw.streakSnapshot) ? raw.streakSnapshot : null;
+  const totalsByCategory = isRecord(migratedRaw.totalsByCategory) ? migratedRaw.totalsByCategory : null;
+  const pendingByCategory = isRecord(migratedRaw.pendingByCategory) ? migratedRaw.pendingByCategory : null;
+  const approvedByCategory = isRecord(migratedRaw.approvedByCategory) ? migratedRaw.approvedByCategory : null;
+  const lastEntryAtByCategory = isRecord(migratedRaw.lastEntryAtByCategory)
+    ? migratedRaw.lastEntryAtByCategory
+    : null;
+  const countsByStatus = isRecord(migratedRaw.countsByStatus) ? migratedRaw.countsByStatus : null;
+  const streakSnapshot = isRecord(migratedRaw.streakSnapshot) ? migratedRaw.streakSnapshot : null;
   const streakByCategory = streakSnapshot && isRecord(streakSnapshot.byCategory) ? streakSnapshot.byCategory : null;
   const activeEntriesRaw =
     streakSnapshot && Array.isArray(streakSnapshot.activeEntries) ? streakSnapshot.activeEntries : null;
@@ -285,7 +295,7 @@ function hydrateIndex(
       .filter((value): value is UserIndexActiveEntry => !!value)
   );
 
-  if (String(raw.userEmail ?? "") !== userEmail) {
+  if (String(migratedRaw.userEmail ?? "") !== userEmail) {
     changed = true;
   }
 
@@ -293,9 +303,13 @@ function hydrateIndex(
 }
 
 async function writeIndexFile(userEmail: string, index: UserIndex) {
+  const migrated = migrateUserIndex(index);
+  if (!migrated.ok) {
+    throw migrated.error;
+  }
   const filePath = getIndexFilePath(userEmail);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(index, null, 2), "utf8");
+  await fs.writeFile(filePath, JSON.stringify(migrated.data, null, 2), "utf8");
 }
 
 async function readIndexRaw(userEmail: string): Promise<unknown | null> {

@@ -4,6 +4,8 @@ export type AppErrorCode =
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "UPLOAD_FAILED"
+  | "RATE_LIMITED"
+  | "PAYLOAD_TOO_LARGE"
   | "IO_ERROR"
   | "NETWORK_ERROR"
   | "UNKNOWN";
@@ -33,6 +35,8 @@ export function isAppError(value: unknown): value is AppError {
 
 function codeFromMessage(message: string): AppErrorCode {
   const lower = message.toLowerCase();
+  if (lower.includes("rate limit") || lower.includes("too many requests")) return "RATE_LIMITED";
+  if (lower.includes("payload too large") || lower.includes("request too large")) return "PAYLOAD_TOO_LARGE";
   if (lower.includes("unauthorized") || lower.includes("sign in")) return "UNAUTHORIZED";
   if (lower.includes("forbidden") || lower.includes("permission")) return "FORBIDDEN";
   if (lower.includes("not found") || lower.includes("missing")) return "NOT_FOUND";
@@ -84,6 +88,8 @@ export function toUserMessage(error: unknown): string {
   const appError = normalizeError(error);
 
   if (appError.code === "VALIDATION_ERROR") return appError.message || "Please check the highlighted fields.";
+  if (appError.code === "RATE_LIMITED") return appError.message || "Too many requests. Please try again shortly.";
+  if (appError.code === "PAYLOAD_TOO_LARGE") return "The request is too large. Reduce the input size and try again.";
   if (appError.code === "UNAUTHORIZED") return "Please sign in and try again.";
   if (appError.code === "FORBIDDEN") return "You do not have permission to perform this action.";
   if (appError.code === "NOT_FOUND") return "The requested record was not found.";

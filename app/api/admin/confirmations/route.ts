@@ -2,9 +2,9 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { isMasterAdmin } from "@/lib/admin";
 import { getPendingConfirmations } from "@/lib/admin/pendingConfirmations";
-import { CATEGORY_KEYS } from "@/lib/categories";
 import {
   approveEntry,
   rejectEntry,
@@ -13,6 +13,8 @@ import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { type CategoryKey } from "@/lib/entries/types";
 import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
+import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -33,6 +35,13 @@ export async function PATCH(request: Request) {
   }
 
   try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: adminEmail,
+      action: "admin.confirmations.patch",
+      options: RATE_LIMIT_PRESETS.adminOps,
+    });
+
     const body = (await request.json()) as {
       ownerEmail?: string;
       categoryKey?: string;
@@ -40,6 +49,7 @@ export async function PATCH(request: Request) {
       decision?: "approve" | "reject";
       rejectionReason?: string;
     };
+    assertActionPayload(body, "admin confirmation request", SECURITY_LIMITS.actionPayloadMaxBytes);
     const ownerEmail = normalizeEmail(String(body.ownerEmail ?? ""));
     const categoryKey = String(body.categoryKey ?? "").trim();
     const entryId = String(body.entryId ?? "").trim();
@@ -48,7 +58,7 @@ export async function PATCH(request: Request) {
     if (!ownerEmail || !ownerEmail.endsWith("@tce.edu")) {
       return NextResponse.json({ error: "ownerEmail required" }, { status: 400 });
     }
-    if (!CATEGORY_KEYS.includes(categoryKey as CategoryKey)) {
+    if (!isValidCategorySlug(categoryKey)) {
       return NextResponse.json({ error: "Unsupported category" }, { status: 404 });
     }
     if (!entryId) {
@@ -91,6 +101,12 @@ export async function PATCH(request: Request) {
     }
     if (appError.code === "VALIDATION_ERROR") {
       return NextResponse.json({ error: appError.message }, { status: 400 });
+    }
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    if (appError.code === "PAYLOAD_TOO_LARGE") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
     }
 
     return NextResponse.json({ error: appError.message || "Failed to update confirmation." }, { status: 500 });

@@ -1,3 +1,4 @@
+import "server-only";
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
