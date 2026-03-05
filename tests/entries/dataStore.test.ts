@@ -59,7 +59,13 @@ test("DataStore normalization applies default attachments and status values", as
       filePath,
       JSON.stringify(
         [
-          { id: "legacy-1", eventName: "Legacy no status", attachments: null },
+          {
+            id: "legacy-1",
+            eventName: "  Legacy no status  ",
+            speakerName: "   ",
+            startDate: "2026-04-01T08:00:00.000Z",
+            attachments: null,
+          },
           { id: "legacy-2", requestEditStatus: "pending" },
         ],
         null,
@@ -71,6 +77,9 @@ test("DataStore normalization applies default attachments and status values", as
     const entries = await store.readCategory(email, "guest-lectures");
     assert.equal(entries.length, 2);
     assert.deepEqual(entries[0]?.attachments, []);
+    assert.equal(String(entries[0]?.eventName ?? ""), "Legacy no status");
+    assert.equal(entries[0]?.speakerName, null);
+    assert.equal(String(entries[0]?.startDate ?? ""), "2026-04-01");
     assert.equal(String(entries[0]?.status ?? ""), "draft");
     assert.equal(String(entries[0]?.confirmationStatus ?? ""), "DRAFT");
     assert.equal(String(entries[1]?.confirmationStatus ?? ""), "PENDING_CONFIRMATION");

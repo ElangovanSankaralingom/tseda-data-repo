@@ -52,6 +52,14 @@ export function adminAudit() {
   return "/admin/audit";
 }
 
+export function adminExport() {
+  return "/admin/export";
+}
+
+export function adminBackups() {
+  return "/admin/backups";
+}
+
 export function adminIntegrity() {
   return "/admin/integrity";
 }

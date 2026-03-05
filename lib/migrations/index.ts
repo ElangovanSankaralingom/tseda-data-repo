@@ -1,8 +1,10 @@
 import "server-only";
+import { getCategorySchema, isValidCategorySlug } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { AppError, normalizeError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
+import { normalizeEntry as normalizeEntryRecord } from "@/lib/normalize";
 import { err, ok, type Result } from "@/lib/result";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import type { UserIndex } from "@/lib/data/indexStore";
@@ -167,18 +169,24 @@ export function migrateEntry(raw: unknown): Result<Entry> {
       nowISO
     );
 
-    migrated.confirmationStatus = normalizeEntryStatus(migrated as EntryStateLike);
-    if (!Array.isArray(migrated.attachments)) {
-      migrated.attachments = [];
-    }
-    if (!toTrimmedString(migrated.status)) {
-      migrated.status = "draft";
-    }
-    migrated.createdAt = toISO(migrated.createdAt, nowISO);
-    migrated.updatedAt = toISO(migrated.updatedAt, toISO(migrated.createdAt, nowISO));
-    migrated.schemaVersion = ENTRY_SCHEMA_VERSION;
+    const categorySlug = toTrimmedString(migrated.category).toLowerCase();
+    const normalized = normalizeEntryRecord(
+      migrated as Entry,
+      isValidCategorySlug(categorySlug) ? getCategorySchema(categorySlug) : undefined
+    ) as Record<string, unknown>;
 
-    return ok(migrated as Entry);
+    normalized.confirmationStatus = normalizeEntryStatus(normalized as EntryStateLike);
+    if (!Array.isArray(normalized.attachments)) {
+      normalized.attachments = [];
+    }
+    if (!toTrimmedString(normalized.status)) {
+      normalized.status = "draft";
+    }
+    normalized.createdAt = toISO(normalized.createdAt, nowISO);
+    normalized.updatedAt = toISO(normalized.updatedAt, toISO(normalized.createdAt, nowISO));
+    normalized.schemaVersion = ENTRY_SCHEMA_VERSION;
+
+    return ok(normalized as Entry);
   } catch (error) {
     return err(normalizeError(error));
   }
