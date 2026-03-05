@@ -1,4 +1,6 @@
+import "server-only";
 import fs from "node:fs/promises";
+import { getCategoryTitle } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { ensureUserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngine";
@@ -21,11 +23,7 @@ export type PendingConfirmationRow = {
 };
 
 function toEntryTitle(categoryKey: CategoryKey, entry: Entry) {
-  if (categoryKey === "fdp-attended") return String(entry.programName ?? "").trim() || "FDP Entry";
-  if (categoryKey === "fdp-conducted") return String(entry.eventName ?? "").trim() || "FDP Entry";
-  if (categoryKey === "case-studies") return String(entry.placeOfVisit ?? "").trim() || "Case Study";
-  if (categoryKey === "guest-lectures") return String(entry.eventName ?? "").trim() || "Guest Lecture";
-  return String(entry.eventName ?? "").trim() || "Workshop";
+  return getCategoryTitle(entry as Record<string, unknown>, categoryKey);
 }
 
 function toSortTimestamp(row: PendingConfirmationRow) {

@@ -1,0 +1,73 @@
+{
+  "version": 2,
+  "byId": {
+    "62d22c4e-94f3-47ce-ae13-e9b0c6a5f4ad": {
+      "academicYear": "Academic Year 2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2025-08-10",
+      "endDate": "2025-08-12",
+      "eventName": "Pending Workshop",
+      "speakerName": "Speaker",
+      "organisationName": "TCE",
+      "uploads": {
+        "permissionLetter": {
+          "fileName": "permission.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:14:19.983Z",
+          "url": "/uploads/permission.pdf",
+          "storedPath": "permission.pdf"
+        },
+        "brochure": {
+          "fileName": "brochure.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:14:19.983Z",
+          "url": "/uploads/brochure.pdf",
+          "storedPath": "brochure.pdf"
+        },
+        "attendance": {
+          "fileName": "attendance.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:14:19.983Z",
+          "url": "/uploads/attendance.pdf",
+          "storedPath": "attendance.pdf"
+        },
+        "organiserProfile": {
+          "fileName": "organiser-profile.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:14:19.983Z",
+          "url": "/uploads/organiser-profile.pdf",
+          "storedPath": "organiser-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "fileName": "photo-1.pdf",
+            "mimeType": "application/pdf",
+            "size": 100,
+            "uploadedAt": "2026-03-05T15:14:19.983Z",
+            "url": "/uploads/photo-1.pdf",
+            "storedPath": "photo-1.pdf"
+          }
+        ]
+      },
+      "id": "62d22c4e-94f3-47ce-ae13-e9b0c6a5f4ad",
+      "status": "final",
+      "createdAt": "2026-03-05T15:14:19.983Z",
+      "updatedAt": "2026-03-05T15:14:19.989Z",
+      "confirmationStatus": "PENDING_CONFIRMATION",
+      "sentForConfirmationAtISO": "2026-03-05T15:14:19.989Z",
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": "",
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-05T15:14:19.987Z"
+    }
+  },
+  "order": [
+    "62d22c4e-94f3-47ce-ae13-e9b0c6a5f4ad"
+  ]
+}

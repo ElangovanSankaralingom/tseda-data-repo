@@ -23,6 +23,7 @@ import {
   normalizeEmail,
   type Faculty,
 } from "@/lib/facultyDirectory";
+import { normalizeError } from "@/lib/errors";
 import {
   computeDueAtISO,
   isEntryEditable,
@@ -352,6 +353,26 @@ async function getAuthorizedEmail() {
   }
 
   return email;
+}
+
+function mutationErrorResponse(error: unknown, fallbackMessage: string) {
+  const appError = normalizeError(error);
+  if (appError.code === "RATE_LIMITED") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+  }
+  if (appError.code === "PAYLOAD_TOO_LARGE") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
+  }
+  if (appError.code === "VALIDATION_ERROR") {
+    return NextResponse.json({ error: appError.message, code: appError.code }, { status: 400 });
+  }
+  if (appError.code === "FORBIDDEN") {
+    return NextResponse.json({ error: appError.message || "Forbidden" }, { status: 403 });
+  }
+  if (appError.code === "NOT_FOUND") {
+    return NextResponse.json({ error: appError.message || "Entry not found" }, { status: 404 });
+  }
+  return NextResponse.json({ error: appError.message || fallbackMessage }, { status: 500 });
 }
 
 async function readList(email: string): Promise<CaseStudyEntry[]> {
@@ -688,8 +709,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Save failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return mutationErrorResponse(error, "Save failed");
   }
 }
 
@@ -892,8 +912,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Save failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return mutationErrorResponse(error, "Save failed");
   }
 }
 
@@ -936,7 +955,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Delete failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return mutationErrorResponse(error, "Delete failed");
   }
 }

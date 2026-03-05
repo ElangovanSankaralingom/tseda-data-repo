@@ -3,6 +3,7 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { CATEGORY_KEYS } from "@/lib/categories";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { safeEmailDir } from "@/lib/userStore";
 import { PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
@@ -11,13 +12,7 @@ const LEGACY_DATA_DIR = path.join(process.cwd(), "data");
 const MODERN_USERS_DIR = path.join(process.cwd(), ".data", "users");
 const PUBLIC_UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
 const LEGACY_STORAGE_DIR = path.join(process.cwd(), "storage");
-const LEGACY_CATEGORY_DIRS = [
-  "fdp-attended",
-  "fdp-conducted",
-  "case-studies",
-  "guest-lectures",
-  "workshops",
-];
+const LEGACY_CATEGORY_DIRS = CATEGORY_KEYS;
 
 function legacyEmailKey(email: string) {
   return email.toLowerCase().replace(/[^a-z0-9._-]/g, "_");

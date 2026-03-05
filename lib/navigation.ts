@@ -1,3 +1,4 @@
+import { CATEGORY_LIST, isValidCategorySlug } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type RouterLike = {
@@ -5,17 +6,11 @@ type RouterLike = {
   push: (href: string) => void;
 };
 
-const CATEGORY_SET = new Set<CategoryKey>([
-  "fdp-attended",
-  "fdp-conducted",
-  "case-studies",
-  "guest-lectures",
-  "workshops",
-]);
+const CATEGORY_SET = new Set<CategoryKey>(CATEGORY_LIST);
 
 export function normalizeCategory(category: string): CategoryKey {
   const normalized = category.trim().toLowerCase();
-  if (CATEGORY_SET.has(normalized as CategoryKey)) {
+  if (isValidCategorySlug(normalized) && CATEGORY_SET.has(normalized)) {
     return normalized as CategoryKey;
   }
   throw new Error(`Unsupported category: ${category}`);

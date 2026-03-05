@@ -1,6 +1,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
+import { getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { ensureUserIndex, type UserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngine";
@@ -45,29 +46,6 @@ export type DashboardSummary = {
     streakWinsCount: number;
   };
   streakActivatedRows: DashboardPendingRow[];
-};
-
-const CATEGORY_META: Record<CategoryKey, { label: string; route: string }> = {
-  "fdp-attended": {
-    label: "FDP - Attended",
-    route: entryList("fdp-attended"),
-  },
-  "fdp-conducted": {
-    label: "FDP - Conducted",
-    route: entryList("fdp-conducted"),
-  },
-  "case-studies": {
-    label: "Case Studies",
-    route: entryList("case-studies"),
-  },
-  "guest-lectures": {
-    label: "Guest Lectures",
-    route: entryList("guest-lectures"),
-  },
-  workshops: {
-    label: "Workshops",
-    route: entryList("workshops"),
-  },
 };
 
 function emptyCategorySummary(): CategoryDashboardSummary {
@@ -167,7 +145,7 @@ function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
   }
 
   for (const categoryKey of CATEGORY_KEYS) {
-    const categoryMeta = CATEGORY_META[categoryKey];
+    const categoryConfig = getCategoryConfig(categoryKey);
     const categoryRows = index.streakSnapshot.activeEntries
       .filter((entry) => entry.categoryKey === categoryKey)
       .sort((left, right) => getSortTime(left.sortAtISO) - getSortTime(right.sortAtISO));
@@ -176,9 +154,9 @@ function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
       summary.streakActivatedRows.push({
         id: row.id,
         categoryKey,
-        categoryLabel: categoryMeta.label,
+        categoryLabel: categoryConfig.label,
         tag: `P${indexWithinCategory + 1}`,
-        route: categoryMeta.route,
+        route: entryList(categoryKey),
         remainingDays: remainingDaysFromDueAtISO(row.dueAtISO),
       });
     });
@@ -192,7 +170,7 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
 
   for (const categoryKey of CATEGORY_KEYS) {
     const categoryEntries = await listEntriesForCategory<DashboardEntry>(normalizedEmail, categoryKey);
-    const categoryMeta = CATEGORY_META[categoryKey];
+    const categoryConfig = getCategoryConfig(categoryKey);
     const categoryActiveRows: Array<Omit<DashboardPendingRow, "tag"> & { sortTime: number }> = [];
     const categorySummary = emptyCategorySummary();
 
@@ -220,8 +198,8 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
         categoryActiveRows.push({
           id,
           categoryKey,
-          categoryLabel: categoryMeta.label,
-          route: categoryMeta.route,
+          categoryLabel: categoryConfig.label,
+          route: entryList(categoryKey),
           remainingDays: remainingDaysFromDueAtISO(normalizeStreakState(entry.streak).dueAtISO),
           sortTime: getEntrySortTime(entry),
         });

@@ -1,3 +1,4 @@
+import "server-only";
 // lib/uploadStore.ts
 import fs from "fs";
 import path from "path";

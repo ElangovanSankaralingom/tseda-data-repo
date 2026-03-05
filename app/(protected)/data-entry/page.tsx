@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import EntryPageHeader from "@/components/entry/EntryPageHeader";
 import NotificationBadge from "@/components/ui/NotificationBadge";
+import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
 import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
+  EMPTY_DATA_ENTRY_SUMMARY,
   getDataEntrySummary,
   getUnfinishedCountByCategory,
   type DataEntrySummary,
@@ -19,38 +21,15 @@ type EntryItem = {
   href: string;
 };
 
-const ITEMS: EntryItem[] = [
-  {
-    key: "fdpAttended",
-    title: "FDP — Attended",
-    subtitle: "Record FDPs you attended with support amount and required supporting documents.",
-    href: entryList("fdp-attended"),
-  },
-  {
-    key: "fdpConducted",
-    title: "FDP — Conducted",
-    subtitle: "Capture FDPs conducted with coordinator details, dates, and required supporting documents.",
-    href: entryList("fdp-conducted"),
-  },
-  {
-    key: "caseStudies",
-    title: "Case Studies",
-    subtitle: "Maintain case study records with academic context, outcomes, and supporting material.",
-    href: entryList("case-studies"),
-  },
-  {
-    key: "guestLectures",
-    title: "Guest Lectures",
-    subtitle: "Record event details and supporting documents.",
-    href: entryList("guest-lectures"),
-  },
-  {
-    key: "workshops",
-    title: "Workshops",
-    subtitle: "Record workshop details and supporting documents.",
-    href: entryList("workshops"),
-  },
-];
+const ITEMS: EntryItem[] = CATEGORY_LIST.map((categoryKey) => {
+  const categoryConfig = getCategoryConfig(categoryKey);
+  return {
+    key: categoryConfig.summaryKey as keyof DataEntrySummary,
+    title: categoryConfig.label,
+    subtitle: categoryConfig.subtitle || "Record entry details and supporting documents.",
+    href: entryList(categoryKey),
+  };
+});
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -62,13 +41,7 @@ export default async function DataEntryHomePage() {
   const navigation = getDataEntryNavigation();
   const summary = email.endsWith("@tce.edu")
     ? await getDataEntrySummary(email)
-    : {
-        fdpAttended: { active: 0, pending: 0 },
-        fdpConducted: { active: 0, pending: 0 },
-        caseStudies: { active: 0, pending: 0 },
-        guestLectures: { active: 0, pending: 0 },
-        workshops: { active: 0, pending: 0 },
-      };
+    : { ...EMPTY_DATA_ENTRY_SUMMARY };
   const unfinishedByCategory = getUnfinishedCountByCategory(summary);
 
   return (

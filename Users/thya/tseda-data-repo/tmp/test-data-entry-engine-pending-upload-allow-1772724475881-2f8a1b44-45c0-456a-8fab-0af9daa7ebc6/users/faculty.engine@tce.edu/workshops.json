@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "byId": {
+    "781a17ca-3c79-49e9-831a-004f449f6454": {
+      "academicYear": "Academic Year 2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2025-08-10",
+      "endDate": "2025-08-12",
+      "eventName": "Pending Workshop Upload",
+      "speakerName": "Speaker",
+      "organisationName": "TCE",
+      "uploads": {
+        "permissionLetter": {
+          "fileName": "permission.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:27:55.884Z",
+          "url": "/uploads/permission.pdf",
+          "storedPath": "permission.pdf"
+        },
+        "brochure": null,
+        "attendance": null,
+        "organiserProfile": null,
+        "geotaggedPhotos": []
+      },
+      "id": "781a17ca-3c79-49e9-831a-004f449f6454",
+      "status": "final",
+      "createdAt": "2026-03-05T15:27:55.881Z",
+      "updatedAt": "2026-03-05T15:27:55.884Z",
+      "confirmationStatus": "PENDING_CONFIRMATION",
+      "sentForConfirmationAtISO": "2026-03-05T15:27:55.883Z",
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": "",
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-05T15:27:55.883Z"
+    }
+  },
+  "order": [
+    "781a17ca-3c79-49e9-831a-004f449f6454"
+  ]
+}

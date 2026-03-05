@@ -1,3 +1,5 @@
+import type { CategoryKey } from "@/lib/entries/types";
+
 type PdfMetaLike = {
   url?: string | null;
   storedPath?: string | null;
@@ -8,12 +10,7 @@ type FacultyRowLike = {
   email?: string | null;
 };
 
-type PdfSnapshotCategory =
-  | "fdp-attended"
-  | "fdp-conducted"
-  | "case-studies"
-  | "guest-lectures"
-  | "workshops";
+type PdfSnapshotCategory = CategoryKey;
 
 type PdfStateInput = {
   pdfMeta: PdfMetaLike;

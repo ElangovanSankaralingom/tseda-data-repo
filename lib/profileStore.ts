@@ -1,3 +1,4 @@
+import "server-only";
 import { readJson, writeJson, newId } from "@/lib/storage";
 
 export type BloodGroup = "A+"|"A-"|"B+"|"B-"|"O+"|"O-"|"AB+"|"AB-";

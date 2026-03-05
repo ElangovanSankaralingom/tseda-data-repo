@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isCategoryKey } from "@/lib/categories";
 import { logError, normalizeError } from "@/lib/errors";
+import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { runGenerateEntryRequest } from "@/lib/server/generateEntry";
 
 export async function POST(request: Request) {
@@ -10,6 +11,11 @@ export async function POST(request: Request) {
       id?: string;
       draft?: unknown;
     };
+    assertActionPayload(
+      body,
+      "generate request",
+      SECURITY_LIMITS.entryPayloadMaxBytes + SECURITY_LIMITS.actionPayloadMaxBytes
+    );
 
     const categoryKey = String(body?.categoryKey ?? "").trim();
     const id = String(body?.id ?? "").trim();
@@ -26,6 +32,12 @@ export async function POST(request: Request) {
   } catch (error) {
     const appError = normalizeError(error);
     logError(appError, "api.me.entry.generate.POST");
-    return NextResponse.json({ error: "Invalid generate request." }, { status: 400 });
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    if (appError.code === "PAYLOAD_TOO_LARGE") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
+    }
+    return NextResponse.json({ error: appError.message || "Invalid generate request." }, { status: 400 });
   }
 }

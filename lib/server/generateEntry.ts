@@ -12,6 +12,8 @@ import { PATCH as patchWorkshops } from "@/app/api/me/workshops/route";
 import { POST as postWorkshopsPdf } from "@/app/api/me/workshops/[id]/pdf/route";
 import { authOptions } from "@/lib/auth";
 import type { CategoryKey } from "@/lib/entries/types";
+import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 type SaveHandler = (request: Request) => Promise<Response>;
 type PdfHandler = (
@@ -83,6 +85,19 @@ export async function runGenerateEntryRequest(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  enforceRateLimitForRequest({
+    request,
+    userEmail: email,
+    action: `entry.generate.${args.categoryKey}`,
+    options: RATE_LIMIT_PRESETS.entryMutations,
+  });
+
+  assertActionPayload(
+    args,
+    "generate request",
+    SECURITY_LIMITS.entryPayloadMaxBytes + SECURITY_LIMITS.actionPayloadMaxBytes
+  );
+
   const saveHandler = SAVE_HANDLERS[args.categoryKey];
   const pdfHandler = PDF_HANDLERS[args.categoryKey];
 
@@ -93,6 +108,10 @@ export async function runGenerateEntryRequest(
   const draftRecord =
     args.draft && typeof args.draft === "object" ? (args.draft as Record<string, unknown>) : null;
   const requestedId = String(draftRecord?.id ?? args.id ?? "").trim();
+
+  if (draftRecord) {
+    assertEntryMutationInput(draftRecord, "generate draft");
+  }
 
   if (!requestedId) {
     return NextResponse.json({ error: "entry id required" }, { status: 400 });

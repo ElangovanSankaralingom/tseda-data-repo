@@ -1,9 +1,16 @@
+import "server-only";
 import { randomUUID } from "node:crypto";
 import { ENTRY_SCHEMAS, type SchemaValidationMode } from "@/data/schemas";
 import { isMasterAdmin } from "@/lib/admin";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { rebuildUserIndex, updateIndexForEntryMutation } from "@/lib/data/indexStore";
-import { readCategoryEntries, writeCategoryEntries } from "@/lib/dataStore";
+import {
+  deleteCategoryEntry as deleteCategoryEntryInStore,
+  readCategoryEntries,
+  readCategoryEntryById,
+  upsertCategoryEntry as upsertCategoryEntryInStore,
+  writeCategoryEntries,
+} from "@/lib/dataStore";
 import {
   appendEvent,
   appendEvents,
@@ -23,6 +30,8 @@ import {
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeStreakState } from "@/lib/gamification";
 import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
+import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
+import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import type { Entry, EntryStatus as EntryWorkflowStatus } from "@/lib/types/entry";
 
 export type EntryEngineRecord = Entry;
@@ -160,6 +169,31 @@ async function writeListRaw(
   await writeCategoryEntries(userEmail, category, list);
 }
 
+async function readEntryRaw(
+  userEmail: string,
+  category: CategoryKey,
+  entryId: string
+): Promise<EntryEngineRecord | null> {
+  return readCategoryEntryById(userEmail, category, entryId);
+}
+
+async function upsertEntryRaw(
+  userEmail: string,
+  category: CategoryKey,
+  entry: EntryEngineRecord,
+  options?: { insertPosition?: "start" | "end" }
+): Promise<EntryEngineRecord> {
+  return upsertCategoryEntryInStore(userEmail, category, entry, options);
+}
+
+async function deleteEntryRaw(
+  userEmail: string,
+  category: CategoryKey,
+  entryId: string
+): Promise<EntryEngineRecord | null> {
+  return deleteCategoryEntryInStore(userEmail, category, entryId);
+}
+
 async function refreshIndexForMutation(
   userEmail: string,
   category: CategoryKey,
@@ -183,6 +217,36 @@ function normalizeId(value: unknown) {
 function getWalActorEmail(value: string, fallbackEmail: string) {
   const normalized = normalizeEmail(value);
   return normalized || fallbackEmail;
+}
+
+function enforceEntryMutationGuards(
+  userEmail: string,
+  action: string,
+  payload?: unknown
+) {
+  const normalizedEmail = normalizeEmail(userEmail);
+  enforceRateLimitOrThrow(
+    `user:${normalizedEmail}:action:${action}`,
+    RATE_LIMIT_PRESETS.entryMutations
+  );
+  if (payload !== undefined) {
+    assertEntryMutationInput(payload, `${action} payload`);
+  }
+}
+
+function enforceAdminMutationGuards(
+  adminEmail: string,
+  action: string,
+  payload?: unknown
+) {
+  const normalizedEmail = normalizeEmail(adminEmail);
+  enforceRateLimitOrThrow(
+    `user:${normalizedEmail}:action:${action}`,
+    RATE_LIMIT_PRESETS.adminOps
+  );
+  if (payload !== undefined) {
+    assertActionPayload(payload, `${action} payload`, SECURITY_LIMITS.actionPayloadMaxBytes);
+  }
 }
 
 function buildWalEventsForReplace(
@@ -328,6 +392,15 @@ export async function replaceEntriesForCategory(
   }
 ) {
   const normalizedOwner = normalizeEmail(userEmail);
+  enforceRateLimitOrThrow(
+    `user:${normalizedOwner}:action:entry.replace.${category}`,
+    RATE_LIMIT_PRESETS.entryMutations
+  );
+  assertActionPayload(
+    entries,
+    `entry.replace.${category} payload`,
+    SECURITY_LIMITS.entryPayloadMaxBytes * 5
+  );
   const actorEmail = getWalActorEmail(options?.actorEmail ?? normalizedOwner, normalizedOwner);
   const actorRole = options?.actorRole ?? "user";
   const currentList = await readListRaw(normalizedOwner, category);
@@ -377,12 +450,12 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const nextPayload = ensureRecord(payload);
+  enforceEntryMutationGuards(normalizedOwner, `entry.create.${category}`, nextPayload);
   validatePayload(category, nextPayload, "create");
 
   const nowISO = new Date().toISOString();
-  const list = await readListRaw(normalizedOwner, category);
   const id = normalizeId(nextPayload.id) || randomUUID();
-  const existing = list.find((entry) => normalizeId(entry.id) === id);
+  const existing = await readEntryRaw(normalizedOwner, category, id);
   if (existing) {
     throw new Error("Entry already exists");
   }
@@ -416,8 +489,9 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
     })
   );
 
-  list.unshift(entry);
-  await writeListRaw(normalizedOwner, category, list);
+  await upsertEntryRaw(normalizedOwner, category, entry as EntryEngineRecord, {
+    insertPosition: "start",
+  });
   await refreshIndexForMutation(normalizedOwner, category, null, entry as EntryEngineRecord);
   revalidateDashboardSummary(normalizedOwner);
   return entry as T;
@@ -431,6 +505,7 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const nextPayload = ensureRecord(payload);
+  enforceEntryMutationGuards(normalizedOwner, `entry.update.${category}`, nextPayload);
   validatePayload(category, nextPayload, "update");
 
   const id = normalizeId(entryId);
@@ -438,14 +513,13 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
     throw new Error("Entry ID is required");
   }
 
-  const list = await readListRaw(normalizedOwner, category);
-  const index = list.findIndex((entry) => normalizeId(entry.id) === id);
-  if (index < 0) {
+  const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+  if (!existingEntry) {
     throw new Error("Entry not found");
   }
 
   const nowISO = new Date().toISOString();
-  const existing = list[index] as EntryLike;
+  const existing = existingEntry as EntryLike;
   const next: EntryLike = {
     ...existing,
   };
@@ -482,8 +556,7 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
     })
   );
 
-  list[index] = updated;
-  await writeListRaw(normalizedOwner, category, list);
+  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
   await refreshIndexForMutation(
     normalizedOwner,
     category,
@@ -501,6 +574,7 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const id = normalizeId(entryId);
+  enforceEntryMutationGuards(normalizedOwner, `entry.commit.${category}`, { entryId: id });
   if (!id) {
     throw new AppError({
       code: "VALIDATION_ERROR",
@@ -508,16 +582,15 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
     });
   }
 
-  const list = await readListRaw(normalizedOwner, category);
-  const index = list.findIndex((entry) => normalizeId(entry.id) === id);
-  if (index < 0) {
+  const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+  if (!existingEntry) {
     throw new AppError({
       code: "NOT_FOUND",
       message: "Entry not found",
     });
   }
 
-  const existing = list[index] as EntryLike;
+  const existing = existingEntry as EntryLike;
   const missingFields = getCommitMissingFields(category, existing);
   if (missingFields.length > 0) {
     throw new AppError({
@@ -551,8 +624,7 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
     })
   );
 
-  list[index] = updated;
-  await writeListRaw(normalizedOwner, category, list);
+  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
   await refreshIndexForMutation(
     normalizedOwner,
     category,
@@ -570,17 +642,16 @@ export async function deleteEntry(
 ) {
   const normalizedOwner = normalizeEmail(userEmail);
   const id = normalizeId(entryId);
+  enforceEntryMutationGuards(normalizedOwner, `entry.delete.${category}`, { entryId: id });
   if (!id) {
     throw new Error("Entry ID is required");
   }
 
-  const list = await readListRaw(normalizedOwner, category);
-  const index = list.findIndex((entry) => normalizeId(entry.id) === id);
-  if (index < 0) {
+  const existing = await readEntryRaw(normalizedOwner, category, id);
+  if (!existing) {
     return null;
   }
 
-  const [removed] = list.splice(index, 1);
   await appendWalEventOrThrow(
     normalizedOwner,
     buildEvent({
@@ -590,15 +661,15 @@ export async function deleteEntry(
       category,
       entryId: id,
       action: "DELETE",
-      before: removed,
+      before: existing,
       after: null,
     })
   );
 
-  await writeListRaw(normalizedOwner, category, list);
-  await refreshIndexForMutation(normalizedOwner, category, removed, null);
+  await deleteEntryRaw(normalizedOwner, category, id);
+  await refreshIndexForMutation(normalizedOwner, category, existing, null);
   revalidateDashboardSummary(normalizedOwner);
-  return removed;
+  return existing;
 }
 
 export async function sendForConfirmation<T extends EntryEngineRecord = EntryEngineRecord>(
@@ -607,14 +678,14 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   entryId: string
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
-  const list = await readListRaw(normalizedOwner, category);
   const id = normalizeId(entryId);
-  const index = list.findIndex((entry) => normalizeId(entry.id) === id);
-  if (index < 0) {
+  enforceEntryMutationGuards(normalizedOwner, `entry.confirmation.send.${category}`, { entryId: id });
+  const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+  if (!existingEntry) {
     throw new Error("Entry not found");
   }
 
-  const existing = list[index] as EntryLike;
+  const existing = existingEntry as EntryLike;
   if (String(existing.status ?? "draft") !== "final") {
     throw new Error("Complete the entry with Done before confirmation.");
   }
@@ -637,8 +708,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
     })
   );
 
-  list[index] = updated;
-  await writeListRaw(normalizedOwner, category, list);
+  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
   await refreshIndexForMutation(
     normalizedOwner,
     category,
@@ -661,16 +731,20 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     throw new Error("Forbidden");
   }
 
-  const list = await readListRaw(normalizedOwner, category);
+  enforceAdminMutationGuards(normalizedAdmin, "entry.confirmation.approve", {
+    category,
+    ownerEmail: normalizedOwner,
+    entryId,
+  });
+
   const id = normalizeId(entryId);
-  const index = list.findIndex((entry) => normalizeId(entry.id) === id);
-  if (index < 0) {
+  const existing = await readEntryRaw(normalizedOwner, category, id);
+  if (!existing) {
     throw new Error("Entry not found");
   }
 
-  const existing = list[index] as EntryEngineRecord;
   const nowISO = new Date().toISOString();
-  const updated = transitionEntry(list[index] as WorkflowEntryLike, "adminApprove", {
+  const updated = transitionEntry(existing as WorkflowEntryLike, "adminApprove", {
     nowISO,
     adminEmail: normalizedAdmin,
   }) as EntryLike;
@@ -688,8 +762,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     })
   );
 
-  list[index] = updated;
-  await writeListRaw(normalizedOwner, category, list);
+  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
   await refreshIndexForMutation(
     normalizedOwner,
     category,
@@ -713,16 +786,21 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
     throw new Error("Forbidden");
   }
 
-  const list = await readListRaw(normalizedOwner, category);
+  enforceAdminMutationGuards(normalizedAdmin, "entry.confirmation.reject", {
+    category,
+    ownerEmail: normalizedOwner,
+    entryId,
+    reason: reason?.trim() ?? "",
+  });
+
   const id = normalizeId(entryId);
-  const index = list.findIndex((entry) => normalizeId(entry.id) === id);
-  if (index < 0) {
+  const existing = await readEntryRaw(normalizedOwner, category, id);
+  if (!existing) {
     throw new Error("Entry not found");
   }
 
-  const existing = list[index] as EntryEngineRecord;
   const nowISO = new Date().toISOString();
-  const updated = transitionEntry(list[index] as WorkflowEntryLike, "adminReject", {
+  const updated = transitionEntry(existing as WorkflowEntryLike, "adminReject", {
     nowISO,
     adminEmail: normalizedAdmin,
     rejectionReason: reason?.trim(),
@@ -742,8 +820,7 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
     })
   );
 
-  list[index] = updated;
-  await writeListRaw(normalizedOwner, category, list);
+  await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
   await refreshIndexForMutation(
     normalizedOwner,
     category,
@@ -760,13 +837,10 @@ export async function computeStreak(
   const summary: EntryStreakSummary = {
     activated: 0,
     completed: 0,
-    byCategory: {
-      "fdp-attended": { activated: 0, completed: 0 },
-      "fdp-conducted": { activated: 0, completed: 0 },
-      "case-studies": { activated: 0, completed: 0 },
-      "guest-lectures": { activated: 0, completed: 0 },
-      workshops: { activated: 0, completed: 0 },
-    },
+    byCategory: CATEGORY_KEYS.reduce<EntryStreakSummary["byCategory"]>((next, categoryKey) => {
+      next[categoryKey] = { activated: 0, completed: 0 };
+      return next;
+    }, {} as EntryStreakSummary["byCategory"]),
   };
 
   for (const category of CATEGORY_KEYS) {

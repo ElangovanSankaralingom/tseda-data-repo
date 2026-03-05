@@ -5,11 +5,14 @@ import {
   listEntriesForCategory,
   updateEntry,
 } from "@/lib/entryEngine";
+import { normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   isWithinRequestEditWindow,
   nowISTTimestampISO,
 } from "@/lib/gamification";
+import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
 
@@ -67,9 +70,17 @@ export async function PATCH(
   }
 
   try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "entry.request-edit.fdp-conducted",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+
     const body = (await request.json()) as {
       action?: string;
     };
+    assertActionPayload(body, "request edit payload", SECURITY_LIMITS.actionPayloadMaxBytes);
     const action = String(body?.action ?? "").trim();
     const list = await readList(email);
     const index = list.findIndex((item) => String(item?.id ?? "").trim() === entryId);
@@ -133,7 +144,16 @@ export async function PATCH(
     );
     return NextResponse.json(persisted, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Request failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    if (appError.code === "PAYLOAD_TOO_LARGE") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
+    }
+    if (appError.code === "VALIDATION_ERROR") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 400 });
+    }
+    return NextResponse.json({ error: appError.message || "Request failed" }, { status: 500 });
   }
 }

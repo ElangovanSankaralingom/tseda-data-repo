@@ -1,21 +1,18 @@
+import "server-only";
 import fs from "node:fs/promises";
-import path from "node:path";
+import { CATEGORY_LIST, type CategorySummaryKey, getCategoryConfig } from "@/data/categoryRegistry";
+import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isFutureDatedEntry, normalizeStreakState } from "@/lib/gamification";
-import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
+import { migrateCategoryStore } from "@/lib/migrations";
+import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 export type CategorySummary = {
   active: number;
   pending: number;
 };
 
-export type DataEntrySummary = {
-  fdpAttended: CategorySummary;
-  fdpConducted: CategorySummary;
-  caseStudies: CategorySummary;
-  guestLectures: CategorySummary;
-  workshops: CategorySummary;
-};
+export type DataEntrySummary = Record<CategorySummaryKey, CategorySummary>;
 
 export function getUnfinishedCount(summary: DataEntrySummary) {
   return Object.values(summary).reduce((total, category) => total + category.active + category.pending, 0);
@@ -26,13 +23,11 @@ export function countUnfinished(summary: CategorySummary) {
 }
 
 export function getUnfinishedCountByCategory(summary: DataEntrySummary) {
-  return {
-    fdpAttended: countUnfinished(summary.fdpAttended),
-    fdpConducted: countUnfinished(summary.fdpConducted),
-    caseStudies: countUnfinished(summary.caseStudies),
-    guestLectures: countUnfinished(summary.guestLectures),
-    workshops: countUnfinished(summary.workshops),
-  } satisfies Record<keyof DataEntrySummary, number>;
+  return Object.keys(summary).reduce<Record<keyof DataEntrySummary, number>>((next, key) => {
+    const typedKey = key as keyof DataEntrySummary;
+    next[typedKey] = countUnfinished(summary[typedKey]);
+    return next;
+  }, {} as Record<keyof DataEntrySummary, number>);
 }
 
 type SummaryEntry = {
@@ -43,6 +38,10 @@ type SummaryEntry = {
 };
 
 const EMPTY_SUMMARY: CategorySummary = { active: 0, pending: 0 };
+export const EMPTY_DATA_ENTRY_SUMMARY = CATEGORY_LIST.reduce<DataEntrySummary>((next, categoryKey) => {
+  next[getCategoryConfig(categoryKey).summaryKey] = { ...EMPTY_SUMMARY };
+  return next;
+}, {} as DataEntrySummary);
 
 function isCompletedEntry(entry: SummaryEntry) {
   const streak = normalizeStreakState(entry.streak);
@@ -80,7 +79,13 @@ async function readSummaryFile(filePath: string) {
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? summarizeEntries(parsed as SummaryEntry[]) : EMPTY_SUMMARY;
+    const migratedStore = migrateCategoryStore(parsed);
+    if (!migratedStore.ok) return EMPTY_SUMMARY;
+
+    const entries = migratedStore.data.order
+      .map((entryId) => migratedStore.data.byId[entryId] as SummaryEntry | undefined)
+      .filter((entry): entry is SummaryEntry => !!entry);
+    return summarizeEntries(entries);
   } catch {
     return EMPTY_SUMMARY;
   }
@@ -88,27 +93,19 @@ async function readSummaryFile(filePath: string) {
 
 export async function getDataEntrySummary(email: string): Promise<DataEntrySummary> {
   const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return { ...EMPTY_DATA_ENTRY_SUMMARY };
 
-  const attendedPath = path.join(
-    process.cwd(),
-    "data",
-    "fdp-attended",
-    `${safeEmailDir(normalizedEmail)}.json`
+  const categorySummaries = await Promise.all(
+    CATEGORY_LIST.map(async (categoryKey) => {
+      const filePath = getUserCategoryStoreFile(normalizedEmail, CATEGORY_STORE_FILES[categoryKey]);
+      const summary = await readSummaryFile(filePath);
+      return { categoryKey, summary };
+    })
   );
 
-  const [fdpAttended, fdpConducted, caseStudies, guestLectures, workshops] = await Promise.all([
-    readSummaryFile(attendedPath),
-    readSummaryFile(getUserCategoryStoreFile(normalizedEmail, "fdp-conducted.json")),
-    readSummaryFile(getUserCategoryStoreFile(normalizedEmail, "case-studies.json")),
-    readSummaryFile(getUserCategoryStoreFile(normalizedEmail, "guest-lectures.json")),
-    readSummaryFile(getUserCategoryStoreFile(normalizedEmail, "workshops.json")),
-  ]);
-
-  return {
-    fdpAttended,
-    fdpConducted,
-    caseStudies,
-    guestLectures,
-    workshops,
-  };
+  return categorySummaries.reduce<DataEntrySummary>((next, item) => {
+    const summaryKey = getCategoryConfig(item.categoryKey).summaryKey;
+    next[summaryKey] = item.summary;
+    return next;
+  }, { ...EMPTY_DATA_ENTRY_SUMMARY });
 }

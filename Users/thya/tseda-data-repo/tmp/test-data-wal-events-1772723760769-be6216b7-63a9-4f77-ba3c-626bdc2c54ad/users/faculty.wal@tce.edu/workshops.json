@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "byId": {
+    "20c62b4d-1ef3-4112-a2a9-9a67785247df": {
+      "eventName": "WAL Workshop Updated",
+      "status": "final",
+      "id": "20c62b4d-1ef3-4112-a2a9-9a67785247df",
+      "createdAt": "2026-03-05T15:16:00.770Z",
+      "updatedAt": "2026-03-05T15:16:00.781Z",
+      "confirmationStatus": "APPROVED",
+      "sentForConfirmationAtISO": "2026-03-05T15:16:00.780Z",
+      "confirmedAtISO": "2026-03-05T15:16:00.781Z",
+      "confirmedBy": "senarch@tce.edu",
+      "confirmationRejectedReason": "",
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "20c62b4d-1ef3-4112-a2a9-9a67785247df"
+  ]
+}

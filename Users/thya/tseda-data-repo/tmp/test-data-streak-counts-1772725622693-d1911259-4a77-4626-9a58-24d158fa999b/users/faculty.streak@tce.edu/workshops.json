@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "byId": {
+    "14002fb6-2934-4a62-9e06-e651f33a8b1e": {
+      "eventName": "Active streak workshop",
+      "streak": {
+        "activatedAtISO": "2026-03-05T10:00:00.000Z"
+      },
+      "id": "14002fb6-2934-4a62-9e06-e651f33a8b1e",
+      "status": "draft",
+      "createdAt": "2026-03-05T15:47:02.694Z",
+      "updatedAt": "2026-03-05T15:47:02.694Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": "",
+      "attachments": [],
+      "schemaVersion": 1
+    },
+    "07f0f64d-7872-4ba7-b86e-f00129a82bb7": {
+      "eventName": "Completed streak workshop",
+      "streak": {
+        "activatedAtISO": "2026-03-05T08:00:00.000Z",
+        "completedAtISO": "2026-03-05T09:00:00.000Z"
+      },
+      "id": "07f0f64d-7872-4ba7-b86e-f00129a82bb7",
+      "status": "draft",
+      "createdAt": "2026-03-05T15:47:02.699Z",
+      "updatedAt": "2026-03-05T15:47:02.699Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": "",
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "07f0f64d-7872-4ba7-b86e-f00129a82bb7",
+    "14002fb6-2934-4a62-9e06-e651f33a8b1e"
+  ]
+}

@@ -14,6 +14,8 @@ export type Entry = Record<string, unknown> & {
   id?: string;
   category?: string;
   ownerEmail?: string;
+  schemaVersion?: number;
+  v?: number;
   status?: string;
   confirmationStatus?: EntryStatus;
   createdAt?: string;
@@ -23,4 +25,3 @@ export type Entry = Record<string, unknown> & {
 };
 
 export type EntryLike = Entry;
-
