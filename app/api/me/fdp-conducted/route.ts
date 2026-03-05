@@ -25,7 +25,8 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus, type EntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus } from "@/lib/entryStateMachine";
+import type { EntryStatus } from "@/lib/types/entry";
 import { safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {

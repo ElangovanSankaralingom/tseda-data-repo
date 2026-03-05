@@ -1,14 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CATEGORY_KEYS } from "@/lib/categories";
-import { readCategoryEntries, type EntryEngineRecord } from "@/lib/dataStore";
+import { readCategoryEntries } from "@/lib/dataStore";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike, type EntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isFutureDatedEntry, normalizeStreakState, status as getStreakStatus } from "@/lib/gamification";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
+import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 
 const INDEX_FILE_NAME = "index.json";
@@ -21,7 +22,7 @@ const ENTRY_STATUS_KEYS: readonly EntryStatus[] = [
   "REJECTED",
 ];
 
-type EntryLike = EntryEngineRecord & {
+type EntryLike = Entry & {
   id?: unknown;
   status?: unknown;
   streak?: unknown;
@@ -519,8 +520,8 @@ function isInvalidCountMap(index: UserIndex) {
 export async function updateIndexForEntryMutation(
   userEmail: string,
   category: CategoryKey,
-  beforeEntry: EntryEngineRecord | null,
-  afterEntry: EntryEngineRecord | null
+  beforeEntry: Entry | null,
+  afterEntry: Entry | null
 ): Promise<Result<UserIndex>> {
   return safeAction(async () => {
     const normalizedEmail = normalizeEmail(userEmail);

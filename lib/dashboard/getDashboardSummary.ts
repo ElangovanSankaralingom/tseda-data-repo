@@ -14,16 +14,9 @@ import {
 } from "@/lib/gamification";
 import { entryList } from "@/lib/navigation";
 import { getDashboardTag } from "@/lib/dashboard/tags";
+import type { Entry } from "@/lib/types/entry";
 
-type DashboardEntry = {
-  id?: unknown;
-  startDate?: unknown;
-  endDate?: unknown;
-  status?: unknown;
-  streak?: unknown;
-  createdAt?: unknown;
-  updatedAt?: unknown;
-};
+type DashboardEntry = Entry;
 
 export type DashboardPendingRow = {
   id: string;

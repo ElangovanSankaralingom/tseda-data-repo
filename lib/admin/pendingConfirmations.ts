@@ -5,6 +5,7 @@ import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngin
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/navigation";
+import type { Entry } from "@/lib/types/entry";
 import { getUsersRootDir } from "@/lib/userStore";
 
 export type PendingConfirmationRow = {
@@ -19,7 +20,7 @@ export type PendingConfirmationRow = {
   entryHref: string;
 };
 
-function toEntryTitle(categoryKey: CategoryKey, entry: Record<string, unknown>) {
+function toEntryTitle(categoryKey: CategoryKey, entry: Entry) {
   if (categoryKey === "fdp-attended") return String(entry.programName ?? "").trim() || "FDP Entry";
   if (categoryKey === "fdp-conducted") return String(entry.eventName ?? "").trim() || "FDP Entry";
   if (categoryKey === "case-studies") return String(entry.placeOfVisit ?? "").trim() || "Case Study";

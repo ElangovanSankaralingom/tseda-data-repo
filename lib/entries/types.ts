@@ -1,3 +1,5 @@
+import type { Entry, EntryStatus, UploadedFile } from "@/lib/types/entry";
+
 export type CategoryKey =
   | "fdp-attended"
   | "fdp-conducted"
@@ -5,14 +7,8 @@ export type CategoryKey =
   | "guest-lectures"
   | "workshops";
 
-export type UploadMeta = {
-  fileName: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  storedPath: string;
-};
+export type { Entry, EntryStatus, UploadedFile };
+export type UploadMeta = UploadedFile;
 
 export type PdfSnapshotMeta = {
   storedPath: string;

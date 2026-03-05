@@ -31,13 +31,14 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus, type EntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus } from "@/lib/entryStateMachine";
 import {
   isSemesterAllowed,
   normalizeStudentYear,
   type StudentYear,
 } from "@/lib/student-academic";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
+import type { EntryStatus } from "@/lib/types/entry";
 import { safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {
@@ -370,8 +371,11 @@ async function readList(email: string): Promise<GuestLectureEntry[]> {
   return listEntriesForCategory(email, "guest-lectures", normalizeEntry);
 }
 
-async function writeList(email: string, list: GuestLectureEntry[]) {
-  await replaceEntriesForCategory(email, "guest-lectures", list);
+async function writeList(email: string, list: GuestLectureEntry[], actorEmail?: string) {
+  await replaceEntriesForCategory(email, "guest-lectures", list, {
+    actorEmail,
+    actorRole: actorEmail ? "user" : undefined,
+  });
 }
 
 async function deleteStoredFile(email: string, meta: FileMeta | null) {
@@ -681,7 +685,7 @@ export async function POST(request: Request) {
             updatedAt: now,
           };
 
-          await writeList(target.email, [clonedEntry, ...targetList]);
+          await writeList(target.email, [clonedEntry, ...targetList], email);
         }
       } catch (error) {
         console.error("Guest lectures share failed", error);
@@ -948,7 +952,7 @@ export async function PATCH(request: Request) {
             updatedAt: now,
           };
 
-          await writeList(target.email, [clonedEntry, ...targetList]);
+          await writeList(target.email, [clonedEntry, ...targetList], email);
         }
       } catch (error) {
         console.error("Guest lectures share failed", error);

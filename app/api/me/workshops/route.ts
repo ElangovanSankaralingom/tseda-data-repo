@@ -31,8 +31,9 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus, type EntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus } from "@/lib/entryStateMachine";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
+import type { EntryStatus } from "@/lib/types/entry";
 import { safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {
@@ -341,8 +342,11 @@ async function readList(email: string): Promise<WorkshopEntry[]> {
   return listEntriesForCategory(email, "workshops", normalizeEntry);
 }
 
-async function writeList(email: string, list: WorkshopEntry[]) {
-  await replaceEntriesForCategory(email, "workshops", list);
+async function writeList(email: string, list: WorkshopEntry[], actorEmail?: string) {
+  await replaceEntriesForCategory(email, "workshops", list, {
+    actorEmail,
+    actorRole: actorEmail ? "user" : undefined,
+  });
 }
 
 async function deleteStoredFile(email: string, meta: FileMeta | null) {
@@ -638,7 +642,7 @@ export async function POST(request: Request) {
             updatedAt: now,
           };
 
-          await writeList(target.email, [clonedEntry, ...targetList]);
+          await writeList(target.email, [clonedEntry, ...targetList], email);
         }
       } catch (error) {
         console.error("Workshops share failed", error);
@@ -911,7 +915,7 @@ export async function PATCH(request: Request) {
             updatedAt: now,
           };
 
-          await writeList(target.email, [clonedEntry, ...targetList]);
+          await writeList(target.email, [clonedEntry, ...targetList], email);
         }
       } catch (error) {
         console.error("Workshops share failed", error);

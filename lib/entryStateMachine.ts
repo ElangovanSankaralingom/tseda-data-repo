@@ -1,4 +1,5 @@
-export type EntryStatus = "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
+import type { EntryStatus } from "@/lib/types/entry";
+export type { EntryStatus } from "@/lib/types/entry";
 
 export type EntryTransitionAction =
   | "createEntry"
