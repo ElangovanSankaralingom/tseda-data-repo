@@ -2,6 +2,7 @@ import Link from "next/link";
 import BackTo from "@/components/nav/BackTo";
 import { getPendingConfirmationsCount } from "@/lib/admin/pendingConfirmations";
 import {
+  adminAudit,
   adminConfirmations,
   adminSettings,
   adminUsers,
@@ -29,6 +30,11 @@ const ADMIN_CARDS: AdminCard[] = [
     title: "Settings",
     href: adminSettings(),
     description: "Configure admin-level settings for the data-entry workflow.",
+  },
+  {
+    title: "Audit",
+    href: adminAudit(),
+    description: "Inspect approval/rejection audit history across all users and categories.",
   },
 ];
 

@@ -17,6 +17,7 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
+import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
@@ -38,6 +39,12 @@ import { groupEntries } from "@/lib/entryCategorization";
 import { entryDetail, entryList, entryNew } from "@/lib/navigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
+import { canEditField } from "@/lib/pendingImmutability";
+import {
+  createOptimisticSnapshot,
+  optimisticRemove,
+  optimisticUpsert,
+} from "@/lib/ui/optimistic";
 
 type FileMeta = {
   fileName: string;
@@ -231,8 +238,8 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): WorkshopEntry {
   };
 }
 
-function hydrateEntry(entry: WorkshopEntry) {
-  return hydratePdfSnapshot(entry, "workshops");
+function hydrateEntry(entry: WorkshopEntry): WorkshopEntry {
+  return hydratePdfSnapshot(entry, "workshops") as WorkshopEntry;
 }
 
 function SectionCard({
@@ -474,6 +481,9 @@ export function WorkshopsPage({
   const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
   const entryLocked = isEntryLockedFromStatus(form);
   const controlsDisabled = isViewMode || entryLocked;
+  const pendingCoreLocked = getEntryApprovalStatus(form) === "PENDING_CONFIRMATION";
+  const coreFieldDisabled = (fieldKey: string) =>
+    controlsDisabled || !canEditField(form, "workshops", fieldKey);
   const pdfHash = useMemo(() => hashPrePdfFields(form, "workshops"), [form]);
   const pdfState = useMemo(
     () =>
@@ -498,6 +508,10 @@ export function WorkshopsPage({
   const generateEntrySnapshot = useGenerateEntry<WorkshopEntry>({
     category: "workshops",
     email,
+    hydrateEntry,
+  });
+  const commitDraftEntry = useCommitDraft<WorkshopEntry>({
+    category: "workshops",
     hydrateEntry,
   });
   async function parseApiError(response: Response, fallback: string) {
@@ -605,6 +619,8 @@ export function WorkshopsPage({
     if (intent === "save" && !lifecycle.canSave) return;
     if (intent === "done" && !lifecycle.canDone) return;
     saveLockRef.current = true;
+    let rollbackSnapshot: WorkshopEntry[] | null = null;
+    let lastPersistedEntry: WorkshopEntry | null = null;
 
     try {
       if (hasBusyUploads) {
@@ -616,20 +632,44 @@ export function WorkshopsPage({
       setSaving(true);
       const entryToSave: WorkshopEntry = {
         ...form,
-        status: intent === "done" || form.status === "final" ? "final" : "draft",
+        status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
+      const optimisticEntry = hydrateEntry({
+        ...entryToSave,
+        updatedAt: new Date().toISOString(),
+      });
+      setList((current) => {
+        rollbackSnapshot = createOptimisticSnapshot(current);
+        return optimisticUpsert(current, optimisticEntry);
+      });
       const persisted = hydrateEntry(await persistProgress(entryToSave));
-      applyPersistedEntry(persisted);
+      lastPersistedEntry = persisted;
+      setList((current) => optimisticUpsert(current, persisted));
+
+      const finalEntry: WorkshopEntry =
+        intent === "done" ? await commitDraftEntry(String(persisted.id)) : persisted;
+      if (intent === "done") {
+        lastPersistedEntry = finalEntry;
+        setList((current) => optimisticUpsert<WorkshopEntry>(current, finalEntry));
+      }
+
+      applyPersistedEntry(finalEntry);
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
-      await refreshList(email);
-      setToast({ type: "ok", msg: "Saved" });
+      void refreshList(email);
+      setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
       setTimeout(() => setToast(null), 1400);
       if (options?.closeAfterSave) {
         closeForm();
       }
     } catch (error) {
+      const persistedEntry = lastPersistedEntry;
+      if (persistedEntry) {
+        setList((current) => optimisticUpsert<WorkshopEntry>(current, persistedEntry));
+      } else if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Save failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
@@ -724,6 +764,12 @@ export function WorkshopsPage({
   }
 
   async function deleteEntry(id: string) {
+    let rollbackSnapshot: WorkshopEntry[] | null = null;
+    setList((current) => {
+      rollbackSnapshot = createOptimisticSnapshot(current);
+      return optimisticRemove(current, id);
+    });
+
     try {
       const response = await fetch("/api/me/workshops", {
         method: "DELETE",
@@ -736,10 +782,14 @@ export function WorkshopsPage({
         throw new Error(payload?.error || "Delete failed.");
       }
 
-      setList((current) => current.filter((item) => item.id !== id));
+      setList((current) => optimisticRemove(current, id));
+      void refreshList(email);
       setToast({ type: "ok", msg: "Entry deleted." });
       setTimeout(() => setToast(null), 1200);
     } catch (error) {
+      if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Delete failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1500);
@@ -997,6 +1047,11 @@ export function WorkshopsPage({
             title={isViewMode ? "Workshop Entry" : "New Workshop Entry"}
             subtitle="Add the entry details and generate the entry to unlock uploads."
           >
+            {pendingCoreLocked ? (
+              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Pending confirmation — core fields cannot be edited.
+              </p>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
                 <SelectDropdown
@@ -1004,7 +1059,7 @@ export function WorkshopsPage({
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("academicYear")}
                   error={submitted && !!errors.academicYear}
                 />
               </Field>
@@ -1020,7 +1075,7 @@ export function WorkshopsPage({
                   }
                   options={SEMESTER_TYPE_OPTIONS}
                   placeholder="Select semester type"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("semesterType")}
                   error={submitted && !!errors.semesterType}
                 />
               </Field>
@@ -1033,7 +1088,7 @@ export function WorkshopsPage({
                 <DateField
                   value={form.startDate}
                   onChange={(next) => setForm((current) => ({ ...current, startDate: next }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("startDate")}
                   error={submitted && !!errors.startDate}
                 />
               </Field>
@@ -1046,7 +1101,7 @@ export function WorkshopsPage({
                 <DateField
                   value={form.endDate}
                   onChange={(next) => setForm((current) => ({ ...current, endDate: next }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("endDate")}
                   error={submitted && !!errors.endDate}
                 />
               </Field>
@@ -1055,7 +1110,7 @@ export function WorkshopsPage({
                 <input
                   value={form.eventName}
                   onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("eventName")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.eventName
@@ -1069,7 +1124,7 @@ export function WorkshopsPage({
                 <input
                   value={form.speakerName}
                   onChange={(event) => setForm((current) => ({ ...current, speakerName: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("speakerName")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.speakerName
@@ -1083,7 +1138,7 @@ export function WorkshopsPage({
                 <input
                   value={form.organisationName}
                   onChange={(event) => setForm((current) => ({ ...current, organisationName: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("organisationName")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.organisationName
@@ -1110,7 +1165,7 @@ export function WorkshopsPage({
                 onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
                 facultyOptions={FACULTY_OPTIONS}
                 disableEmails={[currentFaculty.email || form.coordinator.email]}
-                parentLocked={controlsDisabled}
+                parentLocked={coreFieldDisabled("coCoordinators")}
                 viewOnly={isViewMode}
                 sectionError={errors.coCoordinators}
                 showSectionError={submitted}
@@ -1138,7 +1193,7 @@ export function WorkshopsPage({
                       participants: digits === "" ? null : Number(digits),
                     }));
                   }}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("participants")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.participants

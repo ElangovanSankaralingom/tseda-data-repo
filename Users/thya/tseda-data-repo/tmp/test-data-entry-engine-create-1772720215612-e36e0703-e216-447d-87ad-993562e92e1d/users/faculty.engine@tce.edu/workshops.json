@@ -1,0 +1,15 @@
+[
+  {
+    "eventName": "Intro Workshop",
+    "id": "102368e8-2ca7-4d25-9ba8-65e018df6427",
+    "status": "draft",
+    "createdAt": "2026-03-05T14:16:55.613Z",
+    "updatedAt": "2026-03-05T14:16:55.613Z",
+    "confirmationStatus": "DRAFT",
+    "sentForConfirmationAtISO": null,
+    "confirmedAtISO": null,
+    "confirmedBy": null,
+    "confirmationRejectedReason": "",
+    "attachments": []
+  }
+]

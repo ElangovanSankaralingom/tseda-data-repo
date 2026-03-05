@@ -5,6 +5,10 @@ import { getEntryApprovalStatus } from "@/lib/confirmation";
 import { AppError, toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { safeAction } from "@/lib/safeAction";
+import {
+  createOptimisticSnapshot,
+  optimisticUpsert,
+} from "@/lib/ui/optimistic";
 
 type ConfirmableEntry = {
   id: string;
@@ -30,6 +34,17 @@ export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
 
       sendingIdsRef.current = { ...sendingIdsRef.current, [entry.id]: true };
       setSendingIds(sendingIdsRef.current);
+
+      let rollbackSnapshot: TEntry[] | null = null;
+      const optimisticEntry = {
+        ...entry,
+        confirmationStatus: "PENDING_CONFIRMATION",
+      } as TEntry;
+
+      args.setItems((current) => {
+        rollbackSnapshot = createOptimisticSnapshot(current);
+        return optimisticUpsert(current, optimisticEntry);
+      });
 
       const result = await safeAction(async () => {
         const response = await fetch("/api/me/entry/confirmation", {
@@ -57,12 +72,15 @@ export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
 
       try {
         if (!result.ok) {
+          if (rollbackSnapshot) {
+            args.setItems(rollbackSnapshot);
+          }
           args.onError?.(toUserMessage(result.error));
           return;
         }
 
         const updated = result.data;
-        args.setItems((current) => current.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
+        args.setItems((current) => optimisticUpsert(current, { ...optimisticEntry, ...updated } as TEntry));
         args.onSuccess?.("Sent for confirmation.");
       } finally {
         const rest = { ...sendingIdsRef.current };

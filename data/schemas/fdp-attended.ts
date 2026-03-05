@@ -19,6 +19,25 @@ const fields = [
 export const fdpAttendedSchema: EntrySchema = {
   category: "fdp-attended",
   fields,
+  immutableWhenPending: [
+    "academicYear",
+    "semesterType",
+    "startDate",
+    "endDate",
+    "programName",
+    "organisingBody",
+    "supportAmount",
+  ],
+  requiredForCommit: [
+    "academicYear",
+    "semesterType",
+    "startDate",
+    "endDate",
+    "programName",
+    "organisingBody",
+    "permissionLetter",
+    "completionCertificate",
+  ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);
   },

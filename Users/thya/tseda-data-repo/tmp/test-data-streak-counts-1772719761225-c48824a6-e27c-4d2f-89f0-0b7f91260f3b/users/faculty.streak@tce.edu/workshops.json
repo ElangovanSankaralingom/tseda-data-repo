@@ -1,0 +1,35 @@
+[
+  {
+    "eventName": "Completed streak workshop",
+    "streak": {
+      "activatedAtISO": "2026-03-05T08:00:00.000Z",
+      "completedAtISO": "2026-03-05T09:00:00.000Z"
+    },
+    "id": "e18f39c1-5e42-4249-b6c2-3d0e6e7fc313",
+    "status": "draft",
+    "createdAt": "2026-03-05T14:09:21.232Z",
+    "updatedAt": "2026-03-05T14:09:21.232Z",
+    "confirmationStatus": "DRAFT",
+    "sentForConfirmationAtISO": null,
+    "confirmedAtISO": null,
+    "confirmedBy": null,
+    "confirmationRejectedReason": "",
+    "attachments": []
+  },
+  {
+    "eventName": "Active streak workshop",
+    "streak": {
+      "activatedAtISO": "2026-03-05T10:00:00.000Z"
+    },
+    "id": "065460fe-9a4e-4852-aa12-289d47b319fc",
+    "status": "draft",
+    "createdAt": "2026-03-05T14:09:21.226Z",
+    "updatedAt": "2026-03-05T14:09:21.226Z",
+    "confirmationStatus": "DRAFT",
+    "sentForConfirmationAtISO": null,
+    "confirmedAtISO": null,
+    "confirmedBy": null,
+    "confirmationRejectedReason": "",
+    "attachments": []
+  }
+]

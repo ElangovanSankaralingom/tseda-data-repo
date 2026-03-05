@@ -27,7 +27,8 @@ export function computeCutoffDate(endDateISO?: string | null, isStreak = false) 
 }
 
 export function computeDaysLeft(cutoffISO?: string | null) {
-  return cutoffISO ? getDaysLeft(cutoffISO) : 0;
+  const daysLeft = cutoffISO ? getDaysLeft(cutoffISO) : 0;
+  return Object.is(daysLeft, -0) ? 0 : daysLeft;
 }
 
 export function getTagColor(daysLeft: number): EntryTagColor {

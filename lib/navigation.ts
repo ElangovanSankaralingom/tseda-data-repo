@@ -53,6 +53,10 @@ export function adminSettings() {
   return "/admin/settings";
 }
 
+export function adminAudit() {
+  return "/admin/audit";
+}
+
 export function entryList(category: CategoryKey) {
   return `${dataEntryHome()}/${category}`;
 }

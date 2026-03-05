@@ -17,6 +17,7 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
+import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
@@ -45,6 +46,12 @@ import {
   STUDENT_YEAR_OPTIONS,
   type StudentYear,
 } from "@/lib/student-academic";
+import { canEditField } from "@/lib/pendingImmutability";
+import {
+  createOptimisticSnapshot,
+  optimisticRemove,
+  optimisticUpsert,
+} from "@/lib/ui/optimistic";
 
 type FileMeta = {
   fileName: string;
@@ -242,8 +249,8 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): GuestLectureEntry {
   };
 }
 
-function hydrateEntry(entry: GuestLectureEntry) {
-  return hydratePdfSnapshot(entry, "guest-lectures");
+function hydrateEntry(entry: GuestLectureEntry): GuestLectureEntry {
+  return hydratePdfSnapshot(entry, "guest-lectures") as GuestLectureEntry;
 }
 
 function SectionCard({
@@ -484,6 +491,9 @@ export function GuestLecturesPage({
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const entryLocked = isEntryLockedFromStatus(form);
   const controlsDisabled = isViewMode || entryLocked;
+  const pendingCoreLocked = getEntryApprovalStatus(form) === "PENDING_CONFIRMATION";
+  const coreFieldDisabled = (fieldKey: string) =>
+    controlsDisabled || !canEditField(form, "guest-lectures", fieldKey);
   const hasBusyUploads =
     Object.values(singleUploadStatus).some((status) => status.busy) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
@@ -519,6 +529,10 @@ export function GuestLecturesPage({
   const generateEntrySnapshot = useGenerateEntry<GuestLectureEntry>({
     category: "guest-lectures",
     email,
+    hydrateEntry,
+  });
+  const commitDraftEntry = useCommitDraft<GuestLectureEntry>({
+    category: "guest-lectures",
     hydrateEntry,
   });
   const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
@@ -626,6 +640,8 @@ export function GuestLecturesPage({
     if (intent === "save" && !lifecycle.canSave) return;
     if (intent === "done" && !lifecycle.canDone) return;
     saveLockRef.current = true;
+    let rollbackSnapshot: GuestLectureEntry[] | null = null;
+    let lastPersistedEntry: GuestLectureEntry | null = null;
 
     try {
       if (hasBusyUploads) {
@@ -637,20 +653,44 @@ export function GuestLecturesPage({
       setSaving(true);
       const entryToSave: GuestLectureEntry = {
         ...form,
-        status: intent === "done" || form.status === "final" ? "final" : "draft",
+        status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
+      const optimisticEntry = hydrateEntry({
+        ...entryToSave,
+        updatedAt: new Date().toISOString(),
+      });
+      setList((current) => {
+        rollbackSnapshot = createOptimisticSnapshot(current);
+        return optimisticUpsert(current, optimisticEntry);
+      });
       const persisted = hydrateEntry(await persistProgress(entryToSave));
-      applyPersistedEntry(persisted);
+      lastPersistedEntry = persisted;
+      setList((current) => optimisticUpsert(current, persisted));
+
+      const finalEntry: GuestLectureEntry =
+        intent === "done" ? await commitDraftEntry(String(persisted.id)) : persisted;
+      if (intent === "done") {
+        lastPersistedEntry = finalEntry;
+        setList((current) => optimisticUpsert<GuestLectureEntry>(current, finalEntry));
+      }
+
+      applyPersistedEntry(finalEntry);
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
-      await refreshList(email);
-      setToast({ type: "ok", msg: "Saved" });
+      void refreshList(email);
+      setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
       setTimeout(() => setToast(null), 1400);
       if (options?.closeAfterSave) {
         closeForm();
       }
     } catch (error) {
+      const persistedEntry = lastPersistedEntry;
+      if (persistedEntry) {
+        setList((current) => optimisticUpsert<GuestLectureEntry>(current, persistedEntry));
+      } else if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Save failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1800);
@@ -743,6 +783,12 @@ export function GuestLecturesPage({
   }
 
   async function deleteEntry(id: string) {
+    let rollbackSnapshot: GuestLectureEntry[] | null = null;
+    setList((current) => {
+      rollbackSnapshot = createOptimisticSnapshot(current);
+      return optimisticRemove(current, id);
+    });
+
     try {
       const response = await fetch("/api/me/guest-lectures", {
         method: "DELETE",
@@ -755,10 +801,14 @@ export function GuestLecturesPage({
         throw new Error(payload?.error || "Delete failed.");
       }
 
-      setList((current) => current.filter((item) => item.id !== id));
+      setList((current) => optimisticRemove(current, id));
+      void refreshList(email);
       setToast({ type: "ok", msg: "Entry deleted." });
       setTimeout(() => setToast(null), 1200);
     } catch (error) {
+      if (rollbackSnapshot) {
+        setList(rollbackSnapshot);
+      }
       const message = error instanceof Error ? error.message : "Delete failed.";
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1500);
@@ -1018,6 +1068,11 @@ export function GuestLecturesPage({
             title={isViewMode ? "Guest Lecture Entry" : "New Guest Lecture Entry"}
             subtitle="Add the entry details and generate the entry to unlock uploads."
           >
+            {pendingCoreLocked ? (
+              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Pending confirmation — core fields cannot be edited.
+              </p>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
                 <SelectDropdown
@@ -1025,7 +1080,7 @@ export function GuestLecturesPage({
                   onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
                   options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
                   placeholder="Select academic year"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("academicYear")}
                   error={submitted && !!errors.academicYear}
                 />
               </Field>
@@ -1041,7 +1096,7 @@ export function GuestLecturesPage({
                   }
                   options={SEMESTER_TYPE_OPTIONS}
                   placeholder="Select semester type"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("semesterType")}
                   error={submitted && !!errors.semesterType}
                 />
               </Field>
@@ -1054,7 +1109,7 @@ export function GuestLecturesPage({
                 <DateField
                   value={form.startDate}
                   onChange={(next) => setForm((current) => ({ ...current, startDate: next }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("startDate")}
                   error={submitted && !!errors.startDate}
                 />
               </Field>
@@ -1067,7 +1122,7 @@ export function GuestLecturesPage({
                 <DateField
                   value={form.endDate}
                   onChange={(next) => setForm((current) => ({ ...current, endDate: next }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("endDate")}
                   error={submitted && !!errors.endDate}
                 />
               </Field>
@@ -1076,7 +1131,7 @@ export function GuestLecturesPage({
                 <input
                   value={form.eventName}
                   onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("eventName")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.eventName
@@ -1090,7 +1145,7 @@ export function GuestLecturesPage({
                 <input
                   value={form.speakerName}
                   onChange={(event) => setForm((current) => ({ ...current, speakerName: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("speakerName")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.speakerName
@@ -1104,7 +1159,7 @@ export function GuestLecturesPage({
                 <input
                   value={form.organizationName}
                   onChange={(event) => setForm((current) => ({ ...current, organizationName: event.target.value }))}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("organizationName")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.organizationName
@@ -1131,7 +1186,7 @@ export function GuestLecturesPage({
                 onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
                 facultyOptions={FACULTY_OPTIONS}
                 disableEmails={[currentFaculty.email || form.coordinator.email]}
-                parentLocked={controlsDisabled}
+                parentLocked={coreFieldDisabled("coCoordinators")}
                 viewOnly={isViewMode}
                 sectionError={errors.coCoordinators}
                 showSectionError={submitted}
@@ -1168,7 +1223,7 @@ export function GuestLecturesPage({
                   }
                   options={STUDENT_YEAR_OPTIONS}
                   placeholder="Select year"
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("studentYear")}
                   error={submitted && !!errors.studentYear}
                 />
               </Field>
@@ -1180,7 +1235,7 @@ export function GuestLecturesPage({
               >
                 <SelectDropdown
                   value={form.semesterNumber === null ? "" : String(form.semesterNumber)}
-                  disabled={controlsDisabled || !normalizedStudentYear}
+                  disabled={coreFieldDisabled("semesterNumber") || !normalizedStudentYear}
                   onChange={(value) =>
                     setForm((current) => ({
                       ...current,
@@ -1207,7 +1262,7 @@ export function GuestLecturesPage({
                       participants: digits === "" ? null : Number(digits),
                     }));
                   }}
-                  disabled={controlsDisabled}
+                  disabled={coreFieldDisabled("participants")}
                   className={cx(
                     "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
                     submitted && errors.participants

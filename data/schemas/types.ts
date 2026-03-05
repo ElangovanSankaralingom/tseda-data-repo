@@ -26,6 +26,9 @@ export type SchemaValidationError = {
 export type EntrySchema = {
   category: CategoryKey;
   fields: readonly SchemaFieldDefinition[];
+  immutableWhenPending?: readonly string[];
+  requiredForCommit?: readonly string[];
+  minAttachmentsForCommit?: number;
   validate: (
     payload: Record<string, unknown>,
     mode: SchemaValidationMode
