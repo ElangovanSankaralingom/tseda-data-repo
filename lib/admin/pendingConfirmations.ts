@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/navigation";
+import { getUsersRootDir } from "@/lib/userStore";
 
 export type PendingConfirmationRow = {
   ownerEmail: string;
@@ -46,7 +46,7 @@ function asOptionalISO(value: unknown): string | null {
 }
 
 export async function getPendingConfirmations(): Promise<PendingConfirmationRow[]> {
-  const usersRoot = path.join(process.cwd(), ".data", "users");
+  const usersRoot = getUsersRootDir();
   const rows: PendingConfirmationRow[] = [];
 
   try {

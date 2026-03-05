@@ -1,0 +1,19 @@
+[
+  {
+    "eventName": "FDP completed streak",
+    "streak": {
+      "activatedAtISO": "2026-03-04T08:00:00.000Z",
+      "completedAtISO": "2026-03-04T09:00:00.000Z"
+    },
+    "id": "e7df62b7-31ef-419b-9318-39ddb69f16ad",
+    "status": "draft",
+    "createdAt": "2026-03-05T12:09:08.192Z",
+    "updatedAt": "2026-03-05T12:09:08.192Z",
+    "confirmationStatus": "DRAFT",
+    "sentForConfirmationAtISO": null,
+    "confirmedAtISO": null,
+    "confirmedBy": null,
+    "confirmationRejectedReason": "",
+    "attachments": []
+  }
+]
