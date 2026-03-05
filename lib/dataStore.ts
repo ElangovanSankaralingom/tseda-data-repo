@@ -7,15 +7,16 @@ import {
 } from "@/lib/entryStateMachine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import type { Entry } from "@/lib/types/entry";
 import { getDataRoot, getUserCategoryStoreFile } from "@/lib/userStore";
+
+export type EntryEngineRecord = Entry;
 
 export type DataStoreEntry = EntryEngineRecord & {
   attachments?: unknown;
   status?: unknown;
   confirmationStatus?: unknown;
 };
-
-export type EntryEngineRecord = Record<string, unknown>;
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -35,7 +36,7 @@ export function normalizeDataStoreEntry(entry: unknown): EntryEngineRecord | nul
     next.attachments = [];
   }
 
-  return next;
+  return next as EntryEngineRecord;
 }
 
 export class DataStore {
