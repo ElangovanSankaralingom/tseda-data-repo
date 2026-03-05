@@ -35,6 +35,7 @@ import { useUploadController } from "@/hooks/useUploadController";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import { entryDetail, entryList, entryNew } from "@/lib/navigation";
+import { uploadFile } from "@/lib/upload/uploadService";
 import {
   type StreakState,
 } from "@/lib/gamification";
@@ -258,38 +259,13 @@ function uploadConductedFileXHR(opts: {
 }): Promise<FileMeta> {
   const { email, recordId, slot, file, onProgress } = opts;
 
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/me/fdp-conducted-file", true);
-
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) return;
-      onProgress(Math.round((event.loaded / event.total) * 100));
-    };
-
-    xhr.onerror = () => reject(new Error("Upload failed (network)."));
-
-    xhr.onload = () => {
-      try {
-        const isJSON = (xhr.getResponseHeader("content-type") || "").includes("application/json");
-        const data = isJSON ? JSON.parse(xhr.responseText || "{}") : {};
-
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(data as FileMeta);
-        } else {
-          reject(new Error(data?.error || `Upload failed (${xhr.status}).`));
-        }
-      } catch {
-        reject(new Error("Upload failed (bad response)."));
-      }
-    };
-
-    const body = new FormData();
-    body.set("email", email);
-    body.set("recordId", recordId);
-    body.set("slot", slot);
-    body.set("file", file);
-    xhr.send(body);
+  return uploadFile({
+    endpoint: "/api/me/fdp-conducted-file",
+    email,
+    recordId,
+    slot,
+    file,
+    onProgress,
   });
 }
 

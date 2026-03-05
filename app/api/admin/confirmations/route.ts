@@ -1,41 +1,17 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isMasterAdmin } from "@/lib/admin";
+import { getPendingConfirmations } from "@/lib/admin/pendingConfirmations";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import {
   approveEntry,
-  getEntryWorkflowStatus,
-  listEntriesForCategory,
   rejectEntry,
 } from "@/lib/entryEngine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { type CategoryKey } from "@/lib/entries/types";
 import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
-
-type PendingConfirmationRow = {
-  ownerEmail: string;
-  categoryKey: CategoryKey;
-  entryId: string;
-  title: string;
-  sentForConfirmationAtISO: string | null;
-  status: string;
-};
-
-function getEntryTitle(categoryKey: CategoryKey, entry: Record<string, unknown>) {
-  if (categoryKey === "fdp-attended") return String(entry.programName ?? "").trim() || "FDP Entry";
-  if (categoryKey === "fdp-conducted") return String(entry.eventName ?? "").trim() || "FDP Entry";
-  if (categoryKey === "case-studies") return String(entry.placeOfVisit ?? "").trim() || "Case Study";
-  if (categoryKey === "guest-lectures") return String(entry.eventName ?? "").trim() || "Guest Lecture";
-  return String(entry.eventName ?? "").trim() || "Workshop";
-}
-
-function toEmailFromDir(dirName: string) {
-  return normalizeEmail(dirName);
-}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -44,46 +20,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const usersRoot = path.join(process.cwd(), ".data", "users");
-  const rows: PendingConfirmationRow[] = [];
-
-  try {
-    const userDirs = await fs.readdir(usersRoot, { withFileTypes: true });
-    for (const userDir of userDirs) {
-      if (!userDir.isDirectory()) continue;
-      const ownerEmail = toEmailFromDir(userDir.name);
-      if (!ownerEmail.endsWith("@tce.edu")) continue;
-
-      for (const categoryKey of CATEGORY_KEYS) {
-        const list = await listEntriesForCategory(ownerEmail, categoryKey);
-        for (const entry of list) {
-          if (getEntryWorkflowStatus(entry) !== "PENDING_CONFIRMATION") continue;
-          rows.push({
-            ownerEmail,
-            categoryKey,
-            entryId: String(entry.id ?? "").trim(),
-            title: getEntryTitle(categoryKey, entry),
-            sentForConfirmationAtISO:
-              typeof entry.sentForConfirmationAtISO === "string"
-                ? entry.sentForConfirmationAtISO
-                : typeof entry.requestEditRequestedAtISO === "string"
-                  ? entry.requestEditRequestedAtISO
-                  : null,
-            status: String(entry.status ?? "draft"),
-          });
-        }
-      }
-    }
-  } catch {
-    return NextResponse.json([], { status: 200 });
-  }
-
-  rows.sort((left, right) => {
-    const leftTs = left.sentForConfirmationAtISO ? Date.parse(left.sentForConfirmationAtISO) : 0;
-    const rightTs = right.sentForConfirmationAtISO ? Date.parse(right.sentForConfirmationAtISO) : 0;
-    return rightTs - leftTs;
-  });
-
+  const rows = await getPendingConfirmations();
   return NextResponse.json(rows, { status: 200 });
 }
 

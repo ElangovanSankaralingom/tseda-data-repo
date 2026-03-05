@@ -13,6 +13,7 @@ import EntryPageHeader from "@/components/entry/EntryPageHeader";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
+import EntryUploader from "@/components/upload/EntryUploader";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
@@ -58,6 +59,17 @@ type FileMeta = {
 type StaffSelection = FacultyRowValue;
 
 type UploadSlot = "permissionLetter" | "travelPlan";
+type UploadStatus = { hasPending: boolean; busy: boolean };
+
+const SINGLE_UPLOAD_SLOTS: Array<{ slot: UploadSlot; label: string }> = [
+  { slot: "permissionLetter", label: "Permission Letter" },
+  { slot: "travelPlan", label: "Travel Plan" },
+];
+
+const EMPTY_UPLOAD_STATUS: Record<UploadSlot, UploadStatus> = {
+  permissionLetter: { hasPending: false, busy: false },
+  travelPlan: { hasPending: false, busy: false },
+};
 
 type CaseStudyEntry = {
   id: string;
@@ -279,59 +291,6 @@ function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
   return <ActionButton {...props} />;
 }
 
-function ProgressBar({ value }: { value: number }) {
-  const pct = Math.max(0, Math.min(100, value));
-  return (
-    <div className="h-2 w-full overflow-hidden rounded-full border border-border bg-muted">
-      <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
-function uploadCaseStudiesFileXHR(opts: {
-  email: string;
-  recordId: string;
-  slot: UploadSlot;
-  file: File;
-  onProgress: (pct: number) => void;
-}): Promise<FileMeta> {
-  const { email, recordId, slot, file, onProgress } = opts;
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/me/case-studies-file", true);
-
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) return;
-      onProgress(Math.round((event.loaded / event.total) * 100));
-    };
-
-    xhr.onerror = () => reject(new Error("Upload failed (network)."));
-
-    xhr.onload = () => {
-      try {
-        const isJSON = (xhr.getResponseHeader("content-type") || "").includes("application/json");
-        const data = isJSON ? JSON.parse(xhr.responseText || "{}") : {};
-
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(data as FileMeta);
-        } else {
-          reject(new Error(data?.error || `Upload failed (${xhr.status}).`));
-        }
-      } catch {
-        reject(new Error("Upload failed (bad response)."));
-      }
-    };
-
-    const body = new FormData();
-    body.set("email", email);
-    body.set("recordId", recordId);
-    body.set("slot", slot);
-    body.set("file", file);
-    xhr.send(body);
-  });
-}
-
 type CaseStudiesPageProps = {
   viewEntryId?: string;
   editEntryId?: string;
@@ -356,22 +315,8 @@ export function CaseStudiesPage({
   const [list, setList] = useState<CaseStudyEntry[]>([]);
   const [form, setForm] = useState<CaseStudyEntry>(() => emptyForm());
   const [lastPersistedSnapshot, setLastPersistedSnapshot] = useState(() => stableStringify(emptyForm()));
-  const [pending, setPending] = useState<Record<UploadSlot, File | null>>({
-    permissionLetter: null,
-    travelPlan: null,
-  });
-  const [busy, setBusy] = useState<Record<UploadSlot, boolean>>({
-    permissionLetter: false,
-    travelPlan: false,
-  });
-  const [progress, setProgress] = useState<Record<UploadSlot, number>>({
-    permissionLetter: 0,
-    travelPlan: 0,
-  });
-  const [uploadError, setUploadError] = useState<Record<UploadSlot, string | null>>({
-    permissionLetter: null,
-    travelPlan: null,
-  });
+  const [singleUploadStatus, setSingleUploadStatus] =
+    useState<Record<UploadSlot, UploadStatus>>(EMPTY_UPLOAD_STATUS);
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
   const seededViewEntryIdRef = useRef<string | null>(null);
@@ -446,22 +391,7 @@ export function CaseStudiesPage({
     setLastPersistedSnapshot(stableStringify(hydratedEntry));
     setAttemptedSectionSave(false);
     setSubmitAttemptedFinal(false);
-    setPending({
-      permissionLetter: null,
-      travelPlan: null,
-    });
-    setBusy({
-      permissionLetter: false,
-      travelPlan: false,
-    });
-    setProgress({
-      permissionLetter: 0,
-      travelPlan: 0,
-    });
-    setUploadError({
-      permissionLetter: null,
-      travelPlan: null,
-    });
+    setSingleUploadStatus({ ...EMPTY_UPLOAD_STATUS });
     setPhotoUploadStatus({ hasPending: false, busy: false });
   }, [activeEntryId, list]);
 
@@ -553,7 +483,8 @@ export function CaseStudiesPage({
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const entryLocked = isEntryLockedFromStatus(form);
   const controlsDisabled = isViewMode || entryLocked;
-  const hasBusyUploads = Object.values(busy).some(Boolean) || photoUploadStatus.busy;
+  const hasBusyUploads =
+    Object.values(singleUploadStatus).some((status) => status.busy) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const generateReady = validatePreUploadFields("case-studies", form as Record<string, unknown>);
   const uploadsVisible = !!form.pdfMeta;
@@ -592,22 +523,7 @@ export function CaseStudiesPage({
     const nextForm = emptyForm(currentFaculty);
     setForm(nextForm);
     setLastPersistedSnapshot(stableStringify(nextForm));
-    setPending({
-      permissionLetter: null,
-      travelPlan: null,
-    });
-    setBusy({
-      permissionLetter: false,
-      travelPlan: false,
-    });
-    setProgress({
-      permissionLetter: 0,
-      travelPlan: 0,
-    });
-    setUploadError({
-      permissionLetter: null,
-      travelPlan: null,
-    });
+    setSingleUploadStatus({ ...EMPTY_UPLOAD_STATUS });
     setPhotoUploadStatus({ hasPending: false, busy: false });
   }
 
@@ -702,97 +618,6 @@ export function CaseStudiesPage({
       coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       staffAccompanying: savedRows,
     };
-  }
-
-  async function uploadSlot(slot: UploadSlot) {
-    const currentForm = form;
-    const file = pending[slot];
-    if (!file) {
-      setUploadError((current) => ({ ...current, [slot]: "Select a file first." }));
-      return;
-    }
-
-    const allowed = file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg";
-    if (!allowed) {
-      setUploadError((current) => ({ ...current, [slot]: "Only PDF/JPG/PNG allowed." }));
-      return;
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      setUploadError((current) => ({ ...current, [slot]: "Max file size is 20MB." }));
-      return;
-    }
-
-    const previousMeta = form[slot];
-
-    try {
-      setUploadError((current) => ({ ...current, [slot]: null }));
-      setBusy((current) => ({ ...current, [slot]: true }));
-      setProgress((current) => ({ ...current, [slot]: 0 }));
-
-      const meta = await uploadCaseStudiesFileXHR({
-        email,
-        recordId: form.id,
-        slot,
-        file,
-        onProgress: (pct) => setProgress((current) => ({ ...current, [slot]: pct })),
-      });
-
-      if (previousMeta?.storedPath && previousMeta.storedPath !== meta.storedPath) {
-        void deleteStoredFile(previousMeta.storedPath);
-      }
-
-      const nextForm = { ...currentForm, [slot]: meta };
-      const persisted = hydrateEntry(await persistProgress(nextForm));
-      applyPersistedEntry(persisted);
-      setPending((current) => ({ ...current, [slot]: null }));
-      setBusy((current) => ({ ...current, [slot]: false }));
-      setProgress((current) => ({ ...current, [slot]: 100 }));
-      await refreshList(email);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Upload failed.";
-      setBusy((current) => ({ ...current, [slot]: false }));
-      setUploadError((current) => ({ ...current, [slot]: message }));
-    }
-  }
-
-  async function deleteSlot(slot: UploadSlot) {
-    const currentForm = form;
-    const meta = currentForm[slot];
-    if (!meta?.storedPath) {
-      setToast({ type: "err", msg: "File path missing." });
-      setTimeout(() => setToast(null), 1500);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/me/case-studies-file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload?.error || "Delete failed.");
-      }
-
-      const nextForm = { ...currentForm, [slot]: null };
-      const persisted = hydrateEntry(await persistProgress(nextForm));
-      applyPersistedEntry(persisted);
-      setPending((current) => ({ ...current, [slot]: null }));
-      setBusy((current) => ({ ...current, [slot]: false }));
-      setProgress((current) => ({ ...current, [slot]: 0 }));
-      setUploadError((current) => ({ ...current, [slot]: null }));
-      await refreshList(email);
-
-      setToast({ type: "ok", msg: "File deleted." });
-      setTimeout(() => setToast(null), 1200);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Delete failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1500);
-    }
   }
 
   async function saveDraftChanges(options?: { closeAfterSave?: boolean; intent?: "save" | "done" }) {
@@ -1536,129 +1361,41 @@ export function CaseStudiesPage({
 
               {uploadsVisible ? (
                 <div className="grid gap-4 sm:grid-cols-3">
-              {(
-                [
-                  ["permissionLetter", "Permission Letter"],
-                  ["travelPlan", "Travel Plan"],
-                ] as const
-              ).map(([slot, label]) => {
-                const meta = form[slot];
-                const currentPending = pending[slot];
-                const currentBusy = busy[slot];
-                const currentProgress = progress[slot];
-                const currentUploadError = uploadError[slot];
-                const canUpload = !!currentPending && !currentBusy;
-                const showUploaded = !!meta && !currentPending;
-
-                return (
-                  <div key={slot} className="rounded-xl border border-border p-4 space-y-3">
-                    <div className="text-sm font-semibold">{label}</div>
-
-                    {isViewMode ? (
-                      meta ? (
-                        <div className="space-y-3">
-                          <div className="text-xs text-muted-foreground">
-                            {meta.fileName} • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <a
-                              href={meta.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
-                            >
-                              Preview
-                            </a>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground">Not uploaded</div>
-                      )
-                    ) : (
-                      <>
-                        {meta ? (
-                          <div className="text-xs text-muted-foreground">
-                            <a className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                              {meta.fileName}
-                            </a>{" "}
-                            • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
-                          </div>
-                        ) : (
-                          <div className={cx("text-xs", submitAttemptedFinal ? "text-red-600" : "text-muted-foreground")}>
-                            {submitAttemptedFinal ? "This upload is mandatory." : "No file uploaded yet."}
-                          </div>
-                        )}
-
-                        <div className="text-xs text-muted-foreground">
-                          {currentPending
-                            ? `Selected: ${currentPending.name}`
-                            : meta
-                              ? "Uploaded. Choose a new file and upload to replace it."
-                              : "Select a file to enable Upload & Save."}
-                        </div>
-
-                        {currentBusy ? (
-                          <div className="space-y-2">
-                            <ProgressBar value={currentProgress} />
-                            <div className="text-xs text-muted-foreground">{currentProgress}% uploading...</div>
-                          </div>
-                        ) : null}
-
-                        {currentUploadError ? <div className="text-xs text-red-600">{currentUploadError}</div> : null}
-
-                        <div className="flex flex-wrap gap-2">
-                          {meta ? (
-                            <>
-                              <a
-                                href={meta.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
-                              >
-                                Preview
-                              </a>
-                              <MiniButton variant="danger" onClick={() => void deleteSlot(slot)} disabled={currentBusy || controlsDisabled}>
-                                Delete
-                              </MiniButton>
-                            </>
-                          ) : null}
-
-                          <label
-                            className={cx(
-                              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-                              currentBusy || controlsDisabled
-                                ? "pointer-events-none cursor-not-allowed opacity-60"
-                                : "cursor-pointer transition hover:bg-muted"
-                            )}
-                          >
-                            Choose file
-                            <input
-                              type="file"
-                              className="hidden"
-                              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                              disabled={controlsDisabled}
-                              onChange={(event) => {
-                                const file = event.target.files?.[0] || null;
-                                event.currentTarget.value = "";
-                                setPending((current) => ({ ...current, [slot]: file }));
-                                setUploadError((current) => ({ ...current, [slot]: null }));
-                                setProgress((current) => ({ ...current, [slot]: 0 }));
-                              }}
-                            />
-                          </label>
-
-                          <MiniButton onClick={() => void uploadSlot(slot)} disabled={controlsDisabled || !canUpload}>
-                            {showUploaded ? "Uploaded" : "Upload & Save"}
-                          </MiniButton>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                  {SINGLE_UPLOAD_SLOTS.map(({ slot, label }) => (
+                    <EntryUploader
+                      key={slot}
+                      title={label}
+                      mode={isViewMode ? "view" : "edit"}
+                      meta={form[slot]}
+                      uploadEndpoint="/api/me/case-studies-file"
+                      email={email}
+                      recordId={form.id}
+                      slot={slot}
+                      disabled={controlsDisabled}
+                      showValidationError={submitAttemptedFinal}
+                      validationMessage="This upload is mandatory."
+                      onStatusChange={(status) =>
+                        setSingleUploadStatus((current) => ({
+                          ...current,
+                          [slot]: status,
+                        }))
+                      }
+                      onUploaded={async (meta) => {
+                        const nextForm = { ...form, [slot]: meta };
+                        const persisted = hydrateEntry(await persistProgress(nextForm));
+                        applyPersistedEntry(persisted);
+                        await refreshList(email);
+                      }}
+                      onDeleted={async () => {
+                        const nextForm = { ...form, [slot]: null };
+                        const persisted = hydrateEntry(await persistProgress(nextForm));
+                        applyPersistedEntry(persisted);
+                        await refreshList(email);
+                      }}
+                    />
+                  ))}
 
               <MultiPhotoUpload
-                key={form.id}
                 title="Geotagged Photos"
                 value={form.geotaggedPhotos}
                 onUploaded={async (meta) => {
