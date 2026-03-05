@@ -11,6 +11,7 @@ import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import type { Entry } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
+import { logger } from "@/lib/logger";
 
 const WAL_FILE_NAME = "events.log";
 const WAL_VERSION = WAL_EVENT_SCHEMA_VERSION;
@@ -207,10 +208,18 @@ export async function ensureWalFile(userEmail: string): Promise<Result<void>> {
   return safeAction(async () => {
     const walFilePath = getWalFilePath(userEmail);
     await fs.mkdir(path.dirname(walFilePath), { recursive: true });
+    let created = false;
     try {
       await fs.access(walFilePath);
     } catch {
       await fs.writeFile(walFilePath, "", "utf8");
+      created = true;
+    }
+    if (created) {
+      logger.info({
+        event: "wal.file.created",
+        userEmail,
+      });
     }
   }, { context: "wal.ensureWalFile" });
 }
@@ -228,7 +237,16 @@ export async function appendEvent(userEmail: string, event: WalEvent): Promise<R
     }
 
     const walFilePath = getWalFilePath(userEmail);
-    await fs.appendFile(walFilePath, `${JSON.stringify(migrated.data)}\n`, "utf8");
+    const line = `${JSON.stringify(migrated.data)}\n`;
+    await fs.appendFile(walFilePath, line, "utf8");
+    logger.info({
+      event: "wal.append",
+      userEmail,
+      category: migrated.data.category,
+      entryId: migrated.data.entryId,
+      action: migrated.data.action,
+      sizeBytes: Buffer.byteLength(line),
+    });
   }, { context: "wal.appendEvent" });
 }
 
@@ -254,6 +272,12 @@ export async function appendEvents(userEmail: string, events: WalEvent[]): Promi
     const walFilePath = getWalFilePath(userEmail);
     const payload = migratedEvents.map((event) => JSON.stringify(event)).join("\n");
     await fs.appendFile(walFilePath, `${payload}\n`, "utf8");
+    logger.info({
+      event: "wal.append.batch",
+      userEmail,
+      count: migratedEvents.length,
+      sizeBytes: Buffer.byteLength(payload),
+    });
   }, { context: "wal.appendEvents" });
 }
 
@@ -296,6 +320,12 @@ export async function readEvents(
         continue;
       }
     }
+    logger.debug({
+      event: "wal.read",
+      userEmail,
+      count: events.length,
+      sinceTs: options?.sinceTs ?? null,
+    });
     return events;
   }, { context: "wal.readEvents" });
 }

@@ -3,7 +3,9 @@ import BackTo from "@/components/nav/BackTo";
 import { getPendingConfirmationsCount } from "@/lib/admin/pendingConfirmations";
 import {
   adminAudit,
+  adminBackups,
   adminConfirmations,
+  adminExport,
   adminSettings,
   adminIntegrity,
   adminUsers,
@@ -38,9 +40,19 @@ const ADMIN_CARDS: AdminCard[] = [
     description: "Inspect approval/rejection audit history across all users and categories.",
   },
   {
+    title: "Export",
+    href: adminExport(),
+    description: "Export normalized entry data to Excel or CSV using schema-driven columns.",
+  },
+  {
     title: "Integrity",
     href: adminIntegrity(),
     description: "Run integrity checks and repair category stores, index, and migration drift.",
+  },
+  {
+    title: "Backups",
+    href: adminBackups(),
+    description: "Create, download, and retain secure zipped backups of the .data store.",
   },
 ];
 

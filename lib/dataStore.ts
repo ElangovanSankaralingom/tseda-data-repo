@@ -1,6 +1,7 @@
 import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { getCategorySchema } from "@/data/categoryRegistry";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import {
   normalizeEntryStatus,
@@ -15,6 +16,8 @@ import {
   type CategoryStoreV2,
   migrateEntry,
 } from "@/lib/migrations";
+import { logger } from "@/lib/logger";
+import { normalizeEntry } from "@/lib/normalize";
 import type { Entry } from "@/lib/types/entry";
 import { getDataRoot, getUserCategoryStoreFile } from "@/lib/userStore";
 
@@ -47,12 +50,18 @@ function normalizeEntryId(value: unknown) {
   return String(value ?? "").trim();
 }
 
-export function normalizeDataStoreEntry(entry: unknown): EntryEngineRecord | null {
+export function normalizeDataStoreEntry(
+  entry: unknown,
+  category?: CategoryKey
+): EntryEngineRecord | null {
   const migrated = migrateEntry(entry);
   if (!migrated.ok) return null;
   if (!isPlainRecord(migrated.data)) return null;
 
-  const next = { ...migrated.data } as DataStoreEntry;
+  const next = normalizeEntry(
+    { ...migrated.data } as Entry,
+    category ? getCategorySchema(category) : undefined
+  ) as DataStoreEntry;
   next.confirmationStatus = normalizeEntryStatus(next as EntryStateLike);
 
   if (typeof next.status !== "string" || !next.status.trim()) {
@@ -90,16 +99,31 @@ export class DataStore {
     };
   }
 
-  private async writeCategoryStore(filePath: string, store: CategoryStoreV2) {
-    await fs.writeFile(filePath, JSON.stringify(store, null, 2), "utf8");
+  private async writeCategoryStore(
+    filePath: string,
+    store: CategoryStoreV2,
+    meta?: { userEmail: string; category: CategoryKey; source: string }
+  ) {
+    const payload = JSON.stringify(store, null, 2);
+    await fs.writeFile(filePath, payload, "utf8");
+    if (meta) {
+      logger.info({
+        event: "datastore.category.write",
+        userEmail: meta.userEmail,
+        category: meta.category,
+        count: store.order.length,
+        sizeBytes: Buffer.byteLength(payload),
+        source: meta.source,
+      });
+    }
   }
 
-  private toStoreFromEntries(entries: EntryEngineRecord[]): CategoryStoreV2 {
+  private toStoreFromEntries(entries: EntryEngineRecord[], category: CategoryKey): CategoryStoreV2 {
     const byId: CategoryStoreV2["byId"] = {};
     const order: string[] = [];
 
     for (const value of entries) {
-      const normalized = normalizeDataStoreEntry(value);
+      const normalized = normalizeDataStoreEntry(value, category);
       if (!normalized) continue;
 
       const id = normalizeEntryId(normalized.id);
@@ -119,7 +143,7 @@ export class DataStore {
     };
   }
 
-  private toEntries(store: CategoryStoreV2): EntryEngineRecord[] {
+  private toEntries(store: CategoryStoreV2, category: CategoryKey): EntryEngineRecord[] {
     const entries = new Array<EntryEngineRecord>();
     for (const id of store.order) {
       const key = normalizeEntryId(id);
@@ -127,7 +151,7 @@ export class DataStore {
       const value = store.byId[key];
       if (!value) continue;
 
-      const normalized = normalizeDataStoreEntry(value);
+      const normalized = normalizeDataStoreEntry(value, category);
       if (!normalized) continue;
 
       entries.push(normalized);
@@ -167,7 +191,11 @@ export class DataStore {
     }
 
     if ((options?.persistMigration ?? true) && shouldWrite) {
-      await this.writeCategoryStore(filePath, store);
+      await this.writeCategoryStore(filePath, store, {
+        userEmail: normalizeEmail(email),
+        category,
+        source: "readCategoryStore.migration",
+      });
     }
 
     return { filePath, store };
@@ -180,7 +208,14 @@ export class DataStore {
     const { store } = await this.readCategoryStore(email, category, {
       persistMigration: true,
     });
-    return this.toEntries(store);
+    const entries = this.toEntries(store, category);
+    logger.debug({
+      event: "datastore.category.read",
+      userEmail: normalizeEmail(email),
+      category,
+      count: entries.length,
+    });
+    return entries;
   }
 
   async writeCategory(
@@ -191,8 +226,12 @@ export class DataStore {
     const filePath = this.categoryFilePath(email, category);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
 
-    const store = this.toStoreFromEntries(entries);
-    await this.writeCategoryStore(filePath, store);
+    const store = this.toStoreFromEntries(entries, category);
+    await this.writeCategoryStore(filePath, store, {
+      userEmail: normalizeEmail(email),
+      category,
+      source: "writeCategory",
+    });
   }
 
   async readEntryById(
@@ -208,8 +247,14 @@ export class DataStore {
     });
     const raw = store.byId[id];
     if (!raw) return null;
-    const normalized = normalizeDataStoreEntry(raw);
+    const normalized = normalizeDataStoreEntry(raw, category);
     if (!normalized) return null;
+    logger.debug({
+      event: "datastore.entry.read",
+      userEmail: normalizeEmail(email),
+      category,
+      entryId: id,
+    });
     return normalized;
   }
 
@@ -219,7 +264,7 @@ export class DataStore {
     entry: EntryEngineRecord,
     options?: { insertPosition?: "start" | "end" }
   ): Promise<EntryEngineRecord> {
-    const normalized = normalizeDataStoreEntry(entry);
+    const normalized = normalizeDataStoreEntry(entry, category);
     if (!normalized) {
       throw new Error("Invalid entry payload");
     }
@@ -243,7 +288,18 @@ export class DataStore {
       }
     }
 
-    await this.writeCategoryStore(filePath, store);
+    await this.writeCategoryStore(filePath, store, {
+      userEmail: normalizeEmail(email),
+      category,
+      source: "upsertCategoryEntry",
+    });
+    logger.info({
+      event: exists ? "datastore.entry.update" : "datastore.entry.create",
+      userEmail: normalizeEmail(email),
+      category,
+      entryId: id,
+      count: store.order.length,
+    });
     return store.byId[id] as EntryEngineRecord;
   }
 
@@ -263,9 +319,20 @@ export class DataStore {
 
     delete store.byId[id];
     store.order = store.order.filter((value) => normalizeEntryId(value) !== id);
-    await this.writeCategoryStore(filePath, store);
+    await this.writeCategoryStore(filePath, store, {
+      userEmail: normalizeEmail(email),
+      category,
+      source: "deleteCategoryEntry",
+    });
+    logger.info({
+      event: "datastore.entry.delete",
+      userEmail: normalizeEmail(email),
+      category,
+      entryId: id,
+      count: store.order.length,
+    });
 
-    const normalized = normalizeDataStoreEntry(existing);
+    const normalized = normalizeDataStoreEntry(existing, category);
     return normalized ?? null;
   }
 }

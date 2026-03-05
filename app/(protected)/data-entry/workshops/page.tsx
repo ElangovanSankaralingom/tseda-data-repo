@@ -8,7 +8,7 @@ import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
-import EntryPageHeader from "@/components/entry/EntryPageHeader";
+import EntryShell from "@/components/entry/EntryShell";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
@@ -979,50 +979,52 @@ export function WorkshopsPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <EntryPageHeader
-        title="Workshops"
-        subtitle="Record workshop details and supporting documents."
-        isViewMode={isViewMode}
-        backHref={backHref}
-        backDisabled={backDisabled}
-        onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
-        actions={
-          showForm && !isViewMode ? (
-            <>
-              <MiniButton
-                role="context"
-                onClick={() => void closeForm()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads}
-              >
-                Cancel
-              </MiniButton>
-              <SaveButton
-                onClick={() => void saveDraftChanges()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
-              >
-                {saving ? "Saving..." : "Save"}
-              </SaveButton>
-              <MiniButton
-                onClick={() => void handleDone()}
-                disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
-              >
-                {saving ? "Saving..." : "Done"}
-              </MiniButton>
-            </>
-          ) : !isViewMode ? (
+    <EntryShell
+      category="workshops"
+      mode={isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview"}
+      entry={showForm ? (form as Record<string, unknown>) : null}
+      title="Workshops"
+      subtitle="Record workshop details and supporting documents."
+      status={showForm ? getEntryApprovalStatus(form) : undefined}
+      backHref={backHref}
+      backDisabled={backDisabled}
+      onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
+      actions={
+        showForm && !isViewMode ? (
+          <>
             <MiniButton
-              onClick={() => {
-                resetForm();
-                router.push(entryNew("workshops"), { scroll: false });
-              }}
-              disabled={loading}
+              role="context"
+              onClick={() => void closeForm()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads}
             >
-              + Add Workshop
+              Cancel
             </MiniButton>
-          ) : null
-        }
-      />
+            <SaveButton
+              onClick={() => void saveDraftChanges()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+            >
+              {saving ? "Saving..." : "Save"}
+            </SaveButton>
+            <MiniButton
+              onClick={() => void handleDone()}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
+            >
+              {saving ? "Saving..." : "Done"}
+            </MiniButton>
+          </>
+        ) : !isViewMode ? (
+          <MiniButton
+            onClick={() => {
+              resetForm();
+              router.push(entryNew("workshops"), { scroll: false });
+            }}
+            disabled={loading}
+          >
+            + Add Workshop
+          </MiniButton>
+        ) : null
+      }
+    >
 
       {toast ? (
         <div
@@ -1350,7 +1352,7 @@ export function WorkshopsPage({
           </SectionCard>
         ) : null}
       </div>
-    </div>
+    </EntryShell>
   );
 }
 
