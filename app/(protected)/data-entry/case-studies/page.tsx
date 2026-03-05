@@ -34,7 +34,7 @@ import {
   type EntryDisplayCategory,
 } from "@/lib/entries/lifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
-import { toEntryEdit, toEntryList, toEntryNew } from "@/lib/entryNavigation";
+import { entryDetail, entryList, entryNew } from "@/lib/navigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
@@ -344,7 +344,7 @@ export function CaseStudiesPage({
   startInNewMode = false,
 }: CaseStudiesPageProps = {}) {
   const router = useRouter();
-  const categoryPath = toEntryList("case-studies");
+  const categoryPath = entryList("case-studies");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(startInNewMode);
@@ -1128,7 +1128,7 @@ export function CaseStudiesPage({
                   index={index}
                   streakState={getEntryStreakDisplayState(entry)}
                 />
-                <Link href={`/data-entry/case-studies/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                <Link href={entryDetail("case-studies", entry.id)} className="text-base font-semibold hover:opacity-80">
                   {entry.academicYear} • {entry.semesterType} Semester
                 </Link>
                 <EntryLockBadge deadlineState={deadlineState} />
@@ -1147,7 +1147,7 @@ export function CaseStudiesPage({
 
             <div className="flex shrink-0 flex-col items-end gap-2">
               <div className="flex items-center gap-2">
-                <MiniButton onClick={() => router.push(`/data-entry/case-studies/${entry.id}`)}>
+                <MiniButton onClick={() => router.push(entryDetail("case-studies", entry.id))}>
                   View
                 </MiniButton>
                 {lockApproved ? (
@@ -1171,7 +1171,7 @@ export function CaseStudiesPage({
                   )
                 ) : (
                   <>
-                    <MiniButton onClick={() => router.push(toEntryEdit("case-studies", entry.id))}>
+                    <MiniButton onClick={() => router.push(entryDetail("case-studies", entry.id))}>
                       Edit
                     </MiniButton>
                     <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
@@ -1276,7 +1276,7 @@ export function CaseStudiesPage({
             <MiniButton
               onClick={() => {
                 resetForm();
-                router.push(toEntryNew("case-studies"), { scroll: false });
+                router.push(entryNew("case-studies"), { scroll: false });
               }}
               disabled={loading}
             >

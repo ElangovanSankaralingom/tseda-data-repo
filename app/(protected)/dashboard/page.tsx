@@ -11,6 +11,7 @@ import {
   status as getStreakStatus,
   type StreakState,
 } from "@/lib/gamification";
+import { entryList } from "@/lib/navigation";
 
 type DashboardEntry = {
   id: string;
@@ -124,11 +125,11 @@ const CATEGORY_PENDING_CONFIG: Array<{
   categoryLabel: string;
   route: string;
 }> = [
-  { key: "fdpAttended", categoryLabel: "FDP - Attended", route: "/data-entry/fdp-attended" },
-  { key: "fdpConducted", categoryLabel: "FDP - Conducted", route: "/data-entry/fdp-conducted" },
-  { key: "caseStudies", categoryLabel: "Case Studies", route: "/data-entry/case-studies" },
-  { key: "guestLectures", categoryLabel: "Guest Lectures", route: "/data-entry/guest-lectures" },
-  { key: "workshops", categoryLabel: "Workshops", route: "/data-entry/workshops" },
+  { key: "fdpAttended", categoryLabel: "FDP - Attended", route: entryList("fdp-attended") },
+  { key: "fdpConducted", categoryLabel: "FDP - Conducted", route: entryList("fdp-conducted") },
+  { key: "caseStudies", categoryLabel: "Case Studies", route: entryList("case-studies") },
+  { key: "guestLectures", categoryLabel: "Guest Lectures", route: entryList("guest-lectures") },
+  { key: "workshops", categoryLabel: "Workshops", route: entryList("workshops") },
 ];
 
 function parseEntryList(payload: unknown): DashboardEntry[] {

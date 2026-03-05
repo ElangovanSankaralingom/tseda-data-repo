@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { isMasterAdmin } from "@/lib/admin";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import { dashboard } from "@/lib/navigation";
 
 export default async function AdminLayout({
   children,
@@ -13,7 +14,7 @@ export default async function AdminLayout({
   const email = normalizeEmail(session?.user?.email ?? "");
 
   if (!isMasterAdmin(email)) {
-    redirect("/dashboard");
+    redirect(dashboard());
   }
 
   return <>{children}</>;

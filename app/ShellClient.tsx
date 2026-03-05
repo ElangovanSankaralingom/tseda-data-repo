@@ -6,6 +6,13 @@ import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import AvatarMenu from "@/components/AvatarMenu";
 import { isMasterAdmin } from "@/lib/admin";
+import {
+  adminHome,
+  dashboard,
+  dataEntryHome,
+  profile,
+  signin,
+} from "@/lib/navigation";
 
 const ENABLE_RESET = true;
 
@@ -27,12 +34,12 @@ export default function ShellClient({
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
 
   const nav = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/data-entry", label: "Data Entry" },
-    { href: "/account", label: "My Account" },
+    { href: dashboard(), label: "Dashboard" },
+    { href: dataEntryHome(), label: "Data Entry" },
+    { href: profile(), label: "My Account" },
   ];
   const drawerNav = canAccessAdmin
-    ? [...nav, { href: "/admin", label: "⚙️ Admin Console" }]
+    ? [...nav, { href: adminHome(), label: "⚙️ Admin Console" }]
     : nav;
 
   async function handleResetConfirm() {
@@ -52,7 +59,7 @@ export default function ShellClient({
       setAvatarRefreshKey((value) => value + 1);
       setToast({ type: "ok", msg: "Account reset successfully" });
       setTimeout(() => setToast(null), 2200);
-      router.push("/dashboard");
+      router.push(dashboard());
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Reset failed.";
@@ -77,11 +84,11 @@ export default function ShellClient({
             >
               ☰
             </button>
-            <Link href="/dashboard" className="font-semibold">
+            <Link href={dashboard()} className="font-semibold">
               {title}
             </Link>
             <Link
-              href="/data-entry"
+              href={dataEntryHome()}
               className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-foreground bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-colors duration-150 hover:opacity-90 active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
             >
               Data Entry
@@ -101,7 +108,7 @@ export default function ShellClient({
             ) : null}
             {canAccessAdmin ? (
               <Link
-                href="/admin"
+                href={adminHome()}
                 className="inline-flex items-center gap-2 rounded-full border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
               >
                 <span aria-hidden="true">⚙️</span>
@@ -170,7 +177,7 @@ export default function ShellClient({
             <div className="pt-3 border-t border-border space-y-2">
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: "/signin" })}
+                onClick={() => signOut({ callbackUrl: signin() })}
                 className="w-full rounded-lg px-3 py-2 text-sm border border-border hover:bg-muted transition text-left"
               >
                 Sign Out

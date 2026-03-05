@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import BackTo from "@/components/nav/BackTo";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { adminHome } from "@/lib/navigation";
 
 type PendingConfirmationRow = {
   ownerEmail: string;
@@ -82,7 +83,7 @@ export default function AdminConfirmationsPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center gap-3">
-        <BackTo href="/admin" compact />
+        <BackTo href={adminHome()} compact />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Entry Confirmations</h1>
           <p className="mt-1 text-sm text-muted-foreground">

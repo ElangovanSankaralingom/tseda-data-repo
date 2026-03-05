@@ -35,7 +35,7 @@ import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { toEntryEdit, toEntryList, toEntryNew } from "@/lib/entryNavigation";
+import { entryDetail, entryList, entryNew } from "@/lib/navigation";
 
 type FileMeta = {
   fileName: string;
@@ -283,7 +283,7 @@ export function FdpAttendedPage({
   startInNewMode = false,
 }: FdpAttendedPageProps = {}) {
   const router = useRouter();
-  const categoryPath = toEntryList("fdp-attended");
+  const categoryPath = entryList("fdp-attended");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
@@ -802,7 +802,7 @@ export function FdpAttendedPage({
             onAdd={() => {
               resetForm();
               setFormOpen(true);
-              router.push(toEntryNew("fdp-attended"), { scroll: false });
+              router.push(entryNew("fdp-attended"), { scroll: false });
             }}
             addLabel="+ Add FDP Entry"
             onCancel={() => void handleCancel()}
@@ -1026,7 +1026,7 @@ export function FdpAttendedPage({
                                     index={index}
                                     streakState={getEntryStreakDisplayState(entry)}
                                   />
-                                  <Link href={`/data-entry/fdp-attended/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                  <Link href={entryDetail("fdp-attended", entry.id)} className="text-base font-semibold hover:opacity-80">
                                     {entry.programName}
                                   </Link>
                                   <EntryLockBadge deadlineState={deadlineState} />
@@ -1041,12 +1041,12 @@ export function FdpAttendedPage({
                               {!(activeEntryId && entry.id === activeEntryId) ? (
                                 <div className="flex shrink-0 flex-col items-end gap-2">
                                   <div className="flex items-center gap-2">
-                                    <MiniButton onClick={() => router.push(`/data-entry/fdp-attended/${entry.id}`)}>
+                                    <MiniButton onClick={() => router.push(entryDetail("fdp-attended", entry.id))}>
                                       View
                                     </MiniButton>
                                     <MiniButton
                                       onClick={() => {
-                                        router.push(toEntryEdit("fdp-attended", entry.id), { scroll: false });
+                                        router.push(entryDetail("fdp-attended", entry.id), { scroll: false });
                                       }}
                                     >
                                       Edit
@@ -1117,7 +1117,7 @@ export function FdpAttendedPage({
                                     index={index}
                                     streakState={getEntryStreakDisplayState(entry)}
                                   />
-                                  <Link href={`/data-entry/fdp-attended/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                  <Link href={entryDetail("fdp-attended", entry.id)} className="text-base font-semibold hover:opacity-80">
                                     {entry.programName}
                                   </Link>
                                   <EntryLockBadge deadlineState={deadlineState} />
@@ -1132,12 +1132,12 @@ export function FdpAttendedPage({
                               {!(activeEntryId && entry.id === activeEntryId) ? (
                                 <div className="flex shrink-0 flex-col items-end gap-2">
                                   <div className="flex items-center gap-2">
-                                    <MiniButton onClick={() => router.push(`/data-entry/fdp-attended/${entry.id}`)}>
+                                    <MiniButton onClick={() => router.push(entryDetail("fdp-attended", entry.id))}>
                                       View
                                     </MiniButton>
                                     <MiniButton
                                       onClick={() => {
-                                        router.push(toEntryEdit("fdp-attended", entry.id), { scroll: false });
+                                        router.push(entryDetail("fdp-attended", entry.id), { scroll: false });
                                       }}
                                     >
                                       Edit
@@ -1222,7 +1222,7 @@ export function FdpAttendedPage({
                                     index={index}
                                     streakState={getEntryStreakDisplayState(entry)}
                                   />
-                                  <Link href={`/data-entry/fdp-attended/${entry.id}`} className="text-base font-semibold hover:opacity-80">
+                                  <Link href={entryDetail("fdp-attended", entry.id)} className="text-base font-semibold hover:opacity-80">
                                     {entry.programName}
                                   </Link>
                                   <EntryLockBadge deadlineState={deadlineState} />
@@ -1240,7 +1240,7 @@ export function FdpAttendedPage({
                               {!(activeEntryId && entry.id === activeEntryId) ? (
                                 <div className="flex shrink-0 flex-col items-end gap-2">
                                   <div className="flex items-center gap-2">
-                                    <MiniButton onClick={() => router.push(`/data-entry/fdp-attended/${entry.id}`)}>
+                                    <MiniButton onClick={() => router.push(entryDetail("fdp-attended", entry.id))}>
                                       View
                                     </MiniButton>
                                     {lockApproved ? (
@@ -1276,7 +1276,7 @@ export function FdpAttendedPage({
                                       <>
                                         <MiniButton
                                           onClick={() => {
-                                            router.push(toEntryEdit("fdp-attended", entry.id), { scroll: false });
+                                            router.push(entryDetail("fdp-attended", entry.id), { scroll: false });
                                           }}
                                         >
                                           Edit

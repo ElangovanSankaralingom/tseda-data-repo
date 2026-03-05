@@ -14,6 +14,7 @@ import {
 } from "@/lib/entryEngine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { type CategoryKey } from "@/lib/entries/types";
+import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
 
 type PendingConfirmationRow = {
   ownerEmail: string;
@@ -23,10 +24,6 @@ type PendingConfirmationRow = {
   sentForConfirmationAtISO: string | null;
   status: string;
 };
-
-function categoryPath(category: string) {
-  return `/data-entry/${category}`;
-}
 
 function getEntryTitle(categoryKey: CategoryKey, entry: Record<string, unknown>) {
   if (categoryKey === "fdp-attended") return String(entry.programName ?? "").trim() || "FDP Entry";
@@ -134,11 +131,11 @@ export async function PATCH(request: Request) {
             String(body.rejectionReason ?? "")
           );
 
-    const categoryRoute = categoryPath(categoryKey);
-    revalidatePath("/dashboard");
-    revalidatePath("/data-entry");
+    const categoryRoute = entryList(categoryKey as CategoryKey);
+    revalidatePath(dashboard());
+    revalidatePath(dataEntryHome());
     revalidatePath(categoryRoute);
-    revalidatePath(`${categoryRoute}/${entryId}`);
+    revalidatePath(entryDetail(categoryKey as CategoryKey, entryId));
 
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
