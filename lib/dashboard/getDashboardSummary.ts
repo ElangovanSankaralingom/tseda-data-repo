@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { ensureUserIndex, type UserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -154,7 +155,46 @@ function isStreakWinEntry(entry: DashboardEntry) {
   return Date.parse(streak.completedAtISO) <= Date.parse(streak.dueAtISO);
 }
 
-async function computeDashboardSummary(normalizedEmail: string): Promise<DashboardSummary> {
+function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
+  const summary = emptySummary();
+
+  for (const categoryKey of CATEGORY_KEYS) {
+    const categorySummary = summary.byCategory[categoryKey];
+    categorySummary.totalEntries = index.totalsByCategory[categoryKey] ?? 0;
+    categorySummary.pendingConfirmationCount = index.pendingByCategory[categoryKey] ?? 0;
+    categorySummary.approvedCount = index.approvedByCategory[categoryKey] ?? 0;
+    categorySummary.streakActivatedCount = index.streakSnapshot.byCategory[categoryKey]?.activated ?? 0;
+    categorySummary.streakWinsCount = index.streakSnapshot.byCategory[categoryKey]?.wins ?? 0;
+
+    summary.totals.totalEntries += categorySummary.totalEntries;
+    summary.totals.pendingConfirmationCount += categorySummary.pendingConfirmationCount;
+    summary.totals.approvedCount += categorySummary.approvedCount;
+    summary.totals.streakActivatedCount += categorySummary.streakActivatedCount;
+    summary.totals.streakWinsCount += categorySummary.streakWinsCount;
+  }
+
+  for (const categoryKey of CATEGORY_KEYS) {
+    const categoryMeta = CATEGORY_META[categoryKey];
+    const categoryRows = index.streakSnapshot.activeEntries
+      .filter((entry) => entry.categoryKey === categoryKey)
+      .sort((left, right) => getSortTime(left.sortAtISO) - getSortTime(right.sortAtISO));
+
+    categoryRows.forEach((row, indexWithinCategory) => {
+      summary.streakActivatedRows.push({
+        id: row.id,
+        categoryKey,
+        categoryLabel: categoryMeta.label,
+        tag: `P${indexWithinCategory + 1}`,
+        route: categoryMeta.route,
+        remainingDays: remainingDaysFromDueAtISO(row.dueAtISO),
+      });
+    });
+  }
+
+  return summary;
+}
+
+async function computeDashboardSummaryFromEntries(normalizedEmail: string): Promise<DashboardSummary> {
   const summary = emptySummary();
 
   for (const categoryKey of CATEGORY_KEYS) {
@@ -217,6 +257,15 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
   }
 
   return summary;
+}
+
+async function computeDashboardSummary(normalizedEmail: string): Promise<DashboardSummary> {
+  const indexed = await ensureUserIndex(normalizedEmail);
+  if (indexed.ok) {
+    return computeDashboardSummaryFromIndex(indexed.data);
+  }
+
+  return computeDashboardSummaryFromEntries(normalizedEmail);
 }
 
 function getCachedSummary(normalizedEmail: string) {

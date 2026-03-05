@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { ENTRY_SCHEMAS, type SchemaValidationMode } from "@/data/schemas";
 import { isMasterAdmin } from "@/lib/admin";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { rebuildUserIndex, updateIndexForEntryMutation } from "@/lib/data/indexStore";
 import { readCategoryEntries, writeCategoryEntries } from "@/lib/dataStore";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { CategoryKey } from "@/lib/entries/types";
@@ -94,6 +95,22 @@ async function writeListRaw(
   await writeCategoryEntries(userEmail, category, list);
 }
 
+async function refreshIndexForMutation(
+  userEmail: string,
+  category: CategoryKey,
+  beforeEntry: EntryEngineRecord | null,
+  afterEntry: EntryEngineRecord | null
+) {
+  const indexResult = await updateIndexForEntryMutation(userEmail, category, beforeEntry, afterEntry);
+  if (indexResult.ok) return;
+
+  logError(indexResult.error, "entryEngine.refreshIndexForMutation");
+  const rebuildResult = await rebuildUserIndex(userEmail);
+  if (!rebuildResult.ok) {
+    logError(rebuildResult.error, "entryEngine.rebuildUserIndex");
+  }
+}
+
 function normalizeId(value: unknown) {
   return String(value ?? "").trim();
 }
@@ -136,6 +153,10 @@ export async function replaceEntriesForCategory(
   entries: EntryEngineRecord[]
 ) {
   await writeListRaw(userEmail, category, entries);
+  const rebuildResult = await rebuildUserIndex(userEmail);
+  if (!rebuildResult.ok) {
+    logError(rebuildResult.error, "entryEngine.replaceEntriesForCategory.rebuildUserIndex");
+  }
   revalidateDashboardSummary(userEmail);
 }
 
@@ -172,6 +193,7 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
 
   list.unshift(entry);
   await writeListRaw(userEmail, category, list);
+  await refreshIndexForMutation(userEmail, category, null, entry as EntryEngineRecord);
   revalidateDashboardSummary(userEmail);
   return entry as T;
 }
@@ -218,6 +240,12 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
 
   list[index] = updated;
   await writeListRaw(userEmail, category, list);
+  await refreshIndexForMutation(
+    userEmail,
+    category,
+    existing as EntryEngineRecord,
+    updated as EntryEngineRecord
+  );
   revalidateDashboardSummary(userEmail);
   return updated as T;
 }
@@ -240,6 +268,7 @@ export async function deleteEntry(
 
   const [removed] = list.splice(index, 1);
   await writeListRaw(userEmail, category, list);
+  await refreshIndexForMutation(userEmail, category, removed, null);
   revalidateDashboardSummary(userEmail);
   return removed;
 }
@@ -267,6 +296,12 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   }) as EntryLike;
   list[index] = updated;
   await writeListRaw(userEmail, category, list);
+  await refreshIndexForMutation(
+    userEmail,
+    category,
+    existing as EntryEngineRecord,
+    updated as EntryEngineRecord
+  );
   revalidateDashboardSummary(userEmail);
   return updated as T;
 }
@@ -289,6 +324,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     throw new Error("Entry not found");
   }
 
+  const existing = list[index] as EntryEngineRecord;
   const nowISO = new Date().toISOString();
   const updated = transitionEntry(list[index] as WorkflowEntryLike, "adminApprove", {
     nowISO,
@@ -296,6 +332,12 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
   }) as EntryLike;
   list[index] = updated;
   await writeListRaw(ownerEmail, category, list);
+  await refreshIndexForMutation(
+    ownerEmail,
+    category,
+    existing,
+    updated as EntryEngineRecord
+  );
   revalidateDashboardSummary(ownerEmail);
   return updated as T;
 }
@@ -319,6 +361,7 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
     throw new Error("Entry not found");
   }
 
+  const existing = list[index] as EntryEngineRecord;
   const nowISO = new Date().toISOString();
   const updated = transitionEntry(list[index] as WorkflowEntryLike, "adminReject", {
     nowISO,
@@ -327,6 +370,12 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
   }) as EntryLike;
   list[index] = updated;
   await writeListRaw(ownerEmail, category, list);
+  await refreshIndexForMutation(
+    ownerEmail,
+    category,
+    existing,
+    updated as EntryEngineRecord
+  );
   revalidateDashboardSummary(ownerEmail);
   return updated as T;
 }
