@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "byId": {
+    "legacy-1": {
+      "id": "legacy-1",
+      "eventName": "Legacy no status",
+      "attachments": [],
+      "confirmationStatus": "DRAFT",
+      "createdAt": "2026-03-05T15:58:45.225Z",
+      "updatedAt": "2026-03-05T15:58:45.225Z",
+      "schemaVersion": 1,
+      "status": "draft"
+    },
+    "legacy-2": {
+      "id": "legacy-2",
+      "requestEditStatus": "pending",
+      "confirmationStatus": "PENDING_CONFIRMATION",
+      "attachments": [],
+      "createdAt": "2026-03-05T15:58:45.225Z",
+      "updatedAt": "2026-03-05T15:58:45.225Z",
+      "schemaVersion": 1,
+      "status": "draft"
+    }
+  },
+  "order": [
+    "legacy-1",
+    "legacy-2"
+  ]
+}

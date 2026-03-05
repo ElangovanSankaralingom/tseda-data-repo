@@ -1,0 +1,73 @@
+{
+  "version": 2,
+  "byId": {
+    "6bed4744-b0cd-40bf-9ade-b1620b884ccd": {
+      "academicYear": "Academic Year 2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2025-08-10",
+      "endDate": "2025-08-12",
+      "eventName": "Approval Workshop",
+      "speakerName": "Speaker",
+      "organisationName": "TCE",
+      "uploads": {
+        "permissionLetter": {
+          "fileName": "permission.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:57:18.156Z",
+          "url": "/uploads/permission.pdf",
+          "storedPath": "permission.pdf"
+        },
+        "brochure": {
+          "fileName": "brochure.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:57:18.156Z",
+          "url": "/uploads/brochure.pdf",
+          "storedPath": "brochure.pdf"
+        },
+        "attendance": {
+          "fileName": "attendance.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:57:18.156Z",
+          "url": "/uploads/attendance.pdf",
+          "storedPath": "attendance.pdf"
+        },
+        "organiserProfile": {
+          "fileName": "organiser-profile.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-05T15:57:18.156Z",
+          "url": "/uploads/organiser-profile.pdf",
+          "storedPath": "organiser-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "fileName": "photo-1.pdf",
+            "mimeType": "application/pdf",
+            "size": 100,
+            "uploadedAt": "2026-03-05T15:57:18.156Z",
+            "url": "/uploads/photo-1.pdf",
+            "storedPath": "photo-1.pdf"
+          }
+        ]
+      },
+      "id": "6bed4744-b0cd-40bf-9ade-b1620b884ccd",
+      "status": "final",
+      "createdAt": "2026-03-05T15:57:18.156Z",
+      "updatedAt": "2026-03-05T15:57:18.195Z",
+      "confirmationStatus": "APPROVED",
+      "sentForConfirmationAtISO": "2026-03-05T15:57:18.193Z",
+      "confirmedAtISO": "2026-03-05T15:57:18.195Z",
+      "confirmedBy": "senarch@tce.edu",
+      "confirmationRejectedReason": "",
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-05T15:57:18.187Z"
+    }
+  },
+  "order": [
+    "6bed4744-b0cd-40bf-9ade-b1620b884ccd"
+  ]
+}

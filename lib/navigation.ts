@@ -52,6 +52,14 @@ export function adminAudit() {
   return "/admin/audit";
 }
 
+export function adminIntegrity() {
+  return "/admin/integrity";
+}
+
+export function adminIntegrityUser(userEmail: string) {
+  return `/admin/integrity/${encodeURIComponent(userEmail)}`;
+}
+
 export function entryList(category: CategoryKey) {
   return `${dataEntryHome()}/${category}`;
 }
