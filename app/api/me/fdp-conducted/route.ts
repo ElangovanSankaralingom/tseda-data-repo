@@ -181,6 +181,17 @@ function canonicalizeFacultySelection(value: FacultySelection) {
   };
 }
 
+function sanitizeCoCoordinators(value: unknown): FacultySelection[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(normalizeFacultySelection)
+    .map(canonicalizeFacultySelection)
+    .filter((item) => !!item.email);
+}
+
 function normalizeStatus(value: unknown, fallback: "draft" | "final" = "draft") {
   return value === "final" ? "final" : value === "draft" ? "draft" : fallback;
 }
@@ -428,12 +439,7 @@ export async function POST(request: Request) {
       name: getCanonicalName(authorizedEmail) ?? String(entry.coordinatorName ?? "").trim(),
       email: authorizedEmail,
     });
-    const coCoordinators = Array.isArray(entry.coCoordinators)
-      ? entry.coCoordinators
-          .map(normalizeFacultySelection)
-          .map(canonicalizeFacultySelection)
-          .filter((value) => value.name || value.email)
-      : [];
+    const coCoordinators = sanitizeCoCoordinators(entry.coCoordinators);
 
     if (!coordinator.name || !coordinator.email) {
       return NextResponse.json({ error: "coordinator required" }, { status: 400 });
@@ -702,7 +708,7 @@ export async function PATCH(request: Request) {
       coordinatorName,
       coordinatorEmail: email,
       coCoordinators: hasCoCoordinators
-        ? entry.coCoordinators.map(canonicalizeFacultySelection)
+        ? sanitizeCoCoordinators(entry.coCoordinators)
         : existing?.coCoordinators || [],
       pdfMeta: existing?.pdfMeta ?? null,
       pdfSourceHash: existing?.pdfSourceHash ?? "",
