@@ -635,18 +635,15 @@ export async function POST(request: Request) {
           ? entry.participants
           : null,
       amountSupport,
-      pdfMeta: entry.status === "final" && entry.pdfMeta ? entry.pdfMeta : null,
-      pdfSourceHash:
-        entry.status === "final"
-          ? entry.pdfSourceHash || existing?.pdfSourceHash || ""
-          : "",
-      pdfStale: entry.status === "final" ? entry.pdfStale === true : false,
+      pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
+      pdfSourceHash: entry.pdfSourceHash || existing?.pdfSourceHash || "",
+      pdfStale: entry.pdfStale === true,
       permissionLetter,
       travelPlan,
       geotaggedPhotos,
       streak: buildSavedStreak({
         status: entry.status === "final" ? "final" : "draft",
-        pdfMeta: entry.status === "final" ? entry.pdfMeta ?? null : null,
+        pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
         startDate: entry.startDate,
         endDate: entry.endDate,
         streak: entry.streak,
@@ -786,6 +783,10 @@ export async function PATCH(request: Request) {
       !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "travelPlan");
     const hasGeotaggedPhotos =
       !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "geotaggedPhotos");
+    const hasPdfMeta = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfMeta");
+    const hasPdfSourceHash =
+      !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash");
+    const hasPdfStale = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale");
     const coordinator: StaffSelection = {
       email,
       name: getCanonicalName(email) ?? email.split("@")[0],
@@ -855,31 +856,15 @@ export async function PATCH(request: Request) {
           ? entry.participants
           : existing?.participants ?? null,
       amountSupport: entry.amountSupport ?? existing?.amountSupport ?? null,
-      pdfMeta:
-        entry.status === "final"
-          ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
-          : null,
-      pdfSourceHash:
-        entry.status === "final"
-          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfSourceHash")
-              ? (entry.pdfSourceHash ?? "")
-              : (existing?.pdfSourceHash ?? ""))
-          : "",
-      pdfStale:
-        entry.status === "final"
-          ? (entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "pdfStale")
-              ? entry.pdfStale === true
-              : existing?.pdfStale === true)
-          : false,
+      pdfMeta: hasPdfMeta ? (entry.pdfMeta ?? null) : existing?.pdfMeta ?? null,
+      pdfSourceHash: hasPdfSourceHash ? (entry.pdfSourceHash ?? "") : existing?.pdfSourceHash ?? "",
+      pdfStale: hasPdfStale ? entry.pdfStale === true : existing?.pdfStale === true,
       permissionLetter: nextPermissionLetter,
       travelPlan: nextTravelPlan,
       geotaggedPhotos: nextGeotaggedPhotos,
       streak: buildSavedStreak({
         status: entry.status === "final" ? "final" : existing?.status ?? "draft",
-        pdfMeta:
-          entry.status === "final"
-            ? (entry.pdfMeta ?? existing?.pdfMeta ?? null)
-            : null,
+        pdfMeta: hasPdfMeta ? (entry.pdfMeta ?? null) : existing?.pdfMeta ?? null,
         startDate: entry.startDate || existing?.startDate || "",
         endDate: entry.endDate || existing?.endDate || "",
         streak: entry.streak ?? existing?.streak,
