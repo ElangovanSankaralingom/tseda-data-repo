@@ -9,5 +9,5 @@ type FdpAttendedViewPageProps = {
 export default async function FdpAttendedViewPage({ params }: FdpAttendedViewPageProps) {
   const { id } = await params;
 
-  return <FdpAttendedPage viewEntryId={id} />;
+  return <FdpAttendedPage editEntryId={id} />;
 }

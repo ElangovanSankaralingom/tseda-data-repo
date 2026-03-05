@@ -31,6 +31,9 @@ export function computeDaysLeft(cutoffISO?: string | null) {
 }
 
 export function getTagColor(daysLeft: number): EntryTagColor {
+  if (daysLeft < 0) {
+    return "expired";
+  }
   const color = getDaysLeftColor(daysLeft);
   return color === "normal" ? "default" : color;
 }

@@ -9,5 +9,5 @@ type FdpConductedViewPageProps = {
 export default async function FdpConductedViewPage({ params }: FdpConductedViewPageProps) {
   const { id } = await params;
 
-  return <FdpConductedPage viewEntryId={id} />;
+  return <FdpConductedPage editEntryId={id} />;
 }

@@ -1,0 +1,53 @@
+import Link from "next/link";
+import BackTo from "@/components/nav/BackTo";
+
+type AdminCard = {
+  title: string;
+  href: string;
+  description: string;
+};
+
+const ADMIN_CARDS: AdminCard[] = [
+  {
+    title: "Confirmations",
+    href: "/admin/confirmations",
+    description: "Review pending entry confirmations and approve or reject requests.",
+  },
+  {
+    title: "Users",
+    href: "/admin/users",
+    description: "Manage user-level admin tools and account controls.",
+  },
+  {
+    title: "Settings",
+    href: "/admin/settings",
+    description: "Configure admin-level settings for the data-entry workflow.",
+  },
+];
+
+export default function AdminConsolePage() {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      <div className="mb-6 flex items-center gap-3">
+        <BackTo href="/dashboard" compact />
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Admin Console</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Master-admin controls for confirmations and system management.</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {ADMIN_CARDS.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="rounded-2xl border border-border bg-card p-5 transition hover:border-foreground/30 hover:bg-muted/20"
+          >
+            <div className="text-lg font-semibold tracking-tight">{card.title}</div>
+            <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
