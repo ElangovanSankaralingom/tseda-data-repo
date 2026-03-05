@@ -13,6 +13,8 @@ import {
   profile,
   signin,
 } from "@/lib/navigation";
+import { safeAction } from "@/lib/safeAction";
+import { notifyError, notifySuccess } from "@/lib/ui/notify";
 
 const ENABLE_RESET = true;
 
@@ -47,24 +49,27 @@ export default function ShellClient({
 
     try {
       setResetBusy(true);
-      const response = await fetch("/api/me/reset", { method: "POST" });
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      const result = await safeAction(async () => {
+        const response = await fetch("/api/me/reset", { method: "POST" });
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        if (!response.ok) {
+          throw new Error(payload.error || "Reset failed.");
+        }
+      }, {
+        context: "shell.resetAccount",
+      });
 
-      if (!response.ok) {
-        throw new Error(payload.error || "Reset failed.");
+      if (!result.ok) {
+        notifyError(result.error, setToast);
+        return;
       }
 
       setResetOpen(false);
       setOpen(false);
       setAvatarRefreshKey((value) => value + 1);
-      setToast({ type: "ok", msg: "Account reset successfully" });
-      setTimeout(() => setToast(null), 2200);
+      notifySuccess("Account reset successfully", setToast);
       router.push(dashboard());
       router.refresh();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Reset failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 2200);
     } finally {
       setResetBusy(false);
     }

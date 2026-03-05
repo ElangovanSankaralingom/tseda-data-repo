@@ -2,7 +2,9 @@
 
 import { useCallback, useRef, useState } from "react";
 import { getEntryApprovalStatus } from "@/lib/confirmation";
+import { AppError, toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
+import { safeAction } from "@/lib/safeAction";
 
 type ConfirmableEntry = {
   id: string;
@@ -29,7 +31,7 @@ export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
       sendingIdsRef.current = { ...sendingIdsRef.current, [entry.id]: true };
       setSendingIds(sendingIdsRef.current);
 
-      try {
+      const result = await safeAction(async () => {
         const response = await fetch("/api/me/entry/confirmation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -41,15 +43,27 @@ export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
         const payload = (await response.json()) as TEntry | { error?: string };
 
         if (!response.ok) {
-          throw new Error(("error" in payload && payload.error) || "Failed to send for confirmation.");
+          throw new AppError({
+            code: response.status === 401 ? "UNAUTHORIZED" : response.status === 403 ? "FORBIDDEN" : "IO_ERROR",
+            message: ("error" in payload && payload.error) || "Failed to send for confirmation.",
+            details: { status: response.status, category: args.category, entryId: entry.id },
+          });
         }
 
-        const updated = payload as TEntry;
+        return payload as TEntry;
+      }, {
+        context: "useEntryConfirmation.sendForConfirmation",
+      });
+
+      try {
+        if (!result.ok) {
+          args.onError?.(toUserMessage(result.error));
+          return;
+        }
+
+        const updated = result.data;
         args.setItems((current) => current.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
         args.onSuccess?.("Sent for confirmation.");
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to send for confirmation.";
-        args.onError?.(message);
       } finally {
         const rest = { ...sendingIdsRef.current };
         delete rest[entry.id];

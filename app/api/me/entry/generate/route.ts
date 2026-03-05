@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isCategoryKey } from "@/lib/categories";
+import { logError, normalizeError } from "@/lib/errors";
 import { runGenerateEntryRequest } from "@/lib/server/generateEntry";
 
 export async function POST(request: Request) {
@@ -22,7 +23,9 @@ export async function POST(request: Request) {
       id,
       draft: body?.draft,
     });
-  } catch {
+  } catch (error) {
+    const appError = normalizeError(error);
+    logError(appError, "api.me.entry.generate.POST");
     return NextResponse.json({ error: "Invalid generate request." }, { status: 400 });
   }
 }

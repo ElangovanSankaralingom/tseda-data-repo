@@ -1027,7 +1027,7 @@ export function FdpAttendedPage({
                                     >
                                       Edit
                                     </MiniButton>
-                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
+                                    <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
                                       Delete entry
                                     </MiniButton>
                                   </div>
@@ -1118,7 +1118,7 @@ export function FdpAttendedPage({
                                     >
                                       Edit
                                     </MiniButton>
-                                    <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
+                                    <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
                                       Delete entry
                                     </MiniButton>
                                   </div>
@@ -1222,22 +1222,18 @@ export function FdpAttendedPage({
                                     {lockApproved ? (
                                       <>
                                         {entry.pdfMeta?.url ? (
-                                          <a
-                                            href={entry.pdfMeta.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-150 hover:opacity-90 active:opacity-80"
+                                          <MiniButton
+                                            role="context"
+                                            onClick={() =>
+                                              window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")
+                                            }
                                           >
                                             Preview
-                                          </a>
+                                          </MiniButton>
                                         ) : (
-                                          <button
-                                            type="button"
-                                            disabled
-                                            className="pointer-events-none inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-foreground bg-foreground px-4 text-sm font-medium text-background opacity-60"
-                                          >
+                                          <MiniButton role="context" disabled>
                                             Preview
-                                          </button>
+                                          </MiniButton>
                                         )}
                                         <RequestEditAction
                                           locked
@@ -1257,7 +1253,7 @@ export function FdpAttendedPage({
                                         >
                                           Edit
                                         </MiniButton>
-                                        <MiniButton variant="danger" onClick={() => void deleteEntry(entry.id)}>
+                                        <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
                                           Delete entry
                                         </MiniButton>
                                         <MiniButton

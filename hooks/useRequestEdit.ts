@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import type { RequestEditableEntry } from "@/lib/entries/types";
+import { toUserMessage } from "@/lib/errors";
+import { safeAction } from "@/lib/safeAction";
 
 type UseRequestEditOptions<TEntry extends RequestEditableEntry> = {
   setItems: Dispatch<SetStateAction<TEntry[]>>;
@@ -41,14 +43,20 @@ export function useRequestEdit<TEntry extends RequestEditableEntry>({
       setRequestingIds((current) => ({ ...current, [entry.id]: true }));
       setItems((current) => current.map((item) => (item.id === entry.id ? optimisticEntry : item)));
 
+      const result = await safeAction(() => persistRequest(optimisticEntry), {
+        context: "useRequestEdit.requestEdit",
+      });
+
       try {
-        const persisted = await persistRequest(optimisticEntry);
+        if (!result.ok) {
+          setItems((current) => current.map((item) => (item.id === entry.id ? entry : item)));
+          onError?.(toUserMessage(result.error));
+          return;
+        }
+
+        const persisted = result.data;
         setItems((current) => current.map((item) => (item.id === entry.id ? persisted : item)));
         onSuccess?.("Request sent.");
-      } catch (error) {
-        setItems((current) => current.map((item) => (item.id === entry.id ? entry : item)));
-        const message = error instanceof Error ? error.message : "Request failed.";
-        onError?.(message);
       } finally {
         setRequestingIds((current) => ({ ...current, [entry.id]: false }));
       }
@@ -71,14 +79,20 @@ export function useRequestEdit<TEntry extends RequestEditableEntry>({
       setRequestingIds((current) => ({ ...current, [entry.id]: true }));
       setItems((current) => current.map((item) => (item.id === entry.id ? optimisticEntry : item)));
 
+      const result = await safeAction(() => persistCancel(entry), {
+        context: "useRequestEdit.cancelRequestEdit",
+      });
+
       try {
-        const persisted = await persistCancel(entry);
+        if (!result.ok) {
+          setItems((current) => current.map((item) => (item.id === entry.id ? entry : item)));
+          onError?.(toUserMessage(result.error));
+          return;
+        }
+
+        const persisted = result.data;
         setItems((current) => current.map((item) => (item.id === entry.id ? persisted : item)));
         onSuccess?.("Request cancelled.");
-      } catch (error) {
-        setItems((current) => current.map((item) => (item.id === entry.id ? entry : item)));
-        const message = error instanceof Error ? error.message : "Cancel request failed.";
-        onError?.(message);
       } finally {
         setRequestingIds((current) => ({ ...current, [entry.id]: false }));
       }

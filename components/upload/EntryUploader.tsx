@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import UploadField from "@/components/entry/UploadField";
 import { useUploadController } from "@/hooks/useUploadController";
+import { toUserMessage } from "@/lib/errors";
+import { safeAction } from "@/lib/safeAction";
 import { deleteFile, uploadFile, type UploadedFile } from "@/lib/upload/uploadService";
 
 type UploadMeta = {
@@ -88,11 +90,12 @@ export default function EntryUploader({
     const uploaded = await controller.uploadAndSave();
     if (!uploaded) return;
 
-    try {
-      await Promise.resolve(onUploaded(uploaded));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Upload save failed.";
-      setActionError(message);
+    const result = await safeAction(() => Promise.resolve(onUploaded(uploaded)), {
+      context: "EntryUploader.onUploaded",
+    });
+
+    if (!result.ok) {
+      setActionError(toUserMessage(result.error));
     }
   }
 

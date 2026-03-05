@@ -38,13 +38,13 @@ export function HeaderEntryActionsBar({
   if (isEditing && !isViewMode) {
     return (
       <>
-        <ActionButton variant="ghost" onClick={onCancel} disabled={cancelDisabled}>
+        <ActionButton role="context" onClick={onCancel} disabled={cancelDisabled}>
           Cancel
         </ActionButton>
         <SaveButton onClick={onSave} disabled={saveDisabled}>
           {saving && saveIntent === "save" ? "Saving..." : "Save"}
         </SaveButton>
-        <ActionButton onClick={onDone} disabled={doneDisabled}>
+        <ActionButton role="context" onClick={onDone} disabled={doneDisabled}>
           {saving && saveIntent === "done" ? "Saving..." : "Done"}
         </ActionButton>
       </>
@@ -53,7 +53,7 @@ export function HeaderEntryActionsBar({
 
   if (!isEditing && !isViewMode && onAdd) {
     return (
-      <ActionButton onClick={onAdd} disabled={loading}>
+      <ActionButton role="context" onClick={onAdd} disabled={loading}>
         {addLabel}
       </ActionButton>
     );
@@ -91,7 +91,7 @@ export function PdfEntryActionsBar({
   return (
     <div className="flex flex-wrap gap-2">
       {!isViewMode ? (
-        <ActionButton onClick={onGenerate} disabled={!canGenerate || generating}>
+        <ActionButton role="context" onClick={onGenerate} disabled={!canGenerate || generating}>
           {generating ? "Generating..." : "Generate Entry"}
         </ActionButton>
       ) : null}
