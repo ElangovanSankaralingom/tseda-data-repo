@@ -173,7 +173,6 @@ export function normalizeEntryStatus(
 }
 
 export function canTransition(from: EntryStatus, to: EntryStatus): boolean {
-  if (from === to) return true;
   if (from === "DRAFT") return to === "PENDING_CONFIRMATION";
   if (from === "REJECTED") return to === "PENDING_CONFIRMATION";
   if (from === "PENDING_CONFIRMATION") return to === "APPROVED" || to === "REJECTED";
@@ -215,11 +214,8 @@ export function transitionEntry<T extends EntryStateLike>(
   }
 
   if (to === "PENDING_CONFIRMATION") {
-    const hasSentAt =
-      typeof entry.sentForConfirmationAtISO === "string" && entry.sentForConfirmationAtISO.trim();
-    (next as Record<string, unknown>).sentForConfirmationAtISO = hasSentAt
-      ? entry.sentForConfirmationAtISO
-      : nowISO;
+    // Each send/resend should record the current submission timestamp.
+    (next as Record<string, unknown>).sentForConfirmationAtISO = nowISO;
     (next as Record<string, unknown>).confirmedAtISO = null;
     (next as Record<string, unknown>).confirmedBy = null;
     (next as Record<string, unknown>).confirmationRejectedReason = "";

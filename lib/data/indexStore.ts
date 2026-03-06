@@ -23,6 +23,7 @@ import {
 import {
   getStreakProgressSnapshot,
   sortActiveStreakEntries,
+  STREAK_RULE_VERSION,
 } from "@/lib/streakProgress";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
@@ -30,6 +31,7 @@ import { logger } from "@/lib/logger";
 
 const INDEX_FILE_NAME = "index.json";
 const USER_INDEX_VERSION = USER_INDEX_SCHEMA_VERSION;
+const USER_INDEX_STREAK_RULE_VERSION = STREAK_RULE_VERSION;
 
 const ENTRY_STATUS_KEYS: readonly EntryStatus[] = [
   "DRAFT",
@@ -67,6 +69,7 @@ export type UserIndex = {
   approvedByCategory: Record<CategoryKey, number>;
   lastEntryAtByCategory: Record<CategoryKey, string | null>;
   streakSnapshot: {
+    ruleVersion: number;
     streakActivatedCount: number;
     streakWinsCount: number;
     byCategory: UserIndexStreakByCategory;
@@ -156,6 +159,7 @@ function createEmptyUserIndex(userEmail: string, nowISO = new Date().toISOString
     approvedByCategory: emptyCategoryMap(() => 0),
     lastEntryAtByCategory: emptyCategoryMap(() => null),
     streakSnapshot: {
+      ruleVersion: USER_INDEX_STREAK_RULE_VERSION,
       streakActivatedCount: 0,
       streakWinsCount: 0,
       byCategory: emptyStreakByCategory(),
@@ -281,6 +285,10 @@ function hydrateIndex(
   if (!streakSnapshot || !streakByCategory || !activeEntriesRaw) {
     return { index: base, rebuildRequired: true, migrated: true };
   }
+  const streakRuleVersion = toNonNegativeInteger(streakSnapshot.ruleVersion);
+  if (streakRuleVersion !== USER_INDEX_STREAK_RULE_VERSION) {
+    return { index: base, rebuildRequired: true, migrated: true };
+  }
 
   for (const category of CATEGORY_KEYS) {
     index.totalsByCategory[category] = toNonNegativeInteger(totalsByCategory[category]);
@@ -299,6 +307,7 @@ function hydrateIndex(
     index.countsByStatus[status] = toNonNegativeInteger(countsByStatus[status]);
   }
 
+  index.streakSnapshot.ruleVersion = USER_INDEX_STREAK_RULE_VERSION;
   index.streakSnapshot.streakActivatedCount = toNonNegativeInteger(streakSnapshot.streakActivatedCount);
   index.streakSnapshot.streakWinsCount = toNonNegativeInteger(streakSnapshot.streakWinsCount);
   index.streakSnapshot.lastComputedAt = toOptionalISO(streakSnapshot.lastComputedAt) ?? nowISO;

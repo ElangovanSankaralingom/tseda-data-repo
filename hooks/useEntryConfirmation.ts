@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { getEntryApprovalStatus } from "@/lib/confirmation";
+import { canSendForConfirmation, getEntryApprovalStatus } from "@/lib/confirmation";
 import { AppError, toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { safeAction } from "@/lib/safeAction";
@@ -12,6 +12,7 @@ import {
 
 type ConfirmableEntry = {
   id: string;
+  status?: string | null;
   confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
 };
@@ -31,6 +32,7 @@ export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
       if (sendingIdsRef.current[entry.id]) return;
       const approvalStatus = getEntryApprovalStatus(entry);
       if (approvalStatus === "PENDING_CONFIRMATION" || approvalStatus === "APPROVED") return;
+      if (!canSendForConfirmation(entry)) return;
 
       sendingIdsRef.current = { ...sendingIdsRef.current, [entry.id]: true };
       setSendingIds(sendingIdsRef.current);
