@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import BackTo from "@/components/nav/BackTo";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { authOptions } from "@/lib/auth";
 import { canViewAnalytics } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -43,17 +43,11 @@ export default async function AdminAnalyticsPage() {
   const summary = summaryResult.ok ? summaryResult.data : null;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Internal usage telemetry from server-side event tracking.
-          </p>
-        </div>
-      </div>
-
+    <AdminPageShell
+      title="Analytics"
+      subtitle="Internal usage telemetry from server-side event tracking."
+      backHref={adminHome()}
+    >
       {!summary ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Failed to load telemetry summary.
@@ -210,6 +204,6 @@ export default async function AdminAnalyticsPage() {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageShell>
   );
 }

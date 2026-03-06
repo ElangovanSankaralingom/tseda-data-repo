@@ -11,20 +11,15 @@ type Option = {
 type AdminExportFormProps = {
   users: string[];
   categories: Option[];
+  statusOptions: Option[];
   fieldOptionsByCategory: Record<string, Option[]>;
   downloadPath: string;
 };
 
-const STATUS_OPTIONS = [
-  { key: "DRAFT", label: "Draft" },
-  { key: "PENDING_CONFIRMATION", label: "Pending Confirmation" },
-  { key: "APPROVED", label: "Approved" },
-  { key: "REJECTED", label: "Rejected" },
-] as const;
-
 export default function AdminExportForm({
   users,
   categories,
+  statusOptions,
   fieldOptionsByCategory,
   downloadPath,
 }: AdminExportFormProps) {
@@ -143,21 +138,21 @@ export default function AdminExportForm({
 
         <div className="space-y-1 text-sm">
           <span className="text-muted-foreground">Statuses (optional)</span>
-          <div className="rounded-lg border border-border bg-background px-3 py-2">
-            <div className="flex flex-wrap gap-2">
-              {STATUS_OPTIONS.map((status) => (
-                <label key={status.key} className="inline-flex items-center gap-1 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={selectedStatuses.includes(status.key)}
-                    onChange={() => toggleStatus(status.key)}
-                  />
-                  <span>{status.label}</span>
-                </label>
-              ))}
+            <div className="rounded-lg border border-border bg-background px-3 py-2">
+              <div className="flex flex-wrap gap-2">
+                {statusOptions.map((status) => (
+                  <label key={status.key} className="inline-flex items-center gap-1 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(status.key)}
+                      onChange={() => toggleStatus(status.key)}
+                    />
+                    <span>{status.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

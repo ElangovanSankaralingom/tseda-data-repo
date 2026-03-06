@@ -2,7 +2,7 @@ import { validateByFieldDefinitions } from "@/data/schemas/common";
 import type { EntrySchema } from "@/data/schemas/types";
 
 const fields = [
-  { key: "id", label: "Entry ID", kind: "string", required: true },
+  { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
   { key: "academicYear", label: "Academic Year", kind: "string" },
   {
     key: "semesterType",
@@ -21,8 +21,8 @@ const fields = [
   { key: "semesterNumber", label: "Semester Number", kind: "number" },
   { key: "participants", label: "Participants", kind: "number" },
   { key: "uploads", label: "Uploads", kind: "object" },
-  { key: "pdfMeta", label: "PDF Metadata", kind: "object" },
-  { key: "streak", label: "Streak", kind: "object" },
+  { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
+  { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
 
 export const guestLecturesSchema: EntrySchema = {

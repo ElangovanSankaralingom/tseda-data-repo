@@ -8,6 +8,7 @@ import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
+import { EntryHeaderActionsBar } from "@/components/entry/EntryHeaderActions";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import EntryShell from "@/components/entry/EntryShell";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
@@ -15,7 +16,6 @@ import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import EntryUploader from "@/components/upload/EntryUploader";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
@@ -322,6 +322,7 @@ export function GuestLecturesPage({
   const categoryPath = entryList("guest-lectures");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
   const [formOpen, setFormOpen] = useState(startInNewMode);
   const [submitted, setSubmitted] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
@@ -744,7 +745,12 @@ export function GuestLecturesPage({
   }
 
   async function closeForm(targetHref = categoryPath) {
+    const currentEntryId = String(form.id ?? "").trim();
+    const hasPersistedEntry = currentEntryId
+      ? list.some((entry) => String(entry.id ?? "").trim() === currentEntryId)
+      : false;
     if (
+      !hasPersistedEntry &&
       !form.pdfMeta &&
       (
         form.uploads.permissionLetter ||
@@ -770,6 +776,10 @@ export function GuestLecturesPage({
     const canLeave = await confirmNavigate();
     if (!canLeave) return;
     await closeForm(targetHref);
+  }
+
+  async function handleSaveDraft() {
+    await saveDraftChanges({ intent: "save" });
   }
 
   async function refreshList(nextEmail = email) {
@@ -810,6 +820,7 @@ export function GuestLecturesPage({
       }
 
       setSaving(true);
+      setSaveIntent(intent);
       const entryToSave: GuestLectureEntry = {
         ...form,
         status: form.status === "final" ? "final" : "draft",
@@ -864,11 +875,12 @@ export function GuestLecturesPage({
       return null;
     } finally {
       setSaving(false);
+      setSaveIntent(null);
       saveLockRef.current = false;
     }
   }
 
-  async function handleDone() {
+  async function handleSaveAndClose() {
     setSubmitAttemptedFinal(true);
 
     if (hasBusyUploads) {
@@ -1236,39 +1248,24 @@ export function GuestLecturesPage({
       backDisabled={backDisabled}
       onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
       actions={
-        showForm && !isViewMode ? (
-          <>
-            <MiniButton
-              role="context"
-              onClick={() => void handleCancel()}
-              disabled={controlsDisabled || saving || loading || hasBusyUploads}
-            >
-              Cancel
-            </MiniButton>
-            <SaveButton
-              onClick={() => void saveDraftChanges()}
-              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
-            >
-              {saving ? "Saving..." : "Save"}
-            </SaveButton>
-            <MiniButton
-              onClick={() => void handleDone()}
-              disabled={controlsDisabled || saving || loading || hasBusyUploads}
-            >
-              {saving ? "Saving..." : "Done"}
-            </MiniButton>
-          </>
-        ) : !isViewMode ? (
-          <MiniButton
-            onClick={() => {
-              resetForm();
-              router.push(entryNew("guest-lectures"), { scroll: false });
-            }}
-            disabled={loading}
-          >
-            + Add Guest Lecture
-          </MiniButton>
-        ) : null
+        <EntryHeaderActionsBar
+          isEditing={showForm}
+          isViewMode={isViewMode}
+          loading={loading}
+          onAdd={() => {
+            resetForm();
+            router.push(entryNew("guest-lectures"), { scroll: false });
+          }}
+          addLabel="+ Add Guest Lecture"
+          onCancel={() => void handleCancel()}
+          cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          onSave={() => void handleSaveDraft()}
+          saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+          onDone={() => void handleSaveAndClose()}
+          doneDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          saving={saving}
+          saveIntent={saveIntent}
+        />
       }
     >
 

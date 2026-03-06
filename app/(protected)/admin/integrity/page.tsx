@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import BackTo from "@/components/nav/BackTo";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import SectionCard from "@/components/layout/SectionCard";
 import { authOptions } from "@/lib/auth";
 import { canRunIntegrityTools } from "@/lib/admin/roles";
 import {
@@ -60,18 +61,12 @@ export default async function AdminIntegrityOverviewPage({ searchParams }: Admin
   const summaryByUser = new Map(summaries.map((item) => [item.userEmail, item] as const));
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Integrity Check &amp; Repair</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Admin-only tools for store consistency checks across category files, index, and WAL.
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-4">
+    <AdminPageShell
+      title="Integrity Check & Repair"
+      subtitle="Admin-only tools for store consistency checks across category files, index, and WAL."
+      backHref={adminHome()}
+    >
+      <SectionCard>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <form method="get">
             <input type="hidden" name="run" value="all" />
@@ -140,7 +135,7 @@ export default async function AdminIntegrityOverviewPage({ searchParams }: Admin
             </table>
           </div>
         )}
-      </div>
-    </div>
+      </SectionCard>
+    </AdminPageShell>
   );
 }

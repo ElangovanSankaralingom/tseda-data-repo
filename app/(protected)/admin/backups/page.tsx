@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import BackTo from "@/components/nav/BackTo";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import SectionCard from "@/components/layout/SectionCard";
 import { authOptions } from "@/lib/auth";
 import { canManageBackups } from "@/lib/admin/roles";
 import {
@@ -64,17 +65,12 @@ export default async function AdminBackupsPage({
   ].filter((item): item is string => !!item);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Backups</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create and download zipped snapshots of the entire <code>.data/</code> store.
-          </p>
-        </div>
-      </div>
-
+    <AdminPageShell
+      title="Backups"
+      subtitle="Create and download zipped snapshots of the entire .data store."
+      backHref={adminHome()}
+      maxWidthClassName="max-w-6xl"
+    >
       {status ? (
         <div
           className={
@@ -93,7 +89,7 @@ export default async function AdminBackupsPage({
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <SectionCard>
         <div className="mb-4 grid gap-3 md:grid-cols-3">
           <div className="rounded-xl border border-border p-3">
             <div className="text-xs uppercase tracking-wide text-muted-foreground">Retention</div>
@@ -120,10 +116,9 @@ export default async function AdminBackupsPage({
             </button>
           </form>
         </div>
-      </div>
+      </SectionCard>
 
-      <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-        <div className="mb-3 text-sm font-medium">Stored Backups</div>
+      <SectionCard title="Stored Backups">
 
         {backups.length === 0 ? (
           <div className="text-sm text-muted-foreground">No backups found in <code>.data_backups/</code>.</div>
@@ -158,7 +153,7 @@ export default async function AdminBackupsPage({
             </table>
           </div>
         )}
-      </div>
-    </div>
+      </SectionCard>
+    </AdminPageShell>
   );
 }

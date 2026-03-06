@@ -132,6 +132,7 @@ export async function GET(request: Request) {
         category: categorySlug,
         format: "csv",
         count: rowsResult.data.rows.length,
+        statusCounts: rowsResult.data.countsByStatus,
         durationMs: Date.now() - startedAt,
       });
       return new NextResponse(csvResult.data, {
@@ -157,6 +158,7 @@ export async function GET(request: Request) {
       category: categorySlug,
       format: "xlsx",
       count: rowsResult.data.rows.length,
+      statusCounts: rowsResult.data.countsByStatus,
       durationMs: Date.now() - startedAt,
     });
     return new NextResponse(new Uint8Array(xlsxResult.data), {

@@ -1,78 +1,28 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import StreakSummaryCard from "@/components/gamification/StreakSummaryCard";
+import MetricCard from "@/components/layout/MetricCard";
+import PageHeader from "@/components/layout/PageHeader";
+import SectionCard from "@/components/layout/SectionCard";
+import EntryStatusBadge from "@/components/entry/EntryStatusBadge";
+import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
-import { getDashboardSummary, type DashboardPendingRow } from "@/lib/entries/summary";
+import { getDashboardSummary } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { remainingDaysFromDueAtISO } from "@/lib/gamification";
-import { signin } from "@/lib/entryNavigation";
+import { adminHome, entryList, signin } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
-
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
 
 function toSafeCount(value: number) {
   if (!Number.isFinite(value) || value <= 0) return 0;
   return Math.floor(value);
 }
 
-function SectionCard({
-  title,
-  subtitle,
-  children,
-  className,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cx("rounded-2xl border border-border bg-white/70 p-6 transition-all duration-200 hover:scale-[1.01]", className)}>
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-        {subtitle ? <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p> : null}
-      </div>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
-
-function StreakCardShell({
-  title,
-  subtitle,
-  summary,
-  action,
-  className,
-  footer,
-}: {
-  title: string;
-  subtitle?: string;
-  summary: React.ReactNode;
-  action?: React.ReactNode;
-  className?: string;
-  footer?: React.ReactNode;
-}) {
-  return (
-    <SectionCard title={title} subtitle={subtitle} className={className}>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 flex flex-wrap items-center gap-3">{summary}</div>
-          <div className="shrink-0">
-            {action ? (
-              action
-            ) : (
-              <span className="invisible inline-flex h-10 items-center justify-center px-3 text-sm">Action</span>
-            )}
-          </div>
-        </div>
-        {footer ? <div>{footer}</div> : null}
-      </div>
-    </SectionCard>
-  );
+function formatUpdatedAt(value: string | null | undefined) {
+  if (!value) return "-";
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return "-";
+  return new Date(parsed).toLocaleString();
 }
 
 export default async function DashboardPage() {
@@ -83,92 +33,104 @@ export default async function DashboardPage() {
     redirect(signin());
   }
 
+  const canAccessAdmin = canAccessAdminConsole(email);
   void trackEvent({
     event: "page.dashboard_view",
     actorEmail: email,
-    role: canAccessAdminConsole(email) ? "admin" : "user",
+    role: canAccessAdmin ? "admin" : "user",
     meta: {
       page: "/dashboard",
     },
   });
 
   const summary = await getDashboardSummary(email);
-  const globalWinsCount = toSafeCount(summary.totals.streakWinsCount);
-  const totalActivatedPendingCount = toSafeCount(summary.totals.streakActivatedCount);
-  const orderedPendingRows = summary.streakActivatedRows;
-  const visiblePendingRows = orderedPendingRows.slice(0, 5);
-  const hiddenPendingCount = Math.max(0, orderedPendingRows.length - visiblePendingRows.length);
+  const userName = session?.user?.name?.trim() || email;
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Track pending uploads and streak wins.</p>
+      <PageHeader
+        title={`Welcome, ${userName}`}
+        subtitle="Track your current data-entry progress and continue from recent work."
+        actions={
+          canAccessAdmin ? (
+            <Link
+              href={adminHome()}
+              className="inline-flex items-center rounded-xl border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted/60"
+            >
+              Open Admin Console
+            </Link>
+          ) : null
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard
+          label="Streak Activated"
+          value={toSafeCount(summary.totals.streakActivatedCount)}
+          hint="Display-only motivation metric"
+        />
+        <MetricCard label="Draft Entries" value={toSafeCount(summary.totals.draftCount)} />
+        <MetricCard
+          label="Pending Confirmation"
+          value={toSafeCount(summary.totals.pendingConfirmationCount)}
+          tone="warning"
+        />
+        <MetricCard
+          label="Approved Entries"
+          value={toSafeCount(summary.totals.approvedCount)}
+          tone="success"
+        />
+        <MetricCard
+          label="Rejected Entries"
+          value={toSafeCount(summary.totals.rejectedCount)}
+          tone="danger"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <StreakCardShell
-          title="🔥 Streak Wins"
-          subtitle="Keep the momentum alive"
-          className={globalWinsCount > 0 ? "border-orange-200 bg-gradient-to-br from-orange-50/80 to-transparent" : undefined}
-          summary={<StreakSummaryCard coloredCount={globalWinsCount} animateColored={globalWinsCount > 0} />}
-          footer={
-            totalActivatedPendingCount === 0 ? (
-              <p className="text-sm text-muted-foreground">Start a task to activate your streak.</p>
-            ) : null
-          }
-        />
-
-        <StreakCardShell
-          title="Streak Activated"
-          subtitle="Active tasks by category"
-          className="border-orange-300/80 shadow-[0_0_18px_rgba(249,115,22,0.08)]"
-          summary={<StreakSummaryCard greyCount={totalActivatedPendingCount} animateGrey={totalActivatedPendingCount > 0} />}
-          footer={
-            totalActivatedPendingCount > 0 ? (
-              <div className="space-y-2">
-                {visiblePendingRows.map((row: DashboardPendingRow) => {
-                  const remainingDays = remainingDaysFromDueAtISO(row.dueAtISO);
-                  return (
-                    <div
-                      key={`${row.categoryLabel}-${row.id}`}
-                      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3"
-                    >
-                      <div className="min-w-0 text-sm text-foreground">
-                        <span className="text-muted-foreground">{row.categoryLabel}</span>
-                        <span className="mx-2 text-muted-foreground">•</span>
-                        <span className="font-mono text-xs text-muted-foreground">{row.tag}</span>
-                      </div>
-                      <span
-                        className={cx(
-                          "whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium",
-                          remainingDays <= 2
-                            ? "bg-red-50 text-red-700"
-                            : remainingDays <= 5
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {remainingDays} days left
-                      </span>
-                      <Link
-                        href={row.route}
-                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-3 text-sm text-background transition-colors duration-150 hover:bg-foreground/90 hover:shadow-[0_0_16px_rgba(15,23,42,0.18)]"
-                      >
-                        Complete
-                      </Link>
+        <SectionCard title="Recent Entries" subtitle="Most recently updated records">
+          {summary.recentEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No entries yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {summary.recentEntries.map((row) => (
+                <Link
+                  key={`${row.categoryKey}:${row.id}`}
+                  href={row.route}
+                  className="block rounded-xl border border-border p-3 transition hover:bg-muted/40"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{row.title}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{row.categoryLabel}</div>
                     </div>
-                  );
-                })}
-                {hiddenPendingCount > 0 ? (
-                  <p className="text-sm text-muted-foreground">+ {hiddenPendingCount} more active tasks</p>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No active streaks</p>
-            )
-          }
-        />
+                    <EntryStatusBadge status={row.status} />
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Updated: {formatUpdatedAt(row.updatedAtISO)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Quick Actions"
+          subtitle="Open a category and continue data entry"
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            {CATEGORY_LIST.map((category) => (
+              <Link
+                key={category}
+                href={entryList(category)}
+                className="rounded-xl border border-border px-3 py-2 text-sm transition hover:bg-muted/40"
+              >
+                {getCategoryConfig(category).label}
+              </Link>
+            ))}
+          </div>
+        </SectionCard>
       </div>
     </div>
   );

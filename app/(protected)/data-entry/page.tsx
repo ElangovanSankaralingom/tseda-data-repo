@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import EntryPageHeader from "@/components/entry/EntryPageHeader";
+import PageHeader from "@/components/layout/PageHeader";
+import SectionCard from "@/components/layout/SectionCard";
 import NotificationBadge from "@/components/ui/NotificationBadge";
 import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
 import { authOptions } from "@/lib/auth";
@@ -11,7 +12,7 @@ import {
   getUnfinishedCountByCategory,
   type DataEntrySummary,
 } from "@/lib/entries/summary";
-import { dataEntrySearch, entryList, getDataEntryNavigation } from "@/lib/entryNavigation";
+import { dataEntrySearch, entryList } from "@/lib/entryNavigation";
 
 type EntryItem = {
   key: keyof DataEntrySummary;
@@ -37,7 +38,6 @@ function cx(...classes: Array<string | false | null | undefined>) {
 export default async function DataEntryHomePage() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
-  const navigation = getDataEntryNavigation();
   const summary = email.endsWith("@tce.edu")
     ? await getDataEntrySummary(email)
     : { ...EMPTY_DATA_ENTRY_SUMMARY };
@@ -45,23 +45,19 @@ export default async function DataEntryHomePage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <EntryPageHeader
+      <PageHeader
         title="Data Entry"
         subtitle="Choose a category to record faculty activities and supporting documents."
-        isViewMode={false}
-        backHref={navigation.backHref}
-        backDisabled={navigation.backDisabled}
         showBack={false}
+        actions={
+          <Link
+            href={dataEntrySearch()}
+            className="inline-flex items-center rounded-xl border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted/60"
+          >
+            Search Entries
+          </Link>
+        }
       />
-
-      <div className="mt-4">
-        <Link
-          href={dataEntrySearch()}
-          className="inline-flex items-center rounded-xl border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted/60"
-        >
-          Search Entries
-        </Link>
-      </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {ITEMS.map((it) => {
@@ -92,8 +88,12 @@ export default async function DataEntryHomePage() {
         })}
       </div>
 
-      <div className="mt-6 rounded-2xl border border-border bg-white/70 p-4 text-sm text-muted-foreground">
-        Add entries and upload required documents by category.
+      <div className="mt-6">
+        <SectionCard>
+          <p className="text-sm text-muted-foreground">
+            Add entries and upload required documents by category.
+          </p>
+        </SectionCard>
       </div>
     </div>
   );

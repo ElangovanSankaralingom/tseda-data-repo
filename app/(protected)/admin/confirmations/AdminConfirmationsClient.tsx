@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import BackTo from "@/components/nav/BackTo";
+import PageHeader from "@/components/layout/PageHeader";
+import SectionCard from "@/components/layout/SectionCard";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { toUserMessage } from "@/lib/errors";
@@ -128,17 +129,15 @@ export default function AdminConfirmationsClient() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Entry Confirmations</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review entries sent for confirmation. Locked mode activates only after approval.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Entry Confirmations"
+        subtitle="Review entries sent for confirmation. Locked mode activates only after approval."
+        backHref={adminHome()}
+        showBack
+      />
 
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="mt-6">
+        <SectionCard>
         <div className="mb-4 text-sm text-muted-foreground">
           Pending confirmation requests:{" "}
           <span className="font-medium text-foreground">{pendingCount}</span>
@@ -206,6 +205,7 @@ export default function AdminConfirmationsClient() {
             })}
           </div>
         )}
+        </SectionCard>
       </div>
 
       {error ? (

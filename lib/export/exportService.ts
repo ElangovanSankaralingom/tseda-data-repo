@@ -1,7 +1,10 @@
 import "server-only";
 
 import { CATEGORY_LIST, getCategoryConfig, getCategorySchema } from "@/data/categoryRegistry";
-import type { SchemaFieldKind } from "@/data/schemas/types";
+import type {
+  SchemaExportFormatter,
+  SchemaFieldKind,
+} from "@/data/schemas/types";
 import { isCategoryKey } from "@/lib/categories";
 import { DataStore } from "@/lib/dataStore";
 import { AppError, normalizeError } from "@/lib/errors";
@@ -16,16 +19,10 @@ import type { EntryStatus } from "@/lib/types/entry";
 export const EXPORT_MAX_ROWS_DEFAULT = 10_000;
 export const EXPORT_MAX_FIELDS_DEFAULT = 80;
 
-const BASE_FIELD_DEFS = [
-  { key: "category", label: "Category", kind: "string" as const },
-  { key: "id", label: "Entry ID", kind: "string" as const },
-  { key: "confirmationStatus", label: "Confirmation Status", kind: "string" as const },
-  { key: "status", label: "Entry Stage", kind: "string" as const },
-  { key: "createdAt", label: "Created At", kind: "string" as const },
-  { key: "updatedAt", label: "Updated At", kind: "string" as const },
-] as const;
-
-type BaseFieldDef = (typeof BASE_FIELD_DEFS)[number];
+export type ExportStatusOption = {
+  key: EntryStatus;
+  label: string;
+};
 
 export type ExportCategorySelection = CategoryKey | "all";
 export type ExportFormat = "xlsx" | "csv";
@@ -33,7 +30,7 @@ export type ExportFormat = "xlsx" | "csv";
 export type ExportFieldOption = {
   key: string;
   label: string;
-  kind: SchemaFieldKind | BaseFieldDef["kind"];
+  kind: SchemaFieldKind;
 };
 
 export type BuildExportOptions = {
@@ -48,7 +45,84 @@ export type ExportRowsResult = {
   rows: Array<Array<string | number | boolean>>;
   usedFieldKeys: string[];
   categoryKeys: CategoryKey[];
+  countsByStatus: Record<EntryStatus, number>;
 };
+
+export const EXPORT_CANONICAL_STATUSES: readonly EntryStatus[] = [
+  "DRAFT",
+  "PENDING_CONFIRMATION",
+  "APPROVED",
+  "REJECTED",
+] as const;
+
+export const EXPORT_STATUS_OPTIONS: readonly ExportStatusOption[] = [
+  { key: "DRAFT", label: "Draft" },
+  { key: "PENDING_CONFIRMATION", label: "Pending Confirmation" },
+  { key: "APPROVED", label: "Approved" },
+  { key: "REJECTED", label: "Rejected" },
+] as const;
+
+type ExportFieldDefinition = {
+  key: string;
+  label: string;
+  kind: SchemaFieldKind;
+  exportOrder: number;
+  exportFormatter: SchemaExportFormatter;
+};
+
+type CollectedExportEntry = {
+  categoryKey: CategoryKey;
+  categoryLabel: string;
+  workflowStatus: EntryStatus;
+  entry: Record<string, unknown>;
+};
+
+const BASE_EXPORT_FIELD_DEFS: readonly ExportFieldDefinition[] = [
+  {
+    key: "category",
+    label: "Category",
+    kind: "string",
+    exportOrder: 10,
+    exportFormatter: "auto",
+  },
+  {
+    key: "id",
+    label: "Entry ID",
+    kind: "string",
+    exportOrder: 20,
+    exportFormatter: "auto",
+  },
+  {
+    key: "confirmationStatus",
+    label: "Confirmation Status",
+    kind: "string",
+    exportOrder: 30,
+    exportFormatter: "status",
+  },
+  {
+    key: "createdAt",
+    label: "Created At",
+    kind: "string",
+    exportOrder: 40,
+    exportFormatter: "datetime",
+  },
+  {
+    key: "updatedAt",
+    label: "Updated At",
+    kind: "string",
+    exportOrder: 50,
+    exportFormatter: "datetime",
+  },
+] as const;
+
+function createEmptyStatusCounts(): Record<EntryStatus, number> {
+  return {
+    DRAFT: 0,
+    PENDING_CONFIRMATION: 0,
+    APPROVED: 0,
+    REJECTED: 0,
+  };
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -114,7 +188,7 @@ function formatObjectCell(value: Record<string, unknown>): string {
 function formatUnknownCell(value: unknown): string | number | boolean {
   if (value === null || value === undefined) return "";
   if (typeof value === "number") return Number.isFinite(value) ? value : "";
-  if (typeof value === "boolean") return value;
+  if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "string") return value.trim();
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? "" : value.toISOString();
   if (Array.isArray(value)) return formatArrayCell(value);
@@ -122,38 +196,49 @@ function formatUnknownCell(value: unknown): string | number | boolean {
   return String(value);
 }
 
-function formatCellValue(
-  fieldKey: string,
-  kind: SchemaFieldKind | BaseFieldDef["kind"] | "unknown",
+function formatBooleanYesNo(value: unknown) {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return "Yes";
+    if (normalized === "false") return "No";
+  }
+  return "";
+}
+
+function formatExportValue(
+  fieldDef: ExportFieldDefinition,
   value: unknown
 ): string | number | boolean {
   if (value === null || value === undefined) return "";
 
-  if (fieldKey === "createdAt" || fieldKey === "updatedAt") {
-    return toIsoTimestamp(value);
-  }
-  if (fieldKey === "confirmationStatus") {
+  if (fieldDef.exportFormatter === "status") {
     return toTrimmed(value).toUpperCase();
   }
-  if (fieldKey === "status") {
-    return toTrimmed(value).toLowerCase();
+  if (fieldDef.exportFormatter === "datetime") {
+    return toIsoTimestamp(value);
   }
-
-  if (kind === "date") {
+  if (fieldDef.exportFormatter === "date") {
     return toDateOnly(value);
   }
-  if (kind === "number") {
+  if (fieldDef.exportFormatter === "boolean_yes_no") {
+    return formatBooleanYesNo(value);
+  }
+
+  if (fieldDef.kind === "date") {
+    return toDateOnly(value);
+  }
+  if (fieldDef.kind === "number") {
     if (typeof value === "number" && Number.isFinite(value)) return value;
     return "";
   }
-  if (kind === "boolean") {
-    if (typeof value === "boolean") return value;
-    return "";
+  if (fieldDef.kind === "boolean") {
+    return formatBooleanYesNo(value);
   }
-  if (kind === "array") {
+  if (fieldDef.kind === "array") {
     return Array.isArray(value) ? formatArrayCell(value) : "";
   }
-  if (kind === "object") {
+  if (fieldDef.kind === "object") {
     return isRecord(value) ? formatObjectCell(value) : "";
   }
 
@@ -165,91 +250,177 @@ function resolveCategoryKeys(category: ExportCategorySelection): CategoryKey[] {
   return [category];
 }
 
-function resolveAllowedStatuses(statuses?: EntryStatus[]) {
-  if (!statuses || statuses.length === 0) return null;
-  return new Set(statuses);
-}
-
-function resolveFieldKinds(
-  categoryKeys: CategoryKey[],
-  fieldKeys: string[]
-): Record<string, SchemaFieldKind | BaseFieldDef["kind"] | "unknown"> {
-  const byKey: Record<string, SchemaFieldKind | BaseFieldDef["kind"] | "unknown"> = {};
-
-  for (const baseField of BASE_FIELD_DEFS) {
-    byKey[baseField.key] = baseField.kind;
-  }
-
-  for (const categoryKey of categoryKeys) {
-    const schema = getCategorySchema(categoryKey);
-    for (const field of schema.fields) {
-      if (!(field.key in byKey)) {
-        byKey[field.key] = field.kind;
-      }
-    }
-  }
-
-  return fieldKeys.reduce<Record<string, SchemaFieldKind | BaseFieldDef["kind"] | "unknown">>(
-    (next, key) => {
-      next[key] = byKey[key] ?? "unknown";
-      return next;
-    },
-    {}
+function normalizeSelectedFieldKeys(fieldKeys: string[]) {
+  return Array.from(
+    new Set(
+      (fieldKeys ?? [])
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean)
+    )
   );
 }
 
-function resolveFieldLabels(
-  categoryKeys: CategoryKey[],
-  fieldKeys: string[]
-): Record<string, string> {
-  const byKey: Record<string, string> = {};
-  for (const baseField of BASE_FIELD_DEFS) {
-    byKey[baseField.key] = baseField.label;
-  }
-
+function resolveSchemaFieldDefs(categoryKeys: CategoryKey[]): ExportFieldDefinition[] {
+  const defs = new Array<ExportFieldDefinition>();
   for (const categoryKey of categoryKeys) {
     const schema = getCategorySchema(categoryKey);
-    for (const field of schema.fields) {
-      if (!(field.key in byKey)) {
-        byKey[field.key] = field.label;
+    schema.fields.forEach((field, index) => {
+      if (field.exportable === false) return;
+      defs.push({
+        key: field.key,
+        label: field.label,
+        kind: field.kind,
+        exportOrder: field.exportOrder ?? 1000 + index,
+        exportFormatter: field.exportFormatter ?? "auto",
+      });
+    });
+  }
+  return defs;
+}
+
+function resolveExportFieldDefinitions(categoryKeys: CategoryKey[]): ExportFieldDefinition[] {
+  const byKey = new Map<string, ExportFieldDefinition>();
+  const candidates = [...BASE_EXPORT_FIELD_DEFS, ...resolveSchemaFieldDefs(categoryKeys)];
+  for (const def of candidates) {
+    if (byKey.has(def.key)) {
+      continue;
+    }
+    byKey.set(def.key, def);
+  }
+
+  return Array.from(byKey.values()).sort(
+    (left, right) =>
+      left.exportOrder - right.exportOrder || left.label.localeCompare(right.label)
+  );
+}
+
+function resolveUsedFieldDefinitions(
+  allFieldDefs: ExportFieldDefinition[],
+  selectedFieldKeys: string[]
+) {
+  const byKey = new Map(allFieldDefs.map((fieldDef) => [fieldDef.key, fieldDef] as const));
+  const selectedDefs = selectedFieldKeys
+    .map((key) => byKey.get(key))
+    .filter((fieldDef): fieldDef is ExportFieldDefinition => !!fieldDef);
+
+  if (selectedDefs.length > 0) {
+    return selectedDefs;
+  }
+
+  return allFieldDefs;
+}
+
+function isCanonicalExportStatus(value: string): value is EntryStatus {
+  return (
+    value === "DRAFT" ||
+    value === "PENDING_CONFIRMATION" ||
+    value === "APPROVED" ||
+    value === "REJECTED"
+  );
+}
+
+function resolveAllowedStatuses(statuses?: EntryStatus[]) {
+  if (!statuses || statuses.length === 0) return null;
+
+  const allowed = new Set<EntryStatus>();
+  for (const status of statuses) {
+    const normalized = String(status ?? "").trim().toUpperCase();
+    if (isCanonicalExportStatus(normalized)) {
+      allowed.add(normalized);
+    }
+  }
+  return allowed.size > 0 ? allowed : null;
+}
+
+function resolveFilterBounds(options: BuildExportOptions) {
+  const fromMs = options.fromISO ? Date.parse(options.fromISO) : Number.NaN;
+  const toMs = options.toISO ? Date.parse(options.toISO) : Number.NaN;
+  return {
+    fromMs,
+    toMs,
+  };
+}
+
+function resolveTimestampMs(entry: Record<string, unknown>) {
+  const updatedAtMs = parseDateMs(entry.updatedAt);
+  if (!Number.isNaN(updatedAtMs)) return updatedAtMs;
+  const createdAtMs = parseDateMs(entry.createdAt);
+  return createdAtMs;
+}
+
+function isWithinDateBounds(timestampMs: number, fromMs: number, toMs: number) {
+  if (!Number.isNaN(fromMs) && (Number.isNaN(timestampMs) || timestampMs < fromMs)) {
+    return false;
+  }
+  if (!Number.isNaN(toMs) && (Number.isNaN(timestampMs) || timestampMs > toMs)) {
+    return false;
+  }
+  return true;
+}
+
+async function collectFilteredEntries(
+  normalizedEmail: string,
+  categoryKeys: CategoryKey[],
+  options: BuildExportOptions
+) {
+  const allowedStatuses = resolveAllowedStatuses(options.statuses);
+  const { fromMs, toMs } = resolveFilterBounds(options);
+  const maxRows = Number.isFinite(options.maxRows)
+    ? Math.max(1, Math.min(EXPORT_MAX_ROWS_DEFAULT, Number(options.maxRows)))
+    : EXPORT_MAX_ROWS_DEFAULT;
+
+  const rows = new Array<CollectedExportEntry>();
+  const countsByStatus = createEmptyStatusCounts();
+  const store = new DataStore();
+
+  for (const categoryKey of categoryKeys) {
+    const categoryConfig = getCategoryConfig(categoryKey);
+    const schema = getCategorySchema(categoryKey);
+    const list = await store.readCategory(normalizedEmail, categoryKey);
+
+    for (const rawEntry of list) {
+      const entry = normalizeEntry(rawEntry, schema) as Record<string, unknown>;
+      const workflowStatus = normalizeEntryStatus(entry);
+      if (allowedStatuses && !allowedStatuses.has(workflowStatus)) {
+        continue;
+      }
+
+      const timestampMs = resolveTimestampMs(entry);
+      if (!isWithinDateBounds(timestampMs, fromMs, toMs)) {
+        continue;
+      }
+
+      countsByStatus[workflowStatus] += 1;
+      rows.push({
+        categoryKey,
+        categoryLabel: categoryConfig.label,
+        workflowStatus,
+        entry,
+      });
+
+      if (rows.length > maxRows) {
+        throw new AppError({
+          code: "PAYLOAD_TOO_LARGE",
+          message: `Export exceeds ${maxRows} rows. Narrow filters and retry.`,
+        });
       }
     }
   }
 
-  return fieldKeys.reduce<Record<string, string>>((next, key) => {
-    next[key] = byKey[key] ?? key;
-    return next;
-  }, {});
-}
-
-function resolveDefaultFieldKeys(categoryKeys: CategoryKey[]) {
-  const keys = new Array<string>();
-  for (const baseField of BASE_FIELD_DEFS) {
-    keys.push(baseField.key);
-  }
-
-  const seen = new Set(keys);
-  for (const categoryKey of categoryKeys) {
-    const schema = getCategorySchema(categoryKey);
-    for (const field of schema.fields) {
-      if (seen.has(field.key)) continue;
-      keys.push(field.key);
-      seen.add(field.key);
-    }
-  }
-  return keys;
+  return {
+    rows,
+    countsByStatus,
+  };
 }
 
 export function getExportableFields(category: ExportCategorySelection): ExportFieldOption[] {
   const categoryKeys = resolveCategoryKeys(category);
-  const keys = resolveDefaultFieldKeys(categoryKeys);
-  const labels = resolveFieldLabels(categoryKeys, keys);
-  const kinds = resolveFieldKinds(categoryKeys, keys);
+  const fieldDefs = resolveExportFieldDefinitions(categoryKeys);
 
-  return keys.map((key) => ({
-    key,
-    label: labels[key] ?? key,
-    kind: kinds[key] ?? "unknown",
+  return fieldDefs.map((fieldDef) => ({
+    key: fieldDef.key,
+    label: fieldDef.label,
+    kind: fieldDef.kind,
   }));
 }
 
@@ -269,16 +440,7 @@ export async function buildExportRows(
     }
 
     const categoryKeys = resolveCategoryKeys(category);
-    const selectedFieldKeys = Array.from(
-      new Set(
-        (fieldKeys ?? [])
-          .map((value) => String(value ?? "").trim())
-          .filter(Boolean)
-      )
-    );
-    const maxRows = Number.isFinite(options.maxRows)
-      ? Math.max(1, Math.min(EXPORT_MAX_ROWS_DEFAULT, Number(options.maxRows)))
-      : EXPORT_MAX_ROWS_DEFAULT;
+    const selectedFieldKeys = normalizeSelectedFieldKeys(fieldKeys);
 
     if (selectedFieldKeys.length > EXPORT_MAX_FIELDS_DEFAULT) {
       throw new AppError({
@@ -287,59 +449,22 @@ export async function buildExportRows(
       });
     }
 
-    const usedFieldKeys =
-      selectedFieldKeys.length > 0 ? selectedFieldKeys : resolveDefaultFieldKeys(categoryKeys);
-    const fieldLabels = resolveFieldLabels(categoryKeys, usedFieldKeys);
-    const fieldKinds = resolveFieldKinds(categoryKeys, usedFieldKeys);
-    const headers = usedFieldKeys.map((key) => fieldLabels[key] ?? key);
+    // Exports are schema-driven and canonical-data-driven.
+    // Do not duplicate field labels/column lists in page components.
+    const allFieldDefs = resolveExportFieldDefinitions(categoryKeys);
+    const usedFieldDefs = resolveUsedFieldDefinitions(allFieldDefs, selectedFieldKeys);
+    const usedFieldKeys = usedFieldDefs.map((fieldDef) => fieldDef.key);
+    const headers = usedFieldDefs.map((fieldDef) => fieldDef.label);
 
-    const allowedStatuses = resolveAllowedStatuses(options.statuses);
-    const fromMs = options.fromISO ? Date.parse(options.fromISO) : Number.NaN;
-    const toMs = options.toISO ? Date.parse(options.toISO) : Number.NaN;
-    const store = new DataStore();
-    const rows = new Array<Array<string | number | boolean>>();
-
-    for (const categoryKey of categoryKeys) {
-      const schema = getCategorySchema(categoryKey);
-      const list = await store.readCategory(normalizedEmail, categoryKey);
-      for (const rawEntry of list) {
-        const entry = normalizeEntry(rawEntry, schema) as Record<string, unknown>;
-
-        const workflowStatus = normalizeEntryStatus(entry);
-        if (allowedStatuses && !allowedStatuses.has(workflowStatus)) {
-          continue;
-        }
-
-        const timestampMs =
-          parseDateMs(entry.updatedAt) || parseDateMs(entry.createdAt);
-        if (!Number.isNaN(fromMs) && (Number.isNaN(timestampMs) || timestampMs < fromMs)) {
-          continue;
-        }
-        if (!Number.isNaN(toMs) && (Number.isNaN(timestampMs) || timestampMs > toMs)) {
-          continue;
-        }
-
-        const row = usedFieldKeys.map((fieldKey) => {
-          if (fieldKey === "category") {
-            return getCategoryConfig(categoryKey).label;
-          }
-          if (fieldKey === "confirmationStatus") {
-            return workflowStatus;
-          }
-          const value = getValueAtPath(entry, fieldKey);
-          const kind = fieldKinds[fieldKey] ?? "unknown";
-          return formatCellValue(fieldKey, kind, value);
-        });
-
-        rows.push(row);
-        if (rows.length > maxRows) {
-          throw new AppError({
-            code: "PAYLOAD_TOO_LARGE",
-            message: `Export exceeds ${maxRows} rows. Narrow filters and retry.`,
-          });
-        }
-      }
-    }
+    const collected = await collectFilteredEntries(normalizedEmail, categoryKeys, options);
+    const rows = collected.rows.map((item) =>
+      usedFieldDefs.map((fieldDef) => {
+        if (fieldDef.key === "category") return item.categoryLabel;
+        if (fieldDef.key === "confirmationStatus") return item.workflowStatus;
+        const value = getValueAtPath(item.entry, fieldDef.key);
+        return formatExportValue(fieldDef, value);
+      })
+    );
 
     logger.info({
       event: "admin.export.rows",
@@ -355,6 +480,7 @@ export async function buildExportRows(
       rows,
       usedFieldKeys,
       categoryKeys,
+      countsByStatus: collected.countsByStatus,
     });
   } catch (error) {
     return err(normalizeError(error));
@@ -585,6 +711,10 @@ export function parseExportCategory(value: string): ExportCategorySelection | nu
   return isCategoryKey(normalized) ? normalized : null;
 }
 
+export function getExportStatusOptions(): ExportStatusOption[] {
+  return EXPORT_STATUS_OPTIONS.map((option) => ({ ...option }));
+}
+
 export function parseExportStatuses(value: string): EntryStatus[] {
   const parsed = value
     .split(",")
@@ -593,10 +723,9 @@ export function parseExportStatuses(value: string): EntryStatus[] {
 
   const statuses = new Set<EntryStatus>();
   for (const candidate of parsed) {
-    if (candidate === "DRAFT") statuses.add("DRAFT");
-    if (candidate === "PENDING_CONFIRMATION") statuses.add("PENDING_CONFIRMATION");
-    if (candidate === "APPROVED") statuses.add("APPROVED");
-    if (candidate === "REJECTED") statuses.add("REJECTED");
+    if (isCanonicalExportStatus(candidate)) {
+      statuses.add(candidate);
+    }
   }
   return Array.from(statuses);
 }

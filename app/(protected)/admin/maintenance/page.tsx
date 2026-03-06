@@ -1,6 +1,6 @@
-import BackTo from "@/components/nav/BackTo";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { authOptions } from "@/lib/auth";
 import { canRunMaintenance } from "@/lib/admin/roles";
 import { toUserMessage } from "@/lib/errors";
@@ -71,17 +71,12 @@ export default async function AdminMaintenancePage({
   const loadError = lastRunResult.ok ? null : toUserMessage(lastRunResult.error);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Maintenance Jobs</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Trigger backup and integrity maintenance now, or run it via secure nightly cron.
-          </p>
-        </div>
-      </div>
-
+    <AdminPageShell
+      title="Maintenance Jobs"
+      subtitle="Trigger backup and integrity maintenance now, or run it via secure nightly cron."
+      backHref={adminHome()}
+      maxWidthClassName="max-w-6xl"
+    >
       {status ? (
         <div
           className={
@@ -183,6 +178,6 @@ export default async function AdminMaintenancePage({
           </div>
         )}
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

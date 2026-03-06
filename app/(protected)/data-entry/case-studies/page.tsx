@@ -9,6 +9,7 @@ import DateField from "@/components/controls/DateField";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
+import { EntryHeaderActionsBar } from "@/components/entry/EntryHeaderActions";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import EntryShell from "@/components/entry/EntryShell";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
@@ -16,7 +17,6 @@ import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import EntryUploader from "@/components/upload/EntryUploader";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { SaveButton } from "@/components/ui/SaveButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
@@ -320,6 +320,7 @@ export function CaseStudiesPage({
   const categoryPath = entryList("case-studies");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
   const [formOpen, setFormOpen] = useState(startInNewMode);
   const [attemptedSectionSave, setAttemptedSectionSave] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
@@ -628,7 +629,15 @@ export function CaseStudiesPage({
   }
 
   async function closeForm(targetHref = categoryPath) {
-    if (!form.pdfMeta && (form.permissionLetter || form.travelPlan || form.geotaggedPhotos.length > 0)) {
+    const currentEntryId = String(form.id ?? "").trim();
+    const hasPersistedEntry = currentEntryId
+      ? list.some((entry) => String(entry.id ?? "").trim() === currentEntryId)
+      : false;
+    if (
+      !hasPersistedEntry &&
+      !form.pdfMeta &&
+      (form.permissionLetter || form.travelPlan || form.geotaggedPhotos.length > 0)
+    ) {
       await cleanupDraftUploads(form);
     }
     resetForm();
@@ -645,6 +654,10 @@ export function CaseStudiesPage({
     const canLeave = await confirmNavigate();
     if (!canLeave) return;
     await closeForm(targetHref);
+  }
+
+  async function handleSaveDraft() {
+    await saveDraftChanges({ intent: "save" });
   }
 
   async function refreshList(nextEmail = email) {
@@ -811,6 +824,7 @@ export function CaseStudiesPage({
       }
 
       setSaving(true);
+      setSaveIntent(intent);
       const entryToSave: CaseStudyEntry = {
         ...form,
         status: form.status === "final" ? "final" : "draft",
@@ -865,11 +879,12 @@ export function CaseStudiesPage({
       return null;
     } finally {
       setSaving(false);
+      setSaveIntent(null);
       saveLockRef.current = false;
     }
   }
 
-  async function handleDone() {
+  async function handleSaveAndClose() {
     setSubmitAttemptedFinal(true);
 
     if (hasBusyUploads) {
@@ -1347,39 +1362,24 @@ export function CaseStudiesPage({
       backDisabled={backDisabled}
       onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
       actions={
-        showForm && !isViewMode ? (
-          <>
-            <MiniButton
-              role="context"
-              onClick={() => void handleCancel()}
-              disabled={controlsDisabled || saving || loading || hasBusyUploads}
-            >
-              Cancel
-            </MiniButton>
-            <SaveButton
-              onClick={() => void saveDraftChanges()}
-              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
-            >
-              {saving ? "Saving..." : "Save"}
-            </SaveButton>
-            <MiniButton
-              onClick={() => void handleDone()}
-              disabled={controlsDisabled || saving || loading || hasBusyUploads}
-            >
-              {saving ? "Saving..." : "Done"}
-            </MiniButton>
-          </>
-        ) : !isViewMode ? (
-          <MiniButton
-            onClick={() => {
-              resetForm();
-              router.push(entryNew("case-studies"), { scroll: false });
-            }}
-            disabled={loading}
-          >
-            + Add Case Study
-          </MiniButton>
-        ) : null
+        <EntryHeaderActionsBar
+          isEditing={showForm}
+          isViewMode={isViewMode}
+          loading={loading}
+          onAdd={() => {
+            resetForm();
+            router.push(entryNew("case-studies"), { scroll: false });
+          }}
+          addLabel="+ Add Case Study"
+          onCancel={() => void handleCancel()}
+          cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          onSave={() => void handleSaveDraft()}
+          saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+          onDone={() => void handleSaveAndClose()}
+          doneDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          saving={saving}
+          saveIntent={saveIntent}
+        />
       }
     >
 

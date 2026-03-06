@@ -1,6 +1,7 @@
-import BackTo from "@/components/nav/BackTo";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import SectionCard from "@/components/layout/SectionCard";
 import { authOptions } from "@/lib/auth";
 import { canAccessSettings } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -14,18 +15,17 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Settings</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Global admin settings will be configured here.</p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-        Placeholder panel for admin settings.
-      </div>
-    </div>
+    <AdminPageShell
+      title="Admin Settings"
+      subtitle="Global admin settings and environment-level controls."
+      backHref={adminHome()}
+      maxWidthClassName="max-w-6xl"
+    >
+      <SectionCard>
+        <p className="text-sm text-muted-foreground">
+          Placeholder panel for admin settings.
+        </p>
+      </SectionCard>
+    </AdminPageShell>
   );
 }
