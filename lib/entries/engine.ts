@@ -33,7 +33,10 @@ import { normalizeEntry } from "@/lib/normalize";
 import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { getStreakProgressSnapshot } from "@/lib/streakProgress";
+import {
+  computeStreakProgressAggregate,
+  type StreakProgressAggregateEntry,
+} from "@/lib/streakProgress";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { validateAndSanitizeOrThrow } from "@/lib/validation/validateEntryPayload";
 import type { Entry, EntryStatus as EntryWorkflowStatus } from "@/lib/types/entry";
@@ -43,8 +46,8 @@ export type EntryEngineRecord = Entry;
 
 export type EntryStreakSummary = {
   activated: number;
-  completed: number;
-  byCategory: Record<CategoryKey, { activated: number; completed: number }>;
+  wins: number;
+  byCategory: Record<CategoryKey, { activated: number; wins: number }>;
 };
 
 type EntryLike = EntryEngineRecord & {
@@ -1458,37 +1461,38 @@ export async function computeStreak(
   userEmail: string
 ): Promise<EntryStreakSummary> {
   const normalizedOwner = normalizeEmail(userEmail);
-  const summary: EntryStreakSummary = {
-    activated: 0,
-    completed: 0,
-    byCategory: CATEGORY_KEYS.reduce<EntryStreakSummary["byCategory"]>((next, categoryKey) => {
-      next[categoryKey] = { activated: 0, completed: 0 };
-      return next;
-    }, {} as EntryStreakSummary["byCategory"]),
-  };
+  const entries: StreakProgressAggregateEntry[] = [];
 
   await withTimer("entry.streak.compute", async () => {
     for (const category of CATEGORY_KEYS) {
       const list = await readListRaw(normalizedOwner, category);
       for (const entry of list) {
-        const streak = getStreakProgressSnapshot(entry as EntryLike);
-        if (streak.hasCompletedAt) {
-          summary.completed += 1;
-          summary.byCategory[category].completed += 1;
-          continue;
-        }
-        if (streak.hasActivatedAt) {
-          summary.activated += 1;
-          summary.byCategory[category].activated += 1;
-        }
+        entries.push({
+          ...(entry as EntryLike),
+          categoryKey: category,
+        });
       }
     }
   }, { userEmail: normalizedOwner });
+
+  const aggregate = computeStreakProgressAggregate(entries);
+  const summary: EntryStreakSummary = {
+    activated: aggregate.activatedCount,
+    wins: aggregate.winsCount,
+    byCategory: CATEGORY_KEYS.reduce<EntryStreakSummary["byCategory"]>((next, categoryKey) => {
+      next[categoryKey] = {
+        activated: aggregate.byCategory[categoryKey].activated,
+        wins: aggregate.byCategory[categoryKey].wins,
+      };
+      return next;
+    }, {} as EntryStreakSummary["byCategory"]),
+  };
+
   logger.info({
     event: "entry.streak.summary",
     userEmail: normalizedOwner,
     activated: summary.activated,
-    completed: summary.completed,
+    wins: summary.wins,
   });
   return summary;
 }
