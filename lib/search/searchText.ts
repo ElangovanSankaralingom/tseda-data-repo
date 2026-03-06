@@ -1,5 +1,5 @@
 import { getCategoryConfig, getCategorySchema } from "@/data/categoryRegistry";
-import { normalizeEntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { getEntryTitle } from "@/lib/search/getEntryTitle";
 import type { Entry, EntryStatus } from "@/lib/types/entry";

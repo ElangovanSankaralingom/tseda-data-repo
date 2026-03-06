@@ -6,7 +6,7 @@ import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { readCategoryEntryById } from "@/lib/dataStore";
 import { AppError, normalizeError } from "@/lib/errors";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { updateEntry } from "@/lib/entryEngine";
+import { updateEntry } from "@/lib/entries/lifecycle.server";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   ensureActivated,

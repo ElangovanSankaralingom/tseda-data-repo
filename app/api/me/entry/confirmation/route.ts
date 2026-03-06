@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
-import { sendForConfirmation } from "@/lib/entryEngine";
+import { sendForConfirmation } from "@/lib/entries/lifecycle.server";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
