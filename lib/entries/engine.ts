@@ -23,6 +23,7 @@ import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { CategoryKey } from "@/lib/entries/types";
 import { AppError, logError, normalizeError } from "@/lib/errors";
 import {
+  isEntryCommitted,
   isEntryLocked,
   normalizeEntryStatus,
   transitionEntry,
@@ -628,10 +629,9 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
       const base: EntryLike = {
         ...nextPayload,
         id,
-        status:
-          typeof nextPayload.status === "string" && nextPayload.status.trim()
-            ? nextPayload.status
-            : "draft",
+        ...(typeof nextPayload.status === "string" && nextPayload.status.trim()
+          ? { status: nextPayload.status }
+          : {}),
         createdAt:
           typeof nextPayload.createdAt === "string" && nextPayload.createdAt
             ? nextPayload.createdAt
@@ -890,7 +890,6 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       const updated = prepareEntryForWrite(
         {
           ...existing,
-          status: "final",
           committedAtISO: nowISO,
         },
         nowISO,
@@ -1101,7 +1100,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
         "sendForConfirmation"
       ) as EntryLike;
       trackedFromStatus = String(getWorkflowStatus(existing));
-      if (String(existing.status ?? "draft") !== "final") {
+      if (!isEntryCommitted(existing as WorkflowEntryLike)) {
         throw new AppError({
           code: "VALIDATION_ERROR",
           message: "Complete the entry with Done before confirmation.",

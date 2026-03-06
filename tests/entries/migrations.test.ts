@@ -27,7 +27,8 @@ test("migrateEntry upgrades legacy entries to canonical format", () => {
   if (!migrated.ok) return;
 
   assert.equal(migrated.data.schemaVersion, ENTRY_SCHEMA_VERSION);
-  assert.equal(migrated.data.status, "final");
+  assert.equal(typeof migrated.data.committedAtISO, "string");
+  assert.equal(migrated.data.status, undefined);
   assert.equal(migrated.data.confirmationStatus, "APPROVED");
   assert.equal(migrated.data.eventName, "Legacy Event");
   assert.equal(migrated.data.speakerName, null);

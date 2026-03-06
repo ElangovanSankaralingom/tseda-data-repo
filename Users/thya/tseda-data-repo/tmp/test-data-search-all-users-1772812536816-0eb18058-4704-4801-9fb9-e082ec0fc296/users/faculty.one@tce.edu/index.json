@@ -1,0 +1,79 @@
+{
+  "version": 2,
+  "userEmail": "faculty.one@tce.edu",
+  "updatedAt": "2026-03-06T15:55:36.819Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "countsByStatus": {
+    "DRAFT": 1,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 0,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T15:55:36.817Z"
+  },
+  "streakSnapshot": {
+    "ruleVersion": 2,
+    "streakActivatedCount": 0,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 0
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T15:55:36.819Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:00c7e91a-b5c2-4e7b-b72b-01a7218f5bb3": {
+      "entryId": "00c7e91a-b5c2-4e7b-b72b-01a7218f5bb3",
+      "categoryKey": "workshops",
+      "title": "Distributed Systems Workshop",
+      "text": "distributed systems workshop workshops draft distributed systems workshop",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T15:55:36.817Z",
+      "createdAtISO": "2026-03-06T15:55:36.817Z"
+    }
+  }
+}

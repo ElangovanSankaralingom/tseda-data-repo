@@ -52,15 +52,15 @@ import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import { uploadFile } from "@/lib/upload/uploadService";
 import type { EntryStatus } from "@/lib/types/entry";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import {
   type StreakState,
 } from "@/lib/gamification";
 
 type FdpConducted = {
   id: string;
-  status: "draft" | "final";
   confirmationStatus?: EntryStatus;
-  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
@@ -196,7 +196,6 @@ function getConductedEntrySubtitle(entry: FdpConducted) {
 function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
   return {
     id: uuid(),
-    status: "draft",
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     requestEditMessage: "",
@@ -668,9 +667,7 @@ export function FdpConductedPage({
       status:
         String(
           persisted?.confirmationStatus ??
-            persisted?.status ??
             nextForm.confirmationStatus ??
-            nextForm.status ??
             ""
         ).trim() || null,
       success: true,
@@ -812,10 +809,7 @@ export function FdpConductedPage({
 
       setSaving(true);
       setSaveIntent(intent);
-      const entryToSave: FdpConducted = {
-        ...form,
-        status: form.status === "final" ? "final" : "draft",
-      };
+      const entryToSave: FdpConducted = { ...form };
       const optimisticEntry: FdpConducted = {
         ...entryToSave,
         updatedAt: new Date().toISOString(),
@@ -908,7 +902,6 @@ export function FdpConductedPage({
       setSaveIntent("save");
       const draftEntry: FdpConducted = {
         ...form,
-        status: form.status === "final" ? "final" : "draft",
         coordinatorName: currentFaculty?.name ?? form.coordinatorName,
         coordinatorEmail: currentFaculty?.email ?? form.coordinatorEmail,
         pdfStale: pdfState.pdfStale,

@@ -68,6 +68,29 @@ function toOptionalISO(value: unknown): string | null {
   return Number.isNaN(parsed) ? null : candidate;
 }
 
+function getLegacyWorkflowStage(value: unknown): "draft" | "final" | "completed" | null {
+  const normalized = toTrimmedString(value).toLowerCase();
+  if (normalized === "draft") return "draft";
+  if (normalized === "final") return "final";
+  if (normalized === "completed") return "completed";
+  return null;
+}
+
+function stripLegacyWorkflowStatus(record: Record<string, unknown>) {
+  const normalized = toTrimmedString(record.status).toLowerCase();
+  if (
+    normalized === "draft" ||
+    normalized === "final" ||
+    normalized === "completed" ||
+    normalized === "pending" ||
+    normalized === "pending_confirmation" ||
+    normalized === "approved" ||
+    normalized === "rejected"
+  ) {
+    delete record.status;
+  }
+}
+
 function toNonNegativeInteger(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 0;
   if (value <= 0) return 0;
@@ -112,7 +135,7 @@ function emptyCategoryMap<T>(valueFactory: () => T) {
   }, {} as Record<CategoryKey, T>);
 }
 
-function normalizeLegacyFinalization(record: Record<string, unknown>) {
+function normalizeLegacyFinalization(record: Record<string, unknown>, nowISO: string) {
   const finalizedFlags = [
     record.finalised,
     record.finalized,
@@ -121,9 +144,8 @@ function normalizeLegacyFinalization(record: Record<string, unknown>) {
   ];
   const isLegacyFinalized = finalizedFlags.some((value) => value === true);
 
-  const currentStatus = toTrimmedString(record.status).toLowerCase();
-  if (!currentStatus && isLegacyFinalized) {
-    record.status = "final";
+  if (isLegacyFinalized && !toTrimmedString(record.committedAtISO)) {
+    record.committedAtISO = toISO(record.updatedAt, nowISO);
   }
 
   if (isLegacyFinalized) {
@@ -140,8 +162,13 @@ function normalizeLegacyFinalization(record: Record<string, unknown>) {
 function migrateEntryV0ToV1(raw: Record<string, unknown>, nowISO: string) {
   const next = { ...raw };
 
-  normalizeLegacyFinalization(next);
+  normalizeLegacyFinalization(next, nowISO);
+  const legacyStage = getLegacyWorkflowStage(next.status);
+  if ((legacyStage === "final" || legacyStage === "completed") && !toTrimmedString(next.committedAtISO)) {
+    next.committedAtISO = toISO(next.updatedAt, nowISO);
+  }
   next.confirmationStatus = normalizeEntryStatus(next as EntryStateLike);
+  stripLegacyWorkflowStatus(next);
 
   if (!Array.isArray(next.attachments)) {
     next.attachments = [];
@@ -206,12 +233,17 @@ export function migrateEntry(raw: unknown): Result<Entry> {
       isValidCategorySlug(categorySlug) ? getCategorySchema(categorySlug) : undefined
     ) as Record<string, unknown>;
 
+    const legacyStage = getLegacyWorkflowStage(normalized.status);
+    if ((legacyStage === "final" || legacyStage === "completed") && !toTrimmedString(normalized.committedAtISO)) {
+      normalized.committedAtISO = toISO(
+        normalized.updatedAt,
+        toISO(normalized.createdAt, nowISO)
+      );
+    }
     normalized.confirmationStatus = normalizeEntryStatus(normalized as EntryStateLike);
+    stripLegacyWorkflowStatus(normalized);
     if (!Array.isArray(normalized.attachments)) {
       normalized.attachments = [];
-    }
-    if (!toTrimmedString(normalized.status)) {
-      normalized.status = "draft";
     }
     normalized.createdAt = toISO(normalized.createdAt, nowISO);
     normalized.updatedAt = toISO(normalized.updatedAt, toISO(normalized.createdAt, nowISO));

@@ -18,7 +18,7 @@ const ALLOWED_SLOTS = new Set(["permissionLetter", "completionCertificate"]);
 
 type FdpAttendedRecord = {
   id: string;
-  status?: "draft" | "final";
+  status?: string;
   pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
   permissionLetter?: unknown;
   completionCertificate?: unknown;

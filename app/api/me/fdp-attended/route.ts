@@ -21,8 +21,13 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
+import {
+  isEntryCommitted,
+  normalizeEntryStatus,
+  type EntryStateLike,
+} from "@/lib/entries/stateMachine";
 import type { EntryStatus } from "@/lib/types/entry";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
 type FileMeta = {
   fileName: string;
@@ -35,9 +40,9 @@ type FileMeta = {
 
 type FdpAttended = {
   id: string;
-  status: "draft" | "final";
   confirmationStatus?: EntryStatus;
-  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  committedAtISO?: string | null;
+  requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
@@ -96,13 +101,9 @@ function isValidFileMeta(meta: FileMeta | null): meta is FileMeta {
   );
 }
 
-function normalizeStatus(value: unknown, fallback: "draft" | "final" = "draft") {
-  return value === "final" ? "final" : value === "draft" ? "draft" : fallback;
-}
-
 function normalizeRequestEditStatus(
   value: unknown,
-  fallback: "none" | "pending" | "approved" | "rejected" = "none"
+  fallback: RequestEditStatus = "none"
 ) {
   return value === "pending" || value === "approved" || value === "rejected" || value === "none"
     ? value
@@ -133,8 +134,11 @@ function normalizeEntry(value: unknown): FdpAttended | null {
   const record = value as Record<string, unknown>;
   const normalized: FdpAttended = {
     id: String(record.id ?? "").trim(),
-    status: normalizeStatus(record.status),
     confirmationStatus: normalizeEntryStatus(record as Record<string, unknown>),
+    committedAtISO:
+      typeof record.committedAtISO === "string" && record.committedAtISO.trim()
+        ? record.committedAtISO.trim()
+        : null,
     requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
     requestEditRequestedAtISO:
       typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
@@ -333,6 +337,8 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as { entry?: unknown };
+    const entryRecord =
+      body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
     const entry = normalizeEntry(body?.entry);
 
     if (!entry?.id) {
@@ -359,8 +365,22 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString();
     const eligible = isFutureDatedEntry(validated.startDate, validated.endDate);
-    const requestedStatus = normalizeStatus(entry.status, "draft");
-    const nextStatus: "draft" | "final" = requestedStatus === "final" ? "final" : "draft";
+    const existingCommittedAtISO =
+      typeof existing?.committedAtISO === "string" && existing.committedAtISO.trim()
+        ? existing.committedAtISO
+        : null;
+    const requestedCommitted = isEntryCommitted({
+      ...(entry as EntryStateLike),
+      status: entryRecord?.status,
+    });
+    const nextCommitted = !!existingCommittedAtISO || requestedCommitted;
+    const nextCommittedAtISO =
+      existingCommittedAtISO ??
+      (nextCommitted
+        ? (typeof entry.committedAtISO === "string" && entry.committedAtISO.trim()
+            ? entry.committedAtISO
+            : now)
+        : null);
     const existingStreak = normalizeStreakState(existing?.streak ?? entry.streak);
     let streak = normalizeStreakState(existingStreak);
 
@@ -375,7 +395,7 @@ export async function POST(request: Request) {
       streak = ensureActivated(existingStreak, validated.endDate);
 
       if (
-        nextStatus === "final" &&
+        nextCommitted &&
         hasCompletedUploads(entry) &&
         streak.activatedAtISO &&
         streak.dueAtISO &&
@@ -388,7 +408,7 @@ export async function POST(request: Request) {
 
     const savedEntry: FdpAttended = {
       id: entry.id,
-      status: nextStatus,
+      committedAtISO: nextCommittedAtISO,
       requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
       requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       requestEditMessage: entry.requestEditMessage ?? existing?.requestEditMessage ?? "",
@@ -426,7 +446,7 @@ export async function POST(request: Request) {
     const persisted = existing
       ? await updateEntry<FdpAttended>(email, "fdp-attended", savedEntry.id, savedEntry)
       : await createEntry<FdpAttended>(email, "fdp-attended", savedEntry);
-    return NextResponse.json(persisted, { status: 200 });
+    return NextResponse.json(normalizeEntry(persisted) ?? persisted, { status: 200 });
   } catch (error) {
     return mutationErrorResponse(error, "Save failed");
   }
@@ -502,11 +522,26 @@ export async function PATCH(request: Request) {
       !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "permissionLetter");
     const hasCompletionCertificate =
       !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "completionCertificate");
-    const requestedStatus = normalizeStatus(entry.status, existing?.status ?? "draft");
+    const existingCommittedAtISO =
+      typeof existing?.committedAtISO === "string" && existing.committedAtISO.trim()
+        ? existing.committedAtISO
+        : null;
+    const requestedCommitted = isEntryCommitted({
+      ...(entry as EntryStateLike),
+      status: entryRecord?.status,
+    });
+    const nextCommitted = !!existingCommittedAtISO || requestedCommitted;
+    const nextCommittedAtISO =
+      existingCommittedAtISO ??
+      (nextCommitted
+        ? (typeof entry.committedAtISO === "string" && entry.committedAtISO.trim()
+            ? entry.committedAtISO
+            : now)
+        : null);
     const savedEntryBase: FdpAttended = {
       ...(existing ?? {
         id: entry.id,
-        status: "draft",
+        committedAtISO: null,
         requestEditStatus: "none",
         requestEditRequestedAtISO: null,
         requestEditMessage: "",
@@ -525,7 +560,7 @@ export async function PATCH(request: Request) {
         updatedAt: now,
       }),
       id: entry.id,
-      status: existing?.status === "final" ? "final" : requestedStatus,
+      committedAtISO: nextCommittedAtISO,
       requestEditStatus: hasRequestEditStatus
         ? normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none")
         : existing?.requestEditStatus ?? "none",
@@ -588,7 +623,7 @@ export async function PATCH(request: Request) {
       savedEntry.streak = ensureActivated(savedEntry.streak, savedEntry.endDate);
 
       if (
-        savedEntry.status === "final" &&
+        isEntryCommitted(savedEntry as EntryStateLike) &&
         hasCompletedUploads(savedEntry) &&
         savedEntry.streak.activatedAtISO &&
         savedEntry.streak.dueAtISO &&
@@ -603,7 +638,7 @@ export async function PATCH(request: Request) {
       ? await updateEntry<FdpAttended>(email, "fdp-attended", savedEntry.id, savedEntry)
       : await createEntry<FdpAttended>(email, "fdp-attended", savedEntry);
 
-    return NextResponse.json(persisted, { status: 200 });
+    return NextResponse.json(normalizeEntry(persisted) ?? persisted, { status: 200 });
   } catch (error) {
     return mutationErrorResponse(error, "Save failed");
   }

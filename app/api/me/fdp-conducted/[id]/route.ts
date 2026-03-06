@@ -5,18 +5,18 @@ import {
   listEntriesForCategory,
   updateEntry,
 } from "@/lib/entries/lifecycle";
+import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { isWithinRequestEditWindow } from "@/lib/entries/lock";
 import { normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-
-type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
 type FdpConductedRecord = {
   id: string;
-  status?: "draft" | "final";
+  status?: string;
   startDate?: string;
   endDate?: string;
   createdAt?: string;
@@ -34,7 +34,7 @@ function normalizeRequestEditStatus(value: unknown): RequestEditStatus {
 }
 
 function canRequestEdit(entry: FdpConductedRecord) {
-  return entry.status === "final";
+  return isEntryCommitted(entry as EntryStateLike);
 }
 
 async function getAuthorizedEmail() {
