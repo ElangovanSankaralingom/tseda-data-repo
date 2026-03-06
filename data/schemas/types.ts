@@ -11,6 +11,13 @@ export type SchemaFieldKind =
   | "boolean"
   | "unknown";
 
+export type SchemaExportFormatter =
+  | "auto"
+  | "date"
+  | "datetime"
+  | "status"
+  | "boolean_yes_no";
+
 export type SchemaFieldDefinition = {
   key: string;
   label: string;
@@ -20,6 +27,9 @@ export type SchemaFieldDefinition = {
   min?: number;
   max?: number;
   enumValues?: readonly (string | number | boolean)[];
+  exportable?: boolean;
+  exportOrder?: number;
+  exportFormatter?: SchemaExportFormatter;
 };
 
 export type SchemaValidationError = {

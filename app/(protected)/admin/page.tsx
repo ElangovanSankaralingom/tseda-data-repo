@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import BackTo from "@/components/nav/BackTo";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { authOptions } from "@/lib/auth";
 import { getPendingConfirmationsCount } from "@/lib/admin/pendingConfirmations";
 import {
@@ -129,15 +129,12 @@ export default async function AdminConsolePage() {
   const pendingCount = await getPendingConfirmationsCount();
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={dashboard()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Console</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Master-admin controls for confirmations and system management.</p>
-        </div>
-      </div>
-
+    <AdminPageShell
+      title="Admin Console"
+      subtitle="Master-admin controls for confirmations and system management."
+      backHref={dashboard()}
+      maxWidthClassName="max-w-6xl"
+    >
       <div className="grid gap-4 md:grid-cols-3">
         {cards.map((card) => (
           <Link
@@ -157,6 +154,6 @@ export default async function AdminConsolePage() {
           </Link>
         ))}
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

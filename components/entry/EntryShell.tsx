@@ -2,6 +2,7 @@
 
 import BackTo from "@/components/nav/BackTo";
 import EntryStatusBadge from "@/components/entry/EntryStatusBadge";
+import WorkflowHelpStrip from "@/components/entry/WorkflowHelpStrip";
 import {
   getCategoryConfig,
   getCategoryTitle,
@@ -31,6 +32,7 @@ type EntryShellProps = {
   onBack?: (() => void | Promise<void>) | undefined;
   showUnsavedChanges?: boolean;
   unsavedLabel?: string;
+  showWorkflowHelp?: boolean;
 };
 
 function getModeTitle(mode: EntryShellMode) {
@@ -56,6 +58,7 @@ export default function EntryShell({
   onBack,
   showUnsavedChanges = false,
   unsavedLabel = "Unsaved changes",
+  showWorkflowHelp = true,
 }: EntryShellProps) {
   const config = getCategoryConfig(category);
   const entryId = String(entry?.id ?? "").trim();
@@ -66,6 +69,10 @@ export default function EntryShell({
     status ??
     (typeof entry?.confirmationStatus === "string" ? entry.confirmationStatus : null);
   const resolvedStatus = statusValue ? normalizeEntryApprovalStatus(statusValue) : null;
+  const showStatusRow = Boolean(resolvedStatus) || Boolean(meta) || showUnsavedChanges;
+  const isEditingMode = mode === "new" || mode === "edit";
+  const headerActions = isEditingMode ? null : actions;
+  const footerActions = isEditingMode ? actions : null;
 
   return (
     <div className="mx-auto w-full max-w-5xl">
@@ -78,10 +85,9 @@ export default function EntryShell({
             <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {config.label}
             </span>
-            {resolvedStatus ? <EntryStatusBadge status={resolvedStatus} /> : null}
-            {showUnsavedChanges ? (
-              <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">
-                {unsavedLabel}
+            {mode === "view" ? (
+              <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                Preview
               </span>
             ) : null}
           </div>
@@ -91,17 +97,36 @@ export default function EntryShell({
             <p className="mt-1 text-xs text-muted-foreground">Entry ID: {entryId}</p>
           ) : null}
           {resolvedSubtitle ? <p className="mt-2 text-sm text-muted-foreground">{resolvedSubtitle}</p> : null}
-          {meta ? <div className="mt-2">{meta}</div> : null}
+
+          {showStatusRow ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/20 px-3 py-2">
+              <EntryStatusBadge status={resolvedStatus ?? "DRAFT"} />
+              {meta ? <div>{meta}</div> : null}
+              {showUnsavedChanges ? (
+                <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">
+                  {unsavedLabel}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        {actions ? (
+        {headerActions ? (
           <div className={cx("mt-4 flex flex-wrap items-center justify-end gap-2", !showBack && "justify-start")}>
-            {actions}
+            {headerActions}
           </div>
         ) : null}
       </div>
 
-      {children}
+      {showWorkflowHelp && isEditingMode ? <WorkflowHelpStrip className="mt-4" /> : null}
+
+      <div className="mt-6">{children}</div>
+
+      {footerActions ? (
+        <div className="sticky bottom-4 z-20 mt-6 rounded-2xl border border-border bg-background/95 p-3 shadow-sm backdrop-blur">
+          {footerActions}
+        </div>
+      ) : null}
     </div>
   );
 }

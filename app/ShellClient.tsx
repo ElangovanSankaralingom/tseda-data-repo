@@ -10,6 +10,8 @@ import {
   adminHome,
   dashboard,
   dataEntryHome,
+  dataEntrySearch,
+  helpHome,
   profile,
   signin,
 } from "@/lib/entryNavigation";
@@ -17,6 +19,55 @@ import { safeAction } from "@/lib/safeAction";
 import { notifyError, notifySuccess } from "@/lib/ui/notify";
 
 const ENABLE_RESET = true;
+
+type NavLink = {
+  href: string;
+  label: string;
+};
+
+type RouteMeta = {
+  title: string;
+  subtitle: string;
+};
+
+function getRouteMeta(pathname: string | null): RouteMeta {
+  const path = pathname ?? "";
+
+  if (path.startsWith("/admin")) {
+    return {
+      title: "Admin Console",
+      subtitle: "Approvals, audits, exports, and system operations",
+    };
+  }
+  if (path.startsWith("/data-entry/search")) {
+    return {
+      title: "Search",
+      subtitle: "Find entries by category, content, and status",
+    };
+  }
+  if (path.startsWith("/data-entry")) {
+    return {
+      title: "Data Entry",
+      subtitle: "Create, edit, and manage faculty activity records",
+    };
+  }
+  if (path.startsWith("/help")) {
+    return {
+      title: "Help",
+      subtitle: "Workflow guidance and common questions",
+    };
+  }
+  if (path.startsWith("/account")) {
+    return {
+      title: "My Account",
+      subtitle: "Profile and personal configuration",
+    };
+  }
+  return {
+    title: "Dashboard",
+    subtitle: "Progress, activity summary, and quick actions",
+  };
+}
 
 export default function ShellClient({
   children,
@@ -36,15 +87,18 @@ export default function ShellClient({
   const [resetBusy, setResetBusy] = useState(false);
   const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const routeMeta = getRouteMeta(pathname);
 
-  const nav = [
+  const primaryNav: NavLink[] = [
     { href: dashboard(), label: "Dashboard" },
     { href: dataEntryHome(), label: "Data Entry" },
+    { href: dataEntrySearch(), label: "Search" },
+    { href: helpHome(), label: "Help" },
     { href: profile(), label: "My Account" },
   ];
-  const drawerNav = canAccessAdmin
-    ? [...nav, { href: adminHome(), label: "⚙️ Admin Console" }]
-    : nav;
+  const drawerNav: NavLink[] = canAccessAdmin
+    ? [...primaryNav, { href: adminHome(), label: "Admin Console" }]
+    : primaryNav;
 
   useEffect(() => {
     const email = session?.user?.email ?? "";
@@ -107,8 +161,8 @@ export default function ShellClient({
     <div className="min-h-dvh bg-background text-foreground">
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setOpen(true)}
@@ -117,34 +171,30 @@ export default function ShellClient({
             >
               ☰
             </button>
-            <Link href={dashboard()} className="font-semibold">
-              {title}
-            </Link>
-            <Link
-              href={dataEntryHome()}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-foreground bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-colors duration-150 hover:opacity-90 active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
-            >
-              Data Entry
-            </Link>
+
+            <div className="min-w-0">
+              <Link href={dashboard()} className="block truncate text-sm font-semibold text-muted-foreground">
+                {title}
+              </Link>
+              <div className="truncate text-sm font-semibold tracking-tight">{routeMeta.title}</div>
+              <div className="hidden truncate text-xs text-muted-foreground sm:block">
+                {routeMeta.subtitle}
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {ENABLE_RESET ? (
-              <button
-                type="button"
-                onClick={() => setResetOpen(true)}
-                disabled={resetBusy}
-                className="rounded-full border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground disabled:opacity-60"
-              >
-                Reset Account
-              </button>
-            ) : null}
+            <Link
+              href={helpHome()}
+              className="hidden rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition hover:bg-muted sm:inline-flex"
+            >
+              Help
+            </Link>
             {canAccessAdmin ? (
               <Link
                 href={adminHome()}
-                className="inline-flex items-center gap-2 rounded-full border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+                className="inline-flex items-center gap-1 rounded-lg border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
               >
-                <span aria-hidden="true">⚙️</span>
                 <span>Admin Console</span>
               </Link>
             ) : null}
@@ -208,6 +258,19 @@ export default function ShellClient({
 
             {/* Bottom actions */}
             <div className="pt-3 border-t border-border space-y-2">
+              {ENABLE_RESET ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    setResetOpen(true);
+                  }}
+                  disabled={resetBusy}
+                  className="w-full rounded-lg border border-red-300 px-3 py-2 text-left text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground disabled:opacity-60"
+                >
+                  Reset Account
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: signin() })}

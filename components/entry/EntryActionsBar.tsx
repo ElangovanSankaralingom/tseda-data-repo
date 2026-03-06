@@ -18,6 +18,13 @@ type HeaderEntryActionsBarProps = {
   doneDisabled: boolean;
   saving: boolean;
   saveIntent: "save" | "done" | null;
+  workflowAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    busyLabel?: string;
+  };
+  workflowDisabledHint?: string;
 };
 
 export function HeaderEntryActionsBar({
@@ -34,20 +41,46 @@ export function HeaderEntryActionsBar({
   doneDisabled,
   saving,
   saveIntent,
+  workflowAction,
+  workflowDisabledHint = "Complete required fields before submitting.",
 }: HeaderEntryActionsBarProps) {
   if (isEditing && !isViewMode) {
+    const workflowDisabled = workflowAction?.disabled ?? false;
     return (
-      <>
-        <ActionButton role="context" onClick={onCancel} disabled={cancelDisabled}>
-          Cancel
-        </ActionButton>
-        <SaveButton onClick={onSave} disabled={saveDisabled}>
-          {saving && saveIntent === "save" ? "Saving..." : "Save"}
-        </SaveButton>
-        <ActionButton role="context" onClick={onDone} disabled={doneDisabled}>
-          {saving && saveIntent === "done" ? "Saving..." : "Done"}
-        </ActionButton>
-      </>
+      <div className="flex w-full flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionButton role="context" onClick={onCancel} disabled={cancelDisabled}>
+            Cancel
+          </ActionButton>
+          <SaveButton onClick={onSave} disabled={saveDisabled}>
+            {saving && saveIntent === "save" ? "Saving..." : "Save Draft"}
+          </SaveButton>
+          <ActionButton role="context" onClick={onDone} disabled={doneDisabled}>
+            {saving && saveIntent === "done" ? "Saving..." : "Save & Close"}
+          </ActionButton>
+        </div>
+
+        <div className="flex min-w-[220px] flex-col items-start gap-1 sm:items-end">
+          {workflowAction ? (
+            <>
+              <ActionButton
+                role="context"
+                onClick={workflowAction.onClick}
+                disabled={workflowDisabled}
+              >
+                {saving ? workflowAction.busyLabel ?? workflowAction.label : workflowAction.label}
+              </ActionButton>
+              {workflowDisabled ? (
+                <p className="text-xs text-muted-foreground">{workflowDisabledHint}</p>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Send for Confirmation is available as a separate workflow action.
+            </p>
+          )}
+        </div>
+      </div>
     );
   }
 
