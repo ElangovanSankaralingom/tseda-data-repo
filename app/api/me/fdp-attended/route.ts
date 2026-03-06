@@ -8,7 +8,7 @@ import {
   deleteEntry as deleteEngineEntry,
   listEntriesForCategory,
   updateEntry,
-} from "@/lib/entries/lifecycle.server";
+} from "@/lib/entries/lifecycle";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import { normalizeError } from "@/lib/errors";
 import { mergeWithNulls } from "@/lib/mergeWithNulls";

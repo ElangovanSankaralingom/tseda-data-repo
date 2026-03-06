@@ -16,7 +16,7 @@ import UploadField from "@/components/entry/UploadField";
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
-import { getEntryStreakDisplayState } from "@/lib/entries/lifecycle";
+import { getEntryStreakDisplayState } from "@/lib/entries/displayLifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
 import {
   canSendForConfirmation,

@@ -5,7 +5,7 @@ import {
   isEntryLocked,
   normalizeEntryStatus,
   transitionEntry,
-} from "../../lib/entryStateMachine.ts";
+} from "../../lib/entries/stateMachine.ts";
 
 test("normalizeEntryStatus maps legacy and missing values safely", () => {
   assert.equal(normalizeEntryStatus({}), "DRAFT");

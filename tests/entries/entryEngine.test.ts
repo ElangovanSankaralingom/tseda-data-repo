@@ -11,7 +11,7 @@ import {
   rejectEntry,
   sendForConfirmation,
   updateEntry,
-} from "../../lib/entryEngine.ts";
+} from "../../lib/entries/lifecycle.ts";
 import { readEvents } from "../../lib/data/wal.ts";
 import { SECURITY_LIMITS } from "../../lib/security/limits.ts";
 import type { CategoryKey } from "../../lib/entries/types.ts";

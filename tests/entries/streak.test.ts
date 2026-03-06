@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { computeStreak, createEntry } from "../../lib/entryEngine.ts";
+import { computeStreak, createEntry } from "../../lib/entries/lifecycle.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 const ownerEmail = "faculty.streak@tce.edu";
