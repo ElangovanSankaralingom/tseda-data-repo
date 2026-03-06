@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import BackTo from "@/components/nav/BackTo";
+import { authOptions } from "@/lib/auth";
 import { getRecentAuditEvents, type AuditAction } from "@/lib/admin/auditLog";
+import { canViewAudit } from "@/lib/admin/roles";
 import { CATEGORY_KEYS, isCategoryKey } from "@/lib/categories";
 import { toUserMessage } from "@/lib/errors";
-import { adminAudit, adminHome, entryDetail } from "@/lib/navigation";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { adminAudit, adminHome, dashboard, entryDetail } from "@/lib/navigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -53,6 +58,12 @@ function formatTimestamp(value: string) {
 }
 
 export default async function AdminAuditPage({ searchParams }: AdminAuditPageProps) {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!canViewAudit(email)) {
+    redirect(dashboard());
+  }
+
   const params = searchParams ? await searchParams : {};
 
   const ownerInput = getParam(params, "owner");

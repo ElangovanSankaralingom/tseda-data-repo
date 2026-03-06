@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { normalizeError } from "@/lib/errors";
 import type { Result } from "@/lib/result";
+import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 
 type Primitive = string | number | boolean | null | undefined;
 
@@ -20,6 +21,22 @@ function stableStringify(value: unknown): string {
     .sort((left, right) => left.localeCompare(right))
     .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
     .join(",")}}`;
+}
+
+function getTelemetryContext(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { entryId: null as string | null, status: null as string | null };
+  }
+  const record = value as Record<string, unknown>;
+  const entryId =
+    typeof record.id === "string" && record.id.trim() ? record.id.trim() : null;
+  const status =
+    typeof record.confirmationStatus === "string" && record.confirmationStatus.trim()
+      ? record.confirmationStatus.trim()
+      : typeof record.status === "string" && record.status.trim()
+        ? record.status.trim()
+        : null;
+  return { entryId, status };
 }
 
 export type AutoSavePhase = "idle" | "saving" | "saved" | "error";
@@ -121,6 +138,7 @@ export function useAutoSave<T>({
 
       savingRef.current = true;
       lastAttemptedHashRef.current = hash;
+      const startedAt = Date.now();
       pushStatus({
         phase: "saving",
         savedAtISO: status.savedAtISO,
@@ -142,6 +160,17 @@ export function useAutoSave<T>({
           const nextHash = stableStringify(result.data ?? valueRef.current);
           lastSavedHashRef.current = nextHash;
           lastAttemptedHashRef.current = nextHash;
+          const telemetry = getTelemetryContext(valueRef.current);
+          void trackClientTelemetryEvent({
+            event: "autosave.success",
+            entryId: telemetry.entryId,
+            status: telemetry.status,
+            success: true,
+            durationMs: Date.now() - startedAt,
+            meta: {
+              source: "autosave",
+            },
+          });
           pushStatus({
             phase: "saved",
             savedAtISO: new Date().toISOString(),
@@ -155,9 +184,33 @@ export function useAutoSave<T>({
           savedAtISO: status.savedAtISO,
           errorMessage: result.error.message || "Autosave failed.",
         });
+        const telemetry = getTelemetryContext(valueRef.current);
+        void trackClientTelemetryEvent({
+          event: "autosave.failure",
+          entryId: telemetry.entryId,
+          status: telemetry.status,
+          success: false,
+          durationMs: Date.now() - startedAt,
+          meta: {
+            source: "autosave",
+            errorCode: result.error.code,
+          },
+        });
         return result;
       } catch (error) {
         const normalized = normalizeError(error);
+        const telemetry = getTelemetryContext(valueRef.current);
+        void trackClientTelemetryEvent({
+          event: "autosave.failure",
+          entryId: telemetry.entryId,
+          status: telemetry.status,
+          success: false,
+          durationMs: Date.now() - startedAt,
+          meta: {
+            source: "autosave",
+            errorCode: normalized.code,
+          },
+        });
         pushStatus({
           phase: "error",
           savedAtISO: status.savedAtISO,

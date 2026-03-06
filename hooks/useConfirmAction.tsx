@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 
 type ConfirmDialogVariant = "default" | "destructive";
 
@@ -25,6 +26,14 @@ export function useConfirmAction(): UseConfirmActionResult {
   const [confirming, setConfirming] = useState(false);
 
   const requestConfirmation = useCallback((nextRequest: ConfirmActionRequest) => {
+    void trackClientTelemetryEvent({
+      event: "confirmation.dialog_opened",
+      success: true,
+      meta: {
+        action: "confirmation.dialog_opened",
+        title: nextRequest.title.slice(0, 120),
+      },
+    });
     setRequest(nextRequest);
   }, []);
 

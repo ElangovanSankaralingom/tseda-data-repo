@@ -11,7 +11,7 @@ import {
   repairUserCategoryStore,
   type IntegrityIssue,
 } from "@/lib/admin/integrity";
-import { isMasterAdmin } from "@/lib/admin";
+import { canRunIntegrityTools } from "@/lib/admin/roles";
 import { CATEGORY_KEYS, isCategoryKey } from "@/lib/categories";
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
@@ -56,7 +56,7 @@ function encodeNoticeUrl(userEmail: string, level: "success" | "warn" | "error" 
 async function ensureMasterAdmin() {
   const session = await getServerSession(authOptions);
   const actorEmail = normalizeEmail(session?.user?.email ?? "");
-  if (!isMasterAdmin(actorEmail)) {
+  if (!canRunIntegrityTools(actorEmail)) {
     redirect(adminIntegrity());
   }
 }
@@ -96,6 +96,8 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
       </div>
     );
   }
+
+  await ensureMasterAdmin();
 
   async function repairCategoryAction(formData: FormData) {
     "use server";
