@@ -56,7 +56,8 @@ export function isEntryLockedFromStatus(entry: ConfirmationEntryLike) {
 }
 
 export function canSendForConfirmation(entry: ConfirmationEntryLike) {
-  if (entry.status !== "final") {
+  const stage = String(entry.status ?? "").trim().toLowerCase();
+  if (stage !== "final") {
     return false;
   }
 

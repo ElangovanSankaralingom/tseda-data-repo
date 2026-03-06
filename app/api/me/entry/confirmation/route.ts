@@ -6,7 +6,14 @@ import { isCategoryKey } from "@/lib/categories";
 import { sendForConfirmation } from "@/lib/entryEngine";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
+import {
+  adminConfirmations,
+  adminHome,
+  dashboard,
+  dataEntryHome,
+  entryDetail,
+  entryList,
+} from "@/lib/navigation";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
@@ -48,6 +55,8 @@ export async function POST(request: Request) {
     revalidatePath(dataEntryHome());
     revalidatePath(entryList(categoryKey));
     revalidatePath(entryDetail(categoryKey, entryId));
+    revalidatePath(adminHome());
+    revalidatePath(adminConfirmations());
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
     const appError = normalizeError(error);

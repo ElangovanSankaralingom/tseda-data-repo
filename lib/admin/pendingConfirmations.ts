@@ -7,7 +7,7 @@ import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngin
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/navigation";
-import type { Entry } from "@/lib/types/entry";
+import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUsersRootDir } from "@/lib/userStore";
 
 export type PendingConfirmationRow = {
@@ -18,7 +18,7 @@ export type PendingConfirmationRow = {
   sentForConfirmationAtISO: string | null;
   createdAtISO: string | null;
   updatedAtISO: string | null;
-  status: string;
+  status: EntryStatus;
   entryHref: string;
 };
 
@@ -59,7 +59,8 @@ export async function getPendingConfirmations(): Promise<PendingConfirmationRow[
       for (const categoryKey of CATEGORY_KEYS) {
         const list = await listEntriesForCategory(ownerEmail, categoryKey);
         for (const entry of list) {
-          if (getEntryWorkflowStatus(entry) !== "PENDING_CONFIRMATION") continue;
+          const workflowStatus = getEntryWorkflowStatus(entry);
+          if (workflowStatus !== "PENDING_CONFIRMATION") continue;
 
           const entryId = String(entry.id ?? "").trim();
           if (!entryId) continue;
@@ -71,10 +72,11 @@ export async function getPendingConfirmations(): Promise<PendingConfirmationRow[
             title: toEntryTitle(categoryKey, entry),
             sentForConfirmationAtISO:
               asOptionalISO(entry.sentForConfirmationAtISO) ??
-              asOptionalISO(entry.requestEditRequestedAtISO),
+              asOptionalISO(entry.updatedAt) ??
+              asOptionalISO(entry.createdAt),
             createdAtISO: asOptionalISO(entry.createdAt),
             updatedAtISO: asOptionalISO(entry.updatedAt),
-            status: String(entry.status ?? "draft"),
+            status: workflowStatus,
             entryHref: entryDetail(categoryKey, entryId),
           });
         }
