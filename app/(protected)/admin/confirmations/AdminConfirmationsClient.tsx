@@ -29,6 +29,10 @@ function formatTimestamp(value: string | null) {
   return date.toLocaleString();
 }
 
+function getRowKey(row: Pick<PendingConfirmationRow, "ownerEmail" | "categoryKey" | "entryId">) {
+  return `${row.ownerEmail}:${row.categoryKey}:${row.entryId}`;
+}
+
 export default function AdminConfirmationsClient() {
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const [loading, setLoading] = useState(true);
@@ -75,7 +79,7 @@ export default function AdminConfirmationsClient() {
   const pendingCount = useMemo(() => rows.length, [rows]);
 
   async function resolve(row: PendingConfirmationRow, decision: "approve" | "reject") {
-    const key = `${row.categoryKey}:${row.entryId}`;
+    const key = getRowKey(row);
     setBusyKey(key);
     setError(null);
 
@@ -109,7 +113,12 @@ export default function AdminConfirmationsClient() {
 
       setRows((current) =>
         current.filter(
-          (item) => !(item.categoryKey === row.categoryKey && item.entryId === row.entryId)
+          (item) =>
+            !(
+              item.ownerEmail === row.ownerEmail &&
+              item.categoryKey === row.categoryKey &&
+              item.entryId === row.entryId
+            )
         )
       );
     } finally {
@@ -142,7 +151,7 @@ export default function AdminConfirmationsClient() {
         ) : (
           <div className="space-y-3">
             {rows.map((row) => {
-              const rowKey = `${row.categoryKey}:${row.entryId}`;
+              const rowKey = getRowKey(row);
               const busy = busyKey === rowKey;
 
               return (
