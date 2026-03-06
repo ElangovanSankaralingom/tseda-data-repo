@@ -35,6 +35,8 @@ import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUploadController } from "@/hooks/useUploadController";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import { entryDetail, entryList, entryNew } from "@/lib/navigation";
@@ -290,6 +292,7 @@ export function FdpConductedPage({
   editEntryId,
   startInNewMode = false,
 }: FdpConductedPageProps = {}) {
+  const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const router = useRouter();
   const categoryPath = entryList("fdp-conducted");
   const [loading, setLoading] = useState(true);
@@ -505,6 +508,11 @@ export function FdpConductedPage({
       markAutoSaveSaved(form);
     }
   }, [form, formDirty, markAutoSaveSaved]);
+  const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
+    enabled: showForm && !isViewMode && !isEntryLockedFromStatus(form),
+    isDirty: formDirty,
+    isSaving: saving || hasBusyUploads || autoSaveStatus.phase === "saving",
+  });
 
   const resetUploadState = useCallback(() => {
     permissionController.reset();
@@ -555,6 +563,8 @@ export function FdpConductedPage({
       return;
     }
 
+    const canLeave = await confirmNavigate();
+    if (!canLeave) return;
     closeForm(targetHref);
   }
 
@@ -946,6 +956,7 @@ export function FdpConductedPage({
       subtitle="Record FDPs conducted with duration and the required supporting documents."
       status={showForm ? getEntryApprovalStatus(form) : undefined}
       meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
+      showUnsavedChanges={showForm && !isViewMode && hasUnsavedChanges}
       backHref={backHref}
       backDisabled={backDisabled}
       onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
@@ -1242,7 +1253,20 @@ export function FdpConductedPage({
                                     >
                                       Edit
                                     </MiniButton>
-                                    <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
+                                    <MiniButton
+                                      role="destructive"
+                                      onClick={() =>
+                                        requestConfirmation({
+                                          title: "Delete entry?",
+                                          description:
+                                            "This permanently deletes this FDP entry and its associated uploaded files.",
+                                          confirmLabel: "Delete",
+                                          cancelLabel: "Cancel",
+                                          variant: "destructive",
+                                          onConfirm: () => deleteEntry(entry.id),
+                                        })
+                                      }
+                                    >
                                       Delete entry
                                     </MiniButton>
                                   </div>
@@ -1328,7 +1352,20 @@ export function FdpConductedPage({
                                     >
                                       Edit
                                     </MiniButton>
-                                    <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
+                                    <MiniButton
+                                      role="destructive"
+                                      onClick={() =>
+                                        requestConfirmation({
+                                          title: "Delete entry?",
+                                          description:
+                                            "This permanently deletes this FDP entry and its associated uploaded files.",
+                                          confirmLabel: "Delete",
+                                          cancelLabel: "Cancel",
+                                          variant: "destructive",
+                                          onConfirm: () => deleteEntry(entry.id),
+                                        })
+                                      }
+                                    >
                                       Delete entry
                                     </MiniButton>
                                   </div>
@@ -1454,7 +1491,20 @@ export function FdpConductedPage({
                                         >
                                           Edit
                                         </MiniButton>
-                                        <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
+                                        <MiniButton
+                                          role="destructive"
+                                          onClick={() =>
+                                            requestConfirmation({
+                                              title: "Delete entry?",
+                                              description:
+                                                "This permanently deletes this FDP entry and its associated uploaded files.",
+                                              confirmLabel: "Delete",
+                                              cancelLabel: "Cancel",
+                                              variant: "destructive",
+                                              onConfirm: () => deleteEntry(entry.id),
+                                            })
+                                          }
+                                        >
                                           Delete entry
                                         </MiniButton>
                                         <MiniButton
@@ -1514,6 +1564,7 @@ export function FdpConductedPage({
           </SectionCard>
         ) : null}
       </div>
+      {confirmationDialog}
     </EntryShell>
   );
 }

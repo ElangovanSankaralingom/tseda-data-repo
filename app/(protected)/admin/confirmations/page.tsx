@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import BackTo from "@/components/nav/BackTo";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { toUserMessage } from "@/lib/errors";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { adminHome } from "@/lib/navigation";
@@ -29,6 +30,7 @@ function formatTimestamp(value: string | null) {
 }
 
 export default function AdminConfirmationsPage() {
+  const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [rows, setRows] = useState<PendingConfirmationRow[]>([]);
@@ -154,7 +156,21 @@ export default function AdminConfirmationsPage() {
                       <ActionButton role="context" onClick={() => void resolve(row, "approve")} disabled={busy}>
                         {busy ? "Saving..." : "Approve"}
                       </ActionButton>
-                      <ActionButton role="destructive" onClick={() => void resolve(row, "reject")} disabled={busy}>
+                      <ActionButton
+                        role="destructive"
+                        onClick={() =>
+                          requestConfirmation({
+                            title: "Reject confirmation request?",
+                            description:
+                              "This changes the entry status to Rejected and sends it back for user edits.",
+                            confirmLabel: "Reject",
+                            cancelLabel: "Cancel",
+                            variant: "destructive",
+                            onConfirm: () => resolve(row, "reject"),
+                          })
+                        }
+                        disabled={busy}
+                      >
                         Reject
                       </ActionButton>
                     </div>
@@ -167,6 +183,7 @@ export default function AdminConfirmationsPage() {
       </div>
 
       {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {confirmationDialog}
     </div>
   );
 }

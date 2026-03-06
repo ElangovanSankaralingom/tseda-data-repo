@@ -24,6 +24,8 @@ import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import {
   canSendForConfirmation,
@@ -303,6 +305,7 @@ export function WorkshopsPage({
   editEntryId,
   startInNewMode = false,
 }: WorkshopsPageProps = {}) {
+  const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const router = useRouter();
   const categoryPath = entryList("workshops");
   const [loading, setLoading] = useState(true);
@@ -541,6 +544,11 @@ export function WorkshopsPage({
       markAutoSaveSaved(form);
     }
   }, [form, lastPersistedSnapshot, markAutoSaveSaved]);
+  const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
+    enabled: showForm && !isViewMode && !entryLocked,
+    isDirty: formDirty,
+    isSaving: saving || hasBusyUploads || autoSaveStatus.phase === "saving",
+  });
   async function parseApiError(response: Response, fallback: string) {
     const text = await response.text();
     let message = `${fallback} (${response.status})`;
@@ -625,6 +633,17 @@ export function WorkshopsPage({
     resetForm();
     setFormOpen(false);
     router.replace(targetHref, { scroll: false });
+  }
+
+  async function handleCancel(targetHref = categoryPath) {
+    if (hasBusyUploads) {
+      setToast({ type: "err", msg: "Please wait for upload to finish." });
+      setTimeout(() => setToast(null), 1800);
+      return;
+    }
+    const canLeave = await confirmNavigate();
+    if (!canLeave) return;
+    await closeForm(targetHref);
   }
 
   async function refreshList(nextEmail = email) {
@@ -949,7 +968,20 @@ export function WorkshopsPage({
                     <MiniButton onClick={() => router.push(entryDetail("workshops", entry.id))}>
                       Edit
                     </MiniButton>
-                    <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
+                    <MiniButton
+                      role="destructive"
+                      onClick={() =>
+                        requestConfirmation({
+                          title: "Delete entry?",
+                          description:
+                            "This permanently deletes this workshop entry and its associated uploaded files.",
+                          confirmLabel: "Delete",
+                          cancelLabel: "Cancel",
+                          variant: "destructive",
+                          onConfirm: () => deleteEntry(entry.id),
+                        })
+                      }
+                    >
                       Delete Entry
                     </MiniButton>
                     {completedEntry ? (
@@ -1032,15 +1064,16 @@ export function WorkshopsPage({
       subtitle="Record workshop details and supporting documents."
       status={showForm ? getEntryApprovalStatus(form) : undefined}
       meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
+      showUnsavedChanges={showForm && !isViewMode && hasUnsavedChanges}
       backHref={backHref}
       backDisabled={backDisabled}
-      onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
+      onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
       actions={
         showForm && !isViewMode ? (
           <>
             <MiniButton
               role="context"
-              onClick={() => void closeForm()}
+              onClick={() => void handleCancel()}
               disabled={controlsDisabled || saving || loading || hasBusyUploads}
             >
               Cancel
@@ -1398,6 +1431,7 @@ export function WorkshopsPage({
           </SectionCard>
         ) : null}
       </div>
+      {confirmationDialog}
     </EntryShell>
   );
 }

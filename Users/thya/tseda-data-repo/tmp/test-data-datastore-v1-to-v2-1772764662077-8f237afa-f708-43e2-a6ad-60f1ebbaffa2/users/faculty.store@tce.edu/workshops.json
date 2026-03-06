@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "byId": {
+    "legacy-1": {
+      "id": "legacy-1",
+      "eventName": "Legacy 1",
+      "confirmationStatus": "DRAFT",
+      "attachments": [],
+      "createdAt": "2026-03-06T02:37:42.079Z",
+      "updatedAt": "2026-03-06T02:37:42.079Z",
+      "schemaVersion": 1,
+      "status": "draft"
+    },
+    "legacy-2": {
+      "id": "legacy-2",
+      "eventName": "Legacy 2",
+      "confirmationStatus": "DRAFT",
+      "attachments": [],
+      "createdAt": "2026-03-06T02:37:42.079Z",
+      "updatedAt": "2026-03-06T02:37:42.079Z",
+      "schemaVersion": 1,
+      "status": "draft"
+    }
+  },
+  "order": [
+    "legacy-1",
+    "legacy-2"
+  ]
+}
