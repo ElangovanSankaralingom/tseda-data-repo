@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "byId": {
+    "c3856b29-5c43-430c-b6e2-236a4232d40c": {
+      "eventName": "Distributed Systems Workshop",
+      "id": "c3856b29-5c43-430c-b6e2-236a4232d40c",
+      "status": "draft",
+      "createdAt": "2026-03-06T02:15:10.792Z",
+      "updatedAt": "2026-03-06T02:15:10.792Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "c3856b29-5c43-430c-b6e2-236a4232d40c"
+  ]
+}

@@ -24,6 +24,10 @@ export function dataEntryHome() {
   return "/data-entry";
 }
 
+export function dataEntrySearch() {
+  return "/data-entry/search";
+}
+
 export function profile() {
   return "/account";
 }
@@ -66,6 +70,10 @@ export function adminMaintenance() {
 
 export function adminIntegrity() {
   return "/admin/integrity";
+}
+
+export function adminSearch() {
+  return "/admin/search";
 }
 
 export function adminIntegrityUser(userEmail: string) {

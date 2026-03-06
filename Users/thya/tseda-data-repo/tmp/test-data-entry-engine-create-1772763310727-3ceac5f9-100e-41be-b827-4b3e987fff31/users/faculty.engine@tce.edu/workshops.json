@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "byId": {
+    "2ddd733b-46cf-40ac-9e0d-405e11a139b6": {
+      "eventName": "Intro Workshop",
+      "id": "2ddd733b-46cf-40ac-9e0d-405e11a139b6",
+      "status": "draft",
+      "createdAt": "2026-03-06T02:15:10.729Z",
+      "updatedAt": "2026-03-06T02:15:10.729Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "2ddd733b-46cf-40ac-9e0d-405e11a139b6"
+  ]
+}

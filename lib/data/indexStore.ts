@@ -16,6 +16,11 @@ import {
 } from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
+import {
+  buildSearchSnapshot,
+  getSearchSnapshotKey,
+  type SearchSnapshot,
+} from "@/lib/search/searchText";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 import { logger } from "@/lib/logger";
@@ -65,6 +70,7 @@ export type UserIndex = {
     activeEntries: UserIndexActiveEntry[];
     lastComputedAt: string;
   };
+  searchIndexByEntryId: Record<string, SearchSnapshot>;
 };
 
 export type UserIndexDelta = {
@@ -157,6 +163,7 @@ function createEmptyUserIndex(userEmail: string, nowISO = new Date().toISOString
       activeEntries: [],
       lastComputedAt: nowISO,
     },
+    searchIndexByEntryId: {},
   };
 }
 
@@ -207,6 +214,40 @@ function toContribution(entry: EntryLike | null): EntryContribution | null {
   };
 }
 
+function toSearchIndexSnapshot(entry: EntryLike | null, category: CategoryKey): SearchSnapshot | null {
+  if (!entry) return null;
+  return buildSearchSnapshot(entry as Entry, category);
+}
+
+function hydrateSearchIndexMap(raw: unknown) {
+  if (!isRecord(raw)) return {} as Record<string, SearchSnapshot>;
+
+  const next: Record<string, SearchSnapshot> = {};
+  for (const value of Object.values(raw)) {
+    if (!isRecord(value)) continue;
+    const snapshot = value as Record<string, unknown>;
+    const entryId = String(snapshot.entryId ?? "").trim();
+    const categoryKey = String(snapshot.categoryKey ?? "").trim() as CategoryKey;
+    const title = String(snapshot.title ?? "").trim();
+    const text = String(snapshot.text ?? "").trim();
+    const status = String(snapshot.status ?? "").trim() as EntryStatus;
+    if (!entryId || !CATEGORY_KEYS.includes(categoryKey) || !title || !text || !status) continue;
+
+    const key = getSearchSnapshotKey(categoryKey, entryId);
+    next[key] = {
+      entryId,
+      categoryKey,
+      title,
+      text,
+      status,
+      updatedAtISO: toOptionalISO(snapshot.updatedAtISO),
+      createdAtISO: toOptionalISO(snapshot.createdAtISO),
+    };
+  }
+
+  return next;
+}
+
 function sortActiveEntries(entries: UserIndexActiveEntry[]) {
   return entries
     .slice()
@@ -252,6 +293,10 @@ function hydrateIndex(
   const streakByCategory = streakSnapshot && isRecord(streakSnapshot.byCategory) ? streakSnapshot.byCategory : null;
   const activeEntriesRaw =
     streakSnapshot && Array.isArray(streakSnapshot.activeEntries) ? streakSnapshot.activeEntries : null;
+  const rawSearchIndexByEntryId = isRecord(migratedRaw.searchIndexByEntryId)
+    ? migratedRaw.searchIndexByEntryId
+    : null;
+  const searchIndexByEntryId = hydrateSearchIndexMap(rawSearchIndexByEntryId);
 
   if (!totalsByCategory || !pendingByCategory || !approvedByCategory || !lastEntryAtByCategory || !countsByStatus) {
     return { index: base, rebuildRequired: true, migrated: true };
@@ -297,6 +342,12 @@ function hydrateIndex(
       })
       .filter((value): value is UserIndexActiveEntry => !!value)
   );
+  index.searchIndexByEntryId = searchIndexByEntryId;
+  if (!rawSearchIndexByEntryId) {
+    changed = true;
+  } else if (Object.keys(rawSearchIndexByEntryId).length !== Object.keys(searchIndexByEntryId).length) {
+    changed = true;
+  }
 
   if (String(migratedRaw.userEmail ?? "") !== userEmail) {
     changed = true;
@@ -365,6 +416,10 @@ async function buildUserIndex(userEmail: string): Promise<UserIndex> {
 
       const contribution = toContribution(entry);
       if (!contribution) continue;
+      const snapshot = toSearchIndexSnapshot(entry, category);
+      if (snapshot) {
+        index.searchIndexByEntryId[getSearchSnapshotKey(category, snapshot.entryId)] = snapshot;
+      }
 
       const sortAtTime = toSortTime(contribution.sortAtISO);
       if (sortAtTime !== Number.POSITIVE_INFINITY && sortAtTime > latestEntryTime) {
@@ -419,6 +474,12 @@ function cloneIndex(index: UserIndex): UserIndex {
       }, {} as UserIndexStreakByCategory),
       activeEntries: index.streakSnapshot.activeEntries.slice(),
     },
+    searchIndexByEntryId: Object.entries(index.searchIndexByEntryId).reduce<
+      Record<string, SearchSnapshot>
+    >((next, [key, value]) => {
+      next[key] = { ...value };
+      return next;
+    }, {}),
   };
 }
 
@@ -615,6 +676,8 @@ export async function updateIndexForEntryMutation(
       const next = cloneIndex(current.data);
       const before = toContribution(beforeEntry as EntryLike | null);
       const after = toContribution(afterEntry as EntryLike | null);
+      const beforeSnapshot = toSearchIndexSnapshot(beforeEntry as EntryLike | null, category);
+      const afterSnapshot = toSearchIndexSnapshot(afterEntry as EntryLike | null, category);
 
       if (!before && !after) {
         logger.debug({
@@ -670,6 +733,16 @@ export async function updateIndexForEntryMutation(
         if (after?.id && entry.id === after.id) return false;
         return true;
       });
+
+      if (beforeSnapshot) {
+        delete next.searchIndexByEntryId[getSearchSnapshotKey(category, beforeSnapshot.entryId)];
+      } else if (before?.id) {
+        delete next.searchIndexByEntryId[getSearchSnapshotKey(category, before.id)];
+      }
+
+      if (afterSnapshot) {
+        next.searchIndexByEntryId[getSearchSnapshotKey(category, afterSnapshot.entryId)] = afterSnapshot;
+      }
 
       if (after?.streakActive && after.id) {
         next.streakSnapshot.activeEntries.push({

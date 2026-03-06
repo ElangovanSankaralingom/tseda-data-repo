@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   approveEntry,
+  commitDraft,
   createEntry,
   sendForConfirmation,
   updateEntry,
@@ -15,6 +16,36 @@ import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 const ownerEmail = "faculty.wal@tce.edu";
 const adminEmail = "senarch@tce.edu";
+
+function buildUploadedFile(seed: string) {
+  return {
+    fileName: `${seed}.pdf`,
+    mimeType: "application/pdf",
+    size: 100,
+    uploadedAt: new Date().toISOString(),
+    url: `/uploads/${seed}.pdf`,
+    storedPath: `${seed}.pdf`,
+  };
+}
+
+function buildCompleteWorkshopPayload() {
+  return {
+    academicYear: "Academic Year 2025-2026",
+    semesterType: "Odd",
+    startDate: "2025-08-10",
+    endDate: "2025-08-12",
+    eventName: "WAL Workshop",
+    speakerName: "Speaker",
+    organisationName: "TCE",
+    uploads: {
+      permissionLetter: buildUploadedFile("permission"),
+      brochure: buildUploadedFile("brochure"),
+      attendance: buildUploadedFile("attendance"),
+      organiserProfile: buildUploadedFile("organiser-profile"),
+      geotaggedPhotos: [buildUploadedFile("photo-1")],
+    },
+  };
+}
 
 async function withSandbox<T>(label: string, run: () => Promise<T>): Promise<T> {
   const sandbox = await createTestDataRoot(label);
@@ -28,14 +59,12 @@ async function withSandbox<T>(label: string, run: () => Promise<T>): Promise<T> 
 
 test("entry mutations append WAL events with action and actor metadata", async () => {
   await withSandbox("wal-events", async () => {
-    const created = await createEntry(ownerEmail, "workshops", {
-      eventName: "WAL Workshop",
-      status: "final",
-    });
+    const created = await createEntry(ownerEmail, "workshops", buildCompleteWorkshopPayload());
 
     await updateEntry(ownerEmail, "workshops", String(created.id), {
       eventName: "WAL Workshop Updated",
     });
+    await commitDraft(ownerEmail, "workshops", String(created.id));
     await sendForConfirmation(ownerEmail, "workshops", String(created.id));
     await approveEntry(adminEmail, "workshops", ownerEmail, String(created.id));
 
@@ -59,9 +88,10 @@ test("entry mutations append WAL events with action and actor metadata", async (
 test("rebuildUserIndexFromWal restores index snapshot without category scan", async () => {
   await withSandbox("wal-recovery", async () => {
     const created = await createEntry(ownerEmail, "workshops", {
+      ...buildCompleteWorkshopPayload(),
       eventName: "Recovery Workshop",
-      status: "final",
     });
+    await commitDraft(ownerEmail, "workshops", String(created.id));
     await sendForConfirmation(ownerEmail, "workshops", String(created.id));
 
     const userDir = getUserStoreDir(ownerEmail);
@@ -79,4 +109,3 @@ test("rebuildUserIndexFromWal restores index snapshot without category scan", as
     await fs.access(path.join(userDir, "index.json"));
   });
 });
-

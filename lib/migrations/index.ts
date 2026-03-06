@@ -12,7 +12,7 @@ import type { WalAction, WalActorRole, WalEvent } from "@/lib/data/wal";
 
 export const ENTRY_SCHEMA_VERSION = 1;
 export const CATEGORY_STORE_SCHEMA_VERSION = 2;
-export const USER_INDEX_SCHEMA_VERSION = 1;
+export const USER_INDEX_SCHEMA_VERSION = 2;
 export const WAL_EVENT_SCHEMA_VERSION = 1;
 
 export type CategoryStoreV2 = {
@@ -72,6 +72,37 @@ function toNonNegativeInteger(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 0;
   if (value <= 0) return 0;
   return Math.floor(value);
+}
+
+function normalizeIndexSearchMap(
+  raw: unknown
+): UserIndex["searchIndexByEntryId"] {
+  if (!isRecord(raw)) return {};
+  const next: UserIndex["searchIndexByEntryId"] = {};
+
+  for (const value of Object.values(raw)) {
+    if (!isRecord(value)) continue;
+    const entryId = toTrimmedString(value.entryId);
+    const categoryKey = toTrimmedString(value.categoryKey) as CategoryKey;
+    const title = toTrimmedString(value.title);
+    const text = toTrimmedString(value.text);
+    const status = toTrimmedString(value.status) as EntryStatus;
+    if (!entryId || !CATEGORY_KEYS.includes(categoryKey) || !title || !text) continue;
+    if (!ENTRY_STATUS_KEYS.includes(status)) continue;
+
+    const key = `${categoryKey}:${entryId}`;
+    next[key] = {
+      entryId,
+      categoryKey,
+      title,
+      text,
+      status,
+      updatedAtISO: toOptionalISO(value.updatedAtISO),
+      createdAtISO: toOptionalISO(value.createdAtISO),
+    };
+  }
+
+  return next;
 }
 
 function emptyCategoryMap<T>(valueFactory: () => T) {
@@ -318,6 +349,7 @@ function migrateUserIndexV0ToV1(raw: Record<string, unknown>, nowISO: string) {
       activeEntries: [],
       lastComputedAt: nowISO,
     },
+    searchIndexByEntryId: {},
   };
 
   const totalsByCategory = isRecord(raw.totalsByCategory) ? raw.totalsByCategory : null;
@@ -371,8 +403,15 @@ function migrateUserIndexV0ToV1(raw: Record<string, unknown>, nowISO: string) {
       const safeRight = Number.isNaN(rightTime) ? Number.POSITIVE_INFINITY : rightTime;
       return safeLeft - safeRight;
     });
+  next.searchIndexByEntryId = normalizeIndexSearchMap(raw.searchIndexByEntryId);
 
   return next as unknown as Record<string, unknown>;
+}
+
+function migrateUserIndexV1ToV2(raw: Record<string, unknown>, nowISO: string) {
+  const next = migrateUserIndexV0ToV1(raw, nowISO) as Record<string, unknown>;
+  next.searchIndexByEntryId = normalizeIndexSearchMap(raw.searchIndexByEntryId);
+  return next;
 }
 
 export function migrateUserIndex(raw: unknown): Result<UserIndex> {
@@ -392,11 +431,15 @@ export function migrateUserIndex(raw: unknown): Result<UserIndex> {
       USER_INDEX_SCHEMA_VERSION,
       {
         0: migrateUserIndexV0ToV1,
+        1: migrateUserIndexV1ToV2,
       },
       nowISO
     );
 
-    const finalized = migrateUserIndexV0ToV1(migrated, nowISO) as unknown as UserIndex;
+    const finalized = migrateUserIndexV1ToV2(
+      migrateUserIndexV0ToV1(migrated, nowISO),
+      nowISO
+    ) as unknown as UserIndex;
     finalized.version = USER_INDEX_SCHEMA_VERSION;
     finalized.updatedAt = toISO(finalized.updatedAt, nowISO);
     finalized.userEmail = toTrimmedString(finalized.userEmail);

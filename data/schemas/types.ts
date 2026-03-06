@@ -16,6 +16,10 @@ export type SchemaFieldDefinition = {
   label: string;
   kind: SchemaFieldKind;
   required?: boolean;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  enumValues?: readonly (string | number | boolean)[];
 };
 
 export type SchemaValidationError = {

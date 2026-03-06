@@ -1,0 +1,96 @@
+{
+  "version": 2,
+  "userEmail": "faculty.streak@tce.edu",
+  "updatedAt": "2026-03-06T02:16:23.254Z",
+  "totalsByCategory": {
+    "fdp-attended": 1,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 2
+  },
+  "countsByStatus": {
+    "DRAFT": 3,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 0,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T02:16:23.230Z"
+  },
+  "streakSnapshot": {
+    "streakActivatedCount": 0,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 0
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T02:16:23.254Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:da94d00c-8486-4060-a498-1bb0fb1f83a1": {
+      "entryId": "da94d00c-8486-4060-a498-1bb0fb1f83a1",
+      "categoryKey": "workshops",
+      "title": "Active streak workshop",
+      "text": "active streak workshop workshops draft active streak workshop",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T02:16:23.199Z",
+      "createdAtISO": "2026-03-06T02:16:23.199Z"
+    },
+    "workshops:823f212b-c774-4d59-878c-7bfcfa977157": {
+      "entryId": "823f212b-c774-4d59-878c-7bfcfa977157",
+      "categoryKey": "workshops",
+      "title": "Completed streak workshop",
+      "text": "completed streak workshop workshops draft completed streak workshop",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T02:16:23.230Z",
+      "createdAtISO": "2026-03-06T02:16:23.230Z"
+    },
+    "fdp-attended:066a362b-c2c2-4e81-b0bc-07a0f8d9553b": {
+      "entryId": "066a362b-c2c2-4e81-b0bc-07a0f8d9553b",
+      "categoryKey": "fdp-attended",
+      "title": "066a362b-c2c2-4e81-b0bc-07a0f8d9553b",
+      "text": "066a362b c2c2 4e81 b0bc 07a0f8d9553b fdp attended draft",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T02:16:23.253Z",
+      "createdAtISO": "2026-03-06T02:16:23.253Z"
+    }
+  }
+}

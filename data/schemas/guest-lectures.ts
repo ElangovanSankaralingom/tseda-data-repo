@@ -4,7 +4,12 @@ import type { EntrySchema } from "@/data/schemas/types";
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true },
   { key: "academicYear", label: "Academic Year", kind: "string" },
-  { key: "semesterType", label: "Semester Type", kind: "string" },
+  {
+    key: "semesterType",
+    label: "Semester Type",
+    kind: "string",
+    enumValues: ["Odd", "Even", "odd", "even", "ODD", "EVEN"],
+  },
   { key: "startDate", label: "Start Date", kind: "date" },
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "eventName", label: "Event Name", kind: "string" },
