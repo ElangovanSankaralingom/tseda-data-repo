@@ -743,7 +743,11 @@ export function FdpConductedPage({
     }).catch(() => null);
   }
 
-  async function handleDone() {
+  async function handleSaveDraft() {
+    await saveDraftChanges({ intent: "save" });
+  }
+
+  async function handleSaveAndClose() {
     setSubmitAttemptedFinal(true);
 
     if (hasBusyUploads) {
@@ -1125,9 +1129,9 @@ export function FdpConductedPage({
           addLabel="+ Add FDP Entry"
           onCancel={() => void handleCancel()}
           cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
-          onSave={() => void saveDraftChanges()}
+          onSave={() => void handleSaveDraft()}
           saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
-          onDone={() => void handleDone()}
+          onDone={() => void handleSaveAndClose()}
           doneDisabled={controlsDisabled || saving || loading || hasBusyUploads}
           saving={saving}
           saveIntent={saveIntent}

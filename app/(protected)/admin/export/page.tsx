@@ -1,12 +1,14 @@
-import BackTo from "@/components/nav/BackTo";
 import { getServerSession } from "next-auth";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminExportForm from "@/components/admin/AdminExportForm";
+import SectionCard from "@/components/layout/SectionCard";
 import { authOptions } from "@/lib/auth";
 import { canExport } from "@/lib/admin/roles";
 import { listUsers } from "@/lib/admin/integrity";
 import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
 import { toUserMessage } from "@/lib/errors";
 import {
+  getExportStatusOptions,
   getExportableFields,
   type ExportCategorySelection,
 } from "@/lib/export/exportService";
@@ -44,20 +46,18 @@ export default async function AdminExportPage() {
     },
     {}
   );
+  const statusOptions = getExportStatusOptions().map((status) => ({
+    key: status.key,
+    label: status.label,
+  }));
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Export Entries</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Download schema-driven exports from canonical normalized DataStore records.
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-5">
+    <AdminPageShell
+      title="Export Entries"
+      subtitle="Download schema-driven exports from canonical normalized DataStore records."
+      backHref={adminHome()}
+    >
+      <SectionCard>
         {error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -68,11 +68,12 @@ export default async function AdminExportPage() {
           <AdminExportForm
             users={users}
             categories={categories}
+            statusOptions={statusOptions}
             fieldOptionsByCategory={fieldOptionsByCategory}
             downloadPath="/api/admin/export/entries"
           />
         )}
-      </div>
-    </div>
+      </SectionCard>
+    </AdminPageShell>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import BackTo from "@/components/nav/BackTo";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { authOptions } from "@/lib/auth";
 import { getRecentAuditEvents, type AuditAction } from "@/lib/admin/auditLog";
 import { canViewAudit } from "@/lib/admin/roles";
@@ -90,17 +90,11 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
   const error = result.ok ? null : toUserMessage(result.error);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Audit</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Approval workflow history from WAL events across all users and categories.
-          </p>
-        </div>
-      </div>
-
+    <AdminPageShell
+      title="Admin Audit"
+      subtitle="Approval workflow history from WAL events across all users and categories."
+      backHref={adminHome()}
+    >
       <form method="get" className="rounded-2xl border border-border bg-card p-4">
         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           <label className="space-y-1 text-sm">
@@ -236,6 +230,6 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           </div>
         )}
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

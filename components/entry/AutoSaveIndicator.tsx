@@ -2,15 +2,23 @@
 
 import { type AutoSaveStatus } from "@/hooks/useAutoSave";
 
-function formatSavedAt(value: string | null) {
-  if (!value) return "";
+function getSavedLabel(value: string | null) {
+  if (!value) return "Autosave enabled";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+  if (Number.isNaN(date.getTime())) return "Autosave enabled";
 
-  return date.toLocaleTimeString(undefined, {
+  const elapsedMs = Date.now() - date.getTime();
+  if (elapsedMs < 30 * 1000) return "Saved just now";
+
+  const elapsedMinutes = Math.floor(elapsedMs / (60 * 1000));
+  if (elapsedMinutes <= 0) return "Saved just now";
+  if (elapsedMinutes < 60) return `Saved ${elapsedMinutes} min ago`;
+
+  const savedAt = date.toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
   });
+  return `Saved at ${savedAt}`;
 }
 
 export default function AutoSaveIndicator({
@@ -31,10 +39,9 @@ export default function AutoSaveIndicator({
   }
 
   if (status.phase === "saved") {
-    const savedAt = formatSavedAt(status.savedAtISO);
     return (
       <p className="text-xs text-muted-foreground">
-        Saved{savedAt ? ` at ${savedAt}` : ""}
+        {getSavedLabel(status.savedAtISO)}
       </p>
     );
   }

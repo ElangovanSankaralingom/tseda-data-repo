@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import BackTo from "@/components/nav/BackTo";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import SectionCard from "@/components/layout/SectionCard";
 import { authOptions } from "@/lib/auth";
 import { canAccessAdminSearch } from "@/lib/admin/roles";
 import { CATEGORY_LIST, getCategoryConfig, isValidCategorySlug } from "@/data/categoryRegistry";
@@ -59,62 +60,59 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Search</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Search entries across all users and categories.
-          </p>
-        </div>
-      </div>
-
-      <form method="GET" className="rounded-2xl border border-border bg-card p-4">
-        <div className="grid gap-3 md:grid-cols-[1fr_220px_240px_auto]">
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Keyword</span>
-            <input
-              name="q"
-              defaultValue={query}
-              placeholder="Search by title, category, or field values"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Category</span>
-            <select
-              name="category"
-              defaultValue={selectedCategory}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
-            >
-              <option value="all">All categories</option>
-              {CATEGORY_LIST.map((category) => (
-                <option key={category} value={category}>
-                  {getCategoryConfig(category).label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Owner Email (optional)</span>
-            <input
-              name="userEmail"
-              defaultValue={userEmail}
-              placeholder="faculty@tce.edu"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
-            />
-          </label>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium transition hover:bg-muted/60"
-            >
-              Search
-            </button>
+    <AdminPageShell
+      title="Admin Search"
+      subtitle="Search entries across all users and categories."
+      backHref={adminHome()}
+      maxWidthClassName="max-w-6xl"
+    >
+      <SectionCard>
+        <form method="GET">
+          <div className="grid gap-3 md:grid-cols-[1fr_220px_240px_auto]">
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">Keyword</span>
+              <input
+                name="q"
+                defaultValue={query}
+                placeholder="Search by title, category, or field values"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">Category</span>
+              <select
+                name="category"
+                defaultValue={selectedCategory}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
+              >
+                <option value="all">All categories</option>
+                {CATEGORY_LIST.map((category) => (
+                  <option key={category} value={category}>
+                    {getCategoryConfig(category).label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">Owner Email (optional)</span>
+              <input
+                name="userEmail"
+                defaultValue={userEmail}
+                placeholder="faculty@tce.edu"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
+              />
+            </label>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium transition hover:bg-muted/60"
+              >
+                Search
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </SectionCard>
 
       {error ? (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -123,10 +121,10 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
       ) : null}
 
       {query ? (
-        <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-          <div className="mb-3 text-sm text-muted-foreground">
-            Results: <span className="font-medium text-foreground">{results.length}</span>
-          </div>
+        <SectionCard
+          title="Search Results"
+          subtitle={`Results: ${results.length}`}
+        >
           {results.length === 0 ? (
             <div className="text-sm text-muted-foreground">No entries matched this search.</div>
           ) : (
@@ -150,8 +148,8 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
               ))}
             </div>
           )}
-        </div>
+        </SectionCard>
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }

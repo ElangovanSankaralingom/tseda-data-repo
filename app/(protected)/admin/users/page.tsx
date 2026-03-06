@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import BackTo from "@/components/nav/BackTo";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { authOptions } from "@/lib/auth";
 import { MASTER_ADMIN_EMAIL } from "@/lib/admin";
 import {
@@ -114,16 +114,11 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const users = config.users;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminHome()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Users</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Assign admin roles. Master admin access is always retained for {MASTER_ADMIN_EMAIL}.
-          </p>
-        </div>
-      </div>
+    <AdminPageShell
+      title="Admin Users"
+      subtitle={`Assign admin roles. Master admin access is always retained for ${MASTER_ADMIN_EMAIL}.`}
+      backHref={adminHome()}
+    >
 
       {notice ? (
         <div
@@ -240,6 +235,6 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           </div>
         )}
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

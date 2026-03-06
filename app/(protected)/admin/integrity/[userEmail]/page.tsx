@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import BackTo from "@/components/nav/BackTo";
 import ConfirmSubmitButton from "@/components/ui/ConfirmSubmitButton";
 import { authOptions } from "@/lib/auth";
@@ -219,17 +220,11 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
   const severity = report ? countBySeverity(report.issues) : { info: 0, warn: 0, error: 0 };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <BackTo href={adminIntegrity()} compact />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Integrity: {normalizedUserEmail}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Category-store, index, WAL, and attachment metadata checks with repair actions.
-          </p>
-        </div>
-      </div>
-
+    <AdminPageShell
+      title={`Integrity: ${normalizedUserEmail}`}
+      subtitle="Category-store, index, WAL, and attachment metadata checks with repair actions."
+      backHref={adminIntegrity()}
+    >
       {notice ? <div className={`mb-4 ${getNoticeClass(level)}`}>{notice}</div> : null}
 
       <div className="mb-4 rounded-2xl border border-border bg-card p-4">
@@ -399,6 +394,6 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
           </div>
         </>
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }
