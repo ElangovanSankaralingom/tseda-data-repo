@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
-import { isMasterAdmin } from "@/lib/admin";
+import { canApproveConfirmations } from "@/lib/admin/roles";
 import { getPendingConfirmations } from "@/lib/admin/pendingConfirmations";
 import {
   approveEntry,
@@ -19,7 +19,7 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 export async function GET() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
-  if (!isMasterAdmin(email)) {
+  if (!canApproveConfirmations(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -30,7 +30,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   const adminEmail = normalizeEmail(session?.user?.email ?? "");
-  if (!isMasterAdmin(adminEmail)) {
+  if (!canApproveConfirmations(adminEmail)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

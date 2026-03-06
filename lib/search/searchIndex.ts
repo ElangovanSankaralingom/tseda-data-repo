@@ -9,6 +9,7 @@ import { entryDetail } from "@/lib/navigation";
 import { err, ok, type Result } from "@/lib/result";
 import { getUsersRootDir } from "@/lib/userStore";
 import type { EntryStatus } from "@/lib/types/entry";
+import { trackEvent } from "@/lib/telemetry/telemetry";
 import {
   buildSearchText,
   normalizeSearchText,
@@ -34,6 +35,7 @@ type SearchOptions = {
   category?: CategoryKey | "all";
   limit?: number;
   userEmail?: string;
+  actorEmail?: string;
 };
 
 type IndexedUserSearch = {
@@ -113,6 +115,39 @@ function toSearchEntries(index: { searchIndexByEntryId?: unknown }): SearchIndex
   return entries;
 }
 
+async function trackSearchTelemetry(args: {
+  actorEmail: string;
+  role: "user" | "admin";
+  category: CategoryKey | "all" | null;
+  success: boolean;
+  durationMs: number;
+  resultCount?: number;
+  queryLength: number;
+  scope: "user" | "admin";
+  errorCode?: string;
+  ownerFilter?: string;
+}) {
+  const tracked = await trackEvent({
+    event: "entry.search",
+    actorEmail: args.actorEmail,
+    role: args.role,
+    category: args.category && args.category !== "all" ? args.category : null,
+    success: args.success,
+    durationMs: args.durationMs,
+    meta: {
+      action: "entry.search",
+      scope: args.scope,
+      queryLength: args.queryLength,
+      resultCount: args.resultCount ?? null,
+      ownerFilter: args.ownerFilter || null,
+      errorCode: args.errorCode ?? null,
+    },
+  });
+  if (!tracked.ok) {
+    // Telemetry should not affect search results.
+  }
+}
+
 async function loadUserSearchEntries(userEmail: string): Promise<Result<IndexedUserSearch>> {
   const normalized = normalizeEmail(userEmail);
   if (!normalized) {
@@ -170,6 +205,8 @@ export async function searchUserEntries(
   query: string,
   options: SearchOptions = {}
 ): Promise<Result<SearchResult[]>> {
+  const startedAt = Date.now();
+  const actorEmail = normalizeEmail(userEmail) || "unknown";
   const normalizedQuery = normalizeSearchText(query);
   if (!normalizedQuery) return ok([]);
 
@@ -177,15 +214,41 @@ export async function searchUserEntries(
   if (!tokens.length) return ok([]);
 
   const indexed = await loadUserSearchEntries(userEmail);
-  if (!indexed.ok) return err(indexed.error);
+  if (!indexed.ok) {
+    await trackSearchTelemetry({
+      actorEmail,
+      role: "user",
+      category: options.category ?? null,
+      success: false,
+      durationMs: Date.now() - startedAt,
+      queryLength: normalizedQuery.length,
+      scope: "user",
+      errorCode: indexed.error.code,
+    });
+    return err(indexed.error);
+  }
 
-  return ok(toSearchResults(indexed.data, normalizedQuery, tokens, options));
+  const results = toSearchResults(indexed.data, normalizedQuery, tokens, options);
+  await trackSearchTelemetry({
+    actorEmail,
+    role: "user",
+    category: options.category ?? null,
+    success: true,
+    durationMs: Date.now() - startedAt,
+    resultCount: results.length,
+    queryLength: normalizedQuery.length,
+    scope: "user",
+  });
+
+  return ok(results);
 }
 
 export async function searchAllUsers(
   query: string,
   options: SearchOptions = {}
 ): Promise<Result<SearchResult[]>> {
+  const startedAt = Date.now();
+  const actorEmail = normalizeEmail(options.actorEmail ?? "") || "unknown";
   try {
     const normalizedQuery = normalizeSearchText(query);
     if (!normalizedQuery) return ok([]);
@@ -217,10 +280,34 @@ export async function searchAllUsers(
       if (right.score !== left.score) return right.score - left.score;
       return toSortTime(right.updatedAt) - toSortTime(left.updatedAt);
     });
+    const finalResults = results.slice(0, limit);
+    await trackSearchTelemetry({
+      actorEmail,
+      role: "admin",
+      category: options.category ?? null,
+      success: true,
+      durationMs: Date.now() - startedAt,
+      resultCount: finalResults.length,
+      queryLength: normalizedQuery.length,
+      scope: "admin",
+      ownerFilter,
+    });
 
-    return ok(results.slice(0, limit));
+    return ok(finalResults);
   } catch (error) {
-    return err(normalizeError(error));
+    const normalized = normalizeError(error);
+    await trackSearchTelemetry({
+      actorEmail,
+      role: "admin",
+      category: options.category ?? null,
+      success: false,
+      durationMs: Date.now() - startedAt,
+      queryLength: normalizeSearchText(query).length,
+      scope: "admin",
+      errorCode: normalized.code,
+      ownerFilter: options.userEmail ?? "",
+    });
+    return err(normalized);
   }
 }
 

@@ -76,6 +76,10 @@ export function adminSearch() {
   return "/admin/search";
 }
 
+export function adminAnalytics() {
+  return "/admin/analytics";
+}
+
 export function adminIntegrityUser(userEmail: string) {
   return `/admin/integrity/${encodeURIComponent(userEmail)}`;
 }
