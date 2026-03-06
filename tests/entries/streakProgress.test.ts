@@ -65,21 +65,19 @@ test("streak progress aggregate uses one canonical activated/wins rule", () => {
     {
       categoryKey: "workshops",
       id: "entry-1",
-      status: "final",
       confirmationStatus: "DRAFT",
+      committedAtISO: "2026-03-06T10:01:00.000Z",
       updatedAt: "2026-03-06T10:01:00.000Z",
     },
     {
       categoryKey: "workshops",
       id: "entry-2",
-      status: "final",
       confirmationStatus: "APPROVED",
       updatedAt: "2026-03-06T10:02:00.000Z",
     },
     {
       categoryKey: "fdp-attended",
       id: "entry-3",
-      status: "final",
       confirmationStatus: "APPROVED",
       updatedAt: "2026-03-06T10:03:00.000Z",
     },
@@ -98,14 +96,13 @@ test("canonical streak snapshot maps aggregate totals and active entries", () =>
     {
       categoryKey: "workshops",
       id: "entry-1",
-      status: "final",
       confirmationStatus: "DRAFT",
+      committedAtISO: "2026-03-06T10:01:00.000Z",
       updatedAt: "2026-03-06T10:01:00.000Z",
     },
     {
       categoryKey: "workshops",
       id: "entry-2",
-      status: "final",
       confirmationStatus: "APPROVED",
       updatedAt: "2026-03-06T10:02:00.000Z",
     },

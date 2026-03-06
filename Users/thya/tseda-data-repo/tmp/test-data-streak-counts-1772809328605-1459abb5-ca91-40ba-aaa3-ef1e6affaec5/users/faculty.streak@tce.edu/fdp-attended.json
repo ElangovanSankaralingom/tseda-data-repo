@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "byId": {
+    "696658da-0cb2-4e9b-9c7d-28b97880fb32": {
+      "id": "696658da-0cb2-4e9b-9c7d-28b97880fb32",
+      "academicYear": "2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2026-03-05",
+      "endDate": "2026-03-06",
+      "programName": "FDP Won",
+      "organisingBody": "TCE",
+      "permissionLetter": {
+        "storedPath": "uploads/fdp/win-permission.pdf"
+      },
+      "completionCertificate": {
+        "storedPath": "uploads/fdp/win-certificate.pdf"
+      },
+      "status": "final",
+      "createdAt": "2026-03-06T15:02:08.644Z",
+      "updatedAt": "2026-03-06T15:02:08.715Z",
+      "confirmationStatus": "APPROVED",
+      "sentForConfirmationAtISO": "2026-03-06T15:02:08.711Z",
+      "confirmedAtISO": "2026-03-06T15:02:08.715Z",
+      "confirmedBy": "senarch@tce.edu",
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "696658da-0cb2-4e9b-9c7d-28b97880fb32"
+  ]
+}

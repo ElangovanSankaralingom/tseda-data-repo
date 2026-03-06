@@ -1,11 +1,13 @@
 import {
+  isEntryCommitted,
   isEntryLocked,
   normalizeEntryStatus,
   type EntryStateLike,
 } from "./entries/stateMachine.ts";
 import type { EntryStatus as EntryApprovalStatus } from "./types/entry.ts";
+import type { RequestEditStatus } from "./types/requestEdit.ts";
 
-export type ConfirmationStatus = "none" | "pending" | "approved" | "rejected";
+export type ConfirmationStatus = RequestEditStatus;
 
 type ConfirmationEntryLike = EntryStateLike & {
   status?: string | null;
@@ -56,8 +58,7 @@ export function isEntryLockedFromStatus(entry: ConfirmationEntryLike) {
 }
 
 export function canSendForConfirmation(entry: ConfirmationEntryLike) {
-  const stage = String(entry.status ?? "").trim().toLowerCase();
-  if (stage !== "final") {
+  if (!isEntryCommitted(entry)) {
     return false;
   }
 

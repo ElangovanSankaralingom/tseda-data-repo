@@ -1,4 +1,5 @@
 import { isEntryLockedFromStatus } from "./confirmation.ts";
+import { isEntryCommitted, type EntryStateLike } from "./entries/stateMachine.ts";
 
 export type StreakState = {
   activatedAtISO?: string | null;
@@ -320,7 +321,7 @@ export function aggregateCategoryPending(
 
   for (const entry of entries) {
     if (!entry?.id) continue;
-    if (entry.status !== "final") continue;
+    if (!isEntryCommitted(entry as EntryStateLike)) continue;
     if (!isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "")) continue;
     if (!entry.streak?.activatedAtISO) continue;
 
@@ -360,7 +361,7 @@ export function aggregateGlobalWins(
   for (const entries of Object.values(allCategoryData)) {
     for (const entry of entries ?? []) {
       if (!entry) continue;
-      if (entry.status !== "final") continue;
+      if (!isEntryCommitted(entry as EntryStateLike)) continue;
       if (!isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "")) continue;
       if (isCompletedWithinDueWindow(entry.streak)) {
         winsCount += 1;

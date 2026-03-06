@@ -5,6 +5,7 @@ import { canSendForConfirmation, getEntryApprovalStatus } from "@/lib/confirmati
 import { AppError, toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { safeAction } from "@/lib/safeAction";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import {
   createOptimisticSnapshot,
   optimisticUpsert,
@@ -14,7 +15,7 @@ type ConfirmableEntry = {
   id: string;
   status?: string | null;
   confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
-  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  requestEditStatus?: RequestEditStatus;
 };
 
 export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {

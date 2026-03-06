@@ -13,7 +13,7 @@ type Slot = "permissionLetter" | "travelPlan" | "geotaggedPhotos";
 
 type CaseStudyRecord = {
   id: string;
-  status?: "draft" | "final";
+  status?: string;
   pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
   permissionLetter?: unknown;
   travelPlan?: unknown;

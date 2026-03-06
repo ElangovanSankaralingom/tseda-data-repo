@@ -59,6 +59,5 @@ export function useEntryWorkflow({
     canPreviewPdf: lifecycle.canPreview,
     canDownloadPdf: lifecycle.canDownload,
     canDone: lifecycle.canDone,
-    canCancel: !lifecycle.canDone,
   };
 }

@@ -1,6 +1,10 @@
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import {
+  isEntryCommitted,
+  normalizeEntryStatus,
+  type EntryStateLike,
+} from "@/lib/entries/stateMachine";
 import { normalizeStreakState } from "@/lib/gamification";
 
 export const STREAK_RULE_VERSION = 2;
@@ -78,16 +82,8 @@ export function compareStreakSortAtISO(left: string | null | undefined, right: s
   return toSortTime(left) - toSortTime(right);
 }
 
-function isFinalStatus(value: unknown) {
-  const normalized = String(value ?? "").trim().toLowerCase();
-  return normalized === "final" || normalized === "completed";
-}
-
 function hasCommittedMilestone(entry: StreakProgressEntryLike) {
-  if (toOptionalISO(entry.committedAtISO)) {
-    return true;
-  }
-  if (isFinalStatus(entry.status)) {
+  if (isEntryCommitted(entry as EntryStateLike)) {
     return true;
   }
   const streak = normalizeStreakState(entry.streak);
