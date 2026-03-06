@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "userEmail": "faculty.wal@tce.edu",
+  "updatedAt": "2026-03-06T05:36:07.295Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "countsByStatus": {
+    "DRAFT": 0,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 1,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T05:36:07.292Z"
+  },
+  "streakSnapshot": {
+    "streakActivatedCount": 0,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 0
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T05:36:07.295Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:b5bde59b-5384-41a1-be97-9b6db40a4ffb": {
+      "entryId": "b5bde59b-5384-41a1-be97-9b6db40a4ffb",
+      "categoryKey": "workshops",
+      "title": "WAL Workshop Updated",
+      "text": "wal workshop updated workshops approved academic year 2025 2026 odd wal workshop updated speaker tce",
+      "status": "APPROVED",
+      "updatedAtISO": "2026-03-06T05:36:07.292Z",
+      "createdAtISO": "2026-03-06T05:36:07.205Z"
+    }
+  }
+}

@@ -59,6 +59,7 @@ export default function EntryUploader({
   onStatusChange,
 }: EntryUploaderProps) {
   const [actionError, setActionError] = useState<string | null>(null);
+  const [persisting, setPersisting] = useState(false);
   const locked = disabled || mode === "view";
 
   const controller = useUploadController<UploadMeta>({
@@ -78,24 +79,31 @@ export default function EntryUploader({
     },
   });
 
+  const uploadBusy = controller.busy || persisting;
+
   useEffect(() => {
     onStatusChange?.({
-      busy: controller.busy,
+      busy: uploadBusy,
       hasPending: !!controller.pendingFile,
     });
-  }, [controller.busy, controller.pendingFile, onStatusChange]);
+  }, [controller.pendingFile, onStatusChange, uploadBusy]);
 
   async function handleUpload() {
     setActionError(null);
     const uploaded = await controller.uploadAndSave();
     if (!uploaded) return;
 
-    const result = await safeAction(() => Promise.resolve(onUploaded(uploaded)), {
-      context: "EntryUploader.onUploaded",
-    });
+    setPersisting(true);
+    try {
+      const result = await safeAction(() => Promise.resolve(onUploaded(uploaded)), {
+        context: "EntryUploader.onUploaded",
+      });
 
-    if (!result.ok) {
-      setActionError(toUserMessage(result.error));
+      if (!result.ok) {
+        setActionError(toUserMessage(result.error));
+      }
+    } finally {
+      setPersisting(false);
     }
   }
 
@@ -113,11 +121,11 @@ export default function EntryUploader({
       meta={meta}
       pendingFile={controller.pendingFile}
       progress={controller.progress}
-      busy={controller.busy}
+      busy={uploadBusy}
       error={actionError ?? controller.error}
-      canChoose={controller.canChoose}
-      canUpload={controller.canUpload}
-      canDelete={controller.canDelete}
+      canChoose={controller.canChoose && !persisting}
+      canUpload={controller.canUpload && !persisting}
+      canDelete={controller.canDelete && !persisting}
       onSelectFile={(file) => {
         setActionError(null);
         controller.selectFile(file);

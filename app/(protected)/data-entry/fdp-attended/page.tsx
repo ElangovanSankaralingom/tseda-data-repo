@@ -283,6 +283,7 @@ export function FdpAttendedPage({
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [list, setList] = useState<FdpAttended[]>([]);
   const [editorSeed, setEditorSeed] = useState<FdpAttended>(() => emptyForm());
+  const [uploadPersistingCount, setUploadPersistingCount] = useState(0);
   const saveLockRef = useRef(false);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
 
@@ -346,6 +347,11 @@ export function FdpAttendedPage({
   const loadEditorEntry = editorActions.loadEntry;
   const isEditing = formOpen || !!activeEntryId;
   const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
+  const formRef = useRef(form);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   useEffect(() => {
     (async () => {
@@ -463,7 +469,8 @@ export function FdpAttendedPage({
       }
     },
   });
-  const hasBusyUploads = permissionController.busy || completionController.busy;
+  const uploadPersisting = uploadPersistingCount > 0;
+  const hasBusyUploads = permissionController.busy || completionController.busy || uploadPersisting;
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && !!form.completionCertificate;
@@ -702,7 +709,7 @@ export function FdpAttendedPage({
 
   async function uploadSlot(slot: "permissionLetter" | "completionCertificate") {
     const controller = slot === "permissionLetter" ? permissionController : completionController;
-    const previousMeta = form[slot];
+    const previousMeta = formRef.current[slot];
 
     try {
       const meta = await controller.uploadAndSave();
@@ -712,12 +719,18 @@ export function FdpAttendedPage({
         void deleteStoredFile(previousMeta.storedPath);
       }
 
-      const nextForm = { ...form, [slot]: meta } as FdpAttended;
-      const persisted = await persistProgress(nextForm);
-      setEditorSeed(persisted);
-      editorActions.saveDraft(persisted);
-      markAutoSaveSaved(persisted);
-      await refreshList();
+      setUploadPersistingCount((current) => current + 1);
+      try {
+        const latestForm = formRef.current;
+        const nextForm = { ...latestForm, [slot]: meta } as FdpAttended;
+        const persisted = await persistProgress(nextForm);
+        setEditorSeed(persisted);
+        editorActions.saveDraft(persisted);
+        markAutoSaveSaved(persisted);
+        await refreshList();
+      } finally {
+        setUploadPersistingCount((current) => Math.max(0, current - 1));
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Upload failed.";
       setToast({ type: "err", msg: message });
@@ -726,7 +739,7 @@ export function FdpAttendedPage({
   }
 
   async function deleteSlot(slot: "permissionLetter" | "completionCertificate") {
-    const meta = form[slot];
+    const meta = formRef.current[slot];
     if (!meta?.storedPath) {
       setToast({ type: "err", msg: "File path missing." });
       setTimeout(() => setToast(null), 1500);
@@ -737,7 +750,18 @@ export function FdpAttendedPage({
       const controller = slot === "permissionLetter" ? permissionController : completionController;
       const deleted = await controller.deleteFile(meta);
       if (!deleted) return;
-      setForm((current) => ({ ...current, [slot]: null }));
+      setUploadPersistingCount((current) => current + 1);
+      try {
+        const latestForm = formRef.current;
+        const nextForm = { ...latestForm, [slot]: null } as FdpAttended;
+        const persisted = await persistProgress(nextForm);
+        setEditorSeed(persisted);
+        editorActions.saveDraft(persisted);
+        markAutoSaveSaved(persisted);
+        await refreshList();
+      } finally {
+        setUploadPersistingCount((current) => Math.max(0, current - 1));
+      }
 
       setToast({ type: "ok", msg: "File deleted." });
       setTimeout(() => setToast(null), 1200);
@@ -1213,11 +1237,11 @@ export function FdpAttendedPage({
                     meta={form.permissionLetter}
                     pendingFile={permissionController.pendingFile}
                     progress={permissionController.progress}
-                    busy={permissionController.busy}
+                    busy={permissionController.busy || uploadPersisting}
                     error={permissionController.error}
-                    canChoose={permissionController.canChoose}
-                    canUpload={permissionController.canUpload}
-                    canDelete={permissionController.canDelete}
+                    canChoose={permissionController.canChoose && !uploadPersisting}
+                    canUpload={permissionController.canUpload && !uploadPersisting}
+                    canDelete={permissionController.canDelete && !uploadPersisting}
                     onSelectFile={permissionController.selectFile}
                     onUpload={() => void uploadSlot("permissionLetter")}
                     onDelete={() => void deleteSlot("permissionLetter")}
@@ -1230,11 +1254,11 @@ export function FdpAttendedPage({
                     meta={form.completionCertificate}
                     pendingFile={completionController.pendingFile}
                     progress={completionController.progress}
-                    busy={completionController.busy}
+                    busy={completionController.busy || uploadPersisting}
                     error={completionController.error}
-                    canChoose={completionController.canChoose}
-                    canUpload={completionController.canUpload}
-                    canDelete={completionController.canDelete}
+                    canChoose={completionController.canChoose && !uploadPersisting}
+                    canUpload={completionController.canUpload && !uploadPersisting}
+                    canDelete={completionController.canDelete && !uploadPersisting}
                     onSelectFile={completionController.selectFile}
                     onUpload={() => void uploadSlot("completionCertificate")}
                     onDelete={() => void deleteSlot("completionCertificate")}

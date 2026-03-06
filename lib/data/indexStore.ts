@@ -9,7 +9,6 @@ import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { isFutureDatedEntry, normalizeStreakState, status as getStreakStatus } from "@/lib/gamification";
 import {
   migrateUserIndex,
   USER_INDEX_SCHEMA_VERSION,
@@ -21,6 +20,10 @@ import {
   getSearchSnapshotKey,
   type SearchSnapshot,
 } from "@/lib/search/searchText";
+import {
+  getStreakProgressSnapshot,
+  sortActiveStreakEntries,
+} from "@/lib/streakProgress";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 import { logger } from "@/lib/logger";
@@ -112,10 +115,6 @@ function toOptionalISO(value: unknown): string | null {
   return Number.isNaN(parsed) ? null : trimmed;
 }
 
-function toSortAtISO(entry: EntryLike) {
-  return toOptionalISO(entry.updatedAt) ?? toOptionalISO(entry.createdAt);
-}
-
 function toSortTime(value: string | null | undefined) {
   if (!value) return Number.POSITIVE_INFINITY;
   const parsed = Date.parse(value);
@@ -171,26 +170,6 @@ function getIndexFilePath(userEmail: string) {
   return path.join(getUserStoreDir(userEmail), INDEX_FILE_NAME);
 }
 
-function isStreakActiveEntry(entry: EntryLike) {
-  const startDate = String(entry.startDate ?? "").trim();
-  const endDate = String(entry.endDate ?? "").trim();
-  if (!isFutureDatedEntry(startDate, endDate)) return false;
-  const streak = normalizeStreakState(entry.streak);
-  return getStreakStatus(streak) === "active";
-}
-
-function isStreakWinEntry(entry: EntryLike) {
-  if (entry.status !== "final") return false;
-  const startDate = String(entry.startDate ?? "").trim();
-  const endDate = String(entry.endDate ?? "").trim();
-  if (!isFutureDatedEntry(startDate, endDate)) return false;
-
-  const streak = normalizeStreakState(entry.streak);
-  if (!streak.activatedAtISO || !streak.completedAtISO || !streak.dueAtISO) return false;
-
-  return Date.parse(streak.completedAtISO) <= Date.parse(streak.dueAtISO);
-}
-
 function toContribution(entry: EntryLike | null): EntryContribution | null {
   if (!entry) return null;
 
@@ -198,9 +177,9 @@ function toContribution(entry: EntryLike | null): EntryContribution | null {
   const status = normalizeEntryStatus(entry as EntryStateLike);
   const pending = status === "PENDING_CONFIRMATION" ? 1 : 0;
   const approved = status === "APPROVED" ? 1 : 0;
-  const streak = normalizeStreakState(entry.streak);
-  const streakActive = isStreakActiveEntry(entry) ? 1 : 0;
-  const streakWin = isStreakWinEntry(entry) ? 1 : 0;
+  const streak = getStreakProgressSnapshot(entry);
+  const streakActive = streak.isActivated ? 1 : 0;
+  const streakWin = streak.isWin ? 1 : 0;
 
   return {
     id,
@@ -209,8 +188,8 @@ function toContribution(entry: EntryLike | null): EntryContribution | null {
     approved,
     streakActive,
     streakWin,
-    dueAtISO: streak.dueAtISO ?? null,
-    sortAtISO: toSortAtISO(entry),
+    dueAtISO: streak.dueAtISO,
+    sortAtISO: streak.sortAtISO,
   };
 }
 
@@ -249,9 +228,7 @@ function hydrateSearchIndexMap(raw: unknown) {
 }
 
 function sortActiveEntries(entries: UserIndexActiveEntry[]) {
-  return entries
-    .slice()
-    .sort((left, right) => toSortTime(left.sortAtISO) - toSortTime(right.sortAtISO));
+  return sortActiveStreakEntries(entries);
 }
 
 function hydrateIndex(
