@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { profile as profileRoute, signin } from "@/lib/navigation";
+import { profile as profileRoute, signin } from "@/lib/entryNavigation";
 
 type ProfileSummary = {
   email?: string;

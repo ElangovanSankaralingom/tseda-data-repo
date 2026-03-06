@@ -6,7 +6,7 @@ import { normalizeError, toUserMessage } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { runNightlyMaintenance } from "@/lib/jobs/nightly";
 import { logger } from "@/lib/logger";
-import { adminMaintenance, signin } from "@/lib/navigation";
+import { adminMaintenance, signin } from "@/lib/entryNavigation";
 import { enforceRateLimitForRequest } from "@/lib/security/rateLimit";
 
 const MAINTENANCE_RATE_LIMIT = { windowMs: 60 * 60_000, max: 2 } as const;

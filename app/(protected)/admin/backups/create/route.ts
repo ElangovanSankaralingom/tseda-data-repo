@@ -7,7 +7,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";
 import { enforceRateLimitForRequest } from "@/lib/security/rateLimit";
 import { toUserMessage } from "@/lib/errors";
-import { adminBackups, signin } from "@/lib/navigation";
+import { adminBackups, signin } from "@/lib/entryNavigation";
 
 const BACKUP_RATE_LIMIT = { windowMs: 10 * 60_000, max: 3 } as const;
 

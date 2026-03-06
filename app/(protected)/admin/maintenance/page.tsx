@@ -9,7 +9,7 @@ import {
   getLastMaintenanceRun,
   type NightlyMaintenanceSummary,
 } from "@/lib/jobs/nightly";
-import { adminHome, dashboard } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;

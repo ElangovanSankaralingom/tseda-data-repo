@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { dataEntryHome } from "@/lib/navigation";
+import { dataEntryHome } from "@/lib/entryNavigation";
 import { searchUserEntries, type SearchResult } from "@/lib/search/searchIndex";
 
 type SearchParams = Record<string, string | string[] | undefined>;

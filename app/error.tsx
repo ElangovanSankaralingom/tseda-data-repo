@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { toUserMessage } from "@/lib/errors";
-import { dashboard } from "@/lib/navigation";
+import { dashboard } from "@/lib/entryNavigation";
 
 export default function GlobalError({
   error,
