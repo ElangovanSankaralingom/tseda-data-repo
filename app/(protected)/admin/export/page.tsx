@@ -11,8 +11,7 @@ import {
   type ExportCategorySelection,
 } from "@/lib/export/exportService";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { dashboard } from "@/lib/navigation";
-import { adminHome } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { redirect } from "next/navigation";
 
 export default async function AdminExportPage() {

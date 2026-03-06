@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
-import { dashboard, profile, signin } from "@/lib/navigation";
+import { dashboard, profile, signin } from "@/lib/entryNavigation";
 
 const nav = [
   { href: dashboard(), label: "Dashboard" },

@@ -5,7 +5,7 @@ import { getCategoryConfig } from "@/data/categoryRegistry";
 import { ensureUserIndex } from "@/lib/data/indexStore";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { entryDetail } from "@/lib/navigation";
+import { entryDetail } from "@/lib/entryNavigation";
 import { err, ok, type Result } from "@/lib/result";
 import { getUsersRootDir } from "@/lib/userStore";
 import type { EntryStatus } from "@/lib/types/entry";

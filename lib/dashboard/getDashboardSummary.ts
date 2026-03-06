@@ -8,7 +8,7 @@ import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/li
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { remainingDaysFromDueAtISO } from "@/lib/gamification";
-import { entryDetail } from "@/lib/navigation";
+import { entryDetail } from "@/lib/entryNavigation";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import { getStreakProgressSnapshot, toStreakSortAtISO } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";

@@ -7,7 +7,7 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { toUserMessage } from "@/lib/errors";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
-import { adminHome } from "@/lib/navigation";
+import { adminHome } from "@/lib/entryNavigation";
 import { safeAction } from "@/lib/safeAction";
 
 type PendingConfirmationRow = {

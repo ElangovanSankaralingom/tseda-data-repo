@@ -8,7 +8,7 @@ import { CATEGORY_LIST, getCategoryConfig, isValidCategorySlug } from "@/data/ca
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminHome, dashboard } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { searchAllUsers, type SearchResult } from "@/lib/search/searchIndex";
 
 type SearchParams = Record<string, string | string[] | undefined>;

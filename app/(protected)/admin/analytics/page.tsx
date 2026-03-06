@@ -4,7 +4,7 @@ import BackTo from "@/components/nav/BackTo";
 import { authOptions } from "@/lib/auth";
 import { canViewAnalytics } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminHome, dashboard } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { summarizeTelemetry, trackEvent } from "@/lib/telemetry/telemetry";
 
 function formatDuration(durationMs: number | null) {

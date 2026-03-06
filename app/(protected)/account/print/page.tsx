@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getProfileByEmail } from "@/lib/profileStore";
-import { profile as profileRoute, signin } from "@/lib/navigation";
+import { profile as profileRoute, signin } from "@/lib/entryNavigation";
 
 export default async function PrintProfile() {
   const session = await getServerSession();

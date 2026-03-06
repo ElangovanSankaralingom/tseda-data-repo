@@ -8,7 +8,7 @@ import { canViewAudit } from "@/lib/admin/roles";
 import { CATEGORY_KEYS, isCategoryKey } from "@/lib/categories";
 import { toUserMessage } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminAudit, adminHome, dashboard, entryDetail } from "@/lib/navigation";
+import { adminAudit, adminHome, dashboard, entryDetail } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;

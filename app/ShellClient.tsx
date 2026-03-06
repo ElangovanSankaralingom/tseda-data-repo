@@ -12,7 +12,7 @@ import {
   dataEntryHome,
   profile,
   signin,
-} from "@/lib/navigation";
+} from "@/lib/entryNavigation";
 import { safeAction } from "@/lib/safeAction";
 import { notifyError, notifySuccess } from "@/lib/ui/notify";
 
