@@ -3,13 +3,13 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
-import { ensureUserIndex, type UserIndex } from "@/lib/data/indexStore";
+import { getDashboardTag } from "@/lib/dashboard/tags";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
 import type { CategoryKey } from "@/lib/entries/types";
+import { logError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/entryNavigation";
-import { getDashboardTag } from "@/lib/dashboard/tags";
-import { getStreakProgressSnapshot, toStreakSortAtISO } from "@/lib/streakProgress";
+import { computeStreakProgressAggregate, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 
 type DashboardEntry = Entry;
@@ -75,27 +75,6 @@ function emptySummary(): DashboardSummary {
   };
 }
 
-function getSortTime(value?: unknown) {
-  if (typeof value !== "string" || !value.trim()) return Number.POSITIVE_INFINITY;
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
-}
-
-function getEntrySortTime(entry: DashboardEntry) {
-  return getSortTime(toStreakSortAtISO(entry));
-}
-
-function toEntryId(value: unknown) {
-  return String(value ?? "").trim();
-}
-
-function toSafeCount(value: unknown) {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
-    return 0;
-  }
-  return Math.floor(value);
-}
-
 function appendTaggedRows(
   target: DashboardPendingRow[],
   rows: Array<Omit<DashboardPendingRow, "tag">>
@@ -108,27 +87,48 @@ function appendTaggedRows(
   });
 }
 
-function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
+async function computeDashboardSummary(normalizedEmail: string): Promise<DashboardSummary> {
   const summary = emptySummary();
+  const streakInputs: StreakProgressAggregateEntry[] = [];
 
   for (const categoryKey of CATEGORY_KEYS) {
+    const categoryEntries = await listEntriesForCategory<DashboardEntry>(normalizedEmail, categoryKey);
     const categorySummary = summary.byCategory[categoryKey];
-    categorySummary.totalEntries = toSafeCount(index.totalsByCategory[categoryKey]);
-    categorySummary.pendingConfirmationCount = toSafeCount(index.pendingByCategory[categoryKey]);
-    categorySummary.approvedCount = toSafeCount(index.approvedByCategory[categoryKey]);
-    categorySummary.streakActivatedCount = toSafeCount(index.streakSnapshot.byCategory[categoryKey]?.activated);
-    categorySummary.streakWinsCount = toSafeCount(index.streakSnapshot.byCategory[categoryKey]?.wins);
+    categorySummary.totalEntries = categoryEntries.length;
+
+    for (const entry of categoryEntries) {
+      const workflowStatus = getEntryWorkflowStatus(entry as Record<string, unknown>);
+      if (workflowStatus === "PENDING_CONFIRMATION") {
+        categorySummary.pendingConfirmationCount += 1;
+      }
+      if (workflowStatus === "APPROVED") {
+        categorySummary.approvedCount += 1;
+      }
+
+      streakInputs.push({
+        ...(entry as DashboardEntry),
+        categoryKey,
+      });
+    }
 
     summary.totals.totalEntries += categorySummary.totalEntries;
     summary.totals.pendingConfirmationCount += categorySummary.pendingConfirmationCount;
     summary.totals.approvedCount += categorySummary.approvedCount;
+  }
+
+  const streakSummary = computeStreakProgressAggregate(streakInputs);
+
+  for (const categoryKey of CATEGORY_KEYS) {
+    const categorySummary = summary.byCategory[categoryKey];
+    categorySummary.streakActivatedCount = streakSummary.byCategory[categoryKey].activated;
+    categorySummary.streakWinsCount = streakSummary.byCategory[categoryKey].wins;
+
     summary.totals.streakActivatedCount += categorySummary.streakActivatedCount;
     summary.totals.streakWinsCount += categorySummary.streakWinsCount;
   }
 
-  const rows = index.streakSnapshot.activeEntries
+  const rows = streakSummary.activatedEntries
     .slice()
-    .sort((left, right) => getSortTime(left.sortAtISO) - getSortTime(right.sortAtISO))
     .map((row) => {
       const categoryConfig = getCategoryConfig(row.categoryKey);
       return {
@@ -143,74 +143,6 @@ function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
   appendTaggedRows(summary.streakActivatedRows, rows);
 
   return summary;
-}
-
-async function computeDashboardSummaryFromEntries(normalizedEmail: string): Promise<DashboardSummary> {
-  const summary = emptySummary();
-  const rows: Array<Omit<DashboardPendingRow, "tag"> & { sortTime: number }> = [];
-
-  for (const categoryKey of CATEGORY_KEYS) {
-    const categoryEntries = await listEntriesForCategory<DashboardEntry>(normalizedEmail, categoryKey);
-    const categoryConfig = getCategoryConfig(categoryKey);
-    const categorySummary = emptyCategorySummary();
-
-    categorySummary.totalEntries = categoryEntries.length;
-
-    for (const entry of categoryEntries) {
-      const workflowStatus = getEntryWorkflowStatus(entry as Record<string, unknown>);
-      const streak = getStreakProgressSnapshot(entry);
-
-      if (workflowStatus === "PENDING_CONFIRMATION") {
-        categorySummary.pendingConfirmationCount += 1;
-      }
-      if (workflowStatus === "APPROVED") {
-        categorySummary.approvedCount += 1;
-      }
-
-      if (streak.isWin) {
-        categorySummary.streakWinsCount += 1;
-      }
-
-      if (streak.isActivated) {
-        const id = toEntryId(entry.id);
-        if (!id) continue;
-
-        categorySummary.streakActivatedCount += 1;
-        rows.push({
-          id,
-          categoryKey,
-          categoryLabel: categoryConfig.label,
-          route: entryDetail(categoryKey, id),
-          dueAtISO: streak.dueAtISO,
-          sortTime: getEntrySortTime(entry),
-        });
-      }
-    }
-
-    summary.byCategory[categoryKey] = categorySummary;
-    summary.totals.totalEntries += categorySummary.totalEntries;
-    summary.totals.pendingConfirmationCount += categorySummary.pendingConfirmationCount;
-    summary.totals.approvedCount += categorySummary.approvedCount;
-    summary.totals.streakActivatedCount += categorySummary.streakActivatedCount;
-    summary.totals.streakWinsCount += categorySummary.streakWinsCount;
-  }
-
-  const orderedRows = rows
-    .slice()
-    .sort((left, right) => left.sortTime - right.sortTime)
-    .map(({ sortTime: _ignored, ...row }) => row);
-  appendTaggedRows(summary.streakActivatedRows, orderedRows);
-
-  return summary;
-}
-
-async function computeDashboardSummary(normalizedEmail: string): Promise<DashboardSummary> {
-  const indexed = await ensureUserIndex(normalizedEmail);
-  if (indexed.ok) {
-    return computeDashboardSummaryFromIndex(indexed.data);
-  }
-
-  return computeDashboardSummaryFromEntries(normalizedEmail);
 }
 
 function getCachedSummary(normalizedEmail: string) {
@@ -228,5 +160,10 @@ export async function getDashboardSummary(email: string): Promise<DashboardSumma
     return emptySummary();
   }
 
-  return getCachedSummary(normalizedEmail);
+  try {
+    return await getCachedSummary(normalizedEmail);
+  } catch (error) {
+    logError(error, "dashboard.getDashboardSummary");
+    return emptySummary();
+  }
 }
