@@ -207,13 +207,18 @@ export async function storeEntryPdf(args: {
   bytes: Uint8Array | Buffer;
 }) {
   const generatedAtISO = new Date().toISOString();
+  const generatedDatePart = generatedAtISO.slice(0, 10).replace(/-/g, "");
+  const normalizedCategory = sanitizeSegment(args.categoryFolder || "entry");
+  const normalizedEntryId = sanitizeSegment(args.entryId || "entry");
+  const normalizedBase = sanitizeFileName(args.fileNameBase || "entry");
+  const logicalFileName = `TSEDA_${normalizedCategory}_${normalizedEntryId}_${generatedDatePart}_${normalizedBase}.pdf`;
   const storedPath = path.posix.join(
     "uploads",
     safeEmailDir(args.email),
     args.categoryFolder,
     sanitizeSegment(args.entryId),
     "pdf",
-    `${Date.now()}-${sanitizeFileName(args.fileNameBase)}.pdf`
+    logicalFileName
   );
   const absolutePath = path.join(process.cwd(), "public", storedPath);
 

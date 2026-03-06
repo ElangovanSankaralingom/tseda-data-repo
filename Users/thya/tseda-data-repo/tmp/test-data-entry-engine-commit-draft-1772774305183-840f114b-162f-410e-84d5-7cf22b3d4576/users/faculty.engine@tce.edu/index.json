@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "userEmail": "faculty.engine@tce.edu",
+  "updatedAt": "2026-03-06T05:18:25.191Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 2
+  },
+  "countsByStatus": {
+    "DRAFT": 2,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 0,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T05:18:25.190Z"
+  },
+  "streakSnapshot": {
+    "streakActivatedCount": 0,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 0
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T05:18:25.191Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:aa5902c0-621a-4519-9ad0-5f65bb38823c": {
+      "entryId": "aa5902c0-621a-4519-9ad0-5f65bb38823c",
+      "categoryKey": "workshops",
+      "title": "Incomplete workshop",
+      "text": "incomplete workshop workshops draft incomplete workshop",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T05:18:25.183Z",
+      "createdAtISO": "2026-03-06T05:18:25.183Z"
+    },
+    "workshops:45d8c589-75b2-498f-b157-8228cedb9380": {
+      "entryId": "45d8c589-75b2-498f-b157-8228cedb9380",
+      "categoryKey": "workshops",
+      "title": "Commit Ready Workshop",
+      "text": "commit ready workshop workshops draft academic year 2025 2026 odd commit ready workshop speaker tce",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T05:18:25.190Z",
+      "createdAtISO": "2026-03-06T05:18:25.188Z"
+    }
+  }
+}

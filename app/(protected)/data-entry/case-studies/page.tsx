@@ -333,8 +333,13 @@ export function CaseStudiesPage({
     useState<Record<UploadSlot, UploadStatus>>(EMPTY_UPLOAD_STATUS);
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
+  const formRef = useRef(form);
   const seededViewEntryIdRef = useRef<string | null>(null);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   useEffect(() => {
     const routeEntryId = editEntryId?.trim() || "";
@@ -1660,13 +1665,15 @@ export function CaseStudiesPage({
                         }))
                       }
                       onUploaded={async (meta) => {
-                        const nextForm = { ...form, [slot]: meta };
+                        const latestForm = formRef.current;
+                        const nextForm = { ...latestForm, [slot]: meta };
                         const persisted = hydrateEntry(await persistProgress(nextForm));
                         applyPersistedEntry(persisted);
                         await refreshList(email);
                       }}
                       onDeleted={async () => {
-                        const nextForm = { ...form, [slot]: null };
+                        const latestForm = formRef.current;
+                        const nextForm = { ...latestForm, [slot]: null };
                         const persisted = hydrateEntry(await persistProgress(nextForm));
                         applyPersistedEntry(persisted);
                         await refreshList(email);
@@ -1678,18 +1685,20 @@ export function CaseStudiesPage({
                 title="Geotagged Photos"
                 value={form.geotaggedPhotos}
                 onUploaded={async (meta) => {
+                  const latestForm = formRef.current;
                   const nextForm = {
-                    ...form,
-                    geotaggedPhotos: [...form.geotaggedPhotos, meta],
+                    ...latestForm,
+                    geotaggedPhotos: [...latestForm.geotaggedPhotos, meta],
                   };
                   const persisted = hydrateEntry(await persistProgress(nextForm));
                   applyPersistedEntry(persisted);
                   await refreshList(email);
                 }}
                 onDeleted={async (meta) => {
+                  const latestForm = formRef.current;
                   const nextForm = {
-                    ...form,
-                    geotaggedPhotos: form.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath),
+                    ...latestForm,
+                    geotaggedPhotos: latestForm.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath),
                   };
                   const persisted = hydrateEntry(await persistProgress(nextForm));
                   applyPersistedEntry(persisted);

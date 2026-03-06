@@ -7,14 +7,10 @@ import { ensureUserIndex, type UserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entryEngine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import {
-  isFutureDatedEntry,
-  normalizeStreakState,
-  remainingDaysFromDueAtISO,
-  status as getStreakStatus,
-} from "@/lib/gamification";
+import { remainingDaysFromDueAtISO } from "@/lib/gamification";
 import { entryDetail } from "@/lib/navigation";
 import { getDashboardTag } from "@/lib/dashboard/tags";
+import { getStreakProgressSnapshot, toStreakSortAtISO } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 
 type DashboardEntry = Entry;
@@ -87,43 +83,11 @@ function getSortTime(value?: unknown) {
 }
 
 function getEntrySortTime(entry: DashboardEntry) {
-  const createdTime = getSortTime(entry.createdAt);
-  if (createdTime !== Number.POSITIVE_INFINITY) return createdTime;
-  return getSortTime(entry.updatedAt);
+  return getSortTime(toStreakSortAtISO(entry));
 }
 
 function toEntryId(value: unknown) {
   return String(value ?? "").trim();
-}
-
-function toDateISO(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toFinalStatus(value: unknown) {
-  return value === "final";
-}
-
-function isStreakActiveEntry(entry: DashboardEntry) {
-  const startDate = toDateISO(entry.startDate);
-  const endDate = toDateISO(entry.endDate);
-  if (!isFutureDatedEntry(startDate, endDate)) return false;
-
-  const streak = normalizeStreakState(entry.streak);
-  return getStreakStatus(streak) === "active";
-}
-
-function isStreakWinEntry(entry: DashboardEntry) {
-  if (!toFinalStatus(entry.status)) return false;
-
-  const startDate = toDateISO(entry.startDate);
-  const endDate = toDateISO(entry.endDate);
-  if (!isFutureDatedEntry(startDate, endDate)) return false;
-
-  const streak = normalizeStreakState(entry.streak);
-  if (!streak.activatedAtISO || !streak.completedAtISO || !streak.dueAtISO) return false;
-
-  return Date.parse(streak.completedAtISO) <= Date.parse(streak.dueAtISO);
 }
 
 function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
@@ -178,6 +142,7 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
 
     for (const entry of categoryEntries) {
       const workflowStatus = getEntryWorkflowStatus(entry as Record<string, unknown>);
+      const streak = getStreakProgressSnapshot(entry);
 
       if (workflowStatus === "PENDING_CONFIRMATION") {
         categorySummary.pendingConfirmationCount += 1;
@@ -186,11 +151,11 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
         categorySummary.approvedCount += 1;
       }
 
-      if (isStreakWinEntry(entry)) {
+      if (streak.isWin) {
         categorySummary.streakWinsCount += 1;
       }
 
-      if (isStreakActiveEntry(entry)) {
+      if (streak.isActivated) {
         const id = toEntryId(entry.id);
         if (!id) continue;
 
@@ -199,8 +164,8 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
           id,
           categoryKey,
           categoryLabel: categoryConfig.label,
-              route: entryDetail(categoryKey, id),
-          remainingDays: remainingDaysFromDueAtISO(normalizeStreakState(entry.streak).dueAtISO),
+          route: entryDetail(categoryKey, id),
+          remainingDays: remainingDaysFromDueAtISO(streak.dueAtISO),
           sortTime: getEntrySortTime(entry),
         });
       }

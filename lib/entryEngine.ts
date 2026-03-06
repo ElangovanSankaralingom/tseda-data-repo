@@ -29,11 +29,11 @@ import {
   type EntryStateLike,
 } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { normalizeStreakState } from "@/lib/gamification";
 import { normalizeEntry } from "@/lib/normalize";
 import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { getStreakProgressSnapshot } from "@/lib/streakProgress";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { validateAndSanitizeOrThrow } from "@/lib/validation/validateEntryPayload";
 import type { Entry, EntryStatus as EntryWorkflowStatus } from "@/lib/types/entry";
@@ -1471,13 +1471,13 @@ export async function computeStreak(
     for (const category of CATEGORY_KEYS) {
       const list = await readListRaw(normalizedOwner, category);
       for (const entry of list) {
-        const streak = normalizeStreakState((entry as EntryLike).streak);
-        if (streak.completedAtISO) {
+        const streak = getStreakProgressSnapshot(entry as EntryLike);
+        if (streak.hasCompletedAt) {
           summary.completed += 1;
           summary.byCategory[category].completed += 1;
           continue;
         }
-        if (streak.activatedAtISO) {
+        if (streak.hasActivatedAt) {
           summary.activated += 1;
           summary.byCategory[category].activated += 1;
         }

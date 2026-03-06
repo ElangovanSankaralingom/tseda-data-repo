@@ -335,8 +335,13 @@ export function GuestLecturesPage({
     useState<Record<UploadSlot, UploadStatus>>(EMPTY_UPLOAD_STATUS);
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
   const saveLockRef = useRef(false);
+  const formRef = useRef(form);
   const seededViewEntryIdRef = useRef<string | null>(null);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   useEffect(() => {
     const routeEntryId = editEntryId?.trim() || "";
@@ -1545,10 +1550,11 @@ export function GuestLecturesPage({
                         }))
                       }
                       onUploaded={async (meta) => {
+                        const latestForm = formRef.current;
                         const nextForm = {
-                          ...form,
+                          ...latestForm,
                           uploads: {
-                            ...form.uploads,
+                            ...latestForm.uploads,
                             [slot]: meta,
                           },
                         };
@@ -1557,10 +1563,11 @@ export function GuestLecturesPage({
                         await refreshList(email);
                       }}
                       onDeleted={async () => {
+                        const latestForm = formRef.current;
                         const nextForm = {
-                          ...form,
+                          ...latestForm,
                           uploads: {
-                            ...form.uploads,
+                            ...latestForm.uploads,
                             [slot]: null,
                           },
                         };
@@ -1575,11 +1582,12 @@ export function GuestLecturesPage({
                 title="Geotagged Photos"
                 value={form.uploads.geotaggedPhotos}
                 onUploaded={async (meta) => {
+                  const latestForm = formRef.current;
                   const nextForm = {
-                    ...form,
+                    ...latestForm,
                     uploads: {
-                      ...form.uploads,
-                      geotaggedPhotos: [...form.uploads.geotaggedPhotos, meta],
+                      ...latestForm.uploads,
+                      geotaggedPhotos: [...latestForm.uploads.geotaggedPhotos, meta],
                     },
                   };
                   const persisted = hydrateEntry(await persistProgress(nextForm));
@@ -1587,11 +1595,12 @@ export function GuestLecturesPage({
                   await refreshList(email);
                 }}
                 onDeleted={async (meta) => {
+                  const latestForm = formRef.current;
                   const nextForm = {
-                    ...form,
+                    ...latestForm,
                     uploads: {
-                      ...form.uploads,
-                      geotaggedPhotos: form.uploads.geotaggedPhotos.filter(
+                      ...latestForm.uploads,
+                      geotaggedPhotos: latestForm.uploads.geotaggedPhotos.filter(
                         (item) => item.storedPath !== meta.storedPath
                       ),
                     },

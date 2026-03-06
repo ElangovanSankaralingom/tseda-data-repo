@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "byId": {
+    "51b52390-fedf-476d-b5d7-9f53cbf889a6": {
+      "startDate": "2026-03-10",
+      "eventName": "Updated Workshop",
+      "speakerName": null,
+      "id": "51b52390-fedf-476d-b5d7-9f53cbf889a6",
+      "status": "draft",
+      "createdAt": "2026-03-06T05:36:07.187Z",
+      "updatedAt": "2026-03-06T05:36:07.205Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "endDate": "2026-03-12",
+      "organisationName": null
+    }
+  },
+  "order": [
+    "51b52390-fedf-476d-b5d7-9f53cbf889a6"
+  ]
+}
