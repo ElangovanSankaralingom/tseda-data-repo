@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import { CATEGORY_LIST, type CategorySummaryKey, getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { isFutureDatedEntry, normalizeStreakState } from "@/lib/gamification";
 import { migrateCategoryStore } from "@/lib/migrations";
+import { getStreakProgressSnapshot } from "@/lib/streakProgress";
 import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 export type CategorySummary = {
@@ -44,17 +44,12 @@ export const EMPTY_DATA_ENTRY_SUMMARY = CATEGORY_LIST.reduce<DataEntrySummary>((
 }, {} as DataEntrySummary);
 
 function isCompletedEntry(entry: SummaryEntry) {
-  const streak = normalizeStreakState(entry.streak);
-  return entry.status === "final" || !!streak.completedAtISO;
+  const streak = getStreakProgressSnapshot(entry);
+  return String(entry.status ?? "").trim().toLowerCase() === "final" || streak.hasCompletedAt;
 }
 
 function isActiveEntry(entry: SummaryEntry) {
-  const streak = normalizeStreakState(entry.streak);
-  return (
-    isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "") &&
-    !!streak.activatedAtISO &&
-    !isCompletedEntry(entry)
-  );
+  return getStreakProgressSnapshot(entry).isActivated;
 }
 
 function summarizeEntries(entries: SummaryEntry[]): CategorySummary {

@@ -10,13 +10,13 @@ export async function generateEntrySnapshot<TEntry extends { id?: string | null 
   category: CategoryKey,
   entry: TEntry
 ) {
+  const entryId = String(entry?.id ?? "").trim();
   const response = await fetch("/api/me/entry/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       categoryKey: category,
-      id: String(entry?.id ?? "").trim(),
-      draft: entry,
+      id: entryId,
     }),
   });
 

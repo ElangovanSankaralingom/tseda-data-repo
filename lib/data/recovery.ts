@@ -8,11 +8,11 @@ import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { isFutureDatedEntry, normalizeStreakState, status as getStreakStatus } from "@/lib/gamification";
 import { USER_INDEX_SCHEMA_VERSION } from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { buildSearchSnapshot, getSearchSnapshotKey } from "@/lib/search/searchText";
+import { getStreakProgressSnapshot, sortActiveStreakEntries } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 
@@ -26,22 +26,10 @@ type EntryLike = Entry & {
   updatedAt?: unknown;
 };
 
-function toOptionalISO(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Date.parse(trimmed);
-  return Number.isNaN(parsed) ? null : trimmed;
-}
-
 function toSortTime(value: string | null | undefined) {
   if (!value) return Number.POSITIVE_INFINITY;
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
-}
-
-function toSortAtISO(entry: EntryLike) {
-  return toOptionalISO(entry.updatedAt) ?? toOptionalISO(entry.createdAt);
 }
 
 function emptyCategoryMap<T>(valueFactory: () => T) {
@@ -75,24 +63,6 @@ function createEmptyIndex(userEmail: string, nowISO = new Date().toISOString()):
     },
     searchIndexByEntryId: {},
   };
-}
-
-function isStreakActiveEntry(entry: EntryLike) {
-  const startDate = String(entry.startDate ?? "").trim();
-  const endDate = String(entry.endDate ?? "").trim();
-  if (!isFutureDatedEntry(startDate, endDate)) return false;
-  const streak = normalizeStreakState(entry.streak);
-  return getStreakStatus(streak) === "active";
-}
-
-function isStreakWinEntry(entry: EntryLike) {
-  if (entry.status !== "final") return false;
-  const startDate = String(entry.startDate ?? "").trim();
-  const endDate = String(entry.endDate ?? "").trim();
-  if (!isFutureDatedEntry(startDate, endDate)) return false;
-  const streak = normalizeStreakState(entry.streak);
-  if (!streak.activatedAtISO || !streak.completedAtISO || !streak.dueAtISO) return false;
-  return Date.parse(streak.completedAtISO) <= Date.parse(streak.dueAtISO);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -144,28 +114,27 @@ function buildIndexFromState(userEmail: string, state: Map<CategoryKey, Map<stri
         index.searchIndexByEntryId[getSearchSnapshotKey(category, snapshot.entryId)] = snapshot;
       }
 
-      const sortAt = toSortAtISO(entry);
-      const sortTime = toSortTime(sortAt);
-      if (sortAt && sortTime > latestTime && sortTime < Number.POSITIVE_INFINITY) {
+      const streak = getStreakProgressSnapshot(entry);
+      const sortTime = toSortTime(streak.sortAtISO);
+      if (streak.sortAtISO && sortTime > latestTime && sortTime < Number.POSITIVE_INFINITY) {
         latestTime = sortTime;
-        latestAt = sortAt;
+        latestAt = streak.sortAtISO;
       }
 
       const entryId = String(entry.id ?? "").trim();
-      const streak = normalizeStreakState(entry.streak);
-      if (isStreakActiveEntry(entry)) {
+      if (streak.isActivated) {
         index.streakSnapshot.streakActivatedCount += 1;
         index.streakSnapshot.byCategory[category].activated += 1;
         if (entryId) {
           activeEntries.push({
             id: entryId,
             categoryKey: category,
-            dueAtISO: streak.dueAtISO ?? null,
-            sortAtISO: sortAt,
+            dueAtISO: streak.dueAtISO,
+            sortAtISO: streak.sortAtISO,
           });
         }
       }
-      if (isStreakWinEntry(entry)) {
+      if (streak.isWin) {
         index.streakSnapshot.streakWinsCount += 1;
         index.streakSnapshot.byCategory[category].wins += 1;
       }
@@ -174,9 +143,7 @@ function buildIndexFromState(userEmail: string, state: Map<CategoryKey, Map<stri
     index.lastEntryAtByCategory[category] = latestAt;
   }
 
-  index.streakSnapshot.activeEntries = activeEntries.sort(
-    (left, right) => toSortTime(left.sortAtISO) - toSortTime(right.sortAtISO)
-  );
+  index.streakSnapshot.activeEntries = sortActiveStreakEntries(activeEntries);
   index.streakSnapshot.lastComputedAt = nowISO;
   index.updatedAt = nowISO;
   return index;

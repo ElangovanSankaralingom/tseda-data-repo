@@ -308,6 +308,7 @@ export function FdpConductedPage({
   const [list, setList] = useState<FdpConducted[]>([]);
   const [editorSeed, setEditorSeed] = useState<FdpConducted>(() => emptyForm());
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
+  const [uploadPersistingCount, setUploadPersistingCount] = useState(0);
   const saveLockRef = useRef(false);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
 
@@ -494,7 +495,8 @@ export function FdpConductedPage({
       }
     },
   });
-  const hasBusyUploads = permissionController.busy || photoUploadStatus.busy;
+  const uploadPersisting = uploadPersistingCount > 0;
+  const hasBusyUploads = permissionController.busy || photoUploadStatus.busy || uploadPersisting;
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0;
   const workflow = useEntryWorkflow({
@@ -760,8 +762,7 @@ export function FdpConductedPage({
   }
 
   async function uploadSlot() {
-    const currentForm = formRef.current;
-    const previousMeta = currentForm.permissionLetter;
+    const previousMeta = formRef.current.permissionLetter;
 
     try {
       const meta = await permissionController.uploadAndSave();
@@ -771,16 +772,22 @@ export function FdpConductedPage({
         void deleteStoredFile(previousMeta.storedPath);
       }
 
-      const nextForm = {
-        ...currentForm,
-        permissionLetter: meta,
-      };
+      setUploadPersistingCount((current) => current + 1);
+      try {
+        const latestForm = formRef.current;
+        const nextForm = {
+          ...latestForm,
+          permissionLetter: meta,
+        };
 
-      const persisted = await persistProgress(nextForm);
-      setEditorSeed(persisted);
-      editorActions.saveDraft(persisted);
-      markAutoSaveSaved(persisted);
-      await refreshList();
+        const persisted = await persistProgress(nextForm);
+        setEditorSeed(persisted);
+        editorActions.saveDraft(persisted);
+        markAutoSaveSaved(persisted);
+        await refreshList();
+      } finally {
+        setUploadPersistingCount((current) => Math.max(0, current - 1));
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Upload failed.";
       setToast({ type: "err", msg: message });
@@ -789,8 +796,7 @@ export function FdpConductedPage({
   }
 
   async function deleteSlot(slot: "permissionLetter") {
-    const currentForm = formRef.current;
-    const meta = currentForm[slot];
+    const meta = formRef.current[slot];
     if (!meta?.storedPath) {
       setToast({ type: "err", msg: "File path missing." });
       setTimeout(() => setToast(null), 1500);
@@ -801,15 +807,21 @@ export function FdpConductedPage({
       const deleted = await permissionController.deleteFile(meta);
       if (!deleted) return;
 
-      const nextForm = {
-        ...currentForm,
-        permissionLetter: null,
-      };
-      const persisted = await persistProgress(nextForm);
-      setEditorSeed(persisted);
-      editorActions.saveDraft(persisted);
-      markAutoSaveSaved(persisted);
-      await refreshList();
+      setUploadPersistingCount((current) => current + 1);
+      try {
+        const latestForm = formRef.current;
+        const nextForm = {
+          ...latestForm,
+          permissionLetter: null,
+        };
+        const persisted = await persistProgress(nextForm);
+        setEditorSeed(persisted);
+        editorActions.saveDraft(persisted);
+        markAutoSaveSaved(persisted);
+        await refreshList();
+      } finally {
+        setUploadPersistingCount((current) => Math.max(0, current - 1));
+      }
 
       setToast({ type: "ok", msg: "File deleted." });
       setTimeout(() => setToast(null), 1200);
@@ -1283,11 +1295,11 @@ export function FdpConductedPage({
                   meta={form.permissionLetter}
                   pendingFile={permissionController.pendingFile}
                   progress={permissionController.progress}
-                  busy={permissionController.busy}
+                  busy={permissionController.busy || uploadPersisting}
                   error={permissionController.error}
-                  canChoose={permissionController.canChoose}
-                  canUpload={permissionController.canUpload}
-                  canDelete={permissionController.canDelete}
+                  canChoose={permissionController.canChoose && !uploadPersisting}
+                  canUpload={permissionController.canUpload && !uploadPersisting}
+                  canDelete={permissionController.canDelete && !uploadPersisting}
                   onSelectFile={permissionController.selectFile}
                         onUpload={() => void uploadSlot()}
                   onDelete={() => void deleteSlot("permissionLetter")}
