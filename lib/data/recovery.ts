@@ -12,7 +12,11 @@ import { USER_INDEX_SCHEMA_VERSION } from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { buildSearchSnapshot, getSearchSnapshotKey } from "@/lib/search/searchText";
-import { getStreakProgressSnapshot, sortActiveStreakEntries } from "@/lib/streakProgress";
+import {
+  getStreakProgressSnapshot,
+  sortActiveStreakEntries,
+  STREAK_RULE_VERSION,
+} from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 
@@ -55,6 +59,7 @@ function createEmptyIndex(userEmail: string, nowISO = new Date().toISOString()):
     approvedByCategory: emptyCategoryMap(() => 0),
     lastEntryAtByCategory: emptyCategoryMap(() => null),
     streakSnapshot: {
+      ruleVersion: STREAK_RULE_VERSION,
       streakActivatedCount: 0,
       streakWinsCount: 0,
       byCategory: emptyCategoryMap(() => ({ activated: 0, wins: 0 })),
