@@ -7,7 +7,7 @@ import {
   getEntryStreakDisplayState,
   getTagColor,
   isEditableNow,
-} from "../../lib/entries/lifecycle.ts";
+} from "../../lib/entries/displayLifecycle.ts";
 import { groupEntries } from "../../lib/entryCategorization.ts";
 import { addDaysISO, computeDueAtISO, nowISTDateISO } from "../../lib/gamification.ts";
 

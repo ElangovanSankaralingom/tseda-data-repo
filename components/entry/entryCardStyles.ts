@@ -1,4 +1,4 @@
-import type { EntryDisplayCategory } from "@/lib/entries/lifecycle";
+import type { EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
 
 export function getEntryListCardClass(category: EntryDisplayCategory) {
   if (category === "completed") {

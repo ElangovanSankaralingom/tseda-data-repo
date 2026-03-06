@@ -8,7 +8,7 @@ import {
   createEntry,
   deleteEntry,
   sendForConfirmation,
-} from "../../lib/entryEngine.ts";
+} from "../../lib/entries/lifecycle.ts";
 import { ensureUserIndex } from "../../lib/data/indexStore.ts";
 import { getUserStoreDir } from "../../lib/userStore.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";

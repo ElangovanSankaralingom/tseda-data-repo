@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache";
 import { getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { ensureUserIndex, type UserIndex } from "@/lib/data/indexStore";
-import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle.server";
+import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { remainingDaysFromDueAtISO } from "@/lib/gamification";

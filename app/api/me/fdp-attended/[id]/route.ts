@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import {
   listEntriesForCategory,
   updateEntry,
-} from "@/lib/entries/lifecycle.server";
+} from "@/lib/entries/lifecycle";
 import { isWithinRequestEditWindow } from "@/lib/entries/lock";
 import { normalizeError } from "@/lib/errors";
 import { nowISTTimestampISO } from "@/lib/gamification";

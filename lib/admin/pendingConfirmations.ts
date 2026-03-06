@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { getCategoryTitle } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { ensureUserIndex } from "@/lib/data/indexStore";
-import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle.server";
+import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/navigation";
