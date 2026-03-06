@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "userEmail": "faculty.engine@tce.edu",
+  "updatedAt": "2026-03-06T04:53:21.022Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "countsByStatus": {
+    "DRAFT": 1,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 0,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T04:53:21.020Z"
+  },
+  "streakSnapshot": {
+    "streakActivatedCount": 0,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 0
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T04:53:21.022Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:5645a47c-396b-439d-8fef-9147725b4100": {
+      "entryId": "5645a47c-396b-439d-8fef-9147725b4100",
+      "categoryKey": "workshops",
+      "title": "Sanitized Workshop",
+      "text": "sanitized workshop workshops draft sanitized workshop known field",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T04:53:21.020Z",
+      "createdAtISO": "2026-03-06T04:53:21.009Z"
+    }
+  }
+}

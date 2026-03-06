@@ -13,7 +13,7 @@ import {
   remainingDaysFromDueAtISO,
   status as getStreakStatus,
 } from "@/lib/gamification";
-import { entryList } from "@/lib/navigation";
+import { entryDetail } from "@/lib/navigation";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { Entry } from "@/lib/types/entry";
 
@@ -156,7 +156,7 @@ function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
         categoryKey,
         categoryLabel: categoryConfig.label,
         tag: `P${indexWithinCategory + 1}`,
-        route: entryList(categoryKey),
+        route: entryDetail(categoryKey, row.id),
         remainingDays: remainingDaysFromDueAtISO(row.dueAtISO),
       });
     });
@@ -199,7 +199,7 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
           id,
           categoryKey,
           categoryLabel: categoryConfig.label,
-          route: entryList(categoryKey),
+              route: entryDetail(categoryKey, id),
           remainingDays: remainingDaysFromDueAtISO(normalizeStreakState(entry.streak).dueAtISO),
           sortTime: getEntrySortTime(entry),
         });

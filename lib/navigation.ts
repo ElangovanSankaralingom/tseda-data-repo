@@ -4,6 +4,7 @@ import type { CategoryKey } from "@/lib/entries/types";
 type RouterLike = {
   back: () => void;
   push: (href: string) => void;
+  replace?: (href: string) => void;
 };
 
 const CATEGORY_SET = new Set<CategoryKey>(CATEGORY_LIST);
@@ -98,6 +99,10 @@ export function entryDetail(category: CategoryKey, id: string) {
 
 export function safeBack(router: RouterLike, fallbackUrl: string) {
   if (typeof window === "undefined") {
+    if (typeof router.replace === "function") {
+      router.replace(fallbackUrl);
+      return;
+    }
     router.push(fallbackUrl);
     return;
   }
@@ -116,6 +121,11 @@ export function safeBack(router: RouterLike, fallbackUrl: string) {
     } catch {
       // Ignore parse failures and use fallback push.
     }
+  }
+
+  if (typeof router.replace === "function") {
+    router.replace(fallbackUrl);
+    return;
   }
 
   router.push(fallbackUrl);
