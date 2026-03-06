@@ -23,6 +23,9 @@ import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
+import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
+import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
+import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
@@ -51,7 +54,6 @@ import {
   STUDENT_YEAR_OPTIONS,
   type StudentYear,
 } from "@/lib/student-academic";
-import { canEditField } from "@/lib/pendingImmutability";
 import {
   createOptimisticSnapshot,
   optimisticRemove,
@@ -59,6 +61,7 @@ import {
 } from "@/lib/ui/optimistic";
 import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
+import type { EntryStatus } from "@/lib/types/entry";
 
 type FileMeta = {
   fileName: string;
@@ -90,7 +93,7 @@ type CaseStudyEntry = {
   sourceEmail?: string;
   sharedRole?: "staffAccompanying";
   status?: "draft" | "final";
-  confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
+  confirmationStatus?: EntryStatus;
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
@@ -342,32 +345,12 @@ export function CaseStudiesPage({
     formRef.current = form;
   }, [form]);
 
-  useEffect(() => {
-    const routeEntryId = editEntryId?.trim() || "";
-    const mode = routeEntryId ? "edit" : startInNewMode ? "new" : "list";
-    void trackClientTelemetryEvent({
-      event: routeEntryId || startInNewMode ? "page.entry_detail_view" : "page.entry_list_view",
-      category: "case-studies",
-      entryId: routeEntryId || null,
-      success: true,
-      meta: {
-        page: "/data-entry/case-studies",
-        mode,
-      },
-    });
-    if (routeEntryId) {
-      void trackClientTelemetryEvent({
-        event: "entry.view",
-        category: "case-studies",
-        entryId: routeEntryId,
-        success: true,
-        meta: {
-          mode: "edit",
-          source: "detail_route",
-        },
-      });
-    }
-  }, [editEntryId, startInNewMode]);
+  useEntryPageModeTelemetry({
+    category: "case-studies",
+    pagePath: "/data-entry/case-studies",
+    editEntryId,
+    startInNewMode,
+  });
 
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
     categoryPath,
@@ -530,11 +513,11 @@ export function CaseStudiesPage({
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeStudentYear(form.studentYear);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
-  const entryLocked = isEntryLockedFromStatus(form);
-  const controlsDisabled = isViewMode || entryLocked;
-  const pendingCoreLocked = getEntryApprovalStatus(form) === "PENDING_CONFIRMATION";
-  const coreFieldDisabled = (fieldKey: string) =>
-    controlsDisabled || !canEditField(form, "case-studies", fieldKey);
+  const { entryLocked, controlsDisabled, pendingCoreLocked, coreFieldDisabled } = useEntryFormAccess({
+    entry: form,
+    category: "case-studies",
+    isViewMode,
+  });
   const hasBusyUploads =
     Object.values(singleUploadStatus).some((status) => status.busy) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
@@ -643,21 +626,6 @@ export function CaseStudiesPage({
     resetForm();
     setFormOpen(false);
     safeBack(router, targetHref);
-  }
-
-  async function handleCancel(targetHref = categoryPath) {
-    if (hasBusyUploads) {
-      setToast({ type: "err", msg: "Please wait for upload to finish." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-    const canLeave = await confirmNavigate();
-    if (!canLeave) return;
-    await closeForm(targetHref);
-  }
-
-  async function handleSaveDraft() {
-    await saveDraftChanges({ intent: "save" });
   }
 
   async function refreshList(nextEmail = email) {
@@ -884,18 +852,6 @@ export function CaseStudiesPage({
     }
   }
 
-  async function handleSaveAndClose() {
-    setSubmitAttemptedFinal(true);
-
-    if (hasBusyUploads) {
-      setToast({ type: "err", msg: "Please wait for upload to finish." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
-    await saveDraftChanges({ closeAfterSave: true, intent: "done" });
-  }
-
   async function generateEntry() {
     if (saveLockRef.current) return;
     saveLockRef.current = true;
@@ -938,6 +894,18 @@ export function CaseStudiesPage({
       saveLockRef.current = false;
     }
   }
+
+  const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
+    defaultCancelTargetHref: categoryPath,
+    hasBusyUploads,
+    confirmNavigate: () => confirmNavigate(),
+    closeForm,
+    saveDraftChanges,
+    setToast,
+    setSubmitAttemptedFinal,
+    cancelBusyMessage: "Please wait for upload to finish.",
+    saveAndCloseBusyMessage: "Please wait for upload to finish.",
+  });
 
   function validateRowForFacultySave(entryDraft: CaseStudyEntry, row: StaffSelection) {
     const selectedEmail = row.email.trim().toLowerCase();

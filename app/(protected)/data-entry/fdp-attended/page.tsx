@@ -35,13 +35,15 @@ import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
+import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
+import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
+import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
 import { useUploadController } from "@/hooks/useUploadController";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
-import { canEditField } from "@/lib/pendingImmutability";
 import {
   createOptimisticSnapshot,
   optimisticRemove,
@@ -50,6 +52,7 @@ import {
 import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import { uploadFile } from "@/lib/upload/uploadService";
+import type { EntryStatus } from "@/lib/types/entry";
 
 type FileMeta = {
   fileName: string;
@@ -63,7 +66,7 @@ type FileMeta = {
 type FdpAttended = {
   id: string;
   status: "draft" | "final";
-  confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
+  confirmationStatus?: EntryStatus;
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
@@ -287,32 +290,12 @@ export function FdpAttendedPage({
   const saveLockRef = useRef(false);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
 
-  useEffect(() => {
-    const routeEntryId = editEntryId?.trim() || "";
-    const mode = routeEntryId ? "edit" : startInNewMode ? "new" : "list";
-    void trackClientTelemetryEvent({
-      event: routeEntryId || startInNewMode ? "page.entry_detail_view" : "page.entry_list_view",
-      category: "fdp-attended",
-      entryId: routeEntryId || null,
-      success: true,
-      meta: {
-        page: "/data-entry/fdp-attended",
-        mode,
-      },
-    });
-    if (routeEntryId) {
-      void trackClientTelemetryEvent({
-        event: "entry.view",
-        category: "fdp-attended",
-        entryId: routeEntryId,
-        success: true,
-        meta: {
-          mode: "edit",
-          source: "detail_route",
-        },
-      });
-    }
-  }, [editEntryId, startInNewMode]);
+  useEntryPageModeTelemetry({
+    category: "fdp-attended",
+    pagePath: "/data-entry/fdp-attended",
+    editEntryId,
+    startInNewMode,
+  });
 
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
     categoryPath,
@@ -423,10 +406,11 @@ export function FdpAttendedPage({
     return nextErrors;
   }, [form]);
 
-  const controlsDisabled = isViewMode || isEntryLockedFromStatus(form);
-  const pendingCoreLocked = getEntryApprovalStatus(form) === "PENDING_CONFIRMATION";
-  const coreFieldDisabled = (fieldKey: string) =>
-    controlsDisabled || !canEditField(form, "fdp-attended", fieldKey);
+  const { entryLocked, controlsDisabled, pendingCoreLocked, coreFieldDisabled } = useEntryFormAccess({
+    entry: form,
+    category: "fdp-attended",
+    isViewMode,
+  });
   const permissionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
     upload: (file, onProgress) =>
@@ -475,7 +459,7 @@ export function FdpAttendedPage({
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && !!form.completionCertificate;
   const workflow = useEntryWorkflow({
-    isLocked: isEntryLockedFromStatus(form),
+    isLocked: entryLocked,
     coreValid: generateReady,
     hasPdfSnapshot: uploadsVisible,
     pdfStale: pdfState.pdfStale,
@@ -492,7 +476,7 @@ export function FdpAttendedPage({
     enabled:
       showForm &&
       !isViewMode &&
-      !isEntryLockedFromStatus(form) &&
+      !entryLocked &&
       !saving &&
       !hasBusyUploads &&
       lifecycle.canSave,
@@ -515,7 +499,7 @@ export function FdpAttendedPage({
     }
   }, [form, formDirty, markAutoSaveSaved]);
   const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
-    enabled: showForm && !isViewMode && !isEntryLockedFromStatus(form),
+    enabled: showForm && !isViewMode && !entryLocked,
     isDirty: formDirty,
     isSaving: saving || hasBusyUploads || autoSaveStatus.phase === "saving",
   });
@@ -646,34 +630,6 @@ export function FdpAttendedPage({
     resetForm();
     setFormOpen(false);
     safeBack(router, targetHref);
-  }
-
-  async function handleCancel(targetHref = categoryPath) {
-    if (hasBusyUploads) {
-      setToast({ type: "err", msg: "Please wait for upload to finish." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
-    const canLeave = await confirmNavigate();
-    if (!canLeave) return;
-    closeForm(targetHref);
-  }
-
-  async function handleSaveDraft() {
-    await saveDraftChanges({ intent: "save" });
-  }
-
-  async function handleSaveAndClose() {
-    setSubmitAttemptedFinal(true);
-
-    if (hasBusyUploads) {
-      setToast({ type: "err", msg: "Please wait for upload to finish." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
-    await saveDraftChanges({ closeAfterSave: true, intent: "done" });
   }
 
   const seedLoadedEntry = useCallback(
@@ -862,6 +818,18 @@ export function FdpAttendedPage({
       saveLockRef.current = false;
     }
   }
+
+  const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
+    defaultCancelTargetHref: categoryPath,
+    hasBusyUploads,
+    confirmNavigate: () => confirmNavigate(),
+    closeForm,
+    saveDraftChanges,
+    setToast,
+    setSubmitAttemptedFinal,
+    cancelBusyMessage: "Please wait for upload to finish.",
+    saveAndCloseBusyMessage: "Please wait for upload to finish.",
+  });
 
   async function generateEntry() {
     if (saveLockRef.current) return;

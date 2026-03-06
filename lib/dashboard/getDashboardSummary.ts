@@ -10,7 +10,7 @@ import { logError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/entryNavigation";
 import { getEntryTitle } from "@/lib/search/getEntryTitle";
-import { computeStreakProgressAggregate, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
+import { computeCanonicalStreakSnapshot, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 
 type DashboardEntry = Entry;
@@ -173,7 +173,7 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
     summary.totals.rejectedCount += categorySummary.rejectedCount;
   }
 
-  const streakSummary = computeStreakProgressAggregate(streakInputs);
+  const streakSummary = computeCanonicalStreakSnapshot(streakInputs);
 
   for (const categoryKey of CATEGORY_KEYS) {
     const categorySummary = summary.byCategory[categoryKey];
@@ -184,7 +184,7 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
     summary.totals.streakWinsCount += categorySummary.streakWinsCount;
   }
 
-  const rows = streakSummary.activatedEntries
+  const rows = streakSummary.activeEntries
     .slice()
     .map((row) => {
       const categoryConfig = getCategoryConfig(row.categoryKey);

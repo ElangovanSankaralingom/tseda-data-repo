@@ -48,6 +48,14 @@ export type StreakProgressAggregate = {
   activatedEntries: StreakActiveEntry[];
 };
 
+export type CanonicalStreakSnapshot = {
+  ruleVersion: number;
+  streakActivatedCount: number;
+  streakWinsCount: number;
+  byCategory: StreakProgressAggregateByCategory;
+  activeEntries: StreakActiveEntry[];
+};
+
 function toOptionalISO(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -167,4 +175,23 @@ export function computeStreakProgressAggregate(
 
   summary.activatedEntries = sortActiveStreakEntries(summary.activatedEntries);
   return summary;
+}
+
+export function computeCanonicalStreakSnapshot(
+  entries: ReadonlyArray<StreakProgressAggregateEntry>
+): CanonicalStreakSnapshot {
+  const aggregate = computeStreakProgressAggregate(entries);
+  return {
+    ruleVersion: STREAK_RULE_VERSION,
+    streakActivatedCount: aggregate.activatedCount,
+    streakWinsCount: aggregate.winsCount,
+    byCategory: CATEGORY_KEYS.reduce<StreakProgressAggregateByCategory>((next, categoryKey) => {
+      next[categoryKey] = {
+        activated: aggregate.byCategory[categoryKey].activated,
+        wins: aggregate.byCategory[categoryKey].wins,
+      };
+      return next;
+    }, {} as StreakProgressAggregateByCategory),
+    activeEntries: aggregate.activatedEntries.slice(),
+  };
 }

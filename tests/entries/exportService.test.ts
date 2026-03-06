@@ -3,10 +3,16 @@ import test from "node:test";
 import { DataStore } from "../../lib/dataStore.ts";
 import {
   buildExportRows,
+  getExportCategoryOptions,
   getExportableFields,
+  getExportStatusOptions,
   generateCsvText,
   generateXlsxBuffer,
 } from "../../lib/export/exportService.ts";
+import {
+  ENTRY_STATUSES,
+  ENTRY_STATUS_LABELS,
+} from "../../lib/types/entry.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 const email = "faculty.export@tce.edu";
@@ -73,6 +79,27 @@ test("getExportableFields resolves schema-driven fields and excludes internal-on
 
   assert.equal(keys.has("pdfMeta"), false);
   assert.equal(keys.has("streak"), false);
+});
+
+test("export status options use canonical status keys and labels", () => {
+  const options = getExportStatusOptions();
+
+  assert.deepEqual(
+    options.map((option) => option.key),
+    [...ENTRY_STATUSES]
+  );
+  assert.deepEqual(
+    options.map((option) => option.label),
+    ENTRY_STATUSES.map((status) => ENTRY_STATUS_LABELS[status])
+  );
+});
+
+test("export category options are resolved from canonical category registry", () => {
+  const options = getExportCategoryOptions();
+
+  assert.equal(options[0]?.key, "all");
+  assert.equal(options[0]?.label, "All Categories");
+  assert.equal(options.length >= 2, true);
 });
 
 test("buildExportRows filters by status/date and generates csv/xlsx", async () => {

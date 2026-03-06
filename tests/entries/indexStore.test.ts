@@ -85,6 +85,10 @@ test("entry confirmation transitions keep pending and approved index counts in s
     if (!ensured.ok) return;
     assert.equal(ensured.data.countsByStatus.PENDING_CONFIRMATION, 1);
     assert.equal(ensured.data.pendingByCategory.workshops, 1);
+    assert.equal(ensured.data.streakSnapshot.streakActivatedCount, 1);
+    assert.equal(ensured.data.streakSnapshot.streakWinsCount, 0);
+    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.activated, 1);
+    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.wins, 0);
 
     await approveEntry(adminEmail, "workshops", ownerEmail, String(created.id));
     ensured = await ensureUserIndex(ownerEmail);
@@ -93,6 +97,10 @@ test("entry confirmation transitions keep pending and approved index counts in s
     assert.equal(ensured.data.countsByStatus.PENDING_CONFIRMATION, 0);
     assert.equal(ensured.data.countsByStatus.APPROVED, 1);
     assert.equal(ensured.data.approvedByCategory.workshops, 1);
+    assert.equal(ensured.data.streakSnapshot.streakActivatedCount, 0);
+    assert.equal(ensured.data.streakSnapshot.streakWinsCount, 1);
+    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.activated, 0);
+    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.wins, 1);
   });
 });
 
