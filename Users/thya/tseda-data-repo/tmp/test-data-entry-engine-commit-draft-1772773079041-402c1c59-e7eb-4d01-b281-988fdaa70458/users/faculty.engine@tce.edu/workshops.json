@@ -1,0 +1,88 @@
+{
+  "version": 2,
+  "byId": {
+    "cb1bc0ea-d242-4f5e-be4e-1abb0502bc6c": {
+      "id": "cb1bc0ea-d242-4f5e-be4e-1abb0502bc6c",
+      "academicYear": "Academic Year 2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2025-08-10",
+      "endDate": "2025-08-12",
+      "eventName": "Commit Ready Workshop",
+      "speakerName": "Speaker",
+      "organisationName": "TCE",
+      "uploads": {
+        "permissionLetter": {
+          "fileName": "permission.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-06T04:57:59.045Z",
+          "url": "/uploads/permission.pdf",
+          "storedPath": "permission.pdf"
+        },
+        "brochure": {
+          "fileName": "brochure.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-06T04:57:59.045Z",
+          "url": "/uploads/brochure.pdf",
+          "storedPath": "brochure.pdf"
+        },
+        "attendance": {
+          "fileName": "attendance.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-06T04:57:59.045Z",
+          "url": "/uploads/attendance.pdf",
+          "storedPath": "attendance.pdf"
+        },
+        "organiserProfile": {
+          "fileName": "organiser-profile.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-06T04:57:59.045Z",
+          "url": "/uploads/organiser-profile.pdf",
+          "storedPath": "organiser-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "fileName": "photo-1.pdf",
+            "mimeType": "application/pdf",
+            "size": 100,
+            "uploadedAt": "2026-03-06T04:57:59.045Z",
+            "url": "/uploads/photo-1.pdf",
+            "storedPath": "photo-1.pdf"
+          }
+        ]
+      },
+      "status": "final",
+      "createdAt": "2026-03-06T04:57:59.046Z",
+      "updatedAt": "2026-03-06T04:57:59.047Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-06T04:57:59.047Z"
+    },
+    "6a4a5792-59b6-4d4e-b7b1-27da8b9184ac": {
+      "eventName": "Incomplete workshop",
+      "id": "6a4a5792-59b6-4d4e-b7b1-27da8b9184ac",
+      "status": "draft",
+      "createdAt": "2026-03-06T04:57:59.041Z",
+      "updatedAt": "2026-03-06T04:57:59.041Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "cb1bc0ea-d242-4f5e-be4e-1abb0502bc6c",
+    "6a4a5792-59b6-4d4e-b7b1-27da8b9184ac"
+  ]
+}

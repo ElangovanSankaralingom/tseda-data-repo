@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "byId": {
+    "2d79b6f5-a0d1-48e5-83e3-175b9a3d6611": {
+      "streak": {
+        "activatedAtISO": "2026-03-04T08:00:00.000Z",
+        "completedAtISO": "2026-03-04T09:00:00.000Z"
+      },
+      "id": "2d79b6f5-a0d1-48e5-83e3-175b9a3d6611",
+      "status": "draft",
+      "createdAt": "2026-03-06T04:57:58.947Z",
+      "updatedAt": "2026-03-06T04:57:58.947Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "2d79b6f5-a0d1-48e5-83e3-175b9a3d6611"
+  ]
+}

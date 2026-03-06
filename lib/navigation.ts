@@ -112,14 +112,15 @@ export function safeBack(router: RouterLike, fallbackUrl: string) {
     try {
       const referrerUrl = new URL(referrer);
       const sameOrigin = referrerUrl.origin === window.location.origin;
-      const samePath = referrerUrl.pathname === window.location.pathname;
+      const fallbackPath = new URL(fallbackUrl, window.location.origin).pathname;
+      const referrerMatchesFallback = referrerUrl.pathname === fallbackPath;
 
-      if (sameOrigin && !samePath) {
+      if (sameOrigin && referrerMatchesFallback) {
         router.back();
         return;
       }
     } catch {
-      // Ignore parse failures and use fallback push.
+      // Ignore parse failures and use fallback navigation.
     }
   }
 

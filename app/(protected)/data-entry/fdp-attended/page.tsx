@@ -40,7 +40,7 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { entryDetail, entryList, entryNew } from "@/lib/navigation";
+import { entryDetail, entryList, entryNew, safeBack } from "@/lib/navigation";
 import { canEditField } from "@/lib/pendingImmutability";
 import {
   createOptimisticSnapshot,
@@ -638,7 +638,7 @@ export function FdpAttendedPage({
   function closeForm(targetHref = categoryPath) {
     resetForm();
     setFormOpen(false);
-    router.replace(targetHref, { scroll: false });
+    safeBack(router, targetHref);
   }
 
   async function handleCancel(targetHref = categoryPath) {
@@ -1050,7 +1050,6 @@ export function FdpAttendedPage({
           loading={loading}
           onAdd={() => {
             resetForm();
-            setFormOpen(true);
             router.push(entryNew("fdp-attended"), { scroll: false });
           }}
           addLabel="+ Add FDP Entry"

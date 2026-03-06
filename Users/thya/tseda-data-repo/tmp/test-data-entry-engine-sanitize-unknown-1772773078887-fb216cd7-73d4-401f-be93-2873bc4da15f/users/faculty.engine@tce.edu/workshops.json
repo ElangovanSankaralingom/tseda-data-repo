@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "byId": {
+    "b3ee3fd5-0227-43d5-812f-777825cddf19": {
+      "eventName": "Sanitized Workshop",
+      "id": "b3ee3fd5-0227-43d5-812f-777825cddf19",
+      "status": "draft",
+      "createdAt": "2026-03-06T04:57:58.888Z",
+      "updatedAt": "2026-03-06T04:57:58.898Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "speakerName": "Known field"
+    }
+  },
+  "order": [
+    "b3ee3fd5-0227-43d5-812f-777825cddf19"
+  ]
+}
