@@ -39,6 +39,12 @@ function FlameIcon({
   );
 }
 
+function toDisplayCount(value: number | undefined) {
+  if (typeof value !== "number") return null;
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.floor(value);
+}
+
 export default function StreakSummaryCard({
   coloredCount,
   greyCount,
@@ -56,13 +62,16 @@ export default function StreakSummaryCard({
   detailChip?: boolean;
   className?: string;
 }) {
+  const safeColoredCount = toDisplayCount(coloredCount);
+  const safeGreyCount = toDisplayCount(greyCount);
+
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className ?? ""}`}>
-      {typeof coloredCount === "number" ? (
-        <FlameIcon tone="color" count={coloredCount} animated={animateColored} />
+      {safeColoredCount !== null ? (
+        <FlameIcon tone="color" count={safeColoredCount} animated={animateColored} />
       ) : null}
-      {typeof greyCount === "number" ? (
-        <FlameIcon tone="gray" count={greyCount} animated={animateGrey} />
+      {safeGreyCount !== null ? (
+        <FlameIcon tone="gray" count={safeGreyCount} animated={animateGrey} />
       ) : null}
       {detail ? (
         <div

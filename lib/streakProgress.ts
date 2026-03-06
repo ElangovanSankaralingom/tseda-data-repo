@@ -1,3 +1,4 @@
+import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeStreakState } from "@/lib/gamification";
@@ -32,6 +33,19 @@ export type StreakActiveEntry = {
   categoryKey: CategoryKey;
   dueAtISO: string | null;
   sortAtISO: string | null;
+};
+
+export type StreakProgressAggregateByCategory = Record<CategoryKey, { activated: number; wins: number }>;
+
+export type StreakProgressAggregateEntry = StreakProgressEntryLike & {
+  categoryKey: CategoryKey;
+};
+
+export type StreakProgressAggregate = {
+  activatedCount: number;
+  winsCount: number;
+  byCategory: StreakProgressAggregateByCategory;
+  activatedEntries: StreakActiveEntry[];
 };
 
 function toOptionalISO(value: unknown): string | null {
@@ -77,7 +91,10 @@ export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): Strea
   const streak = normalizeStreakState(entry.streak);
   const workflowStatus = normalizeEntryStatus(entry as EntryStateLike);
   const committed = hasCommittedMilestone(entry);
-  const isWin = workflowStatus === "APPROVED";
+  // Canonical streak rule:
+  // - Activated: committed draft milestone reached and not yet approved.
+  // - Win: committed draft milestone that has been approved.
+  const isWin = committed && workflowStatus === "APPROVED";
   const isActivated = committed && !isWin;
   const isCompleted = committed;
 
@@ -97,4 +114,57 @@ export function sortActiveStreakEntries(entries: StreakActiveEntry[]): StreakAct
   return entries
     .slice()
     .sort((left, right) => compareStreakSortAtISO(left.sortAtISO, right.sortAtISO));
+}
+
+function emptyAggregateByCategory(): StreakProgressAggregateByCategory {
+  return CATEGORY_KEYS.reduce<StreakProgressAggregateByCategory>((next, categoryKey) => {
+    next[categoryKey] = { activated: 0, wins: 0 };
+    return next;
+  }, {} as StreakProgressAggregateByCategory);
+}
+
+export function createEmptyStreakProgressAggregate(): StreakProgressAggregate {
+  return {
+    activatedCount: 0,
+    winsCount: 0,
+    byCategory: emptyAggregateByCategory(),
+    activatedEntries: [],
+  };
+}
+
+export function computeStreakProgressAggregate(
+  entries: ReadonlyArray<StreakProgressAggregateEntry>
+): StreakProgressAggregate {
+  const summary = createEmptyStreakProgressAggregate();
+
+  for (const entry of entries) {
+    const categoryKey = entry.categoryKey;
+    if (!CATEGORY_KEYS.includes(categoryKey)) continue;
+
+    const streak = getStreakProgressSnapshot(entry);
+    if (streak.isWin) {
+      summary.winsCount += 1;
+      summary.byCategory[categoryKey].wins += 1;
+    }
+
+    if (!streak.isActivated) {
+      continue;
+    }
+
+    summary.activatedCount += 1;
+    summary.byCategory[categoryKey].activated += 1;
+    if (!streak.id) {
+      continue;
+    }
+
+    summary.activatedEntries.push({
+      id: streak.id,
+      categoryKey,
+      dueAtISO: streak.dueAtISO,
+      sortAtISO: streak.sortAtISO,
+    });
+  }
+
+  summary.activatedEntries = sortActiveStreakEntries(summary.activatedEntries);
+  return summary;
 }

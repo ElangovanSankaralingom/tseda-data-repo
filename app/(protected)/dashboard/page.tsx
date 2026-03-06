@@ -14,6 +14,11 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+function toSafeCount(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.floor(value);
+}
+
 function SectionCard({
   title,
   subtitle,
@@ -88,10 +93,8 @@ export default async function DashboardPage() {
   });
 
   const summary = await getDashboardSummary(email);
-  const globalWinsCount = Number.isFinite(summary.totals.streakWinsCount) ? summary.totals.streakWinsCount : 0;
-  const totalActivatedPendingCount = Number.isFinite(summary.totals.streakActivatedCount)
-    ? summary.totals.streakActivatedCount
-    : 0;
+  const globalWinsCount = toSafeCount(summary.totals.streakWinsCount);
+  const totalActivatedPendingCount = toSafeCount(summary.totals.streakActivatedCount);
   const orderedPendingRows = summary.streakActivatedRows;
   const visiblePendingRows = orderedPendingRows.slice(0, 5);
   const hiddenPendingCount = Math.max(0, orderedPendingRows.length - visiblePendingRows.length);
