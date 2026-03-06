@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import StreakSummaryCard from "@/components/gamification/StreakSummaryCard";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
-import { getDashboardSummary, type DashboardPendingRow } from "@/lib/dashboard/getDashboardSummary";
+import { getDashboardSummary, type DashboardPendingRow } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { signin } from "@/lib/navigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";

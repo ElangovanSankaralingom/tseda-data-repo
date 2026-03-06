@@ -8,20 +8,20 @@ import {
   deleteEntry as deleteEngineEntry,
   listEntriesForCategory,
   updateEntry,
-} from "@/lib/entryEngine";
+} from "@/lib/entries/lifecycle.server";
 import { isValidPdfMeta, type PdfMeta } from "@/lib/entry-pdf";
 import { normalizeError } from "@/lib/errors";
 import { mergeWithNulls } from "@/lib/mergeWithNulls";
 import { safeEmailDir } from "@/lib/userStore";
+import { isEntryEditable } from "@/lib/entries/lock";
 import {
   ensureActivated,
-  isEntryEditable,
   isFutureDatedEntry,
   markCompleted,
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
 import type { EntryStatus } from "@/lib/types/entry";
 
 type FileMeta = {

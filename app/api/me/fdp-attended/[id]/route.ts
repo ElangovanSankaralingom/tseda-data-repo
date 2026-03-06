@@ -4,12 +4,10 @@ import { authOptions } from "@/lib/auth";
 import {
   listEntriesForCategory,
   updateEntry,
-} from "@/lib/entryEngine";
+} from "@/lib/entries/lifecycle.server";
+import { isWithinRequestEditWindow } from "@/lib/entries/lock";
 import { normalizeError } from "@/lib/errors";
-import {
-  isWithinRequestEditWindow,
-  nowISTTimestampISO,
-} from "@/lib/gamification";
+import { nowISTTimestampISO } from "@/lib/gamification";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 

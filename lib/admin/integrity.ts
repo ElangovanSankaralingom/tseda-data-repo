@@ -15,7 +15,7 @@ import { rebuildUserIndexFromWal } from "@/lib/data/recovery";
 import { type WalEvent } from "@/lib/data/wal";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   CATEGORY_STORE_SCHEMA_VERSION,

@@ -7,7 +7,7 @@ import { withUserDataLock } from "@/lib/data/locks";
 import { readCategoryEntries } from "@/lib/dataStore";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   migrateUserIndex,

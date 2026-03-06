@@ -104,3 +104,9 @@ export async function getDataEntrySummary(email: string): Promise<DataEntrySumma
     return next;
   }, { ...EMPTY_DATA_ENTRY_SUMMARY });
 }
+
+export {
+  getDashboardSummary,
+  type DashboardPendingRow,
+  type DashboardSummary,
+} from "@/lib/dashboard/getDashboardSummary";

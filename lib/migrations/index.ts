@@ -3,7 +3,7 @@ import { getCategorySchema, isValidCategorySlug } from "@/data/categoryRegistry"
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { AppError, normalizeError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeEntry as normalizeEntryRecord } from "@/lib/normalize";
 import { err, ok, type Result } from "@/lib/result";
 import type { Entry, EntryStatus } from "@/lib/types/entry";

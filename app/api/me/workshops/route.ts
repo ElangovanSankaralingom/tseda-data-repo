@@ -9,7 +9,7 @@ import {
   listEntriesForCategory,
   replaceEntriesForCategory,
   updateEntry,
-} from "@/lib/entryEngine";
+} from "@/lib/entries/lifecycle.server";
 import {
   cloneOptionalFileArrayToTarget,
   cloneOptionalFileToTarget,
@@ -25,15 +25,15 @@ import {
 } from "@/lib/facultyDirectory";
 import { normalizeError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { isEntryEditable } from "@/lib/entries/lock";
 import {
   computeDueAtISO,
-  isEntryEditable,
   isFutureDatedEntry,
   isWithinDueWindow,
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus } from "@/lib/entryStateMachine";
+import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { EntryStatus } from "@/lib/types/entry";
 import { safeEmailDir } from "@/lib/userStore";

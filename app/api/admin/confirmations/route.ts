@@ -8,7 +8,7 @@ import { getPendingConfirmations } from "@/lib/admin/pendingConfirmations";
 import {
   approveEntry,
   rejectEntry,
-} from "@/lib/entryEngine";
+} from "@/lib/entries/lifecycle.server";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { type CategoryKey } from "@/lib/entries/types";
