@@ -1,7 +1,23 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
 import BackTo from "@/components/nav/BackTo";
+import { authOptions } from "@/lib/auth";
 import { getPendingConfirmationsCount } from "@/lib/admin/pendingConfirmations";
 import {
+  canAccessAdminSearch,
+  canAccessSettings,
+  canApproveConfirmations,
+  canExport,
+  canManageAdminUsers,
+  canManageBackups,
+  canRunIntegrityTools,
+  canRunMaintenance,
+  canViewAnalytics,
+  canViewAudit,
+} from "@/lib/admin/roles";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import {
+  adminAnalytics,
   adminAudit,
   adminBackups,
   adminConfirmations,
@@ -13,6 +29,7 @@ import {
   adminUsers,
   dashboard,
 } from "@/lib/navigation";
+import { trackEvent } from "@/lib/telemetry/telemetry";
 
 type AdminCard = {
   title: string;
@@ -20,55 +37,95 @@ type AdminCard = {
   description: string;
 };
 
-const ADMIN_CARDS: AdminCard[] = [
-  {
-    title: "Confirmations",
-    href: adminConfirmations(),
-    description: "Review pending entry confirmations and approve or reject requests.",
-  },
-  {
-    title: "Users",
-    href: adminUsers(),
-    description: "Manage user-level admin tools and account controls.",
-  },
-  {
-    title: "Settings",
-    href: adminSettings(),
-    description: "Configure admin-level settings for the data-entry workflow.",
-  },
-  {
-    title: "Audit",
-    href: adminAudit(),
-    description: "Inspect approval/rejection audit history across all users and categories.",
-  },
-  {
-    title: "Search",
-    href: adminSearch(),
-    description: "Search entries across all users and categories using indexed snapshots.",
-  },
-  {
-    title: "Export",
-    href: adminExport(),
-    description: "Export normalized entry data to Excel or CSV using schema-driven columns.",
-  },
-  {
-    title: "Integrity",
-    href: adminIntegrity(),
-    description: "Run integrity checks and repair category stores, index, and migration drift.",
-  },
-  {
-    title: "Backups",
-    href: adminBackups(),
-    description: "Create, download, and retain secure zipped backups of the .data store.",
-  },
-  {
-    title: "Maintenance",
-    href: adminMaintenance(),
-    description: "Run nightly maintenance jobs now and monitor recent job outcomes.",
-  },
-];
+function getAdminCards(email: string): AdminCard[] {
+  const cards: Array<AdminCard | null> = [
+    canApproveConfirmations(email)
+      ? {
+          title: "Confirmations",
+          href: adminConfirmations(),
+          description: "Review pending entry confirmations and approve or reject requests.",
+        }
+      : null,
+    canManageAdminUsers(email)
+      ? {
+          title: "Users",
+          href: adminUsers(),
+          description: "Manage admin role assignments and account controls.",
+        }
+      : null,
+    canAccessSettings(email)
+      ? {
+          title: "Settings",
+          href: adminSettings(),
+          description: "Configure admin-level settings for the data-entry workflow.",
+        }
+      : null,
+    canViewAudit(email)
+      ? {
+          title: "Audit",
+          href: adminAudit(),
+          description: "Inspect approval/rejection audit history across all users and categories.",
+        }
+      : null,
+    canViewAnalytics(email)
+      ? {
+          title: "Analytics",
+          href: adminAnalytics(),
+          description: "Review usage, funnel drop-offs, failures, and workflow turnaround metrics.",
+        }
+      : null,
+    canAccessAdminSearch(email)
+      ? {
+          title: "Search",
+          href: adminSearch(),
+          description: "Search entries across all users and categories using indexed snapshots.",
+        }
+      : null,
+    canExport(email)
+      ? {
+          title: "Export",
+          href: adminExport(),
+          description: "Export normalized entry data to Excel or CSV using schema-driven columns.",
+        }
+      : null,
+    canRunIntegrityTools(email)
+      ? {
+          title: "Integrity",
+          href: adminIntegrity(),
+          description: "Run integrity checks and repair category stores, index, and migration drift.",
+        }
+      : null,
+    canManageBackups(email)
+      ? {
+          title: "Backups",
+          href: adminBackups(),
+          description: "Create, download, and retain secure zipped backups of the .data store.",
+        }
+      : null,
+    canRunMaintenance(email)
+      ? {
+          title: "Maintenance",
+          href: adminMaintenance(),
+          description: "Run nightly maintenance jobs now and monitor recent job outcomes.",
+        }
+      : null,
+  ];
+
+  return cards.filter((card): card is AdminCard => card !== null);
+}
 
 export default async function AdminConsolePage() {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  void trackEvent({
+    event: "page.admin_console_view",
+    actorEmail: email,
+    role: "admin",
+    meta: {
+      page: "/admin",
+    },
+  });
+  const cards = getAdminCards(email);
   const pendingCount = await getPendingConfirmationsCount();
 
   return (
@@ -82,7 +139,7 @@ export default async function AdminConsolePage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {ADMIN_CARDS.map((card) => (
+        {cards.map((card) => (
           <Link
             key={card.href}
             href={card.href}

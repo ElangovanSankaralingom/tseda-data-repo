@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import BackTo from "@/components/nav/BackTo";
+import { authOptions } from "@/lib/auth";
+import { canRunIntegrityTools } from "@/lib/admin/roles";
 import {
   checkAllUsersIntegrity,
   listUsers,
   type IntegritySummary,
 } from "@/lib/admin/integrity";
 import { toUserMessage } from "@/lib/errors";
-import { adminHome, adminIntegrity, adminIntegrityUser } from "@/lib/navigation";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { adminHome, adminIntegrity, adminIntegrityUser, dashboard } from "@/lib/navigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -35,6 +40,12 @@ function badgeClass(summary: IntegritySummary | undefined) {
 }
 
 export default async function AdminIntegrityOverviewPage({ searchParams }: AdminIntegrityOverviewPageProps) {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!canRunIntegrityTools(email)) {
+    redirect(dashboard());
+  }
+
   const params = searchParams ? await searchParams : {};
   const runAllChecks = getParam(params, "run") === "all";
 

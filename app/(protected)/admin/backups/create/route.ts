@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { canManageBackups } from "@/lib/admin/roles";
 import { createBackupZip } from "@/lib/backup/backupService";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if (!actorEmail) {
     return NextResponse.redirect(new URL(signin(), request.url), { status: 302 });
   }
-  if (!isMasterAdmin(actorEmail)) {
+  if (!canManageBackups(actorEmail)) {
     return NextResponse.redirect(new URL(adminBackups(), request.url), { status: 302 });
   }
 

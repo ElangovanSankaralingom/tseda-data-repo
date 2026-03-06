@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import BackTo from "@/components/nav/BackTo";
+import { authOptions } from "@/lib/auth";
+import { canManageBackups } from "@/lib/admin/roles";
 import {
   BACKUP_KEEP_LAST_DEFAULT,
   getLatestBackupFile,
   listBackups,
 } from "@/lib/backup/backupService";
 import { toUserMessage } from "@/lib/errors";
-import { adminHome } from "@/lib/navigation";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { adminHome, dashboard } from "@/lib/navigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -38,6 +43,12 @@ function formatTime(value: string) {
 export default async function AdminBackupsPage({
   searchParams,
 }: AdminBackupsPageProps) {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!canManageBackups(email)) {
+    redirect(dashboard());
+  }
+
   const params = searchParams ? await searchParams : {};
   const status = getParam(params, "status");
   const message = getParam(params, "message");

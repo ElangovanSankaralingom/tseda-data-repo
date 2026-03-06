@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import BackTo from "@/components/nav/BackTo";
+import { authOptions } from "@/lib/auth";
+import { canAccessAdminSearch } from "@/lib/admin/roles";
 import { CATEGORY_LIST, getCategoryConfig, isValidCategorySlug } from "@/data/categoryRegistry";
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
-import { adminHome } from "@/lib/navigation";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { adminHome, dashboard } from "@/lib/navigation";
 import { searchAllUsers, type SearchResult } from "@/lib/search/searchIndex";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -26,6 +31,12 @@ function getCategory(raw: string): CategoryKey | "all" {
 }
 
 export default async function AdminSearchPage({ searchParams }: AdminSearchPageProps) {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!canAccessAdminSearch(email)) {
+    redirect(dashboard());
+  }
+
   const params = searchParams ? await searchParams : {};
   const query = getParam(params, "q").trim();
   const userEmail = getParam(params, "userEmail").trim();
@@ -37,6 +48,7 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
     const result = await searchAllUsers(query, {
       category: selectedCategory,
       userEmail,
+      actorEmail: email,
       limit: 200,
     });
     if (result.ok) {

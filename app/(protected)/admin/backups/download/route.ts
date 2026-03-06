@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { canManageBackups } from "@/lib/admin/roles";
 import { readBackupFile, streamBackupZip } from "@/lib/backup/backupService";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";
@@ -13,7 +13,7 @@ const BACKUP_RATE_LIMIT = { windowMs: 10 * 60_000, max: 3 } as const;
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const actorEmail = normalizeEmail(session?.user?.email ?? "");
-  if (!isMasterAdmin(actorEmail)) {
+  if (!canManageBackups(actorEmail)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

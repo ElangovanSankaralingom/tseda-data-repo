@@ -1,5 +1,8 @@
 import BackTo from "@/components/nav/BackTo";
+import { getServerSession } from "next-auth";
 import AdminExportForm from "@/components/admin/AdminExportForm";
+import { authOptions } from "@/lib/auth";
+import { canExport } from "@/lib/admin/roles";
 import { listUsers } from "@/lib/admin/integrity";
 import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
 import { toUserMessage } from "@/lib/errors";
@@ -7,9 +10,18 @@ import {
   getExportableFields,
   type ExportCategorySelection,
 } from "@/lib/export/exportService";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { dashboard } from "@/lib/navigation";
 import { adminHome } from "@/lib/navigation";
+import { redirect } from "next/navigation";
 
 export default async function AdminExportPage() {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!canExport(email)) {
+    redirect(dashboard());
+  }
+
   const usersResult = await listUsers();
   const users = usersResult.ok ? usersResult.data : [];
   const error = usersResult.ok ? null : toUserMessage(usersResult.error);

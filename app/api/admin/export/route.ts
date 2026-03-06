@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { canExport } from "@/lib/admin/roles";
 import { getAllProfiles } from "@/lib/profileStore";
 
 function csvEscape(s: string) {
@@ -13,7 +13,7 @@ function csvEscape(s: string) {
 export async function GET() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
-  if (!isMasterAdmin(email)) {
+  if (!canExport(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

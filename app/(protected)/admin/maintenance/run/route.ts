@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { canRunMaintenance } from "@/lib/admin/roles";
 import { normalizeError, toUserMessage } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { runNightlyMaintenance } from "@/lib/jobs/nightly";
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   if (!actorEmail) {
     return NextResponse.redirect(new URL(signin(), request.url), { status: 302 });
   }
-  if (!isMasterAdmin(actorEmail)) {
+  if (!canRunMaintenance(actorEmail)) {
     return NextResponse.redirect(new URL(adminMaintenance(), request.url), { status: 302 });
   }
 

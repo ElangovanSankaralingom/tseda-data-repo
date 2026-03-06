@@ -1,10 +1,15 @@
 import BackTo from "@/components/nav/BackTo";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import { canRunMaintenance } from "@/lib/admin/roles";
 import { toUserMessage } from "@/lib/errors";
+import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   getLastMaintenanceRun,
   type NightlyMaintenanceSummary,
 } from "@/lib/jobs/nightly";
-import { adminHome } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/navigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -51,6 +56,12 @@ function stepLabel(step: { ok: true } | { ok: false; errorCode: string }) {
 export default async function AdminMaintenancePage({
   searchParams,
 }: AdminMaintenancePageProps) {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!canRunMaintenance(email)) {
+    redirect(dashboard());
+  }
+
   const params = searchParams ? await searchParams : {};
   const status = getParam(params, "status");
   const message = getParam(params, "message");

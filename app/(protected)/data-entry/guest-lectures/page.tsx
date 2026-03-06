@@ -57,6 +57,7 @@ import {
   optimisticUpsert,
 } from "@/lib/ui/optimistic";
 import { ok } from "@/lib/result";
+import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 
 type FileMeta = {
   fileName: string;
@@ -336,6 +337,34 @@ export function GuestLecturesPage({
   const saveLockRef = useRef(false);
   const seededViewEntryIdRef = useRef<string | null>(null);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
+
+  useEffect(() => {
+    const routeEntryId = editEntryId?.trim() || "";
+    const mode = routeEntryId ? "edit" : startInNewMode ? "new" : "list";
+    void trackClientTelemetryEvent({
+      event: routeEntryId || startInNewMode ? "page.entry_detail_view" : "page.entry_list_view",
+      category: "guest-lectures",
+      entryId: routeEntryId || null,
+      success: true,
+      meta: {
+        page: "/data-entry/guest-lectures",
+        mode,
+      },
+    });
+    if (routeEntryId) {
+      void trackClientTelemetryEvent({
+        event: "entry.view",
+        category: "guest-lectures",
+        entryId: routeEntryId,
+        success: true,
+        meta: {
+          mode: "edit",
+          source: "detail_route",
+        },
+      });
+    }
+  }, [editEntryId, startInNewMode]);
+
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
     categoryPath,
     viewEntryId
@@ -605,6 +634,8 @@ export function GuestLecturesPage({
   }
 
   async function persistProgress(nextForm: GuestLectureEntry) {
+    const startedAt = Date.now();
+    const eventName = String(nextForm.createdAt ?? "").trim() ? "entry.update" : "entry.create";
     const response = await fetch("/api/me/guest-lectures", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -613,10 +644,79 @@ export function GuestLecturesPage({
     const { message, payload } = await parseApiError(response, "Save failed");
 
     if (!response.ok) {
+      const errorCode =
+        response.status === 400
+          ? "VALIDATION_ERROR"
+          : response.status === 413
+            ? "PAYLOAD_TOO_LARGE"
+            : response.status === 429
+              ? "RATE_LIMITED"
+              : "IO_ERROR";
+      void trackClientTelemetryEvent({
+        event: "action.failure",
+        category: "guest-lectures",
+        entryId: String(nextForm.id ?? "").trim() || null,
+        success: false,
+        durationMs: Date.now() - startedAt,
+        meta: {
+          action: eventName,
+          source: "manual",
+          errorCode,
+          statusCode: response.status,
+        },
+      });
+      if (errorCode === "VALIDATION_ERROR") {
+        void trackClientTelemetryEvent({
+          event: "validation.failure",
+          category: "guest-lectures",
+          entryId: String(nextForm.id ?? "").trim() || null,
+          success: false,
+          durationMs: Date.now() - startedAt,
+          meta: { action: eventName, source: "manual", errorCode },
+        });
+      } else if (errorCode === "RATE_LIMITED") {
+        void trackClientTelemetryEvent({
+          event: "rate_limit.hit",
+          category: "guest-lectures",
+          entryId: String(nextForm.id ?? "").trim() || null,
+          success: false,
+          durationMs: Date.now() - startedAt,
+          meta: { action: eventName, source: "manual", errorCode },
+        });
+      } else if (errorCode === "PAYLOAD_TOO_LARGE") {
+        void trackClientTelemetryEvent({
+          event: "payload.too_large",
+          category: "guest-lectures",
+          entryId: String(nextForm.id ?? "").trim() || null,
+          success: false,
+          durationMs: Date.now() - startedAt,
+          meta: { action: eventName, source: "manual", errorCode },
+        });
+      }
       throw new Error(message);
     }
 
-    return payload as GuestLectureEntry;
+    const persisted = payload as GuestLectureEntry;
+    void trackClientTelemetryEvent({
+      event: eventName,
+      category: "guest-lectures",
+      entryId: String(persisted?.id ?? nextForm.id ?? "").trim() || null,
+      status:
+        String(
+          persisted?.confirmationStatus ??
+            persisted?.status ??
+            nextForm.confirmationStatus ??
+            nextForm.status ??
+            ""
+        ).trim() || null,
+      success: true,
+      durationMs: Date.now() - startedAt,
+      meta: {
+        source: "manual",
+      },
+    });
+
+    return persisted;
   }
 
   async function deleteStoredFile(storedPath: string) {
@@ -847,6 +947,8 @@ export function GuestLecturesPage({
   }
 
   async function deleteEntry(id: string) {
+    const startedAt = Date.now();
+    let failureTracked = false;
     let rollbackSnapshot: GuestLectureEntry[] | null = null;
     setList((current) => {
       rollbackSnapshot = createOptimisticSnapshot(current);
@@ -862,9 +964,41 @@ export function GuestLecturesPage({
       const payload = await response.json();
 
       if (!response.ok) {
+        const errorCode =
+          response.status === 400
+            ? "VALIDATION_ERROR"
+            : response.status === 413
+              ? "PAYLOAD_TOO_LARGE"
+              : response.status === 429
+                ? "RATE_LIMITED"
+                : "IO_ERROR";
+        void trackClientTelemetryEvent({
+          event: "action.failure",
+          category: "guest-lectures",
+          entryId: id,
+          success: false,
+          durationMs: Date.now() - startedAt,
+          meta: {
+            action: "entry.delete",
+            source: "manual",
+            errorCode,
+            statusCode: response.status,
+          },
+        });
+        failureTracked = true;
         throw new Error(payload?.error || "Delete failed.");
       }
 
+      void trackClientTelemetryEvent({
+        event: "entry.delete",
+        category: "guest-lectures",
+        entryId: id,
+        success: true,
+        durationMs: Date.now() - startedAt,
+        meta: {
+          source: "manual",
+        },
+      });
       setList((current) => optimisticRemove(current, id));
       void refreshList(email);
       setToast({ type: "ok", msg: "Entry deleted." });
@@ -872,6 +1006,20 @@ export function GuestLecturesPage({
     } catch (error) {
       if (rollbackSnapshot) {
         setList(rollbackSnapshot);
+      }
+      if (!failureTracked) {
+        void trackClientTelemetryEvent({
+          event: "action.failure",
+          category: "guest-lectures",
+          entryId: id,
+          success: false,
+          durationMs: Date.now() - startedAt,
+          meta: {
+            action: "entry.delete",
+            source: "manual",
+            errorCode: "IO_ERROR",
+          },
+        });
       }
       const message = error instanceof Error ? error.message : "Delete failed.";
       setToast({ type: "err", msg: message });

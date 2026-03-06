@@ -2,10 +2,12 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import StreakSummaryCard from "@/components/gamification/StreakSummaryCard";
+import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { getDashboardSummary, type DashboardPendingRow } from "@/lib/dashboard/getDashboardSummary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { signin } from "@/lib/navigation";
+import { trackEvent } from "@/lib/telemetry/telemetry";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -74,6 +76,15 @@ export default async function DashboardPage() {
   if (!email.endsWith("@tce.edu")) {
     redirect(signin());
   }
+
+  void trackEvent({
+    event: "page.dashboard_view",
+    actorEmail: email,
+    role: canAccessAdminConsole(email) ? "admin" : "user",
+    meta: {
+      page: "/dashboard",
+    },
+  });
 
   const summary = await getDashboardSummary(email);
   const globalWinsCount = summary.totals.streakWinsCount;

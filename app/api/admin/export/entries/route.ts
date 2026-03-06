@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { canExport } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   buildExportRows,
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
   const startedAt = Date.now();
   const session = await getServerSession(authOptions);
   const actorEmail = normalizeEmail(session?.user?.email ?? "");
-  if (!isMasterAdmin(actorEmail)) {
+  if (!canExport(actorEmail)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

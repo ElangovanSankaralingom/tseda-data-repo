@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
+import { beaconClientTelemetryEvent, trackClientTelemetryEvent } from "@/lib/telemetry/client";
 
 type UseUnsavedChangesGuardOptions = {
   enabled: boolean;
@@ -40,6 +41,14 @@ export function useUnsavedChangesGuard({
 
   const confirmLeave = useCallback(() => {
     if (!hasUnsavedChanges) return true;
+    void trackClientTelemetryEvent({
+      event: "unsaved_changes.prompt_shown",
+      success: true,
+      meta: {
+        action: "unsaved_changes.prompt_shown",
+        source: "navigation",
+      },
+    });
     return window.confirm(message);
   }, [hasUnsavedChanges, message]);
 
@@ -58,6 +67,14 @@ export function useUnsavedChangesGuard({
     if (!hasUnsavedChanges) return;
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      beaconClientTelemetryEvent({
+        event: "unsaved_changes.prompt_shown",
+        success: true,
+        meta: {
+          action: "unsaved_changes.prompt_shown",
+          source: "beforeunload",
+        },
+      });
       event.preventDefault();
       event.returnValue = message;
       return message;
@@ -92,6 +109,14 @@ export function useUnsavedChangesGuard({
         nextUrl.hash === currentUrl.hash;
       if (sameLocation) return;
 
+      void trackClientTelemetryEvent({
+        event: "unsaved_changes.prompt_shown",
+        success: true,
+        meta: {
+          action: "unsaved_changes.prompt_shown",
+          source: "anchor_navigation",
+        },
+      });
       const confirmed = window.confirm(message);
       if (!confirmed) {
         event.preventDefault();

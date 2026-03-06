@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AvatarMenu from "@/components/AvatarMenu";
 import { isMasterAdmin } from "@/lib/admin";
 import {
@@ -28,7 +28,9 @@ export default function ShellClient({
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const canAccessAdmin = isMasterAdmin(session?.user?.email);
+  const [canAccessAdmin, setCanAccessAdmin] = useState(() =>
+    isMasterAdmin(session?.user?.email)
+  );
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
@@ -43,6 +45,33 @@ export default function ShellClient({
   const drawerNav = canAccessAdmin
     ? [...nav, { href: adminHome(), label: "⚙️ Admin Console" }]
     : nav;
+
+  useEffect(() => {
+    const email = session?.user?.email ?? "";
+    const masterFallback = isMasterAdmin(email);
+    setCanAccessAdmin(masterFallback);
+
+    if (!email) return;
+
+    let cancelled = false;
+    void fetch("/api/me/admin-capabilities", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          canAccessAdminConsole?: boolean;
+        };
+        if (cancelled) return;
+        setCanAccessAdmin(Boolean(payload.canAccessAdminConsole));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCanAccessAdmin(masterFallback);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.email]);
 
   async function handleResetConfirm() {
     if (resetBusy) return;
