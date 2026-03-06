@@ -13,7 +13,10 @@ import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { type CategoryKey } from "@/lib/entries/types";
 import {
+  adminAnalytics,
+  adminAudit,
   adminConfirmations,
+  adminExport,
   adminHome,
   dashboard,
   dataEntryHome,
@@ -93,6 +96,9 @@ export async function PATCH(request: Request) {
     revalidatePath(entryDetail(categoryKey as CategoryKey, entryId));
     revalidatePath(adminHome());
     revalidatePath(adminConfirmations());
+    revalidatePath(adminAudit());
+    revalidatePath(adminAnalytics());
+    revalidatePath(adminExport());
 
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {

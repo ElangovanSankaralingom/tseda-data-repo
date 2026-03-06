@@ -1,9 +1,14 @@
 import type { CategoryKey } from "@/lib/entries/types";
-import { isFutureDatedEntry, normalizeStreakState, status as getStreakStatus } from "@/lib/gamification";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { normalizeStreakState } from "@/lib/gamification";
+
+export const STREAK_RULE_VERSION = 2;
 
 export type StreakProgressEntryLike = {
   id?: unknown;
   status?: unknown;
+  confirmationStatus?: unknown;
+  committedAtISO?: unknown;
   streak?: unknown;
   startDate?: unknown;
   endDate?: unknown;
@@ -52,28 +57,29 @@ export function compareStreakSortAtISO(left: string | null | undefined, right: s
 }
 
 function isFinalStatus(value: unknown) {
-  return String(value ?? "").trim().toLowerCase() === "final";
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "final" || normalized === "completed";
 }
 
-function isEntryFutureDated(entry: StreakProgressEntryLike) {
-  const startDate = String(entry.startDate ?? "").trim();
-  const endDate = String(entry.endDate ?? "").trim();
-  return isFutureDatedEntry(startDate, endDate);
+function hasCommittedMilestone(entry: StreakProgressEntryLike) {
+  if (toOptionalISO(entry.committedAtISO)) {
+    return true;
+  }
+  if (isFinalStatus(entry.status)) {
+    return true;
+  }
+  const streak = normalizeStreakState(entry.streak);
+  return !!streak.activatedAtISO || !!streak.completedAtISO;
 }
 
 export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): StreakProgressSnapshot {
   const id = String(entry.id ?? "").trim();
   const streak = normalizeStreakState(entry.streak);
-  const isFutureDated = isEntryFutureDated(entry);
-  const isActivated = isFutureDated && getStreakStatus(streak) === "active";
-  const isCompleted = !!streak.completedAtISO;
-  const isWin =
-    isFinalStatus(entry.status) &&
-    isFutureDated &&
-    !!streak.activatedAtISO &&
-    !!streak.completedAtISO &&
-    !!streak.dueAtISO &&
-    Date.parse(streak.completedAtISO) <= Date.parse(streak.dueAtISO);
+  const workflowStatus = normalizeEntryStatus(entry as EntryStateLike);
+  const committed = hasCommittedMilestone(entry);
+  const isWin = workflowStatus === "APPROVED";
+  const isActivated = committed && !isWin;
+  const isCompleted = committed;
 
   return {
     id,

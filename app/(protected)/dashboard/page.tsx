@@ -6,6 +6,7 @@ import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { getDashboardSummary, type DashboardPendingRow } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import { remainingDaysFromDueAtISO } from "@/lib/gamification";
 import { signin } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 
@@ -87,8 +88,10 @@ export default async function DashboardPage() {
   });
 
   const summary = await getDashboardSummary(email);
-  const globalWinsCount = summary.totals.streakWinsCount;
-  const totalActivatedPendingCount = summary.totals.streakActivatedCount;
+  const globalWinsCount = Number.isFinite(summary.totals.streakWinsCount) ? summary.totals.streakWinsCount : 0;
+  const totalActivatedPendingCount = Number.isFinite(summary.totals.streakActivatedCount)
+    ? summary.totals.streakActivatedCount
+    : 0;
   const orderedPendingRows = summary.streakActivatedRows;
   const visiblePendingRows = orderedPendingRows.slice(0, 5);
   const hiddenPendingCount = Math.max(0, orderedPendingRows.length - visiblePendingRows.length);
@@ -121,36 +124,39 @@ export default async function DashboardPage() {
           footer={
             totalActivatedPendingCount > 0 ? (
               <div className="space-y-2">
-                {visiblePendingRows.map((row: DashboardPendingRow) => (
-                  <div
-                    key={`${row.categoryLabel}-${row.id}`}
-                    className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3"
-                  >
-                    <div className="min-w-0 text-sm text-foreground">
-                      <span className="text-muted-foreground">{row.categoryLabel}</span>
-                      <span className="mx-2 text-muted-foreground">•</span>
-                      <span className="font-mono text-xs text-muted-foreground">{row.tag}</span>
+                {visiblePendingRows.map((row: DashboardPendingRow) => {
+                  const remainingDays = remainingDaysFromDueAtISO(row.dueAtISO);
+                  return (
+                    <div
+                      key={`${row.categoryLabel}-${row.id}`}
+                      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3"
+                    >
+                      <div className="min-w-0 text-sm text-foreground">
+                        <span className="text-muted-foreground">{row.categoryLabel}</span>
+                        <span className="mx-2 text-muted-foreground">•</span>
+                        <span className="font-mono text-xs text-muted-foreground">{row.tag}</span>
+                      </div>
+                      <span
+                        className={cx(
+                          "whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium",
+                          remainingDays <= 2
+                            ? "bg-red-50 text-red-700"
+                            : remainingDays <= 5
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {remainingDays} days left
+                      </span>
+                      <Link
+                        href={row.route}
+                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-3 text-sm text-background transition-colors duration-150 hover:bg-foreground/90 hover:shadow-[0_0_16px_rgba(15,23,42,0.18)]"
+                      >
+                        Complete
+                      </Link>
                     </div>
-                    <span
-                      className={cx(
-                        "whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium",
-                        row.remainingDays <= 2
-                          ? "bg-red-50 text-red-700"
-                          : row.remainingDays <= 5
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {row.remainingDays} days left
-                    </span>
-                    <Link
-                      href={row.route}
-                      className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-foreground bg-foreground px-3 text-sm text-background transition-colors duration-150 hover:bg-foreground/90 hover:shadow-[0_0_16px_rgba(15,23,42,0.18)]"
-                    >
-                      Complete
-                    </Link>
-                  </div>
-                ))}
+                  );
+                })}
                 {hiddenPendingCount > 0 ? (
                   <p className="text-sm text-muted-foreground">+ {hiddenPendingCount} more active tasks</p>
                 ) : null}

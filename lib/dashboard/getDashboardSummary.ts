@@ -7,7 +7,6 @@ import { ensureUserIndex, type UserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { remainingDaysFromDueAtISO } from "@/lib/gamification";
 import { entryDetail } from "@/lib/entryNavigation";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import { getStreakProgressSnapshot, toStreakSortAtISO } from "@/lib/streakProgress";
@@ -21,7 +20,7 @@ export type DashboardPendingRow = {
   categoryLabel: string;
   tag: string;
   route: string;
-  remainingDays: number;
+  dueAtISO: string | null;
 };
 
 type CategoryDashboardSummary = {
@@ -90,16 +89,35 @@ function toEntryId(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function toSafeCount(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+  return Math.floor(value);
+}
+
+function appendTaggedRows(
+  target: DashboardPendingRow[],
+  rows: Array<Omit<DashboardPendingRow, "tag">>
+) {
+  rows.forEach((row, index) => {
+    target.push({
+      ...row,
+      tag: `P${index + 1}`,
+    });
+  });
+}
+
 function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
   const summary = emptySummary();
 
   for (const categoryKey of CATEGORY_KEYS) {
     const categorySummary = summary.byCategory[categoryKey];
-    categorySummary.totalEntries = index.totalsByCategory[categoryKey] ?? 0;
-    categorySummary.pendingConfirmationCount = index.pendingByCategory[categoryKey] ?? 0;
-    categorySummary.approvedCount = index.approvedByCategory[categoryKey] ?? 0;
-    categorySummary.streakActivatedCount = index.streakSnapshot.byCategory[categoryKey]?.activated ?? 0;
-    categorySummary.streakWinsCount = index.streakSnapshot.byCategory[categoryKey]?.wins ?? 0;
+    categorySummary.totalEntries = toSafeCount(index.totalsByCategory[categoryKey]);
+    categorySummary.pendingConfirmationCount = toSafeCount(index.pendingByCategory[categoryKey]);
+    categorySummary.approvedCount = toSafeCount(index.approvedByCategory[categoryKey]);
+    categorySummary.streakActivatedCount = toSafeCount(index.streakSnapshot.byCategory[categoryKey]?.activated);
+    categorySummary.streakWinsCount = toSafeCount(index.streakSnapshot.byCategory[categoryKey]?.wins);
 
     summary.totals.totalEntries += categorySummary.totalEntries;
     summary.totals.pendingConfirmationCount += categorySummary.pendingConfirmationCount;
@@ -108,34 +126,32 @@ function computeDashboardSummaryFromIndex(index: UserIndex): DashboardSummary {
     summary.totals.streakWinsCount += categorySummary.streakWinsCount;
   }
 
-  for (const categoryKey of CATEGORY_KEYS) {
-    const categoryConfig = getCategoryConfig(categoryKey);
-    const categoryRows = index.streakSnapshot.activeEntries
-      .filter((entry) => entry.categoryKey === categoryKey)
-      .sort((left, right) => getSortTime(left.sortAtISO) - getSortTime(right.sortAtISO));
-
-    categoryRows.forEach((row, indexWithinCategory) => {
-      summary.streakActivatedRows.push({
+  const rows = index.streakSnapshot.activeEntries
+    .slice()
+    .sort((left, right) => getSortTime(left.sortAtISO) - getSortTime(right.sortAtISO))
+    .map((row) => {
+      const categoryConfig = getCategoryConfig(row.categoryKey);
+      return {
         id: row.id,
-        categoryKey,
+        categoryKey: row.categoryKey,
         categoryLabel: categoryConfig.label,
-        tag: `P${indexWithinCategory + 1}`,
-        route: entryDetail(categoryKey, row.id),
-        remainingDays: remainingDaysFromDueAtISO(row.dueAtISO),
-      });
+        route: entryDetail(row.categoryKey, row.id),
+        dueAtISO: row.dueAtISO ?? null,
+      } satisfies Omit<DashboardPendingRow, "tag">;
     });
-  }
+
+  appendTaggedRows(summary.streakActivatedRows, rows);
 
   return summary;
 }
 
 async function computeDashboardSummaryFromEntries(normalizedEmail: string): Promise<DashboardSummary> {
   const summary = emptySummary();
+  const rows: Array<Omit<DashboardPendingRow, "tag"> & { sortTime: number }> = [];
 
   for (const categoryKey of CATEGORY_KEYS) {
     const categoryEntries = await listEntriesForCategory<DashboardEntry>(normalizedEmail, categoryKey);
     const categoryConfig = getCategoryConfig(categoryKey);
-    const categoryActiveRows: Array<Omit<DashboardPendingRow, "tag"> & { sortTime: number }> = [];
     const categorySummary = emptyCategorySummary();
 
     categorySummary.totalEntries = categoryEntries.length;
@@ -160,29 +176,16 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
         if (!id) continue;
 
         categorySummary.streakActivatedCount += 1;
-        categoryActiveRows.push({
+        rows.push({
           id,
           categoryKey,
           categoryLabel: categoryConfig.label,
           route: entryDetail(categoryKey, id),
-          remainingDays: remainingDaysFromDueAtISO(streak.dueAtISO),
+          dueAtISO: streak.dueAtISO,
           sortTime: getEntrySortTime(entry),
         });
       }
     }
-
-    categoryActiveRows
-      .sort((left, right) => left.sortTime - right.sortTime)
-      .forEach((row, index) => {
-        summary.streakActivatedRows.push({
-          id: row.id,
-          categoryKey: row.categoryKey,
-          categoryLabel: row.categoryLabel,
-          tag: `P${index + 1}`,
-          route: row.route,
-          remainingDays: row.remainingDays,
-        });
-      });
 
     summary.byCategory[categoryKey] = categorySummary;
     summary.totals.totalEntries += categorySummary.totalEntries;
@@ -191,6 +194,12 @@ async function computeDashboardSummaryFromEntries(normalizedEmail: string): Prom
     summary.totals.streakActivatedCount += categorySummary.streakActivatedCount;
     summary.totals.streakWinsCount += categorySummary.streakWinsCount;
   }
+
+  const orderedRows = rows
+    .slice()
+    .sort((left, right) => left.sortTime - right.sortTime)
+    .map(({ sortTime: _ignored, ...row }) => row);
+  appendTaggedRows(summary.streakActivatedRows, orderedRows);
 
   return summary;
 }
