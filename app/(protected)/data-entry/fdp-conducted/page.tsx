@@ -39,7 +39,7 @@ import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
-import { entryDetail, entryList, entryNew } from "@/lib/navigation";
+import { entryDetail, entryList, entryNew, safeBack } from "@/lib/navigation";
 import { canEditField } from "@/lib/pendingImmutability";
 import {
   createOptimisticSnapshot,
@@ -561,7 +561,7 @@ export function FdpConductedPage({
   function closeForm(targetHref = categoryPath) {
     resetForm();
     setFormOpen(false);
-    router.replace(targetHref, { scroll: false });
+    safeBack(router, targetHref);
   }
 
   const seedLoadedEntry = useCallback(
@@ -1115,7 +1115,6 @@ export function FdpConductedPage({
           loading={loading}
           onAdd={() => {
             resetForm();
-            setFormOpen(true);
             router.push(entryNew("fdp-conducted"), { scroll: false });
           }}
           addLabel="+ Add FDP Entry"
