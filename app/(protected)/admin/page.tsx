@@ -6,6 +6,7 @@ import {
   adminBackups,
   adminConfirmations,
   adminExport,
+  adminSearch,
   adminSettings,
   adminMaintenance,
   adminIntegrity,
@@ -39,6 +40,11 @@ const ADMIN_CARDS: AdminCard[] = [
     title: "Audit",
     href: adminAudit(),
     description: "Inspect approval/rejection audit history across all users and categories.",
+  },
+  {
+    title: "Search",
+    href: adminSearch(),
+    description: "Search entries across all users and categories using indexed snapshots.",
   },
   {
     title: "Export",

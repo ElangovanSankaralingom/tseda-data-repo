@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { ENTRY_SCHEMAS, type SchemaValidationMode } from "@/data/schemas";
+import { ENTRY_SCHEMAS } from "@/data/schemas";
 import { isMasterAdmin } from "@/lib/admin";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { rebuildUserIndex, updateIndexForEntryMutation } from "@/lib/data/indexStore";
@@ -30,10 +30,11 @@ import {
 } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeStreakState } from "@/lib/gamification";
-import { normalizeEntry, normalizePayload } from "@/lib/normalize";
+import { normalizeEntry } from "@/lib/normalize";
 import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { validateAndSanitizeOrThrow } from "@/lib/validation/validateEntryPayload";
 import type { Entry, EntryStatus as EntryWorkflowStatus } from "@/lib/types/entry";
 import { logger, withTimer } from "@/lib/logger";
 
@@ -71,75 +72,17 @@ function ensureRecord(value: unknown): EntryEngineRecord {
   return value as EntryEngineRecord;
 }
 
-function validatePayload(
-  category: CategoryKey,
-  payload: EntryEngineRecord,
-  mode: SchemaValidationMode
-) {
-  const schema = ENTRY_SCHEMAS[category];
-  const errors = schema.validate(payload, mode);
-  if (!errors.length) return;
-
-  const message = errors.map((error) => error.message).join("; ");
-  throw new Error(message);
-}
-
-function getValueAtPath(record: Record<string, unknown>, fieldPath: string): unknown {
-  const parts = fieldPath.split(".").filter(Boolean);
-  if (!parts.length) return undefined;
-
-  let current: unknown = record;
-  for (const part of parts) {
-    if (!current || typeof current !== "object" || Array.isArray(current)) {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
-}
-
-function hasCommittedValue(value: unknown): boolean {
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim().length > 0;
-  if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value === "boolean") return true;
-  if (Array.isArray(value)) return value.length > 0;
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    if (typeof record.storedPath === "string" && record.storedPath.trim()) return true;
-    if (typeof record.url === "string" && record.url.trim()) return true;
-    return Object.keys(record).length > 0;
-  }
-  return false;
-}
-
-function getCommitMissingFields(category: CategoryKey, entry: EntryLike) {
-  const schema = ENTRY_SCHEMAS[category];
-  const requiredFields =
-    (schema.requiredForCommit ?? schema.fields.filter((field) => field.required).map((field) => field.key)).slice();
-
-  const missing = new Array<string>();
-  for (const requiredField of requiredFields) {
-    const value = getValueAtPath(entry as Record<string, unknown>, requiredField);
-    if (!hasCommittedValue(value)) {
-      missing.push(requiredField);
-    }
-  }
-
-  if (
-    typeof schema.minAttachmentsForCommit === "number" &&
-    Number.isFinite(schema.minAttachmentsForCommit) &&
-    schema.minAttachmentsForCommit > 0
-  ) {
-    const attachments = entry.attachments;
-    const attachmentCount = Array.isArray(attachments) ? attachments.length : 0;
-    if (attachmentCount < schema.minAttachmentsForCommit) {
-      missing.push("attachments");
-    }
-  }
-
-  return missing;
-}
+const PROTECTED_UPDATE_KEYS = new Set([
+  "id",
+  "createdAt",
+  "status",
+  "confirmationStatus",
+  "sentForConfirmationAtISO",
+  "confirmedAtISO",
+  "confirmedBy",
+  "confirmationRejectedReason",
+  "committedAtISO",
+]);
 
 function revalidateDashboardSummary(userEmail: string) {
   const normalizedEmail = normalizeEmail(userEmail);
@@ -509,15 +452,15 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const startedAt = Date.now();
-  const nextPayload = normalizePayload(ensureRecord(payload), ENTRY_SCHEMAS[category]);
+  const rawPayload = ensureRecord(payload);
   logger.info({
     event: "entry.mutation.start",
     action: "create",
     userEmail: normalizedOwner,
     category,
   });
-  enforceEntryMutationGuards(normalizedOwner, `entry.create.${category}`, nextPayload);
-  validatePayload(category, nextPayload, "create");
+  enforceEntryMutationGuards(normalizedOwner, `entry.create.${category}`, rawPayload);
+  const nextPayload = validateAndSanitizeOrThrow(category, rawPayload, "create");
   return withUserDataLock(normalizedOwner, async () => {
     const nowISO = new Date().toISOString();
     const id = normalizeId(nextPayload.id) || randomUUID();
@@ -584,7 +527,7 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const startedAt = Date.now();
-  const nextPayload = normalizePayload(ensureRecord(payload), ENTRY_SCHEMAS[category]);
+  const rawPayload = ensureRecord(payload);
   logger.info({
     event: "entry.mutation.start",
     action: "update",
@@ -592,17 +535,23 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
     category,
     entryId: normalizeId(entryId),
   });
-  enforceEntryMutationGuards(normalizedOwner, `entry.update.${category}`, nextPayload);
-  validatePayload(category, nextPayload, "update");
+  enforceEntryMutationGuards(normalizedOwner, `entry.update.${category}`, rawPayload);
+  const nextPayload = validateAndSanitizeOrThrow(category, rawPayload, "update");
 
   const id = normalizeId(entryId);
   if (!id) {
-    throw new Error("Entry ID is required");
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Entry ID is required.",
+    });
   }
   return withUserDataLock(normalizedOwner, async () => {
     const existingEntry = await readEntryRaw(normalizedOwner, category, id);
     if (!existingEntry) {
-      throw new Error("Entry not found");
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Entry not found",
+      });
     }
 
     const nowISO = new Date().toISOString();
@@ -612,7 +561,7 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
     };
 
     for (const [key, value] of Object.entries(nextPayload)) {
-      if (key === "id" || key === "createdAt" || key === "confirmationStatus") continue;
+      if (PROTECTED_UPDATE_KEYS.has(key)) continue;
       next[key] = value;
     }
 
@@ -695,15 +644,11 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       });
     }
 
-    const existing = existingEntry as EntryLike;
-    const missingFields = getCommitMissingFields(category, existing);
-    if (missingFields.length > 0) {
-      throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: `Commit blocked. Complete required fields: ${missingFields.join(", ")}.`,
-        details: { missingFields },
-      });
-    }
+    const existing = validateAndSanitizeOrThrow(
+      category,
+      ensureRecord(existingEntry),
+      "commit"
+    ) as EntryLike;
 
     const nowISO = new Date().toISOString();
     const updated = prepareEntryForWrite(
@@ -821,15 +766,31 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
     entryId: id,
   });
   enforceEntryMutationGuards(normalizedOwner, `entry.confirmation.send.${category}`, { entryId: id });
+  if (!id) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Entry ID is required.",
+    });
+  }
   return withUserDataLock(normalizedOwner, async () => {
     const existingEntry = await readEntryRaw(normalizedOwner, category, id);
     if (!existingEntry) {
-      throw new Error("Entry not found");
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Entry not found",
+      });
     }
 
-    const existing = existingEntry as EntryLike;
+    const existing = validateAndSanitizeOrThrow(
+      category,
+      ensureRecord(existingEntry),
+      "sendForConfirmation"
+    ) as EntryLike;
     if (String(existing.status ?? "draft") !== "final") {
-      throw new Error("Complete the entry with Done before confirmation.");
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: "Complete the entry with Done before confirmation.",
+      });
     }
 
     const nowISO = new Date().toISOString();
@@ -892,7 +853,10 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     entryId: normalizeId(entryId),
   });
   if (!isMasterAdmin(normalizedAdmin)) {
-    throw new Error("Forbidden");
+    throw new AppError({
+      code: "FORBIDDEN",
+      message: "Forbidden",
+    });
   }
 
   enforceAdminMutationGuards(normalizedAdmin, "entry.confirmation.approve", {
@@ -901,10 +865,25 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     entryId,
   });
   const id = normalizeId(entryId);
+  if (!id) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Entry ID is required.",
+    });
+  }
+  if (!CATEGORY_KEYS.includes(category)) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: `Unsupported category: ${category}`,
+    });
+  }
   return withUserDataLock(normalizedOwner, async () => {
     const existing = await readEntryRaw(normalizedOwner, category, id);
     if (!existing) {
-      throw new Error("Entry not found");
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Entry not found",
+      });
     }
 
     const nowISO = new Date().toISOString();
@@ -970,7 +949,10 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
     entryId: normalizeId(entryId),
   });
   if (!isMasterAdmin(normalizedAdmin)) {
-    throw new Error("Forbidden");
+    throw new AppError({
+      code: "FORBIDDEN",
+      message: "Forbidden",
+    });
   }
 
   enforceAdminMutationGuards(normalizedAdmin, "entry.confirmation.reject", {
@@ -980,10 +962,25 @@ export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecor
     reason: reason?.trim() ?? "",
   });
   const id = normalizeId(entryId);
+  if (!id) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Entry ID is required.",
+    });
+  }
+  if (!CATEGORY_KEYS.includes(category)) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: `Unsupported category: ${category}`,
+    });
+  }
   return withUserDataLock(normalizedOwner, async () => {
     const existing = await readEntryRaw(normalizedOwner, category, id);
     if (!existing) {
-      throw new Error("Entry not found");
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Entry not found",
+      });
     }
 
     const nowISO = new Date().toISOString();

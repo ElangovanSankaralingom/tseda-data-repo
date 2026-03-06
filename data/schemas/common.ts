@@ -16,6 +16,32 @@ function isMissing(value: unknown) {
   return value === null || value === undefined || value === "";
 }
 
+function getValueAtPath(payload: Record<string, unknown>, path: string): unknown {
+  const parts = path.split(".").filter(Boolean);
+  if (!parts.length) return undefined;
+  let current: unknown = payload;
+  for (const part of parts) {
+    if (!isPlainObject(current) || !Object.prototype.hasOwnProperty.call(current, part)) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+}
+
+function hasPath(payload: Record<string, unknown>, path: string): boolean {
+  const parts = path.split(".").filter(Boolean);
+  if (!parts.length) return false;
+  let current: unknown = payload;
+  for (const part of parts) {
+    if (!isPlainObject(current) || !Object.prototype.hasOwnProperty.call(current, part)) {
+      return false;
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  return true;
+}
+
 function validateFieldKind(
   field: SchemaFieldDefinition,
   value: unknown
@@ -32,9 +58,21 @@ function validateFieldKind(
     return `${field.label} must be a string`;
   }
 
+  if (field.kind === "string" && typeof value === "string" && typeof field.maxLength === "number") {
+    if (value.length > field.maxLength) {
+      return `${field.label} must be at most ${field.maxLength} characters`;
+    }
+  }
+
   if (field.kind === "number") {
     if (typeof value !== "number" || !Number.isFinite(value)) {
       return `${field.label} must be a number`;
+    }
+    if (typeof field.min === "number" && value < field.min) {
+      return `${field.label} must be at least ${field.min}`;
+    }
+    if (typeof field.max === "number" && value > field.max) {
+      return `${field.label} must be at most ${field.max}`;
     }
   }
 
@@ -56,6 +94,12 @@ function validateFieldKind(
     }
   }
 
+  if (Array.isArray(field.enumValues) && field.enumValues.length > 0) {
+    if (!field.enumValues.includes(value as string | number | boolean)) {
+      return `${field.label} has an invalid value`;
+    }
+  }
+
   return null;
 }
 
@@ -67,8 +111,8 @@ export function validateByFieldDefinitions(
   const errors: SchemaValidationError[] = [];
 
   for (const field of fields) {
-    const hasKey = Object.prototype.hasOwnProperty.call(payload, field.key);
-    const value = payload[field.key];
+    const hasKey = hasPath(payload, field.key);
+    const value = getValueAtPath(payload, field.key);
 
     if (field.required && mode === "create" && hasKey && isMissing(value)) {
       errors.push({

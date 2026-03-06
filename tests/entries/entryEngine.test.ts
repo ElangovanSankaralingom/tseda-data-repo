@@ -13,6 +13,7 @@ import {
   updateEntry,
 } from "../../lib/entryEngine.ts";
 import { readEvents } from "../../lib/data/wal.ts";
+import { SECURITY_LIMITS } from "../../lib/security/limits.ts";
 import type { CategoryKey } from "../../lib/entries/types.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
@@ -98,6 +99,55 @@ test("entryEngine normalizes payload values on create and update", async () => {
     assert.equal(updated.organisationName, null);
     assert.equal(String(updated.endDate ?? ""), "2026-03-12");
     assert.deepEqual(updated.attachments, []);
+  });
+});
+
+test("entryEngine strips unknown keys on create and update", async () => {
+  await withSandbox("entry-engine-sanitize-unknown", async () => {
+    const created = await createEntry(ownerEmail, category, {
+      eventName: "Sanitized Workshop",
+      unsafeKey: "drop-me",
+      nestedUnsafe: {
+        a: 1,
+      },
+    });
+
+    assert.equal(created.unsafeKey, undefined);
+    assert.equal(created.nestedUnsafe, undefined);
+
+    const updated = await updateEntry(ownerEmail, category, String(created.id), {
+      speakerName: "Known field",
+      randomFlag: true,
+      status: "final",
+    });
+
+    assert.equal(updated.randomFlag, undefined);
+    assert.equal(String(updated.status ?? ""), "draft");
+  });
+});
+
+test("entryEngine rejects invalid enum values server-side", async () => {
+  await withSandbox("entry-engine-enum-validation", async () => {
+    await assert.rejects(
+      () =>
+        createEntry(ownerEmail, category, {
+          eventName: "Invalid enum workshop",
+          semesterType: "Summer",
+        }),
+      /Semester Type has an invalid value/
+    );
+  });
+});
+
+test("entryEngine rejects overlong string values server-side", async () => {
+  await withSandbox("entry-engine-max-length", async () => {
+    await assert.rejects(
+      () =>
+        createEntry(ownerEmail, category, {
+          eventName: "x".repeat(SECURITY_LIMITS.entryMaxStringLength + 1),
+        }),
+      /exceeds 5000 characters/
+    );
   });
 });
 
@@ -218,7 +268,13 @@ test("commitDraft blocks incomplete entries and sets status final when complete"
 
     await assert.rejects(
       () => commitDraft(ownerEmail, category, String(incomplete.id)),
-      /Commit blocked\. Complete required fields:/
+      (error: unknown) => {
+        const asRecord = error as { code?: string; details?: { fieldErrors?: Record<string, string> } };
+        assert.equal(asRecord.code, "VALIDATION_ERROR");
+        assert.ok(asRecord.details?.fieldErrors);
+        assert.equal(typeof asRecord.details?.fieldErrors?.academicYear, "string");
+        return true;
+      }
     );
 
     const complete = await createEntry(ownerEmail, category, buildCompleteWorkshopPayload());
