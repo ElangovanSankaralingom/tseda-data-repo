@@ -752,12 +752,6 @@ export function FdpConductedPage({
       return;
     }
 
-    if (!lifecycle.canDone) {
-      setToast({ type: "err", msg: "Complete all required uploads before finishing." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
     await saveDraftChanges({ closeAfterSave: true, intent: "done" });
   }
 
@@ -843,7 +837,6 @@ export function FdpConductedPage({
     const showToast = source !== "autosave";
     if (saveLockRef.current) return null;
     if (intent === "save" && !lifecycle.canSave) return null;
-    if (intent === "done" && !lifecycle.canDone) return null;
     saveLockRef.current = true;
     let rollbackSnapshot: FdpConducted[] | null = null;
     let lastPersistedEntry: FdpConducted | null = null;
@@ -1135,7 +1128,7 @@ export function FdpConductedPage({
           onSave={() => void saveDraftChanges()}
           saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
           onDone={() => void handleDone()}
-          doneDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
+          doneDisabled={controlsDisabled || saving || loading || hasBusyUploads}
           saving={saving}
           saveIntent={saveIntent}
         />
