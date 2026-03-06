@@ -6,7 +6,7 @@ import { isCategoryKey } from "@/lib/categories";
 import { commitDraft } from "@/lib/entries/lifecycle";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/navigation";
+import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/entryNavigation";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 

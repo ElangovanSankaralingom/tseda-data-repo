@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { dashboard } from "@/lib/navigation";
+import { dashboard } from "@/lib/entryNavigation";
 
 export default async function AdminLayout({
   children,

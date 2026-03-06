@@ -39,7 +39,7 @@ import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { getStreakDeadlineState } from "@/lib/streakDeadline";
-import { entryDetail, entryList, entryNew, safeBack } from "@/lib/navigation";
+import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import { canEditField } from "@/lib/pendingImmutability";
 import {
   createOptimisticSnapshot,

@@ -11,8 +11,7 @@ import {
   getUnfinishedCountByCategory,
   type DataEntrySummary,
 } from "@/lib/entries/summary";
-import { dataEntrySearch, entryList } from "@/lib/navigation";
-import { getDataEntryNavigation } from "@/lib/navigationStack";
+import { dataEntrySearch, entryList, getDataEntryNavigation } from "@/lib/entryNavigation";
 
 type EntryItem = {
   key: keyof DataEntrySummary;

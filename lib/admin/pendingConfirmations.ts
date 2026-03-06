@@ -6,7 +6,7 @@ import { ensureUserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { entryDetail } from "@/lib/navigation";
+import { entryDetail } from "@/lib/entryNavigation";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUsersRootDir } from "@/lib/userStore";
 

@@ -16,7 +16,7 @@ import { CATEGORY_KEYS, isCategoryKey } from "@/lib/categories";
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminIntegrity, adminIntegrityUser } from "@/lib/navigation";
+import { adminIntegrity, adminIntegrityUser } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;

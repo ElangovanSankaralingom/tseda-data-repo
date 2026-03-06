@@ -19,7 +19,7 @@ import {
   dataEntryHome,
   entryDetail,
   entryList,
-} from "@/lib/navigation";
+} from "@/lib/entryNavigation";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 

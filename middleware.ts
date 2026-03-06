@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { isMasterAdmin } from "@/lib/admin";
-import { dashboard } from "@/lib/navigation";
+import { dashboard } from "@/lib/entryNavigation";
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });

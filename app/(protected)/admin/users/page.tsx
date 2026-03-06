@@ -11,7 +11,7 @@ import {
   upsertAdminUser,
 } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminHome, adminUsers, dashboard } from "@/lib/navigation";
+import { adminHome, adminUsers, dashboard } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;

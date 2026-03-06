@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { safeBack } from "@/lib/navigation";
+import { safeBack } from "@/lib/entryNavigation";
 
 function ArrowLeftIcon({ className }: { className?: string }) {
   return (

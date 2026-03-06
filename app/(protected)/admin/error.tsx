@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { toUserMessage } from "@/lib/errors";
-import { adminHome, dashboard } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/entryNavigation";
 
 export default function AdminError({
   error,

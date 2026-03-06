@@ -28,7 +28,7 @@ import {
   adminIntegrity,
   adminUsers,
   dashboard,
-} from "@/lib/navigation";
+} from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 
 type AdminCard = {

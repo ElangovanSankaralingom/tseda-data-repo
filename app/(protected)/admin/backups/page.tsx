@@ -11,7 +11,7 @@ import {
 } from "@/lib/backup/backupService";
 import { toUserMessage } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminHome, dashboard } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;

@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
-import { signin } from "@/lib/navigation";
+import { signin } from "@/lib/entryNavigation";
 
 export const authOptions: NextAuthOptions = {
   providers: [

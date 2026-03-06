@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { canAccessSettings } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminHome, dashboard } from "@/lib/navigation";
+import { adminHome, dashboard } from "@/lib/entryNavigation";
 
 export default async function AdminSettingsPage() {
   const session = await getServerSession(authOptions);
