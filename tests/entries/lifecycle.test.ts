@@ -58,7 +58,7 @@ test("entry category derives from stored state", () => {
     getEntryCategory({
       startDate: today,
       endDate: futureEnd,
-      status: "final",
+      committedAtISO: new Date().toISOString(),
       streak: { completedAtISO: new Date().toISOString() },
     }),
     "completed"
@@ -68,7 +68,7 @@ test("entry category derives from stored state", () => {
     getEntryCategory({
       startDate: pastStart,
       endDate: pastEnd,
-      status: "final",
+      committedAtISO: new Date().toISOString(),
       streak: {},
     }),
     "completed"
@@ -133,7 +133,7 @@ test("groupEntries groups entries globally and sorts newest first within each gr
       updatedAt: "2026-03-04T10:00:00.000Z",
       startDate: today,
       endDate: futureEnd,
-      status: "final",
+      committedAtISO: "2026-03-04T10:00:00.000Z",
       streak: {},
     },
   ]);

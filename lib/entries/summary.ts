@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import { CATEGORY_LIST, type CategorySummaryKey, getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
+import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { migrateCategoryStore } from "@/lib/migrations";
 import { getStreakProgressSnapshot } from "@/lib/streakProgress";
@@ -34,6 +35,8 @@ type SummaryEntry = {
   startDate?: string | null;
   endDate?: string | null;
   status?: string | null;
+  confirmationStatus?: string | null;
+  committedAtISO?: string | null;
   streak?: unknown;
 };
 
@@ -45,7 +48,7 @@ export const EMPTY_DATA_ENTRY_SUMMARY = CATEGORY_LIST.reduce<DataEntrySummary>((
 
 function isCompletedEntry(entry: SummaryEntry) {
   const streak = getStreakProgressSnapshot(entry);
-  return String(entry.status ?? "").trim().toLowerCase() === "final" || streak.hasCompletedAt;
+  return isEntryCommitted(entry as EntryStateLike) || streak.hasCompletedAt;
 }
 
 function isActiveEntry(entry: SummaryEntry) {

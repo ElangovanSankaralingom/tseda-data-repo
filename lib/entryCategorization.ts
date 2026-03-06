@@ -1,4 +1,5 @@
 import { normalizeStreakState } from "./gamification.ts";
+import { isEntryCommitted, type EntryStateLike } from "./entries/stateMachine.ts";
 
 export type EntryCategoryBucket = "draft" | "activated" | "completed";
 export type EntryDisplayCategory = "draft" | "streak_active" | "completed";
@@ -9,6 +10,8 @@ export type StreakIconVariant = "none" | "activated" | "completed" | "genericPas
 export type CategorizableEntry = {
   completionState?: string | null;
   streakState?: string | null;
+  confirmationStatus?: string | null;
+  committedAtISO?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   createdAt?: string | null;
@@ -30,7 +33,7 @@ function normalizeTextValue(value?: string | null) {
 export function isEntryCompleted(entry: CategorizableEntry): boolean {
   const explicitState = normalizeTextValue(entry.completionState);
   if (explicitState === "completed") return true;
-  return entry.status === "final";
+  return isEntryCommitted(entry as EntryStateLike);
 }
 
 export function isStreakCompleted(entry: CategorizableEntry): boolean {

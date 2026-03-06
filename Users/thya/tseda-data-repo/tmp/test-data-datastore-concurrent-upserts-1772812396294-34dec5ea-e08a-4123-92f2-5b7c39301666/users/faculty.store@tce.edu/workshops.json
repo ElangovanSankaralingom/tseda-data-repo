@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "byId": {
+    "concurrent-1": {
+      "id": "concurrent-1",
+      "eventName": "Concurrent 1",
+      "confirmationStatus": "DRAFT",
+      "attachments": [],
+      "createdAt": "2026-03-06T15:53:16.294Z",
+      "updatedAt": "2026-03-06T15:53:16.294Z",
+      "schemaVersion": 1
+    },
+    "concurrent-2": {
+      "id": "concurrent-2",
+      "eventName": "Concurrent 2",
+      "confirmationStatus": "DRAFT",
+      "attachments": [],
+      "createdAt": "2026-03-06T15:53:16.295Z",
+      "updatedAt": "2026-03-06T15:53:16.295Z",
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "concurrent-2",
+    "concurrent-1"
+  ]
+}

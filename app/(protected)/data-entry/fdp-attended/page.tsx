@@ -53,6 +53,7 @@ import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import { uploadFile } from "@/lib/upload/uploadService";
 import type { EntryStatus } from "@/lib/types/entry";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
 type FileMeta = {
   fileName: string;
@@ -65,9 +66,8 @@ type FileMeta = {
 
 type FdpAttended = {
   id: string;
-  status: "draft" | "final";
   confirmationStatus?: EntryStatus;
-  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
@@ -129,7 +129,6 @@ function uuid() {
 function emptyForm(): FdpAttended {
   return {
     id: uuid(),
-    status: "draft",
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     requestEditMessage: "",
@@ -601,9 +600,7 @@ export function FdpAttendedPage({
       status:
         String(
           persisted?.confirmationStatus ??
-            persisted?.status ??
             nextForm.confirmationStatus ??
-            nextForm.status ??
             ""
         ).trim() || null,
       success: true,
@@ -752,10 +749,7 @@ export function FdpAttendedPage({
 
       setSaving(true);
       setSaveIntent(intent);
-      const entryToSave: FdpAttended = {
-        ...form,
-        status: form.status === "final" ? "final" : "draft",
-      };
+      const entryToSave: FdpAttended = { ...form };
       const optimisticEntry: FdpAttended = {
         ...entryToSave,
         updatedAt: new Date().toISOString(),
@@ -854,7 +848,6 @@ export function FdpAttendedPage({
       setSaveIntent("save");
       const draftEntry: FdpAttended = {
         ...form,
-        status: form.status === "final" ? "final" : "draft",
         pdfStale: pdfState.pdfStale,
         pdfSourceHash: form.pdfSourceHash || "",
       };

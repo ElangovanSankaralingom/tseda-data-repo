@@ -42,6 +42,7 @@ import {
   getEntryStreakDisplayState,
   type EntryDisplayCategory,
 } from "@/lib/entries/displayLifecycle";
+import { isEntryCommitted } from "@/lib/entries/stateMachine";
 import { groupEntries } from "@/lib/entryCategorization";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
@@ -54,6 +55,7 @@ import {
 import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import type { EntryStatus } from "@/lib/types/entry";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
 type FileMeta = {
   fileName: string;
@@ -76,9 +78,8 @@ type WorkshopEntry = {
   sharedEntryId?: string;
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
-  status?: "draft" | "final";
   confirmationStatus?: EntryStatus;
-  requestEditStatus?: "none" | "pending" | "approved" | "rejected";
+  requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
   semesterType: "Odd" | "Even" | "";
@@ -221,7 +222,6 @@ function formatFacultyDisplay(selection: FacultyRowValue) {
 function createEmptyForm(currentFaculty?: FacultyRowValue): WorkshopEntry {
   return {
     id: uuid(),
-    status: "draft",
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     academicYear: "",
@@ -670,9 +670,7 @@ export function WorkshopsPage({
       status:
         String(
           persisted?.confirmationStatus ??
-            persisted?.status ??
             nextForm.confirmationStatus ??
-            nextForm.status ??
             ""
         ).trim() || null,
       success: true,
@@ -770,7 +768,6 @@ export function WorkshopsPage({
       setSaveIntent(intent);
       const entryToSave: WorkshopEntry = {
         ...form,
-        status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
       };
       const optimisticEntry = hydrateEntry({
@@ -869,7 +866,6 @@ export function WorkshopsPage({
       setSaving(true);
       const draftEntry: WorkshopEntry = {
         ...form,
-        status: form.status === "final" ? "final" : "draft",
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
         pdfStale: pdfState.pdfStale,
         pdfSourceHash: form.pdfSourceHash || "",
@@ -1036,7 +1032,7 @@ export function WorkshopsPage({
       !Number.isNaN(createdTime) &&
       !Number.isNaN(updatedTime) &&
       Math.abs(updatedTime - createdTime) > 60 * 1000;
-    const completedEntry = entry.status === "final";
+    const completedEntry = isEntryCommitted(entry);
     const confirmationStatus = getEntryApprovalStatus(entry);
     const lockApproved = isEntryLockedFromStatus(entry);
     const canSendConfirmation = canSendForConfirmation(entry);

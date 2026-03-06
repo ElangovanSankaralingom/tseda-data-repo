@@ -1,0 +1,79 @@
+{
+  "version": 2,
+  "userEmail": "faculty.index@tce.edu",
+  "updatedAt": "2026-03-06T15:02:08.609Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "countsByStatus": {
+    "DRAFT": 0,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 1,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T15:02:08.607Z"
+  },
+  "streakSnapshot": {
+    "ruleVersion": 2,
+    "streakActivatedCount": 0,
+    "streakWinsCount": 1,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 1
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T15:02:08.609Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:a6d88459-8625-4eb0-8c42-a713cb96a8de": {
+      "entryId": "a6d88459-8625-4eb0-8c42-a713cb96a8de",
+      "categoryKey": "workshops",
+      "title": "Index Workshop",
+      "text": "index workshop workshops approved academic year 2025 2026 odd index workshop speaker tce",
+      "status": "APPROVED",
+      "updatedAtISO": "2026-03-06T15:02:08.607Z",
+      "createdAtISO": "2026-03-06T15:02:08.576Z"
+    }
+  }
+}

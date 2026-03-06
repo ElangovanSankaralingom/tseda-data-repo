@@ -1,4 +1,5 @@
 import type { Entry, EntryStatus, UploadedFile } from "@/lib/types/entry";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import type { CategorySlug } from "@/data/categoryRegistry";
 
 export type CategoryKey = CategorySlug;
@@ -15,7 +16,7 @@ export type PdfSnapshotMeta = {
 
 export type LockStateColor = "normal" | "yellow" | "red";
 
-export type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
+export type { RequestEditStatus };
 
 export type RequestEditableEntry = {
   id: string;

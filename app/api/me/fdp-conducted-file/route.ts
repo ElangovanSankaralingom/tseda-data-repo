@@ -18,7 +18,7 @@ const ALLOWED_SLOTS = new Set<Slot>(["permissionLetter", "geotaggedPhotos"]);
 
 type FdpConductedRecord = {
   id: string;
-  status?: "draft" | "final";
+  status?: string;
   pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
   permissionLetter?: unknown;
   geotaggedPhotos?: unknown;

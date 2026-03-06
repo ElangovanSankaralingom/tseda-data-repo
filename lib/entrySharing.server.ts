@@ -3,6 +3,7 @@ import {
   cloneFileMetaArrayToTarget,
   cloneFileMetaToTarget,
 } from "@/lib/crosspost.server";
+import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachine";
 
 type FileMeta = {
   fileName: string;
@@ -13,8 +14,8 @@ type FileMeta = {
   storedPath: string;
 };
 
-export function shouldShareEntry(entry: { status?: string | null }) {
-  return entry.status === "final";
+export function shouldShareEntry(entry: EntryStateLike) {
+  return isEntryCommitted(entry);
 }
 
 export async function cloneOptionalFileToTarget(

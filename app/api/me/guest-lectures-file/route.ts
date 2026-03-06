@@ -18,7 +18,7 @@ type Slot =
 
 type GuestLectureRecord = {
   id: string;
-  status?: "draft" | "final";
+  status?: string;
   pdfMeta?: { storedPath?: string | null; url?: string | null } | null;
   uploads?: Record<string, unknown> | null;
   startDate?: string;

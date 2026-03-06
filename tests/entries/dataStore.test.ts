@@ -51,7 +51,7 @@ test("DataStore write/read round-trip keeps persisted entries", async () => {
   });
 });
 
-test("DataStore normalization applies default attachments and status values", async () => {
+test("DataStore normalization applies default attachments and canonical confirmation status", async () => {
   await withSandbox("datastore-normalize", async (store) => {
     const filePath = store.categoryFilePath(email, "guest-lectures");
     await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -80,7 +80,7 @@ test("DataStore normalization applies default attachments and status values", as
     assert.equal(String(entries[0]?.eventName ?? ""), "Legacy no status");
     assert.equal(entries[0]?.speakerName, null);
     assert.equal(String(entries[0]?.startDate ?? ""), "2026-04-01");
-    assert.equal(String(entries[0]?.status ?? ""), "draft");
+    assert.equal(entries[0]?.status, undefined);
     assert.equal(String(entries[0]?.confirmationStatus ?? ""), "DRAFT");
     assert.equal(String(entries[1]?.confirmationStatus ?? ""), "PENDING_CONFIRMATION");
   });

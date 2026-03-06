@@ -115,6 +115,7 @@ export type EntryStateLike = {
   confirmationStatus?: unknown;
   requestEditStatus?: unknown;
   status?: unknown;
+  committedAtISO?: unknown;
   sentForConfirmationAtISO?: unknown;
   confirmedAtISO?: unknown;
   confirmedBy?: unknown;
@@ -137,6 +138,14 @@ function normalizeStatusValue(value: unknown): EntryStatus | null {
   if (normalized === "APPROVED") return "APPROVED";
   if (normalized === "REJECTED") return "REJECTED";
   return null;
+}
+
+function toOptionalISO(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Date.parse(trimmed);
+  return Number.isNaN(parsed) ? null : trimmed;
 }
 
 function normalizeLegacyRequestStatus(value: unknown): EntryStatus | null {
@@ -170,6 +179,23 @@ export function normalizeEntryStatus(
   if (fromLegacy) return fromLegacy;
 
   return fallback;
+}
+
+export function isEntryCommitted(entry: EntryStateLike): boolean {
+  if (toOptionalISO(entry.committedAtISO)) {
+    return true;
+  }
+
+  const workflowStatus = normalizeEntryStatus(entry);
+  if (
+    workflowStatus === "PENDING_CONFIRMATION" ||
+    workflowStatus === "APPROVED" ||
+    workflowStatus === "REJECTED"
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export function canTransition(from: EntryStatus, to: EntryStatus): boolean {

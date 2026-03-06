@@ -33,7 +33,11 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
+import {
+  isEntryCommitted,
+  normalizeEntryStatus,
+  type EntryStateLike,
+} from "@/lib/entries/stateMachine";
 import {
   isSemesterAllowed,
   normalizeStudentYear,
@@ -41,6 +45,7 @@ import {
 } from "@/lib/student-academic";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { EntryStatus } from "@/lib/types/entry";
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import { safeEmailDir } from "@/lib/userStore";
 
 type FileMeta = {
@@ -59,8 +64,6 @@ type FacultySelection = {
   isLocked?: boolean;
   savedAtISO?: string | null;
 };
-
-type RequestEditStatus = "none" | "pending" | "approved" | "rejected";
 
 type UploadSlot =
   | "permissionLetter"
@@ -82,8 +85,8 @@ type GuestLectureEntry = {
   sharedEntryId?: string;
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
-  status?: "draft" | "final";
   confirmationStatus?: EntryStatus;
+  committedAtISO?: string | null;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
@@ -284,8 +287,11 @@ function normalizeEntry(value: unknown): GuestLectureEntry | null {
     sharedEntryId: String(record.sharedEntryId ?? "").trim() || undefined,
     sourceEmail: String(record.sourceEmail ?? "").trim() || undefined,
     sharedRole: record.sharedRole === "coCoordinator" ? "coCoordinator" : undefined,
-    status: record.status === "final" ? "final" : "draft",
     confirmationStatus: normalizeEntryStatus(record as Record<string, unknown>),
+    committedAtISO:
+      typeof record.committedAtISO === "string" && record.committedAtISO.trim()
+        ? record.committedAtISO.trim()
+        : null,
     requestEditStatus: normalizeRequestEditStatus(record.requestEditStatus),
     requestEditRequestedAtISO:
       typeof record.requestEditRequestedAtISO === "string" && record.requestEditRequestedAtISO.trim()
@@ -327,7 +333,10 @@ function normalizeEntry(value: unknown): GuestLectureEntry | null {
 }
 
 function buildSavedStreak(
-  entry: Pick<GuestLectureEntry, "status" | "pdfMeta" | "startDate" | "endDate" | "streak" | "uploads">
+  entry: Pick<
+    GuestLectureEntry,
+    "confirmationStatus" | "committedAtISO" | "pdfMeta" | "startDate" | "endDate" | "streak" | "uploads"
+  >
 ) {
   const normalized = normalizeStreakState(entry.streak);
   const eligible = isFutureDatedEntry(entry.startDate, entry.endDate);
@@ -348,7 +357,7 @@ function buildSavedStreak(
     activatedAtISO: normalized.activatedAtISO ?? null,
     dueAtISO,
     completedAtISO:
-      entry.status === "final" &&
+      isEntryCommitted(entry as EntryStateLike) &&
       normalized.activatedAtISO &&
       uploadsComplete &&
       dueAtISO &&
@@ -463,6 +472,8 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as { email?: string; entry?: unknown };
+    const entryRecord =
+      body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
     const email = normalizeEmail(String(body?.email ?? ""));
     const entry = normalizeEntry(body?.entry);
 
@@ -581,12 +592,28 @@ export async function POST(request: Request) {
     }
     const now = new Date().toISOString();
     const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
+    const existingCommittedAtISO =
+      typeof existing?.committedAtISO === "string" && existing.committedAtISO.trim()
+        ? existing.committedAtISO
+        : null;
+    const requestedCommitted = isEntryCommitted({
+      ...(entry as EntryStateLike),
+      status: entryRecord?.status,
+    });
+    const nextCommitted = !!existingCommittedAtISO || requestedCommitted;
+    const nextCommittedAtISO =
+      existingCommittedAtISO ??
+      (nextCommitted
+        ? (typeof entry.committedAtISO === "string" && entry.committedAtISO.trim()
+            ? entry.committedAtISO
+            : now)
+        : null);
 
     const savedEntry: GuestLectureEntry = {
       id: entry.id,
       sharedEntryId,
       sourceEmail: email,
-      status: entry.status === "final" ? "final" : "draft",
+      committedAtISO: nextCommittedAtISO,
       academicYear: entry.academicYear,
       semesterType: entry.semesterType,
       startDate: entry.startDate,
@@ -613,7 +640,8 @@ export async function POST(request: Request) {
       pdfStale: entry.pdfStale === true,
       uploads: entry.uploads,
       streak: buildSavedStreak({
-        status: entry.status === "final" ? "final" : "draft",
+        confirmationStatus: entry.confirmationStatus,
+        committedAtISO: nextCommittedAtISO,
         pdfMeta: entry.pdfMeta ?? existing?.pdfMeta ?? null,
         startDate: entry.startDate,
         endDate: entry.endDate,
@@ -723,7 +751,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(persisted, { status: 200 });
+    return NextResponse.json(normalizeEntry(persisted) ?? persisted, { status: 200 });
   } catch (error) {
     return mutationErrorResponse(error, "Save failed");
   }
@@ -849,11 +877,27 @@ export async function PATCH(request: Request) {
     ) {
       return NextResponse.json({ error: "geotaggedPhotos invalid" }, { status: 400 });
     }
+    const existingCommittedAtISO =
+      typeof existing?.committedAtISO === "string" && existing.committedAtISO.trim()
+        ? existing.committedAtISO
+        : null;
+    const requestedCommitted = isEntryCommitted({
+      ...(entry as EntryStateLike),
+      status: entryRecord?.status,
+    });
+    const nextCommitted = !!existingCommittedAtISO || requestedCommitted;
+    const nextCommittedAtISO =
+      existingCommittedAtISO ??
+      (nextCommitted
+        ? (typeof entry.committedAtISO === "string" && entry.committedAtISO.trim()
+            ? entry.committedAtISO
+            : now)
+        : null);
 
     const savedEntry: GuestLectureEntry = {
       ...(existing ?? {
         id: entry.id,
-        status: "draft",
+        committedAtISO: null,
         requestEditStatus: "none",
         requestEditRequestedAtISO: null,
         coordinator,
@@ -877,7 +921,7 @@ export async function PATCH(request: Request) {
         updatedAt: now,
       }),
       id: entry.id,
-      status: entry.status === "final" ? "final" : existing?.status ?? "draft",
+      committedAtISO: nextCommittedAtISO,
       requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
       requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       academicYear: hasAcademicYear ? entry.academicYear : existing?.academicYear ?? "",
@@ -906,7 +950,8 @@ export async function PATCH(request: Request) {
       pdfStale: hasPdfStale ? entry.pdfStale === true : existing?.pdfStale === true,
       uploads: nextUploads,
       streak: buildSavedStreak({
-        status: entry.status === "final" ? "final" : existing?.status ?? "draft",
+        confirmationStatus: entry.confirmationStatus ?? existing?.confirmationStatus,
+        committedAtISO: nextCommittedAtISO,
         pdfMeta: hasPdfMeta ? (entry.pdfMeta ?? null) : existing?.pdfMeta ?? null,
         startDate: hasStartDate ? entry.startDate : existing?.startDate ?? "",
         endDate: hasEndDate ? entry.endDate : existing?.endDate ?? "",
@@ -998,7 +1043,7 @@ export async function PATCH(request: Request) {
       }
     }
 
-    return NextResponse.json(persisted, { status: 200 });
+    return NextResponse.json(normalizeEntry(persisted) ?? persisted, { status: 200 });
   } catch (error) {
     return mutationErrorResponse(error, "Save failed");
   }

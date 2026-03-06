@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "byId": {
+    "3140189e-4459-424f-990b-11006a6bd518": {
+      "id": "3140189e-4459-424f-990b-11006a6bd518",
+      "academicYear": "2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2026-03-03",
+      "endDate": "2026-03-04",
+      "eventName": "Won streak workshop",
+      "speakerName": "Speaker Won",
+      "organisationName": "Org Won",
+      "uploads": {
+        "permissionLetter": {
+          "storedPath": "uploads/workshops/win-permission.pdf"
+        },
+        "brochure": {
+          "storedPath": "uploads/workshops/win-brochure.pdf"
+        },
+        "attendance": {
+          "storedPath": "uploads/workshops/win-attendance.pdf"
+        },
+        "organiserProfile": {
+          "storedPath": "uploads/workshops/win-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "storedPath": "uploads/workshops/win-photo.jpg"
+          }
+        ]
+      },
+      "createdAt": "2026-03-06T15:57:37.402Z",
+      "updatedAt": "2026-03-06T15:57:37.416Z",
+      "confirmationStatus": "APPROVED",
+      "sentForConfirmationAtISO": "2026-03-06T15:57:37.408Z",
+      "confirmedAtISO": "2026-03-06T15:57:37.416Z",
+      "confirmedBy": "senarch@tce.edu",
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "committedAtISO": "2026-03-06T15:57:37.402Z",
+      "schemaVersion": 1
+    },
+    "28f33d35-058d-4764-90bd-81619af9d6ea": {
+      "academicYear": "2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2026-03-01",
+      "endDate": "2026-03-02",
+      "eventName": "Active streak workshop",
+      "speakerName": "Speaker Active",
+      "organisationName": "Org Active",
+      "uploads": {
+        "permissionLetter": {
+          "storedPath": "uploads/workshops/active-permission.pdf"
+        },
+        "brochure": {
+          "storedPath": "uploads/workshops/active-brochure.pdf"
+        },
+        "attendance": {
+          "storedPath": "uploads/workshops/active-attendance.pdf"
+        },
+        "organiserProfile": {
+          "storedPath": "uploads/workshops/active-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "storedPath": "uploads/workshops/active-photo.jpg"
+          }
+        ]
+      },
+      "id": "28f33d35-058d-4764-90bd-81619af9d6ea",
+      "createdAt": "2026-03-06T15:57:37.387Z",
+      "updatedAt": "2026-03-06T15:57:37.387Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "committedAtISO": "2026-03-06T15:57:37.387Z",
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "3140189e-4459-424f-990b-11006a6bd518",
+    "28f33d35-058d-4764-90bd-81619af9d6ea"
+  ]
+}

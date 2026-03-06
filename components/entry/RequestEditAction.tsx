@@ -2,8 +2,7 @@
 
 import { ActionButton } from "@/components/ui/ActionButton";
 import { isWithinRequestEditWindow } from "@/lib/entries/lock";
-
-type RequestEditStatus = "none" | "pending" | "approved" | "rejected" | undefined;
+import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
 export default function RequestEditAction({
   locked,
@@ -14,7 +13,7 @@ export default function RequestEditAction({
   onCancel,
 }: {
   locked: boolean;
-  status: RequestEditStatus;
+  status: RequestEditStatus | undefined;
   requestedAtISO?: string | null;
   requesting: boolean;
   onRequest: () => void;
