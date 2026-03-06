@@ -1,8 +1,11 @@
 import "server-only";
 
 import { CATEGORY_LIST, getCategoryConfig, getCategorySchema } from "@/data/categoryRegistry";
+import {
+  BASE_EXPORT_FIELD_DEFS,
+  type SchemaExportFieldDefinition,
+} from "@/data/schemas/exportConfig";
 import type {
-  SchemaExportFormatter,
   SchemaFieldKind,
 } from "@/data/schemas/types";
 import { isCategoryKey } from "@/lib/categories";
@@ -14,7 +17,12 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";
 import { normalizeEntry } from "@/lib/normalize";
 import { err, ok, type Result } from "@/lib/result";
-import type { EntryStatus } from "@/lib/types/entry";
+import {
+  ENTRY_STATUSES,
+  ENTRY_STATUS_LABELS,
+  isEntryStatus,
+  type EntryStatus,
+} from "@/lib/types/entry";
 
 export const EXPORT_MAX_ROWS_DEFAULT = 10_000;
 export const EXPORT_MAX_FIELDS_DEFAULT = 80;
@@ -33,6 +41,11 @@ export type ExportFieldOption = {
   kind: SchemaFieldKind;
 };
 
+export type ExportCategoryOption = {
+  key: ExportCategorySelection;
+  label: string;
+};
+
 export type BuildExportOptions = {
   statuses?: EntryStatus[];
   fromISO?: string;
@@ -48,27 +61,16 @@ export type ExportRowsResult = {
   countsByStatus: Record<EntryStatus, number>;
 };
 
-export const EXPORT_CANONICAL_STATUSES: readonly EntryStatus[] = [
-  "DRAFT",
-  "PENDING_CONFIRMATION",
-  "APPROVED",
-  "REJECTED",
-] as const;
+export const EXPORT_CANONICAL_STATUSES: readonly EntryStatus[] = ENTRY_STATUSES;
 
-export const EXPORT_STATUS_OPTIONS: readonly ExportStatusOption[] = [
-  { key: "DRAFT", label: "Draft" },
-  { key: "PENDING_CONFIRMATION", label: "Pending Confirmation" },
-  { key: "APPROVED", label: "Approved" },
-  { key: "REJECTED", label: "Rejected" },
-] as const;
+export const EXPORT_STATUS_OPTIONS: readonly ExportStatusOption[] = ENTRY_STATUSES.map(
+  (status) => ({
+    key: status,
+    label: ENTRY_STATUS_LABELS[status],
+  })
+);
 
-type ExportFieldDefinition = {
-  key: string;
-  label: string;
-  kind: SchemaFieldKind;
-  exportOrder: number;
-  exportFormatter: SchemaExportFormatter;
-};
+type ExportFieldDefinition = SchemaExportFieldDefinition;
 
 type CollectedExportEntry = {
   categoryKey: CategoryKey;
@@ -77,51 +79,12 @@ type CollectedExportEntry = {
   entry: Record<string, unknown>;
 };
 
-const BASE_EXPORT_FIELD_DEFS: readonly ExportFieldDefinition[] = [
-  {
-    key: "category",
-    label: "Category",
-    kind: "string",
-    exportOrder: 10,
-    exportFormatter: "auto",
-  },
-  {
-    key: "id",
-    label: "Entry ID",
-    kind: "string",
-    exportOrder: 20,
-    exportFormatter: "auto",
-  },
-  {
-    key: "confirmationStatus",
-    label: "Confirmation Status",
-    kind: "string",
-    exportOrder: 30,
-    exportFormatter: "status",
-  },
-  {
-    key: "createdAt",
-    label: "Created At",
-    kind: "string",
-    exportOrder: 40,
-    exportFormatter: "datetime",
-  },
-  {
-    key: "updatedAt",
-    label: "Updated At",
-    kind: "string",
-    exportOrder: 50,
-    exportFormatter: "datetime",
-  },
-] as const;
-
 function createEmptyStatusCounts(): Record<EntryStatus, number> {
-  return {
-    DRAFT: 0,
-    PENDING_CONFIRMATION: 0,
-    APPROVED: 0,
-    REJECTED: 0,
-  };
+  const counts = {} as Record<EntryStatus, number>;
+  for (const status of EXPORT_CANONICAL_STATUSES) {
+    counts[status] = 0;
+  }
+  return counts;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -311,12 +274,7 @@ function resolveUsedFieldDefinitions(
 }
 
 function isCanonicalExportStatus(value: string): value is EntryStatus {
-  return (
-    value === "DRAFT" ||
-    value === "PENDING_CONFIRMATION" ||
-    value === "APPROVED" ||
-    value === "REJECTED"
-  );
+  return isEntryStatus(value);
 }
 
 function resolveAllowedStatuses(statuses?: EntryStatus[]) {
@@ -422,6 +380,16 @@ export function getExportableFields(category: ExportCategorySelection): ExportFi
     label: fieldDef.label,
     kind: fieldDef.kind,
   }));
+}
+
+export function getExportCategoryOptions(): ExportCategoryOption[] {
+  return [
+    { key: "all", label: "All Categories" },
+    ...CATEGORY_LIST.map((categoryKey) => ({
+      key: categoryKey,
+      label: getCategoryConfig(categoryKey).label,
+    })),
+  ];
 }
 
 export async function buildExportRows(

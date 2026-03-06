@@ -21,9 +21,11 @@ import {
   type SearchSnapshot,
 } from "@/lib/search/searchText";
 import {
-  getStreakProgressSnapshot,
+  computeCanonicalStreakSnapshot,
   sortActiveStreakEntries,
   STREAK_RULE_VERSION,
+  toStreakSortAtISO,
+  type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
@@ -85,8 +87,6 @@ export type UserIndexDelta = {
   pendingByCategory?: Partial<Record<CategoryKey, number>>;
   approvedByCategory?: Partial<Record<CategoryKey, number>>;
   lastEntryAtByCategory?: Partial<Record<CategoryKey, string | null>>;
-  streakActivatedCount?: number;
-  streakWinsCount?: number;
 };
 
 type EntryContribution = {
@@ -94,9 +94,6 @@ type EntryContribution = {
   status: EntryStatus;
   pending: number;
   approved: number;
-  streakActive: number;
-  streakWin: number;
-  dueAtISO: string | null;
   sortAtISO: string | null;
 };
 
@@ -181,19 +178,13 @@ function toContribution(entry: EntryLike | null): EntryContribution | null {
   const status = normalizeEntryStatus(entry as EntryStateLike);
   const pending = status === "PENDING_CONFIRMATION" ? 1 : 0;
   const approved = status === "APPROVED" ? 1 : 0;
-  const streak = getStreakProgressSnapshot(entry);
-  const streakActive = streak.isActivated ? 1 : 0;
-  const streakWin = streak.isWin ? 1 : 0;
 
   return {
     id,
     status,
     pending,
     approved,
-    streakActive,
-    streakWin,
-    dueAtISO: streak.dueAtISO,
-    sortAtISO: streak.sortAtISO,
+    sortAtISO: toStreakSortAtISO(entry),
   };
 }
 
@@ -233,6 +224,41 @@ function hydrateSearchIndexMap(raw: unknown) {
 
 function sortActiveEntries(entries: UserIndexActiveEntry[]) {
   return sortActiveStreakEntries(entries);
+}
+
+function buildStreakSnapshotFromInputs(
+  entries: ReadonlyArray<StreakProgressAggregateEntry>,
+  nowISO: string
+): UserIndex["streakSnapshot"] {
+  const summary = computeCanonicalStreakSnapshot(entries);
+  return {
+    ruleVersion: USER_INDEX_STREAK_RULE_VERSION,
+    streakActivatedCount: summary.streakActivatedCount,
+    streakWinsCount: summary.streakWinsCount,
+    byCategory: CATEGORY_KEYS.reduce<UserIndexStreakByCategory>((next, category) => {
+      next[category] = {
+        activated: summary.byCategory[category].activated,
+        wins: summary.byCategory[category].wins,
+      };
+      return next;
+    }, {} as UserIndexStreakByCategory),
+    activeEntries: sortActiveEntries(summary.activeEntries),
+    lastComputedAt: nowISO,
+  };
+}
+
+async function buildStreakSnapshotFromStore(userEmail: string, nowISO: string) {
+  const streakInputs: StreakProgressAggregateEntry[] = [];
+  for (const category of CATEGORY_KEYS) {
+    const entries = await readCategoryEntries(userEmail, category);
+    for (const entry of entries) {
+      streakInputs.push({
+        ...(entry as EntryLike),
+        categoryKey: category,
+      });
+    }
+  }
+  return buildStreakSnapshotFromInputs(streakInputs, nowISO);
 }
 
 function hydrateIndex(
@@ -380,7 +406,7 @@ async function readIndexRaw(userEmail: string): Promise<unknown | null> {
 async function buildUserIndex(userEmail: string): Promise<UserIndex> {
   const nowISO = new Date().toISOString();
   const index = createEmptyUserIndex(userEmail, nowISO);
-  const activeEntries: UserIndexActiveEntry[] = [];
+  const streakInputs: StreakProgressAggregateEntry[] = [];
 
   for (const category of CATEGORY_KEYS) {
     const entries = await readCategoryEntries(userEmail, category);
@@ -406,37 +432,22 @@ async function buildUserIndex(userEmail: string): Promise<UserIndex> {
       if (snapshot) {
         index.searchIndexByEntryId[getSearchSnapshotKey(category, snapshot.entryId)] = snapshot;
       }
+      streakInputs.push({
+        ...(entry as EntryLike),
+        categoryKey: category,
+      });
 
       const sortAtTime = toSortTime(contribution.sortAtISO);
       if (sortAtTime !== Number.POSITIVE_INFINITY && sortAtTime > latestEntryTime) {
         latestEntryTime = sortAtTime;
         latestEntryAt = contribution.sortAtISO;
       }
-
-      if (contribution.streakActive) {
-        index.streakSnapshot.streakActivatedCount += 1;
-        index.streakSnapshot.byCategory[category].activated += 1;
-        if (contribution.id) {
-          activeEntries.push({
-            id: contribution.id,
-            categoryKey: category,
-            dueAtISO: contribution.dueAtISO,
-            sortAtISO: contribution.sortAtISO,
-          });
-        }
-      }
-
-      if (contribution.streakWin) {
-        index.streakSnapshot.streakWinsCount += 1;
-        index.streakSnapshot.byCategory[category].wins += 1;
-      }
     }
 
     index.lastEntryAtByCategory[category] = latestEntryAt;
   }
 
-  index.streakSnapshot.activeEntries = sortActiveEntries(activeEntries);
-  index.streakSnapshot.lastComputedAt = nowISO;
+  index.streakSnapshot = buildStreakSnapshotFromInputs(streakInputs, nowISO);
   index.updatedAt = nowISO;
   return index;
 }
@@ -595,17 +606,6 @@ export async function applyIndexDelta(
         next.countsByStatus[status] = clampCount(next.countsByStatus[status] + statusDelta);
       }
 
-      if (typeof delta.streakActivatedCount === "number") {
-        next.streakSnapshot.streakActivatedCount = clampCount(
-          next.streakSnapshot.streakActivatedCount + delta.streakActivatedCount
-        );
-      }
-      if (typeof delta.streakWinsCount === "number") {
-        next.streakSnapshot.streakWinsCount = clampCount(
-          next.streakSnapshot.streakWinsCount + delta.streakWinsCount
-        );
-      }
-
       next.updatedAt = new Date().toISOString();
       await writeIndexFile(normalizedEmail, next);
       logger.info({
@@ -696,10 +696,6 @@ export async function updateIndexForEntryMutation(
         next.countsByStatus[before.status] -= 1;
         next.pendingByCategory[category] -= before.pending;
         next.approvedByCategory[category] -= before.approved;
-        next.streakSnapshot.streakActivatedCount -= before.streakActive;
-        next.streakSnapshot.streakWinsCount -= before.streakWin;
-        next.streakSnapshot.byCategory[category].activated -= before.streakActive;
-        next.streakSnapshot.byCategory[category].wins -= before.streakWin;
       }
 
       if (after) {
@@ -707,18 +703,7 @@ export async function updateIndexForEntryMutation(
         next.countsByStatus[after.status] += 1;
         next.pendingByCategory[category] += after.pending;
         next.approvedByCategory[category] += after.approved;
-        next.streakSnapshot.streakActivatedCount += after.streakActive;
-        next.streakSnapshot.streakWinsCount += after.streakWin;
-        next.streakSnapshot.byCategory[category].activated += after.streakActive;
-        next.streakSnapshot.byCategory[category].wins += after.streakWin;
       }
-
-      next.streakSnapshot.activeEntries = next.streakSnapshot.activeEntries.filter((entry) => {
-        if (entry.categoryKey !== category) return true;
-        if (before?.id && entry.id === before.id) return false;
-        if (after?.id && entry.id === after.id) return false;
-        return true;
-      });
 
       if (beforeSnapshot) {
         delete next.searchIndexByEntryId[getSearchSnapshotKey(category, beforeSnapshot.entryId)];
@@ -730,22 +715,13 @@ export async function updateIndexForEntryMutation(
         next.searchIndexByEntryId[getSearchSnapshotKey(category, afterSnapshot.entryId)] = afterSnapshot;
       }
 
-      if (after?.streakActive && after.id) {
-        next.streakSnapshot.activeEntries.push({
-          id: after.id,
-          categoryKey: category,
-          dueAtISO: after.dueAtISO,
-          sortAtISO: after.sortAtISO,
-        });
-      }
-
-      next.streakSnapshot.activeEntries = sortActiveEntries(next.streakSnapshot.activeEntries);
-
       const currentLastTime = toSortTime(next.lastEntryAtByCategory[category]);
       const afterTime = toSortTime(after?.sortAtISO);
       if (after?.sortAtISO && afterTime < Number.POSITIVE_INFINITY && afterTime >= currentLastTime) {
         next.lastEntryAtByCategory[category] = after.sortAtISO;
       }
+
+      next.streakSnapshot = await buildStreakSnapshotFromStore(normalizedEmail, nowISO);
 
       if (isInvalidCountMap(next)) {
         const rebuilt = await buildUserIndex(normalizedEmail);
@@ -759,7 +735,6 @@ export async function updateIndexForEntryMutation(
       }
 
       next.updatedAt = nowISO;
-      next.streakSnapshot.lastComputedAt = nowISO;
       await writeIndexFile(normalizedEmail, next);
       logger.info({
         event: "index.entryMutation.applied",

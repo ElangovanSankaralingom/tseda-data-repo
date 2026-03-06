@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  computeCanonicalStreakSnapshot,
   computeStreakProgressAggregate,
   getStreakProgressSnapshot,
 } from "../../lib/streakProgress.ts";
@@ -90,4 +91,29 @@ test("streak progress aggregate uses one canonical activated/wins rule", () => {
   assert.equal(summary.byCategory.workshops.wins, 1);
   assert.equal(summary.byCategory["fdp-attended"].wins, 1);
   assert.deepEqual(summary.activatedEntries.map((entry) => entry.id), ["entry-1"]);
+});
+
+test("canonical streak snapshot maps aggregate totals and active entries", () => {
+  const summary = computeCanonicalStreakSnapshot([
+    {
+      categoryKey: "workshops",
+      id: "entry-1",
+      status: "final",
+      confirmationStatus: "DRAFT",
+      updatedAt: "2026-03-06T10:01:00.000Z",
+    },
+    {
+      categoryKey: "workshops",
+      id: "entry-2",
+      status: "final",
+      confirmationStatus: "APPROVED",
+      updatedAt: "2026-03-06T10:02:00.000Z",
+    },
+  ]);
+
+  assert.equal(summary.streakActivatedCount, 1);
+  assert.equal(summary.streakWinsCount, 1);
+  assert.equal(summary.byCategory.workshops.activated, 1);
+  assert.equal(summary.byCategory.workshops.wins, 1);
+  assert.deepEqual(summary.activeEntries.map((entry) => entry.id), ["entry-1"]);
 });

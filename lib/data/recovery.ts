@@ -2,7 +2,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CATEGORY_KEYS } from "@/lib/categories";
-import type { UserIndex, UserIndexActiveEntry } from "@/lib/data/indexStore";
+import type { UserIndex } from "@/lib/data/indexStore";
 import { readEvents, type WalEvent } from "@/lib/data/wal";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
@@ -13,9 +13,10 @@ import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { buildSearchSnapshot, getSearchSnapshotKey } from "@/lib/search/searchText";
 import {
-  getStreakProgressSnapshot,
-  sortActiveStreakEntries,
+  computeCanonicalStreakSnapshot,
   STREAK_RULE_VERSION,
+  toStreakSortAtISO,
+  type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
@@ -98,7 +99,7 @@ function applyEvent(
 function buildIndexFromState(userEmail: string, state: Map<CategoryKey, Map<string, Entry>>) {
   const nowISO = new Date().toISOString();
   const index = createEmptyIndex(userEmail, nowISO);
-  const activeEntries: UserIndexActiveEntry[] = [];
+  const streakInputs: StreakProgressAggregateEntry[] = [];
 
   for (const category of CATEGORY_KEYS) {
     const entriesMap = state.get(category) ?? new Map<string, Entry>();
@@ -118,38 +119,37 @@ function buildIndexFromState(userEmail: string, state: Map<CategoryKey, Map<stri
       if (snapshot) {
         index.searchIndexByEntryId[getSearchSnapshotKey(category, snapshot.entryId)] = snapshot;
       }
+      streakInputs.push({
+        ...(entry as EntryLike),
+        categoryKey: category,
+      });
 
-      const streak = getStreakProgressSnapshot(entry);
-      const sortTime = toSortTime(streak.sortAtISO);
-      if (streak.sortAtISO && sortTime > latestTime && sortTime < Number.POSITIVE_INFINITY) {
+      const sortAtISO = toStreakSortAtISO(entry);
+      const sortTime = toSortTime(sortAtISO);
+      if (sortAtISO && sortTime > latestTime && sortTime < Number.POSITIVE_INFINITY) {
         latestTime = sortTime;
-        latestAt = streak.sortAtISO;
-      }
-
-      const entryId = String(entry.id ?? "").trim();
-      if (streak.isActivated) {
-        index.streakSnapshot.streakActivatedCount += 1;
-        index.streakSnapshot.byCategory[category].activated += 1;
-        if (entryId) {
-          activeEntries.push({
-            id: entryId,
-            categoryKey: category,
-            dueAtISO: streak.dueAtISO,
-            sortAtISO: streak.sortAtISO,
-          });
-        }
-      }
-      if (streak.isWin) {
-        index.streakSnapshot.streakWinsCount += 1;
-        index.streakSnapshot.byCategory[category].wins += 1;
+        latestAt = sortAtISO;
       }
     }
 
     index.lastEntryAtByCategory[category] = latestAt;
   }
 
-  index.streakSnapshot.activeEntries = sortActiveStreakEntries(activeEntries);
-  index.streakSnapshot.lastComputedAt = nowISO;
+  const streakSummary = computeCanonicalStreakSnapshot(streakInputs);
+  index.streakSnapshot = {
+    ruleVersion: STREAK_RULE_VERSION,
+    streakActivatedCount: streakSummary.streakActivatedCount,
+    streakWinsCount: streakSummary.streakWinsCount,
+    byCategory: CATEGORY_KEYS.reduce<UserIndex["streakSnapshot"]["byCategory"]>((next, category) => {
+      next[category] = {
+        activated: streakSummary.byCategory[category].activated,
+        wins: streakSummary.byCategory[category].wins,
+      };
+      return next;
+    }, {} as UserIndex["streakSnapshot"]["byCategory"]),
+    activeEntries: streakSummary.activeEntries.slice(),
+    lastComputedAt: nowISO,
+  };
   index.updatedAt = nowISO;
   return index;
 }

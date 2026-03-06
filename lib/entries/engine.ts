@@ -34,7 +34,7 @@ import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability"
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import {
-  computeStreakProgressAggregate,
+  computeCanonicalStreakSnapshot,
   type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
 import { trackEvent } from "@/lib/telemetry/telemetry";
@@ -1475,10 +1475,10 @@ export async function computeStreak(
     }
   }, { userEmail: normalizedOwner });
 
-  const aggregate = computeStreakProgressAggregate(entries);
+  const aggregate = computeCanonicalStreakSnapshot(entries);
   const summary: EntryStreakSummary = {
-    activated: aggregate.activatedCount,
-    wins: aggregate.winsCount,
+    activated: aggregate.streakActivatedCount,
+    wins: aggregate.streakWinsCount,
     byCategory: CATEGORY_KEYS.reduce<EntryStreakSummary["byCategory"]>((next, categoryKey) => {
       next[categoryKey] = {
         activated: aggregate.byCategory[categoryKey].activated,
