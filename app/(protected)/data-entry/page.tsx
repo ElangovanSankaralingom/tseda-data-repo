@@ -11,7 +11,7 @@ import {
   getUnfinishedCountByCategory,
   type DataEntrySummary,
 } from "@/lib/entries/summary";
-import { entryList } from "@/lib/navigation";
+import { dataEntrySearch, entryList } from "@/lib/navigation";
 import { getDataEntryNavigation } from "@/lib/navigationStack";
 
 type EntryItem = {
@@ -54,6 +54,15 @@ export default async function DataEntryHomePage() {
         backDisabled={navigation.backDisabled}
         showBack={false}
       />
+
+      <div className="mt-4">
+        <Link
+          href={dataEntrySearch()}
+          className="inline-flex items-center rounded-xl border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted/60"
+        >
+          Search Entries
+        </Link>
+      </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {ITEMS.map((it) => {

@@ -9,8 +9,10 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isFutureDatedEntry, normalizeStreakState, status as getStreakStatus } from "@/lib/gamification";
+import { USER_INDEX_SCHEMA_VERSION } from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
+import { buildSearchSnapshot, getSearchSnapshotKey } from "@/lib/search/searchText";
 import type { Entry } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 
@@ -51,7 +53,7 @@ function emptyCategoryMap<T>(valueFactory: () => T) {
 
 function createEmptyIndex(userEmail: string, nowISO = new Date().toISOString()): UserIndex {
   return {
-    version: 1,
+    version: USER_INDEX_SCHEMA_VERSION,
     userEmail,
     updatedAt: nowISO,
     totalsByCategory: emptyCategoryMap(() => 0),
@@ -71,6 +73,7 @@ function createEmptyIndex(userEmail: string, nowISO = new Date().toISOString()):
       activeEntries: [],
       lastComputedAt: nowISO,
     },
+    searchIndexByEntryId: {},
   };
 }
 
@@ -136,6 +139,10 @@ function buildIndexFromState(userEmail: string, state: Map<CategoryKey, Map<stri
       index.countsByStatus[status] += 1;
       if (status === "PENDING_CONFIRMATION") index.pendingByCategory[category] += 1;
       if (status === "APPROVED") index.approvedByCategory[category] += 1;
+      const snapshot = buildSearchSnapshot(entry as Entry, category);
+      if (snapshot) {
+        index.searchIndexByEntryId[getSearchSnapshotKey(category, snapshot.entryId)] = snapshot;
+      }
 
       const sortAt = toSortAtISO(entry);
       const sortTime = toSortTime(sortAt);
