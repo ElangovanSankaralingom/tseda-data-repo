@@ -7,10 +7,10 @@ function cx(...classes: Array<string | false | null | undefined>) {
 }
 
 function getBadgeText(deadlineState: StreakDeadlineState) {
-  if (deadlineState.isExpired) return "Expired";
-  if (deadlineState.daysRemaining <= 0) return "Finalise today";
-  if (deadlineState.daysRemaining === 1) return "Finalise in 1 day";
-  return `Finalise in ${deadlineState.daysRemaining} days`;
+  if (deadlineState.isExpired) return "Streak expired";
+  if (deadlineState.daysRemaining <= 0) return "Streak ends today";
+  if (deadlineState.daysRemaining === 1) return "Streak ends in 1 day";
+  return `Streak ends in ${deadlineState.daysRemaining} days`;
 }
 
 function getBadgeClass(deadlineState: StreakDeadlineState) {
