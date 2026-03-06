@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { normalizeError } from "@/lib/errors";
-import { isEntryEditable } from "@/lib/gamification";
+import { isEntryEditable } from "@/lib/entries/lock";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";

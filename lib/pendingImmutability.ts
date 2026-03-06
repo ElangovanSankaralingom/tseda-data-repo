@@ -1,5 +1,5 @@
 import { ENTRY_SCHEMAS } from "@/data/schemas";
-import { isEntryLocked, normalizeEntryStatus, type EntryStateLike } from "@/lib/entryStateMachine";
+import { isEntryLocked, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type PendingEntryLike = EntryStateLike & Record<string, unknown>;
