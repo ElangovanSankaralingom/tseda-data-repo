@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type FileMetaLike = {
@@ -60,6 +61,7 @@ export default function UploadField({
   showValidationError = false,
   validationMessage,
 }: UploadFieldProps) {
+  const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const neutralHelper = useMemo(() => {
     if (pendingFile) return `Selected: ${pendingFile.name}`;
     if (meta) return "Uploaded. Choose a new file and upload to replace it.";
@@ -128,7 +130,21 @@ export default function UploadField({
                 >
                   Preview
                 </a>
-                <ActionButton role="destructive" disabled={!canDelete} onClick={onDelete}>
+                <ActionButton
+                  role="destructive"
+                  disabled={!canDelete}
+                  onClick={() =>
+                    requestConfirmation({
+                      title: "Remove uploaded file?",
+                      description:
+                        "This removes the currently uploaded file from this entry. You can upload a replacement afterward.",
+                      confirmLabel: "Remove",
+                      cancelLabel: "Cancel",
+                      variant: "destructive",
+                      onConfirm: onDelete,
+                    })
+                  }
+                >
                   Delete
                 </ActionButton>
               </>
@@ -161,6 +177,7 @@ export default function UploadField({
           </div>
         </>
       )}
+      {confirmationDialog}
     </div>
   );
 }

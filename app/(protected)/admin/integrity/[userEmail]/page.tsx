@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import BackTo from "@/components/nav/BackTo";
+import ConfirmSubmitButton from "@/components/ui/ConfirmSubmitButton";
 import { authOptions } from "@/lib/auth";
 import {
   checkUserIntegrity,
@@ -231,11 +232,18 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
 
       <div className="mb-4 rounded-2xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <form action={repairStoresAction}>
+          <form id="repair-stores-form" action={repairStoresAction}>
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
-            <button type="submit" className={getButtonClass("context")}>
+            <ConfirmSubmitButton
+              formId="repair-stores-form"
+              title="Repair all category stores?"
+              description="This will rewrite category files for this user after normalization and create backups."
+              confirmLabel="Repair Stores"
+              variant="destructive"
+              className={getButtonClass("context")}
+            >
               Repair Stores
-            </button>
+            </ConfirmSubmitButton>
           </form>
 
           <form action={rebuildIndexAction}>
@@ -245,18 +253,32 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
             </button>
           </form>
 
-          <form action={migrateDataAction}>
+          <form id="migrate-data-form" action={migrateDataAction}>
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
-            <button type="submit" className={getButtonClass("context")}>
+            <ConfirmSubmitButton
+              formId="migrate-data-form"
+              title="Run data migrations?"
+              description="This may rewrite legacy data files to the latest schema version and create backups."
+              confirmLabel="Run Migrations"
+              variant="destructive"
+              className={getButtonClass("context")}
+            >
               Run Migrations
-            </button>
+            </ConfirmSubmitButton>
           </form>
 
-          <form action={backupRepairAllAction}>
+          <form id="backup-repair-all-form" action={backupRepairAllAction}>
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
-            <button type="submit" className={getButtonClass("primary")}>
+            <ConfirmSubmitButton
+              formId="backup-repair-all-form"
+              title="Run backup + repair all?"
+              description="This creates backups and performs migration plus index rebuild for this user."
+              confirmLabel="Backup + Repair All"
+              variant="destructive"
+              className={getButtonClass("primary")}
+            >
               Backup + Repair All
-            </button>
+            </ConfirmSubmitButton>
           </form>
 
           <Link href={adminIntegrityUser(normalizedUserEmail)} className={getButtonClass("ghost")}>
@@ -313,12 +335,19 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
                         <td className="px-2 py-2">{categoryReport.totalEntries}</td>
                         <td className="px-2 py-2">{categoryReport.issues.length}</td>
                         <td className="px-2 py-2">
-                          <form action={repairCategoryAction}>
+                          <form id={`repair-category-${category}`} action={repairCategoryAction}>
                             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
                             <input type="hidden" name="category" value={category} />
-                            <button type="submit" className={getButtonClass("context")}>
+                            <ConfirmSubmitButton
+                              formId={`repair-category-${category}`}
+                              title={`Repair ${category} store?`}
+                              description="This rewrites the category file after normalization and creates a backup."
+                              confirmLabel="Repair Category"
+                              variant="destructive"
+                              className={getButtonClass("context")}
+                            >
                               Repair Category
-                            </button>
+                            </ConfirmSubmitButton>
                           </form>
                         </td>
                       </tr>

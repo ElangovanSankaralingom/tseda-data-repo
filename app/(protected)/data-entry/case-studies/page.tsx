@@ -24,6 +24,8 @@ import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import {
   canSendForConfirmation,
@@ -312,6 +314,7 @@ export function CaseStudiesPage({
   editEntryId,
   startInNewMode = false,
 }: CaseStudiesPageProps = {}) {
+  const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const router = useRouter();
   const categoryPath = entryList("case-studies");
   const [loading, setLoading] = useState(true);
@@ -557,6 +560,11 @@ export function CaseStudiesPage({
       markAutoSaveSaved(form);
     }
   }, [form, lastPersistedSnapshot, markAutoSaveSaved]);
+  const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
+    enabled: showForm && !isViewMode && !entryLocked,
+    isDirty: formDirty,
+    isSaving: saving || hasBusyUploads || autoSaveStatus.phase === "saving",
+  });
 
   function resetForm() {
     setAttemptedSectionSave(false);
@@ -592,6 +600,17 @@ export function CaseStudiesPage({
     resetForm();
     setFormOpen(false);
     router.replace(targetHref, { scroll: false });
+  }
+
+  async function handleCancel(targetHref = categoryPath) {
+    if (hasBusyUploads) {
+      setToast({ type: "err", msg: "Please wait for upload to finish." });
+      setTimeout(() => setToast(null), 1800);
+      return;
+    }
+    const canLeave = await confirmNavigate();
+    if (!canLeave) return;
+    await closeForm(targetHref);
   }
 
   async function refreshList(nextEmail = email) {
@@ -1089,7 +1108,20 @@ export function CaseStudiesPage({
                     <MiniButton onClick={() => router.push(entryDetail("case-studies", entry.id))}>
                       Edit
                     </MiniButton>
-                    <MiniButton role="destructive" onClick={() => void deleteEntry(entry.id)}>
+                    <MiniButton
+                      role="destructive"
+                      onClick={() =>
+                        requestConfirmation({
+                          title: "Delete entry?",
+                          description:
+                            "This permanently deletes this case-study entry and its associated uploaded files.",
+                          confirmLabel: "Delete",
+                          cancelLabel: "Cancel",
+                          variant: "destructive",
+                          onConfirm: () => deleteEntry(entry.id),
+                        })
+                      }
+                    >
                       Delete Entry
                     </MiniButton>
                     {completedEntry ? (
@@ -1164,15 +1196,16 @@ export function CaseStudiesPage({
       subtitle="Record case study visits with academic context, staff involvement, dates, and the required supporting documents."
       status={showForm ? getEntryApprovalStatus(form) : undefined}
       meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
+      showUnsavedChanges={showForm && !isViewMode && hasUnsavedChanges}
       backHref={backHref}
       backDisabled={backDisabled}
-      onBack={showForm || isViewMode ? () => closeForm(categoryPath) : undefined}
+      onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
       actions={
         showForm && !isViewMode ? (
           <>
             <MiniButton
               role="context"
-              onClick={() => void closeForm()}
+              onClick={() => void handleCancel()}
               disabled={controlsDisabled || saving || loading || hasBusyUploads}
             >
               Cancel
@@ -1561,6 +1594,7 @@ export function CaseStudiesPage({
           </SectionCard>
         ) : null}
       </div>
+      {confirmationDialog}
     </EntryShell>
   );
 }

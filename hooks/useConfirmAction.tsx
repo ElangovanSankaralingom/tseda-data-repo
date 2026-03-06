@@ -1,0 +1,69 @@
+"use client";
+
+import { useCallback, useMemo, useState } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+
+type ConfirmDialogVariant = "default" | "destructive";
+
+export type ConfirmActionRequest = {
+  title: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: ConfirmDialogVariant;
+  onConfirm: () => void | Promise<void>;
+};
+
+type UseConfirmActionResult = {
+  requestConfirmation: (request: ConfirmActionRequest) => void;
+  confirmationDialog: React.ReactNode;
+  confirming: boolean;
+};
+
+export function useConfirmAction(): UseConfirmActionResult {
+  const [request, setRequest] = useState<ConfirmActionRequest | null>(null);
+  const [confirming, setConfirming] = useState(false);
+
+  const requestConfirmation = useCallback((nextRequest: ConfirmActionRequest) => {
+    setRequest(nextRequest);
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    if (confirming) return;
+    setRequest(null);
+  }, [confirming]);
+
+  const handleConfirm = useCallback(async () => {
+    if (!request) return;
+    setConfirming(true);
+    try {
+      await request.onConfirm();
+      setRequest(null);
+    } finally {
+      setConfirming(false);
+    }
+  }, [request]);
+
+  const confirmationDialog = useMemo(
+    () => (
+      <ConfirmDialog
+        open={!!request}
+        title={request?.title ?? "Are you sure?"}
+        description={request?.description}
+        confirmLabel={request?.confirmLabel}
+        cancelLabel={request?.cancelLabel}
+        variant={request?.variant ?? "default"}
+        confirming={confirming}
+        onCancel={handleCancel}
+        onConfirm={() => void handleConfirm()}
+      />
+    ),
+    [confirming, handleCancel, handleConfirm, request]
+  );
+
+  return {
+    requestConfirmation,
+    confirmationDialog,
+    confirming,
+  };
+}

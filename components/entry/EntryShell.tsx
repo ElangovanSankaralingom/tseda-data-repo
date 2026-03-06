@@ -29,6 +29,8 @@ type EntryShellProps = {
   backDisabled?: boolean;
   showBack?: boolean;
   onBack?: (() => void | Promise<void>) | undefined;
+  showUnsavedChanges?: boolean;
+  unsavedLabel?: string;
 };
 
 function getModeTitle(mode: EntryShellMode) {
@@ -52,6 +54,8 @@ export default function EntryShell({
   backDisabled = false,
   showBack = true,
   onBack,
+  showUnsavedChanges = false,
+  unsavedLabel = "Unsaved changes",
 }: EntryShellProps) {
   const config = getCategoryConfig(category);
   const entryId = String(entry?.id ?? "").trim();
@@ -75,6 +79,11 @@ export default function EntryShell({
               {config.label}
             </span>
             {resolvedStatus ? <EntryStatusBadge status={resolvedStatus} /> : null}
+            {showUnsavedChanges ? (
+              <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">
+                {unsavedLabel}
+              </span>
+            ) : null}
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight">{resolvedTitle}</h1>
