@@ -24,7 +24,7 @@ import {
   getEntryApprovalStatus,
   isEntryLockedFromStatus,
 } from "@/lib/confirmation";
-import { getEntryStreakDisplayState } from "@/lib/entries/lifecycle";
+import { getEntryStreakDisplayState } from "@/lib/entries/displayLifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
 import { useCommitDraft } from "@/hooks/useCommitDraft";

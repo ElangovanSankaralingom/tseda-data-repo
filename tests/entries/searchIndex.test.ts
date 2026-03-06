@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createEntry, deleteEntry } from "../../lib/entryEngine.ts";
+import { createEntry, deleteEntry } from "../../lib/entries/lifecycle.ts";
 import type { CategoryKey } from "../../lib/entries/types.ts";
 import {
   buildSearchText,

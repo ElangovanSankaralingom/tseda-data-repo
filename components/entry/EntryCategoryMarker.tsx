@@ -2,7 +2,7 @@ import {
   getEntryTag,
   type EntryDisplayCategory,
   type EntryStreakDisplayState,
-} from "@/lib/entries/lifecycle";
+} from "@/lib/entries/displayLifecycle";
 
 function FlameStatusIcon({ tone }: { tone: "gray" | "color" }) {
   return (

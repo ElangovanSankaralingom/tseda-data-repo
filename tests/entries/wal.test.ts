@@ -8,7 +8,7 @@ import {
   createEntry,
   sendForConfirmation,
   updateEntry,
-} from "../../lib/entryEngine.ts";
+} from "../../lib/entries/lifecycle.ts";
 import { rebuildUserIndexFromWal } from "../../lib/data/recovery.ts";
 import { readEvents } from "../../lib/data/wal.ts";
 import { getUserStoreDir } from "../../lib/userStore.ts";

@@ -38,7 +38,7 @@ import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import {
   getEntryStreakDisplayState,
   type EntryDisplayCategory,
-} from "@/lib/entries/lifecycle";
+} from "@/lib/entries/displayLifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/navigation";
 import { nowISTTimestampISO } from "@/lib/gamification";

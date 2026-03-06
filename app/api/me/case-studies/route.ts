@@ -9,7 +9,7 @@ import {
   listEntriesForCategory,
   replaceEntriesForCategory,
   updateEntry,
-} from "@/lib/entries/lifecycle.server";
+} from "@/lib/entries/lifecycle";
 import {
   cloneOptionalFileArrayToTarget,
   cloneOptionalFileToTarget,
