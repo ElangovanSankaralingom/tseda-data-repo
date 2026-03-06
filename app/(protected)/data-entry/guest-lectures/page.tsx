@@ -796,7 +796,6 @@ export function GuestLecturesPage({
     const showToast = source !== "autosave";
     if (saveLockRef.current) return null;
     if (intent === "save" && !lifecycle.canSave) return null;
-    if (intent === "done" && !lifecycle.canDone) return null;
     saveLockRef.current = true;
     let rollbackSnapshot: GuestLectureEntry[] | null = null;
     let lastPersistedEntry: GuestLectureEntry | null = null;
@@ -874,12 +873,6 @@ export function GuestLecturesPage({
 
     if (hasBusyUploads) {
       setToast({ type: "err", msg: "Finish the current uploads before continuing." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
-    if (!lifecycle.canDone) {
-      setToast({ type: "err", msg: "Complete all required uploads before finishing." });
       setTimeout(() => setToast(null), 1800);
       return;
     }
@@ -1260,7 +1253,7 @@ export function GuestLecturesPage({
             </SaveButton>
             <MiniButton
               onClick={() => void handleDone()}
-              disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canDone}
+              disabled={controlsDisabled || saving || loading || hasBusyUploads}
             >
               {saving ? "Saving..." : "Done"}
             </MiniButton>
