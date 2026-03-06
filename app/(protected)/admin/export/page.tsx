@@ -5,12 +5,11 @@ import SectionCard from "@/components/layout/SectionCard";
 import { authOptions } from "@/lib/auth";
 import { canExport } from "@/lib/admin/roles";
 import { listUsers } from "@/lib/admin/integrity";
-import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
 import { toUserMessage } from "@/lib/errors";
 import {
+  getExportCategoryOptions,
   getExportStatusOptions,
   getExportableFields,
-  type ExportCategorySelection,
 } from "@/lib/export/exportService";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
@@ -27,13 +26,7 @@ export default async function AdminExportPage() {
   const users = usersResult.ok ? usersResult.data : [];
   const error = usersResult.ok ? null : toUserMessage(usersResult.error);
 
-  const categories: Array<{ key: ExportCategorySelection; label: string }> = [
-    { key: "all", label: "All Categories" },
-    ...CATEGORY_LIST.map((categoryKey) => ({
-      key: categoryKey,
-      label: getCategoryConfig(categoryKey).label,
-    })),
-  ];
+  const categories = getExportCategoryOptions();
 
   const fieldOptionsByCategory = categories.reduce<Record<string, { key: string; label: string }[]>>(
     (next, category) => {
@@ -46,10 +39,7 @@ export default async function AdminExportPage() {
     },
     {}
   );
-  const statusOptions = getExportStatusOptions().map((status) => ({
-    key: status.key,
-    label: status.label,
-  }));
+  const statusOptions = getExportStatusOptions();
 
   return (
     <AdminPageShell

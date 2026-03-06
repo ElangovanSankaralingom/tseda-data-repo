@@ -1,4 +1,24 @@
-export type EntryStatus = "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
+export const ENTRY_STATUSES = [
+  "DRAFT",
+  "PENDING_CONFIRMATION",
+  "APPROVED",
+  "REJECTED",
+] as const;
+
+export type EntryStatus = (typeof ENTRY_STATUSES)[number];
+
+export const ENTRY_STATUS_LABELS: Readonly<Record<EntryStatus, string>> = {
+  DRAFT: "Draft",
+  PENDING_CONFIRMATION: "Pending Confirmation",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+const ENTRY_STATUS_SET = new Set<string>(ENTRY_STATUSES);
+
+export function isEntryStatus(value: string): value is EntryStatus {
+  return ENTRY_STATUS_SET.has(value);
+}
 
 export type UploadedFile = {
   id?: string;

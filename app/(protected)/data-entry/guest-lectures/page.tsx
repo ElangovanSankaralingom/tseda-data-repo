@@ -23,6 +23,9 @@ import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
+import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
+import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
+import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
@@ -50,7 +53,6 @@ import {
   STUDENT_YEAR_OPTIONS,
   type StudentYear,
 } from "@/lib/student-academic";
-import { canEditField } from "@/lib/pendingImmutability";
 import {
   createOptimisticSnapshot,
   optimisticRemove,
@@ -58,6 +60,7 @@ import {
 } from "@/lib/ui/optimistic";
 import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
+import type { EntryStatus } from "@/lib/types/entry";
 
 type FileMeta = {
   fileName: string;
@@ -81,7 +84,7 @@ type GuestLectureEntry = {
   sourceEmail?: string;
   sharedRole?: "coCoordinator";
   status?: "draft" | "final";
-  confirmationStatus?: "DRAFT" | "PENDING_CONFIRMATION" | "APPROVED" | "REJECTED";
+  confirmationStatus?: EntryStatus;
   requestEditStatus?: "none" | "pending" | "approved" | "rejected";
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
@@ -344,32 +347,12 @@ export function GuestLecturesPage({
     formRef.current = form;
   }, [form]);
 
-  useEffect(() => {
-    const routeEntryId = editEntryId?.trim() || "";
-    const mode = routeEntryId ? "edit" : startInNewMode ? "new" : "list";
-    void trackClientTelemetryEvent({
-      event: routeEntryId || startInNewMode ? "page.entry_detail_view" : "page.entry_list_view",
-      category: "guest-lectures",
-      entryId: routeEntryId || null,
-      success: true,
-      meta: {
-        page: "/data-entry/guest-lectures",
-        mode,
-      },
-    });
-    if (routeEntryId) {
-      void trackClientTelemetryEvent({
-        event: "entry.view",
-        category: "guest-lectures",
-        entryId: routeEntryId,
-        success: true,
-        meta: {
-          mode: "edit",
-          source: "detail_route",
-        },
-      });
-    }
-  }, [editEntryId, startInNewMode]);
+  useEntryPageModeTelemetry({
+    category: "guest-lectures",
+    pagePath: "/data-entry/guest-lectures",
+    editEntryId,
+    startInNewMode,
+  });
 
   const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
     categoryPath,
@@ -531,11 +514,11 @@ export function GuestLecturesPage({
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeStudentYear(form.studentYear);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
-  const entryLocked = isEntryLockedFromStatus(form);
-  const controlsDisabled = isViewMode || entryLocked;
-  const pendingCoreLocked = getEntryApprovalStatus(form) === "PENDING_CONFIRMATION";
-  const coreFieldDisabled = (fieldKey: string) =>
-    controlsDisabled || !canEditField(form, "guest-lectures", fieldKey);
+  const { entryLocked, controlsDisabled, pendingCoreLocked, coreFieldDisabled } = useEntryFormAccess({
+    entry: form,
+    category: "guest-lectures",
+    isViewMode,
+  });
   const hasBusyUploads =
     Object.values(singleUploadStatus).some((status) => status.busy) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
@@ -767,21 +750,6 @@ export function GuestLecturesPage({
     safeBack(router, targetHref);
   }
 
-  async function handleCancel(targetHref = categoryPath) {
-    if (hasBusyUploads) {
-      setToast({ type: "err", msg: "Please wait for upload to finish." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-    const canLeave = await confirmNavigate();
-    if (!canLeave) return;
-    await closeForm(targetHref);
-  }
-
-  async function handleSaveDraft() {
-    await saveDraftChanges({ intent: "save" });
-  }
-
   async function refreshList(nextEmail = email) {
     const response = await fetch(`/api/me/guest-lectures?email=${encodeURIComponent(nextEmail)}`, {
       cache: "no-store",
@@ -880,18 +848,6 @@ export function GuestLecturesPage({
     }
   }
 
-  async function handleSaveAndClose() {
-    setSubmitAttemptedFinal(true);
-
-    if (hasBusyUploads) {
-      setToast({ type: "err", msg: "Finish the current uploads before continuing." });
-      setTimeout(() => setToast(null), 1800);
-      return;
-    }
-
-    await saveDraftChanges({ closeAfterSave: true, intent: "done" });
-  }
-
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
     if (saveLockRef.current) {
       throw new Error("Please wait for the current save to finish.");
@@ -955,6 +911,18 @@ export function GuestLecturesPage({
       saveLockRef.current = false;
     }
   }
+
+  const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
+    defaultCancelTargetHref: categoryPath,
+    hasBusyUploads,
+    confirmNavigate: () => confirmNavigate(),
+    closeForm,
+    saveDraftChanges,
+    setToast,
+    setSubmitAttemptedFinal,
+    cancelBusyMessage: "Please wait for upload to finish.",
+    saveAndCloseBusyMessage: "Finish the current uploads before continuing.",
+  });
 
   async function deleteEntry(id: string) {
     const startedAt = Date.now();
