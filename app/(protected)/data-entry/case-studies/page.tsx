@@ -40,7 +40,7 @@ import {
   type EntryDisplayCategory,
 } from "@/lib/entries/lifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
-import { entryDetail, entryList, entryNew } from "@/lib/navigation";
+import { entryDetail, entryList, entryNew, safeBack } from "@/lib/navigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
@@ -628,7 +628,7 @@ export function CaseStudiesPage({
     }
     resetForm();
     setFormOpen(false);
-    router.replace(targetHref, { scroll: false });
+    safeBack(router, targetHref);
   }
 
   async function handleCancel(targetHref = categoryPath) {

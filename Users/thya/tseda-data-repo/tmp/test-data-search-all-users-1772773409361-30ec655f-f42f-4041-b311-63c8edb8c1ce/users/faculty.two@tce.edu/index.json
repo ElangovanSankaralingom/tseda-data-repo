@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "userEmail": "faculty.two@tce.edu",
+  "updatedAt": "2026-03-06T05:03:29.370Z",
+  "totalsByCategory": {
+    "fdp-attended": 1,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "countsByStatus": {
+    "DRAFT": 1,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 0,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": "2026-03-06T05:03:29.368Z",
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": null
+  },
+  "streakSnapshot": {
+    "streakActivatedCount": 0,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 0
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T05:03:29.370Z"
+  },
+  "searchIndexByEntryId": {
+    "fdp-attended:ab63869a-e611-42c1-91ed-6d3fe9a5abb8": {
+      "entryId": "ab63869a-e611-42c1-91ed-6d3fe9a5abb8",
+      "categoryKey": "fdp-attended",
+      "title": "Distributed AI FDP",
+      "text": "distributed ai fdp fdp attended draft distributed ai fdp",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T05:03:29.368Z",
+      "createdAtISO": "2026-03-06T05:03:29.368Z"
+    }
+  }
+}

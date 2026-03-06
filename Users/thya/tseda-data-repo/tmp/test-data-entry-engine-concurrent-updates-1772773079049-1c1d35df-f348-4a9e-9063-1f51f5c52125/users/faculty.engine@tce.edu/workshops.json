@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "byId": {
+    "eb15dbde-f74e-4950-9a4c-910f9aa9f196": {
+      "eventName": "Concurrent Workshop",
+      "id": "eb15dbde-f74e-4950-9a4c-910f9aa9f196",
+      "status": "draft",
+      "createdAt": "2026-03-06T04:57:59.049Z",
+      "updatedAt": "2026-03-06T04:57:59.054Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "speakerName": "Speaker A",
+      "organisationName": "TCE Concurrent Org"
+    }
+  },
+  "order": [
+    "eb15dbde-f74e-4950-9a4c-910f9aa9f196"
+  ]
+}

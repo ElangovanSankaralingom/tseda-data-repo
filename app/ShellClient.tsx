@@ -97,8 +97,7 @@ export default function ShellClient({
       setOpen(false);
       setAvatarRefreshKey((value) => value + 1);
       notifySuccess("Account reset successfully", setToast);
-      router.push(dashboard());
-      router.refresh();
+      router.replace(dashboard());
     } finally {
       setResetBusy(false);
     }
