@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RoleButton } from "@/components/ui/RoleButton";
+import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { safeAction } from "@/lib/safeAction";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
@@ -60,6 +61,7 @@ export default function MultiPhotoUpload({
   disabled = false,
   viewOnly = false,
 }: MultiPhotoUploadProps) {
+  const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
@@ -188,7 +190,17 @@ export default function MultiPhotoUpload({
                 {!viewOnly ? (
                   <button
                     type="button"
-                    onClick={() => void deletePhoto(meta)}
+                    onClick={() =>
+                      requestConfirmation({
+                        title: "Remove uploaded file?",
+                        description:
+                          "This deletes the uploaded file from this entry. You can upload it again if needed.",
+                        confirmLabel: "Remove",
+                        cancelLabel: "Cancel",
+                        variant: "destructive",
+                        onConfirm: () => deletePhoto(meta),
+                      })
+                    }
                     disabled={busy || disabled}
                     className={cx(
                       "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
@@ -270,6 +282,7 @@ export default function MultiPhotoUpload({
           </RoleButton>
         </div>
       ) : null}
+      {confirmationDialog}
     </div>
   );
 }
