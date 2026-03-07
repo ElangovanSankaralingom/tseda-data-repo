@@ -23,6 +23,7 @@ type UploadFieldProps = {
   canChoose: boolean;
   canUpload: boolean;
   canDelete: boolean;
+  needsEntry?: boolean;
   onSelectFile: (file: File | null) => void;
   onUpload: () => void;
   onDelete: () => void;
@@ -55,6 +56,7 @@ export default function UploadField({
   canChoose,
   canUpload,
   canDelete,
+  needsEntry = false,
   onSelectFile,
   onUpload,
   onDelete,
@@ -63,10 +65,11 @@ export default function UploadField({
 }: UploadFieldProps) {
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const neutralHelper = useMemo(() => {
+    if (needsEntry) return "Save the entry first to upload files.";
     if (pendingFile) return `Selected: ${pendingFile.name}`;
     if (meta) return "Uploaded. Choose a new file and upload to replace it.";
     return "Select a file to enable Upload & Save.";
-  }, [meta, pendingFile]);
+  }, [meta, needsEntry, pendingFile]);
 
   return (
     <div className="space-y-3 rounded-xl border border-border p-4">

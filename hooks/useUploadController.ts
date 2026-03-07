@@ -11,6 +11,8 @@ type UploadFileMeta = {
 
 type UseUploadControllerOptions<TMeta extends UploadFileMeta> = {
   locked: boolean;
+  /** When provided, uploads are gated on a non-empty entry ID. */
+  entryId?: string;
   upload: (file: File, onProgress: (pct: number) => void) => Promise<TMeta>;
   remove: (meta: TMeta) => Promise<void>;
 };
@@ -20,9 +22,13 @@ const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"
 
 export function useUploadController<TMeta extends UploadFileMeta>({
   locked,
+  entryId,
   upload,
   remove,
 }: UseUploadControllerOptions<TMeta>) {
+  // When entryId is provided, gate all interactions on a saved entry.
+  // When omitted, assume entry exists (backward-compatible).
+  const entryExists = entryId === undefined || !!entryId.trim();
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -117,10 +123,11 @@ export function useUploadController<TMeta extends UploadFileMeta>({
       uploadAndSave,
       deleteFile,
       reset,
-      canChoose: !locked && !busy,
-      canUpload: !!pendingFile && !locked && !busy,
-      canDelete: !locked && !busy,
+      canChoose: entryExists && !locked && !busy,
+      canUpload: entryExists && !!pendingFile && !locked && !busy,
+      canDelete: entryExists && !locked && !busy,
+      needsEntry: !entryExists,
     }),
-    [busy, deleteFile, error, locked, pendingFile, progress, reset, selectFile, uploadAndSave]
+    [busy, deleteFile, entryExists, error, locked, pendingFile, progress, reset, selectFile, uploadAndSave]
   );
 }

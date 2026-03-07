@@ -37,10 +37,10 @@ import {
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import {
-  createOptimisticSnapshot,
-  optimisticRemove,
-} from "@/lib/ui/optimistic";
-import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
+  createDeleteEntry,
+  createPersistProgress,
+  createRefreshList,
+} from "@/lib/entries/adapterOrchestration";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
@@ -412,6 +412,20 @@ export function CaseStudiesPage({
     category: "case-studies",
     hydrateEntry,
   });
+  const refreshList = createRefreshList<CaseStudyEntry>({
+    endpoint: "/api/me/case-studies",
+    queryParams: () => ({ email }),
+    normalizeItems: (items) => (items as CaseStudyEntry[]).map((entry) => hydrateEntry(entry)),
+    setList,
+  });
+
+  const persistProgress = createPersistProgress<CaseStudyEntry>({
+    endpoint: "/api/me/case-studies",
+    category: "case-studies",
+    buildBody: (entry) => ({ email, entry: withAcademicProgressionCompatibility(entry) }),
+    normalizeResponse: (data) => hydrateEntry(data as CaseStudyEntry),
+  });
+
   const controller = useCategoryEntryPageController<CaseStudyEntry>({
     category: "case-studies",
     list,
@@ -465,7 +479,7 @@ export function CaseStudiesPage({
       setSubmitAttemptedFinal(false);
     },
     afterPersistSuccess: async () => {
-      void refreshList(email);
+      void refreshList();
     },
     setSubmitAttemptedFinal,
     hasValidationErrors: Object.keys(errors).length > 0,
@@ -482,7 +496,7 @@ export function CaseStudiesPage({
       applyPersistedEntry(nextEntry);
       setAttemptedSectionSave(false);
       setSubmitAttemptedFinal(false);
-      await refreshList(email);
+      await refreshList();
     },
   });
   const {
@@ -588,105 +602,6 @@ export function CaseStudiesPage({
     resetForm();
     setFormOpen(false);
     safeBack(router, targetHref);
-  }
-
-  async function refreshList(nextEmail = email) {
-    const response = await fetch(`/api/me/case-studies?email=${encodeURIComponent(nextEmail)}`, {
-      cache: "no-store",
-    });
-    const items = await response.json();
-
-    if (!response.ok) {
-      throw new Error(items?.error || "Failed to refresh saved entries.");
-    }
-
-    setList(
-      Array.isArray(items) ? (items as CaseStudyEntry[]).map((entry) => hydrateEntry(entry)) : []
-    );
-  }
-
-  async function persistProgress(nextForm: CaseStudyEntry) {
-    const startedAt = Date.now();
-    const eventName = String(nextForm.createdAt ?? "").trim() ? "entry.update" : "entry.create";
-    const response = await fetch("/api/me/case-studies", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, entry: withAcademicProgressionCompatibility(nextForm) }),
-    });
-    const { message, payload } = await parseApiError(response, "Save failed");
-
-    if (!response.ok) {
-      const errorCode =
-        response.status === 400
-          ? "VALIDATION_ERROR"
-          : response.status === 413
-            ? "PAYLOAD_TOO_LARGE"
-            : response.status === 429
-              ? "RATE_LIMITED"
-              : "IO_ERROR";
-      void trackClientTelemetryEvent({
-        event: "action.failure",
-        category: "case-studies",
-        entryId: String(nextForm.id ?? "").trim() || null,
-        success: false,
-        durationMs: Date.now() - startedAt,
-        meta: {
-          action: eventName,
-          source: "manual",
-          errorCode,
-          statusCode: response.status,
-        },
-      });
-      if (errorCode === "VALIDATION_ERROR") {
-        void trackClientTelemetryEvent({
-          event: "validation.failure",
-          category: "case-studies",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      } else if (errorCode === "RATE_LIMITED") {
-        void trackClientTelemetryEvent({
-          event: "rate_limit.hit",
-          category: "case-studies",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      } else if (errorCode === "PAYLOAD_TOO_LARGE") {
-        void trackClientTelemetryEvent({
-          event: "payload.too_large",
-          category: "case-studies",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      }
-      throw new Error(message);
-    }
-
-    const persisted = hydrateEntry(payload as CaseStudyEntry);
-    void trackClientTelemetryEvent({
-      event: eventName,
-      category: "case-studies",
-      entryId: String(persisted?.id ?? nextForm.id ?? "").trim() || null,
-      status:
-        String(
-          persisted?.confirmationStatus ??
-            nextForm.confirmationStatus ??
-            ""
-        ).trim() || null,
-      success: true,
-      durationMs: Date.now() - startedAt,
-      meta: {
-        source: "manual",
-      },
-    });
-
-    return persisted;
   }
 
   async function parseApiError(response: Response, fallback: string) {
@@ -825,7 +740,7 @@ export function CaseStudiesPage({
       }
 
       const savedEntry = hydrateEntry(payload as CaseStudyEntry);
-      await refreshList(email);
+      await refreshList();
       const mergedRows = nextRows.map((item) => {
         const savedStaff =
           savedEntry.staffAccompanying.find(
@@ -860,84 +775,14 @@ export function CaseStudiesPage({
     });
   }
 
-  async function deleteEntry(id: string) {
-    const startedAt = Date.now();
-    let failureTracked = false;
-    let rollbackSnapshot: CaseStudyEntry[] | null = null;
-    setList((current) => {
-      rollbackSnapshot = createOptimisticSnapshot(current);
-      return optimisticRemove(current, id);
-    });
-
-    try {
-      const response = await fetch("/api/me/case-studies", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, id }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        const errorCode =
-          response.status === 400
-            ? "VALIDATION_ERROR"
-            : response.status === 413
-              ? "PAYLOAD_TOO_LARGE"
-              : response.status === 429
-                ? "RATE_LIMITED"
-                : "IO_ERROR";
-        void trackClientTelemetryEvent({
-          event: "action.failure",
-          category: "case-studies",
-          entryId: id,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: {
-            action: "entry.delete",
-            source: "manual",
-            errorCode,
-            statusCode: response.status,
-          },
-        });
-        failureTracked = true;
-        throw new Error(payload?.error || "Delete failed.");
-      }
-
-      void trackClientTelemetryEvent({
-        event: "entry.delete",
-        category: "case-studies",
-        entryId: id,
-        success: true,
-        durationMs: Date.now() - startedAt,
-        meta: {
-          source: "manual",
-        },
-      });
-      setList((current) => optimisticRemove(current, id));
-      void refreshList(email);
-      showToast("ok", "Entry deleted.", 1200);
-    } catch (error) {
-      if (rollbackSnapshot) {
-        setList(rollbackSnapshot);
-      }
-      if (!failureTracked) {
-        void trackClientTelemetryEvent({
-          event: "action.failure",
-          category: "case-studies",
-          entryId: id,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: {
-            action: "entry.delete",
-            source: "manual",
-            errorCode: "IO_ERROR",
-          },
-        });
-      }
-      const message = error instanceof Error ? error.message : "Delete failed.";
-      showToast("err", message, 1500);
-    }
-  }
+  const deleteEntry = createDeleteEntry<CaseStudyEntry>({
+    endpoint: "/api/me/case-studies",
+    category: "case-studies",
+    buildBody: (id) => ({ email, id }),
+    setList,
+    refreshList,
+    showToast,
+  });
 
   const renderSavedEntry = createCategoryEntryRecordRenderer<CaseStudyEntry>({
     buildHref: (entry) => entryDetail("case-studies", entry.id),

@@ -29,10 +29,10 @@ import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
-  createOptimisticSnapshot,
-  optimisticRemove,
-} from "@/lib/ui/optimistic";
-import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
+  createDeleteEntry,
+  createPersistProgress,
+  createRefreshList,
+} from "@/lib/entries/adapterOrchestration";
 import { uploadFile } from "@/lib/upload/uploadService";
 import {
   allowedSemestersForYear,
@@ -340,6 +340,7 @@ export function FdpConductedPage({
   });
   const permissionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
+    entryId: form.id,
     upload: (file, onProgress) =>
       uploadConductedFileXHR({
         email,
@@ -404,117 +405,20 @@ export function FdpConductedPage({
     onSeed: seedLoadedEntry,
   });
 
-  async function refreshList() {
-    const response = await fetch(`/api/me/fdp-conducted?email=${encodeURIComponent(email)}`, {
-      cache: "no-store",
-    });
-    const items = await response.json();
+  const refreshList = createRefreshList<FdpConducted>({
+    endpoint: "/api/me/fdp-conducted",
+    queryParams: () => ({ email }),
+    normalizeItems: (items) =>
+      items.map((item) => withAcademicProgressionCompatibility(item as FdpConducted)),
+    setList,
+  });
 
-    if (!response.ok) {
-      throw new Error(items?.error || "Failed to refresh saved entries.");
-    }
-
-    const nextItems = Array.isArray(items)
-      ? items.map((item) => withAcademicProgressionCompatibility(item as FdpConducted))
-      : [];
-    setList(nextItems);
-    return nextItems;
-  }
-
-  async function persistProgress(nextForm: FdpConducted) {
-    const startedAt = Date.now();
-    const eventName = String(nextForm.createdAt ?? "").trim() ? "entry.update" : "entry.create";
-    const response = await fetch("/api/me/fdp-conducted", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, entry: withAcademicProgressionCompatibility(nextForm) }),
-    });
-    const text = await response.text();
-    let payload: FdpConducted | { error?: string } | null = null;
-    let message = `Save failed (${response.status})`;
-
-    try {
-      payload = text ? (JSON.parse(text) as FdpConducted | { error?: string }) : null;
-      if (payload && "error" in payload && payload.error) {
-        message = payload.error;
-      }
-    } catch {
-      payload = null;
-    }
-
-    if (!response.ok) {
-      const errorCode =
-        response.status === 400
-          ? "VALIDATION_ERROR"
-          : response.status === 413
-            ? "PAYLOAD_TOO_LARGE"
-            : response.status === 429
-              ? "RATE_LIMITED"
-              : "IO_ERROR";
-      void trackClientTelemetryEvent({
-        event: "action.failure",
-        category: "fdp-conducted",
-        entryId: String(nextForm.id ?? "").trim() || null,
-        success: false,
-        durationMs: Date.now() - startedAt,
-        meta: {
-          action: eventName,
-          source: "manual",
-          errorCode,
-          statusCode: response.status,
-        },
-      });
-      if (errorCode === "VALIDATION_ERROR") {
-        void trackClientTelemetryEvent({
-          event: "validation.failure",
-          category: "fdp-conducted",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      } else if (errorCode === "RATE_LIMITED") {
-        void trackClientTelemetryEvent({
-          event: "rate_limit.hit",
-          category: "fdp-conducted",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      } else if (errorCode === "PAYLOAD_TOO_LARGE") {
-        void trackClientTelemetryEvent({
-          event: "payload.too_large",
-          category: "fdp-conducted",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      }
-      throw new Error(message);
-    }
-
-    const persisted = withAcademicProgressionCompatibility(payload as FdpConducted);
-    void trackClientTelemetryEvent({
-      event: eventName,
-      category: "fdp-conducted",
-      entryId: String(persisted?.id ?? nextForm.id ?? "").trim() || null,
-      status:
-        String(
-          persisted?.confirmationStatus ??
-            nextForm.confirmationStatus ??
-            ""
-        ).trim() || null,
-      success: true,
-      durationMs: Date.now() - startedAt,
-      meta: {
-        source: "manual",
-      },
-    });
-
-    return persisted;
-  }
+  const persistProgress = createPersistProgress<FdpConducted>({
+    endpoint: "/api/me/fdp-conducted",
+    category: "fdp-conducted",
+    buildBody: (entry) => ({ email, entry: withAcademicProgressionCompatibility(entry) }),
+    normalizeResponse: (data) => withAcademicProgressionCompatibility(data as FdpConducted),
+  });
 
   const controller = useCategoryEntryPageController<FdpConducted>({
     category: "fdp-conducted",
@@ -751,84 +655,14 @@ export function FdpConductedPage({
     }
   }
 
-  async function deleteEntry(id: string) {
-    const startedAt = Date.now();
-    let failureTracked = false;
-    let rollbackSnapshot: FdpConducted[] | null = null;
-    setList((current) => {
-      rollbackSnapshot = createOptimisticSnapshot(current);
-      return optimisticRemove(current, id);
-    });
-
-    try {
-      const response = await fetch("/api/me/fdp-conducted", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, id }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        const errorCode =
-          response.status === 400
-            ? "VALIDATION_ERROR"
-            : response.status === 413
-              ? "PAYLOAD_TOO_LARGE"
-              : response.status === 429
-                ? "RATE_LIMITED"
-                : "IO_ERROR";
-        void trackClientTelemetryEvent({
-          event: "action.failure",
-          category: "fdp-conducted",
-          entryId: id,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: {
-            action: "entry.delete",
-            source: "manual",
-            errorCode,
-            statusCode: response.status,
-          },
-        });
-        failureTracked = true;
-        throw new Error(payload?.error || "Delete failed.");
-      }
-
-      void trackClientTelemetryEvent({
-        event: "entry.delete",
-        category: "fdp-conducted",
-        entryId: id,
-        success: true,
-        durationMs: Date.now() - startedAt,
-        meta: {
-          source: "manual",
-        },
-      });
-      setList((current) => optimisticRemove(current, id));
-      void refreshList();
-      showToast("ok", "Entry deleted.", 1200);
-    } catch (error) {
-      if (rollbackSnapshot) {
-        setList(rollbackSnapshot);
-      }
-      if (!failureTracked) {
-        void trackClientTelemetryEvent({
-          event: "action.failure",
-          category: "fdp-conducted",
-          entryId: id,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: {
-            action: "entry.delete",
-            source: "manual",
-            errorCode: "IO_ERROR",
-          },
-        });
-      }
-      const message = error instanceof Error ? error.message : "Delete failed.";
-      showToast("err", message, 1500);
-    }
-  }
+  const deleteEntry = createDeleteEntry<FdpConducted>({
+    endpoint: "/api/me/fdp-conducted",
+    category: "fdp-conducted",
+    buildBody: (id) => ({ email, id }),
+    setList,
+    refreshList,
+    showToast,
+  });
 
   const renderSavedEntry = createCategoryEntryRecordRenderer<FdpConducted>({
     buildHref: (entry) => entryDetail("fdp-conducted", entry.id),
@@ -1081,6 +915,7 @@ export function FdpConductedPage({
                   canChoose={permissionController.canChoose && !uploadPersisting}
                   canUpload={permissionController.canUpload && !uploadPersisting}
                   canDelete={permissionController.canDelete && !uploadPersisting}
+                  needsEntry={permissionController.needsEntry}
                   onSelectFile={permissionController.selectFile}
                         onUpload={() => void uploadSlot()}
                   onDelete={() => void deleteSlot("permissionLetter")}

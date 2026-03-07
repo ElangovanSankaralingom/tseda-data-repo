@@ -12,7 +12,7 @@ import {
 } from "@/lib/backup/backupService";
 import { toUserMessage } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { adminHome, dashboard } from "@/lib/entryNavigation";
+import { adminBackupsCreate, adminBackupsDownload, adminHome, dashboard } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -107,10 +107,10 @@ export default async function AdminBackupsPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/backups/download" className={getButtonClass("context")}>
+          <Link href={adminBackupsDownload()} className={getButtonClass("context")}>
             Download Backup Now
           </Link>
-          <form action="/admin/backups/create" method="post">
+          <form action={adminBackupsCreate()} method="post">
             <button type="submit" className={getButtonClass("context")}>
               Create Backup On Server
             </button>
@@ -141,7 +141,7 @@ export default async function AdminBackupsPage({
                     <td className="px-2 py-2">{formatBytes(backup.sizeBytes)}</td>
                     <td className="px-2 py-2">
                       <Link
-                        href={`/admin/backups/download?filename=${encodeURIComponent(backup.filename)}`}
+                        href={adminBackupsDownload(backup.filename)}
                         className={getButtonClass("ghost")}
                       >
                         Download

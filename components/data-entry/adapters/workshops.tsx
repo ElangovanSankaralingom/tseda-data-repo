@@ -36,10 +36,10 @@ import {
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import {
-  createOptimisticSnapshot,
-  optimisticRemove,
-} from "@/lib/ui/optimistic";
-import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
+  createDeleteEntry,
+  createPersistProgress,
+  createRefreshList,
+} from "@/lib/entries/adapterOrchestration";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
@@ -420,6 +420,20 @@ export function WorkshopsPage({
     category: "workshops",
     hydrateEntry,
   });
+  const refreshList = createRefreshList<WorkshopEntry>({
+    endpoint: "/api/me/workshops",
+    queryParams: () => ({ email }),
+    normalizeItems: (items) => (items as WorkshopEntry[]).map((entry) => hydrateEntry(entry)),
+    setList,
+  });
+
+  const persistProgress = createPersistProgress<WorkshopEntry>({
+    endpoint: "/api/me/workshops",
+    category: "workshops",
+    buildBody: (entry) => ({ email, entry: withAcademicProgressionCompatibility(entry) }),
+    normalizeResponse: (data) => hydrateEntry(data as WorkshopEntry),
+  });
+
   const controller = useCategoryEntryPageController<WorkshopEntry>({
     category: "workshops",
     list,
@@ -473,7 +487,7 @@ export function WorkshopsPage({
       setSubmitAttemptedFinal(false);
     },
     afterPersistSuccess: async () => {
-      void refreshList(email);
+      void refreshList();
     },
     setSubmitAttemptedFinal,
     saveAndCloseBusyMessage: "Finish the current uploads before continuing.",
@@ -494,7 +508,7 @@ export function WorkshopsPage({
       setLastPersistedSnapshot(stableStringify(nextEntry));
       setSubmitted(false);
       setSubmitAttemptedFinal(false);
-      await refreshList(email);
+      await refreshList();
     },
   });
 
@@ -556,28 +570,6 @@ export function WorkshopsPage({
       }
     })();
   }, [setToast]);
-  async function parseApiError(response: Response, fallback: string) {
-    const text = await response.text();
-    let message = `${fallback} (${response.status})`;
-    let payload: unknown = null;
-
-    try {
-      payload = text ? JSON.parse(text) : null;
-      if (
-        payload &&
-        typeof payload === "object" &&
-        "error" in payload &&
-        typeof (payload as { error?: unknown }).error === "string"
-      ) {
-        message = `${(payload as { error: string }).error} (${response.status})`;
-      }
-    } catch {
-      payload = null;
-    }
-
-    return { message, payload };
-  }
-
   function resetForm() {
     setSubmitted(false);
     setSubmitAttemptedFinal(false);
@@ -586,90 +578,6 @@ export function WorkshopsPage({
     setLastPersistedSnapshot(stableStringify(nextForm));
     setSingleUploadStatus({ ...EMPTY_UPLOAD_STATUS });
     setPhotoUploadStatus({ hasPending: false, busy: false });
-  }
-
-  async function persistProgress(nextForm: WorkshopEntry) {
-    const startedAt = Date.now();
-    const eventName = String(nextForm.createdAt ?? "").trim() ? "entry.update" : "entry.create";
-    const response = await fetch("/api/me/workshops", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, entry: withAcademicProgressionCompatibility(nextForm) }),
-    });
-    const { message, payload } = await parseApiError(response, "Save failed");
-
-    if (!response.ok) {
-      const errorCode =
-        response.status === 400
-          ? "VALIDATION_ERROR"
-          : response.status === 413
-            ? "PAYLOAD_TOO_LARGE"
-            : response.status === 429
-              ? "RATE_LIMITED"
-              : "IO_ERROR";
-      void trackClientTelemetryEvent({
-        event: "action.failure",
-        category: "workshops",
-        entryId: String(nextForm.id ?? "").trim() || null,
-        success: false,
-        durationMs: Date.now() - startedAt,
-        meta: {
-          action: eventName,
-          source: "manual",
-          errorCode,
-          statusCode: response.status,
-        },
-      });
-      if (errorCode === "VALIDATION_ERROR") {
-        void trackClientTelemetryEvent({
-          event: "validation.failure",
-          category: "workshops",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      } else if (errorCode === "RATE_LIMITED") {
-        void trackClientTelemetryEvent({
-          event: "rate_limit.hit",
-          category: "workshops",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      } else if (errorCode === "PAYLOAD_TOO_LARGE") {
-        void trackClientTelemetryEvent({
-          event: "payload.too_large",
-          category: "workshops",
-          entryId: String(nextForm.id ?? "").trim() || null,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: { action: eventName, source: "manual", errorCode },
-        });
-      }
-      throw new Error(message);
-    }
-
-    const persisted = hydrateEntry(payload as WorkshopEntry);
-    void trackClientTelemetryEvent({
-      event: eventName,
-      category: "workshops",
-      entryId: String(persisted?.id ?? nextForm.id ?? "").trim() || null,
-      status:
-        String(
-          persisted?.confirmationStatus ??
-            nextForm.confirmationStatus ??
-            ""
-        ).trim() || null,
-      success: true,
-      durationMs: Date.now() - startedAt,
-      meta: {
-        source: "manual",
-      },
-    });
-
-    return persisted;
   }
 
   async function deleteStoredFile(storedPath: string) {
@@ -716,19 +624,6 @@ export function WorkshopsPage({
     safeBack(router, targetHref);
   }
 
-  async function refreshList(nextEmail = email) {
-    const response = await fetch(`/api/me/workshops?email=${encodeURIComponent(nextEmail)}`, {
-      cache: "no-store",
-    });
-    const items = await response.json();
-
-    if (!response.ok) {
-      throw new Error(items?.error || "Failed to refresh saved entries.");
-    }
-
-    setList(Array.isArray(items) ? (items as WorkshopEntry[]).map((entry) => hydrateEntry(entry)) : []);
-  }
-
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
     return persistCurrentMutation({
       buildNextEntry: (current) =>
@@ -741,84 +636,14 @@ export function WorkshopsPage({
     });
   }
 
-  async function deleteEntry(id: string) {
-    const startedAt = Date.now();
-    let failureTracked = false;
-    let rollbackSnapshot: WorkshopEntry[] | null = null;
-    setList((current) => {
-      rollbackSnapshot = createOptimisticSnapshot(current);
-      return optimisticRemove(current, id);
-    });
-
-    try {
-      const response = await fetch("/api/me/workshops", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, id }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        const errorCode =
-          response.status === 400
-            ? "VALIDATION_ERROR"
-            : response.status === 413
-              ? "PAYLOAD_TOO_LARGE"
-              : response.status === 429
-                ? "RATE_LIMITED"
-                : "IO_ERROR";
-        void trackClientTelemetryEvent({
-          event: "action.failure",
-          category: "workshops",
-          entryId: id,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: {
-            action: "entry.delete",
-            source: "manual",
-            errorCode,
-            statusCode: response.status,
-          },
-        });
-        failureTracked = true;
-        throw new Error(payload?.error || "Delete failed.");
-      }
-
-      void trackClientTelemetryEvent({
-        event: "entry.delete",
-        category: "workshops",
-        entryId: id,
-        success: true,
-        durationMs: Date.now() - startedAt,
-        meta: {
-          source: "manual",
-        },
-      });
-      setList((current) => optimisticRemove(current, id));
-      void refreshList(email);
-      showToast("ok", "Entry deleted.", 1200);
-    } catch (error) {
-      if (rollbackSnapshot) {
-        setList(rollbackSnapshot);
-      }
-      if (!failureTracked) {
-        void trackClientTelemetryEvent({
-          event: "action.failure",
-          category: "workshops",
-          entryId: id,
-          success: false,
-          durationMs: Date.now() - startedAt,
-          meta: {
-            action: "entry.delete",
-            source: "manual",
-            errorCode: "IO_ERROR",
-          },
-        });
-      }
-      const message = error instanceof Error ? error.message : "Delete failed.";
-      showToast("err", message, 1500);
-    }
-  }
+  const deleteEntry = createDeleteEntry<WorkshopEntry>({
+    endpoint: "/api/me/workshops",
+    category: "workshops",
+    buildBody: (id) => ({ email, id }),
+    setList,
+    refreshList,
+    showToast,
+  });
 
   const renderSavedEntry = createCategoryEntryRecordRenderer<WorkshopEntry>({
     buildHref: (entry) => entryDetail("workshops", entry.id),
