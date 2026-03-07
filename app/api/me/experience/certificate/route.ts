@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { authOptions } from "@/lib/auth";
 
 type Category = "academic_outside" | "industry";
 type ExperienceCertificate = {
@@ -85,7 +86,7 @@ function requireQuery(req: Request, key: string) {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.endsWith("@tce.edu")) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
@@ -160,7 +161,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.endsWith("@tce.edu")) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
@@ -198,7 +199,7 @@ export async function DELETE(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.endsWith("@tce.edu")) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });

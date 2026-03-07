@@ -17,6 +17,7 @@ type EntryListCardShellProps = {
   title: React.ReactNode;
   href: string;
   streakState?: EntryStreakDisplayState;
+  status?: string;
   badges?: React.ReactNode;
   subtitle?: React.ReactNode;
   createdAt?: string;
@@ -31,6 +32,7 @@ export default function EntryListCardShell({
   title,
   href,
   streakState = "none",
+  status,
   badges,
   subtitle,
   createdAt,
@@ -46,19 +48,19 @@ export default function EntryListCardShell({
     Math.abs(updatedTime - createdTime) > 60 * 1000;
 
   return (
-    <div className={getEntryListCardClass(category)}>
+    <div className={getEntryListCardClass(category, status)}>
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <EntryCategoryMarker category={category} index={index} streakState={streakState} />
-              <Link href={href} className="text-base font-semibold hover:opacity-80">
+              <Link href={href} className="text-base font-semibold text-slate-900 hover:opacity-80">
                 {title}
               </Link>
               {badges}
             </div>
-            {subtitle ? <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div> : null}
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {subtitle ? <div className="mt-1 text-sm text-slate-500">{subtitle}</div> : null}
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
               <span>Added: {formatEntryTimestamp(createdAt)}</span>
               {showUpdated ? <span>Updated: {formatEntryTimestamp(updatedAt)}</span> : null}
             </div>

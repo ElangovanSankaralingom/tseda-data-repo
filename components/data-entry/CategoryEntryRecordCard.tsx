@@ -4,6 +4,7 @@ import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import { ActionButton } from "@/components/ui/ActionButton";
+import StatusBadge from "@/components/ui/StatusBadge";
 import {
   canSendForConfirmation,
   getConfirmationStatusLabel,
@@ -154,15 +155,14 @@ export default function CategoryEntryRecordCard({
       title={title}
       subtitle={subtitle}
       streakState={streakState}
+      status={confirmationStatus ?? undefined}
       createdAt={createdAt}
       updatedAt={updatedAt}
       badges={
         <>
           <EntryLockBadge deadlineState={deadlineState} />
           {confirmationStatus ? (
-            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-              {getConfirmationStatusLabel(confirmationStatus)}
-            </span>
+            <StatusBadge status={confirmationStatus} />
           ) : null}
         </>
       }

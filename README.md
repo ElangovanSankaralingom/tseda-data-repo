@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# T'SEDA Data Repository
 
-## Getting Started
+Faculty professional development data collection and management platform for Thiagarajar College of Engineering.
 
-First, run the development server:
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router), React 19
+- **Styling:** Tailwind CSS 4, shadcn/ui (Radix primitives)
+- **Auth:** NextAuth v4 with Google OAuth (restricted to `@tce.edu`)
+- **Storage:** File-based JSON (no database)
+- **PDF:** pdf-lib for certificate/report generation
+- **Testing:** Node.js built-in test runner
+
+## Prerequisites
+
+- Node.js 22+
+- npm
+- Google OAuth credentials (client ID + secret)
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repo-url>
+cd tseda-data-repo
+npm install
+cp .env.example .env    # Fill in your credentials
+npm run dev             # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See `.env.example` for required variables:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description |
+|---|---|
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `NEXTAUTH_SECRET` | Random secret for JWT signing (`openssl rand -base64 32`) |
+| `NEXTAUTH_URL` | Base URL (e.g., `http://localhost:3000`) |
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Description |
+|---|---|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm start` | Start production server |
+| `npm test` | Run all tests |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Type-check with TypeScript |
+| `npm run migrate:data` | Run data migrations |
+| `npm run backup:data` | Back up `.data/` directory |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Running a single test
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+NODE_ENV=test node --test --experimental-strip-types \
+  --experimental-loader ./tests/helpers/pathAliasLoader.mjs \
+  tests/entries/<testfile>.test.ts
+```
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/                        # Next.js App Router
+  (protected)/              # Auth-gated pages (dashboard, data-entry, admin)
+  api/                      # API routes (auth, user, admin, file, telemetry)
+components/                 # React components (ui/, data-entry/, entry/)
+data/
+  categoryRegistry.ts       # Category definitions (5 categories)
+  schemas/                  # Per-category field schemas
+  faculty.json              # Faculty directory
+hooks/                      # Shared React hooks
+lib/
+  entries/                  # Workflow, lifecycle, editor rules
+  data/                     # Storage layer (indexStore, WAL, locks, atomic writes)
+  export/                   # Export pipeline
+  types/                    # Canonical type definitions
+  migrations/               # Schema migration logic
+  security/                 # Rate limiting
+.data/                      # Runtime data (git-ignored)
+  users/<email>/            # Per-user JSON stores, index, WAL
+tests/                      # Node.js built-in test runner tests
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full canonical architecture document.
+
+## Data Categories
+
+| Category | Description |
+|---|---|
+| FDP Attended | Faculty development programmes attended |
+| FDP Conducted | Faculty development programmes conducted/organized |
+| Case Studies | Industrial visits and case studies |
+| Guest Lectures | Guest lectures organized |
+| Workshops | Workshops organized |
+
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Canonical architecture freeze and ownership rules
+- [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) — UI/UX patterns, color system, component specs
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Branch workflow, commit conventions, PR checklist
+- [DATA_MODEL.md](DATA_MODEL.md) — File-based storage structure and formats
+- [API.md](API.md) — All API endpoints with auth and rate-limit status
+- [CHANGELOG.md](CHANGELOG.md) — Version history

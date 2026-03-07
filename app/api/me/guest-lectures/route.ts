@@ -24,6 +24,7 @@ import {
   type Faculty,
 } from "@/lib/facultyDirectory";
 import { normalizeError } from "@/lib/errors";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { logger } from "@/lib/logger";
 import { isEntryEditable } from "@/lib/entries/lock";
 import { normalizeStreakState, type StreakState } from "@/lib/streakState";
@@ -451,6 +452,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: authorizedEmail,
+      action: "entry.create.guest-lectures",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+
     const body = (await request.json()) as { email?: string; entry?: unknown };
     const entryRecord =
       body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
