@@ -39,7 +39,7 @@ test("DataStore readCategory auto-creates missing category files", async () => {
 test("DataStore write/read round-trip keeps persisted entries", async () => {
   await withSandbox("datastore-roundtrip", async (store) => {
     const initial = [
-      { id: "e-1", status: "draft", eventName: "Roundtrip", attachments: [] },
+      { id: "e-1", confirmationStatus: "DRAFT" as const, eventName: "Roundtrip", attachments: [] },
     ];
 
     await store.writeCategory(email, "workshops", initial);
@@ -121,8 +121,8 @@ test("DataStore migrates legacy array category files to V2 store format", async 
 test("DataStore readEntryById and upsert/delete keep V2 order stable", async () => {
   await withSandbox("datastore-byid-upsert-delete", async (store) => {
     await store.writeCategory(email, "workshops", [
-      { id: "a-1", status: "draft", eventName: "A1" },
-      { id: "a-2", status: "draft", eventName: "A2" },
+      { id: "a-1", confirmationStatus: "DRAFT" as const, eventName: "A1" },
+      { id: "a-2", confirmationStatus: "DRAFT" as const, eventName: "A2" },
     ]);
 
     const found = await store.readEntryById(email, "workshops", "a-2");
@@ -131,7 +131,7 @@ test("DataStore readEntryById and upsert/delete keep V2 order stable", async () 
 
     await store.upsertCategoryEntry(email, "workshops", {
       id: "a-1",
-      status: "draft",
+      confirmationStatus: "DRAFT" as const,
       eventName: "A1 Updated",
     });
     await store.upsertCategoryEntry(
@@ -139,7 +139,7 @@ test("DataStore readEntryById and upsert/delete keep V2 order stable", async () 
       "workshops",
       {
         id: "a-3",
-        status: "draft",
+        confirmationStatus: "DRAFT" as const,
         eventName: "A3",
       },
       { insertPosition: "end" }
@@ -168,7 +168,7 @@ test("DataStore readEntryById resolves directly from byId in V2 files", async ()
         {
           version: CATEGORY_STORE_SCHEMA_VERSION,
           byId: {
-            "direct-1": { id: "direct-1", status: "draft", title: "Direct Lookup" },
+            "direct-1": { id: "direct-1", confirmationStatus: "DRAFT" as const, title: "Direct Lookup" },
           },
           order: [],
         },
@@ -193,12 +193,12 @@ test("DataStore serializes concurrent upserts for the same user/category", async
     await Promise.all([
       store.upsertCategoryEntry(email, "workshops", {
         id: "concurrent-1",
-        status: "draft",
+        confirmationStatus: "DRAFT" as const,
         eventName: "Concurrent 1",
       }),
       store.upsertCategoryEntry(email, "workshops", {
         id: "concurrent-2",
-        status: "draft",
+        confirmationStatus: "DRAFT" as const,
         eventName: "Concurrent 2",
       }),
     ]);

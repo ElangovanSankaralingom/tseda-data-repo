@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   approveEntry,
+  commitDraft,
   computeStreak,
   createEntry,
   sendForConfirmation,
@@ -33,7 +34,7 @@ test("computeStreak returns zeroed numeric summary for empty data", async () => 
 
 test("computeStreak counts activated and wins entries consistently", async () => {
   await withSandbox("streak-counts", async () => {
-    await createEntry(ownerEmail, "workshops", {
+    const activeEntry = await createEntry(ownerEmail, "workshops", {
       academicYear: "2025-2026",
       semesterType: "Odd",
       startDate: "2026-03-01",
@@ -48,8 +49,8 @@ test("computeStreak counts activated and wins entries consistently", async () =>
         organiserProfile: { storedPath: "uploads/workshops/active-profile.pdf" },
         geotaggedPhotos: [{ storedPath: "uploads/workshops/active-photo.jpg" }],
       },
-      status: "final",
     });
+    await commitDraft(ownerEmail, "workshops", String(activeEntry.id));
 
     const workshopWin = await createEntry(ownerEmail, "workshops", {
       academicYear: "2025-2026",
@@ -66,8 +67,8 @@ test("computeStreak counts activated and wins entries consistently", async () =>
         organiserProfile: { storedPath: "uploads/workshops/win-profile.pdf" },
         geotaggedPhotos: [{ storedPath: "uploads/workshops/win-photo.jpg" }],
       },
-      status: "final",
     });
+    await commitDraft(ownerEmail, "workshops", String(workshopWin.id));
     await sendForConfirmation(ownerEmail, "workshops", String(workshopWin.id));
     await approveEntry(adminEmail, "workshops", ownerEmail, String(workshopWin.id));
 
@@ -80,8 +81,8 @@ test("computeStreak counts activated and wins entries consistently", async () =>
       organisingBody: "TCE",
       permissionLetter: { storedPath: "uploads/fdp/win-permission.pdf" },
       completionCertificate: { storedPath: "uploads/fdp/win-certificate.pdf" },
-      status: "final",
     });
+    await commitDraft(ownerEmail, "fdp-attended", String(fdpWin.id));
     await sendForConfirmation(ownerEmail, "fdp-attended", String(fdpWin.id));
     await approveEntry(adminEmail, "fdp-attended", ownerEmail, String(fdpWin.id));
 

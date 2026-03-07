@@ -8,11 +8,7 @@ import { AppError, normalizeError } from "@/lib/errors";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { updateEntry } from "@/lib/entries/lifecycle";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import {
-  ensureActivated,
-  isFutureDatedEntry,
-  normalizeStreakState,
-} from "@/lib/gamification";
+import { normalizeStreakState } from "@/lib/gamification";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
 import { buildEntryPdfData } from "@/lib/pdf/buildPdfData";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
@@ -60,12 +56,7 @@ async function getAuthorizedTceEmail() {
 }
 
 function buildPdfPatch(entry: Entry, category: CategoryKey, pdfMeta: unknown) {
-  const nextStreak = isFutureDatedEntry(
-    String(entry.startDate ?? ""),
-    String(entry.endDate ?? "")
-  )
-    ? ensureActivated(normalizeStreakState(entry.streak), String(entry.endDate ?? ""))
-    : normalizeStreakState(entry.streak);
+  const nextStreak = normalizeStreakState(entry.streak);
 
   return {
     pdfMeta,

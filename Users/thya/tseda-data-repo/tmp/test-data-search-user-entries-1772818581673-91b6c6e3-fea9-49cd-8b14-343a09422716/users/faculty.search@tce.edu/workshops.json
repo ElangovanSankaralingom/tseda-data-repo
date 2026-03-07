@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "byId": {
+    "21f5b76d-520d-4f03-902c-4d8b2caf5991": {
+      "eventName": "AI Foundations Workshop",
+      "speakerName": "Dr Ada",
+      "id": "21f5b76d-520d-4f03-902c-4d8b2caf5991",
+      "createdAt": "2026-03-06T17:36:21.675Z",
+      "updatedAt": "2026-03-06T17:36:21.675Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "21f5b76d-520d-4f03-902c-4d8b2caf5991"
+  ]
+}

@@ -27,7 +27,7 @@ import {
   toStreakSortAtISO,
   type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
-import type { Entry, EntryStatus } from "@/lib/types/entry";
+import { ENTRY_STATUSES, type Entry, type EntryStatus } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 import { logger } from "@/lib/logger";
 
@@ -35,12 +35,7 @@ const INDEX_FILE_NAME = "index.json";
 const USER_INDEX_VERSION = USER_INDEX_SCHEMA_VERSION;
 const USER_INDEX_STREAK_RULE_VERSION = STREAK_RULE_VERSION;
 
-const ENTRY_STATUS_KEYS: readonly EntryStatus[] = [
-  "DRAFT",
-  "PENDING_CONFIRMATION",
-  "APPROVED",
-  "REJECTED",
-];
+const ENTRY_STATUS_KEYS: readonly EntryStatus[] = ENTRY_STATUSES;
 
 type EntryLike = Entry & {
   id?: unknown;

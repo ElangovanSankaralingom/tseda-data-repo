@@ -6,7 +6,7 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeEntry as normalizeEntryRecord } from "@/lib/normalize";
 import { err, ok, type Result } from "@/lib/result";
-import type { Entry, EntryStatus } from "@/lib/types/entry";
+import { ENTRY_STATUSES, type Entry, type EntryStatus } from "@/lib/types/entry";
 import type { UserIndex } from "@/lib/data/indexStore";
 import type { WalAction, WalActorRole, WalEvent } from "@/lib/data/wal";
 
@@ -21,12 +21,7 @@ export type CategoryStoreV2 = {
   order: string[];
 };
 
-const ENTRY_STATUS_KEYS: readonly EntryStatus[] = [
-  "DRAFT",
-  "PENDING_CONFIRMATION",
-  "APPROVED",
-  "REJECTED",
-];
+const ENTRY_STATUS_KEYS: readonly EntryStatus[] = ENTRY_STATUSES;
 
 const WAL_ACTIONS = new Set<WalAction>([
   "CREATE",

@@ -5,7 +5,7 @@ import {
   normalizeEntryStatus,
   type EntryStateLike,
 } from "@/lib/entries/stateMachine";
-import { normalizeStreakState } from "@/lib/gamification";
+import { computeDueAtISO, normalizeStreakState, nowISTTimestampISO } from "@/lib/gamification";
 
 export const STREAK_RULE_VERSION = 2;
 
@@ -83,11 +83,27 @@ export function compareStreakSortAtISO(left: string | null | undefined, right: s
 }
 
 function hasCommittedMilestone(entry: StreakProgressEntryLike) {
-  if (isEntryCommitted(entry as EntryStateLike)) {
-    return true;
-  }
-  const streak = normalizeStreakState(entry.streak);
-  return !!streak.activatedAtISO || !!streak.completedAtISO;
+  // Canonical streak counting must follow workflow commitment only.
+  // Legacy streak timestamps are display metadata and must not activate counts.
+  return isEntryCommitted(entry as EntryStateLike);
+}
+
+export function activateStreakMetadata(streakValue: unknown, endDateISO?: string | null) {
+  const streak = normalizeStreakState(streakValue);
+  return {
+    ...streak,
+    activatedAtISO: streak.activatedAtISO ?? nowISTTimestampISO(),
+    dueAtISO: streak.dueAtISO ?? (endDateISO ? computeDueAtISO(endDateISO) : null),
+    completedAtISO: streak.completedAtISO ?? null,
+  };
+}
+
+export function completeStreakMetadata(streakValue: unknown) {
+  const streak = normalizeStreakState(streakValue);
+  return {
+    ...streak,
+    completedAtISO: streak.completedAtISO ?? nowISTTimestampISO(),
+  };
 }
 
 export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): StreakProgressSnapshot {

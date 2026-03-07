@@ -20,12 +20,11 @@ import { normalizeError } from "@/lib/errors";
 import { mergeWithNulls } from "@/lib/mergeWithNulls";
 import { isEntryEditable } from "@/lib/entries/lock";
 import {
-  ensureActivated,
   isFutureDatedEntry,
-  markCompleted,
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
+import { activateStreakMetadata, completeStreakMetadata } from "@/lib/streakProgress";
 import {
   isEntryCommitted,
   normalizeEntryStatus,
@@ -531,7 +530,7 @@ export async function POST(request: Request) {
         completedAtISO: null,
       };
     } else {
-      streak = ensureActivated(existingStreak, validated.endDate);
+      streak = activateStreakMetadata(existingStreak, validated.endDate);
 
       if (
         nextCommitted &&
@@ -541,7 +540,7 @@ export async function POST(request: Request) {
         !streak.completedAtISO &&
         Date.now() <= new Date(streak.dueAtISO).getTime()
       ) {
-        streak = markCompleted(streak);
+        streak = completeStreakMetadata(streak);
       }
     }
 
@@ -796,7 +795,7 @@ export async function PATCH(request: Request) {
         completedAtISO: null,
       };
     } else {
-      savedEntry.streak = ensureActivated(savedEntry.streak, savedEntry.endDate);
+      savedEntry.streak = activateStreakMetadata(savedEntry.streak, savedEntry.endDate);
 
       if (
         isEntryCommitted(savedEntry as EntryStateLike) &&
@@ -806,7 +805,7 @@ export async function PATCH(request: Request) {
         !savedEntry.streak.completedAtISO &&
         Date.now() <= new Date(savedEntry.streak.dueAtISO).getTime()
       ) {
-        savedEntry.streak = markCompleted(savedEntry.streak);
+        savedEntry.streak = completeStreakMetadata(savedEntry.streak);
       }
     }
 

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "byId": {
+    "e-1": {
+      "id": "e-1",
+      "confirmationStatus": "DRAFT",
+      "eventName": "Roundtrip",
+      "attachments": [],
+      "createdAt": "2026-03-06T16:56:15.625Z",
+      "updatedAt": "2026-03-06T16:56:15.625Z",
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "e-1"
+  ]
+}

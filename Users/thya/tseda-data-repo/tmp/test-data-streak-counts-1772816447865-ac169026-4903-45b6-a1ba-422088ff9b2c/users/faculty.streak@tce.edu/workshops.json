@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "byId": {
+    "b3afe357-1b8e-4f8b-9beb-fdd46f7511c9": {
+      "id": "b3afe357-1b8e-4f8b-9beb-fdd46f7511c9",
+      "academicYear": "2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2026-03-03",
+      "endDate": "2026-03-04",
+      "eventName": "Won streak workshop",
+      "speakerName": "Speaker Won",
+      "organisationName": "Org Won",
+      "uploads": {
+        "permissionLetter": {
+          "storedPath": "uploads/workshops/win-permission.pdf"
+        },
+        "brochure": {
+          "storedPath": "uploads/workshops/win-brochure.pdf"
+        },
+        "attendance": {
+          "storedPath": "uploads/workshops/win-attendance.pdf"
+        },
+        "organiserProfile": {
+          "storedPath": "uploads/workshops/win-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "storedPath": "uploads/workshops/win-photo.jpg"
+          }
+        ]
+      },
+      "createdAt": "2026-03-06T17:00:47.887Z",
+      "updatedAt": "2026-03-06T17:00:47.902Z",
+      "confirmationStatus": "APPROVED",
+      "sentForConfirmationAtISO": "2026-03-06T17:00:47.898Z",
+      "confirmedAtISO": "2026-03-06T17:00:47.902Z",
+      "confirmedBy": "senarch@tce.edu",
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-06T17:00:47.893Z"
+    },
+    "7fe1496a-1a44-49bf-b6df-cb0c7bc5ce51": {
+      "id": "7fe1496a-1a44-49bf-b6df-cb0c7bc5ce51",
+      "academicYear": "2025-2026",
+      "semesterType": "Odd",
+      "startDate": "2026-03-01",
+      "endDate": "2026-03-02",
+      "eventName": "Active streak workshop",
+      "speakerName": "Speaker Active",
+      "organisationName": "Org Active",
+      "uploads": {
+        "permissionLetter": {
+          "storedPath": "uploads/workshops/active-permission.pdf"
+        },
+        "brochure": {
+          "storedPath": "uploads/workshops/active-brochure.pdf"
+        },
+        "attendance": {
+          "storedPath": "uploads/workshops/active-attendance.pdf"
+        },
+        "organiserProfile": {
+          "storedPath": "uploads/workshops/active-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "storedPath": "uploads/workshops/active-photo.jpg"
+          }
+        ]
+      },
+      "createdAt": "2026-03-06T17:00:47.868Z",
+      "updatedAt": "2026-03-06T17:00:47.884Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-06T17:00:47.884Z"
+    }
+  },
+  "order": [
+    "b3afe357-1b8e-4f8b-9beb-fdd46f7511c9",
+    "7fe1496a-1a44-49bf-b6df-cb0c7bc5ce51"
+  ]
+}
