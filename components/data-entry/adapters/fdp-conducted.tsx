@@ -2,25 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import CategoryEntryRecordCard from "@/components/data-entry/CategoryEntryRecordCard";
-import CategoryEntryPageShell from "@/components/data-entry/CategoryEntryPageShell";
+import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
+import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
 import Field from "@/components/data-entry/Field";
-import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
+import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
+import { createGroupedEntryListCard } from "@/components/data-entry/GroupedEntrySections";
 import DateField from "@/components/controls/DateField";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
-import { EntryHeaderActionsBar, EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
+import { EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
 import UploadField from "@/components/entry/UploadField";
 import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import { useCategoryEntryPageController } from "@/hooks/useCategoryEntryPageController";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
-import {
-  canSendForConfirmation,
-  getEntryApprovalStatus,
-  isEntryLockedFromStatus,
-} from "@/lib/confirmation";
-import { getEntryStreakDisplayState, type EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
+import { getEntryApprovalStatus } from "@/lib/confirmation";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
@@ -31,7 +27,6 @@ import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useUploadController } from "@/hooks/useUploadController";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
   createOptimisticSnapshot,
@@ -215,17 +210,11 @@ function uploadConductedFileXHR(opts: {
   });
 }
 
-type FdpConductedPageProps = {
-  viewEntryId?: string;
-  editEntryId?: string;
-  startInNewMode?: boolean;
-};
-
 export function FdpConductedPage({
   viewEntryId,
   editEntryId,
   startInNewMode = false,
-}: FdpConductedPageProps = {}) {
+}: CategoryAdapterPageProps = {}) {
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const router = useRouter();
   const categoryPath = entryList("fdp-conducted");
@@ -553,6 +542,7 @@ export function FdpConductedPage({
       updatedAt: new Date().toISOString(),
     }),
     persistProgress,
+    normalizePersistedEntry: (entry) => withAcademicProgressionCompatibility(entry),
     persistRequestEdit: async (entry) => {
       const response = await fetch(`/api/me/fdp-conducted/${encodeURIComponent(entry.id)}`, {
         method: "PATCH",
@@ -581,7 +571,7 @@ export function FdpConductedPage({
 
       return payload as FdpConducted;
     },
-    commitDraft: async (entryId) => commitDraftEntry(entryId),
+    commitDraft: commitDraftEntry,
     applyPersistedEntry: (entry) => {
       setEditorSeed(entry);
       editorActions.saveDraft(entry);
@@ -621,22 +611,17 @@ export function FdpConductedPage({
     },
   });
   const {
-    actionState,
     autoSaveStatus,
     cancelRequestEdit,
-    generateEntry,
+    getHeaderActionProps,
+    getPdfActionProps,
     groupedEntries,
     handleCancel,
-    handleSaveAndClose,
-    handleSaveDraft,
     hasUnsavedChanges,
-    lifecycle,
     markAutoSaveSaved,
     persistCurrentMutation,
     requestEdit,
     requestingEditIds,
-    saveIntent,
-    saving,
     sendForConfirmation,
     sendingConfirmationIds,
     setToast,
@@ -688,8 +673,6 @@ export function FdpConductedPage({
       }
     })();
   }, [loadEditorEntry, setToast]);
-  const canGenerate = lifecycle.canGenerate;
-
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
     return persistCurrentMutation({
       buildNextEntry: (current) => ({
@@ -847,73 +830,33 @@ export function FdpConductedPage({
     }
   }
 
-  function renderSavedEntry(entry: FdpConducted, category: EntryDisplayCategory, index: number) {
-    const deadlineState = getStreakDeadlineState(entry);
-    const isCompleted = category === "completed";
-    const confirmationStatus = isCompleted ? getEntryApprovalStatus(entry) : undefined;
-    const lockApproved = isCompleted ? isEntryLockedFromStatus(entry) : false;
-    const canSendConfirmation = isCompleted ? canSendForConfirmation(entry) : false;
-    const sendingConfirmation = isCompleted ? !!sendingConfirmationIds[entry.id] : false;
-
-    return (
-      <CategoryEntryRecordCard
-        category={category}
-        index={index}
-        href={entryDetail("fdp-conducted", entry.id)}
-        title={getConductedEntryTitle(entry)}
-        streakState={getEntryStreakDisplayState(entry)}
-        deadlineState={deadlineState}
-        confirmationStatus={confirmationStatus}
-        subtitle={getConductedEntrySubtitle(entry)}
-        createdAt={entry.createdAt}
-        updatedAt={entry.updatedAt}
-        hideActions={!!(activeEntryId && entry.id === activeEntryId)}
-        onView={() => router.push(entryDetail("fdp-conducted", entry.id))}
-        onPreview={
-          entry.pdfMeta?.url
-            ? () => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")
-            : undefined
-        }
-        onEdit={
-          lockApproved
-            ? undefined
-            : () => {
-                router.push(entryDetail("fdp-conducted", entry.id), { scroll: false });
-              }
-        }
-        onDelete={
-          lockApproved
-            ? undefined
-            : () =>
-                requestConfirmation({
-                  title: "Delete entry?",
-                  description:
-                    "This permanently deletes this FDP entry and its associated uploaded files.",
-                  confirmLabel: "Delete",
-                  cancelLabel: "Cancel",
-                  variant: "destructive",
-                  onConfirm: () => deleteEntry(entry.id),
-                })
-        }
-        deleteLabel="Delete entry"
-        sendForConfirmation={
-          isCompleted
-            ? {
-                disabled: !canSendConfirmation,
-                sending: sendingConfirmation,
-                onClick: () => void sendForConfirmation(entry),
-              }
-            : undefined
-        }
-        requestEdit={{
-          locked: lockApproved,
-          status: entry.requestEditStatus,
-          requestedAtISO: entry.requestEditRequestedAtISO,
-          requesting: !!requestingEditIds[entry.id],
-          onRequest: () => void requestEdit(entry),
-          onCancel: () => void cancelRequestEdit(entry),
-        }}
-      >
+  const renderSavedEntry = createCategoryEntryRecordRenderer<FdpConducted>({
+    buildHref: (entry) => entryDetail("fdp-conducted", entry.id),
+    buildTitle: (entry) => getConductedEntryTitle(entry),
+    buildSubtitle: (entry) => getConductedEntrySubtitle(entry),
+    onView: (entry) => router.push(entryDetail("fdp-conducted", entry.id)),
+    onEdit: (entry) => {
+      router.push(entryDetail("fdp-conducted", entry.id), { scroll: false });
+    },
+    hideActions: (entry) => !!(activeEntryId && entry.id === activeEntryId),
+    enableWorkflowActions: (_entry, category) => category === "completed",
+    deleteLabel: "Delete entry",
+    requestConfirmation,
+    buildDeleteRequest: (entry) => ({
+      title: "Delete entry?",
+      description: "This permanently deletes this FDP entry and its associated uploaded files.",
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "destructive",
+      onConfirm: () => deleteEntry(entry.id),
+    }),
+    requestingEditIds,
+    sendingConfirmationIds,
+    requestEdit: (entry) => void requestEdit(entry),
+    cancelRequestEdit: (entry) => void cancelRequestEdit(entry),
+    sendForConfirmation: (entry) => void sendForConfirmation(entry),
+    renderBody: (entry) => (
+      <>
         <div className="text-xs text-muted-foreground">
           Academic Year: {entry.academicYear || "-"} {" • "}
           Year of Study: {entry.yearOfStudy || "-"} {" • "}
@@ -935,25 +878,12 @@ export function FdpConductedPage({
             </a>
           ))}
         </div>
-      </CategoryEntryRecordCard>
-    );
-  }
-
-  const toastBanner = toast ? (
-    <div
-      className={cx(
-        "rounded-lg border px-3 py-2 text-sm",
-        toast.type === "ok"
-          ? "border-green-200 bg-green-50 text-green-800"
-          : "border-red-200 bg-red-50 text-red-800"
-      )}
-    >
-      {toast.msg}
-    </div>
-  ) : null;
+      </>
+    ),
+  });
 
   return (
-    <CategoryEntryPageShell
+    <CategoryEntryRuntime
       entryShell={{
         category: "fdp-conducted",
         mode: isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview",
@@ -966,30 +896,17 @@ export function FdpConductedPage({
         backHref,
         backDisabled,
         onBack: showForm || isViewMode ? () => handleCancel(categoryPath) : undefined,
-        actions: (
-          <EntryHeaderActionsBar
-            isEditing={showForm}
-            isViewMode={isViewMode}
-            loading={loading}
-            onAdd={() => {
-              resetForm();
-              router.push(entryNew("fdp-conducted"), { scroll: false });
-            }}
-            addLabel="+ Add FDP Entry"
-            onCancel={() => void handleCancel()}
-            cancelDisabled={actionState.cancelDisabled}
-            onSave={() => void handleSaveDraft()}
-            saveDisabled={actionState.saveDisabled}
-            onDone={() => void handleSaveAndClose()}
-            doneDisabled={actionState.doneDisabled}
-            saving={saving}
-            saveIntent={saveIntent}
-          />
-        ),
       }}
+      headerActions={getHeaderActionProps({
+        onAdd: () => {
+          resetForm();
+          router.push(entryNew("fdp-conducted"), { scroll: false });
+        },
+        addLabel: "+ Add FDP Entry",
+      })}
       loading={loading}
       showForm={showForm}
-      topContent={toastBanner}
+      toast={toast}
       formCard={
         showForm
           ? {
@@ -1143,14 +1060,7 @@ export function FdpConductedPage({
             </div>
 
                   <div className="mt-5 space-y-4">
-              <EntryPdfActionsBar
-                isViewMode={isViewMode}
-                canGenerate={canGenerate}
-                onGenerate={() => void generateEntry()}
-                generating={saving}
-                pdfMeta={form.pdfMeta ?? null}
-                pdfDisabled={!lifecycle.canPreview}
-              />
+              <EntryPdfActionsBar {...getPdfActionProps(form.pdfMeta ?? null)} />
               {pdfState.pdfStale ? (
                 <p className="text-sm text-muted-foreground">
                   Entry changed. Regenerate PDF to update Preview/Download.
@@ -1220,12 +1130,12 @@ export function FdpConductedPage({
       }
       listCard={
         !loading && !isEditing
-          ? {
-              className: "bg-white/70 p-5",
+          ? createGroupedEntryListCard({
               title: "Saved FDP Conducted Entries",
               subtitle: "Your saved records are stored locally and keyed by your signed-in email.",
-              content: <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />,
-            }
+              groupedEntries,
+              renderEntry: renderSavedEntry,
+            })
           : null
       }
       confirmationDialog={confirmationDialog}

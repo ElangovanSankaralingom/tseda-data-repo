@@ -46,6 +46,38 @@ type GenerateEntrySnapshot<TEntry> = (
   persistDraft: (entry: TEntry) => Promise<TEntry>
 ) => Promise<{ entry: TEntry }>;
 
+type HeaderActionBindings = {
+  isEditing: boolean;
+  isViewMode: boolean;
+  loading: boolean;
+  onAdd?: () => void;
+  addLabel?: string;
+  onCancel: () => void;
+  cancelDisabled: boolean;
+  onSave: () => void;
+  saveDisabled: boolean;
+  onDone: () => void;
+  doneDisabled: boolean;
+  saving: boolean;
+  saveIntent: EntrySaveIntent | null;
+  workflowAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    busyLabel?: string;
+  };
+  workflowDisabledHint?: string;
+};
+
+type PdfActionBindings = {
+  isViewMode: boolean;
+  canGenerate: boolean;
+  onGenerate: () => void;
+  generating: boolean;
+  pdfMeta: { url?: string | null; fileName?: string } | null | undefined;
+  pdfDisabled: boolean;
+};
+
 type ConfirmableEntryLike = {
   id: string;
   status?: string | null;
@@ -80,6 +112,7 @@ type UseCategoryEntryPageControllerOptions<TEntry extends CategoryPageEntry> = {
   persistRequestEdit: (entry: TEntry) => Promise<TEntry>;
   persistCancelRequestEdit: (entry: TEntry) => Promise<TEntry>;
   commitDraft: (entryId: string) => Promise<TEntry>;
+  normalizePersistedEntry?: (entry: TEntry) => TEntry;
   applyPersistedEntry: (entry: TEntry) => void | Promise<void>;
   afterPersistSuccess?: (entry: TEntry, intent: EntrySaveIntent) => void | Promise<void>;
   setSubmitAttemptedFinal?: Dispatch<SetStateAction<boolean>>;
@@ -144,6 +177,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   persistRequestEdit,
   persistCancelRequestEdit,
   commitDraft,
+  normalizePersistedEntry,
   applyPersistedEntry,
   afterPersistSuccess,
   setSubmitAttemptedFinal,
@@ -198,6 +232,31 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   });
   const groupedEntries = useMemo(() => groupEntries(list), [list]);
 
+  const normalizePersisted = useCallback(
+    (entry: TEntry) => (normalizePersistedEntry ? normalizePersistedEntry(entry) : entry),
+    [normalizePersistedEntry]
+  );
+
+  const persistEntry = useCallback(
+    async (entry: TEntry) => normalizePersisted(await persistProgress(entry)),
+    [normalizePersisted, persistProgress]
+  );
+
+  const persistRequestEditEntry = useCallback(
+    async (entry: TEntry) => normalizePersisted(await persistRequestEdit(entry)),
+    [normalizePersisted, persistRequestEdit]
+  );
+
+  const persistCancelRequestEditEntry = useCallback(
+    async (entry: TEntry) => normalizePersisted(await persistCancelRequestEdit(entry)),
+    [normalizePersisted, persistCancelRequestEdit]
+  );
+
+  const commitDraftEntry = useCallback(
+    async (entryId: string) => normalizePersisted(await commitDraft(entryId)),
+    [commitDraft, normalizePersisted]
+  );
+
   const saveDraftChanges = useCallback(
     async (options?: {
       closeAfterSave?: boolean;
@@ -224,8 +283,8 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
         setList,
         buildEntryToSave,
         buildOptimisticEntry,
-        persistProgress,
-        commitDraft,
+        persistProgress: persistEntry,
+        commitDraft: commitDraftEntry,
         applyPersistedEntry,
         afterPersistSuccess,
         closeForm: async () => closeForm(),
@@ -237,15 +296,15 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       buildEntryToSave,
       buildOptimisticEntry,
       closeForm,
-      commitDraft,
       doneSuccessMessage,
       hasBusyUploads,
       lifecycle.canSave,
-      persistProgress,
+      persistEntry,
       saveBusyMessage,
       saveErrorMessage,
       saveSuccessMessage,
       setList,
+      commitDraftEntry,
     ]
   );
 
@@ -266,7 +325,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       afterGenerate,
       buildDraftEntry,
       generateEntrySnapshot,
-      persistProgress,
+      persistProgress: persistEntry,
       applyGeneratedEntry,
     });
   }, [
@@ -283,7 +342,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     hasValidationErrors,
     lifecycle.canGenerate,
     markGenerateAttempted,
-    persistProgress,
+    persistEntry,
   ]);
 
   const showToast = useCallback(
@@ -320,7 +379,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       return runPersistCurrentEntryMutation<TEntry, TResult>({
         saveLockRef,
         formRef,
-        persistProgress,
+        persistProgress: persistEntry,
         applyPersistedEntry,
         afterPersistSuccess,
         buildNextEntry: options.buildNextEntry,
@@ -329,7 +388,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
         intent: options.intent,
       });
     },
-    [afterPersistSuccess, applyPersistedEntry, formRef, persistProgress]
+    [afterPersistSuccess, applyPersistedEntry, formRef, persistEntry]
   );
 
   const {
@@ -377,8 +436,8 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
 
   const { requestingIds: requestingEditIds, requestEdit, cancelRequestEdit } = useRequestEdit<TEntry>({
     setItems: setList,
-    persistRequest: persistRequestEdit,
-    persistCancel: persistCancelRequestEdit,
+    persistRequest: persistRequestEditEntry,
+    persistCancel: persistCancelRequestEditEntry,
     onSuccess: (message) => showToast("ok", message, 1400),
     onError: (message) => showToast("err", message, 1800),
   });
@@ -390,11 +449,63 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     onError: (message) => showToast("err", message, 1800),
   });
 
+  const getHeaderActionProps = useCallback(
+    (options?: {
+      onAdd?: () => void;
+      addLabel?: string;
+      workflowAction?: HeaderActionBindings["workflowAction"];
+      workflowDisabledHint?: string;
+    }): HeaderActionBindings => ({
+      isEditing: showForm,
+      isViewMode,
+      loading,
+      onAdd: options?.onAdd,
+      addLabel: options?.addLabel,
+      onCancel: () => void handleCancel(),
+      cancelDisabled: actionState.cancelDisabled,
+      onSave: () => void handleSaveDraft(),
+      saveDisabled: actionState.saveDisabled,
+      onDone: () => void handleSaveAndClose(),
+      doneDisabled: actionState.doneDisabled,
+      saving,
+      saveIntent,
+      workflowAction: options?.workflowAction,
+      workflowDisabledHint: options?.workflowDisabledHint,
+    }),
+    [
+      actionState.cancelDisabled,
+      actionState.doneDisabled,
+      actionState.saveDisabled,
+      handleCancel,
+      handleSaveAndClose,
+      handleSaveDraft,
+      isViewMode,
+      loading,
+      saveIntent,
+      saving,
+      showForm,
+    ]
+  );
+
+  const getPdfActionProps = useCallback(
+    (pdfMeta: PdfActionBindings["pdfMeta"]): PdfActionBindings => ({
+      isViewMode,
+      canGenerate: !actionState.generateDisabled,
+      onGenerate: () => void generateEntry(),
+      generating: saving,
+      pdfMeta,
+      pdfDisabled: !lifecycle.canPreview,
+    }),
+    [actionState.generateDisabled, generateEntry, isViewMode, lifecycle.canPreview, saving]
+  );
+
   return {
     actionState,
     autoSaveStatus,
     cancelRequestEdit,
     generateEntry,
+    getHeaderActionProps,
+    getPdfActionProps,
     groupedEntries,
     handleCancel,
     handleSaveAndClose,
