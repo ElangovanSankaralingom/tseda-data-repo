@@ -1,14 +1,32 @@
 import type { EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
 
-type GroupedEntries<TEntry> = {
+export type GroupedEntries<TEntry> = {
   draft: TEntry[];
   activated: TEntry[];
   completed: TEntry[];
 };
 
+export type GroupedEntryRender<TEntry> = (
+  entry: TEntry,
+  category: EntryDisplayCategory,
+  index: number
+) => React.ReactNode;
+
 type GroupedEntrySectionsProps<TEntry> = {
   groupedEntries: GroupedEntries<TEntry>;
-  renderEntry: (entry: TEntry, category: EntryDisplayCategory, index: number) => React.ReactNode;
+  renderEntry: GroupedEntryRender<TEntry>;
+  draftTitle?: string;
+  activatedTitle?: string;
+  completedTitle?: string;
+  emptyState?: React.ReactNode;
+};
+
+export type GroupedEntryListCardConfig<TEntry> = {
+  title: string;
+  subtitle?: string;
+  className?: string;
+  groupedEntries: GroupedEntries<TEntry>;
+  renderEntry: GroupedEntryRender<TEntry>;
   draftTitle?: string;
   activatedTitle?: string;
   completedTitle?: string;
@@ -75,4 +93,32 @@ export default function GroupedEntrySections<TEntry>({
       />
     </div>
   );
+}
+
+export function createGroupedEntryListCard<TEntry>({
+  title,
+  subtitle,
+  className = "bg-white/70 p-5",
+  groupedEntries,
+  renderEntry,
+  draftTitle,
+  activatedTitle,
+  completedTitle,
+  emptyState,
+}: GroupedEntryListCardConfig<TEntry>) {
+  return {
+    title,
+    subtitle,
+    className,
+    content: (
+      <GroupedEntrySections
+        groupedEntries={groupedEntries}
+        renderEntry={renderEntry}
+        draftTitle={draftTitle}
+        activatedTitle={activatedTitle}
+        completedTitle={completedTitle}
+        emptyState={emptyState}
+      />
+    ),
+  };
 }

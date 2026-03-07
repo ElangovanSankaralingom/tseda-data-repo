@@ -2,19 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import CategoryEntryRecordCard from "@/components/data-entry/CategoryEntryRecordCard";
-import CategoryEntryPageShell from "@/components/data-entry/CategoryEntryPageShell";
+import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
+import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
 import CurrencyField from "@/components/controls/CurrencyField";
-import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import Field from "@/components/data-entry/Field";
-import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
+import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
+import { createGroupedEntryListCard } from "@/components/data-entry/GroupedEntrySections";
 import DateField from "@/components/controls/DateField";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
-import { EntryHeaderActionsBar } from "@/components/entry/EntryHeaderActions";
+import { EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import EntryUploader from "@/components/upload/EntryUploader";
-import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useCategoryEntryPageController } from "@/hooks/useCategoryEntryPageController";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
@@ -23,18 +22,8 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import {
-  canSendForConfirmation,
-  getEntryApprovalStatus,
-  isEntryLockedFromStatus,
-} from "@/lib/confirmation";
+import { getEntryApprovalStatus } from "@/lib/confirmation";
 import { FACULTY } from "@/lib/facultyDirectory";
-import { getStreakDeadlineState } from "@/lib/streakDeadline";
-import {
-  getEntryStreakDisplayState,
-  type EntryDisplayCategory,
-} from "@/lib/entries/displayLifecycle";
-import { isEntryCommitted } from "@/lib/entries/stateMachine";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
@@ -245,21 +234,11 @@ function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
   ) as CaseStudyEntry;
 }
 
-function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
-  return <ActionButton {...props} />;
-}
-
-type CaseStudiesPageProps = {
-  viewEntryId?: string;
-  editEntryId?: string;
-  startInNewMode?: boolean;
-};
-
 export function CaseStudiesPage({
   viewEntryId,
   editEntryId,
   startInNewMode = false,
-}: CaseStudiesPageProps = {}) {
+}: CategoryAdapterPageProps = {}) {
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const router = useRouter();
   const categoryPath = entryList("case-studies");
@@ -465,24 +444,21 @@ export function CaseStudiesPage({
         ...entryToSave,
         updatedAt: new Date().toISOString(),
       }),
-    persistProgress: async (entryToSave) => hydrateEntry(await persistProgress(entryToSave)),
+    persistProgress,
+    normalizePersistedEntry: hydrateEntry,
     persistRequestEdit: async (entry) =>
-      hydrateEntry(
-        await persistProgress({
-          ...entry,
-          requestEditStatus: "pending",
-          requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
-        })
-      ),
+      persistProgress({
+        ...entry,
+        requestEditStatus: "pending",
+        requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
+      }),
     persistCancelRequestEdit: async (entry) =>
-      hydrateEntry(
-        await persistProgress({
-          ...entry,
-          requestEditStatus: "none",
-          requestEditRequestedAtISO: null,
-        })
-      ),
-    commitDraft: async (entryId) => commitDraftEntry(entryId),
+      persistProgress({
+        ...entry,
+        requestEditStatus: "none",
+        requestEditRequestedAtISO: null,
+      }),
+    commitDraft: commitDraftEntry,
     applyPersistedEntry: (entry) => {
       applyPersistedEntry(entry);
       setAttemptedSectionSave(false);
@@ -510,22 +486,17 @@ export function CaseStudiesPage({
     },
   });
   const {
-    actionState,
     autoSaveStatus,
     cancelRequestEdit,
-    generateEntry,
+    getHeaderActionProps,
+    getPdfActionProps,
     groupedEntries,
     handleCancel,
-    handleSaveAndClose,
-    handleSaveDraft,
     hasUnsavedChanges,
-    lifecycle,
     persistCurrentMutation,
     requestEdit,
     requestingEditIds,
     runWithSaveGuard,
-    saveIntent,
-    saving,
     sendForConfirmation,
     sendingConfirmationIds,
     setToast,
@@ -968,117 +939,72 @@ export function CaseStudiesPage({
     }
   }
 
-  function renderSavedEntry(entry: CaseStudyEntry, category: EntryDisplayCategory, index: number) {
-    const deadlineState = getStreakDeadlineState(entry);
-    const completedEntry = isEntryCommitted(entry);
-    const confirmationStatus = getEntryApprovalStatus(entry);
-    const lockApproved = isEntryLockedFromStatus(entry);
-    const canSendConfirmation = canSendForConfirmation(entry);
-    const sendingConfirmation = !!sendingConfirmationIds[entry.id];
-    const days = getInclusiveDays(entry.startDate, entry.endDate);
+  const renderSavedEntry = createCategoryEntryRecordRenderer<CaseStudyEntry>({
+    buildHref: (entry) => entryDetail("case-studies", entry.id),
+    buildTitle: (entry) =>
+      `${entry.academicYear} • ${entry.yearOfStudy || "-"} • Semester ${entry.currentSemester ?? "-"}`,
+    buildSubtitle: (entry) =>
+      `${entry.placeOfVisit} • ${entry.yearOfStudy || "-"} • Semester ${entry.currentSemester ?? "-"}`,
+    onView: (entry) => router.push(entryDetail("case-studies", entry.id)),
+    onEdit: (entry) => router.push(entryDetail("case-studies", entry.id)),
+    requestConfirmation,
+    buildDeleteRequest: (entry) => ({
+      title: "Delete entry?",
+      description: "This permanently deletes this case-study entry and its associated uploaded files.",
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "destructive",
+      onConfirm: () => deleteEntry(entry.id),
+    }),
+    requestingEditIds,
+    sendingConfirmationIds,
+    requestEdit: (entry) => void requestEdit(entry),
+    cancelRequestEdit: (entry) => void cancelRequestEdit(entry),
+    sendForConfirmation: (entry) => void sendForConfirmation(entry),
+    renderBody: (entry) => {
+      const days = getInclusiveDays(entry.startDate, entry.endDate);
 
-    return (
-      <CategoryEntryRecordCard
-        category={category}
-        index={index}
-        href={entryDetail("case-studies", entry.id)}
-        title={`${entry.academicYear} • ${entry.yearOfStudy || "-"} • Semester ${entry.currentSemester ?? "-"}`}
-        streakState={getEntryStreakDisplayState(entry)}
-        deadlineState={deadlineState}
-        confirmationStatus={confirmationStatus}
-        subtitle={`${entry.placeOfVisit} • ${entry.yearOfStudy || "-"} • Semester ${entry.currentSemester ?? "-"}`}
-        createdAt={entry.createdAt}
-        updatedAt={entry.updatedAt}
-        onView={() => router.push(entryDetail("case-studies", entry.id))}
-        onPreview={
-          entry.pdfMeta?.url
-            ? () => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")
-            : undefined
-        }
-        onEdit={lockApproved ? undefined : () => router.push(entryDetail("case-studies", entry.id))}
-        onDelete={
-          lockApproved
-            ? undefined
-            : () =>
-                requestConfirmation({
-                  title: "Delete entry?",
-                  description:
-                    "This permanently deletes this case-study entry and its associated uploaded files.",
-                  confirmLabel: "Delete",
-                  cancelLabel: "Cancel",
-                  variant: "destructive",
-                  onConfirm: () => deleteEntry(entry.id),
-                })
-        }
-        sendForConfirmation={
-          completedEntry
-            ? {
-                disabled: !canSendConfirmation,
-                sending: sendingConfirmation,
-                onClick: () => void sendForConfirmation(entry),
-              }
-            : undefined
-        }
-        requestEdit={{
-          locked: lockApproved,
-          status: entry.requestEditStatus,
-          requestedAtISO: entry.requestEditRequestedAtISO,
-          requesting: !!requestingEditIds[entry.id],
-          onRequest: () => void requestEdit(entry),
-          onCancel: () => void cancelRequestEdit(entry),
-        }}
-      >
-        <div className="text-sm text-muted-foreground">
-          Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Staff Count: {entry.staffAccompanying.length}
-          {entry.amountSupport !== null ? ` • Amount: ${entry.amountSupport}` : ""}
-        </div>
-        <div className="text-sm text-muted-foreground line-clamp-2">{entry.purposeOfVisit}</div>
+      return (
+        <>
+          <div className="text-sm text-muted-foreground">
+            Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Staff Count: {entry.staffAccompanying.length}
+            {entry.amountSupport !== null ? ` • Amount: ${entry.amountSupport}` : ""}
+          </div>
+          <div className="text-sm text-muted-foreground line-clamp-2">{entry.purposeOfVisit}</div>
 
-        <div className="flex flex-wrap gap-3 text-sm">
-          {entry.permissionLetter ? (
-            <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-              Permission Letter
-            </a>
-          ) : null}
-          {entry.travelPlan ? (
-            <a className="underline" href={entry.travelPlan.url} target="_blank" rel="noreferrer">
-              Travel Plan
-            </a>
-          ) : null}
-          {entry.geotaggedPhotos.map((meta, photoIndex) => (
-            <a
-              key={meta.storedPath}
-              className="underline"
-              href={meta.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Geotagged Photo {photoIndex + 1}
-            </a>
-          ))}
-        </div>
-      </CategoryEntryRecordCard>
-    );
-  }
-
-  const toastBanner = toast ? (
-    <div
-      className={cx(
-        "rounded-lg border px-3 py-2 text-sm",
-        toast.type === "ok"
-          ? "border-green-200 bg-green-50 text-green-800"
-          : "border-red-200 bg-red-50 text-red-800"
-      )}
-    >
-      {toast.msg}
-    </div>
-  ) : null;
+          <div className="flex flex-wrap gap-3 text-sm">
+            {entry.permissionLetter ? (
+              <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
+                Permission Letter
+              </a>
+            ) : null}
+            {entry.travelPlan ? (
+              <a className="underline" href={entry.travelPlan.url} target="_blank" rel="noreferrer">
+                Travel Plan
+              </a>
+            ) : null}
+            {entry.geotaggedPhotos.map((meta, photoIndex) => (
+              <a
+                key={meta.storedPath}
+                className="underline"
+                href={meta.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Geotagged Photo {photoIndex + 1}
+              </a>
+            ))}
+          </div>
+        </>
+      );
+    },
+  });
 
   return (
-    <CategoryEntryPageShell
+    <CategoryEntryRuntime
       entryShell={{
         category: "case-studies",
         mode: isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview",
@@ -1092,30 +1018,17 @@ export function CaseStudiesPage({
         backHref,
         backDisabled,
         onBack: showForm || isViewMode ? () => handleCancel(categoryPath) : undefined,
-        actions: (
-          <EntryHeaderActionsBar
-            isEditing={showForm}
-            isViewMode={isViewMode}
-            loading={loading}
-            onAdd={() => {
-              resetForm();
-              router.push(entryNew("case-studies"), { scroll: false });
-            }}
-            addLabel="+ Add Case Study"
-            onCancel={() => void handleCancel()}
-            cancelDisabled={actionState.cancelDisabled}
-            onSave={() => void handleSaveDraft()}
-            saveDisabled={actionState.saveDisabled}
-            onDone={() => void handleSaveAndClose()}
-            doneDisabled={actionState.doneDisabled}
-            saving={saving}
-            saveIntent={saveIntent}
-          />
-        ),
       }}
+      headerActions={getHeaderActionProps({
+        onAdd: () => {
+          resetForm();
+          router.push(entryNew("case-studies"), { scroll: false });
+        },
+        addLabel: "+ Add Case Study",
+      })}
       loading={loading}
       showForm={showForm}
-      topContent={toastBanner}
+      toast={toast}
       formCard={
         showForm
           ? {
@@ -1325,17 +1238,7 @@ export function CaseStudiesPage({
                   </div>
 
                   <div className="mt-5 space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {!isViewMode ? (
-                        <MiniButton onClick={() => void generateEntry()} disabled={actionState.generateDisabled}>
-                          {saving ? "Generating..." : "Generate Entry"}
-                        </MiniButton>
-                      ) : null}
-                      <EntryPdfActions
-                        pdfMeta={form.pdfMeta ?? null}
-                        disabled={isViewMode ? !form.pdfMeta?.url : !lifecycle.canPreview}
-                      />
-                    </div>
+                    <EntryPdfActionsBar {...getPdfActionProps(form.pdfMeta ?? null)} />
                     {pdfState.pdfStale ? (
                       <p className="text-sm text-muted-foreground">
                         Entry changed. Regenerate PDF to update Preview/Download.
@@ -1416,12 +1319,12 @@ export function CaseStudiesPage({
       }
       listCard={
         !showForm
-          ? {
-              className: "bg-white/70 p-5",
+          ? createGroupedEntryListCard({
               title: "Saved Case Study Entries",
               subtitle: "Your saved case study records are stored locally and keyed to your signed-in email.",
-              content: <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />,
-            }
+              groupedEntries,
+              renderEntry: renderSavedEntry,
+            })
           : null
       }
       confirmationDialog={confirmationDialog}
