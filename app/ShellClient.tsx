@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { ClipboardList } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
+import { Button } from "@/components/ui/button";
 import { isMasterAdmin } from "@/lib/admin";
 import {
   adminHome,
@@ -25,50 +27,6 @@ type NavLink = {
   label: string;
 };
 
-type RouteMeta = {
-  title: string;
-  subtitle: string;
-};
-
-function getRouteMeta(pathname: string | null): RouteMeta {
-  const path = pathname ?? "";
-
-  if (path.startsWith("/admin")) {
-    return {
-      title: "Admin Console",
-      subtitle: "Approvals, audits, exports, and system operations",
-    };
-  }
-  if (path.startsWith("/data-entry/search")) {
-    return {
-      title: "Search",
-      subtitle: "Find entries by category, content, and status",
-    };
-  }
-  if (path.startsWith("/data-entry")) {
-    return {
-      title: "Data Entry",
-      subtitle: "Create, edit, and manage faculty activity records",
-    };
-  }
-  if (path.startsWith("/help")) {
-    return {
-      title: "Help",
-      subtitle: "Workflow guidance and common questions",
-    };
-  }
-  if (path.startsWith("/account")) {
-    return {
-      title: "My Account",
-      subtitle: "Profile and personal configuration",
-    };
-  }
-  return {
-    title: "Dashboard",
-    subtitle: "Progress, activity summary, and quick actions",
-  };
-}
-
 export default function ShellClient({
   children,
   title = "T'SEDA Data Repository",
@@ -87,7 +45,6 @@ export default function ShellClient({
   const [resetBusy, setResetBusy] = useState(false);
   const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
-  const routeMeta = getRouteMeta(pathname);
 
   const primaryNav: NavLink[] = [
     { href: dashboard(), label: "Dashboard" },
@@ -172,15 +129,16 @@ export default function ShellClient({
               ☰
             </button>
 
-            <div className="min-w-0">
-              <Link href={dashboard()} className="block truncate text-sm font-semibold text-muted-foreground">
-                {title}
+            <Link href={dashboard()} className="truncate text-base font-semibold tracking-tight">
+              {title}
+            </Link>
+
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={dataEntryHome()}>
+                <ClipboardList />
+                <span className="hidden sm:inline">Data Entry</span>
               </Link>
-              <div className="truncate text-sm font-semibold tracking-tight">{routeMeta.title}</div>
-              <div className="hidden truncate text-xs text-muted-foreground sm:block">
-                {routeMeta.subtitle}
-              </div>
-            </div>
+            </Button>
           </div>
 
           <div className="flex items-center gap-2">
