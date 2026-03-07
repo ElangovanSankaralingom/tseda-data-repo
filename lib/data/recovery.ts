@@ -18,7 +18,7 @@ import {
   toStreakSortAtISO,
   type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
-import type { Entry } from "@/lib/types/entry";
+import { createEntryStatusRecord, type Entry } from "@/lib/types/entry";
 import { getUserStoreDir } from "@/lib/userStore";
 
 type EntryLike = Entry & {
@@ -50,12 +50,7 @@ function createEmptyIndex(userEmail: string, nowISO = new Date().toISOString()):
     userEmail,
     updatedAt: nowISO,
     totalsByCategory: emptyCategoryMap(() => 0),
-    countsByStatus: {
-      DRAFT: 0,
-      PENDING_CONFIRMATION: 0,
-      APPROVED: 0,
-      REJECTED: 0,
-    },
+    countsByStatus: createEntryStatusRecord(() => 0),
     pendingByCategory: emptyCategoryMap(() => 0),
     approvedByCategory: emptyCategoryMap(() => 0),
     lastEntryAtByCategory: emptyCategoryMap(() => null),

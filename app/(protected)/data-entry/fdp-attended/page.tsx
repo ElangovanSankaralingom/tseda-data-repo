@@ -1,26 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CurrencyField from "@/components/controls/CurrencyField";
+import CategoryEntryPageShell from "@/components/data-entry/CategoryEntryPageShell";
+import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
 import Field from "@/components/data-entry/Field";
 import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
 import DateField from "@/components/controls/DateField";
-import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import { EntryHeaderActionsBar, EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
-import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
-import EntryShell from "@/components/entry/EntryShell";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import UploadField from "@/components/entry/UploadField";
-import SectionCard from "@/components/layout/SectionCard";
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import { useCategoryEntryPageController } from "@/hooks/useCategoryEntryPageController";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { getEntryStreakDisplayState, type EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
-import { groupEntries } from "@/lib/entryCategorization";
 import {
   canSendForConfirmation,
   getConfirmationStatusLabel,
@@ -37,25 +34,16 @@ import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
-import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
-import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
 import { useUploadController } from "@/hooks/useUploadController";
-import { useAutoSave } from "@/hooks/useAutoSave";
-import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import {
-  runGenerateEntryOrchestration,
-  runSaveDraftOrchestration,
-} from "@/lib/entries/pageOrchestration";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
   createOptimisticSnapshot,
   optimisticRemove,
 } from "@/lib/ui/optimistic";
-import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import { uploadFile } from "@/lib/upload/uploadService";
 import {
@@ -194,21 +182,6 @@ function formatDisplayDate(value: string) {
   return new Date(`${value}T00:00:00Z`).toLocaleDateString();
 }
 
-function formatEntryTimestamp(value: string) {
-  if (!value) return "-";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return date.toLocaleString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
   return <ActionButton {...props} />;
 }
@@ -245,16 +218,12 @@ export function FdpAttendedPage({
   const router = useRouter();
   const categoryPath = entryList("fdp-attended");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
   const [formOpen, setFormOpen] = useState(startInNewMode);
   const [submitted, setSubmitted] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
-  const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [list, setList] = useState<FdpAttended[]>([]);
   const [editorSeed, setEditorSeed] = useState<FdpAttended>(() => emptyForm());
   const [uploadPersistingCount, setUploadPersistingCount] = useState(0);
-  const saveLockRef = useRef(false);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
 
   useEntryPageModeTelemetry({
@@ -302,37 +271,6 @@ export function FdpAttendedPage({
   useEffect(() => {
     formRef.current = form;
   }, [form]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-
-        const meResponse = await fetch("/api/me", { cache: "no-store" });
-        const me = await meResponse.json();
-        if (!meResponse.ok || !String(me?.email || "").trim()) {
-          throw new Error("Missing email. Please sign in again.");
-        }
-
-        const listResponse = await fetch("/api/me/fdp-attended", { cache: "no-store" });
-        const items = await listResponse.json();
-        if (!listResponse.ok) {
-          throw new Error(items?.error || "Failed to load FDP Attended records.");
-        }
-
-        setList(
-          Array.isArray(items)
-            ? items.map((item) => withAcademicProgressionCompatibility(item as FdpAttended))
-            : []
-        );
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to load.";
-        setToast({ type: "err", msg: message });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   const errors = useMemo(() => {
     const nextErrors: Record<string, string> = {};
@@ -430,62 +368,11 @@ export function FdpAttendedPage({
     },
   });
   const uploadPersisting = uploadPersistingCount > 0;
-  const hasBusyUploads = permissionController.busy || completionController.busy || uploadPersisting;
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const uploadsVisible = !!form.pdfMeta;
   const requiredUploadsComplete = !!form.permissionLetter && !!form.completionCertificate;
-  const workflow = useEntryWorkflow({
-    isLocked: entryLocked,
-    coreValid: generateReady,
-    hasPdfSnapshot: uploadsVisible,
-    pdfStale: pdfState.pdfStale,
-    completionValid: requiredUploadsComplete,
-    fieldDirty: formDirty,
-  });
-  const lifecycle = workflow.lifecycle;
-  const actionState = deriveEntryActionState({
-    showForm,
-    isViewMode,
-    entryLocked,
-    controlsDisabled,
-    loading,
-    saving,
-    hasBusyUploads,
-    canSave: lifecycle.canSave,
-    canGenerate: lifecycle.canGenerate,
-  });
-  const canGenerate = workflow.canGenerate;
-  const groupedEntries = useMemo(() => groupEntries(list), [list]);
-  const {
-    status: autoSaveStatus,
-    markSaved: markAutoSaveSaved,
-  } = useAutoSave<FdpAttended>({
-    enabled: actionState.autoSaveEnabled,
-    value: form,
-    debounceMs: 15000,
-    onSave: async () => {
-      if (saveLockRef.current || hasBusyUploads || saving) return null;
-      const persisted = await saveDraftChanges({
-        intent: "save",
-        source: "autosave",
-        throwOnError: true,
-      });
-      if (!persisted) return null;
-      return ok(persisted);
-    },
-  });
-  useEffect(() => {
-    if (!formDirty) {
-      markAutoSaveSaved(form);
-    }
-  }, [form, formDirty, markAutoSaveSaved]);
-  const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
-    enabled: showForm && !isViewMode && !entryLocked,
-    isDirty: formDirty,
-    isSaving: actionState.guardSaving || autoSaveStatus.phase === "saving",
-  });
 
   const resetUploadState = useCallback(() => {
     permissionController.reset();
@@ -601,13 +488,123 @@ export function FdpAttendedPage({
     return persisted;
   }
 
+  const controller = useCategoryEntryPageController<FdpAttended>({
+    list,
+    setList,
+    form,
+    formRef,
+    showForm,
+    isViewMode,
+    entryLocked,
+    controlsDisabled,
+    loading,
+    busyUploadSources: [permissionController.busy, completionController.busy, uploadPersisting],
+    coreValid: generateReady,
+    hasPdfSnapshot: uploadsVisible,
+    pdfStale: pdfState.pdfStale,
+    completionValid: requiredUploadsComplete,
+    fieldDirty: formDirty,
+    autoSaveSynced: !formDirty,
+    defaultCancelTargetHref: categoryPath,
+    closeForm,
+    buildEntryToSave: () => withAcademicProgressionCompatibility({ ...formRef.current }),
+    buildOptimisticEntry: (entryToSave) => ({
+      ...entryToSave,
+      updatedAt: new Date().toISOString(),
+    }),
+    persistProgress,
+    commitDraft: async (entryId) => commitDraftEntry(entryId),
+    applyPersistedEntry: (entry) => {
+      setEditorSeed(entry);
+      editorActions.saveDraft(entry);
+      markAutoSaveSaved(entry);
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
+    },
+    afterPersistSuccess: async () => {
+      void refreshList();
+    },
+    setSubmitAttemptedFinal,
+    hasValidationErrors: Object.keys(errors).length > 0,
+    markGenerateAttempted: () => setSubmitted(true),
+    buildDraftEntry: () => {
+      const latestForm = formRef.current;
+      return {
+        ...latestForm,
+        pdfStale: pdfState.pdfStale,
+        pdfSourceHash: latestForm.pdfSourceHash || "",
+      };
+    },
+    generateEntrySnapshot,
+    applyGeneratedEntry: async (generatedEntry) => {
+      const nextEntry = {
+        ...generatedEntry,
+        pdfSourceHash: prePdfFieldsHash,
+        pdfStale: false,
+      };
+      setEditorSeed(nextEntry);
+      editorActions.generatePdf(nextEntry);
+      markAutoSaveSaved(nextEntry);
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
+      await refreshList();
+    },
+  });
+  const {
+    actionState,
+    autoSaveStatus,
+    generateEntry,
+    groupedEntries,
+    handleCancel,
+    handleSaveAndClose,
+    handleSaveDraft,
+    hasUnsavedChanges,
+    lifecycle,
+    markAutoSaveSaved,
+    saveIntent,
+    saving,
+    setToast,
+    toast,
+  } = controller;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+
+        const meResponse = await fetch("/api/me", { cache: "no-store" });
+        const me = await meResponse.json();
+        if (!meResponse.ok || !String(me?.email || "").trim()) {
+          throw new Error("Missing email. Please sign in again.");
+        }
+
+        const listResponse = await fetch("/api/me/fdp-attended", { cache: "no-store" });
+        const items = await listResponse.json();
+        if (!listResponse.ok) {
+          throw new Error(items?.error || "Failed to load FDP Attended records.");
+        }
+
+        setList(
+          Array.isArray(items)
+            ? items.map((item) => withAcademicProgressionCompatibility(item as FdpAttended))
+            : []
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load.";
+        setToast({ type: "err", msg: message });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [setToast]);
+  const canGenerate = lifecycle.canGenerate;
+
   function resetForm() {
     setSubmitted(false);
     setSubmitAttemptedFinal(false);
     const nextForm = emptyForm();
     setEditorSeed(nextForm);
     loadEditorEntry(nextForm);
-    markAutoSaveSaved(nextForm);
     resetUploadState();
   }
 
@@ -623,11 +620,10 @@ export function FdpAttendedPage({
       setSubmitAttemptedFinal(false);
       setEditorSeed(loadedEntry);
       loadEditorEntry(loadedEntry);
-      markAutoSaveSaved(loadedEntry);
       resetUploadState();
       setFormOpen(true);
     },
-    [loadEditorEntry, markAutoSaveSaved, resetUploadState]
+    [loadEditorEntry, resetUploadState]
   );
 
   useSeedEntry({
@@ -709,102 +705,6 @@ export function FdpAttendedPage({
       setToast({ type: "err", msg: message });
       setTimeout(() => setToast(null), 1500);
     }
-  }
-
-  async function saveDraftChanges(options?: {
-    closeAfterSave?: boolean;
-    intent?: "save" | "done";
-    source?: "manual" | "autosave";
-    throwOnError?: boolean;
-  }): Promise<FdpAttended | null> {
-    const intent = options?.intent ?? "save";
-    return runSaveDraftOrchestration<FdpAttended>({
-      intent,
-      source: options?.source ?? "manual",
-      closeAfterSave: options?.closeAfterSave ?? false,
-      throwOnError: options?.throwOnError ?? false,
-      canSave: lifecycle.canSave,
-      hasBusyUploads,
-      busyMessage: "Please wait for uploads to finish before saving.",
-      saveSuccessMessage: "Saved",
-      doneSuccessMessage: "Draft committed.",
-      saveLockRef,
-      setSaving,
-      setSaveIntent,
-      setToast,
-      setList,
-      buildEntryToSave: () => withAcademicProgressionCompatibility({ ...formRef.current }),
-      buildOptimisticEntry: (entryToSave) => ({
-        ...entryToSave,
-        updatedAt: new Date().toISOString(),
-      }),
-      persistProgress,
-      commitDraft: async (entryId) => commitDraftEntry(entryId),
-      applyPersistedEntry: (entry) => {
-        setEditorSeed(entry);
-        editorActions.saveDraft(entry);
-        markAutoSaveSaved(entry);
-        setSubmitted(false);
-        setSubmitAttemptedFinal(false);
-      },
-      afterPersistSuccess: async () => {
-        void refreshList();
-      },
-      closeForm: () => closeForm(),
-    });
-  }
-
-  const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
-    defaultCancelTargetHref: categoryPath,
-    hasBusyUploads,
-    confirmNavigate: () => confirmNavigate(),
-    closeForm,
-    saveDraftChanges,
-    setToast,
-    setSubmitAttemptedFinal,
-    cancelBusyMessage: "Please wait for upload to finish.",
-    saveAndCloseBusyMessage: "Please wait for upload to finish.",
-  });
-
-  async function generateEntry() {
-    await runGenerateEntryOrchestration<FdpAttended>({
-      saveLockRef,
-      hasValidationErrors: Object.keys(errors).length > 0,
-      canGenerate: lifecycle.canGenerate,
-      hasBusyUploads,
-      validationMessage: "Complete all required fields before generating the entry.",
-      busyMessage: "Finish the current uploads before saving.",
-      successMessage: "Entry generated.",
-      errorMessage: "Save failed.",
-      setSaving,
-      setToast,
-      markSubmitAttempted: () => setSubmitted(true),
-      beforeGenerate: () => setSaveIntent("save"),
-      afterGenerate: () => setSaveIntent(null),
-      buildDraftEntry: () => {
-        const latestForm = formRef.current;
-        return {
-          ...latestForm,
-          pdfStale: pdfState.pdfStale,
-          pdfSourceHash: latestForm.pdfSourceHash || "",
-        };
-      },
-      generateEntrySnapshot,
-      persistProgress,
-      applyGeneratedEntry: async (generatedEntry) => {
-        const nextEntry = {
-          ...generatedEntry,
-          pdfSourceHash: prePdfFieldsHash,
-          pdfStale: false,
-        };
-        setEditorSeed(nextEntry);
-        editorActions.generatePdf(nextEntry);
-        markAutoSaveSaved(nextEntry);
-        setSubmitted(false);
-        setSubmitAttemptedFinal(false);
-        await refreshList();
-      },
-    });
   }
 
   async function deleteEntry(id: string) {
@@ -943,12 +843,6 @@ export function FdpAttendedPage({
   });
 
   function renderSavedEntry(entry: FdpAttended, category: EntryDisplayCategory, index: number) {
-    const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
-    const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
-    const showUpdated =
-      !Number.isNaN(createdTime) &&
-      !Number.isNaN(updatedTime) &&
-      Math.abs(updatedTime - createdTime) > 60 * 1000;
     const deadlineState = getStreakDeadlineState(entry);
     const isCompleted = category === "completed";
     const confirmationStatus = isCompleted ? getEntryApprovalStatus(entry) : undefined;
@@ -957,197 +851,190 @@ export function FdpAttendedPage({
     const sendingConfirmation = isCompleted ? !!sendingConfirmationIds[entry.id] : false;
 
     return (
-      <div key={entry.id} className={getEntryListCardClass(category)}>
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <EntryCategoryMarker category={category} index={index} streakState={getEntryStreakDisplayState(entry)} />
-                <Link href={entryDetail("fdp-attended", entry.id)} className="text-base font-semibold hover:opacity-80">
-                  {entry.programName}
-                </Link>
-                <EntryLockBadge deadlineState={deadlineState} />
-                {confirmationStatus ? (
-                  <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                    {getConfirmationStatusLabel(confirmationStatus)}
-                  </span>
-                ) : null}
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">{entry.organisingBody}</div>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
-                {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-              </div>
-            </div>
-
-            {!(activeEntryId && entry.id === activeEntryId) ? (
-              <div className="flex shrink-0 flex-col items-end gap-2">
-                <div className="flex items-center gap-2">
-                  <MiniButton onClick={() => router.push(entryDetail("fdp-attended", entry.id))}>View</MiniButton>
-                  {lockApproved ? (
-                    <>
-                      {entry.pdfMeta?.url ? (
-                        <MiniButton
-                          role="context"
-                          onClick={() => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")}
-                        >
-                          Preview
-                        </MiniButton>
-                      ) : (
-                        <MiniButton role="context" disabled>
-                          Preview
-                        </MiniButton>
-                      )}
-                      <RequestEditAction
-                        locked
-                        status={entry.requestEditStatus}
-                        requestedAtISO={entry.requestEditRequestedAtISO}
-                        requesting={!!requestingEditIds[entry.id]}
-                        onRequest={() => void requestEdit(entry)}
-                        onCancel={() => void cancelRequestEdit(entry)}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <MiniButton
-                        onClick={() => {
-                          router.push(entryDetail("fdp-attended", entry.id), { scroll: false });
-                        }}
-                      >
-                        Edit
-                      </MiniButton>
-                      <MiniButton
-                        role="destructive"
-                        onClick={() =>
-                          requestConfirmation({
-                            title: "Delete entry?",
-                            description:
-                              "This permanently deletes this FDP entry and its associated uploaded files.",
-                            confirmLabel: "Delete",
-                            cancelLabel: "Cancel",
-                            variant: "destructive",
-                            onConfirm: () => deleteEntry(entry.id),
-                          })
-                        }
-                      >
-                        Delete entry
-                      </MiniButton>
-                      {isCompleted ? (
-                        <MiniButton
-                          onClick={() => void sendForConfirmation(entry)}
-                          disabled={!canSendConfirmation || sendingConfirmation}
-                        >
-                          {sendingConfirmation
-                            ? "Sending..."
-                            : confirmationStatus === "PENDING_CONFIRMATION"
-                              ? "Pending Confirmation"
-                              : "Send for Confirmation"}
-                        </MiniButton>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="min-w-0">
-            <div className="text-xs text-muted-foreground">
-              Academic Year: {entry.academicYear || "-"} {" • "}
-              Year of Study: {entry.yearOfStudy || "-"} {" • "}
-              Current Semester: {entry.currentSemester ?? "-"} {" • "}
-              Start: {formatDisplayDate(entry.startDate)} {" • "}
-              End: {formatDisplayDate(entry.endDate)} {" • "}
-              Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"} {" • "}
-              Support:{" "}
-              <span className="font-medium text-foreground">
-                {typeof entry.supportAmount === "number" ? `₹${entry.supportAmount}` : "-"}
+      <EntryListCardShell
+        category={category}
+        index={index}
+        href={entryDetail("fdp-attended", entry.id)}
+        title={entry.programName}
+        streakState={getEntryStreakDisplayState(entry)}
+        badges={
+          <>
+            <EntryLockBadge deadlineState={deadlineState} />
+            {confirmationStatus ? (
+              <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                {getConfirmationStatusLabel(confirmationStatus)}
               </span>
+            ) : null}
+          </>
+        }
+        subtitle={entry.organisingBody}
+        createdAt={entry.createdAt}
+        updatedAt={entry.updatedAt}
+        actions={
+          !(activeEntryId && entry.id === activeEntryId) ? (
+            <div className="flex items-center gap-2">
+              <MiniButton onClick={() => router.push(entryDetail("fdp-attended", entry.id))}>View</MiniButton>
+              {lockApproved ? (
+                <>
+                  {entry.pdfMeta?.url ? (
+                    <MiniButton
+                      role="context"
+                      onClick={() => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")}
+                    >
+                      Preview
+                    </MiniButton>
+                  ) : (
+                    <MiniButton role="context" disabled>
+                      Preview
+                    </MiniButton>
+                  )}
+                  <RequestEditAction
+                    locked
+                    status={entry.requestEditStatus}
+                    requestedAtISO={entry.requestEditRequestedAtISO}
+                    requesting={!!requestingEditIds[entry.id]}
+                    onRequest={() => void requestEdit(entry)}
+                    onCancel={() => void cancelRequestEdit(entry)}
+                  />
+                </>
+              ) : (
+                <>
+                  <MiniButton
+                    onClick={() => {
+                      router.push(entryDetail("fdp-attended", entry.id), { scroll: false });
+                    }}
+                  >
+                    Edit
+                  </MiniButton>
+                  <MiniButton
+                    role="destructive"
+                    onClick={() =>
+                      requestConfirmation({
+                        title: "Delete entry?",
+                        description:
+                          "This permanently deletes this FDP entry and its associated uploaded files.",
+                        confirmLabel: "Delete",
+                        cancelLabel: "Cancel",
+                        variant: "destructive",
+                        onConfirm: () => deleteEntry(entry.id),
+                      })
+                    }
+                  >
+                    Delete entry
+                  </MiniButton>
+                  {isCompleted ? (
+                    <MiniButton
+                      onClick={() => void sendForConfirmation(entry)}
+                      disabled={!canSendConfirmation || sendingConfirmation}
+                    >
+                      {sendingConfirmation
+                        ? "Sending..."
+                        : confirmationStatus === "PENDING_CONFIRMATION"
+                          ? "Pending Confirmation"
+                          : "Send for Confirmation"}
+                    </MiniButton>
+                  ) : null}
+                </>
+              )}
             </div>
-
-            <div className="mt-3 flex flex-wrap gap-2 text-sm">
-              {entry.permissionLetter ? (
-                <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-                  Permission Letter
-                </a>
-              ) : null}
-              {entry.completionCertificate ? (
-                <a className="underline" href={entry.completionCertificate.url} target="_blank" rel="noreferrer">
-                  Completion Certificate
-                </a>
-              ) : null}
-            </div>
-          </div>
+          ) : null
+        }
+      >
+        <div className="text-xs text-muted-foreground">
+          Academic Year: {entry.academicYear || "-"} {" • "}
+          Year of Study: {entry.yearOfStudy || "-"} {" • "}
+          Current Semester: {entry.currentSemester ?? "-"} {" • "}
+          Start: {formatDisplayDate(entry.startDate)} {" • "}
+          End: {formatDisplayDate(entry.endDate)} {" • "}
+          Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"} {" • "}
+          Support:{" "}
+          <span className="font-medium text-foreground">
+            {typeof entry.supportAmount === "number" ? `₹${entry.supportAmount}` : "-"}
+          </span>
         </div>
-      </div>
+
+        <div className="mt-3 flex flex-wrap gap-2 text-sm">
+          {entry.permissionLetter ? (
+            <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
+              Permission Letter
+            </a>
+          ) : null}
+          {entry.completionCertificate ? (
+            <a className="underline" href={entry.completionCertificate.url} target="_blank" rel="noreferrer">
+              Completion Certificate
+            </a>
+          ) : null}
+        </div>
+      </EntryListCardShell>
     );
   }
 
-  return (
-    <EntryShell
-      category="fdp-attended"
-      mode={isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview"}
-      entry={showForm ? (form as Record<string, unknown>) : null}
-      title="FDP — Attended"
-      subtitle="Record faculty development programmes attended, along with support amount and the two required supporting documents."
-      status={showForm ? getEntryApprovalStatus(form) : undefined}
-      meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
-      showUnsavedChanges={showForm && !isViewMode && hasUnsavedChanges}
-      backHref={backHref}
-      backDisabled={backDisabled}
-      onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
-      actions={
-        <EntryHeaderActionsBar
-          isEditing={showForm}
-          isViewMode={isViewMode}
-          loading={loading}
-          onAdd={() => {
-            resetForm();
-            router.push(entryNew("fdp-attended"), { scroll: false });
-          }}
-          addLabel="+ Add FDP Entry"
-          onCancel={() => void handleCancel()}
-          cancelDisabled={actionState.cancelDisabled}
-          onSave={() => void handleSaveDraft()}
-          saveDisabled={actionState.saveDisabled}
-          onDone={() => void handleSaveAndClose()}
-          doneDisabled={actionState.doneDisabled}
-          saving={saving}
-          saveIntent={saveIntent}
-        />
-      }
+  const toastBanner = toast ? (
+    <div
+      className={cx(
+        "rounded-lg border px-3 py-2 text-sm",
+        toast.type === "ok"
+          ? "border-green-200 bg-green-50 text-green-800"
+          : "border-red-200 bg-red-50 text-red-800"
+      )}
     >
+      {toast.msg}
+    </div>
+  ) : null;
 
-      {toast ? (
-        <div
-          className={cx(
-            "mt-4 rounded-lg border px-3 py-2 text-sm",
-            toast.type === "ok"
-              ? "border-green-200 bg-green-50 text-green-800"
-              : "border-red-200 bg-red-50 text-red-800"
-          )}
-        >
-          {toast.msg}
-        </div>
-      ) : null}
-
-      <div className="mt-6 space-y-4">
-        {loading ? (
-          <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">Loading...</div>
-        ) : null}
-
-        {!loading && showForm ? (
-          <SectionCard
-            className="bg-white/70 p-5"
-            title={isViewMode ? "FDP Entry" : "New FDP Entry"}
-            subtitle="Add the entry details and upload the required documents."
-          >
-            {pendingCoreLocked ? (
-              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                Pending confirmation — core fields cannot be edited.
-              </p>
-            ) : null}
-            <div className="grid gap-4 sm:grid-cols-2">
+  return (
+    <CategoryEntryPageShell
+      entryShell={{
+        category: "fdp-attended",
+        mode: isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview",
+        entry: showForm ? (form as Record<string, unknown>) : null,
+        title: "FDP — Attended",
+        subtitle:
+          "Record faculty development programmes attended, along with support amount and the two required supporting documents.",
+        status: showForm ? getEntryApprovalStatus(form) : undefined,
+        meta: showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null,
+        showUnsavedChanges: showForm && !isViewMode && hasUnsavedChanges,
+        backHref,
+        backDisabled,
+        onBack: showForm || isViewMode ? () => handleCancel(categoryPath) : undefined,
+        actions: (
+          <EntryHeaderActionsBar
+            isEditing={showForm}
+            isViewMode={isViewMode}
+            loading={loading}
+            onAdd={() => {
+              resetForm();
+              router.push(entryNew("fdp-attended"), { scroll: false });
+            }}
+            addLabel="+ Add FDP Entry"
+            onCancel={() => void handleCancel()}
+            cancelDisabled={actionState.cancelDisabled}
+            onSave={() => void handleSaveDraft()}
+            saveDisabled={actionState.saveDisabled}
+            onDone={() => void handleSaveAndClose()}
+            doneDisabled={actionState.doneDisabled}
+            saving={saving}
+            saveIntent={saveIntent}
+          />
+        ),
+      }}
+      loading={loading}
+      showForm={showForm}
+      topContent={toastBanner}
+      formCard={
+        showForm
+          ? {
+              className: "bg-white/70 p-5",
+              title: isViewMode ? "FDP Entry" : "New FDP Entry",
+              subtitle: "Add the entry details and upload the required documents.",
+              content: (
+                <>
+                  {pendingCoreLocked ? (
+                    <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      Pending confirmation — core fields cannot be edited.
+                    </p>
+                  ) : null}
+                  <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
                 <SelectDropdown
                   value={form.academicYear}
@@ -1282,12 +1169,12 @@ export function FdpAttendedPage({
               </Field>
             </div>
 
-            <div className="mt-5 space-y-4">
+                  <div className="mt-5 space-y-4">
               <EntryPdfActionsBar
                 isViewMode={isViewMode}
                 canGenerate={canGenerate}
                 onGenerate={() => void generateEntry()}
-                generating={saving && saveIntent === "save"}
+                generating={saving}
                 pdfMeta={form.pdfMeta ?? null}
                 pdfDisabled={!lifecycle.canPreview}
               />
@@ -1335,26 +1222,29 @@ export function FdpAttendedPage({
                   />
                 </div>
               ) : null}
-            </div>
-          </SectionCard>
-        ) : null}
-
-        {!loading && !isEditing ? (
-          <SectionCard
-            className="bg-white/70 p-5"
-            title="Saved FDP Attended Entries"
-            subtitle="Your saved records are stored locally and keyed by your signed-in email."
-          >
-            {list.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No entries yet.</div>
-            ) : (
-              <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />
-            )}
-          </SectionCard>
-        ) : null}
-      </div>
-      {confirmationDialog}
-    </EntryShell>
+                  </div>
+                </>
+              ),
+            }
+          : null
+      }
+      listCard={
+        !loading && !isEditing
+          ? {
+              className: "bg-white/70 p-5",
+              title: "Saved FDP Attended Entries",
+              subtitle: "Your saved records are stored locally and keyed by your signed-in email.",
+              content:
+                list.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No entries yet.</div>
+                ) : (
+                  <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />
+                ),
+            }
+          : null
+      }
+      confirmationDialog={confirmationDialog}
+    />
   );
 }
 

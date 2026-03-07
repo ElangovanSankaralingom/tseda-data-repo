@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "byId": {
+    "a-1": {
+      "id": "a-1",
+      "confirmationStatus": "DRAFT",
+      "eventName": "A1 Updated",
+      "attachments": [],
+      "createdAt": "2026-03-07T04:06:42.874Z",
+      "updatedAt": "2026-03-07T04:06:42.874Z",
+      "schemaVersion": 1
+    },
+    "a-3": {
+      "id": "a-3",
+      "confirmationStatus": "DRAFT",
+      "eventName": "A3",
+      "attachments": [],
+      "createdAt": "2026-03-07T04:06:42.876Z",
+      "updatedAt": "2026-03-07T04:06:42.876Z",
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "a-1",
+    "a-3"
+  ]
+}

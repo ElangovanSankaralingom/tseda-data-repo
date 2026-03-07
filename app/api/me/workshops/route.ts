@@ -26,11 +26,7 @@ import {
 import { normalizeError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { isEntryEditable } from "@/lib/entries/lock";
-import {
-  isFutureDatedEntry,
-  normalizeStreakState,
-  type StreakState,
-} from "@/lib/gamification";
+import { normalizeStreakState, type StreakState } from "@/lib/streakState";
 import { buildCanonicalStreakMetadata } from "@/lib/streakProgress";
 import {
   isEntryCommitted,
@@ -322,7 +318,6 @@ function buildSavedStreak(
     "confirmationStatus" | "committedAtISO" | "pdfMeta" | "startDate" | "endDate" | "streak" | "uploads"
   >
 ) {
-  const eligible = isFutureDatedEntry(entry.startDate, entry.endDate);
   const uploadsComplete =
     isValidFileMeta(entry.uploads.permissionLetter) &&
     isValidFileMeta(entry.uploads.brochure) &&
@@ -332,9 +327,9 @@ function buildSavedStreak(
 
   return buildCanonicalStreakMetadata({
     streak: entry.streak,
+    startDateISO: entry.startDate,
     endDateISO: entry.endDate,
     hasPdf: !!entry.pdfMeta,
-    isEligible: eligible,
     isCommitted: isEntryCommitted(entry as EntryStateLike),
     completionSatisfied: uploadsComplete,
   });

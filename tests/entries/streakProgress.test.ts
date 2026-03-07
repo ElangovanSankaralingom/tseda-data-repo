@@ -60,9 +60,9 @@ test("streak progress defaults to zeroed state for incomplete drafts", () => {
 test("canonical streak metadata activates only after the commit milestone", () => {
   const streak = buildCanonicalStreakMetadata({
     streak: {},
+    startDateISO: "2026-03-05",
     endDateISO: "2026-03-06",
     hasPdf: true,
-    isEligible: true,
     isCommitted: false,
     completionSatisfied: false,
     nowISO: "2026-03-06T10:00:00.000Z",
@@ -76,9 +76,9 @@ test("canonical streak metadata activates only after the commit milestone", () =
 test("canonical streak metadata derives due date and completion from one shared rule", () => {
   const streak = buildCanonicalStreakMetadata({
     streak: {},
-    endDateISO: "2026-03-06",
+    startDateISO: "2026-03-10",
+    endDateISO: "2026-03-12",
     hasPdf: true,
-    isEligible: true,
     isCommitted: true,
     completionSatisfied: true,
     nowISO: "2026-03-10T10:00:00.000Z",

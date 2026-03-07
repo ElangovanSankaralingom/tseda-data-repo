@@ -9,7 +9,8 @@ import {
   isEditableNow,
 } from "../../lib/entries/displayLifecycle.ts";
 import { groupEntries } from "../../lib/entryCategorization.ts";
-import { addDaysISO, computeDueAtISO, nowISTDateISO } from "../../lib/gamification.ts";
+import { computeDueAtISO } from "../../lib/streakTiming.ts";
+import { addDaysISO, nowISTDateISO } from "../../lib/time.ts";
 
 test("computeCutoffDate uses +8 days for streak entries", () => {
   assert.equal(computeCutoffDate("2026-03-01", true), computeDueAtISO("2026-03-01"));

@@ -223,6 +223,7 @@ function buildStreakSnapshotFromInputs(
   entries: ReadonlyArray<StreakProgressAggregateEntry>,
   nowISO: string
 ): UserIndex["streakSnapshot"] {
+  // Index snapshots cache canonical streak output and must not redefine the rule.
   const summary = computeCanonicalStreakSnapshot(entries);
   return {
     ruleVersion: USER_INDEX_STREAK_RULE_VERSION,

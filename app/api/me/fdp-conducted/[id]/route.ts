@@ -9,7 +9,7 @@ import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachin
 import { isWithinRequestEditWindow } from "@/lib/entries/lock";
 import { normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { nowISTTimestampISO } from "@/lib/gamification";
+import { nowISTTimestampISO } from "@/lib/time";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";

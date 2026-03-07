@@ -4,7 +4,7 @@ import {
   computeEntryLifecycle,
   markDirty,
   markSaved,
-} from "../../lib/entries/stateMachine.ts";
+} from "../../lib/entries/editorLifecycle.ts";
 
 test("pre-stage starts with all actions disabled except none dirty", () => {
   const state = computeEntryLifecycle({

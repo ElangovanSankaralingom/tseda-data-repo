@@ -26,11 +26,7 @@ import {
 import { normalizeError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { isEntryEditable } from "@/lib/entries/lock";
-import {
-  isFutureDatedEntry,
-  normalizeStreakState,
-  type StreakState,
-} from "@/lib/gamification";
+import { normalizeStreakState, type StreakState } from "@/lib/streakState";
 import { buildCanonicalStreakMetadata } from "@/lib/streakProgress";
 import {
   isEntryCommitted,
@@ -325,7 +321,6 @@ function buildSavedStreak(
     | "geotaggedPhotos"
   >
 ) {
-  const eligible = isFutureDatedEntry(entry.startDate, entry.endDate);
   const uploadsComplete =
     isValidFileMeta(entry.permissionLetter) &&
     isValidFileMeta(entry.travelPlan) &&
@@ -333,9 +328,9 @@ function buildSavedStreak(
 
   return buildCanonicalStreakMetadata({
     streak: entry.streak,
+    startDateISO: entry.startDate,
     endDateISO: entry.endDate,
     hasPdf: !!entry.pdfMeta,
-    isEligible: eligible,
     isCommitted: isEntryCommitted(entry as EntryStateLike),
     completionSatisfied: uploadsComplete,
   });
