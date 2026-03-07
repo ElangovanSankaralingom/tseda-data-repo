@@ -71,8 +71,6 @@ export default function EntryShell({
   const resolvedStatus = statusValue ? normalizeEntryApprovalStatus(statusValue) : null;
   const showStatusRow = Boolean(resolvedStatus) || Boolean(meta) || showUnsavedChanges;
   const isEditingMode = mode === "new" || mode === "edit";
-  const headerActions = isEditingMode ? null : actions;
-  const footerActions = isEditingMode ? actions : null;
 
   return (
     <div className="mx-auto w-full max-w-5xl">
@@ -111,22 +109,22 @@ export default function EntryShell({
           ) : null}
         </div>
 
-        {headerActions ? (
+        {!isEditingMode && actions ? (
           <div className={cx("mt-4 flex flex-wrap items-center justify-end gap-2", !showBack && "justify-start")}>
-            {headerActions}
+            {actions}
           </div>
         ) : null}
       </div>
 
       {showWorkflowHelp && isEditingMode ? <WorkflowHelpStrip className="mt-4" /> : null}
 
-      <div className="mt-6">{children}</div>
-
-      {footerActions ? (
-        <div className="sticky bottom-4 z-20 mt-6 rounded-2xl border border-border bg-background/95 p-3 shadow-sm backdrop-blur">
-          {footerActions}
+      {isEditingMode && actions ? (
+        <div className="sticky top-0 z-20 mt-4 rounded-2xl border border-border bg-background/95 p-3 shadow-sm backdrop-blur">
+          {actions}
         </div>
       ) : null}
+
+      <div className="mt-6">{children}</div>
     </div>
   );
 }
