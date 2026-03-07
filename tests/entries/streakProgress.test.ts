@@ -138,6 +138,40 @@ test("non-exportable fields are skipped for win check", () => {
 
 // --- Aggregate computation ---
 
+// Helper: create a complete workshops entry (all exportable fields filled)
+function completeWorkshopEntry(id: string, committedAt: string) {
+  return {
+    categoryKey: "workshops" as const,
+    id,
+    streakEligible: true,
+    committedAtISO: committedAt,
+    academicYear: "2025-26",
+    yearOfStudy: "I",
+    currentSemester: 1,
+    startDate: "2026-03-01",
+    endDate: "2026-03-05",
+    eventName: "Test Workshop",
+    speakerName: "Dr. Test",
+    organisationName: "TCE",
+    coordinator: { name: "Coord", designation: "Prof" },
+    coCoordinators: [{ name: "Co" }],
+    participants: 50,
+    uploads: { photo: "file.jpg" },
+  };
+}
+
+// Helper: create an incomplete workshops entry (missing some fields)
+function incompleteWorkshopEntry(id: string, committedAt: string) {
+  return {
+    categoryKey: "workshops" as const,
+    id,
+    streakEligible: true,
+    committedAtISO: committedAt,
+    eventName: "Workshop " + id,
+    // other exportable fields missing
+  };
+}
+
 test("zero entries: both counters are 0", () => {
   const summary = computeStreakProgressAggregate([]);
   assert.equal(summary.activatedCount, 0);
@@ -146,47 +180,50 @@ test("zero entries: both counters are 0", () => {
 
 test("3 eligible generated entries, none complete: activated=3, wins=0", () => {
   const summary = computeStreakProgressAggregate([
-    {
-      categoryKey: "workshops",
-      id: "e1",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
-      eventName: "Workshop 1",
-    },
-    {
-      categoryKey: "workshops",
-      id: "e2",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T11:00:00.000Z",
-      eventName: "Workshop 2",
-    },
-    {
-      categoryKey: "workshops",
-      id: "e3",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T12:00:00.000Z",
-      eventName: "Workshop 3",
-    },
+    incompleteWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+    incompleteWorkshopEntry("e3", "2026-03-06T12:00:00.000Z"),
   ]);
 
   assert.equal(summary.activatedCount, 3);
   assert.equal(summary.winsCount, 0);
 });
 
+test("5 generated, 2 complete: activated=3, wins=2 (mutually exclusive)", () => {
+  const summary = computeStreakProgressAggregate([
+    completeWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    completeWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+    incompleteWorkshopEntry("e3", "2026-03-06T12:00:00.000Z"),
+    incompleteWorkshopEntry("e4", "2026-03-06T13:00:00.000Z"),
+    incompleteWorkshopEntry("e5", "2026-03-06T14:00:00.000Z"),
+  ]);
+
+  assert.equal(summary.activatedCount, 3, "activated should be in-progress only");
+  assert.equal(summary.winsCount, 2, "wins should be completed only");
+  assert.equal(
+    summary.activatedCount + summary.winsCount,
+    5,
+    "activated + wins = total eligible generated"
+  );
+});
+
+test("5 generated, 5 complete: activated=0, wins=5", () => {
+  const summary = computeStreakProgressAggregate([
+    completeWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    completeWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+    completeWorkshopEntry("e3", "2026-03-06T12:00:00.000Z"),
+    completeWorkshopEntry("e4", "2026-03-06T13:00:00.000Z"),
+    completeWorkshopEntry("e5", "2026-03-06T14:00:00.000Z"),
+  ]);
+
+  assert.equal(summary.activatedCount, 0, "all completed — none in progress");
+  assert.equal(summary.winsCount, 5, "all are wins");
+});
+
 test("3 generated entries, 2 eligible, 1 not: only eligible ones counted", () => {
   const summary = computeStreakProgressAggregate([
-    {
-      categoryKey: "workshops",
-      id: "e1",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
-    },
-    {
-      categoryKey: "workshops",
-      id: "e2",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T11:00:00.000Z",
-    },
+    incompleteWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
     {
       categoryKey: "workshops",
       id: "e3",
@@ -229,12 +266,7 @@ test("entry without streakEligible flag (pre-migration) not counted", () => {
 
 test("entries across multiple categories all count", () => {
   const summary = computeStreakProgressAggregate([
-    {
-      categoryKey: "workshops",
-      id: "e1",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
-    },
+    incompleteWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
     {
       categoryKey: "fdp-attended",
       id: "e2",
@@ -257,18 +289,8 @@ test("entries across multiple categories all count", () => {
 
 test("canonical snapshot maps aggregate totals", () => {
   const snapshot = computeCanonicalStreakSnapshot([
-    {
-      categoryKey: "workshops",
-      id: "e1",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
-    },
-    {
-      categoryKey: "workshops",
-      id: "e2",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T11:00:00.000Z",
-    },
+    incompleteWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
   ]);
 
   assert.equal(snapshot.streakActivatedCount, 2);
@@ -276,20 +298,16 @@ test("canonical snapshot maps aggregate totals", () => {
   assert.equal(snapshot.activeEntries.length, 2);
 });
 
-test("streakWins never exceeds streakActivated", () => {
+test("activated + wins = total eligible generated entries", () => {
   const summary = computeStreakProgressAggregate([
-    {
-      categoryKey: "workshops",
-      id: "e1",
-      streakEligible: true,
-      // no committedAtISO — not activated, so can't be a win
-      eventName: "Complete Workshop",
-    },
+    completeWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+    completeWorkshopEntry("e3", "2026-03-06T12:00:00.000Z"),
   ]);
 
-  assert.equal(summary.activatedCount, 0);
-  assert.equal(summary.winsCount, 0);
-  assert.ok(summary.winsCount <= summary.activatedCount);
+  assert.equal(summary.activatedCount, 1);
+  assert.equal(summary.winsCount, 2);
+  assert.equal(summary.activatedCount + summary.winsCount, 3);
 });
 
 test("eligibility flag is permanent — not rechecked against current date", () => {
@@ -311,12 +329,7 @@ test("eligibility flag is permanent — not rechecked against current date", () 
 test("deleting non-eligible entry has no effect on counters", () => {
   // Before delete: one eligible, one non-eligible
   const before = computeStreakProgressAggregate([
-    {
-      categoryKey: "workshops",
-      id: "e1",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
-    },
+    incompleteWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
     {
       categoryKey: "workshops",
       id: "e2",
@@ -327,15 +340,61 @@ test("deleting non-eligible entry has no effect on counters", () => {
 
   // After deleting the non-eligible entry
   const after = computeStreakProgressAggregate([
-    {
-      categoryKey: "workshops",
-      id: "e1",
-      streakEligible: true,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
-    },
+    incompleteWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
   ]);
 
   assert.equal(before.activatedCount, 1);
   assert.equal(after.activatedCount, 1);
   // No change
+});
+
+test("deleting a complete entry decreases wins, not activated", () => {
+  const before = computeStreakProgressAggregate([
+    completeWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+  ]);
+
+  // Delete the complete entry
+  const after = computeStreakProgressAggregate([
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+  ]);
+
+  assert.equal(before.activatedCount, 1);
+  assert.equal(before.winsCount, 1);
+  assert.equal(after.activatedCount, 1);
+  assert.equal(after.winsCount, 0, "wins decreases when complete entry deleted");
+});
+
+test("deleting an incomplete entry decreases activated, not wins", () => {
+  const before = computeStreakProgressAggregate([
+    completeWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+    incompleteWorkshopEntry("e3", "2026-03-06T12:00:00.000Z"),
+  ]);
+
+  // Delete one incomplete entry
+  const after = computeStreakProgressAggregate([
+    completeWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e3", "2026-03-06T12:00:00.000Z"),
+  ]);
+
+  assert.equal(before.activatedCount, 2);
+  assert.equal(before.winsCount, 1);
+  assert.equal(after.activatedCount, 1, "activated decreases when incomplete entry deleted");
+  assert.equal(after.winsCount, 1, "wins unchanged");
+});
+
+test("per-category counts are also mutually exclusive", () => {
+  const summary = computeStreakProgressAggregate([
+    completeWorkshopEntry("e1", "2026-03-06T10:00:00.000Z"),
+    incompleteWorkshopEntry("e2", "2026-03-06T11:00:00.000Z"),
+    incompleteWorkshopEntry("e3", "2026-03-06T12:00:00.000Z"),
+  ]);
+
+  assert.equal(summary.byCategory.workshops.activated, 2);
+  assert.equal(summary.byCategory.workshops.wins, 1);
+  assert.equal(
+    summary.byCategory.workshops.activated + summary.byCategory.workshops.wins,
+    3
+  );
 });

@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getProfileByEmail } from "@/lib/profileStore";
 import { profile as profileRoute, signin } from "@/lib/entryNavigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function PrintProfile() {
   const session = await getServerSession();
   const email = session?.user?.email;

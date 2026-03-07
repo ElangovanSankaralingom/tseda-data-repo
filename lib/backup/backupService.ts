@@ -6,6 +6,7 @@ import path from "node:path";
 import { AppError, normalizeError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { err, ok, type Result } from "@/lib/result";
+import { getBackupRetention } from "@/lib/settings/consumer";
 import { getDataRoot } from "@/lib/userStore";
 
 export const BACKUP_KEEP_LAST_DEFAULT = 30;
@@ -287,8 +288,10 @@ export async function createBackupZip(): Promise<Result<BackupCreateResult>> {
     const buffer = await buildDataBackupBuffer();
     await fs.writeFile(filePath, buffer);
 
+    let retention = BACKUP_KEEP_LAST_DEFAULT;
+    try { retention = await getBackupRetention(); } catch { /* use default */ }
     const cleanupResult = await cleanupOldBackups({
-      keepLastN: BACKUP_KEEP_LAST_DEFAULT,
+      keepLastN: retention,
     });
     if (!cleanupResult.ok) {
       throw cleanupResult.error;

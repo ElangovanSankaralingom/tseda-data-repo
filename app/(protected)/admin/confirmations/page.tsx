@@ -6,6 +6,8 @@ import { canApproveConfirmations } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dashboard } from "@/lib/entryNavigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminConfirmationsPage() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");

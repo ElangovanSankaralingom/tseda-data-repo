@@ -7,8 +7,10 @@
  * - cache/snapshot readers may consume this output, but must not redefine it
  *
  * Rules:
- * - streakActivated: count of streak-eligible entries where Generate Entry was clicked
- * - streakWins: count of streak-eligible entries that are fully complete after Generate
+ * - streakActivated: eligible generated entries that are NOT yet fully complete (in-progress)
+ * - streakWins: eligible generated entries that ARE fully complete (all fields filled)
+ * - activated and wins are mutually exclusive — an entry is either one or the other
+ * - streakActivated + streakWins = total eligible generated entries
  * - An entry is streak-eligible ONLY if its endDate was in the future at Generate time
  * - Eligibility is checked once at Generate time and stored as streakEligible: true
  * - Both are lifetime counters computed from actual entry data
@@ -279,13 +281,17 @@ export function computeStreakProgressAggregate(
 
     if (!isEntryActivated(entry)) continue;
 
-    summary.activatedCount += 1;
-    summary.byCategory[categoryKey].activated += 1;
-
     const fields = getSchemaFields(categoryKey);
-    if (isEntryWon(entry, fields)) {
+    const won = isEntryWon(entry, fields);
+
+    if (won) {
+      // Won entries count as wins only — not activated
       summary.winsCount += 1;
       summary.byCategory[categoryKey].wins += 1;
+    } else {
+      // Activated but not yet won — in-progress eligible entries
+      summary.activatedCount += 1;
+      summary.byCategory[categoryKey].activated += 1;
     }
 
     const id = String(entry.id ?? "").trim();

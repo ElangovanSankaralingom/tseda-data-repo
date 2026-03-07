@@ -15,12 +15,14 @@ export type { EntryStatus } from "@/lib/types/entry";
  */
 
 // --- Edit window constants ---
+// These defaults can be overridden via app settings (lib/settings/consumer.ts).
+// Functions accept optional override parameters for async settings consumers.
 
 /** Default edit window: 3 days after generation. */
-const DEFAULT_EDIT_WINDOW_DAYS = 3;
+export const DEFAULT_EDIT_WINDOW_DAYS = 3;
 
 /** Streak-eligible entries get until endDate + 8 days. */
-const STREAK_EDIT_WINDOW_BUFFER_DAYS = 8;
+export const STREAK_EDIT_WINDOW_BUFFER_DAYS = 8;
 
 export type EntryTransitionAction =
   | "createEntry"
@@ -123,13 +125,16 @@ function addDays(dateISO: string, days: number): string {
 
 export function computeEditWindowExpiry(
   generatedAtISO: string,
-  entry: { endDate?: unknown; streakEligible?: unknown }
+  entry: { endDate?: unknown; streakEligible?: unknown },
+  overrides?: { editWindowDays?: number; streakBufferDays?: number }
 ): string {
-  const defaultExpiry = addDays(generatedAtISO, DEFAULT_EDIT_WINDOW_DAYS);
+  const windowDays = overrides?.editWindowDays ?? DEFAULT_EDIT_WINDOW_DAYS;
+  const bufferDays = overrides?.streakBufferDays ?? STREAK_EDIT_WINDOW_BUFFER_DAYS;
+  const defaultExpiry = addDays(generatedAtISO, windowDays);
 
   if (entry.streakEligible === true && typeof entry.endDate === "string" && entry.endDate.trim()) {
     // Streak entries: endDate + buffer days
-    const endDateExpiry = addDays(entry.endDate.trim() + "T23:59:59.999Z", STREAK_EDIT_WINDOW_BUFFER_DAYS);
+    const endDateExpiry = addDays(entry.endDate.trim() + "T23:59:59.999Z", bufferDays);
     // Use whichever is later
     return endDateExpiry > defaultExpiry ? endDateExpiry : defaultExpiry;
   }

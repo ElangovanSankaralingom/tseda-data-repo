@@ -1,5 +1,7 @@
 import { CaseStudiesPage } from "../page";
 
+export const dynamic = "force-dynamic";
+
 type CaseStudiesViewPageProps = {
   params: Promise<{
     id: string;

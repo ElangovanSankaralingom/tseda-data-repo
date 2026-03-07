@@ -1,5 +1,7 @@
 import { FdpAttendedPage } from "../page";
 
+export const dynamic = "force-dynamic";
+
 type FdpAttendedViewPageProps = {
   params: Promise<{
     id: string;

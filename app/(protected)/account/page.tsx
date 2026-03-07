@@ -973,9 +973,9 @@ export default function AccountPage() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       {/* Profile Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 animate-fade-in-up">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-          <div className="ring-4 ring-white/20 rounded-full shadow-lg">
+          <div className="ring-4 ring-white/20 rounded-full shadow-lg transition-shadow duration-500">
             <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-900">
               {photo && !avatarLoadFailed ? (
                 <img
@@ -1053,10 +1053,10 @@ export default function AccountPage() {
               key={key}
               onClick={() => setActiveTab(key)}
               className={cx(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
+                "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
                 activeTab === key
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-slate-900 text-white shadow-sm scale-100"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 scale-[0.97] hover:scale-100"
               )}
             >
               {label}
