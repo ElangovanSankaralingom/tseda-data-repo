@@ -1,4 +1,5 @@
 import type { CategoryKey } from "@/lib/entries/types";
+import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 
 function isNonEmptyString(value: unknown) {
   return String(value ?? "").trim().length > 0;
@@ -63,7 +64,8 @@ export const CATEGORY_REQUIREMENTS: Record<
   "fdp-attended": {
     validatePreUploadRequired: (entry) =>
       isNonEmptyString(entry.academicYear) &&
-      isNonEmptyString(entry.semesterType) &&
+      isNonEmptyString(entry.yearOfStudy) &&
+      hasSemesterNumber(entry.currentSemester) &&
       isValidDateRange(entry.startDate, entry.endDate) &&
       isNonEmptyString(entry.programName) &&
       isNonEmptyString(entry.organisingBody),
@@ -71,7 +73,8 @@ export const CATEGORY_REQUIREMENTS: Record<
   "fdp-conducted": {
     validatePreUploadRequired: (entry) =>
       isNonEmptyString(entry.academicYear) &&
-      isNonEmptyString(entry.semesterType) &&
+      isNonEmptyString(entry.yearOfStudy) &&
+      hasSemesterNumber(entry.currentSemester) &&
       isValidDateRange(entry.startDate, entry.endDate) &&
       isNonEmptyString(entry.eventName) &&
       hasOptionalFacultyRows(entry.coCoordinators, { requireLocked: true }),
@@ -79,29 +82,28 @@ export const CATEGORY_REQUIREMENTS: Record<
   "case-studies": {
     validatePreUploadRequired: (entry) =>
       isNonEmptyString(entry.academicYear) &&
-      isNonEmptyString(entry.semesterType) &&
       isValidDateRange(entry.startDate, entry.endDate) &&
       isNonEmptyString(entry.placeOfVisit) &&
       isNonEmptyString(entry.purposeOfVisit) &&
       hasFacultyRows(entry.staffAccompanying, { requireAtLeastOne: true, requireLocked: true }) &&
-      isNonEmptyString(entry.studentYear) &&
-      hasSemesterNumber(entry.semesterNumber),
+      isNonEmptyString(entry.yearOfStudy) &&
+      hasSemesterNumber(entry.currentSemester),
   },
   "guest-lectures": {
     validatePreUploadRequired: (entry) =>
       isNonEmptyString(entry.academicYear) &&
-      isNonEmptyString(entry.semesterType) &&
       isValidDateRange(entry.startDate, entry.endDate) &&
       isNonEmptyString(entry.eventName) &&
       isNonEmptyString(entry.speakerName) &&
       isNonEmptyString(entry.organizationName) &&
-      isNonEmptyString(entry.studentYear) &&
-      hasSemesterNumber(entry.semesterNumber),
+      isNonEmptyString(entry.yearOfStudy) &&
+      hasSemesterNumber(entry.currentSemester),
   },
   workshops: {
     validatePreUploadRequired: (entry) =>
       isNonEmptyString(entry.academicYear) &&
-      isNonEmptyString(entry.semesterType) &&
+      isNonEmptyString(entry.yearOfStudy) &&
+      hasSemesterNumber(entry.currentSemester) &&
       isValidDateRange(entry.startDate, entry.endDate) &&
       isNonEmptyString(entry.eventName) &&
       isNonEmptyString(entry.speakerName) &&
@@ -111,5 +113,7 @@ export const CATEGORY_REQUIREMENTS: Record<
 };
 
 export function validatePreUploadFields(category: CategoryKey, entry: Record<string, unknown>) {
-  return CATEGORY_REQUIREMENTS[category].validatePreUploadRequired(entry);
+  return CATEGORY_REQUIREMENTS[category].validatePreUploadRequired(
+    withAcademicProgressionCompatibility(entry)
+  );
 }

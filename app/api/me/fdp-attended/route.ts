@@ -25,6 +25,11 @@ import {
   normalizeEntryStatus,
   type EntryStateLike,
 } from "@/lib/entries/stateMachine";
+import {
+  isSemesterAllowed,
+  normalizeStudentYear,
+  type StudentYear,
+} from "@/lib/student-academic";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
@@ -45,7 +50,8 @@ type FdpAttended = {
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
-  semesterType: string;
+  studentYear: StudentYear | "";
+  semesterNumber: number | null;
   startDate: string;
   endDate: string;
   programName: string;
@@ -66,7 +72,6 @@ const ACADEMIC_YEAR_OPTIONS = new Set([
   "Academic Year 2026-2027",
   "Academic Year 2027-2028",
 ]);
-const SEMESTER_TYPE_OPTIONS = new Set(["Odd Semester", "Even Semester"]);
 
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
 
@@ -112,12 +117,16 @@ function normalizeRequestEditStatus(
 function getPrePdfFieldsHash(
   entry: Pick<
     FdpAttended,
-    "academicYear" | "semesterType" | "startDate" | "endDate" | "programName" | "organisingBody" | "supportAmount"
+    "academicYear" | "studentYear" | "semesterNumber" | "startDate" | "endDate" | "programName" | "organisingBody" | "supportAmount"
   >
 ) {
   return JSON.stringify({
     academicYear: String(entry.academicYear ?? "").trim(),
-    semesterType: String(entry.semesterType ?? "").trim(),
+    studentYear: String(entry.studentYear ?? "").trim(),
+    semesterNumber:
+      typeof entry.semesterNumber === "number" && Number.isFinite(entry.semesterNumber)
+        ? entry.semesterNumber
+        : null,
     startDate: String(entry.startDate ?? "").trim(),
     endDate: String(entry.endDate ?? "").trim(),
     programName: String(entry.programName ?? "").trim(),
@@ -131,6 +140,14 @@ function normalizeEntry(value: unknown): FdpAttended | null {
   if (!value || typeof value !== "object") return null;
 
   const record = value as Record<string, unknown>;
+  let semesterNumber: number | null = null;
+  if (typeof record.semesterNumber === "number" && Number.isFinite(record.semesterNumber)) {
+    semesterNumber = record.semesterNumber;
+  } else if (typeof record.semesterNumber === "string" && record.semesterNumber.trim()) {
+    const parsed = Number(record.semesterNumber);
+    semesterNumber = Number.isFinite(parsed) ? parsed : null;
+  }
+
   const normalized: FdpAttended = {
     id: String(record.id ?? "").trim(),
     confirmationStatus: normalizeEntryStatus(record as Record<string, unknown>),
@@ -148,7 +165,8 @@ function normalizeEntry(value: unknown): FdpAttended | null {
         ? record.requestEditMessage.trim()
         : "",
     academicYear: String(record.academicYear ?? "").trim(),
-    semesterType: String(record.semesterType ?? "").trim(),
+    studentYear: normalizeStudentYear(String(record.studentYear ?? "").trim()) ?? "",
+    semesterNumber,
     startDate: String(record.startDate ?? "").trim(),
     endDate: String(record.endDate ?? "").trim(),
     programName: String(record.programName ?? "").trim(),
@@ -267,7 +285,11 @@ function validateCoreFields(entry: FdpAttended) {
   const programName = entry.programName.trim();
   const organisingBody = entry.organisingBody.trim();
   const academicYear = entry.academicYear.trim();
-  const semesterType = entry.semesterType.trim();
+  const studentYear = normalizeStudentYear(String(entry.studentYear ?? "").trim()) ?? "";
+  const semesterNumber =
+    typeof entry.semesterNumber === "number" && Number.isFinite(entry.semesterNumber)
+      ? entry.semesterNumber
+      : null;
   const startDate = entry.startDate.trim();
   const endDate = entry.endDate.trim();
   const supportAmount =
@@ -279,8 +301,12 @@ function validateCoreFields(entry: FdpAttended) {
     return { error: "academicYear required" };
   }
 
-  if (!SEMESTER_TYPE_OPTIONS.has(semesterType)) {
-    return { error: "semesterType required" };
+  if (!studentYear) {
+    return { error: "studentYear required" };
+  }
+
+  if (!isSemesterAllowed(studentYear, semesterNumber ?? undefined)) {
+    return { error: "semesterNumber required" };
   }
 
   if (!isISODate(startDate)) {
@@ -310,7 +336,8 @@ function validateCoreFields(entry: FdpAttended) {
 
   return {
     academicYear,
-    semesterType,
+    studentYear,
+    semesterNumber,
     startDate,
     endDate,
     programName,
@@ -412,7 +439,8 @@ export async function POST(request: Request) {
       requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       requestEditMessage: entry.requestEditMessage ?? existing?.requestEditMessage ?? "",
       academicYear: validated.academicYear,
-      semesterType: validated.semesterType,
+      studentYear: validated.studentYear,
+      semesterNumber: validated.semesterNumber,
       startDate: validated.startDate,
       endDate: validated.endDate,
       programName: validated.programName,
@@ -482,8 +510,17 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "academicYear invalid" }, { status: 400 });
     }
 
-    if (entry.semesterType && !SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
-      return NextResponse.json({ error: "semesterType invalid" }, { status: 400 });
+    if (entry.studentYear && !normalizeStudentYear(entry.studentYear)) {
+      return NextResponse.json({ error: "studentYear invalid" }, { status: 400 });
+    }
+
+    if (
+      entry.studentYear &&
+      entry.semesterNumber !== null &&
+      entry.semesterNumber !== undefined &&
+      !isSemesterAllowed(entry.studentYear, entry.semesterNumber)
+    ) {
+      return NextResponse.json({ error: "semesterNumber invalid" }, { status: 400 });
     }
 
     if (entry.startDate && !isISODate(entry.startDate)) {
@@ -545,7 +582,8 @@ export async function PATCH(request: Request) {
         requestEditRequestedAtISO: null,
         requestEditMessage: "",
         academicYear: "",
-        semesterType: "",
+        studentYear: "",
+        semesterNumber: null,
         startDate: "",
         endDate: "",
         programName: "",
@@ -572,7 +610,8 @@ export async function PATCH(request: Request) {
           ? entry.requestEditMessage ?? ""
           : existing?.requestEditMessage ?? "",
       academicYear: entry.academicYear || existing?.academicYear || "",
-      semesterType: entry.semesterType || existing?.semesterType || "",
+      studentYear: entry.studentYear || existing?.studentYear || "",
+      semesterNumber: entry.semesterNumber ?? existing?.semesterNumber ?? null,
       startDate: entry.startDate || existing?.startDate || "",
       endDate: entry.endDate || existing?.endDate || "",
       programName: entry.programName || existing?.programName || "",
