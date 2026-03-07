@@ -5,7 +5,7 @@ import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { migrateCategoryStore } from "@/lib/migrations";
-import { getStreakProgressSnapshot } from "@/lib/streakProgress";
+import { isEntryActivated } from "@/lib/streakProgress";
 import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 export type CategorySummary = {
@@ -51,7 +51,7 @@ function isCompletedEntry(entry: SummaryEntry) {
 }
 
 function isActiveEntry(entry: SummaryEntry) {
-  return getStreakProgressSnapshot(entry).isActivated;
+  return isEntryActivated(entry);
 }
 
 function summarizeEntries(entries: SummaryEntry[]): CategorySummary {

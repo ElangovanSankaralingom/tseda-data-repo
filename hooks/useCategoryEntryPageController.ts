@@ -24,7 +24,7 @@ import {
   type EntrySaveSource,
 } from "@/lib/entries/pageOrchestration";
 import type { CategoryKey, RequestEditableEntry } from "@/lib/entries/types";
-import { groupEntries, type CategorizableEntry } from "@/lib/entryCategorization";
+import { groupEntries, groupEntriesForList, type CategorizableEntry } from "@/lib/entryCategorization";
 import { ok } from "@/lib/result";
 import type { EntryStatus } from "@/lib/types/entry";
 
@@ -231,6 +231,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     canGenerate: lifecycle.canGenerate,
   });
   const groupedEntries = useMemo(() => groupEntries(list), [list]);
+  const smartGroupedEntries = useMemo(() => groupEntriesForList(list), [list]);
 
   const normalizePersisted = useCallback(
     (entry: TEntry) => (normalizePersistedEntry ? normalizePersistedEntry(entry) : entry),
@@ -507,6 +508,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
+    smartGroupedEntries,
     handleCancel,
     handleSaveAndClose,
     handleSaveDraft,

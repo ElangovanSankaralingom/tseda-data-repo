@@ -84,6 +84,8 @@
   html,
   body {
     @apply bg-[#FAFBFC] text-foreground;
+    background-image: radial-gradient(circle, #e2e8f0 0.5px, transparent 0.5px);
+    background-size: 32px 32px;
   }
 }
 
@@ -107,5 +109,24 @@
   .date-modern::-webkit-date-and-time-value {
     min-height: 1.2em;
     text-align: left;
+  }
+
+  @keyframes flame-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+  .animate-flame {
+    animation: flame-flicker 1.5s ease-in-out infinite;
+  }
+
+  /* Styled native select for server-component forms */
+  .select-styled {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
   }
 }

@@ -31,9 +31,8 @@ const WAL_ACTIONS = new Set<WalAction>([
   "CREATE",
   "UPDATE",
   "DELETE",
-  "SEND_FOR_CONFIRMATION",
-  "APPROVE",
-  "REJECT",
+  "REQUEST_EDIT",
+  "GRANT_EDIT",
   "UPLOAD_ADD",
   "UPLOAD_REMOVE",
   "UPLOAD_REPLACE",
@@ -117,11 +116,11 @@ function applyLegacyWorkflowStatusCompatibility(record: Record<string, unknown>,
   if (workflowStatus === "draft" || workflowStatus === "final" || workflowStatus === "completed") {
     record.confirmationStatus = "DRAFT";
   } else if (workflowStatus === "pending" || workflowStatus === "pending_confirmation") {
-    record.confirmationStatus = "PENDING_CONFIRMATION";
+    record.confirmationStatus = "GENERATED";
   } else if (workflowStatus === "approved") {
-    record.confirmationStatus = "APPROVED";
+    record.confirmationStatus = "GENERATED";
   } else {
-    record.confirmationStatus = "REJECTED";
+    record.confirmationStatus = "GENERATED";
   }
 
   stripLegacyWorkflowStatus(record);
@@ -202,10 +201,7 @@ function normalizeLegacyFinalization(record: Record<string, unknown>, nowISO: st
   if (isLegacyFinalized) {
     const status = normalizeEntryStatus(record as EntryStateLike);
     if (status === "DRAFT") {
-      record.confirmationStatus = "APPROVED";
-      if (!toTrimmedString(record.confirmedAtISO)) {
-        record.confirmedAtISO = new Date().toISOString();
-      }
+      record.confirmationStatus = "GENERATED";
     }
   }
 }

@@ -72,7 +72,7 @@ export default function SignInPage() {
   }, []);
 
   return (
-    <div className="min-h-[calc(100vh-0px)] w-full bg-background">
+    <div className="min-h-[calc(100vh-0px)] w-full bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Subtle neutral background */}
       <div
         aria-hidden="true"
@@ -82,6 +82,8 @@ export default function SignInPage() {
             "radial-gradient(900px 500px at 50% 20%, rgba(0,0,0,0.06), transparent 60%), radial-gradient(700px 420px at 20% 80%, rgba(0,0,0,0.05), transparent 60%)",
         }}
       />
+      {/* Ambient glow */}
+      <div aria-hidden="true" className="pointer-events-none fixed left-1/2 top-1/3 -z-10 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/5 blur-3xl" />
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-5 py-10">
         <div className="w-full max-w-lg">
@@ -164,8 +166,12 @@ export default function SignInPage() {
                 <span>{busy ? "Signing in…" : "Sign in with Google"}</span>
               </button>
 
-              <div className="mt-3 text-center text-xs text-muted-foreground">
-                Access is restricted to <span className="font-medium">@tce.edu</span>
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-2" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                Access is restricted to <span className="font-medium">@tce.edu</span> accounts only
               </div>
             </div>
           </div>
@@ -173,6 +179,9 @@ export default function SignInPage() {
           {/* footer hint */}
           <div className="mt-4 text-center text-xs text-muted-foreground">
             If you face issues, sign out of other Google accounts and try again.
+          </div>
+          <div className="mt-6 text-center text-xs text-slate-300">
+            T&apos;SEDA — Thiagarajar College of Engineering
           </div>
         </div>
       </div>

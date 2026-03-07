@@ -6,60 +6,59 @@ import {
   transitionEntry,
 } from "../../lib/entries/workflow.ts";
 
-test("canTransition only allows canonical confirmation transitions", () => {
-  assert.equal(canTransition("DRAFT", "PENDING_CONFIRMATION"), true);
-  assert.equal(canTransition("REJECTED", "PENDING_CONFIRMATION"), true);
-  assert.equal(canTransition("PENDING_CONFIRMATION", "APPROVED"), true);
-  assert.equal(canTransition("PENDING_CONFIRMATION", "REJECTED"), true);
+test("canTransition only allows canonical workflow transitions", () => {
+  assert.equal(canTransition("DRAFT", "GENERATED"), true);
+  assert.equal(canTransition("GENERATED", "EDIT_REQUESTED"), true);
+  assert.equal(canTransition("EDIT_REQUESTED", "EDIT_GRANTED"), true);
+  assert.equal(canTransition("EDIT_GRANTED", "GENERATED"), true);
 
   assert.equal(canTransition("DRAFT", "DRAFT"), false);
-  assert.equal(canTransition("PENDING_CONFIRMATION", "PENDING_CONFIRMATION"), false);
-  assert.equal(canTransition("APPROVED", "APPROVED"), false);
+  assert.equal(canTransition("GENERATED", "GENERATED"), false);
+  assert.equal(canTransition("DRAFT", "EDIT_REQUESTED"), false);
 });
 
-test("sendForConfirmation from pending state is rejected", () => {
+test("requestEdit from EDIT_REQUESTED state is rejected", () => {
   assert.throws(
     () =>
       transitionEntry(
         {
-          confirmationStatus: "PENDING_CONFIRMATION",
+          confirmationStatus: "EDIT_REQUESTED",
         },
-        "sendForConfirmation",
+        "requestEdit",
         { nowISO: "2026-03-06T10:00:00.000Z" }
       ),
     /Invalid status transition/
   );
 });
 
-test("adminApprove from approved state is rejected", () => {
+test("grantEdit from DRAFT state is rejected", () => {
   assert.throws(
     () =>
       transitionEntry(
         {
-          confirmationStatus: "APPROVED",
+          confirmationStatus: "DRAFT",
         },
-        "adminApprove",
+        "grantEdit",
         { nowISO: "2026-03-06T10:00:00.000Z", adminEmail: "senarch@tce.edu" }
       ),
     /Invalid status transition/
   );
 });
 
-test("resending after rejection refreshes sentForConfirmationAtISO", () => {
+test("generateEntry transitions DRAFT to GENERATED with edit window", () => {
   const next = transitionEntry(
     {
-      confirmationStatus: "REJECTED",
-      sentForConfirmationAtISO: "2026-02-01T09:00:00.000Z",
-    },
-    "sendForConfirmation",
+      confirmationStatus: "DRAFT" as const,
+    } as Record<string, unknown>,
+    "generateEntry",
     { nowISO: "2026-03-06T10:00:00.000Z" }
   );
 
-  assert.equal(next.confirmationStatus, "PENDING_CONFIRMATION");
-  assert.equal(next.sentForConfirmationAtISO, "2026-03-06T10:00:00.000Z");
+  assert.equal(next.confirmationStatus, "GENERATED");
+  assert.ok(next.editWindowExpiresAt);
 });
 
-test("normalizeEntryStatus ignores legacy lowercase workflow strings outside migrations", () => {
+test("normalizeEntryStatus maps legacy sentForConfirmationAtISO to GENERATED", () => {
   const status = normalizeEntryStatus(
     {
       status: "draft",
@@ -68,5 +67,27 @@ test("normalizeEntryStatus ignores legacy lowercase workflow strings outside mig
     "DRAFT"
   );
 
-  assert.equal(status, "PENDING_CONFIRMATION");
+  assert.equal(status, "GENERATED");
+});
+
+test("normalizeEntryStatus maps legacy PENDING_CONFIRMATION to GENERATED", () => {
+  const status = normalizeEntryStatus(
+    {
+      confirmationStatus: "PENDING_CONFIRMATION",
+    },
+    "DRAFT"
+  );
+
+  assert.equal(status, "GENERATED");
+});
+
+test("normalizeEntryStatus maps legacy APPROVED to GENERATED", () => {
+  const status = normalizeEntryStatus(
+    {
+      confirmationStatus: "APPROVED",
+    },
+    "DRAFT"
+  );
+
+  assert.equal(status, "GENERATED");
 });

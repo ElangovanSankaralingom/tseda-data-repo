@@ -12,17 +12,16 @@ import "server-only";
  */
 export type { EntryEngineRecord, EntryStreakSummary } from "./internal/engine.ts";
 export {
-  approveEntry,
   commitDraft,
   computeStreak,
   createEntry,
   deleteEntry,
   getEntryWorkflowStatus,
+  grantEditAccess,
   isLockedFromApproval,
   listEntriesForCategory,
   normalizeEntryForWorkflow,
-  rejectEntry,
   replaceEntriesForCategory,
-  sendForConfirmation,
+  requestEdit,
   updateEntry,
 } from "./internal/engine.ts";

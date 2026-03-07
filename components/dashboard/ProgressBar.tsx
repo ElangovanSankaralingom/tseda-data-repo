@@ -1,42 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ProgressBarProps = {
   label: string;
-  value: number;
-  max: number;
-  color?: string;
+  count: number;
+  maxCount: number;
+  href: string;
+  index: number;
 };
 
 export default function ProgressBar({
   label,
-  value,
-  max,
-  color = "bg-blue-500",
+  count,
+  maxCount,
+  href,
+  index,
 }: ProgressBarProps) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  const isEmpty = value === 0;
+  const [barWidth, setBarWidth] = useState(0);
+  const isEmpty = count === 0;
+  const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setBarWidth(pct), index * 100);
+    return () => clearTimeout(timer);
+  }, [pct, index]);
 
   return (
-    <div className="flex items-center gap-3">
+    <Link
+      href={href}
+      className={cn(
+        "group flex items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150",
+        "hover:bg-slate-50"
+      )}
+    >
       <div className="w-32 shrink-0 truncate text-sm font-medium text-slate-700">
         {label}
       </div>
       <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
-        {pct > 0 && (
+        {barWidth > 0 && (
           <div
-            className={cn("absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out", color)}
-            style={{ width: `${pct}%` }}
+            className="absolute inset-y-0 left-0 rounded-full bg-blue-500 transition-all duration-500 ease-out"
+            style={{ width: `${barWidth}%` }}
           />
         )}
       </div>
       <div
         className={cn(
-          "w-10 text-right text-xs font-medium tabular-nums",
+          "w-20 text-right text-xs font-medium tabular-nums",
           isEmpty ? "text-slate-300" : "text-slate-600"
         )}
       >
-        {pct}%
+        {isEmpty ? "Start entering data" : `${count} ${count === 1 ? "entry" : "entries"}`}
       </div>
-    </div>
+      <ChevronRight className="size-4 text-slate-300 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+    </Link>
   );
 }

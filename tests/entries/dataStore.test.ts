@@ -82,7 +82,7 @@ test("DataStore normalization applies default attachments and canonical confirma
     assert.equal(String(entries[0]?.startDate ?? ""), "2026-04-01");
     assert.equal(entries[0]?.status, undefined);
     assert.equal(String(entries[0]?.confirmationStatus ?? ""), "DRAFT");
-    assert.equal(String(entries[1]?.confirmationStatus ?? ""), "PENDING_CONFIRMATION");
+    assert.equal(String(entries[1]?.confirmationStatus ?? ""), "GENERATED");
   });
 });
 

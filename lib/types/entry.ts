@@ -1,26 +1,31 @@
 // Canonical entry workflow statuses. Do not restate this status list in other
 // modules; derive status-keyed collections from `ENTRY_STATUSES` instead.
+//
+// Workflow: DRAFT → GENERATED → (optionally) EDIT_REQUESTED → EDIT_GRANTED → GENERATED
+// Once the edit window expires, a GENERATED entry is effectively finalized
+// (read-only). There is no explicit FINALIZED status — finalization is computed
+// from `editWindowExpiresAt`.
 export const ENTRY_STATUSES = [
   "DRAFT",
-  "PENDING_CONFIRMATION",
-  "APPROVED",
-  "REJECTED",
+  "GENERATED",
+  "EDIT_REQUESTED",
+  "EDIT_GRANTED",
 ] as const;
 
 export type EntryStatus = (typeof ENTRY_STATUSES)[number];
 
 export const ENTRY_STATUS_LABELS: Readonly<Record<EntryStatus, string>> = {
   DRAFT: "Draft",
-  PENDING_CONFIRMATION: "Pending Confirmation",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
+  GENERATED: "Generated",
+  EDIT_REQUESTED: "Edit Requested",
+  EDIT_GRANTED: "Edit Granted",
 };
 
 const STATUS_COUNT_KEYS: Readonly<Record<EntryStatus, string>> = {
   DRAFT: "draftCount",
-  PENDING_CONFIRMATION: "pendingConfirmationCount",
-  APPROVED: "approvedCount",
-  REJECTED: "rejectedCount",
+  GENERATED: "generatedCount",
+  EDIT_REQUESTED: "editRequestedCount",
+  EDIT_GRANTED: "editGrantedCount",
 };
 
 export function incrementStatusCount(
@@ -64,10 +69,29 @@ export type Entry = Record<string, unknown> & {
   v?: number;
   status?: string;
   confirmationStatus?: EntryStatus;
+  streakEligible?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  committedAtISO?: string | null;
+  editWindowExpiresAt?: string | null;
+  editRequestedAt?: string | null;
+  editRequestMessage?: string | null;
+  editGrantedAt?: string | null;
+  editGrantedBy?: string | null;
   attachments?: UploadedFile[];
   data?: Record<string, unknown>;
 };
 
 export type EntryLike = Entry;
+
+// --- Legacy status mapping ---
+// Maps old statuses from pre-migration entries to the new system.
+const LEGACY_STATUS_MAP: Record<string, EntryStatus> = {
+  PENDING_CONFIRMATION: "GENERATED",
+  APPROVED: "GENERATED",
+  REJECTED: "GENERATED",
+};
+
+export function mapLegacyStatus(status: string): EntryStatus | null {
+  return LEGACY_STATUS_MAP[status] ?? null;
+}

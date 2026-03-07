@@ -3,11 +3,10 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
-import { canApproveConfirmations } from "@/lib/admin/roles";
-import { getPendingConfirmations } from "@/lib/admin/pendingConfirmations";
+import { canManageEditRequests } from "@/lib/admin/roles";
+import { getPendingEditRequests } from "@/lib/admin/pendingConfirmations";
 import {
-  approveEntry,
-  rejectEntry,
+  grantEditAccess,
 } from "@/lib/entries/lifecycle";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -29,18 +28,18 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 export async function GET() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
-  if (!canApproveConfirmations(email)) {
+  if (!canManageEditRequests(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const rows = await getPendingConfirmations();
+  const rows = await getPendingEditRequests();
   return NextResponse.json(rows, { status: 200 });
 }
 
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   const adminEmail = normalizeEmail(session?.user?.email ?? "");
-  if (!canApproveConfirmations(adminEmail)) {
+  if (!canManageEditRequests(adminEmail)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -48,7 +47,7 @@ export async function PATCH(request: Request) {
     enforceRateLimitForRequest({
       request,
       userEmail: adminEmail,
-      action: "admin.confirmations.patch",
+      action: "admin.editRequests.patch",
       options: RATE_LIMIT_PRESETS.adminOps,
     });
 
@@ -56,10 +55,9 @@ export async function PATCH(request: Request) {
       ownerEmail?: string;
       categoryKey?: string;
       entryId?: string;
-      decision?: "approve" | "reject";
-      rejectionReason?: string;
+      decision?: "grant";
     };
-    assertActionPayload(body, "admin confirmation request", SECURITY_LIMITS.actionPayloadMaxBytes);
+    assertActionPayload(body, "admin edit request", SECURITY_LIMITS.actionPayloadMaxBytes);
     const ownerEmail = normalizeEmail(String(body.ownerEmail ?? ""));
     const categoryKey = String(body.categoryKey ?? "").trim();
     const entryId = String(body.entryId ?? "").trim();
@@ -74,20 +72,11 @@ export async function PATCH(request: Request) {
     if (!entryId) {
       return NextResponse.json({ error: "entryId required" }, { status: 400 });
     }
-    if (decision !== "approve" && decision !== "reject") {
-      return NextResponse.json({ error: "decision required" }, { status: 400 });
+    if (decision !== "grant") {
+      return NextResponse.json({ error: "decision must be 'grant'" }, { status: 400 });
     }
 
-    const updatedEntry =
-      decision === "approve"
-        ? await approveEntry(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId)
-        : await rejectEntry(
-            adminEmail,
-            categoryKey as CategoryKey,
-            ownerEmail,
-            entryId,
-            String(body.rejectionReason ?? "")
-          );
+    const updatedEntry = await grantEditAccess(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId);
 
     const categoryRoute = entryList(categoryKey as CategoryKey);
     revalidatePath(dashboard());
@@ -103,7 +92,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
     const appError = normalizeError(error);
-    logError(appError, "api.admin.confirmations.PATCH");
+    logError(appError, "api.admin.editRequests.PATCH");
 
     if (appError.code === "NOT_FOUND" || appError.message === "Entry not found") {
       return NextResponse.json({ error: appError.message || "Entry not found" }, { status: 404 });
@@ -112,7 +101,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     if (appError.message.startsWith("Invalid status transition:")) {
-      return NextResponse.json({ error: "Invalid confirmation state transition." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid edit request state transition." }, { status: 400 });
     }
     if (appError.code === "VALIDATION_ERROR") {
       return NextResponse.json({ error: appError.message }, { status: 400 });
@@ -124,6 +113,6 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: appError.message, code: appError.code }, { status: 413 });
     }
 
-    return NextResponse.json({ error: appError.message || "Failed to update confirmation." }, { status: 500 });
+    return NextResponse.json({ error: appError.message || "Failed to process edit request." }, { status: 500 });
   }
 }

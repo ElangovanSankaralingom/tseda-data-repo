@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  approveEntry,
   commitDraft,
   createEntry,
-  sendForConfirmation,
+  requestEdit,
+  grantEditAccess,
   updateEntry,
 } from "../../lib/entries/lifecycle.ts";
 import { isEntryEditable } from "../../lib/entries/lock.ts";
@@ -55,7 +55,7 @@ async function withSandbox<T>(label: string, run: () => Promise<T>): Promise<T> 
   }
 }
 
-test("workflow smoke covers draft save, done, reopen, confirmation, approval, lock, and export", async () => {
+test("workflow smoke: draft, generate, edit request, grant, and export", async () => {
   await withSandbox("workflow-smoke-happy-path", async () => {
     const created = await createEntry(ownerEmail, "workshops", buildCompleteWorkshopPayload());
     const entryId = String(created.id);
@@ -73,29 +73,30 @@ test("workflow smoke covers draft save, done, reopen, confirmation, approval, lo
     assert.equal(isEntryEditable(savedDraft), true);
 
     const committed = await commitDraft(ownerEmail, "workshops", entryId);
-    assert.equal(String(committed.confirmationStatus ?? ""), "DRAFT");
+    assert.equal(String(committed.confirmationStatus ?? ""), "GENERATED");
     assert.equal(Boolean(committed.committedAtISO), true);
-    assert.equal(Boolean(committed.sentForConfirmationAtISO), false);
+    assert.ok(committed.editWindowExpiresAt);
     assert.equal(isEntryEditable(committed), true);
 
     const reopened = await updateEntry(ownerEmail, "workshops", entryId, {
       speakerName: "Reopened Speaker",
     });
-    assert.equal(String(reopened.confirmationStatus ?? ""), "DRAFT");
+    assert.equal(String(reopened.confirmationStatus ?? ""), "GENERATED");
     assert.equal(Boolean(reopened.committedAtISO), true);
     assert.equal(String(reopened.speakerName ?? ""), "Reopened Speaker");
     assert.equal(isEntryEditable(reopened), true);
 
-    const pending = await sendForConfirmation(ownerEmail, "workshops", entryId);
-    assert.equal(String(pending.confirmationStatus ?? ""), "PENDING_CONFIRMATION");
-    assert.equal(Boolean(pending.committedAtISO), true);
-    assert.equal(Boolean(pending.sentForConfirmationAtISO), true);
+    // Request edit after generation
+    const editRequested = await requestEdit(ownerEmail, "workshops", entryId);
+    assert.equal(String(editRequested.confirmationStatus ?? ""), "EDIT_REQUESTED");
+    assert.ok(editRequested.editRequestedAt);
 
-    const approved = await approveEntry(adminEmail, "workshops", ownerEmail, entryId);
-    assert.equal(String(approved.confirmationStatus ?? ""), "APPROVED");
-    assert.equal(Boolean(approved.confirmedAtISO), true);
-    assert.equal(String(approved.confirmedBy ?? ""), adminEmail);
-    assert.equal(isEntryEditable(approved), false);
+    // Admin grants edit access
+    const editGranted = await grantEditAccess(adminEmail, "workshops", ownerEmail, entryId);
+    assert.equal(String(editGranted.confirmationStatus ?? ""), "EDIT_GRANTED");
+    assert.ok(editGranted.editGrantedAt);
+    assert.equal(String(editGranted.editGrantedBy ?? ""), adminEmail);
+    assert.equal(isEntryEditable(editGranted), true);
 
     const built = await buildExportRows(ownerEmail, "workshops", [
       "id",
@@ -111,21 +112,20 @@ test("workflow smoke covers draft save, done, reopen, confirmation, approval, lo
       entryId,
       "Workflow Workshop Draft Saved",
       "Reopened Speaker",
-      "APPROVED",
+      "EDIT_GRANTED",
     ]);
-    assert.equal(built.data.countsByStatus.APPROVED, 1);
+    assert.equal(built.data.countsByStatus.EDIT_GRANTED, 1);
     assert.equal(built.data.countsByStatus.DRAFT, 0);
-    assert.equal(built.data.countsByStatus.PENDING_CONFIRMATION, 0);
   });
 });
 
-test("workflow smoke rejects send for confirmation before done/commit", async () => {
-  await withSandbox("workflow-smoke-precommit-confirmation", async () => {
+test("workflow smoke rejects request edit before generation", async () => {
+  await withSandbox("workflow-smoke-precommit-edit-request", async () => {
     const created = await createEntry(ownerEmail, "workshops", buildCompleteWorkshopPayload());
 
     await assert.rejects(
-      () => sendForConfirmation(ownerEmail, "workshops", String(created.id)),
-      /Complete the entry with Done before confirmation\./
+      () => requestEdit(ownerEmail, "workshops", String(created.id)),
+      /Entry must be generated before requesting edit access\./
     );
 
     assert.equal(String(created.confirmationStatus ?? ""), "DRAFT");

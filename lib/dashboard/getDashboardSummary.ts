@@ -37,9 +37,9 @@ export type DashboardRecentRow = {
 type CategoryDashboardSummary = {
   totalEntries: number;
   draftCount: number;
-  pendingConfirmationCount: number;
-  approvedCount: number;
-  rejectedCount: number;
+  generatedCount: number;
+  editRequestedCount: number;
+  editGrantedCount: number;
   streakActivatedCount: number;
   streakWinsCount: number;
 };
@@ -49,11 +49,15 @@ export type DashboardSummary = {
   totals: {
     totalEntries: number;
     draftCount: number;
+    generatedCount: number;
+    editRequestedCount: number;
+    editGrantedCount: number;
+    streakActivatedCount: number;
+    streakWinsCount: number;
+    // Keep old names as aliases for dashboard page compatibility
     pendingConfirmationCount: number;
     approvedCount: number;
     rejectedCount: number;
-    streakActivatedCount: number;
-    streakWinsCount: number;
   };
   streakActivatedRows: DashboardPendingRow[];
   recentEntries: DashboardRecentRow[];
@@ -67,9 +71,9 @@ function emptyCategorySummary(): CategoryDashboardSummary {
   return {
     totalEntries: 0,
     draftCount: 0,
-    pendingConfirmationCount: 0,
-    approvedCount: 0,
-    rejectedCount: 0,
+    generatedCount: 0,
+    editRequestedCount: 0,
+    editGrantedCount: 0,
     streakActivatedCount: 0,
     streakWinsCount: 0,
   };
@@ -89,11 +93,14 @@ function emptySummary(): DashboardSummary {
     totals: {
       totalEntries: 0,
       draftCount: 0,
+      generatedCount: 0,
+      editRequestedCount: 0,
+      editGrantedCount: 0,
+      streakActivatedCount: 0,
+      streakWinsCount: 0,
       pendingConfirmationCount: 0,
       approvedCount: 0,
       rejectedCount: 0,
-      streakActivatedCount: 0,
-      streakWinsCount: 0,
     },
     streakActivatedRows: [],
     recentEntries: [],
@@ -116,9 +123,9 @@ function normalizeSummary(summary: unknown): DashboardSummary {
       next[categoryKey] = {
         totalEntries: toFiniteCount(raw?.totalEntries),
         draftCount: toFiniteCount(raw?.draftCount),
-        pendingConfirmationCount: toFiniteCount(raw?.pendingConfirmationCount),
-        approvedCount: toFiniteCount(raw?.approvedCount),
-        rejectedCount: toFiniteCount(raw?.rejectedCount),
+        generatedCount: toFiniteCount(raw?.generatedCount),
+        editRequestedCount: toFiniteCount(raw?.editRequestedCount),
+        editGrantedCount: toFiniteCount(raw?.editGrantedCount),
         streakActivatedCount: toFiniteCount(raw?.streakActivatedCount),
         streakWinsCount: toFiniteCount(raw?.streakWinsCount),
       };
@@ -128,14 +135,21 @@ function normalizeSummary(summary: unknown): DashboardSummary {
   );
 
   const rawTotals = candidate.totals ?? fallback.totals;
+  const generatedCount = toFiniteCount(rawTotals.generatedCount);
+  const editRequestedCount = toFiniteCount(rawTotals.editRequestedCount);
+  const editGrantedCount = toFiniteCount(rawTotals.editGrantedCount);
   const totals = {
     totalEntries: toFiniteCount(rawTotals.totalEntries),
     draftCount: toFiniteCount(rawTotals.draftCount),
-    pendingConfirmationCount: toFiniteCount(rawTotals.pendingConfirmationCount),
-    approvedCount: toFiniteCount(rawTotals.approvedCount),
-    rejectedCount: toFiniteCount(rawTotals.rejectedCount),
+    generatedCount,
+    editRequestedCount,
+    editGrantedCount,
     streakActivatedCount: toFiniteCount(rawTotals.streakActivatedCount),
     streakWinsCount: toFiniteCount(rawTotals.streakWinsCount),
+    // Compatibility aliases
+    pendingConfirmationCount: editRequestedCount,
+    approvedCount: generatedCount + editGrantedCount,
+    rejectedCount: 0,
   };
 
   return {
@@ -213,10 +227,15 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
 
     summary.totals.totalEntries += categorySummary.totalEntries;
     summary.totals.draftCount += categorySummary.draftCount;
-    summary.totals.pendingConfirmationCount += categorySummary.pendingConfirmationCount;
-    summary.totals.approvedCount += categorySummary.approvedCount;
-    summary.totals.rejectedCount += categorySummary.rejectedCount;
+    summary.totals.generatedCount += categorySummary.generatedCount;
+    summary.totals.editRequestedCount += categorySummary.editRequestedCount;
+    summary.totals.editGrantedCount += categorySummary.editGrantedCount;
   }
+
+  // Compatibility aliases
+  summary.totals.pendingConfirmationCount = summary.totals.editRequestedCount;
+  summary.totals.approvedCount = summary.totals.generatedCount + summary.totals.editGrantedCount;
+  summary.totals.rejectedCount = 0;
 
   // Dashboard presentation consumes the canonical streak snapshot directly.
   const streakSummary = computeCanonicalStreakSnapshot(streakInputs);

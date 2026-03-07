@@ -345,7 +345,7 @@ function MiniButton({
       ? "destructive"
       : variant === "ghost"
         ? "ghost"
-        : "context";
+        : "primary";
 
   return (
     <RoleButton
@@ -972,10 +972,42 @@ export default function AccountPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
+      {/* Profile Header */}
+      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+          <div className="ring-4 ring-white/20 rounded-full shadow-lg">
+            <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-900">
+              {photo && !avatarLoadFailed ? (
+                <img
+                  src={photo}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                  onError={() => setAvatarLoadFailed(true)}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xl font-bold text-white">
+                  {avatarFallback}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl font-bold text-white">{employeeLabel}</h1>
+            <p className="mt-0.5 text-sm text-slate-300">{draft.email || ""}</p>
+            {draft.academic?.designation && (
+              <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
+                <span className="rounded-full bg-white/10 px-3 py-0.5 text-xs text-slate-200">
+                  {draft.academic.designation} Professor
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">My Account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Click Save once you complete your updates.</p>
+          <p className="text-sm text-muted-foreground">Click Save once you complete your updates.</p>
         </div>
 
         {activeTabDirty ? (
@@ -1007,7 +1039,7 @@ export default function AccountPage() {
       ) : null}
 
       <div>
-        <div className="flex flex-wrap gap-2 border-b border-border pb-2">
+        <div className="flex flex-wrap gap-2">
           {(
             [
               ["profile", employeeLabel],
@@ -1021,10 +1053,10 @@ export default function AccountPage() {
               key={key}
               onClick={() => setActiveTab(key)}
               className={cx(
-                "rounded-full px-4 py-2 text-sm transition border",
+                "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
                 activeTab === key
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-transparent border-border hover:bg-muted"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               )}
             >
               {label}
@@ -1041,32 +1073,6 @@ export default function AccountPage() {
         {/* PROFILE (Google photo only) */}
         {!loading && activeTab === "profile" ? (
           <SectionCard title="Profile">
-            <div className="grid grid-cols-1 items-stretch gap-8 md:grid-cols-[220px_1fr]">
-              <div className="self-stretch">
-                <div className="flex h-full min-h-[280px] flex-col items-center justify-start text-center md:-translate-y-6 md:justify-center">
-                  <div className="flex items-center justify-center">
-                    <div className="h-28 w-28 overflow-hidden rounded-full border border-border bg-muted shadow-sm">
-                      {photo && !avatarLoadFailed ? (
-                        <img
-                          src={photo}
-                          alt="Profile"
-                          className="h-full w-full object-cover"
-                          onError={() => setAvatarLoadFailed(true)}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-muted-foreground">
-                          {avatarFallback}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-4 text-base font-semibold text-center">{employeeLabel}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Debug: photoURL: {photo ? "present" : "missing"}
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-5">
                 <Field label="Email (keyed by email)" error={shouldShowError("email") ? errors.email : undefined} hint="Read-only">
                   <input
@@ -1092,7 +1098,6 @@ export default function AccountPage() {
                   />
                 </Field>
               </div>
-            </div>
           </SectionCard>
         ) : null}
 

@@ -7,9 +7,9 @@ type ButtonClassOptions = {
 };
 
 const BASE_DEFAULT =
-  "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm font-medium transition-colors duration-150";
+  "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm font-medium transition-all duration-150 active:scale-[0.97]";
 const BASE_COMPACT =
-  "inline-flex h-8 shrink-0 items-center justify-center rounded-full border px-3 text-sm font-medium transition-colors duration-150";
+  "inline-flex h-8 shrink-0 items-center justify-center rounded-full border px-3 text-sm font-medium transition-all duration-150 active:scale-[0.97]";
 
 export function getButtonVariant(role: ButtonRole) {
   if (role === "primary") return "default" as const;

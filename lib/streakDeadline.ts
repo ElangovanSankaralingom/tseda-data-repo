@@ -1,8 +1,9 @@
-import { getStreakProgressSnapshot, type StreakProgressEntryLike } from "./streakProgress.ts";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-type DeadlineEntry = StreakProgressEntryLike;
+/**
+ * Streak deadline utilities.
+ *
+ * With the simplified streak system (lifetime counters, no time windows),
+ * deadlines are no longer applicable. All functions return inactive/no-deadline state.
+ */
 
 export type StreakDeadlineColor = "normal" | "yellow" | "red";
 
@@ -14,25 +15,26 @@ export type StreakDeadlineState = {
   color: StreakDeadlineColor;
 };
 
-export function getStreakDeadlineISO(entry: DeadlineEntry) {
-  const streak = getStreakProgressSnapshot(entry);
-  if (!streak.isActivated) {
-    return null;
-  }
+const NO_DEADLINE: StreakDeadlineState = {
+  hasDeadline: false,
+  deadlineISO: null,
+  daysRemaining: 0,
+  isExpired: false,
+  color: "normal",
+};
 
-  return streak.dueAtISO;
+export function getStreakDeadlineISO(_entry: unknown) {
+  return null;
 }
 
-export function getDaysLeft(deadlineISO: string | null | undefined, nowISO?: string) {
+export function getDaysLeft(deadlineISO: string | null | undefined, _nowISO?: string) {
   if (!deadlineISO) return 0;
 
+  const DAY_MS = 24 * 60 * 60 * 1000;
   const deadlineTime = Date.parse(deadlineISO);
-  const nowTime = nowISO ? Date.parse(nowISO) : Date.now();
+  const nowTime = Date.now();
 
-  if (Number.isNaN(deadlineTime) || Number.isNaN(nowTime)) {
-    return 0;
-  }
-
+  if (Number.isNaN(deadlineTime)) return 0;
   return Math.ceil((deadlineTime - nowTime) / DAY_MS);
 }
 
@@ -42,41 +44,14 @@ export function getDaysLeftColor(daysLeft: number): StreakDeadlineColor {
   return "normal";
 }
 
-export function isStreakWindowActive(entry: DeadlineEntry, nowISO?: string) {
-  const deadlineISO = getStreakDeadlineISO(entry);
-  if (!deadlineISO) return false;
-
-  return getDaysLeft(deadlineISO, nowISO) >= 0;
+export function isStreakWindowActive(_entry: unknown, _nowISO?: string) {
+  return false;
 }
 
-export function isStreakExpired(entry: DeadlineEntry, nowISO?: string) {
-  const deadlineISO = getStreakDeadlineISO(entry);
-  if (!deadlineISO) return false;
-
-  return getDaysLeft(deadlineISO, nowISO) < 0;
+export function isStreakExpired(_entry: unknown, _nowISO?: string) {
+  return false;
 }
 
-export function getStreakDeadlineState(entry: DeadlineEntry, nowISO?: string): StreakDeadlineState {
-  const deadlineISO = getStreakDeadlineISO(entry);
-
-  if (!deadlineISO) {
-    return {
-      hasDeadline: false,
-      deadlineISO: null,
-      daysRemaining: 0,
-      isExpired: false,
-      color: "normal",
-    };
-  }
-
-  const daysLeft = getDaysLeft(deadlineISO, nowISO);
-  const isExpired = daysLeft < 0;
-
-  return {
-    hasDeadline: true,
-    deadlineISO,
-    daysRemaining: isExpired ? 0 : daysLeft,
-    isExpired,
-    color: getDaysLeftColor(daysLeft),
-  };
+export function getStreakDeadlineState(_entry: unknown, _nowISO?: string): StreakDeadlineState {
+  return { ...NO_DEADLINE };
 }

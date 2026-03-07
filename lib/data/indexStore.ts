@@ -169,8 +169,8 @@ function toContribution(entry: EntryLike | null): EntryContribution | null {
 
   const id = String(entry.id ?? "").trim();
   const status = normalizeEntryStatus(entry as EntryStateLike);
-  const pending = status === "PENDING_CONFIRMATION" ? 1 : 0;
-  const approved = status === "APPROVED" ? 1 : 0;
+  const pending = status === "EDIT_REQUESTED" ? 1 : 0;
+  const approved = status === "GENERATED" || status === "EDIT_GRANTED" ? 1 : 0;
 
   return {
     id,
@@ -430,10 +430,10 @@ async function buildUserIndex(userEmail: string): Promise<UserIndex> {
       const entry = entryValue as EntryLike;
       const status = normalizeEntryStatus(entry as EntryStateLike);
       index.countsByStatus[status] += 1;
-      if (status === "PENDING_CONFIRMATION") {
+      if (status === "EDIT_REQUESTED") {
         index.pendingByCategory[category] += 1;
       }
-      if (status === "APPROVED") {
+      if (status === "GENERATED" || status === "EDIT_GRANTED") {
         index.approvedByCategory[category] += 1;
       }
 

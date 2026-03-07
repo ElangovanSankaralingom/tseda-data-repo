@@ -3,12 +3,10 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
-import { sendForConfirmation } from "@/lib/entries/lifecycle";
+import { requestEdit } from "@/lib/entries/lifecycle";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
-  adminConfirmations,
-  adminHome,
   dashboard,
   dataEntryHome,
   entryDetail,
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
     enforceRateLimitForRequest({
       request,
       userEmail: email,
-      action: "entry.confirmation.send",
+      action: "entry.edit.request",
       options: RATE_LIMIT_PRESETS.entryMutations,
     });
 
@@ -37,10 +35,12 @@ export async function POST(request: Request) {
       categoryKey?: string;
       entryId?: string;
       id?: string;
+      message?: string;
     };
-    assertActionPayload(body, "confirmation request", SECURITY_LIMITS.actionPayloadMaxBytes);
+    assertActionPayload(body, "edit request", SECURITY_LIMITS.actionPayloadMaxBytes);
     const categoryKey = String(body?.categoryKey ?? "").trim();
     const entryId = String(body?.entryId ?? body?.id ?? "").trim();
+    const message = String(body?.message ?? "").trim();
 
     if (!isCategoryKey(categoryKey)) {
       return NextResponse.json({ error: "Unsupported category" }, { status: 404 });
@@ -50,30 +50,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "entryId required" }, { status: 400 });
     }
 
-    const updatedEntry = await sendForConfirmation(email, categoryKey, entryId);
+    const updatedEntry = await requestEdit(email, categoryKey, entryId, message || undefined);
     revalidatePath(dashboard());
     revalidatePath(dataEntryHome());
     revalidatePath(entryList(categoryKey));
     revalidatePath(entryDetail(categoryKey, entryId));
-    revalidatePath(adminHome());
-    revalidatePath(adminConfirmations());
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
     const appError = normalizeError(error);
-    logError(appError, "api.me.entry.confirmation.POST");
+    logError(appError, "api.me.entry.requestEdit.POST");
 
     if (appError.code === "NOT_FOUND" || appError.message === "Entry not found") {
       return NextResponse.json({ error: appError.message || "Entry not found" }, { status: 404 });
     }
-    if (
-      appError.code === "VALIDATION_ERROR" ||
-      appError.message === "Complete the entry with Done before confirmation."
-    ) {
+    if (appError.code === "VALIDATION_ERROR") {
       return NextResponse.json({ error: appError.message }, { status: 400 });
     }
     if (appError.message.startsWith("Invalid status transition:")) {
       return NextResponse.json(
-        { error: "Entry cannot be sent for confirmation in the current state." },
+        { error: "Entry cannot request edit access in the current state." },
         { status: 400 }
       );
     }

@@ -72,8 +72,8 @@ export default function UploadField({
   }, [meta, needsEntry, pendingFile]);
 
   return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-      <div className="text-sm font-semibold">{title}</div>
+    <div className="space-y-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-5 transition-colors hover:border-slate-300 hover:bg-slate-50">
+      <div className="text-sm font-semibold text-slate-700">{title}</div>
 
       {mode === "view" ? (
         meta ? (
@@ -174,7 +174,7 @@ export default function UploadField({
               />
             </label>
 
-            <ActionButton role="context" disabled={!canUpload} onClick={onUpload}>
+            <ActionButton role="primary" disabled={!canUpload} onClick={onUpload}>
               {meta && !pendingFile ? "Uploaded" : "Upload & Save"}
             </ActionButton>
           </div>

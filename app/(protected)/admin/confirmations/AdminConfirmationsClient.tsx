@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CheckCircle2, Inbox } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import SectionCard from "@/components/layout/SectionCard";
@@ -30,8 +31,25 @@ function formatTimestamp(value: string | null) {
   return date.toLocaleString();
 }
 
+function formatRelativeTime(value: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const diff = Date.now() - date.getTime();
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 1) return "Less than 1 hour ago";
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} ${days === 1 ? "day" : "days"} ago`;
+}
+
 function getRowKey(row: Pick<PendingConfirmationRow, "ownerEmail" | "categoryKey" | "entryId">) {
   return `${row.ownerEmail}:${row.categoryKey}:${row.entryId}`;
+}
+
+function getInitials(email: string) {
+  const name = email.split("@")[0] ?? "";
+  return name.slice(0, 2).toUpperCase();
 }
 
 export default function AdminConfirmationsClient() {
@@ -129,43 +147,69 @@ export default function AdminConfirmationsClient() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <PageHeader
-        title="Entry Confirmations"
-        subtitle="Review entries sent for confirmation. Locked mode activates only after approval."
-        backHref={adminHome()}
-        showBack
-      />
+      {/* Gradient Header */}
+      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 mb-6">
+        <PageHeader
+          title="Entry Confirmations"
+          subtitle="Review entries sent for confirmation. Locked mode activates only after approval."
+          backHref={adminHome()}
+          showBack
+          titleClassName="text-white"
+          subtitleClassName="text-slate-300"
+        />
+        {pendingCount > 0 && (
+          <div className="mt-4">
+            <span className="rounded-full bg-amber-500 px-3 py-1 text-sm font-medium text-white">
+              {pendingCount} pending
+            </span>
+          </div>
+        )}
+      </div>
 
-      <div className="mt-6">
-        <SectionCard>
-        <div className="mb-4 text-sm text-muted-foreground">
-          Pending confirmation requests:{" "}
-          <span className="font-medium text-foreground">{pendingCount}</span>
-        </div>
-
+      <SectionCard>
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading...</div>
         ) : rows.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No pending confirmations.</div>
+          <div className="py-8 text-center">
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50">
+              <CheckCircle2 className="size-8 text-emerald-400" />
+            </div>
+            <p className="mt-4 text-base font-medium text-slate-600">No pending requests</p>
+            <p className="mt-1 text-sm text-slate-400">All caught up! Check back later.</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {rows.map((row) => {
               const rowKey = getRowKey(row);
               const busy = busyKey === rowKey;
+              const relative = formatRelativeTime(row.sentForConfirmationAtISO);
 
               return (
-                <div key={rowKey} className="rounded-xl border border-border p-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium">{row.title}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {row.categoryKey} • {row.ownerEmail}
+                <div
+                  key={rowKey}
+                  className="rounded-xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:shadow-sm"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    {/* Avatar + User Info */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-sm font-bold text-white">
+                        {getInitials(row.ownerEmail)}
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Sent: {formatTimestamp(row.sentForConfirmationAtISO)}
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-slate-900 truncate">{row.title}</div>
+                        <div className="mt-0.5 text-xs text-slate-500">
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium">{row.categoryKey}</span>
+                          <span className="mx-1.5">·</span>
+                          <span className="truncate">{row.ownerEmail}</span>
+                        </div>
+                        {relative && (
+                          <div className="mt-0.5 text-xs text-slate-400">Requested {relative}</div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
                       <Link
                         href={row.entryHref}
                         className={getButtonClass("context")}
@@ -205,8 +249,7 @@ export default function AdminConfirmationsClient() {
             })}
           </div>
         )}
-        </SectionCard>
-      </div>
+      </SectionCard>
 
       {error ? (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

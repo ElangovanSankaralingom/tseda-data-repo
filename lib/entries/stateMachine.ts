@@ -21,10 +21,16 @@ export {
 
 export {
   canTransition,
+  computeEditWindowExpiry,
+  getEditTimeRemaining,
+  isEditWindowExpired,
   isEntryCommitted,
+  isEntryEditable,
+  isEntryFinalized,
   isEntryLocked,
   normalizeEntryStatus,
   transitionEntry,
+  type EditTimeRemaining,
   type EntryStateLike,
   type EntryStatus,
   type EntryTransitionAction,

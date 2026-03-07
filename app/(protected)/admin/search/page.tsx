@@ -83,7 +83,7 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
               <select
                 name="category"
                 defaultValue={selectedCategory}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
+                className="select-styled w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
               >
                 <option value="all">All categories</option>
                 {CATEGORY_LIST.map((category) => (

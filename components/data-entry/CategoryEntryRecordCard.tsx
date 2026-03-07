@@ -1,24 +1,19 @@
 "use client";
 
 import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
-import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import { ActionButton } from "@/components/ui/ActionButton";
-import StatusBadge from "@/components/ui/StatusBadge";
 import {
   canSendForConfirmation,
-  getConfirmationStatusLabel,
   getEntryApprovalStatus,
   isEntryLockedFromStatus,
 } from "@/lib/confirmation";
 import {
-  getEntryStreakDisplayState,
-  type EntryDisplayCategory,
-  type EntryStreakDisplayState,
-} from "@/lib/entries/displayLifecycle";
+  getEntryEditTime,
+  getEntryListGroup,
+  type EntryListGroup,
+} from "@/lib/entryCategorization";
 import { isEntryCommitted } from "@/lib/entries/stateMachine";
-import type { StreakDeadlineState } from "@/lib/streakDeadline";
-import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
@@ -57,6 +52,8 @@ type CategoryEntryRenderEntry = {
   requestEditRequestedAtISO?: string | null;
   committedAtISO?: string | null;
   streak?: unknown;
+  streakEligible?: boolean;
+  editWindowExpiresAt?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   createdAt?: string | null;
@@ -66,36 +63,15 @@ type CategoryEntryRenderEntry = {
   } | null;
 };
 
-type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRenderEntry> = {
-  buildHref: (entry: TEntry) => string;
-  buildTitle: (entry: TEntry) => React.ReactNode;
-  buildSubtitle?: (entry: TEntry) => React.ReactNode;
-  renderBody: (entry: TEntry) => React.ReactNode;
-  onView: (entry: TEntry) => void;
-  onEdit?: (entry: TEntry) => void;
-  onPreview?: (entry: TEntry) => void;
-  previewUrl?: (entry: TEntry) => string | null | undefined;
-  hideActions?: (entry: TEntry, category: EntryDisplayCategory) => boolean;
-  enableWorkflowActions?: (entry: TEntry, category: EntryDisplayCategory) => boolean;
-  deleteLabel?: string | ((entry: TEntry) => string);
-  requestConfirmation?: (request: DeleteConfirmationRequest) => void;
-  buildDeleteRequest?: (entry: TEntry) => DeleteConfirmationRequest;
-  requestingEditIds: Record<string, boolean | undefined>;
-  sendingConfirmationIds: Record<string, boolean | undefined>;
-  requestEdit: (entry: TEntry) => void | Promise<void>;
-  cancelRequestEdit: (entry: TEntry) => void | Promise<void>;
-  sendForConfirmation: (entry: TEntry) => void | Promise<void>;
-};
-
 type CategoryEntryRecordCardProps = {
-  category: EntryDisplayCategory;
+  group: EntryListGroup;
   index: number;
   href: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
-  streakState?: EntryStreakDisplayState;
-  deadlineState: StreakDeadlineState;
+  metadata?: React.ReactNode;
   confirmationStatus?: EntryStatus | string | null;
+  editTime?: ReturnType<typeof getEntryEditTime>;
   createdAt?: string;
   updatedAt?: string;
   hideActions?: boolean;
@@ -109,30 +85,20 @@ type CategoryEntryRecordCardProps = {
   children?: React.ReactNode;
 };
 
-function getSendLabel(
-  confirmationStatus: CategoryEntryRecordCardProps["confirmationStatus"],
-  sendForConfirmation: SendForConfirmationControls
-) {
-  if (sendForConfirmation.sending) {
-    return sendForConfirmation.sendingLabel ?? "Sending...";
-  }
-
-  if (confirmationStatus === "PENDING_CONFIRMATION") {
-    return sendForConfirmation.pendingLabel ?? "Pending Confirmation";
-  }
-
-  return sendForConfirmation.label ?? "Send for Confirmation";
+function getActionLabel(group: EntryListGroup, defaultLabel: string): string {
+  if (group === "in_the_works") return "Continue";
+  return defaultLabel;
 }
 
 export default function CategoryEntryRecordCard({
-  category,
+  group,
   index,
   href,
   title,
   subtitle,
-  streakState = "none",
-  deadlineState,
+  metadata,
   confirmationStatus,
+  editTime,
   createdAt,
   updatedAt,
   hideActions = false,
@@ -140,61 +106,54 @@ export default function CategoryEntryRecordCard({
   onPreview,
   onEdit,
   onDelete,
-  deleteLabel = "Delete Entry",
+  deleteLabel = "Delete",
   sendForConfirmation,
   requestEdit,
   children,
 }: CategoryEntryRecordCardProps) {
   const isLocked = requestEdit?.locked ?? false;
+  const isFinalized = group === "locked_in";
+  const isUnderReview = group === "under_review";
 
   return (
     <EntryListCardShell
-      category={category}
+      group={group}
       index={index}
       href={href}
       title={title}
       subtitle={subtitle}
-      streakState={streakState}
-      status={confirmationStatus ?? undefined}
+      metadata={metadata}
+      editTime={editTime}
       createdAt={createdAt}
       updatedAt={updatedAt}
-      badges={
-        <>
-          <EntryLockBadge deadlineState={deadlineState} />
-          {confirmationStatus ? (
-            <StatusBadge status={confirmationStatus} />
-          ) : null}
-        </>
-      }
       actions={
         !hideActions ? (
           <div className="flex items-center gap-2">
-            <ActionButton onClick={onView}>View</ActionButton>
+            {/* Finalized or Under Review: View as primary action */}
+            {(isFinalized || isUnderReview) ? (
+              <ActionButton role="context" onClick={onView}>View</ActionButton>
+            ) : null}
 
-            {isLocked ? (
-              <ActionButton role="context" onClick={onPreview} disabled={!onPreview}>
-                Preview
-              </ActionButton>
-            ) : (
+            {/* Editable groups: Edit/Continue as primary */}
+            {!isFinalized && !isUnderReview && !isLocked ? (
               <>
-                {onEdit ? <ActionButton onClick={onEdit}>Edit</ActionButton> : null}
+                {onEdit ? (
+                  <ActionButton role="primary" onClick={onEdit}>
+                    {getActionLabel(group, "Edit")}
+                  </ActionButton>
+                ) : (
+                  <ActionButton role="context" onClick={onView}>View</ActionButton>
+                )}
                 {onDelete ? (
-                  <ActionButton role="destructive" onClick={onDelete}>
+                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
                     {deleteLabel}
                   </ActionButton>
                 ) : null}
-                {sendForConfirmation ? (
-                  <ActionButton
-                    onClick={sendForConfirmation.onClick}
-                    disabled={sendForConfirmation.disabled || sendForConfirmation.sending}
-                  >
-                    {getSendLabel(confirmationStatus, sendForConfirmation)}
-                  </ActionButton>
-                ) : null}
               </>
-            )}
+            ) : null}
 
-            {requestEdit ? (
+            {/* Locked (finalized): show request edit */}
+            {isFinalized && requestEdit ? (
               <RequestEditAction
                 locked={requestEdit.locked}
                 status={requestEdit.status}
@@ -204,6 +163,31 @@ export default function CategoryEntryRecordCard({
                 onCancel={requestEdit.onCancel}
               />
             ) : null}
+
+            {/* Under review: cancel request */}
+            {isUnderReview && requestEdit ? (
+              <RequestEditAction
+                locked={requestEdit.locked}
+                status={requestEdit.status}
+                requestedAtISO={requestEdit.requestedAtISO}
+                requesting={requestEdit.requesting}
+                onRequest={requestEdit.onRequest}
+                onCancel={requestEdit.onCancel}
+              />
+            ) : null}
+
+            {/* Send for confirmation (non-finalized, non-review) */}
+            {!isFinalized && !isUnderReview && sendForConfirmation ? (
+              <ActionButton
+                role="primary"
+                onClick={sendForConfirmation.onClick}
+                disabled={sendForConfirmation.disabled || sendForConfirmation.sending}
+              >
+                {sendForConfirmation.sending
+                  ? (sendForConfirmation.sendingLabel ?? "Sending...")
+                  : (sendForConfirmation.label ?? "Send for Confirmation")}
+              </ActionButton>
+            ) : null}
           </div>
         ) : null
       }
@@ -212,6 +196,27 @@ export default function CategoryEntryRecordCard({
     </EntryListCardShell>
   );
 }
+
+type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRenderEntry> = {
+  buildHref: (entry: TEntry) => string;
+  buildTitle: (entry: TEntry) => React.ReactNode;
+  buildSubtitle?: (entry: TEntry) => React.ReactNode;
+  renderBody: (entry: TEntry) => React.ReactNode;
+  onView: (entry: TEntry) => void;
+  onEdit?: (entry: TEntry) => void;
+  onPreview?: (entry: TEntry) => void;
+  previewUrl?: (entry: TEntry) => string | null | undefined;
+  hideActions?: (entry: TEntry, group: EntryListGroup) => boolean;
+  enableWorkflowActions?: (entry: TEntry, group: EntryListGroup) => boolean;
+  deleteLabel?: string | ((entry: TEntry) => string);
+  requestConfirmation?: (request: DeleteConfirmationRequest) => void;
+  buildDeleteRequest?: (entry: TEntry) => DeleteConfirmationRequest;
+  requestingEditIds: Record<string, boolean | undefined>;
+  sendingConfirmationIds: Record<string, boolean | undefined>;
+  requestEdit: (entry: TEntry) => void | Promise<void>;
+  cancelRequestEdit: (entry: TEntry) => void | Promise<void>;
+  sendForConfirmation: (entry: TEntry) => void | Promise<void>;
+};
 
 export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRenderEntry>({
   buildHref,
@@ -233,28 +238,28 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
   cancelRequestEdit,
   sendForConfirmation,
 }: CategoryEntryRecordRendererOptions<TEntry>) {
-  function RenderCategoryEntryRecord(entry: TEntry, category: EntryDisplayCategory, index: number) {
-    const workflowEnabled = enableWorkflowActions?.(entry, category) ?? true;
+  function RenderCategoryEntryRecord(entry: TEntry, group: EntryListGroup, index: number) {
+    const workflowEnabled = enableWorkflowActions?.(entry, group) ?? true;
     const confirmationStatus = workflowEnabled ? getEntryApprovalStatus(entry) : undefined;
     const lockApproved = workflowEnabled ? isEntryLockedFromStatus(entry) : false;
     const canRenderSendAction = workflowEnabled && isEntryCommitted(entry);
     const resolvedDeleteRequest = buildDeleteRequest?.(entry);
     const resolvedPreviewUrl = previewUrl?.(entry) ?? entry.pdfMeta?.url ?? null;
+    const editTime = getEntryEditTime(entry);
 
     return (
       <CategoryEntryRecordCard
         key={entry.id}
-        category={category}
+        group={group}
         index={index}
         href={buildHref(entry)}
         title={buildTitle(entry)}
         subtitle={buildSubtitle?.(entry)}
-        streakState={getEntryStreakDisplayState(entry)}
-        deadlineState={getStreakDeadlineState(entry)}
         confirmationStatus={confirmationStatus}
+        editTime={editTime}
         createdAt={entry.createdAt ?? undefined}
         updatedAt={entry.updatedAt ?? undefined}
-        hideActions={hideActions?.(entry, category) ?? false}
+        hideActions={hideActions?.(entry, group) ?? false}
         onView={() => onView(entry)}
         onPreview={
           onPreview

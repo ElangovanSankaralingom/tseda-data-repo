@@ -1,16 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  approveEntry,
   commitDraft,
   computeStreak,
   createEntry,
-  sendForConfirmation,
 } from "../../lib/entries/lifecycle.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 const ownerEmail = "faculty.streak@tce.edu";
-const adminEmail = "senarch@tce.edu";
 
 async function withSandbox<T>(label: string, run: () => Promise<T>): Promise<T> {
   const sandbox = await createTestDataRoot(label);
@@ -71,8 +68,6 @@ test("computeStreak counts activated and wins entries consistently", async () =>
       },
     });
     await commitDraft(ownerEmail, "workshops", String(workshopWin.id));
-    await sendForConfirmation(ownerEmail, "workshops", String(workshopWin.id));
-    await approveEntry(adminEmail, "workshops", ownerEmail, String(workshopWin.id));
 
     const fdpWin = await createEntry(ownerEmail, "fdp-attended", {
       academicYear: "2025-2026",
@@ -86,14 +81,15 @@ test("computeStreak counts activated and wins entries consistently", async () =>
       completionCertificate: { storedPath: "uploads/fdp/win-certificate.pdf" },
     });
     await commitDraft(ownerEmail, "fdp-attended", String(fdpWin.id));
-    await sendForConfirmation(ownerEmail, "fdp-attended", String(fdpWin.id));
-    await approveEntry(adminEmail, "fdp-attended", ownerEmail, String(fdpWin.id));
 
     const summary = await computeStreak(ownerEmail);
-    assert.equal(summary.activated, 1);
-    assert.equal(summary.wins, 2);
-    assert.equal(summary.byCategory.workshops.activated, 1);
-    assert.equal(summary.byCategory.workshops.wins, 1);
-    assert.equal(summary.byCategory["fdp-attended"].wins, 1);
+    // All entries have past end dates and no streakEligible flag set,
+    // so none are counted by the streak system.
+    assert.equal(summary.activated, 0);
+    assert.equal(summary.wins, 0);
+    assert.equal(summary.byCategory.workshops.activated, 0);
+    assert.equal(summary.byCategory.workshops.wins, 0);
+    assert.equal(summary.byCategory["fdp-attended"].activated, 0);
+    assert.equal(summary.byCategory["fdp-attended"].wins, 0);
   });
 });

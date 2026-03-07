@@ -3,18 +3,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import {
-  approveEntry,
   commitDraft,
   createEntry,
   deleteEntry,
-  sendForConfirmation,
 } from "../../lib/entries/lifecycle.ts";
 import { ensureUserIndex } from "../../lib/data/indexStore.ts";
 import { getUserStoreDir } from "../../lib/userStore.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 const ownerEmail = "faculty.index@tce.edu";
-const adminEmail = "senarch@tce.edu";
 
 function buildUploadedFile(seed: string) {
   return {
@@ -75,33 +72,20 @@ test("ensureUserIndex creates index.json from category files when missing", asyn
   });
 });
 
-test("entry confirmation transitions keep pending and approved index counts in sync", async () => {
+test("entry generation updates index counts", async () => {
   await withSandbox("index-store-status", async () => {
     const created = await createEntry(ownerEmail, "workshops", buildCompleteWorkshopPayload());
 
     await commitDraft(ownerEmail, "workshops", String(created.id));
-    await sendForConfirmation(ownerEmail, "workshops", String(created.id));
     let ensured = await ensureUserIndex(ownerEmail);
     assert.equal(ensured.ok, true);
     if (!ensured.ok) return;
-    assert.equal(ensured.data.countsByStatus.PENDING_CONFIRMATION, 1);
-    assert.equal(ensured.data.pendingByCategory.workshops, 1);
-    assert.equal(ensured.data.streakSnapshot.streakActivatedCount, 1);
-    assert.equal(ensured.data.streakSnapshot.streakWinsCount, 0);
-    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.activated, 1);
-    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.wins, 0);
-
-    await approveEntry(adminEmail, "workshops", ownerEmail, String(created.id));
-    ensured = await ensureUserIndex(ownerEmail);
-    assert.equal(ensured.ok, true);
-    if (!ensured.ok) return;
-    assert.equal(ensured.data.countsByStatus.PENDING_CONFIRMATION, 0);
-    assert.equal(ensured.data.countsByStatus.APPROVED, 1);
-    assert.equal(ensured.data.approvedByCategory.workshops, 1);
+    assert.equal(ensured.data.countsByStatus.GENERATED, 1);
+    // Entry has past endDate and no streakEligible flag — not counted by streak system
     assert.equal(ensured.data.streakSnapshot.streakActivatedCount, 0);
-    assert.equal(ensured.data.streakSnapshot.streakWinsCount, 1);
+    assert.equal(ensured.data.streakSnapshot.streakWinsCount, 0);
     assert.equal(ensured.data.streakSnapshot.byCategory.workshops.activated, 0);
-    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.wins, 1);
+    assert.equal(ensured.data.streakSnapshot.byCategory.workshops.wins, 0);
   });
 });
 

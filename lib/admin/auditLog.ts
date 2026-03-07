@@ -13,7 +13,7 @@ import { safeAction } from "@/lib/safeAction";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUsersRootDir } from "@/lib/userStore";
 
-const AUDIT_ACTIONS = ["APPROVE", "REJECT", "SEND_FOR_CONFIRMATION"] as const;
+const AUDIT_ACTIONS = ["REQUEST_EDIT", "GRANT_EDIT"] as const;
 const AUDIT_ACTION_SET = new Set<WalAction>(AUDIT_ACTIONS);
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

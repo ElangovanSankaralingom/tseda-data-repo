@@ -518,6 +518,7 @@ export function WorkshopsPage({
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
+    smartGroupedEntries,
     handleCancel,
     hasUnsavedChanges,
     persistCurrentMutation,
@@ -1058,7 +1059,7 @@ export function WorkshopsPage({
           ? createGroupedEntryListCard({
               title: "Saved Workshop Entries",
               subtitle: "Your saved workshop records are stored locally and keyed to your signed-in email.",
-              groupedEntries,
+              groupedEntries: smartGroupedEntries,
               renderEntry: renderSavedEntry,
             })
           : null

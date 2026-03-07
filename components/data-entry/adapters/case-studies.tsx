@@ -505,6 +505,7 @@ export function CaseStudiesPage({
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
+    smartGroupedEntries,
     handleCancel,
     hasUnsavedChanges,
     persistCurrentMutation,
@@ -1167,7 +1168,7 @@ export function CaseStudiesPage({
           ? createGroupedEntryListCard({
               title: "Saved Case Study Entries",
               subtitle: "Your saved case study records are stored locally and keyed to your signed-in email.",
-              groupedEntries,
+              groupedEntries: smartGroupedEntries,
               renderEntry: renderSavedEntry,
             })
           : null

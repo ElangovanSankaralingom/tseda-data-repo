@@ -99,7 +99,7 @@ export default function AdminExportForm({
           <select
             value={userEmail}
             onChange={(event) => setUserEmail(event.target.value)}
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
           >
             {users.map((email) => (
               <option key={email} value={email}>
@@ -114,7 +114,7 @@ export default function AdminExportForm({
           <select
             value={category}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
           >
             {categories.map((item) => (
               <option key={item.key} value={item.key}>
@@ -129,7 +129,7 @@ export default function AdminExportForm({
           <select
             value={format}
             onChange={(event) => setFormat(event.target.value === "csv" ? "csv" : "xlsx")}
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
           >
             <option value="xlsx">Excel (.xlsx)</option>
             <option value="csv">CSV (.csv)</option>
@@ -162,7 +162,7 @@ export default function AdminExportForm({
             type="date"
             value={fromDate}
             onChange={(event) => setFromDate(event.target.value)}
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
           />
         </label>
         <label className="space-y-1 text-sm">
@@ -171,7 +171,7 @@ export default function AdminExportForm({
             type="date"
             value={toDate}
             onChange={(event) => setToDate(event.target.value)}
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
           />
         </label>
       </div>

@@ -2,7 +2,7 @@
 
 import BackTo from "@/components/nav/BackTo";
 import StatusBadge from "@/components/ui/StatusBadge";
-import WorkflowHelpStrip from "@/components/entry/WorkflowHelpStrip";
+
 import {
   getCategoryConfig,
   getCategoryTitle,
@@ -32,7 +32,6 @@ type EntryShellProps = {
   onBack?: (() => void | Promise<void>) | undefined;
   showUnsavedChanges?: boolean;
   unsavedLabel?: string;
-  showWorkflowHelp?: boolean;
 };
 
 function getModeTitle(mode: EntryShellMode) {
@@ -58,10 +57,8 @@ export default function EntryShell({
   onBack,
   showUnsavedChanges = false,
   unsavedLabel = "Unsaved changes",
-  showWorkflowHelp = true,
 }: EntryShellProps) {
   const config = getCategoryConfig(category);
-  const entryId = String(entry?.id ?? "").trim();
   const entryTitle = entry ? getCategoryTitle(entry, category) : "";
   const resolvedTitle = title?.trim() || entryTitle || getModeTitle(mode);
   const resolvedSubtitle = subtitle ?? config.subtitle ?? "";
@@ -78,7 +75,7 @@ export default function EntryShell({
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {showBack ? (
-              <BackTo href={backHref} disabled={backDisabled} compact onClick={onBack} />
+              <BackTo href={backHref} disabled={backDisabled} onClick={onBack} />
             ) : null}
             <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500">
               {config.label}
@@ -91,10 +88,7 @@ export default function EntryShell({
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight">{resolvedTitle}</h1>
-          {entryId ? (
-            <p className="mt-1 text-xs text-muted-foreground">Entry ID: {entryId}</p>
-          ) : null}
-          {resolvedSubtitle ? <p className="mt-2 text-sm text-muted-foreground">{resolvedSubtitle}</p> : null}
+          {resolvedSubtitle ? <p className="mt-2 text-sm text-slate-500">{resolvedSubtitle}</p> : null}
 
           {showStatusRow ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -116,10 +110,8 @@ export default function EntryShell({
         ) : null}
       </div>
 
-      {showWorkflowHelp && isEditingMode ? <WorkflowHelpStrip className="mt-4" /> : null}
-
       {isEditingMode && actions ? (
-        <div className="sticky top-14 z-40 mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div className="sticky top-14 z-40 mt-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-sm">
           {actions}
         </div>
       ) : null}
