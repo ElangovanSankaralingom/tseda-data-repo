@@ -6,9 +6,10 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { normalizeError } from "@/lib/errors";
 import { isEntryEditable } from "@/lib/entries/lock";
+import { readCategoryEntryById, upsertCategoryEntry } from "@/lib/dataStore";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
+import { safeEmailDir } from "@/lib/userStore";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -38,22 +39,9 @@ function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-async function readList(email: string): Promise<FdpAttendedRecord[]> {
-  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
-
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as FdpAttendedRecord[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeList(email: string, list: FdpAttendedRecord[]) {
-  const filePath = getUserCategoryStoreFile(email, "fdp-attended.json");
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(list, null, 2), "utf8");
+async function getEntryById(email: string, recordId: string): Promise<FdpAttendedRecord | null> {
+  const entry = await readCategoryEntryById(email, "fdp-attended", recordId);
+  return entry as FdpAttendedRecord | null;
 }
 
 async function getAuthorizedEmail() {
@@ -95,9 +83,7 @@ function resolveOwnedStoredPath(email: string, storedPath: string) {
 }
 
 async function getEntryForRecordId(email: string, recordId: string) {
-  const safeRecordId = sanitizeSegment(recordId);
-  const list = await readList(email);
-  return list.find((item) => sanitizeSegment(String(item?.id ?? "")) === safeRecordId) ?? null;
+  return getEntryById(email, recordId);
 }
 
 function getRecordIdFromStoredPath(storedPath: string) {
@@ -260,17 +246,14 @@ export async function DELETE(request: Request) {
     const resolved = resolveOwnedStoredPath(email, storedPath);
     await fs.unlink(resolved.absolutePath).catch(() => null);
     if (recordId && slot) {
-      const list = await readList(email);
-      const nextList = list.map((item) =>
-        sanitizeSegment(String(item?.id ?? "")) === sanitizeSegment(recordId)
-          ? {
-              ...item,
-              [slot]: null,
-              updatedAt: new Date().toISOString(),
-            }
-          : item
-      );
-      await writeList(email, nextList);
+      const existing = await getEntryById(email, recordId);
+      if (existing) {
+        await upsertCategoryEntry(email, "fdp-attended", {
+          ...existing,
+          [slot]: null,
+          updatedAt: new Date().toISOString(),
+        });
+      }
     }
     return NextResponse.json({ ok: true, storedPath: resolved.normalized });
   } catch (error) {
