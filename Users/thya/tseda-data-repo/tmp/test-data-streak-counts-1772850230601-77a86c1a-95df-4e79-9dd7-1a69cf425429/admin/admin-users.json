@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "users": [
+    {
+      "email": "senarch@tce.edu",
+      "roles": [
+        "MASTER_ADMIN"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "version": 2,
+  "userEmail": "faculty.streak@tce.edu",
+  "updatedAt": "2026-03-07T02:23:01.567Z",
+  "totalsByCategory": {
+    "fdp-attended": 1,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 2
+  },
+  "countsByStatus": {
+    "DRAFT": 1,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 2,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 1,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-07T02:23:01.550Z"
+  },
+  "streakSnapshot": {
+    "ruleVersion": 2,
+    "streakActivatedCount": 1,
+    "streakWinsCount": 2,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 1
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 1,
+        "wins": 1
+      }
+    },
+    "activeEntries": [
+      {
+        "id": "40e2d524-5402-460e-9368-59f63872a2e4",
+        "categoryKey": "workshops",
+        "dueAtISO": null,
+        "sortAtISO": "2026-03-07T02:23:01.377Z"
+      }
+    ],
+    "lastComputedAt": "2026-03-07T02:23:01.567Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:40e2d524-5402-460e-9368-59f63872a2e4": {
+      "entryId": "40e2d524-5402-460e-9368-59f63872a2e4",
+      "categoryKey": "workshops",
+      "title": "Active streak workshop",
+      "text": "active streak workshop workshops draft 2025 2026 2nd year active streak workshop speaker active org active",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-07T02:23:01.377Z",
+      "createdAtISO": "2026-03-07T02:23:01.365Z"
+    },
+    "workshops:8b3ce28a-9976-4fa8-9d8d-4e89dfe474c6": {
+      "entryId": "8b3ce28a-9976-4fa8-9d8d-4e89dfe474c6",
+      "categoryKey": "workshops",
+      "title": "Won streak workshop",
+      "text": "won streak workshop workshops approved 2025 2026 2nd year won streak workshop speaker won org won",
+      "status": "APPROVED",
+      "updatedAtISO": "2026-03-07T02:23:01.550Z",
+      "createdAtISO": "2026-03-07T02:23:01.385Z"
+    },
+    "fdp-attended:6c73d60b-70c7-4565-9643-f2311440c3f0": {
+      "entryId": "6c73d60b-70c7-4565-9643-f2311440c3f0",
+      "categoryKey": "fdp-attended",
+      "title": "FDP Won",
+      "text": "fdp won fdp attended approved 2025 2026 2nd year fdp won tce",
+      "status": "APPROVED",
+      "updatedAtISO": "2026-03-07T02:23:01.566Z",
+      "createdAtISO": "2026-03-07T02:23:01.553Z"
+    }
+  }
+}

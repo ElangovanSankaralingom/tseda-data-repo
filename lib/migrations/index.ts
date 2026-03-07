@@ -6,7 +6,7 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeEntry as normalizeEntryRecord } from "@/lib/normalize";
 import { err, ok, type Result } from "@/lib/result";
-import { ENTRY_STATUSES, type Entry, type EntryStatus } from "@/lib/types/entry";
+import { ENTRY_STATUSES, isEntryStatus, type Entry, type EntryStatus } from "@/lib/types/entry";
 import type { UserIndex } from "@/lib/data/indexStore";
 import type { WalAction, WalActorRole, WalEvent } from "@/lib/data/wal";
 
@@ -20,8 +20,6 @@ export type CategoryStoreV2 = {
   byId: Record<string, Entry>;
   order: string[];
 };
-
-const ENTRY_STATUS_KEYS: readonly EntryStatus[] = ENTRY_STATUSES;
 
 const WAL_ACTIONS = new Set<WalAction>([
   "CREATE",
@@ -63,6 +61,8 @@ function toOptionalISO(value: unknown): string | null {
   return Number.isNaN(parsed) ? null : candidate;
 }
 
+// Legacy lowercase workflow stages are accepted only while normalizing
+// persisted historical data. Active workflow code must use EntryStatus.
 function getLegacyWorkflowStage(value: unknown): "draft" | "final" | "completed" | null {
   const normalized = toTrimmedString(value).toLowerCase();
   if (normalized === "draft") return "draft";
@@ -106,7 +106,7 @@ function normalizeIndexSearchMap(
     const text = toTrimmedString(value.text);
     const status = toTrimmedString(value.status) as EntryStatus;
     if (!entryId || !CATEGORY_KEYS.includes(categoryKey) || !title || !text) continue;
-    if (!ENTRY_STATUS_KEYS.includes(status)) continue;
+    if (!isEntryStatus(status)) continue;
 
     const key = `${categoryKey}:${entryId}`;
     next[key] = {
@@ -403,7 +403,7 @@ function migrateUserIndexV0ToV1(raw: Record<string, unknown>, nowISO: string) {
     };
   }
 
-  for (const status of ENTRY_STATUS_KEYS) {
+  for (const status of ENTRY_STATUSES) {
     next.countsByStatus[status] = toNonNegativeInteger(countsByStatus?.[status]);
   }
 

@@ -26,7 +26,13 @@ import {
 } from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
-import { ENTRY_STATUSES, type Entry, type EntryStatus, type UploadedFile } from "@/lib/types/entry";
+import {
+  ENTRY_STATUSES,
+  isEntryStatus,
+  type Entry,
+  type EntryStatus,
+  type UploadedFile,
+} from "@/lib/types/entry";
 import { getUserCategoryStoreFile, getUsersRootDir, getUserStoreDir } from "@/lib/userStore";
 import { logger, withTimer } from "@/lib/logger";
 
@@ -121,8 +127,6 @@ type CategoryRawRead = {
 };
 
 type EntryStatusCounts = Record<EntryStatus, number>;
-
-const ENTRY_STATUS_KEYS: readonly EntryStatus[] = ENTRY_STATUSES;
 
 const INDEX_FILE_NAME = "index.json";
 const WAL_FILE_NAME = "events.log";
@@ -576,7 +580,7 @@ async function checkCategoryIntegrity(
     }
 
     const statusValue = String(entry.confirmationStatus ?? "").trim();
-    if (!ENTRY_STATUS_KEYS.includes(statusValue as EntryStatus)) {
+    if (!isEntryStatus(statusValue)) {
       issues.push(
         toIssue({
           code: "ENTRY_STATUS_INVALID",
@@ -770,7 +774,7 @@ async function checkIndexIntegrity(
     }
   }
 
-  for (const status of ENTRY_STATUS_KEYS) {
+  for (const status of ENTRY_STATUSES) {
     const indexCount = Number(index.countsByStatus[status] ?? 0);
     const derivedCount = derived.countsByStatus[status];
     if (indexCount !== derivedCount) {
