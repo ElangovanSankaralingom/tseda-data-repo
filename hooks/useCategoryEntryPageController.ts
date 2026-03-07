@@ -1,18 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from "react";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
+import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import {
   runGenerateEntryOrchestration,
+  runPersistCurrentEntryMutation,
   runSaveDraftOrchestration,
   type EntrySaveIntent,
   type EntrySaveSource,
 } from "@/lib/entries/pageOrchestration";
+import type { CategoryKey, RequestEditableEntry } from "@/lib/entries/types";
 import { groupEntries, type CategorizableEntry } from "@/lib/entryCategorization";
 import { ok } from "@/lib/result";
+import type { EntryStatus } from "@/lib/types/entry";
 
 type ToastState = {
   type: "ok" | "err";
@@ -32,7 +46,16 @@ type GenerateEntrySnapshot<TEntry> = (
   persistDraft: (entry: TEntry) => Promise<TEntry>
 ) => Promise<{ entry: TEntry }>;
 
-type UseCategoryEntryPageControllerOptions<TEntry extends CategorizableEntry & { id?: string | null }> = {
+type ConfirmableEntryLike = {
+  id: string;
+  status?: string | null;
+  confirmationStatus?: EntryStatus;
+};
+
+type CategoryPageEntry = CategorizableEntry & RequestEditableEntry & ConfirmableEntryLike;
+
+type UseCategoryEntryPageControllerOptions<TEntry extends CategoryPageEntry> = {
+  category: CategoryKey;
   list: TEntry[];
   setList: Dispatch<SetStateAction<TEntry[]>>;
   form: TEntry;
@@ -54,8 +77,10 @@ type UseCategoryEntryPageControllerOptions<TEntry extends CategorizableEntry & {
   buildEntryToSave: () => TEntry;
   buildOptimisticEntry: (entry: TEntry) => TEntry;
   persistProgress: (entry: TEntry) => Promise<TEntry>;
+  persistRequestEdit: (entry: TEntry) => Promise<TEntry>;
+  persistCancelRequestEdit: (entry: TEntry) => Promise<TEntry>;
   commitDraft: (entryId: string) => Promise<TEntry>;
-  applyPersistedEntry: (entry: TEntry) => void;
+  applyPersistedEntry: (entry: TEntry) => void | Promise<void>;
   afterPersistSuccess?: (entry: TEntry, intent: EntrySaveIntent) => void | Promise<void>;
   setSubmitAttemptedFinal?: Dispatch<SetStateAction<boolean>>;
   saveBusyMessage?: string;
@@ -93,9 +118,8 @@ function hasBusyValue(value: BusyUploadSource): boolean {
   return Object.values(value).some((item) => hasBusyValue(item as BusyUploadSource));
 }
 
-export function useCategoryEntryPageController<
-  TEntry extends CategorizableEntry & { id?: string | null },
->({
+export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>({
+  category,
   list,
   setList,
   form,
@@ -117,6 +141,8 @@ export function useCategoryEntryPageController<
   buildEntryToSave,
   buildOptimisticEntry,
   persistProgress,
+  persistRequestEdit,
+  persistCancelRequestEdit,
   commitDraft,
   applyPersistedEntry,
   afterPersistSuccess,
@@ -207,6 +233,7 @@ export function useCategoryEntryPageController<
     },
     [
       afterPersistSuccess,
+      applyPersistedEntry,
       buildEntryToSave,
       buildOptimisticEntry,
       closeForm,
@@ -219,7 +246,6 @@ export function useCategoryEntryPageController<
       saveErrorMessage,
       saveSuccessMessage,
       setList,
-      applyPersistedEntry,
     ]
   );
 
@@ -259,6 +285,52 @@ export function useCategoryEntryPageController<
     markGenerateAttempted,
     persistProgress,
   ]);
+
+  const showToast = useCallback(
+    (type: ToastState["type"], msg: string, durationMs = 1800) => {
+      setToast({ type, msg });
+      setTimeout(() => setToast(null), durationMs);
+    },
+    []
+  );
+
+  const runWithSaveGuard = useCallback(
+    async <T,>(task: () => Promise<T>, lockedMessage = "Please wait for the current save to finish.") => {
+      if (saveLockRef.current) {
+        throw new Error(lockedMessage);
+      }
+
+      saveLockRef.current = true;
+      try {
+        return await task();
+      } finally {
+        saveLockRef.current = false;
+      }
+    },
+    []
+  );
+
+  const persistCurrentMutation = useCallback(
+    async <TResult = TEntry,>(options: {
+      buildNextEntry: (current: TEntry) => TEntry;
+      selectResult?: (entry: TEntry) => TResult;
+      lockedMessage?: string;
+      intent?: EntrySaveIntent;
+    }): Promise<TResult> => {
+      return runPersistCurrentEntryMutation<TEntry, TResult>({
+        saveLockRef,
+        formRef,
+        persistProgress,
+        applyPersistedEntry,
+        afterPersistSuccess,
+        buildNextEntry: options.buildNextEntry,
+        selectResult: options.selectResult,
+        lockedMessage: options.lockedMessage,
+        intent: options.intent,
+      });
+    },
+    [afterPersistSuccess, applyPersistedEntry, formRef, persistProgress]
+  );
 
   const {
     status: autoSaveStatus,
@@ -303,33 +375,25 @@ export function useCategoryEntryPageController<
     saveAndCloseBusyMessage,
   });
 
-  const showToast = useCallback(
-    (type: ToastState["type"], msg: string, durationMs = 1800) => {
-      setToast({ type, msg });
-      setTimeout(() => setToast(null), durationMs);
-    },
-    []
-  );
+  const { requestingIds: requestingEditIds, requestEdit, cancelRequestEdit } = useRequestEdit<TEntry>({
+    setItems: setList,
+    persistRequest: persistRequestEdit,
+    persistCancel: persistCancelRequestEdit,
+    onSuccess: (message) => showToast("ok", message, 1400),
+    onError: (message) => showToast("err", message, 1800),
+  });
 
-  const runWithSaveGuard = useCallback(
-    async <T,>(task: () => Promise<T>, lockedMessage = "Please wait for the current save to finish.") => {
-      if (saveLockRef.current) {
-        throw new Error(lockedMessage);
-      }
-
-      saveLockRef.current = true;
-      try {
-        return await task();
-      } finally {
-        saveLockRef.current = false;
-      }
-    },
-    []
-  );
+  const { sendingIds: sendingConfirmationIds, sendForConfirmation } = useEntryConfirmation<TEntry>({
+    category,
+    setItems: setList,
+    onSuccess: (message) => showToast("ok", message, 1400),
+    onError: (message) => showToast("err", message, 1800),
+  });
 
   return {
     actionState,
     autoSaveStatus,
+    cancelRequestEdit,
     generateEntry,
     groupedEntries,
     handleCancel,
@@ -339,10 +403,15 @@ export function useCategoryEntryPageController<
     hasUnsavedChanges,
     lifecycle,
     markAutoSaveSaved,
+    persistCurrentMutation,
+    requestEdit,
+    requestingEditIds,
     runWithSaveGuard,
     saveDraftChanges,
     saveIntent,
     saving,
+    sendForConfirmation,
+    sendingConfirmationIds,
     setToast,
     showToast,
     toast,

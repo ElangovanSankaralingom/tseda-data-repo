@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "byId": {
+    "0a335ec1-9a92-44e9-a2e3-c48124662b83": {
+      "eventName": "AI Ethics Lecture",
+      "speakerName": "Dr Turing",
+      "id": "0a335ec1-9a92-44e9-a2e3-c48124662b83",
+      "createdAt": "2026-03-07T05:06:39.168Z",
+      "updatedAt": "2026-03-07T05:06:39.168Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "0a335ec1-9a92-44e9-a2e3-c48124662b83"
+  ]
+}
