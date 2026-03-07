@@ -404,8 +404,8 @@ function buildCategoryStats(entries: Entry[]): CategoryDerivedStats {
 
   for (const entry of entries) {
     const status = normalizeEntryStatus(entry as EntryStateLike);
-    if (status === "PENDING_CONFIRMATION") pending += 1;
-    if (status === "APPROVED") approved += 1;
+    if (status === "EDIT_REQUESTED") pending += 1;
+    if (status === "GENERATED" || status === "EDIT_GRANTED") approved += 1;
 
     const candidate = toISO(entry.updatedAt) ?? toISO(entry.createdAt);
     if (!candidate) continue;

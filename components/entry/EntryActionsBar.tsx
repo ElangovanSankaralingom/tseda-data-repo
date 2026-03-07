@@ -47,38 +47,34 @@ export function HeaderEntryActionsBar({
   if (isEditing && !isViewMode) {
     const workflowDisabled = workflowAction?.disabled ?? false;
     return (
-      <div className="flex w-full flex-wrap items-start justify-between gap-3">
+      <div className="flex w-full flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <ActionButton role="context" onClick={onCancel} disabled={cancelDisabled}>
-            Cancel
-          </ActionButton>
-          <SaveButton onClick={onSave} disabled={saveDisabled}>
-            {saving && saveIntent === "save" ? "Saving..." : "Save Draft"}
-          </SaveButton>
-          <ActionButton role="context" onClick={onDone} disabled={doneDisabled}>
-            {saving && saveIntent === "done" ? "Saving..." : "Save & Close"}
-          </ActionButton>
-        </div>
-
-        <div className="flex min-w-[220px] flex-col items-start gap-1 sm:items-end">
           {workflowAction ? (
-            <>
+            <div className="flex flex-col items-start gap-1">
               <ActionButton
-                role="context"
+                role="primary"
                 onClick={workflowAction.onClick}
                 disabled={workflowDisabled}
               >
                 {saving ? workflowAction.busyLabel ?? workflowAction.label : workflowAction.label}
               </ActionButton>
               {workflowDisabled ? (
-                <p className="text-xs text-muted-foreground">{workflowDisabledHint}</p>
+                <p className="text-xs text-slate-500">{workflowDisabledHint}</p>
               ) : null}
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Send for Confirmation is available as a separate workflow action.
-            </p>
-          )}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionButton role="ghost" onClick={onCancel} disabled={cancelDisabled}>
+            Cancel
+          </ActionButton>
+          <SaveButton onClick={onSave} disabled={saveDisabled}>
+            {saving && saveIntent === "save" ? "Saving..." : "Save Draft"}
+          </SaveButton>
+          <ActionButton role="primary" onClick={onDone} disabled={doneDisabled}>
+            {saving && saveIntent === "done" ? "Saving..." : "Save & Close"}
+          </ActionButton>
         </div>
       </div>
     );

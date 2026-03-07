@@ -15,7 +15,8 @@ export type PendingConfirmationRow = {
   categoryKey: CategoryKey;
   entryId: string;
   title: string;
-  sentForConfirmationAtISO: string | null;
+  editRequestedAtISO: string | null;
+  editRequestMessage: string | null;
   createdAtISO: string | null;
   updatedAtISO: string | null;
   status: EntryStatus;
@@ -27,8 +28,8 @@ function toEntryTitle(categoryKey: CategoryKey, entry: Entry) {
 }
 
 function toSortTimestamp(row: PendingConfirmationRow) {
-  const sentAt = row.sentForConfirmationAtISO ? Date.parse(row.sentForConfirmationAtISO) : Number.NaN;
-  if (!Number.isNaN(sentAt)) return sentAt;
+  const requestedAt = row.editRequestedAtISO ? Date.parse(row.editRequestedAtISO) : Number.NaN;
+  if (!Number.isNaN(requestedAt)) return requestedAt;
 
   const updatedAt = row.updatedAtISO ? Date.parse(row.updatedAtISO) : Number.NaN;
   if (!Number.isNaN(updatedAt)) return updatedAt;
@@ -45,7 +46,7 @@ function asOptionalISO(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
-export async function getPendingConfirmations(): Promise<PendingConfirmationRow[]> {
+export async function getPendingEditRequests(): Promise<PendingConfirmationRow[]> {
   const usersRoot = getUsersRootDir();
   const rows: PendingConfirmationRow[] = [];
 
@@ -60,7 +61,7 @@ export async function getPendingConfirmations(): Promise<PendingConfirmationRow[
         const list = await listEntriesForCategory(ownerEmail, categoryKey);
         for (const entry of list) {
           const workflowStatus = getEntryWorkflowStatus(entry);
-          if (workflowStatus !== "PENDING_CONFIRMATION") continue;
+          if (workflowStatus !== "EDIT_REQUESTED") continue;
 
           const entryId = String(entry.id ?? "").trim();
           if (!entryId) continue;
@@ -70,10 +71,11 @@ export async function getPendingConfirmations(): Promise<PendingConfirmationRow[
             categoryKey,
             entryId,
             title: toEntryTitle(categoryKey, entry),
-            sentForConfirmationAtISO:
-              asOptionalISO(entry.sentForConfirmationAtISO) ??
+            editRequestedAtISO:
+              asOptionalISO(entry.editRequestedAt) ??
               asOptionalISO(entry.updatedAt) ??
               asOptionalISO(entry.createdAt),
+            editRequestMessage: asOptionalISO(entry.editRequestMessage),
             createdAtISO: asOptionalISO(entry.createdAt),
             updatedAtISO: asOptionalISO(entry.updatedAt),
             status: workflowStatus,
@@ -89,7 +91,10 @@ export async function getPendingConfirmations(): Promise<PendingConfirmationRow[
   return rows.sort((left, right) => toSortTimestamp(right) - toSortTimestamp(left));
 }
 
-export async function getPendingConfirmationsCount() {
+/** @deprecated Use getPendingEditRequests instead */
+export const getPendingConfirmations = getPendingEditRequests;
+
+export async function getPendingEditRequestsCount() {
   const usersRoot = getUsersRootDir();
   let total = 0;
 
@@ -102,15 +107,14 @@ export async function getPendingConfirmationsCount() {
 
       const ensured = await ensureUserIndex(ownerEmail);
       if (ensured.ok) {
-        total += ensured.data.countsByStatus.PENDING_CONFIRMATION ?? 0;
+        total += ensured.data.countsByStatus.EDIT_REQUESTED ?? 0;
         continue;
       }
 
-      // Rare fallback path when index read/rebuild fails.
       for (const categoryKey of CATEGORY_KEYS) {
         const list = await listEntriesForCategory(ownerEmail, categoryKey);
         for (const entry of list) {
-          if (getEntryWorkflowStatus(entry) === "PENDING_CONFIRMATION") {
+          if (getEntryWorkflowStatus(entry) === "EDIT_REQUESTED") {
             total += 1;
           }
         }
@@ -122,3 +126,6 @@ export async function getPendingConfirmationsCount() {
 
   return total;
 }
+
+/** @deprecated Use getPendingEditRequestsCount instead */
+export const getPendingConfirmationsCount = getPendingEditRequestsCount;

@@ -76,7 +76,7 @@ export function buildTelemetrySummaryFromEvents(events: TelemetryEvent[]): Telem
       if (event.event === "entry.commit_draft") {
         committed.add(key);
       }
-      if (event.event === "entry.send_for_confirmation") {
+      if (event.event === "entry.request_edit") {
         pending.add(key);
         if (!pendingAtByKey.has(key) && eventTime > 0) {
           pendingAtByKey.set(key, eventTime);
@@ -87,7 +87,7 @@ export function buildTelemetrySummaryFromEvents(events: TelemetryEvent[]): Telem
           draftToPendingSamples += 1;
         }
       }
-      if (event.event === "entry.approve") {
+      if (event.event === "entry.grant_edit") {
         approved.add(key);
         if (!approvedAtByKey.has(key) && eventTime > 0) {
           approvedAtByKey.set(key, eventTime);
@@ -97,9 +97,6 @@ export function buildTelemetrySummaryFromEvents(events: TelemetryEvent[]): Telem
           pendingToApprovedTotal += eventTime - pendingAt;
           pendingToApprovedSamples += 1;
         }
-      }
-      if (event.event === "entry.reject") {
-        rejected.add(key);
       }
       if (event.event === "upload.start") {
         uploadStarted.add(key);

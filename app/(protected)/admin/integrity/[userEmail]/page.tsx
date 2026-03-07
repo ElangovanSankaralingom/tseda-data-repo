@@ -88,7 +88,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="mb-4 flex items-center gap-3">
-          <BackTo href={adminIntegrity()} compact />
+          <BackTo href={adminIntegrity()} label="Integrity" />
           <h1 className="text-2xl font-semibold tracking-tight">Integrity Check</h1>
         </div>
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

@@ -1,6 +1,6 @@
 import {
   isEntryCommitted,
-  isEntryLocked,
+  isEntryFinalized,
   normalizeEntryStatus,
   type EntryStateLike,
 } from "./entries/stateMachine.ts";
@@ -25,9 +25,9 @@ export function normalizeConfirmationStatus(
   }
 
   const approvalStatus = normalizeEntryApprovalStatus(value, "DRAFT");
-  if (approvalStatus === "APPROVED") return "approved";
-  if (approvalStatus === "PENDING_CONFIRMATION") return "pending";
-  if (approvalStatus === "REJECTED") return "rejected";
+  if (approvalStatus === "GENERATED") return "approved";
+  if (approvalStatus === "EDIT_REQUESTED") return "pending";
+  if (approvalStatus === "EDIT_GRANTED") return "approved";
   return fallback;
 }
 
@@ -54,22 +54,19 @@ export function getEntryApprovalStatus(entry: ConfirmationEntryLike) {
 }
 
 export function isEntryLockedFromStatus(entry: ConfirmationEntryLike) {
-  return isEntryLocked(entry);
+  return isEntryFinalized(entry);
 }
 
-export function canSendForConfirmation(entry: ConfirmationEntryLike) {
-  if (!isEntryCommitted(entry)) {
-    return false;
-  }
-
-  const approvalStatus = getEntryApprovalStatus(entry);
-  return approvalStatus === "DRAFT" || approvalStatus === "REJECTED";
+export function canSendForConfirmation(_entry: ConfirmationEntryLike) {
+  // In the new workflow there is no "send for confirmation" action.
+  // Entries auto-finalize based on time. This always returns false.
+  return false;
 }
 
 export function getConfirmationStatusLabel(status: string) {
   const approvalStatus = normalizeEntryApprovalStatus(status);
-  if (approvalStatus === "APPROVED") return "Approved";
-  if (approvalStatus === "PENDING_CONFIRMATION") return "Pending Confirmation";
-  if (approvalStatus === "REJECTED") return "Rejected";
+  if (approvalStatus === "GENERATED") return "Generated";
+  if (approvalStatus === "EDIT_REQUESTED") return "Edit Requested";
+  if (approvalStatus === "EDIT_GRANTED") return "Edit Granted";
   return "Draft";
 }

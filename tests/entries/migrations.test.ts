@@ -29,7 +29,7 @@ test("migrateEntry upgrades legacy entries to canonical format", () => {
   assert.equal(migrated.data.schemaVersion, ENTRY_SCHEMA_VERSION);
   assert.equal(typeof migrated.data.committedAtISO, "string");
   assert.equal(migrated.data.status, undefined);
-  assert.equal(migrated.data.confirmationStatus, "APPROVED");
+  assert.equal(migrated.data.confirmationStatus, "GENERATED");
   assert.equal(migrated.data.eventName, "Legacy Event");
   assert.equal(migrated.data.speakerName, null);
   assert.equal(migrated.data.startDate, "2026-02-05");
@@ -56,7 +56,7 @@ test("migrateUserIndex normalizes legacy index payloads", () => {
   assert.equal(migrated.data.version, USER_INDEX_SCHEMA_VERSION);
   assert.equal(migrated.data.totalsByCategory.workshops, 2);
   assert.equal(migrated.data.countsByStatus.DRAFT, 2);
-  assert.equal(migrated.data.countsByStatus.APPROVED, 0);
+  assert.equal(migrated.data.countsByStatus.GENERATED, 0);
   assert.equal(migrated.data.streakSnapshot.activeEntries.length, 1);
 });
 

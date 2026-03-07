@@ -9,20 +9,20 @@ export const STATUS_COLORS: Record<
     border: "border-l-slate-300",
     icon: "text-slate-400",
   },
-  PENDING_CONFIRMATION: {
+  GENERATED: {
+    badge: "border-blue-200 bg-blue-50 text-blue-700",
+    border: "border-l-blue-500",
+    icon: "text-blue-500",
+  },
+  EDIT_REQUESTED: {
     badge: "border-amber-200 bg-amber-100 text-amber-700",
     border: "border-l-amber-500",
     icon: "text-amber-500",
   },
-  APPROVED: {
+  EDIT_GRANTED: {
     badge: "border-emerald-200 bg-emerald-100 text-emerald-700",
     border: "border-l-emerald-500",
     icon: "text-emerald-500",
-  },
-  REJECTED: {
-    badge: "border-rose-200 bg-rose-100 text-rose-700",
-    border: "border-l-red-500",
-    icon: "text-red-500",
   },
 };
 
@@ -44,6 +44,10 @@ function resolveStatus(status: string): EntryStatus {
   if ((ENTRY_STATUSES as readonly string[]).includes(upper)) {
     return upper as EntryStatus;
   }
+  // Legacy mapping
+  if (upper === "PENDING_CONFIRMATION") return "GENERATED";
+  if (upper === "APPROVED") return "GENERATED";
+  if (upper === "REJECTED") return "GENERATED";
   return FALLBACK_STATUS;
 }
 

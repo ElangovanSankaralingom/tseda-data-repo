@@ -1,5 +1,5 @@
 import { ENTRY_SCHEMAS } from "@/data/schemas";
-import { isEntryLocked, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { isEntryFinalized, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type PendingEntryLike = EntryStateLike & Record<string, unknown>;
@@ -29,6 +29,11 @@ const DEFAULT_MUTABLE_WHEN_PENDING = new Set([
   "organiserProfile",
   "notes",
   "remarks",
+  "editWindowExpiresAt",
+  "editRequestedAt",
+  "editRequestMessage",
+  "editGrantedAt",
+  "editGrantedBy",
 ]);
 
 function stableStringify(value: unknown): string {
@@ -58,9 +63,11 @@ export function getImmutableFieldKeysWhenPending(category: CategoryKey): string[
 }
 
 export function canEditField(entry: EntryStateLike, category: CategoryKey, fieldKey: string): boolean {
-  if (isEntryLocked(entry)) return false;
-  if (normalizeEntryStatus(entry) !== "PENDING_CONFIRMATION") return true;
-  return !getImmutableFieldKeysWhenPending(category).includes(fieldKey);
+  if (isEntryFinalized(entry)) return false;
+  const status = normalizeEntryStatus(entry);
+  // EDIT_REQUESTED entries are not editable (waiting for admin grant)
+  if (status === "EDIT_REQUESTED") return false;
+  return true;
 }
 
 export function getChangedImmutableFieldsWhenPending(
@@ -68,7 +75,8 @@ export function getChangedImmutableFieldsWhenPending(
   beforeEntry: PendingEntryLike,
   afterEntry: PendingEntryLike
 ): string[] {
-  if (normalizeEntryStatus(beforeEntry) !== "PENDING_CONFIRMATION") {
+  // In the new workflow, immutability is enforced when finalized (edit window expired)
+  if (!isEntryFinalized(beforeEntry)) {
     return [];
   }
 

@@ -247,6 +247,10 @@ export function canApproveConfirmations(email: string | null | undefined): boole
   );
 }
 
+export function canManageEditRequests(email: string | null | undefined): boolean {
+  return canApproveConfirmations(email);
+}
+
 export function canExport(email: string | null | undefined): boolean {
   return (
     hasAdminRole(email, "MASTER_ADMIN") ||

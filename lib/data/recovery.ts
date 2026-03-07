@@ -108,8 +108,8 @@ function buildIndexFromState(userEmail: string, state: Map<CategoryKey, Map<stri
       const entry = value as EntryLike;
       const status = normalizeEntryStatus(entry as EntryStateLike);
       index.countsByStatus[status] += 1;
-      if (status === "PENDING_CONFIRMATION") index.pendingByCategory[category] += 1;
-      if (status === "APPROVED") index.approvedByCategory[category] += 1;
+      if (status === "EDIT_REQUESTED") index.pendingByCategory[category] += 1;
+      if (status === "GENERATED" || status === "EDIT_GRANTED") index.approvedByCategory[category] += 1;
       const snapshot = buildSearchSnapshot(entry as Entry, category);
       if (snapshot) {
         index.searchIndexByEntryId[getSearchSnapshotKey(category, snapshot.entryId)] = snapshot;

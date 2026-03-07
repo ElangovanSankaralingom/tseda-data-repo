@@ -69,7 +69,7 @@ test("entry category derives from stored state", () => {
       startDate: today,
       endDate: futureEnd,
       committedAtISO: new Date().toISOString(),
-      confirmationStatus: "APPROVED",
+      completionState: "completed",
       streak: {},
     }),
     "completed"
@@ -80,7 +80,7 @@ test("entry category derives from stored state", () => {
       startDate: pastStart,
       endDate: pastEnd,
       committedAtISO: new Date().toISOString(),
-      confirmationStatus: "APPROVED",
+      completionState: "completed",
       streak: {},
     }),
     "completed"
@@ -106,7 +106,7 @@ test("entry streak display state follows canonical streak snapshot", () => {
       startDate: today,
       endDate: futureEnd,
       committedAtISO: new Date().toISOString(),
-      confirmationStatus: "APPROVED",
+      completionState: "completed",
       streak: {},
     }),
     "completed"
@@ -158,7 +158,7 @@ test("groupEntries groups entries globally and sorts newest first within each gr
       startDate: today,
       endDate: futureEnd,
       committedAtISO: "2026-03-04T10:00:00.000Z",
-      confirmationStatus: "APPROVED",
+      completionState: "completed",
       streak: {},
     },
   ]);

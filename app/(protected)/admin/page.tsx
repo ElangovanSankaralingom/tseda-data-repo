@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import AdminPageShell from "@/components/admin/AdminPageShell";
+import { ChevronRight } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { getPendingConfirmationsCount } from "@/lib/admin/pendingConfirmations";
 import {
@@ -129,31 +129,43 @@ export default async function AdminConsolePage() {
   const pendingCount = await getPendingConfirmationsCount();
 
   return (
-    <AdminPageShell
-      title="Admin Console"
-      subtitle="Master-admin controls for confirmations and system management."
-      backHref={dashboard()}
-      maxWidthClassName="max-w-6xl"
-    >
-      <div className="grid gap-4 md:grid-cols-3">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      {/* Gradient Header */}
+      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 mb-8">
+        <h1 className="text-2xl font-bold text-white">Admin Console</h1>
+        <p className="mt-1 text-sm text-slate-300">Master-admin controls for confirmations and system management.</p>
+        {pendingCount > 0 && (
+          <div className="mt-4">
+            <span className="rounded-full bg-amber-500 px-3 py-1 text-sm font-medium text-white">
+              {pendingCount} pending {pendingCount === 1 ? "request" : "requests"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <Link
             key={card.href}
             href={card.href}
-            className="rounded-2xl border border-border bg-card p-5 transition hover:border-foreground/30 hover:bg-muted/20"
+            className="group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300"
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-lg font-semibold tracking-tight">{card.title}</div>
-              {card.href === adminConfirmations() ? (
-                <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                  {pendingCount}
-                </span>
-              ) : null}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-lg font-semibold text-slate-900 tracking-tight">{card.title}</div>
+                {card.href === adminConfirmations() && pendingCount > 0 ? (
+                  <span className="flex size-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                    {pendingCount}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1.5 text-sm text-slate-500">{card.description}</p>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
+            <ChevronRight className="mt-1 size-5 shrink-0 text-slate-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-slate-500" />
           </Link>
         ))}
       </div>
-    </AdminPageShell>
+    </div>
   );
 }

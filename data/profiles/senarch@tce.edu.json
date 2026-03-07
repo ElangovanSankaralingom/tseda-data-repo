@@ -5,9 +5,13 @@
   "isFacultyListed": true,
   "googleName": "Elangovan Sankaralingom",
   "googlePhotoURL": "https://lh3.googleusercontent.com/a/ACg8ocKqKk9m1l0lR7Y_H2rvaYEn_ndQjah913AJ0b7CuEokgc1xkY8o=s96-c",
-  "userPreferredName": "",
+  "userPreferredName": "Elan",
   "customPhotoURL": null,
-  "personal": {},
+  "personal": {
+    "dob": "2026-03-10",
+    "aadharNumber": "",
+    "panCardNumber": ""
+  },
   "academic": {
     "employeeId": ""
   },
@@ -26,5 +30,5 @@
     "theme": "light"
   },
   "createdAt": "2026-03-06T16:55:21.833Z",
-  "updatedAt": "2026-03-07T11:28:19.425Z"
+  "updatedAt": "2026-03-07T14:38:14.446Z"
 }

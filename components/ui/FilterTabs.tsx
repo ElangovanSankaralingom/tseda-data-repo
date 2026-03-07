@@ -23,14 +23,21 @@ export default function FilterTabs({ tabs, activeKey, onChange }: FilterTabsProp
           type="button"
           onClick={() => onChange?.(tab.key)}
           className={cn(
-            "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+            "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
             tab.key === activeKey
-              ? "bg-[#1E3A5F] text-white"
+              ? "bg-slate-900 text-white shadow-sm"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           )}
         >
           {tab.label}
-          {tab.count !== undefined && tab.count > 0 ? ` (${tab.count})` : ""}
+          {tab.count !== undefined && tab.count > 0 ? (
+            <span className={cn(
+              "ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 text-xs",
+              tab.key === activeKey ? "bg-white/20" : "bg-slate-200"
+            )}>
+              {tab.count}
+            </span>
+          ) : null}
         </button>
       ))}
     </div>

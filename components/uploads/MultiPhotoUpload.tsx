@@ -274,7 +274,7 @@ export default function MultiPhotoUpload({
           </label>
 
           <RoleButton
-            role="context"
+            role="primary"
             onClick={() => void uploadSelected()}
             disabled={!hasPending || busy || disabled}
           >

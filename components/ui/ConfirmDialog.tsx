@@ -75,7 +75,7 @@ export default function ConfirmDialog({
             {cancelLabel}
           </ActionButton>
           <ActionButton
-            role={variant === "destructive" ? "destructive" : "context"}
+            role={variant === "destructive" ? "destructive" : "primary"}
             onClick={onConfirm}
             disabled={confirming}
             className={cx(variant === "default" && "font-medium")}
