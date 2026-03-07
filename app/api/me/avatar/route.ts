@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
+import { authOptions } from "@/lib/auth";
 import { getProfileByEmail, upsertProfile, StoredFile } from "@/lib/profileStore";
 
 const ACCEPT = new Set(["image/jpeg", "image/png"]);
@@ -13,7 +14,7 @@ function safe(s: string) {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.toLowerCase().endsWith("@tce.edu")) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.toLowerCase().endsWith("@tce.edu")) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });

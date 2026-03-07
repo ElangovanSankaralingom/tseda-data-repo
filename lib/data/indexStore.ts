@@ -241,10 +241,11 @@ function buildStreakSnapshotFromInputs(
   };
 }
 
-async function buildStreakSnapshotFromStore(userEmail: string, nowISO: string) {
+function collectStreakInputs(
+  entriesByCategory: ReadonlyArray<{ category: CategoryKey; entries: ReadonlyArray<unknown> }>
+): StreakProgressAggregateEntry[] {
   const streakInputs: StreakProgressAggregateEntry[] = [];
-  for (const category of CATEGORY_KEYS) {
-    const entries = await readCategoryEntries(userEmail, category);
+  for (const { category, entries } of entriesByCategory) {
     for (const entry of entries) {
       streakInputs.push({
         ...(entry as EntryLike),
@@ -252,7 +253,17 @@ async function buildStreakSnapshotFromStore(userEmail: string, nowISO: string) {
       });
     }
   }
-  return buildStreakSnapshotFromInputs(streakInputs, nowISO);
+  return streakInputs;
+}
+
+async function buildStreakSnapshotFromStore(userEmail: string, nowISO: string) {
+  const results = await Promise.all(
+    CATEGORY_KEYS.map(async (category) => ({
+      category,
+      entries: await readCategoryEntries(userEmail, category),
+    }))
+  );
+  return buildStreakSnapshotFromInputs(collectStreakInputs(results), nowISO);
 }
 
 function hydrateIndex(
@@ -402,8 +413,14 @@ async function buildUserIndex(userEmail: string): Promise<UserIndex> {
   const index = createEmptyUserIndex(userEmail, nowISO);
   const streakInputs: StreakProgressAggregateEntry[] = [];
 
-  for (const category of CATEGORY_KEYS) {
-    const entries = await readCategoryEntries(userEmail, category);
+  const results = await Promise.all(
+    CATEGORY_KEYS.map(async (category) => ({
+      category,
+      entries: await readCategoryEntries(userEmail, category),
+    }))
+  );
+
+  for (const { category, entries } of results) {
     index.totalsByCategory[category] = entries.length;
 
     let latestEntryAt: string | null = null;
@@ -653,6 +670,14 @@ export async function updateIndexForEntryMutation(
         return rebuilt;
       }
 
+      // Load all category entries once for streak computation (avoids redundant reads)
+      const allCategoryEntries = await Promise.all(
+        CATEGORY_KEYS.map(async (cat) => ({
+          category: cat,
+          entries: await readCategoryEntries(normalizedEmail, cat),
+        }))
+      );
+
       const next = cloneIndex(current.data);
       const before = toContribution(beforeEntry as EntryLike | null);
       const after = toContribution(afterEntry as EntryLike | null);
@@ -715,7 +740,7 @@ export async function updateIndexForEntryMutation(
         next.lastEntryAtByCategory[category] = after.sortAtISO;
       }
 
-      next.streakSnapshot = await buildStreakSnapshotFromStore(normalizedEmail, nowISO);
+      next.streakSnapshot = buildStreakSnapshotFromInputs(collectStreakInputs(allCategoryEntries), nowISO);
 
       if (isInvalidCountMap(next)) {
         const rebuilt = await buildUserIndex(normalizedEmail);

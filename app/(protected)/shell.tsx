@@ -25,7 +25,7 @@ export default function AppShell({
   return (
     <div className="min-h-screen bg-background relative">
       {/* Header */}
-      <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4">
+      <header className="h-14 border-b border-slate-200 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setDrawerOpen(true)}
@@ -63,9 +63,9 @@ export default function AppShell({
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-slate-200">
           <div className="font-semibold">T&apos;SEDA Data Repository</div>
-          <div className="text-xs text-gray-500 mt-1">{email}</div>
+          <div className="text-xs text-slate-500 mt-1">{email}</div>
         </div>
 
         <div className="flex flex-col h-full justify-between">
@@ -78,8 +78,8 @@ export default function AppShell({
                 onClick={() => setDrawerOpen(false)}
                 className={`block px-3 py-2 rounded text-sm ${
                   pathname === item.href
-                    ? "bg-gray-200"
-                    : "hover:bg-gray-100"
+                    ? "bg-slate-200"
+                    : "hover:bg-slate-100"
                 }`}
               >
                 {item.label}
@@ -88,11 +88,11 @@ export default function AppShell({
           </div>
 
           {/* Bottom Section */}
-          <div className="p-3 border-t border-gray-200 space-y-1">
+          <div className="p-3 border-t border-slate-200 space-y-1">
             <Link
               href={profile()}
               onClick={() => setDrawerOpen(false)}
-              className="block px-3 py-2 rounded text-sm hover:bg-gray-100"
+              className="block px-3 py-2 rounded text-sm hover:bg-slate-100"
             >
               My Account
             </Link>

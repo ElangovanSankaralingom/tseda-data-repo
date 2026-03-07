@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "byId": {
+    "44ec78c6-7a64-443a-a942-4a7b9fc64a5b": {
+      "programName": "Distributed AI FDP",
+      "id": "44ec78c6-7a64-443a-a942-4a7b9fc64a5b",
+      "createdAt": "2026-03-07T08:55:12.825Z",
+      "updatedAt": "2026-03-07T08:55:12.825Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "44ec78c6-7a64-443a-a942-4a7b9fc64a5b"
+  ]
+}

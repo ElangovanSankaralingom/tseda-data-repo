@@ -177,16 +177,22 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
   const streakInputs: StreakProgressAggregateEntry[] = [];
   const recentRows: DashboardRecentRow[] = [];
 
-  for (const categoryKey of CATEGORY_KEYS) {
-    const categoryEntries = await listEntriesForCategory<DashboardEntry>(normalizedEmail, categoryKey);
+  const results = await Promise.all(
+    CATEGORY_KEYS.map(async (categoryKey) => ({
+      categoryKey,
+      entries: await listEntriesForCategory<DashboardEntry>(normalizedEmail, categoryKey),
+    }))
+  );
+
+  for (const { categoryKey, entries: categoryEntries } of results) {
     const categorySummary = summary.byCategory[categoryKey];
     categorySummary.totalEntries = categoryEntries.length;
+    const categoryConfig = getCategoryConfig(categoryKey);
 
     for (const entry of categoryEntries) {
       const workflowStatus = getEntryWorkflowStatus(entry as Record<string, unknown>);
       incrementStatusCount(categorySummary, workflowStatus);
 
-      const categoryConfig = getCategoryConfig(categoryKey);
       const updatedAtISO = toOptionalISO(entry.updatedAt) ?? toOptionalISO(entry.createdAt);
       const title = getEntryTitle(entry, categoryKey);
       recentRows.push({

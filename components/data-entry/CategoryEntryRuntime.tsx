@@ -1,15 +1,9 @@
 "use client";
 
 import CategoryEntryPageShell from "@/components/data-entry/CategoryEntryPageShell";
+import Toast from "@/components/ui/Toast";
 import { EntryHeaderActionsBar } from "@/components/entry/EntryHeaderActions";
-
-type RuntimeToast =
-  | {
-      type: "ok" | "err";
-      msg: string;
-    }
-  | null
-  | undefined;
+import type { UiToast } from "@/lib/ui/notify";
 
 type CategoryEntryRuntimeProps = {
   entryShell: Omit<React.ComponentProps<typeof CategoryEntryPageShell>["entryShell"], "actions">;
@@ -17,7 +11,7 @@ type CategoryEntryRuntimeProps = {
   loading: boolean;
   loadingMessage?: React.ReactNode;
   showForm: boolean;
-  toast?: RuntimeToast;
+  toast?: UiToast | null;
   formCard?: React.ComponentProps<typeof CategoryEntryPageShell>["formCard"];
   listCard?: React.ComponentProps<typeof CategoryEntryPageShell>["listCard"];
   confirmationDialog?: React.ReactNode;
@@ -34,18 +28,6 @@ export default function CategoryEntryRuntime({
   listCard,
   confirmationDialog,
 }: CategoryEntryRuntimeProps) {
-  const toastBanner = toast ? (
-    <div
-      className={`rounded-xl border px-4 py-3 text-sm ${
-        toast.type === "ok"
-          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-          : "border-red-200 bg-red-50 text-red-800"
-      }`}
-    >
-      {toast.msg}
-    </div>
-  ) : null;
-
   return (
     <CategoryEntryPageShell
       entryShell={{
@@ -55,7 +37,7 @@ export default function CategoryEntryRuntime({
       loading={loading}
       loadingMessage={loadingMessage}
       showForm={showForm}
-      topContent={toastBanner}
+      topContent={<Toast toast={toast} />}
       formCard={formCard}
       listCard={listCard}
       confirmationDialog={confirmationDialog}

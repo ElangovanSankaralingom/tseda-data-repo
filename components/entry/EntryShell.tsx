@@ -1,7 +1,7 @@
 "use client";
 
 import BackTo from "@/components/nav/BackTo";
-import EntryStatusBadge from "@/components/entry/EntryStatusBadge";
+import StatusBadge from "@/components/ui/StatusBadge";
 import WorkflowHelpStrip from "@/components/entry/WorkflowHelpStrip";
 import {
   getCategoryConfig,
@@ -98,7 +98,7 @@ export default function EntryShell({
 
           {showStatusRow ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/20 px-3 py-2">
-              <EntryStatusBadge status={resolvedStatus ?? "DRAFT"} />
+              <StatusBadge status={resolvedStatus ?? "DRAFT"} />
               {meta ? <div>{meta}</div> : null}
               {showUnsavedChanges ? (
                 <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">
@@ -119,7 +119,7 @@ export default function EntryShell({
       {showWorkflowHelp && isEditingMode ? <WorkflowHelpStrip className="mt-4" /> : null}
 
       {isEditingMode && actions ? (
-        <div className="sticky top-0 z-20 mt-4 rounded-2xl border border-border bg-background/95 p-3 shadow-sm backdrop-blur">
+        <div className="sticky top-14 z-20 mt-4 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
           {actions}
         </div>
       ) : null}

@@ -17,6 +17,7 @@ import {
   profile,
   signin,
 } from "@/lib/entryNavigation";
+import Toast from "@/components/ui/Toast";
 import { safeAction } from "@/lib/safeAction";
 import { notifyError, notifySuccess } from "@/lib/ui/notify";
 
@@ -161,20 +162,7 @@ export default function ShellClient({
         </div>
       </header>
 
-      {toast ? (
-        <div className="fixed right-4 top-20 z-50">
-          <div
-            className={[
-              "rounded-xl border px-3 py-2 text-sm shadow-sm",
-              toast.type === "ok"
-                ? "border-green-200 bg-green-50 text-green-800"
-                : "border-red-200 bg-red-50 text-red-800",
-            ].join(" ")}
-          >
-            {toast.msg}
-          </div>
-        </div>
-      ) : null}
+      <Toast toast={toast} position="fixed" />
 
       {/* Drawer overlay */}
       {open ? (

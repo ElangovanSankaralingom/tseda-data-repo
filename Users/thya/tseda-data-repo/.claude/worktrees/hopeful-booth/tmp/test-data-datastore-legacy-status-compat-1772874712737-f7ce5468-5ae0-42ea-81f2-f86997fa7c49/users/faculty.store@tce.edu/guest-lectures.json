@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "byId": {
+    "legacy-draft": {
+      "id": "legacy-draft",
+      "confirmationStatus": "DRAFT",
+      "attachments": [],
+      "createdAt": "2026-03-07T09:11:52.738Z",
+      "updatedAt": "2026-03-07T09:11:52.738Z",
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "legacy-draft"
+  ]
+}

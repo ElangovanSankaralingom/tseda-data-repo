@@ -1,3 +1,4 @@
+import { ClipboardList } from "lucide-react";
 import type { EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
 
 export type GroupedEntries<TEntry> = {
@@ -48,8 +49,18 @@ function Section<TEntry>({
 
   return (
     <div className="space-y-3">
-      <div className="text-sm font-semibold">{title}</div>
+      <div className="text-sm font-semibold text-slate-700">{title}</div>
       {items.map((entry, index) => renderEntry(entry, category, index))}
+    </div>
+  );
+}
+
+function DefaultEmptyState() {
+  return (
+    <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+      <ClipboardList className="mx-auto size-12 text-slate-300" />
+      <p className="mt-3 text-base font-medium text-slate-500">No entries yet</p>
+      <p className="mt-1 text-sm text-slate-400">Create your first entry to get started</p>
     </div>
   );
 }
@@ -60,7 +71,7 @@ export default function GroupedEntrySections<TEntry>({
   draftTitle = "Drafts",
   activatedTitle = "Streak Activated",
   completedTitle = "Completed",
-  emptyState = <div className="text-sm text-muted-foreground">No entries yet.</div>,
+  emptyState,
 }: GroupedEntrySectionsProps<TEntry>) {
   const hasEntries =
     groupedEntries.draft.length > 0 ||
@@ -68,11 +79,11 @@ export default function GroupedEntrySections<TEntry>({
     groupedEntries.completed.length > 0;
 
   if (!hasEntries) {
-    return <>{emptyState}</>;
+    return <>{emptyState ?? <DefaultEmptyState />}</>;
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <Section
         title={draftTitle}
         items={groupedEntries.draft}
