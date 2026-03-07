@@ -59,6 +59,10 @@ export type DashboardSummary = {
   recentEntries: DashboardRecentRow[];
 };
 
+function toFiniteCount(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
 function emptyCategorySummary(): CategoryDashboardSummary {
   return {
     totalEntries: 0,
@@ -93,6 +97,52 @@ function emptySummary(): DashboardSummary {
     },
     streakActivatedRows: [],
     recentEntries: [],
+  };
+}
+
+function normalizeSummary(summary: unknown): DashboardSummary {
+  const fallback = emptySummary();
+  if (!summary || typeof summary !== "object") {
+    return fallback;
+  }
+
+  const candidate = summary as Partial<DashboardSummary>;
+  const candidateByCategory =
+    candidate.byCategory as Partial<Record<CategoryKey, Partial<CategoryDashboardSummary>>> | undefined;
+
+  const byCategory = CATEGORY_KEYS.reduce<Record<CategoryKey, CategoryDashboardSummary>>(
+    (next, categoryKey) => {
+      const raw = candidateByCategory?.[categoryKey];
+      next[categoryKey] = {
+        totalEntries: toFiniteCount(raw?.totalEntries),
+        draftCount: toFiniteCount(raw?.draftCount),
+        pendingConfirmationCount: toFiniteCount(raw?.pendingConfirmationCount),
+        approvedCount: toFiniteCount(raw?.approvedCount),
+        rejectedCount: toFiniteCount(raw?.rejectedCount),
+        streakActivatedCount: toFiniteCount(raw?.streakActivatedCount),
+        streakWinsCount: toFiniteCount(raw?.streakWinsCount),
+      };
+      return next;
+    },
+    {} as Record<CategoryKey, CategoryDashboardSummary>
+  );
+
+  const rawTotals = candidate.totals ?? fallback.totals;
+  const totals = {
+    totalEntries: toFiniteCount(rawTotals.totalEntries),
+    draftCount: toFiniteCount(rawTotals.draftCount),
+    pendingConfirmationCount: toFiniteCount(rawTotals.pendingConfirmationCount),
+    approvedCount: toFiniteCount(rawTotals.approvedCount),
+    rejectedCount: toFiniteCount(rawTotals.rejectedCount),
+    streakActivatedCount: toFiniteCount(rawTotals.streakActivatedCount),
+    streakWinsCount: toFiniteCount(rawTotals.streakWinsCount),
+  };
+
+  return {
+    byCategory,
+    totals,
+    streakActivatedRows: Array.isArray(candidate.streakActivatedRows) ? candidate.streakActivatedRows : [],
+    recentEntries: Array.isArray(candidate.recentEntries) ? candidate.recentEntries : [],
   };
 }
 
@@ -222,7 +272,8 @@ export async function getDashboardSummary(email: string): Promise<DashboardSumma
   }
 
   try {
-    return await getCachedSummary(normalizedEmail);
+    const cached = await getCachedSummary(normalizedEmail);
+    return normalizeSummary(cached);
   } catch (error) {
     logError(error, "dashboard.getDashboardSummary");
     return emptySummary();
