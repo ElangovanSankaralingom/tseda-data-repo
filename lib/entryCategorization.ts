@@ -1,5 +1,5 @@
-import { normalizeStreakState } from "./gamification.ts";
 import { isEntryCommitted, type EntryStateLike } from "./entries/stateMachine.ts";
+import { getStreakProgressSnapshot } from "./streakProgress.ts";
 
 export type EntryCategoryBucket = "draft" | "activated" | "completed";
 export type EntryDisplayCategory = "draft" | "streak_active" | "completed";
@@ -39,7 +39,7 @@ export function isEntryCompleted(entry: CategorizableEntry): boolean {
 export function isStreakCompleted(entry: CategorizableEntry): boolean {
   const explicitState = normalizeTextValue(entry.streakState);
   if (explicitState === "completed") return true;
-  return !!normalizeStreakState(entry.streak).completedAtISO;
+  return getStreakProgressSnapshot(entry).isWin;
 }
 
 export function isStreakActivated(entry: CategorizableEntry): boolean {
@@ -49,7 +49,7 @@ export function isStreakActivated(entry: CategorizableEntry): boolean {
   if (explicitState === "activated") return true;
   if (explicitState === "none") return false;
 
-  return !!normalizeStreakState(entry.streak).activatedAtISO;
+  return getStreakProgressSnapshot(entry).isActivated;
 }
 
 export function getEntryCompletionState(entry: CategorizableEntry): EntryCompletionState {
@@ -70,8 +70,9 @@ export function getStreakIconVariant(entry: CategorizableEntry): StreakIconVaria
 }
 
 export function getEntryBucket(entry: CategorizableEntry): EntryCategoryBucket {
-  if (isEntryCompleted(entry)) return "completed";
+  if (isStreakCompleted(entry)) return "completed";
   if (isStreakActivated(entry)) return "activated";
+  if (isEntryCompleted(entry)) return "completed";
   return "draft";
 }
 

@@ -1,11 +1,8 @@
-import { computeDueAtISO, normalizeStreakState } from "./gamification.ts";
+import { getStreakProgressSnapshot, type StreakProgressEntryLike } from "./streakProgress.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type DeadlineEntry = {
-  endDate?: string | null;
-  streak?: unknown;
-};
+type DeadlineEntry = StreakProgressEntryLike;
 
 export type StreakDeadlineColor = "normal" | "yellow" | "red";
 
@@ -18,13 +15,12 @@ export type StreakDeadlineState = {
 };
 
 export function getStreakDeadlineISO(entry: DeadlineEntry) {
-  const streak = normalizeStreakState(entry.streak);
-
-  if (!streak.activatedAtISO || streak.completedAtISO) {
+  const streak = getStreakProgressSnapshot(entry);
+  if (!streak.isActivated) {
     return null;
   }
 
-  return streak.dueAtISO || (entry.endDate ? computeDueAtISO(entry.endDate) : null);
+  return streak.dueAtISO;
 }
 
 export function getDaysLeft(deadlineISO: string | null | undefined, nowISO?: string) {

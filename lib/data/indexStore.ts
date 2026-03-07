@@ -35,8 +35,6 @@ const INDEX_FILE_NAME = "index.json";
 const USER_INDEX_VERSION = USER_INDEX_SCHEMA_VERSION;
 const USER_INDEX_STREAK_RULE_VERSION = STREAK_RULE_VERSION;
 
-const ENTRY_STATUS_KEYS: readonly EntryStatus[] = ENTRY_STATUSES;
-
 type EntryLike = Entry & {
   id?: unknown;
   status?: unknown;
@@ -124,7 +122,7 @@ function emptyCategoryMap<T>(valueFactory: () => T) {
 }
 
 function emptyStatusMap() {
-  return ENTRY_STATUS_KEYS.reduce<Record<EntryStatus, number>>((next, status) => {
+  return ENTRY_STATUSES.reduce<Record<EntryStatus, number>>((next, status) => {
     next[status] = 0;
     return next;
   }, {} as Record<EntryStatus, number>);
@@ -324,7 +322,7 @@ function hydrateIndex(
     };
   }
 
-  for (const status of ENTRY_STATUS_KEYS) {
+  for (const status of ENTRY_STATUSES) {
     index.countsByStatus[status] = toNonNegativeInteger(countsByStatus[status]);
   }
 
@@ -596,7 +594,7 @@ export async function applyIndexDelta(
         }
       }
 
-      for (const status of ENTRY_STATUS_KEYS) {
+      for (const status of ENTRY_STATUSES) {
         const statusDelta = delta.countsByStatus?.[status] ?? 0;
         next.countsByStatus[status] = clampCount(next.countsByStatus[status] + statusDelta);
       }
@@ -622,7 +620,7 @@ function isInvalidCountMap(index: UserIndex) {
     if (index.streakSnapshot.byCategory[category].activated < 0) return true;
     if (index.streakSnapshot.byCategory[category].wins < 0) return true;
   }
-  for (const status of ENTRY_STATUS_KEYS) {
+  for (const status of ENTRY_STATUSES) {
     if (index.countsByStatus[status] < 0) return true;
   }
   if (index.streakSnapshot.streakActivatedCount < 0) return true;

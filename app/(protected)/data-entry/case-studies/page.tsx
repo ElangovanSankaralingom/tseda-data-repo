@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
+import Field from "@/components/data-entry/Field";
 import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
 import DateField from "@/components/controls/DateField";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
@@ -16,6 +17,7 @@ import EntryShell from "@/components/entry/EntryShell";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
+import SectionCard from "@/components/layout/SectionCard";
 import EntryUploader from "@/components/upload/EntryUploader";
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
@@ -258,49 +260,6 @@ function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
   return withAcademicProgressionCompatibility(
     hydratePdfSnapshot(entry, "case-studies") as CaseStudyEntry
   ) as CaseStudyEntry;
-}
-
-function SectionCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-white/70 p-5">
-      <div>
-        <h2 className="text-base font-semibold">{title}</h2>
-        {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
-      </div>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <label className="text-sm font-medium">{label}</label>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
-      </div>
-      {children}
-      {error ? <div className="text-xs text-red-600">{error}</div> : null}
-    </div>
-  );
 }
 
 function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
@@ -1327,6 +1286,7 @@ export function CaseStudiesPage({
 
         {!loading && showForm ? (
           <SectionCard
+            className="bg-white/70 p-5"
             title={isViewMode ? "Case Study Entry" : "New Case Study Entry"}
             subtitle="Add the entry details and generate the entry to unlock uploads."
           >
@@ -1624,6 +1584,7 @@ export function CaseStudiesPage({
 
         {!loading && !showForm ? (
           <SectionCard
+            className="bg-white/70 p-5"
             title="Saved Case Study Entries"
             subtitle="Your saved case study records are stored locally and keyed to your signed-in email."
           >

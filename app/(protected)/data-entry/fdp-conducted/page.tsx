@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Field from "@/components/data-entry/Field";
+import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
 import DateField from "@/components/controls/DateField";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
@@ -13,6 +15,7 @@ import EntryShell from "@/components/entry/EntryShell";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import UploadField from "@/components/entry/UploadField";
 import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldMulti";
+import SectionCard from "@/components/layout/SectionCard";
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
@@ -24,7 +27,7 @@ import {
   getEntryApprovalStatus,
   isEntryLockedFromStatus,
 } from "@/lib/confirmation";
-import { getEntryStreakDisplayState } from "@/lib/entries/displayLifecycle";
+import { getEntryStreakDisplayState, type EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
 import { groupEntries } from "@/lib/entryCategorization";
 import { useEntryEditor } from "@/hooks/useEntryEditor";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
@@ -224,49 +227,6 @@ function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
     createdAt: "",
     updatedAt: "",
   }) as FdpConducted;
-}
-
-function SectionCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-white/70 p-5">
-      <div>
-        <h2 className="text-base font-semibold">{title}</h2>
-        {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
-      </div>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <label className="text-sm font-medium">{label}</label>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
-      </div>
-      {children}
-      {error ? <div className="text-xs text-red-600">{error}</div> : null}
-    </div>
-  );
 }
 
 function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
@@ -1040,6 +1000,143 @@ export function FdpConductedPage({
     },
   });
 
+  function renderSavedEntry(entry: FdpConducted, category: EntryDisplayCategory, index: number) {
+    const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
+    const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
+    const showUpdated =
+      !Number.isNaN(createdTime) &&
+      !Number.isNaN(updatedTime) &&
+      Math.abs(updatedTime - createdTime) > 60 * 1000;
+    const deadlineState = getStreakDeadlineState(entry);
+    const isCompleted = category === "completed";
+    const confirmationStatus = isCompleted ? getEntryApprovalStatus(entry) : undefined;
+    const lockApproved = isCompleted ? isEntryLockedFromStatus(entry) : false;
+    const canSendConfirmation = isCompleted ? canSendForConfirmation(entry) : false;
+    const sendingConfirmation = isCompleted ? !!sendingConfirmationIds[entry.id] : false;
+
+    return (
+      <div key={entry.id} className={getEntryListCardClass(category)}>
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <EntryCategoryMarker category={category} index={index} streakState={getEntryStreakDisplayState(entry)} />
+                <Link href={entryDetail("fdp-conducted", entry.id)} className="text-base font-semibold hover:opacity-80">
+                  {getConductedEntryTitle(entry)}
+                </Link>
+                <EntryLockBadge deadlineState={deadlineState} />
+                {confirmationStatus ? (
+                  <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                    {getConfirmationStatusLabel(confirmationStatus)}
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
+                {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
+              </div>
+            </div>
+
+            {!(activeEntryId && entry.id === activeEntryId) ? (
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <MiniButton onClick={() => router.push(entryDetail("fdp-conducted", entry.id))}>View</MiniButton>
+                  {lockApproved ? (
+                    <>
+                      {entry.pdfMeta?.url ? (
+                        <MiniButton
+                          role="context"
+                          onClick={() => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")}
+                        >
+                          Preview
+                        </MiniButton>
+                      ) : (
+                        <MiniButton role="context" disabled>
+                          Preview
+                        </MiniButton>
+                      )}
+                      <RequestEditAction
+                        locked
+                        status={entry.requestEditStatus}
+                        requestedAtISO={entry.requestEditRequestedAtISO}
+                        requesting={!!requestingEditIds[entry.id]}
+                        onRequest={() => void requestEdit(entry)}
+                        onCancel={() => void cancelRequestEdit(entry)}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <MiniButton
+                        onClick={() => {
+                          router.push(entryDetail("fdp-conducted", entry.id), { scroll: false });
+                        }}
+                      >
+                        Edit
+                      </MiniButton>
+                      <MiniButton
+                        role="destructive"
+                        onClick={() =>
+                          requestConfirmation({
+                            title: "Delete entry?",
+                            description:
+                              "This permanently deletes this FDP entry and its associated uploaded files.",
+                            confirmLabel: "Delete",
+                            cancelLabel: "Cancel",
+                            variant: "destructive",
+                            onConfirm: () => deleteEntry(entry.id),
+                          })
+                        }
+                      >
+                        Delete entry
+                      </MiniButton>
+                      {isCompleted ? (
+                        <MiniButton
+                          onClick={() => void sendForConfirmation(entry)}
+                          disabled={!canSendConfirmation || sendingConfirmation}
+                        >
+                          {sendingConfirmation
+                            ? "Sending..."
+                            : confirmationStatus === "PENDING_CONFIRMATION"
+                              ? "Pending Confirmation"
+                              : "Send for Confirmation"}
+                        </MiniButton>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="min-w-0">
+            <div className="text-xs text-muted-foreground">
+              Academic Year: {entry.academicYear || "-"} {" • "}
+              Year of Study: {entry.yearOfStudy || "-"} {" • "}
+              Current Semester: {entry.currentSemester ?? "-"} {" • "}
+              Start: {formatDisplayDate(entry.startDate)} {" • "}
+              End: {formatDisplayDate(entry.endDate)} {" • "}
+              Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2 text-sm">
+              {entry.permissionLetter ? (
+                <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
+                  Permission Letter
+                </a>
+              ) : null}
+              {entry.geotaggedPhotos.map((meta, photoIndex) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Geotagged Photo {photoIndex + 1}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <EntryShell
       category="fdp-conducted"
@@ -1095,6 +1192,7 @@ export function FdpConductedPage({
 
         {!loading && showForm ? (
           <SectionCard
+            className="bg-white/70 p-5"
             title={isViewMode ? "FDP Entry" : "New FDP Entry"}
             subtitle="Add the entry details and generate the entry to unlock uploads."
           >
@@ -1328,371 +1426,14 @@ export function FdpConductedPage({
 
         {!loading && !isEditing ? (
           <SectionCard
+            className="bg-white/70 p-5"
             title="Saved FDP Conducted Entries"
             subtitle="Your saved records are stored locally and keyed by your signed-in email."
           >
             {list.length === 0 ? (
               <div className="text-sm text-muted-foreground">No entries yet.</div>
             ) : (
-              <div className="space-y-3">
-                {groupedEntries.draft.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold">Drafts</div>
-                    {groupedEntries.draft.map((entry, index) => {
-                      const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
-                      const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
-                      const showUpdated =
-                        !Number.isNaN(createdTime) &&
-                        !Number.isNaN(updatedTime) &&
-                        Math.abs(updatedTime - createdTime) > 60 * 1000;
-                      const deadlineState = getStreakDeadlineState(entry);
-
-                      return (
-                        <div key={entry.id} className={getEntryListCardClass("draft")}>
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <EntryCategoryMarker
-                                    category="draft"
-                                    index={index}
-                                    streakState={getEntryStreakDisplayState(entry)}
-                                  />
-                                  <Link href={entryDetail("fdp-conducted", entry.id)} className="text-base font-semibold hover:opacity-80">
-                                    {getConductedEntryTitle(entry)}
-                                  </Link>
-                                  <EntryLockBadge deadlineState={deadlineState} />
-                                </div>
-                                <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
-                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                  <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
-                                  {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                </div>
-                              </div>
-
-                              {!(activeEntryId && entry.id === activeEntryId) ? (
-                                <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <MiniButton onClick={() => router.push(entryDetail("fdp-conducted", entry.id))}>
-                                      View
-                                    </MiniButton>
-                                    <MiniButton
-                                      onClick={() => {
-                                        router.push(entryDetail("fdp-conducted", entry.id), { scroll: false });
-                                      }}
-                                    >
-                                      Edit
-                                    </MiniButton>
-                                    <MiniButton
-                                      role="destructive"
-                                      onClick={() =>
-                                        requestConfirmation({
-                                          title: "Delete entry?",
-                                          description:
-                                            "This permanently deletes this FDP entry and its associated uploaded files.",
-                                          confirmLabel: "Delete",
-                                          cancelLabel: "Cancel",
-                                          variant: "destructive",
-                                          onConfirm: () => deleteEntry(entry.id),
-                                        })
-                                      }
-                                    >
-                                      Delete entry
-                                    </MiniButton>
-                                  </div>
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div className="min-w-0">
-                              <div className="text-xs text-muted-foreground">
-                                Academic Year: {entry.academicYear || "-"} {" • "}
-                                Year of Study: {entry.yearOfStudy || "-"} {" • "}
-                                Current Semester: {entry.currentSemester ?? "-"} {" • "}
-                                Start: {formatDisplayDate(entry.startDate)} {" • "}
-                                End: {formatDisplayDate(entry.endDate)} {" • "}
-                                Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
-                              </div>
-
-                              <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                                {entry.permissionLetter ? (
-                                  <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-                                    Permission Letter
-                                  </a>
-                                ) : null}
-                                {entry.geotaggedPhotos.map((meta, photoIndex) => (
-                                  <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                                    Geotagged Photo {photoIndex + 1}
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                {groupedEntries.activated.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold">Streak Activated</div>
-                    {groupedEntries.activated.map((entry, index) => {
-                      const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
-                      const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
-                      const showUpdated =
-                        !Number.isNaN(createdTime) &&
-                        !Number.isNaN(updatedTime) &&
-                        Math.abs(updatedTime - createdTime) > 60 * 1000;
-
-                      const deadlineState = getStreakDeadlineState(entry);
-
-                      return (
-                        <div key={entry.id} className={getEntryListCardClass("streak_active")}>
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <EntryCategoryMarker
-                                    category="streak_active"
-                                    index={index}
-                                    streakState={getEntryStreakDisplayState(entry)}
-                                  />
-                                  <Link href={entryDetail("fdp-conducted", entry.id)} className="text-base font-semibold hover:opacity-80">
-                                    {getConductedEntryTitle(entry)}
-                                  </Link>
-                                  <EntryLockBadge deadlineState={deadlineState} />
-                                </div>
-                                <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
-                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                  <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
-                                  {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                </div>
-                              </div>
-
-                              {!(activeEntryId && entry.id === activeEntryId) ? (
-                                <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <MiniButton onClick={() => router.push(entryDetail("fdp-conducted", entry.id))}>
-                                      View
-                                    </MiniButton>
-                                    <MiniButton
-                                      onClick={() => {
-                                        router.push(entryDetail("fdp-conducted", entry.id), { scroll: false });
-                                      }}
-                                    >
-                                      Edit
-                                    </MiniButton>
-                                    <MiniButton
-                                      role="destructive"
-                                      onClick={() =>
-                                        requestConfirmation({
-                                          title: "Delete entry?",
-                                          description:
-                                            "This permanently deletes this FDP entry and its associated uploaded files.",
-                                          confirmLabel: "Delete",
-                                          cancelLabel: "Cancel",
-                                          variant: "destructive",
-                                          onConfirm: () => deleteEntry(entry.id),
-                                        })
-                                      }
-                                    >
-                                      Delete entry
-                                    </MiniButton>
-                                  </div>
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div className="min-w-0">
-                              <div className="text-xs text-muted-foreground">
-                                Academic Year: {entry.academicYear || "-"} {" • "}
-                                Year of Study: {entry.yearOfStudy || "-"} {" • "}
-                                Current Semester: {entry.currentSemester ?? "-"} {" • "}
-                                Start: {formatDisplayDate(entry.startDate)} {" • "}
-                                End: {formatDisplayDate(entry.endDate)} {" • "}
-                                Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
-                              </div>
-
-                              <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                                {entry.permissionLetter ? (
-                                  <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-                                    Permission Letter
-                                  </a>
-                                ) : null}
-                                {entry.geotaggedPhotos.map((meta, photoIndex) => (
-                                  <a
-                                    key={meta.storedPath}
-                                    className="underline"
-                                    href={meta.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    Geotagged Photo {photoIndex + 1}
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                {groupedEntries.completed.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold">Completed</div>
-                    {groupedEntries.completed.map((entry, index) => {
-                      const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
-                      const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
-                      const showUpdated =
-                        !Number.isNaN(createdTime) &&
-                        !Number.isNaN(updatedTime) &&
-                        Math.abs(updatedTime - createdTime) > 60 * 1000;
-                      const confirmationStatus = getEntryApprovalStatus(entry);
-                      const lockApproved = isEntryLockedFromStatus(entry);
-                      const canSendConfirmation = canSendForConfirmation(entry);
-                      const sendingConfirmation = !!sendingConfirmationIds[entry.id];
-
-                      const deadlineState = getStreakDeadlineState(entry);
-
-                      return (
-                        <div key={entry.id} className={getEntryListCardClass("completed")}>
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <EntryCategoryMarker
-                                    category="completed"
-                                    index={index}
-                                    streakState={getEntryStreakDisplayState(entry)}
-                                  />
-                                  <Link href={entryDetail("fdp-conducted", entry.id)} className="text-base font-semibold hover:opacity-80">
-                                    {getConductedEntryTitle(entry)}
-                                  </Link>
-                                  <EntryLockBadge deadlineState={deadlineState} />
-                                  <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                                    {getConfirmationStatusLabel(confirmationStatus)}
-                                  </span>
-                                </div>
-                                <div className="mt-1 text-sm text-muted-foreground">{getConductedEntrySubtitle(entry)}</div>
-                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                  <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
-                                  {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-                                </div>
-                              </div>
-
-                              {!(activeEntryId && entry.id === activeEntryId) ? (
-                                <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <MiniButton onClick={() => router.push(entryDetail("fdp-conducted", entry.id))}>
-                                      View
-                                    </MiniButton>
-                                    {lockApproved ? (
-                                      <>
-                                        {entry.pdfMeta?.url ? (
-                                          <MiniButton
-                                            role="context"
-                                            onClick={() =>
-                                              window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")
-                                            }
-                                          >
-                                            Preview
-                                          </MiniButton>
-                                        ) : (
-                                          <MiniButton role="context" disabled>
-                                            Preview
-                                          </MiniButton>
-                                        )}
-                                        <RequestEditAction
-                                          locked
-                                          status={entry.requestEditStatus}
-                                          requestedAtISO={entry.requestEditRequestedAtISO}
-                                          requesting={!!requestingEditIds[entry.id]}
-                                          onRequest={() => void requestEdit(entry)}
-                                          onCancel={() => void cancelRequestEdit(entry)}
-                                        />
-                                      </>
-                                    ) : (
-                                      <>
-                                        <MiniButton
-                                          onClick={() => {
-                                            router.push(entryDetail("fdp-conducted", entry.id), { scroll: false });
-                                          }}
-                                        >
-                                          Edit
-                                        </MiniButton>
-                                        <MiniButton
-                                          role="destructive"
-                                          onClick={() =>
-                                            requestConfirmation({
-                                              title: "Delete entry?",
-                                              description:
-                                                "This permanently deletes this FDP entry and its associated uploaded files.",
-                                              confirmLabel: "Delete",
-                                              cancelLabel: "Cancel",
-                                              variant: "destructive",
-                                              onConfirm: () => deleteEntry(entry.id),
-                                            })
-                                          }
-                                        >
-                                          Delete entry
-                                        </MiniButton>
-                                        <MiniButton
-                                          onClick={() => void sendForConfirmation(entry)}
-                                          disabled={!canSendConfirmation || sendingConfirmation}
-                                        >
-                                          {sendingConfirmation
-                                            ? "Sending..."
-                                            : confirmationStatus === "PENDING_CONFIRMATION"
-                                              ? "Pending Confirmation"
-                                              : "Send for Confirmation"}
-                                        </MiniButton>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div className="min-w-0">
-                              <div className="text-xs text-muted-foreground">
-                                Academic Year: {entry.academicYear || "-"} {" • "}
-                                Year of Study: {entry.yearOfStudy || "-"} {" • "}
-                                Current Semester: {entry.currentSemester ?? "-"} {" • "}
-                                Start: {formatDisplayDate(entry.startDate)} {" • "}
-                                End: {formatDisplayDate(entry.endDate)} {" • "}
-                                Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
-                              </div>
-
-                              <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                                {entry.permissionLetter ? (
-                                  <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-                                    Permission Letter
-                                  </a>
-                                ) : null}
-                                {entry.geotaggedPhotos.map((meta, photoIndex) => (
-                                  <a
-                                    key={meta.storedPath}
-                                    className="underline"
-                                    href={meta.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    Geotagged Photo {photoIndex + 1}
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-              </div>
+              <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />
             )}
           </SectionCard>
         ) : null}

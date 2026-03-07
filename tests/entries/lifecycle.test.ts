@@ -52,6 +52,15 @@ test("entry category derives from stored state", () => {
       endDate: futureEnd,
       streak: { activatedAtISO: new Date().toISOString() },
     }),
+    "draft"
+  );
+  assert.equal(
+    getEntryCategory({
+      startDate: today,
+      endDate: futureEnd,
+      committedAtISO: new Date().toISOString(),
+      streak: {},
+    }),
     "streak_active"
   );
   assert.equal(
@@ -59,7 +68,8 @@ test("entry category derives from stored state", () => {
       startDate: today,
       endDate: futureEnd,
       committedAtISO: new Date().toISOString(),
-      streak: { completedAtISO: new Date().toISOString() },
+      confirmationStatus: "APPROVED",
+      streak: {},
     }),
     "completed"
   );
@@ -69,13 +79,14 @@ test("entry category derives from stored state", () => {
       startDate: pastStart,
       endDate: pastEnd,
       committedAtISO: new Date().toISOString(),
+      confirmationStatus: "APPROVED",
       streak: {},
     }),
     "completed"
   );
 });
 
-test("entry streak display state only shows flames for actual streak state", () => {
+test("entry streak display state follows canonical streak snapshot", () => {
   const today = nowISTDateISO();
   const futureEnd = addDaysISO(today, 3);
 
@@ -84,7 +95,8 @@ test("entry streak display state only shows flames for actual streak state", () 
     getEntryStreakDisplayState({
       startDate: today,
       endDate: futureEnd,
-      streak: { activatedAtISO: new Date().toISOString() },
+      committedAtISO: new Date().toISOString(),
+      streak: {},
     }),
     "activated"
   );
@@ -92,9 +104,19 @@ test("entry streak display state only shows flames for actual streak state", () 
     getEntryStreakDisplayState({
       startDate: today,
       endDate: futureEnd,
-      streak: { completedAtISO: new Date().toISOString() },
+      committedAtISO: new Date().toISOString(),
+      confirmationStatus: "APPROVED",
+      streak: {},
     }),
     "completed"
+  );
+  assert.equal(
+    getEntryStreakDisplayState({
+      startDate: today,
+      endDate: futureEnd,
+      streak: { completedAtISO: new Date().toISOString() },
+    }),
+    "none"
   );
 });
 
@@ -125,7 +147,8 @@ test("groupEntries groups entries globally and sorts newest first within each gr
       updatedAt: "2026-03-03T10:00:00.000Z",
       startDate: today,
       endDate: futureEnd,
-      streak: { activatedAtISO: "2026-03-03T10:00:00.000Z" },
+      committedAtISO: "2026-03-03T10:00:00.000Z",
+      streak: {},
     },
     {
       id: "completed",
@@ -134,6 +157,7 @@ test("groupEntries groups entries globally and sorts newest first within each gr
       startDate: today,
       endDate: futureEnd,
       committedAtISO: "2026-03-04T10:00:00.000Z",
+      confirmationStatus: "APPROVED",
       streak: {},
     },
   ]);

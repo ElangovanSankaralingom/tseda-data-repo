@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildCanonicalStreakMetadata,
   computeCanonicalStreakSnapshot,
   computeStreakProgressAggregate,
   getStreakProgressSnapshot,
@@ -54,6 +55,38 @@ test("streak progress defaults to zeroed state for incomplete drafts", () => {
   assert.equal(snapshot.isWin, false);
   assert.equal(snapshot.hasActivatedAt, false);
   assert.equal(snapshot.hasCompletedAt, false);
+});
+
+test("canonical streak metadata activates only after the commit milestone", () => {
+  const streak = buildCanonicalStreakMetadata({
+    streak: {},
+    endDateISO: "2026-03-06",
+    hasPdf: true,
+    isEligible: true,
+    isCommitted: false,
+    completionSatisfied: false,
+    nowISO: "2026-03-06T10:00:00.000Z",
+  });
+
+  assert.equal(streak.activatedAtISO, null);
+  assert.equal(streak.dueAtISO, null);
+  assert.equal(streak.completedAtISO, null);
+});
+
+test("canonical streak metadata derives due date and completion from one shared rule", () => {
+  const streak = buildCanonicalStreakMetadata({
+    streak: {},
+    endDateISO: "2026-03-06",
+    hasPdf: true,
+    isEligible: true,
+    isCommitted: true,
+    completionSatisfied: true,
+    nowISO: "2026-03-10T10:00:00.000Z",
+  });
+
+  assert.equal(streak.activatedAtISO, "2026-03-10T10:00:00.000Z");
+  assert.ok(streak.dueAtISO);
+  assert.equal(streak.completedAtISO, "2026-03-10T10:00:00.000Z");
 });
 
 test("streak progress ignores legacy streak timestamps without commit milestone", () => {
@@ -127,4 +160,15 @@ test("canonical streak snapshot maps aggregate totals and active entries", () =>
   assert.equal(summary.byCategory.workshops.activated, 1);
   assert.equal(summary.byCategory.workshops.wins, 1);
   assert.deepEqual(summary.activeEntries.map((entry) => entry.id), ["entry-1"]);
+});
+
+test("streak progress snapshot derives due date for committed entries without stored metadata", () => {
+  const snapshot = getStreakProgressSnapshot({
+    id: "entry-due",
+    confirmationStatus: "DRAFT",
+    committedAtISO: "2026-03-06T10:01:00.000Z",
+    endDate: "2026-03-06",
+  });
+
+  assert.ok(snapshot.dueAtISO);
 });

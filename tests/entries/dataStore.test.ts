@@ -67,6 +67,7 @@ test("DataStore normalization applies default attachments and canonical confirma
             attachments: null,
           },
           { id: "legacy-2", requestEditStatus: "pending" },
+          { id: "legacy-3", status: "draft" },
         ],
         null,
         2
@@ -75,7 +76,7 @@ test("DataStore normalization applies default attachments and canonical confirma
     );
 
     const entries = await store.readCategory(email, "guest-lectures");
-    assert.equal(entries.length, 2);
+    assert.equal(entries.length, 3);
     assert.deepEqual(entries[0]?.attachments, []);
     assert.equal(String(entries[0]?.eventName ?? ""), "Legacy no status");
     assert.equal(entries[0]?.speakerName, null);
@@ -83,6 +84,8 @@ test("DataStore normalization applies default attachments and canonical confirma
     assert.equal(entries[0]?.status, undefined);
     assert.equal(String(entries[0]?.confirmationStatus ?? ""), "DRAFT");
     assert.equal(String(entries[1]?.confirmationStatus ?? ""), "PENDING_CONFIRMATION");
+    assert.equal(entries[2]?.status, undefined);
+    assert.equal(String(entries[2]?.confirmationStatus ?? ""), "DRAFT");
   });
 });
 

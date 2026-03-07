@@ -1,4 +1,14 @@
 import "server-only";
+
+/**
+ * Internal implementation for persisted entry lifecycle operations.
+ *
+ * Ownership:
+ * - persistence/orchestration lives here
+ * - canonical workflow rules live in `stateMachine.ts`
+ * - public callers should generally import server-side operations from
+ *   `lifecycle.ts`, not this file directly
+ */
 import { randomUUID } from "node:crypto";
 import { ENTRY_SCHEMAS } from "@/data/schemas";
 import { canApproveConfirmations } from "@/lib/admin/roles";
@@ -498,6 +508,10 @@ function throwPendingImmutableError(changedFields: string[]) {
   });
 }
 
+/**
+ * Thin compatibility wrapper retained for existing `lifecycle.ts` readers.
+ * Canonical lock/status rules still live in `stateMachine.ts`.
+ */
 export function isLockedFromApproval(entry: EntryEngineRecord) {
   return isEntryLocked(entry as EntryLike);
 }
@@ -1496,10 +1510,19 @@ export async function computeStreak(
   return summary;
 }
 
+/**
+ * Thin compatibility wrapper retained for existing `lifecycle.ts` readers.
+ * Canonical workflow normalization still lives in `stateMachine.ts`.
+ */
 export function getEntryWorkflowStatus(entry: EntryEngineRecord) {
   return getWorkflowStatus(entry as EntryLike);
 }
 
+/**
+ * Engine-side normalization helper for persisted records. This prepares an
+ * entry for workflow-aware reads without moving workflow ownership out of
+ * `stateMachine.ts`.
+ */
 export function normalizeEntryForWorkflow(entry: EntryEngineRecord) {
   const nowISO = new Date().toISOString();
   const category = String(entry.category ?? "").trim().toLowerCase() as CategoryKey;

@@ -1,26 +1,36 @@
 import "server-only";
 
 /**
- * Public entrypoint for entry lifecycle orchestration APIs.
+ * Public entrypoint for persisted entry lifecycle operations.
  *
- * Canonical workflow state normalization and transitions live in
- * `stateMachine.ts` (with `EntryStatus` in `lib/types/entry.ts`).
- * This module intentionally exposes the persisted lifecycle operations
- * from `engine.ts` without re-defining workflow/state logic.
+ * Ownership:
+ * - `stateMachine.ts` owns canonical workflow rules and normalization.
+ * - `engine.ts` owns persistence, WAL/index updates, validation, and telemetry.
+ * - this module is the stable public facade for server-side entry operations.
+ *
+ * Keep workflow-rule consumers on `stateMachine.ts`. Keep persisted mutation/list
+ * callers on this module so the engine remains an internal implementation detail.
  */
 export type { EntryEngineRecord, EntryStreakSummary } from "./engine.ts";
+
+// Public persisted lifecycle operations.
 export {
   approveEntry,
   commitDraft,
   computeStreak,
   createEntry,
   deleteEntry,
-  getEntryWorkflowStatus,
-  isLockedFromApproval,
   listEntriesForCategory,
-  normalizeEntryForWorkflow,
   rejectEntry,
   replaceEntriesForCategory,
   sendForConfirmation,
   updateEntry,
+} from "./engine.ts";
+
+// Compatibility helpers retained for read-only callers. These remain thin
+// wrappers over `stateMachine.ts` via `engine.ts`; they do not own workflow rules.
+export {
+  getEntryWorkflowStatus,
+  isLockedFromApproval,
+  normalizeEntryForWorkflow,
 } from "./engine.ts";

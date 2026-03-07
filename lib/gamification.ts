@@ -1,5 +1,6 @@
 import { isEntryLockedFromStatus } from "./confirmation.ts";
-import { isEntryCommitted, type EntryStateLike } from "./entries/stateMachine.ts";
+// Utility-only module:
+// canonical streak/progress aggregation belongs in lib/streakProgress.ts.
 
 export type StreakState = {
   activatedAtISO?: string | null;
@@ -17,41 +18,10 @@ type LockableEntryLike = {
   requestEditStatus?: string | null;
 };
 
-export type PendingAggregate = {
-  pendingCount: number;
-  activeEntryId?: string;
-  activeDaysRemaining?: number;
-  anyWithinWindow: boolean;
-  allZeroDays: boolean;
-};
-
-export type PendingCategoryKey = "fdp-attended" | "fdp-conducted";
-
-export type GlobalWinsAggregate = {
-  winsCount: number;
-};
-
 export type EditLockState = {
   isLocked: boolean;
   expiresAtISO: string | null;
   daysRemaining: number;
-};
-
-type PendingCapableStreakEntry = {
-  id: string;
-  streak: StreakState;
-  startDate?: string;
-  endDate?: string;
-  status?: string;
-  completionCertificate?: unknown | null;
-  geotaggedPhotos?: unknown[] | null;
-};
-
-type StreakWinEntry = {
-  streak: StreakState;
-  startDate?: string;
-  endDate?: string;
-  status?: string;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -106,11 +76,6 @@ function toISTDateTime(dateISO: string, hours: number, minutes: number, seconds 
   return new Date(utcMs).toISOString();
 }
 
-function getEntryCompletionValue(entry: PendingCapableStreakEntry | StreakWinEntry) {
-  if ("completionCertificate" in entry && entry.completionCertificate) return true;
-  return "geotaggedPhotos" in entry && Array.isArray(entry.geotaggedPhotos) && entry.geotaggedPhotos.length > 0;
-}
-
 export function normalizeStreakState(value: unknown): StreakState {
   if (!value || typeof value !== "object") {
     return {
@@ -156,10 +121,6 @@ export function nowISTTimestampISO() {
   return new Date().toISOString();
 }
 
-export function nowIST() {
-  return nowISTTimestampISO();
-}
-
 export function isWithinRequestEditWindow(
   requestedAtISO: string | null | undefined,
   windowMinutes = 5
@@ -175,10 +136,6 @@ export function isFutureDatedEntry(startISO: string, endISO: string) {
 
   const todayIST = nowISTDateISO();
   return startISO >= todayIST && endISO >= todayIST;
-}
-
-export function isPastDatedEntry(startISO: string, endISO: string) {
-  return !isFutureDatedEntry(startISO, endISO);
 }
 
 export function addDaysISO(dateISO: string, days: number) {
@@ -212,25 +169,11 @@ export function computeEditableUntilISO(createdAtISO: string) {
   return toISTDateTime(editableDayISO, 23, 59, 59, 999);
 }
 
-export function computeGenericDueAtISO(endDateISO: string) {
-  if (!isISODate(endDateISO)) return null;
-  const dueDayISO = addDaysISO(endDateISO, 2);
-  return toISTDateTime(dueDayISO, 23, 59, 59, 999);
-}
-
 export function remainingDaysFromDueAtISO(dueAtISO: string | null | undefined) {
   if (!dueAtISO || !isISODateTime(dueAtISO)) return 0;
 
   const diff = new Date(dueAtISO).getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / DAY_MS));
-}
-
-export function remainingDaysCeil(dueAtISO: string | null | undefined) {
-  return remainingDaysFromDueAtISO(dueAtISO);
-}
-
-export function remainingEditableDays(createdAtISO: string) {
-  return remainingDaysFromDueAtISO(computeEditableUntilISO(createdAtISO));
 }
 
 export function isWithinDueWindow(dueAtISO: string | null | undefined) {
@@ -251,20 +194,6 @@ export function status(state: StreakState) {
   return "expired" as const;
 }
 
-export function isEntryLockedByStreak(state: StreakState | undefined) {
-  const normalized = normalizeStreakState(state);
-  return !!normalized.dueAtISO && isOverdue(normalized.dueAtISO);
-}
-
-export function isNonStreakEntryLocked(createdAtISO: string) {
-  const editableUntilISO = computeEditableUntilISO(createdAtISO);
-  return editableUntilISO ? !isWithinDueWindow(editableUntilISO) : false;
-}
-
-export function isRequestEditApproved(value: string | null | undefined) {
-  return value === "approved";
-}
-
 export function getEditLockState(entry: LockableEntryLike): EditLockState {
   const isLocked = isEntryLockedFromStatus(entry);
   return {
@@ -280,76 +209,4 @@ export function isEntryLockedState(entry: LockableEntryLike) {
 
 export function isEntryEditable(entry: LockableEntryLike) {
   return !isEntryLockedFromStatus(entry);
-}
-
-function isCompletedWithinDueWindow(state: StreakState) {
-  const normalized = normalizeStreakState(state);
-  if (!normalized.activatedAtISO || !normalized.completedAtISO || !normalized.dueAtISO) return false;
-  return new Date(normalized.completedAtISO).getTime() <= new Date(normalized.dueAtISO).getTime();
-}
-
-export function remainingDaysInWindowIST(dueAtISO: string | null | undefined) {
-  return remainingDaysFromDueAtISO(dueAtISO);
-}
-
-export function aggregateCategoryPending(
-  entries: Array<PendingCapableStreakEntry | null | undefined>,
-  categoryKey: PendingCategoryKey
-): PendingAggregate {
-  let pendingCount = 0;
-  let activeEntryId: string | undefined;
-  let activeDaysRemaining: number | undefined;
-  let anyWithinWindow = false;
-
-  for (const entry of entries) {
-    if (!entry?.id) continue;
-    if (!isEntryCommitted(entry as EntryStateLike)) continue;
-    if (!isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "")) continue;
-    if (!entry.streak?.activatedAtISO) continue;
-
-    const isCompleted =
-      categoryKey === "fdp-attended"
-        ? !!entry.completionCertificate || !!entry.streak.completedAtISO
-        : getEntryCompletionValue(entry) || !!entry.streak.completedAtISO;
-
-    if (isCompleted) continue;
-
-    pendingCount += 1;
-
-    const remaining = remainingDaysFromDueAtISO(entry.streak.dueAtISO);
-    if (isWithinDueWindow(entry.streak.dueAtISO)) {
-      anyWithinWindow = true;
-      if (activeDaysRemaining === undefined || remaining < activeDaysRemaining) {
-        activeEntryId = entry.id;
-        activeDaysRemaining = remaining;
-      }
-    }
-  }
-
-  return {
-    pendingCount,
-    activeEntryId,
-    activeDaysRemaining,
-    anyWithinWindow,
-    allZeroDays: pendingCount > 0 && !anyWithinWindow,
-  };
-}
-
-export function aggregateGlobalWins(
-  allCategoryData: Record<string, Array<StreakWinEntry | null | undefined> | undefined>
-): GlobalWinsAggregate {
-  let winsCount = 0;
-
-  for (const entries of Object.values(allCategoryData)) {
-    for (const entry of entries ?? []) {
-      if (!entry) continue;
-      if (!isEntryCommitted(entry as EntryStateLike)) continue;
-      if (!isFutureDatedEntry(entry.startDate ?? "", entry.endDate ?? "")) continue;
-      if (isCompletedWithinDueWindow(entry.streak)) {
-        winsCount += 1;
-      }
-    }
-  }
-
-  return { winsCount };
 }

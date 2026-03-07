@@ -24,7 +24,7 @@ import {
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
-import { activateStreakMetadata, completeStreakMetadata } from "@/lib/streakProgress";
+import { buildCanonicalStreakMetadata } from "@/lib/streakProgress";
 import {
   isEntryCommitted,
   normalizeEntryStatus,
@@ -545,30 +545,15 @@ export async function POST(request: Request) {
             ? entry.committedAtISO
             : now)
         : null);
-    const existingStreak = normalizeStreakState(existing?.streak ?? entry.streak);
-    let streak = normalizeStreakState(existingStreak);
-
-    if (!entry.pdfMeta || !eligible) {
-      streak = {
-        ...existingStreak,
-        activatedAtISO: null,
-        dueAtISO: null,
-        completedAtISO: null,
-      };
-    } else {
-      streak = activateStreakMetadata(existingStreak, validated.endDate);
-
-      if (
-        nextCommitted &&
-        hasCompletedUploads(entry) &&
-        streak.activatedAtISO &&
-        streak.dueAtISO &&
-        !streak.completedAtISO &&
-        Date.now() <= new Date(streak.dueAtISO).getTime()
-      ) {
-        streak = completeStreakMetadata(streak);
-      }
-    }
+    const streak = buildCanonicalStreakMetadata({
+      streak: existing?.streak ?? entry.streak,
+      endDateISO: validated.endDate,
+      hasPdf: !!entry.pdfMeta,
+      isEligible: eligible,
+      isCommitted: nextCommitted,
+      completionSatisfied: hasCompletedUploads(entry),
+      nowISO: now,
+    });
 
     const savedEntry: FdpConducted = {
       id: entry.id,
@@ -825,27 +810,15 @@ export async function PATCH(request: Request) {
       getPrePdfFieldsHash(savedEntry) !== savedEntry.pdfSourceHash;
 
     const eligible = isFutureDatedEntry(savedEntry.startDate, savedEntry.endDate);
-    if (!savedEntry.pdfMeta || !eligible) {
-      savedEntry.streak = {
-        ...savedEntry.streak,
-        activatedAtISO: null,
-        dueAtISO: null,
-        completedAtISO: null,
-      };
-    } else {
-      savedEntry.streak = activateStreakMetadata(savedEntry.streak, savedEntry.endDate);
-
-      if (
-        isEntryCommitted(savedEntry as EntryStateLike) &&
-        hasCompletedUploads(savedEntry) &&
-        savedEntry.streak.activatedAtISO &&
-        savedEntry.streak.dueAtISO &&
-        !savedEntry.streak.completedAtISO &&
-        Date.now() <= new Date(savedEntry.streak.dueAtISO).getTime()
-      ) {
-        savedEntry.streak = completeStreakMetadata(savedEntry.streak);
-      }
-    }
+    savedEntry.streak = buildCanonicalStreakMetadata({
+      streak: savedEntry.streak,
+      endDateISO: savedEntry.endDate,
+      hasPdf: !!savedEntry.pdfMeta,
+      isEligible: eligible,
+      isCommitted: isEntryCommitted(savedEntry as EntryStateLike),
+      completionSatisfied: hasCompletedUploads(savedEntry),
+      nowISO: now,
+    });
 
     const persisted = existing
       ? await updateEntry<FdpConducted>(email, "fdp-conducted", savedEntry.id, savedEntry)

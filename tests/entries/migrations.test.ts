@@ -69,7 +69,7 @@ test("migrateWalEvent upgrades and normalizes legacy WAL events", () => {
     id: "entry-1",
     action: "update",
     before: { id: "entry-1", status: "draft" },
-    after: { id: "entry-1", status: "finalised", attachments: null },
+    after: { id: "entry-1", status: "final", attachments: null },
   };
 
   const migrated = migrateWalEvent(legacy);
@@ -79,7 +79,12 @@ test("migrateWalEvent upgrades and normalizes legacy WAL events", () => {
   assert.equal(migrated.data.v, WAL_EVENT_SCHEMA_VERSION);
   assert.equal(migrated.data.entryId, "entry-1");
   assert.equal(migrated.data.action, "UPDATE");
+  assert.equal(migrated.data.before?.status, undefined);
+  assert.equal(migrated.data.before?.confirmationStatus, "DRAFT");
+  assert.equal(migrated.data.after?.status, undefined);
   assert.equal(migrated.data.after?.schemaVersion, ENTRY_SCHEMA_VERSION);
+  assert.equal(migrated.data.after?.confirmationStatus, "DRAFT");
+  assert.equal(typeof migrated.data.after?.committedAtISO, "string");
 });
 
 test("migrateCategoryStore upgrades legacy entry arrays to V2 byId store", () => {
@@ -96,4 +101,7 @@ test("migrateCategoryStore upgrades legacy entry arrays to V2 byId store", () =>
   assert.deepEqual(migrated.data.order, ["legacy-1", "legacy-2"]);
   assert.equal(migrated.data.byId["legacy-1"]?.schemaVersion, ENTRY_SCHEMA_VERSION);
   assert.deepEqual(migrated.data.byId["legacy-1"]?.attachments, []);
+  assert.equal(migrated.data.byId["legacy-2"]?.status, undefined);
+  assert.equal(migrated.data.byId["legacy-2"]?.confirmationStatus, "DRAFT");
+  assert.equal(typeof migrated.data.byId["legacy-2"]?.committedAtISO, "string");
 });
