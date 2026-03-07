@@ -12,6 +12,8 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { searchAllUsers, type SearchResult } from "@/lib/search/searchIndex";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type AdminSearchPageProps = {

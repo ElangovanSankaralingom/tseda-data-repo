@@ -20,6 +20,8 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminIntegrity, adminIntegrityUser } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type AdminIntegrityUserPageProps = {

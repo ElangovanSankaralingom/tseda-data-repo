@@ -37,23 +37,27 @@ export default function DashboardClient({
             value={streakActivated}
             subtext={
               streakActivated > 0
-                ? "Eligible entries generated"
+                ? `${streakActivated} ${streakActivated === 1 ? "entry" : "entries"} to complete`
                 : "Generate an entry with a future end date"
             }
+            hoverDescription="Entries you've kickstarted \u2014 waiting for you to finish the job."
+            staggerClass="stagger-1"
           />
           <StreakCard
             type="wins"
             value={streakWins}
             subtext={
               streakWins > 0
-                ? `${streakWins} / ${streakActivated} entries completed`
+                ? `${streakWins} completed`
                 : "Complete all fields to earn wins"
             }
+            hoverDescription="Entries you crushed from start to finish. Each one's a victory. \uD83C\uDFC6"
+            staggerClass="stagger-2"
           />
         </div>
       </div>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent animate-grow-width" />
 
       {/* Section B — Your Progress */}
       <div>
@@ -69,7 +73,10 @@ export default function DashboardClient({
             description="Across all categories"
             accent="border-t-2 border-t-blue-400"
             iconColor="text-blue-500"
-            hoverRing="hover:ring-2 hover:ring-blue-200"
+            iconBg="bg-blue-100"
+            hoverRing="hover:ring-2 hover:ring-blue-200/50"
+            hoverDescription="Everything you've ever logged. Your data footprint."
+            staggerClass="stagger-3"
           />
           <StatCard
             icon={CheckCircle2}
@@ -77,7 +84,10 @@ export default function DashboardClient({
             value={generatedCount}
             accent="border-t-2 border-t-emerald-400"
             iconColor="text-emerald-500"
-            hoverRing="hover:ring-2 hover:ring-emerald-200"
+            iconBg="bg-emerald-100"
+            hoverRing="hover:ring-2 hover:ring-emerald-200/50"
+            hoverDescription="Done and dusted. These are locked in forever. \uD83D\uDD12"
+            staggerClass="stagger-4"
           />
           <StatCard
             icon={Clock}
@@ -85,7 +95,10 @@ export default function DashboardClient({
             value={editRequestedCount}
             accent="border-t-2 border-t-amber-400"
             iconColor="text-amber-500"
-            hoverRing="hover:ring-2 hover:ring-amber-200"
+            iconBg="bg-amber-100"
+            hoverRing="hover:ring-2 hover:ring-amber-200/50"
+            hoverDescription="The clock's ticking. Edit these before they lock. \u23F3"
+            staggerClass="stagger-5"
           />
         </div>
       </div>

@@ -15,6 +15,8 @@ type CategoryEntryRuntimeProps = {
   formCard?: React.ComponentProps<typeof CategoryEntryPageShell>["formCard"];
   listCard?: React.ComponentProps<typeof CategoryEntryPageShell>["listCard"];
   confirmationDialog?: React.ReactNode;
+  onRequestEdit?: () => void;
+  onCancelRequestEdit?: () => void;
 };
 
 export default function CategoryEntryRuntime({
@@ -27,6 +29,8 @@ export default function CategoryEntryRuntime({
   formCard,
   listCard,
   confirmationDialog,
+  onRequestEdit,
+  onCancelRequestEdit,
 }: CategoryEntryRuntimeProps) {
   return (
     <CategoryEntryPageShell
@@ -41,6 +45,10 @@ export default function CategoryEntryRuntime({
       formCard={formCard}
       listCard={listCard}
       confirmationDialog={confirmationDialog}
+      onAddEntry={headerActions.onAdd}
+      addEntryLabel={headerActions.addLabel}
+      onRequestEdit={onRequestEdit}
+      onCancelRequestEdit={onCancelRequestEdit}
     />
   );
 }

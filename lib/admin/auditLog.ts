@@ -13,10 +13,19 @@ import { safeAction } from "@/lib/safeAction";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUsersRootDir } from "@/lib/userStore";
 
-const AUDIT_ACTIONS = ["REQUEST_EDIT", "GRANT_EDIT"] as const;
-const AUDIT_ACTION_SET = new Set<WalAction>(AUDIT_ACTIONS);
+const ALL_WAL_ACTIONS: WalAction[] = [
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "REQUEST_EDIT",
+  "GRANT_EDIT",
+  "UPLOAD_ADD",
+  "UPLOAD_REMOVE",
+  "UPLOAD_REPLACE",
+];
+const WAL_ACTION_SET = new Set<string>(ALL_WAL_ACTIONS);
 
-export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+export type AuditAction = WalAction;
 
 export type AuditEvent = {
   ts: string;
@@ -31,13 +40,26 @@ export type AuditEvent = {
   summary: string;
 };
 
+export type AuditStats = {
+  totalEvents: number;
+  byAction: Record<string, number>;
+  byCategory: Record<string, number>;
+  byActor: Record<string, number>;
+  byUser: Record<string, number>;
+  recentDays: { date: string; count: number }[];
+  topEntries: { entryId: string; category: string; userEmail: string; count: number }[];
+};
+
 type RecentAuditOptions = {
   limit?: number;
   userEmail?: string;
+  actorEmail?: string;
   category?: CategoryKey;
   action?: AuditAction;
+  actions?: AuditAction[];
   fromISO?: string;
   toISO?: string;
+  entryId?: string;
 };
 
 type ParsedAuditEvent = {
@@ -45,8 +67,8 @@ type ParsedAuditEvent = {
   eventTimeMs: number;
 };
 
-function isAuditAction(value: string): value is AuditAction {
-  return value === "APPROVE" || value === "REJECT" || value === "SEND_FOR_CONFIRMATION";
+function isWalAction(value: string): value is WalAction {
+  return WAL_ACTION_SET.has(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -138,6 +160,8 @@ function toSummary(event: WalEvent, before: Entry | null, after: Entry | null) {
     parts.push(`title: "${beforeTitle}" -> "${afterTitle}"`);
   } else if (!beforeTitle && afterTitle) {
     parts.push(`title: "${afterTitle}"`);
+  } else if (afterTitle) {
+    parts.push(`title: "${afterTitle}"`);
   }
 
   const beforeAttachmentCount = countAttachments(before);
@@ -155,7 +179,7 @@ function toSummary(event: WalEvent, before: Entry | null, after: Entry | null) {
     return "No tracked field changes.";
   }
 
-  return parts.join(" • ");
+  return parts.join(" | ");
 }
 
 function parseWalEvent(line: string): ParsedAuditEvent | null {
@@ -163,7 +187,7 @@ function parseWalEvent(line: string): ParsedAuditEvent | null {
   if (!isRecord(parsed)) return null;
 
   const actionRaw = String(parsed.action ?? "").trim().toUpperCase();
-  if (!isAuditAction(actionRaw) || !AUDIT_ACTION_SET.has(actionRaw)) return null;
+  if (!isWalAction(actionRaw)) return null;
 
   const categoryRaw = String(parsed.category ?? "").trim().toLowerCase();
   if (!isCategoryKey(categoryRaw)) return null;
@@ -198,95 +222,86 @@ function toLowerTrimmed(value: string | undefined) {
   return String(value ?? "").trim().toLowerCase();
 }
 
-export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Promise<Result<AuditEvent[]>> {
-  return safeAction(async () => {
-    const usersRoot = getUsersRootDir();
-    const limit = Number.isFinite(options.limit)
-      ? Math.max(1, Math.min(500, Number(options.limit)))
-      : 100;
-    const startedAt = Date.now();
+async function collectAllEvents(): Promise<ParsedAuditEvent[]> {
+  const usersRoot = getUsersRootDir();
+  const parsedEvents: ParsedAuditEvent[] = [];
 
-    const ownerFilter = toLowerTrimmed(options.userEmail);
-    const actionFilter = options.action;
-    const categoryFilter = options.category;
-    const fromMs = options.fromISO ? Date.parse(options.fromISO) : Number.NaN;
-    const toMs = options.toISO ? Date.parse(options.toISO) : Number.NaN;
+  let userDirs: Dirent[] = [];
+  try {
+    userDirs = await fs.readdir(usersRoot, { withFileTypes: true });
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "ENOENT") return [];
+    throw error;
+  }
 
-    const parsedEvents = new Array<ParsedAuditEvent>();
-    let skippedLines = 0;
+  for (const userDir of userDirs) {
+    if (!userDir.isDirectory()) continue;
 
-    let userDirs: Dirent[] = [];
+    const walPath = path.join(usersRoot, userDir.name, "events.log");
+    let raw = "";
     try {
-      userDirs = await fs.readdir(usersRoot, { withFileTypes: true });
+      raw = await fs.readFile(walPath, "utf8");
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
-      if (code === "ENOENT") {
-        return [];
-      }
+      if (code === "ENOENT") continue;
       throw error;
     }
 
-    for (const userDir of userDirs) {
-      if (!userDir.isDirectory()) continue;
+    for (const line of raw.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
 
-      const walPath = path.join(usersRoot, userDir.name, "events.log");
-      let raw = "";
       try {
-        raw = await fs.readFile(walPath, "utf8");
-      } catch (error) {
-        const code = (error as { code?: string } | null)?.code;
-        if (code === "ENOENT") continue;
-        throw error;
-      }
-
-      for (const line of raw.split("\n")) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-
-        let parsed: ParsedAuditEvent | null = null;
-        try {
-          parsed = parseWalEvent(trimmed);
-        } catch {
-          parsed = null;
-        }
-
-        if (!parsed) {
-          skippedLines += 1;
-          continue;
-        }
-
-        if (ownerFilter && !parsed.event.userEmail.toLowerCase().includes(ownerFilter)) {
-          continue;
-        }
-        if (categoryFilter && parsed.event.category !== categoryFilter) {
-          continue;
-        }
-        if (actionFilter && parsed.event.action !== actionFilter) {
-          continue;
-        }
-        if (!Number.isNaN(fromMs) && parsed.eventTimeMs < fromMs) {
-          continue;
-        }
-        if (!Number.isNaN(toMs) && parsed.eventTimeMs > toMs) {
-          continue;
-        }
-
-        parsedEvents.push(parsed);
+        const result = parseWalEvent(trimmed);
+        if (result) parsedEvents.push(result);
+      } catch {
+        // skip malformed lines
       }
     }
+  }
 
-    parsedEvents.sort((left, right) => right.eventTimeMs - left.eventTimeMs);
+  return parsedEvents;
+}
 
-    if (skippedLines > 0) {
-      logger.warn({
-        event: "admin.audit.invalid-wal-lines",
-        count: skippedLines,
-      });
+export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Promise<Result<AuditEvent[]>> {
+  return safeAction(async () => {
+    const startedAt = Date.now();
+    const limit = Number.isFinite(options.limit)
+      ? Math.max(1, Math.min(500, Number(options.limit)))
+      : 100;
+
+    const ownerFilter = toLowerTrimmed(options.userEmail);
+    const actorFilter = toLowerTrimmed(options.actorEmail);
+    const actionFilter = options.action;
+    const actionsFilter = options.actions;
+    const categoryFilter = options.category;
+    const entryIdFilter = options.entryId?.trim();
+    const fromMs = options.fromISO ? Date.parse(options.fromISO) : Number.NaN;
+    const toMs = options.toISO ? Date.parse(options.toISO) : Number.NaN;
+
+    const allEvents = await collectAllEvents();
+
+    const filtered: ParsedAuditEvent[] = [];
+    for (const parsed of allEvents) {
+      if (ownerFilter && !parsed.event.userEmail.toLowerCase().includes(ownerFilter)) continue;
+      if (actorFilter && !parsed.event.actorEmail.toLowerCase().includes(actorFilter)) continue;
+      if (categoryFilter && parsed.event.category !== categoryFilter) continue;
+      if (actionFilter && parsed.event.action !== actionFilter) continue;
+      if (actionsFilter && actionsFilter.length > 0 && !actionsFilter.includes(parsed.event.action)) continue;
+      if (entryIdFilter && parsed.event.entryId !== entryIdFilter) continue;
+      if (!Number.isNaN(fromMs) && parsed.eventTimeMs < fromMs) continue;
+      if (!Number.isNaN(toMs) && parsed.eventTimeMs > toMs) continue;
+      filtered.push(parsed);
     }
-    const events = parsedEvents.slice(0, limit).map((item) => item.event);
+
+    filtered.sort((left, right) => right.eventTimeMs - left.eventTimeMs);
+
+    const events = filtered.slice(0, limit).map((item) => item.event);
     logger.info({
       event: "admin.audit.query",
       count: events.length,
+      total: allEvents.length,
       limit,
       durationMs: Date.now() - startedAt,
       ownerFilter: ownerFilter || undefined,
@@ -295,4 +310,58 @@ export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Pr
     });
     return events;
   }, { context: "admin.audit.getRecentAuditEvents" });
+}
+
+export async function getAuditStats(): Promise<Result<AuditStats>> {
+  return safeAction(async () => {
+    const allEvents = await collectAllEvents();
+
+    const byAction: Record<string, number> = {};
+    const byCategory: Record<string, number> = {};
+    const byActor: Record<string, number> = {};
+    const byUser: Record<string, number> = {};
+    const byDate: Record<string, number> = {};
+    const entryHits: Record<string, { category: string; userEmail: string; count: number }> = {};
+
+    for (const { event } of allEvents) {
+      byAction[event.action] = (byAction[event.action] ?? 0) + 1;
+      byCategory[event.category] = (byCategory[event.category] ?? 0) + 1;
+      if (event.actorEmail) byActor[event.actorEmail] = (byActor[event.actorEmail] ?? 0) + 1;
+      byUser[event.userEmail] = (byUser[event.userEmail] ?? 0) + 1;
+
+      const dateKey = event.ts.slice(0, 10);
+      byDate[dateKey] = (byDate[dateKey] ?? 0) + 1;
+
+      const entryKey = `${event.category}:${event.entryId}`;
+      if (!entryHits[entryKey]) {
+        entryHits[entryKey] = { category: event.category, userEmail: event.userEmail, count: 0 };
+      }
+      entryHits[entryKey].count += 1;
+    }
+
+    const recentDays = Object.entries(byDate)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 30)
+      .map(([date, count]) => ({ date, count }));
+
+    const topEntries = Object.entries(entryHits)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 10)
+      .map(([entryId, data]) => ({
+        entryId: entryId.split(":")[1],
+        category: data.category,
+        userEmail: data.userEmail,
+        count: data.count,
+      }));
+
+    return {
+      totalEvents: allEvents.length,
+      byAction,
+      byCategory,
+      byActor,
+      byUser,
+      recentDays,
+      topEntries,
+    };
+  }, { context: "admin.audit.getAuditStats" });
 }

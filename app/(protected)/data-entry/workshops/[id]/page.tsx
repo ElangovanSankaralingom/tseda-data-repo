@@ -1,5 +1,7 @@
 import { WorkshopsPage } from "../page";
 
+export const dynamic = "force-dynamic";
+
 type WorkshopsViewPageProps = {
   params: Promise<{
     id: string;

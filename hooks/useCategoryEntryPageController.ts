@@ -10,6 +10,7 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from "react";
+import { useRouter } from "next/navigation";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
@@ -200,10 +201,20 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   generateSuccessMessage = "Entry generated.",
   generateErrorMessage = "Generate failed.",
 }: UseCategoryEntryPageControllerOptions<TEntry>) {
+  const nextRouter = useRouter();
   const [saving, setSaving] = useState(false);
   const [saveIntent, setSaveIntent] = useState<EntrySaveIntent | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const saveLockRef = useRef(false);
+
+  // Wrap afterPersistSuccess to also refresh server components
+  const afterPersistSuccessWithRefresh = useCallback(
+    async (entry: TEntry, intent: EntrySaveIntent) => {
+      await afterPersistSuccess?.(entry, intent);
+      nextRouter.refresh();
+    },
+    [afterPersistSuccess, nextRouter]
+  );
 
   const hasBusyUploads = useMemo(
     () => busyUploadSources.some((source) => hasBusyValue(source)),
@@ -287,12 +298,12 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
         persistProgress: persistEntry,
         commitDraft: commitDraftEntry,
         applyPersistedEntry,
-        afterPersistSuccess,
+        afterPersistSuccess: afterPersistSuccessWithRefresh,
         closeForm: async () => closeForm(),
       });
     },
     [
-      afterPersistSuccess,
+      afterPersistSuccessWithRefresh,
       applyPersistedEntry,
       buildEntryToSave,
       buildOptimisticEntry,
@@ -329,6 +340,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       persistProgress: persistEntry,
       applyGeneratedEntry,
     });
+    nextRouter.refresh();
   }, [
     afterGenerate,
     applyGeneratedEntry,
@@ -343,6 +355,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     hasValidationErrors,
     lifecycle.canGenerate,
     markGenerateAttempted,
+    nextRouter,
     persistEntry,
   ]);
 
@@ -382,14 +395,14 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
         formRef,
         persistProgress: persistEntry,
         applyPersistedEntry,
-        afterPersistSuccess,
+        afterPersistSuccess: afterPersistSuccessWithRefresh,
         buildNextEntry: options.buildNextEntry,
         selectResult: options.selectResult,
         lockedMessage: options.lockedMessage,
         intent: options.intent,
       });
     },
-    [afterPersistSuccess, applyPersistedEntry, formRef, persistEntry]
+    [afterPersistSuccessWithRefresh, applyPersistedEntry, formRef, persistEntry]
   );
 
   const {

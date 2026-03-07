@@ -10,6 +10,8 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dataEntryHome } from "@/lib/entryNavigation";
 import { searchUserEntries, type SearchResult } from "@/lib/search/searchIndex";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type DataEntrySearchPageProps = {

@@ -1,5 +1,7 @@
 import { FdpConductedPage } from "../page";
 
+export const dynamic = "force-dynamic";
+
 type FdpConductedViewPageProps = {
   params: Promise<{
     id: string;

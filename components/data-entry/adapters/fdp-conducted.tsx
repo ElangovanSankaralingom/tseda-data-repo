@@ -690,31 +690,37 @@ export function FdpConductedPage({
     requestEdit: (entry) => void requestEdit(entry),
     cancelRequestEdit: (entry) => void cancelRequestEdit(entry),
     sendForConfirmation: (entry) => void sendForConfirmation(entry),
-    renderBody: (entry) => (
-      <>
-        <div className="text-xs text-muted-foreground">
-          Academic Year: {entry.academicYear || "-"} {" • "}
-          Year of Study: {entry.yearOfStudy || "-"} {" • "}
-          Current Semester: {entry.currentSemester ?? "-"} {" • "}
-          Start: {formatDisplayDate(entry.startDate)} {" • "}
-          End: {formatDisplayDate(entry.endDate)} {" • "}
-          Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
-        </div>
+    renderBody: (entry) => {
+      const days = getInclusiveDays(entry.startDate, entry.endDate);
+      const startStr = formatDisplayDate(entry.startDate);
+      const endStr = formatDisplayDate(entry.endDate);
+      const parts: string[] = [];
+      if (entry.academicYear) parts.push(entry.academicYear);
+      if (entry.currentSemester) parts.push(`Semester ${entry.currentSemester}`);
+      if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
+      else if (startStr !== "-") parts.push(startStr);
+      if (days) parts.push(`${days} days`);
 
-        <div className="mt-3 flex flex-wrap gap-2 text-sm">
-          {entry.permissionLetter ? (
-            <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-              Permission Letter
-            </a>
-          ) : null}
-          {entry.geotaggedPhotos.map((meta, photoIndex) => (
-            <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-              Geotagged Photo {photoIndex + 1}
-            </a>
-          ))}
-        </div>
-      </>
-    ),
+      return (
+        <>
+          {parts.length > 0 && (
+            <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>
+          )}
+          <div className="mt-2 flex flex-wrap gap-2 text-sm">
+            {entry.permissionLetter ? (
+              <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
+                Permission Letter
+              </a>
+            ) : null}
+            {entry.geotaggedPhotos.map((meta, photoIndex) => (
+              <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                Geotagged Photo {photoIndex + 1}
+              </a>
+            ))}
+          </div>
+        </>
+      );
+    },
   });
 
   return (
@@ -737,7 +743,7 @@ export function FdpConductedPage({
           resetForm();
           router.push(entryNew("fdp-conducted"), { scroll: false });
         },
-        addLabel: "+ Add FDP Entry",
+        addLabel: "Add FDP Entry",
       })}
       loading={loading}
       showForm={showForm}
@@ -868,7 +874,7 @@ export function FdpConductedPage({
               <FacultyPickerRows
                 title="Co-coordinator(s)"
                 helperText="Add co-coordinators only when applicable."
-                addLabel="+ Add Co-coordinator"
+                addLabel="Add Co-coordinator"
                 rowLabelPrefix="Co-coordinator"
                 rows={form.coCoordinators}
                 onRowsChange={(rows) => setForm((current) => ({ ...current, coCoordinators: rows }))}

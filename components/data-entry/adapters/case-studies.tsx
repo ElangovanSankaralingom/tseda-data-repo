@@ -809,19 +809,24 @@ export function CaseStudiesPage({
     sendForConfirmation: (entry) => void sendForConfirmation(entry),
     renderBody: (entry) => {
       const days = getInclusiveDays(entry.startDate, entry.endDate);
+      const startStr = formatDisplayDate(entry.startDate);
+      const endStr = formatDisplayDate(entry.endDate);
+      const parts: string[] = [];
+      if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
+      else if (startStr !== "-") parts.push(startStr);
+      if (days) parts.push(`${days} days`);
+      if (entry.staffAccompanying.length > 0) parts.push(`${entry.staffAccompanying.length} staff`);
+      if (entry.amountSupport !== null && entry.amountSupport !== undefined) parts.push(`₹${Number(entry.amountSupport).toLocaleString("en-IN")}`);
 
       return (
         <>
-          <div className="text-sm text-muted-foreground">
-            Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Staff Count: {entry.staffAccompanying.length}
-            {entry.amountSupport !== null ? ` • Amount: ${entry.amountSupport}` : ""}
-          </div>
-          <div className="text-sm text-muted-foreground line-clamp-2">{entry.purposeOfVisit}</div>
-
-          <div className="flex flex-wrap gap-3 text-sm">
+          {parts.length > 0 && (
+            <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>
+          )}
+          {entry.purposeOfVisit ? (
+            <div className="text-xs text-muted-foreground line-clamp-2">{entry.purposeOfVisit}</div>
+          ) : null}
+          <div className="mt-2 flex flex-wrap gap-2 text-sm">
             {entry.permissionLetter ? (
               <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
                 Permission Letter
@@ -870,7 +875,7 @@ export function CaseStudiesPage({
           resetForm();
           router.push(entryNew("case-studies"), { scroll: false });
         },
-        addLabel: "+ Add Case Study",
+        addLabel: "Add Case Study",
       })}
       loading={loading}
       showForm={showForm}
@@ -1043,7 +1048,7 @@ export function CaseStudiesPage({
                     <FacultyRowPicker
                       title="Staff Accompanying"
                       helperText="Add at least one staff member. Already selected faculty are disabled in other rows."
-                      addLabel="+ Add Staff"
+                      addLabel="Add Staff"
                       rowLabelPrefix="Staff"
                       rows={form.staffAccompanying}
                       onRowsChange={(rows) => setForm((current) => ({ ...current, staffAccompanying: rows }))}

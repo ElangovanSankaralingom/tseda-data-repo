@@ -8,6 +8,8 @@ type StreakCardProps = {
   type: "active" | "wins";
   value: number;
   subtext?: string;
+  hoverDescription?: string;
+  staggerClass?: string;
 };
 
 const CONFIG = {
@@ -18,6 +20,7 @@ const CONFIG = {
       "border-orange-400/50 bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-orange-500/20",
     zeroGradient: "border-dashed border-slate-300 bg-slate-50",
     zeroCta: "Generate your first entry!",
+    hoverRing: "hover:ring-2 hover:ring-amber-300/50",
   },
   wins: {
     icon: Trophy,
@@ -26,25 +29,28 @@ const CONFIG = {
       "border-yellow-400/50 bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg shadow-yellow-500/20",
     zeroGradient: "border-dashed border-slate-300 bg-slate-50",
     zeroCta: "Complete all fields to earn wins",
+    hoverRing: "hover:ring-2 hover:ring-yellow-300/50",
   },
 } as const;
 
-export default function StreakCard({ type, value, subtext }: StreakCardProps) {
-  const { icon: Icon, label, gradient, zeroGradient, zeroCta } = CONFIG[type];
+export default function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: StreakCardProps) {
+  const { icon: Icon, label, gradient, zeroGradient, zeroCta, hoverRing } = CONFIG[type];
   const hasValue = value > 0;
   const displayValue = useCountUp(value);
 
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5",
-        hasValue ? cn(gradient, "hover:shadow-xl") : zeroGradient
+        "group relative overflow-hidden rounded-xl border p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl",
+        "animate-fade-in-up",
+        staggerClass,
+        hasValue ? cn(gradient, hoverRing) : zeroGradient
       )}
     >
       <div className="relative flex items-center gap-3">
         <div
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-xl",
+            "flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110",
             hasValue ? "bg-white/20 text-white" : "bg-slate-200 text-slate-400"
           )}
         >
@@ -83,6 +89,17 @@ export default function StreakCard({ type, value, subtext }: StreakCardProps) {
           </div>
         </div>
       </div>
+      {hoverDescription && (
+        <p
+          className={cn(
+            "mt-0 max-h-0 overflow-hidden text-xs italic opacity-0 transition-all duration-200",
+            "group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100",
+            hasValue ? "text-white/50" : "text-slate-400"
+          )}
+        >
+          {hoverDescription}
+        </p>
+      )}
     </div>
   );
 }

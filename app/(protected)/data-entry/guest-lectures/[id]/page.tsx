@@ -1,5 +1,7 @@
 import { GuestLecturesPage } from "../page";
 
+export const dynamic = "force-dynamic";
+
 type GuestLecturesViewPageProps = {
   params: Promise<{
     id: string;
