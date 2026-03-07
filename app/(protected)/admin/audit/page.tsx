@@ -25,9 +25,8 @@ function getParam(params: SearchParams, key: string) {
 
 function parseAction(value: string): AuditAction | undefined {
   const normalized = value.trim().toUpperCase();
-  if (normalized === "APPROVE") return "APPROVE";
-  if (normalized === "REJECT") return "REJECT";
-  if (normalized === "SEND_FOR_CONFIRMATION") return "SEND_FOR_CONFIRMATION";
+  if (normalized === "REQUEST_EDIT") return "REQUEST_EDIT";
+  if (normalized === "GRANT_EDIT") return "GRANT_EDIT";
   return undefined;
 }
 
@@ -103,7 +102,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
               name="owner"
               defaultValue={ownerInput}
               placeholder="faculty@tce.edu"
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             />
           </label>
 
@@ -112,7 +111,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
             <select
               name="category"
               defaultValue={selectedCategory ?? ""}
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             >
               <option value="">All</option>
               {CATEGORY_KEYS.map((category) => (
@@ -128,7 +127,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
             <select
               name="action"
               defaultValue={selectedAction ?? ""}
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             >
               <option value="">All</option>
               <option value="APPROVE">APPROVE</option>
@@ -143,7 +142,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
               type="date"
               name="from"
               defaultValue={fromInput}
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             />
           </label>
 
@@ -153,7 +152,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
               type="date"
               name="to"
               defaultValue={toInput}
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             />
           </label>
 
@@ -165,7 +164,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
               max={500}
               name="limit"
               defaultValue={String(limit)}
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             />
           </label>
         </div>

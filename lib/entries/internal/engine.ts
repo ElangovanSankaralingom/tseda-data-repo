@@ -11,7 +11,7 @@ import "server-only";
  */
 import { randomUUID } from "node:crypto";
 import { ENTRY_SCHEMAS } from "@/data/schemas";
-import { canApproveConfirmations } from "@/lib/admin/roles";
+import { canManageEditRequests } from "@/lib/admin/roles";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { rebuildUserIndex, updateIndexForEntryMutation } from "@/lib/data/indexStore";
 import { withUserDataLock } from "@/lib/data/locks";
@@ -33,7 +33,10 @@ import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { CategoryKey } from "@/lib/entries/types";
 import { AppError, logError, normalizeError } from "@/lib/errors";
 import {
+  computeEditWindowExpiry,
   isEntryCommitted,
+  isEntryEditable,
+  isEntryFinalized,
   isEntryLocked,
   normalizeEntryStatus,
   transitionEntry,
@@ -45,6 +48,7 @@ import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability"
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import {
+  checkStreakEligibility,
   computeCanonicalStreakSnapshot,
   type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
@@ -92,11 +96,17 @@ const PROTECTED_UPDATE_KEYS = new Set([
   "createdAt",
   "status",
   "confirmationStatus",
+  "committedAtISO",
+  "editWindowExpiresAt",
+  "editRequestedAt",
+  "editRequestMessage",
+  "editGrantedAt",
+  "editGrantedBy",
+  // Legacy fields (kept for migration safety)
   "sentForConfirmationAtISO",
   "confirmedAtISO",
   "confirmedBy",
   "confirmationRejectedReason",
-  "committedAtISO",
 ]);
 
 function revalidateDashboardSummary(userEmail: string) {
@@ -238,9 +248,8 @@ const ENTRY_MUTATION_EVENT_BY_ACTION = {
   update: "entry.update",
   delete: "entry.delete",
   commitDraft: "entry.commit_draft",
-  sendForConfirmation: "entry.send_for_confirmation",
-  approve: "entry.approve",
-  reject: "entry.reject",
+  requestEdit: "entry.request_edit",
+  grantEdit: "entry.grant_edit",
 } as const;
 
 type EntryMutationActionName = keyof typeof ENTRY_MUTATION_EVENT_BY_ACTION;
@@ -901,10 +910,18 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       trackedFromStatus = String(getWorkflowStatus(existing));
 
       const nowISO = new Date().toISOString();
+      const streakEligible = checkStreakEligibility(existing);
+      const editWindowExpiresAt = computeEditWindowExpiry(nowISO, {
+        endDate: existing.endDate,
+        streakEligible,
+      });
       const updated = prepareEntryForWrite(
         {
           ...existing,
           committedAtISO: nowISO,
+          streakEligible,
+          confirmationStatus: "GENERATED" as const,
+          editWindowExpiresAt,
         },
         nowISO,
         category
@@ -1074,10 +1091,11 @@ export async function deleteEntry(
   }
 }
 
-export async function sendForConfirmation<T extends EntryEngineRecord = EntryEngineRecord>(
+export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
-  entryId: string
+  entryId: string,
+  message?: string
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const id = normalizeId(entryId);
@@ -1086,13 +1104,13 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   let trackedToStatus: string | null = null;
   logger.info({
     event: "entry.mutation.start",
-    action: "sendForConfirmation",
+    action: "requestEdit",
     userEmail: normalizedOwner,
     category,
     entryId: id,
   });
   try {
-    enforceEntryMutationGuards(normalizedOwner, `entry.confirmation.send.${category}`, { entryId: id });
+    enforceEntryMutationGuards(normalizedOwner, `entry.edit.request.${category}`, { entryId: id });
     if (!id) {
       throw new AppError({
         code: "VALIDATION_ERROR",
@@ -1108,24 +1126,25 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
         });
       }
 
-      const existing = validateAndSanitizeOrThrow(
-        category,
-        ensureRecord(existingEntry),
-        "sendForConfirmation"
-      ) as EntryLike;
+      const existing = existingEntry as EntryLike;
       trackedFromStatus = String(getWorkflowStatus(existing));
+
       if (!isEntryCommitted(existing as WorkflowEntryLike)) {
         throw new AppError({
           code: "VALIDATION_ERROR",
-          message: "Complete the entry with Done before confirmation.",
+          message: "Entry must be generated before requesting edit access.",
         });
       }
 
       const nowISO = new Date().toISOString();
+      const transitioned = transitionEntry(existing as WorkflowEntryLike, "requestEdit", {
+        nowISO,
+      });
+      if (message?.trim()) {
+        (transitioned as Record<string, unknown>).editRequestMessage = message.trim();
+      }
       const updated = normalizeEntry(
-        transitionEntry(existing as WorkflowEntryLike, "sendForConfirmation", {
-          nowISO,
-        }) as Entry,
+        transitioned as Entry,
         ENTRY_SCHEMAS[category]
       ) as EntryLike;
       trackedToStatus = String(updated.confirmationStatus ?? "");
@@ -1137,7 +1156,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
           userEmail: normalizedOwner,
           category,
           entryId: id,
-          action: "SEND_FOR_CONFIRMATION",
+          action: "REQUEST_EDIT",
           before: existing as EntryEngineRecord,
           after: updated as EntryEngineRecord,
         })
@@ -1153,7 +1172,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
       revalidateDashboardSummary(normalizedOwner);
       logger.info({
         event: "entry.mutation.end",
-        action: "sendForConfirmation",
+        action: "requestEdit",
         userEmail: normalizedOwner,
         category,
         entryId: id,
@@ -1164,7 +1183,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
     });
 
     await trackEntryMutationSuccess({
-      action: "sendForConfirmation",
+      action: "requestEdit",
       actorEmail: normalizedOwner,
       role: "user",
       ownerEmail: normalizedOwner,
@@ -1180,7 +1199,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   } catch (error) {
     await trackEntryMutationFailure(
       {
-        action: "sendForConfirmation",
+        action: "requestEdit",
         actorEmail: normalizedOwner,
         role: "user",
         ownerEmail: normalizedOwner,
@@ -1198,7 +1217,7 @@ export async function sendForConfirmation<T extends EntryEngineRecord = EntryEng
   }
 }
 
-export async function approveEntry<T extends EntryEngineRecord = EntryEngineRecord>(
+export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineRecord>(
   adminEmail: string,
   category: CategoryKey,
   ownerEmail: string,
@@ -1212,21 +1231,21 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
   let trackedToStatus: string | null = null;
   logger.info({
     event: "entry.mutation.start",
-    action: "approve",
+    action: "grantEdit",
     actorEmail: normalizedAdmin,
     userEmail: normalizedOwner,
     category,
     entryId: id,
   });
   try {
-    if (!canApproveConfirmations(normalizedAdmin)) {
+    if (!canManageEditRequests(normalizedAdmin)) {
       throw new AppError({
         code: "FORBIDDEN",
         message: "Forbidden",
       });
     }
 
-    enforceAdminMutationGuards(normalizedAdmin, "entry.confirmation.approve", {
+    enforceAdminMutationGuards(normalizedAdmin, "entry.edit.grant", {
       category,
       ownerEmail: normalizedOwner,
       entryId,
@@ -1243,7 +1262,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
         message: `Unsupported category: ${category}`,
       });
     }
-    const approvedEntry = await withUserDataLock(normalizedOwner, async () => {
+    const grantedEntry = await withUserDataLock(normalizedOwner, async () => {
       const existing = await readEntryRaw(normalizedOwner, category, id);
       if (!existing) {
         throw new AppError({
@@ -1255,7 +1274,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
 
       const nowISO = new Date().toISOString();
       const updated = normalizeEntry(
-        transitionEntry(existing as WorkflowEntryLike, "adminApprove", {
+        transitionEntry(existing as WorkflowEntryLike, "grantEdit", {
           nowISO,
           adminEmail: normalizedAdmin,
         }) as Entry,
@@ -1270,7 +1289,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
           userEmail: normalizedOwner,
           category,
           entryId: id,
-          action: "APPROVE",
+          action: "GRANT_EDIT",
           before: existing,
           after: updated as EntryEngineRecord,
         })
@@ -1286,7 +1305,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
       revalidateDashboardSummary(normalizedOwner);
       logger.info({
         event: "entry.mutation.end",
-        action: "approve",
+        action: "grantEdit",
         actorEmail: normalizedAdmin,
         userEmail: normalizedOwner,
         category,
@@ -1298,7 +1317,7 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
     });
 
     await trackEntryMutationSuccess({
-      action: "approve",
+      action: "grantEdit",
       actorEmail: normalizedAdmin,
       role: "admin",
       ownerEmail: normalizedOwner,
@@ -1310,149 +1329,11 @@ export async function approveEntry<T extends EntryEngineRecord = EntryEngineReco
       durationMs: Date.now() - startedAt,
       source: "admin",
     });
-    return approvedEntry;
+    return grantedEntry;
   } catch (error) {
     await trackEntryMutationFailure(
       {
-        action: "approve",
-        actorEmail: normalizedAdmin,
-        role: "admin",
-        ownerEmail: normalizedOwner,
-        category,
-        entryId: id || null,
-        status: trackedToStatus ?? trackedFromStatus,
-        fromStatus: trackedFromStatus,
-        toStatus: trackedToStatus,
-        durationMs: Date.now() - startedAt,
-        source: "admin",
-      },
-      error
-    );
-    throw error;
-  }
-}
-
-export async function rejectEntry<T extends EntryEngineRecord = EntryEngineRecord>(
-  adminEmail: string,
-  category: CategoryKey,
-  ownerEmail: string,
-  entryId: string,
-  reason?: string
-): Promise<T> {
-  const normalizedAdmin = normalizeEmail(adminEmail);
-  const normalizedOwner = normalizeEmail(ownerEmail);
-  const startedAt = Date.now();
-  const id = normalizeId(entryId);
-  let trackedFromStatus: string | null = null;
-  let trackedToStatus: string | null = null;
-  logger.info({
-    event: "entry.mutation.start",
-    action: "reject",
-    actorEmail: normalizedAdmin,
-    userEmail: normalizedOwner,
-    category,
-    entryId: id,
-  });
-  try {
-    if (!canApproveConfirmations(normalizedAdmin)) {
-      throw new AppError({
-        code: "FORBIDDEN",
-        message: "Forbidden",
-      });
-    }
-
-    enforceAdminMutationGuards(normalizedAdmin, "entry.confirmation.reject", {
-      category,
-      ownerEmail: normalizedOwner,
-      entryId,
-      reason: reason?.trim() ?? "",
-    });
-    if (!id) {
-      throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: "Entry ID is required.",
-      });
-    }
-    if (!CATEGORY_KEYS.includes(category)) {
-      throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: `Unsupported category: ${category}`,
-      });
-    }
-    const rejectedEntry = await withUserDataLock(normalizedOwner, async () => {
-      const existing = await readEntryRaw(normalizedOwner, category, id);
-      if (!existing) {
-        throw new AppError({
-          code: "NOT_FOUND",
-          message: "Entry not found",
-        });
-      }
-      trackedFromStatus = String(normalizeEntryStatus(existing));
-
-      const nowISO = new Date().toISOString();
-      const updated = normalizeEntry(
-        transitionEntry(existing as WorkflowEntryLike, "adminReject", {
-          nowISO,
-          adminEmail: normalizedAdmin,
-          rejectionReason: reason?.trim(),
-        }) as Entry,
-        ENTRY_SCHEMAS[category]
-      ) as EntryLike;
-      trackedToStatus = String(updated.confirmationStatus ?? "");
-      await appendWalEventOrThrow(
-        normalizedOwner,
-        buildEvent({
-          actorEmail: normalizedAdmin,
-          actorRole: "admin",
-          userEmail: normalizedOwner,
-          category,
-          entryId: id,
-          action: "REJECT",
-          before: existing,
-          after: updated as EntryEngineRecord,
-          meta: reason?.trim() ? { reason: reason.trim() } : undefined,
-        })
-      );
-
-      await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
-      await refreshIndexForMutation(
-        normalizedOwner,
-        category,
-        existing,
-        updated as EntryEngineRecord
-      );
-      revalidateDashboardSummary(normalizedOwner);
-      logger.info({
-        event: "entry.mutation.end",
-        action: "reject",
-        actorEmail: normalizedAdmin,
-        userEmail: normalizedOwner,
-        category,
-        entryId: id,
-        status: String(updated.confirmationStatus ?? ""),
-        durationMs: Date.now() - startedAt,
-      });
-      return updated as T;
-    });
-
-    await trackEntryMutationSuccess({
-      action: "reject",
-      actorEmail: normalizedAdmin,
-      role: "admin",
-      ownerEmail: normalizedOwner,
-      category,
-      entryId: id,
-      status: trackedToStatus,
-      fromStatus: trackedFromStatus,
-      toStatus: trackedToStatus,
-      durationMs: Date.now() - startedAt,
-      source: "admin",
-    });
-    return rejectedEntry;
-  } catch (error) {
-    await trackEntryMutationFailure(
-      {
-        action: "reject",
+        action: "grantEdit",
         actorEmail: normalizedAdmin,
         role: "admin",
         ownerEmail: normalizedOwner,

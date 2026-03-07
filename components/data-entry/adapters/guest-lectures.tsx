@@ -515,6 +515,7 @@ export function GuestLecturesPage({
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
+    smartGroupedEntries,
     handleCancel,
     hasUnsavedChanges,
     persistCurrentMutation,
@@ -1056,7 +1057,7 @@ export function GuestLecturesPage({
           ? createGroupedEntryListCard({
               title: "Saved Guest Lecture Entries",
               subtitle: "Your saved guest lecture records are stored locally and keyed to your signed-in email.",
-              groupedEntries,
+              groupedEntries: smartGroupedEntries,
               renderEntry: renderSavedEntry,
             })
           : null

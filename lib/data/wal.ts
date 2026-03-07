@@ -22,9 +22,8 @@ export type WalAction =
   | "CREATE"
   | "UPDATE"
   | "DELETE"
-  | "SEND_FOR_CONFIRMATION"
-  | "APPROVE"
-  | "REJECT"
+  | "REQUEST_EDIT"
+  | "GRANT_EDIT"
   | "UPLOAD_ADD"
   | "UPLOAD_REMOVE"
   | "UPLOAD_REPLACE";

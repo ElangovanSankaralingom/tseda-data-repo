@@ -24,7 +24,7 @@ function getInitials(name: string, email: string) {
   return source.slice(0, 2).toUpperCase();
 }
 
-export default function AvatarMenu({ refreshKey = 0 }: { refreshKey?: number }) {
+export default function AvatarMenu({ refreshKey = 0, showName = false }: { refreshKey?: number; showName?: boolean }) {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -89,17 +89,27 @@ export default function AvatarMenu({ refreshKey = 0 }: { refreshKey?: number }) 
   const email = String(profile?.email ?? "").trim();
   const photoUrl = String(profile?.googlePhotoURL ?? "").trim();
   const initials = getInitials(name, email);
+  const displayName = useMemo(() => {
+    const resolved = String(
+      profile?.officialName ?? profile?.userPreferredName ?? profile?.googleName ?? ""
+    ).trim();
+    return resolved || "";
+  }, [profile]);
 
   return (
     <div ref={rootRef} className="relative">
-      <button
+      <div className="flex items-center gap-2">
+        {showName && displayName ? (
+          <span className="hidden text-sm font-medium text-slate-700 sm:inline">{displayName}</span>
+        ) : null}
+        <button
         ref={buttonRef}
         type="button"
         aria-label="Open account menu"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-sm font-semibold text-foreground transition-transform transition-shadow duration-200 ease-out hover:scale-[1.03] hover:bg-muted/80 hover:shadow-sm hover:ring-2 hover:ring-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
+        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-700 transition-transform transition-shadow duration-200 ease-out hover:scale-[1.03] hover:bg-slate-50 hover:shadow-sm hover:ring-2 hover:ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A5F]/20"
       >
         {photoUrl ? (
           <span
@@ -111,17 +121,18 @@ export default function AvatarMenu({ refreshKey = 0 }: { refreshKey?: number }) 
           <span>{initials}</span>
         )}
       </button>
+      </div>
 
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-border bg-background p-1 shadow-sm"
+          className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
         >
             <Link
             href={profileRoute()}
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="block rounded-lg px-3 py-2 text-sm transition hover:bg-muted"
+            className="block rounded-lg px-3 py-2 text-sm transition hover:bg-slate-50"
           >
             My Account
           </Link>
@@ -132,7 +143,7 @@ export default function AvatarMenu({ refreshKey = 0 }: { refreshKey?: number }) 
               setOpen(false);
               void signOut({ callbackUrl: signin() });
             }}
-            className="block w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-muted"
+            className="block w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-slate-50"
           >
             Sign Out
           </button>

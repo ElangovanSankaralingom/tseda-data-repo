@@ -37,7 +37,7 @@ test("buildExportRows uses schema labels and normalized values", async () => {
         eventName: "  Export Workshop  ",
         speakerName: "   ",
         startDate: "2026-05-10T11:30:00.000Z",
-        confirmationStatus: "PENDING_CONFIRMATION",
+        confirmationStatus: "GENERATED",
         createdAt: "2026-05-10T00:00:00.000Z",
         updatedAt: "2026-05-11T00:00:00.000Z",
       },
@@ -62,8 +62,8 @@ test("buildExportRows uses schema labels and normalized values", async () => {
     assert.equal(String(built.data.rows[0]?.[1] ?? ""), "Export Workshop");
     assert.equal(String(built.data.rows[0]?.[2] ?? ""), "");
     assert.equal(String(built.data.rows[0]?.[3] ?? ""), "2026-05-10");
-    assert.equal(String(built.data.rows[0]?.[4] ?? ""), "PENDING_CONFIRMATION");
-    assert.equal(built.data.countsByStatus.PENDING_CONFIRMATION, 1);
+    assert.equal(String(built.data.rows[0]?.[4] ?? ""), "GENERATED");
+    assert.equal(built.data.countsByStatus.GENERATED, 1);
     assert.equal(built.data.countsByStatus.DRAFT, 0);
   });
 });
@@ -106,10 +106,10 @@ test("buildExportRows filters by status/date and generates csv/xlsx", async () =
   await withSandbox("export-service-files", async (store) => {
     await store.writeCategory(email, "workshops", [
       {
-        id: "approved-1",
+        id: "generated-1",
         category: "workshops",
-        eventName: "Approved Entry",
-        confirmationStatus: "APPROVED",
+        eventName: "Generated Entry",
+        confirmationStatus: "GENERATED",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-05T10:00:00.000Z",
       },
@@ -128,7 +128,7 @@ test("buildExportRows filters by status/date and generates csv/xlsx", async () =
       "all",
       ["category", "id", "confirmationStatus", "updatedAt"],
       {
-        statuses: ["APPROVED"],
+        statuses: ["GENERATED"],
         fromISO: "2026-03-01T00:00:00.000Z",
         toISO: "2026-03-31T23:59:59.999Z",
       }
@@ -137,9 +137,9 @@ test("buildExportRows filters by status/date and generates csv/xlsx", async () =
     if (!built.ok) return;
 
     assert.equal(built.data.rows.length, 1);
-    assert.equal(String(built.data.rows[0]?.[1] ?? ""), "approved-1");
-    assert.equal(String(built.data.rows[0]?.[2] ?? ""), "APPROVED");
-    assert.equal(built.data.countsByStatus.APPROVED, 1);
+    assert.equal(String(built.data.rows[0]?.[1] ?? ""), "generated-1");
+    assert.equal(String(built.data.rows[0]?.[2] ?? ""), "GENERATED");
+    assert.equal(built.data.countsByStatus.GENERATED, 1);
     assert.equal(built.data.countsByStatus.DRAFT, 0);
 
     const csv = generateCsvText(built.data.headers, built.data.rows);
@@ -161,10 +161,10 @@ test("buildExportRows applies canonical status filtering to normalized entries",
   await withSandbox("export-service-status", async (store) => {
     await store.writeCategory(email, "workshops", [
       {
-        id: "approved-canonical-source",
+        id: "generated-canonical-source",
         category: "workshops",
-        eventName: "Approved Entry",
-        confirmationStatus: "APPROVED",
+        eventName: "Generated Entry",
+        confirmationStatus: "GENERATED",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-02T10:00:00.000Z",
       },
@@ -179,14 +179,14 @@ test("buildExportRows applies canonical status filtering to normalized entries",
     ]);
 
     const built = await buildExportRows(email, "workshops", ["id", "confirmationStatus"], {
-      statuses: ["APPROVED"],
+      statuses: ["GENERATED"],
     });
     assert.equal(built.ok, true);
     if (!built.ok) return;
 
     assert.equal(built.data.rows.length, 1);
-    assert.equal(String(built.data.rows[0]?.[0] ?? ""), "approved-canonical-source");
-    assert.equal(String(built.data.rows[0]?.[1] ?? ""), "APPROVED");
-    assert.equal(built.data.countsByStatus.APPROVED, 1);
+    assert.equal(String(built.data.rows[0]?.[0] ?? ""), "generated-canonical-source");
+    assert.equal(String(built.data.rows[0]?.[1] ?? ""), "GENERATED");
+    assert.equal(built.data.countsByStatus.GENERATED, 1);
   });
 });

@@ -1,45 +1,67 @@
-import { isEntryStatus, type EntryStatus } from "@/lib/types/entry";
+import { isEntryStatus, mapLegacyStatus, type EntryStatus } from "@/lib/types/entry";
 export type { EntryStatus } from "@/lib/types/entry";
 
 /**
  * Canonical pure workflow-rule layer for entries.
  *
- * Edit this module when changing confirmation status normalization,
- * commitment semantics, workflow transitions, or approval locking rules.
+ * The new workflow replaces DRAFT/PENDING/APPROVED/REJECTED with:
+ *   DRAFT → GENERATED → (EDIT_REQUESTED → EDIT_GRANTED → GENERATED)
  *
- * Persistence/orchestration does not belong here; see `lifecycle.ts` and
- * `internal/engine.ts` for persisted entry operations.
+ * Finalization is time-based: once `editWindowExpiresAt` has passed, the entry
+ * is effectively read-only. There is no explicit FINALIZED status.
+ *
+ * Edit this module when changing status normalization, edit-window rules,
+ * or transition logic. Persistence lives in `lifecycle.ts` / `engine.ts`.
  */
+
+// --- Edit window constants ---
+
+/** Default edit window: 3 days after generation. */
+const DEFAULT_EDIT_WINDOW_DAYS = 3;
+
+/** Streak-eligible entries get until endDate + 8 days. */
+const STREAK_EDIT_WINDOW_BUFFER_DAYS = 8;
 
 export type EntryTransitionAction =
   | "createEntry"
-  | "sendForConfirmation"
-  | "adminApprove"
-  | "adminReject";
+  | "generateEntry"
+  | "requestEdit"
+  | "grantEdit";
 
 export type EntryStateLike = {
   confirmationStatus?: unknown;
   requestEditStatus?: unknown;
   status?: unknown;
   committedAtISO?: unknown;
+  editWindowExpiresAt?: unknown;
+  editRequestedAt?: unknown;
+  editRequestMessage?: unknown;
+  editGrantedAt?: unknown;
+  editGrantedBy?: unknown;
+  endDate?: unknown;
+  streakEligible?: unknown;
+  updatedAt?: unknown;
+  // Legacy fields for migration
   sentForConfirmationAtISO?: unknown;
   confirmedAtISO?: unknown;
   confirmedBy?: unknown;
   confirmationRejectedReason?: unknown;
-  updatedAt?: unknown;
 };
 
 type TransitionOptions = {
   nowISO?: string;
   adminEmail?: string;
-  rejectionReason?: string;
 };
 
 function normalizeStatusValue(value: unknown): EntryStatus | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
   if (!normalized) return null;
-  return isEntryStatus(normalized) ? normalized : null;
+  if (isEntryStatus(normalized)) return normalized;
+  // Try legacy mapping
+  const mapped = mapLegacyStatus(normalized);
+  if (mapped) return mapped;
+  return null;
 }
 
 function toOptionalISO(value: unknown): string | null {
@@ -48,15 +70,6 @@ function toOptionalISO(value: unknown): string | null {
   if (!trimmed) return null;
   const parsed = Date.parse(trimmed);
   return Number.isNaN(parsed) ? null : trimmed;
-}
-
-function normalizeLegacyRequestStatus(value: unknown): EntryStatus | null {
-  const normalized = String(value ?? "").trim().toLowerCase();
-  if (normalized === "none") return "DRAFT";
-  if (normalized === "pending") return "PENDING_CONFIRMATION";
-  if (normalized === "approved") return "APPROVED";
-  if (normalized === "rejected") return "REJECTED";
-  return null;
 }
 
 export function normalizeEntryStatus(
@@ -69,16 +82,24 @@ export function normalizeEntryStatus(
   const fromStatus = normalizeStatusValue(entry.status);
   if (fromStatus) return fromStatus;
 
+  // Legacy: if it was confirmed or sent for confirmation, it's GENERATED now
   if (typeof entry.confirmedAtISO === "string" && entry.confirmedAtISO.trim()) {
-    return "APPROVED";
+    return "GENERATED";
   }
-
   if (typeof entry.sentForConfirmationAtISO === "string" && entry.sentForConfirmationAtISO.trim()) {
-    return "PENDING_CONFIRMATION";
+    return "GENERATED";
   }
 
-  const fromLegacy = normalizeLegacyRequestStatus(entry.requestEditStatus);
-  if (fromLegacy) return fromLegacy;
+  // If it has committedAtISO, it's GENERATED
+  if (toOptionalISO(entry.committedAtISO)) {
+    return "GENERATED";
+  }
+
+  // Legacy requestEditStatus mapping
+  const legacyReqStatus = String(entry.requestEditStatus ?? "").trim().toLowerCase();
+  if (legacyReqStatus === "pending" || legacyReqStatus === "approved" || legacyReqStatus === "rejected") {
+    return "GENERATED";
+  }
 
   return fallback;
 }
@@ -89,29 +110,83 @@ export function isEntryCommitted(entry: EntryStateLike): boolean {
   }
 
   const workflowStatus = normalizeEntryStatus(entry);
-  if (
-    workflowStatus === "PENDING_CONFIRMATION" ||
-    workflowStatus === "APPROVED" ||
-    workflowStatus === "REJECTED"
-  ) {
-    return true;
+  return workflowStatus !== "DRAFT";
+}
+
+// --- Edit window computation ---
+
+function addDays(dateISO: string, days: number): string {
+  const date = new Date(dateISO);
+  date.setDate(date.getDate() + days);
+  return date.toISOString();
+}
+
+export function computeEditWindowExpiry(
+  generatedAtISO: string,
+  entry: { endDate?: unknown; streakEligible?: unknown }
+): string {
+  const defaultExpiry = addDays(generatedAtISO, DEFAULT_EDIT_WINDOW_DAYS);
+
+  if (entry.streakEligible === true && typeof entry.endDate === "string" && entry.endDate.trim()) {
+    // Streak entries: endDate + buffer days
+    const endDateExpiry = addDays(entry.endDate.trim() + "T23:59:59.999Z", STREAK_EDIT_WINDOW_BUFFER_DAYS);
+    // Use whichever is later
+    return endDateExpiry > defaultExpiry ? endDateExpiry : defaultExpiry;
   }
 
+  return defaultExpiry;
+}
+
+// --- Editability ---
+
+export function isEditWindowExpired(entry: EntryStateLike, nowISO?: string): boolean {
+  const expiry = toOptionalISO(entry.editWindowExpiresAt);
+  if (!expiry) return false;
+  const now = nowISO ?? new Date().toISOString();
+  return now >= expiry;
+}
+
+export function isEntryFinalized(entry: EntryStateLike, nowISO?: string): boolean {
+  const status = normalizeEntryStatus(entry);
+  if (status === "DRAFT") return false;
+  // EDIT_REQUESTED and EDIT_GRANTED are not finalized
+  if (status === "EDIT_REQUESTED" || status === "EDIT_GRANTED") return false;
+  // GENERATED: finalized if edit window has expired
+  return isEditWindowExpired(entry, nowISO);
+}
+
+export function isEntryEditable(entry: EntryStateLike, nowISO?: string): boolean {
+  const status = normalizeEntryStatus(entry);
+  if (status === "DRAFT") return true;
+  if (status === "EDIT_GRANTED") return true;
+  if (status === "GENERATED") {
+    // Editable if edit window hasn't expired
+    return !isEditWindowExpired(entry, nowISO);
+  }
+  // EDIT_REQUESTED: not editable until granted
   return false;
 }
 
+/** @deprecated Use isEntryFinalized instead */
+export function isEntryLocked(entry: EntryStateLike): boolean {
+  return isEntryFinalized(entry);
+}
+
+// --- Transitions ---
+
 export function canTransition(from: EntryStatus, to: EntryStatus): boolean {
-  if (from === "DRAFT") return to === "PENDING_CONFIRMATION";
-  if (from === "REJECTED") return to === "PENDING_CONFIRMATION";
-  if (from === "PENDING_CONFIRMATION") return to === "APPROVED" || to === "REJECTED";
+  if (from === "DRAFT") return to === "GENERATED";
+  if (from === "GENERATED") return to === "EDIT_REQUESTED";
+  if (from === "EDIT_REQUESTED") return to === "EDIT_GRANTED";
+  if (from === "EDIT_GRANTED") return to === "GENERATED";
   return false;
 }
 
 function statusForAction(action: EntryTransitionAction): EntryStatus {
   if (action === "createEntry") return "DRAFT";
-  if (action === "sendForConfirmation") return "PENDING_CONFIRMATION";
-  if (action === "adminApprove") return "APPROVED";
-  return "REJECTED";
+  if (action === "generateEntry") return "GENERATED";
+  if (action === "requestEdit") return "EDIT_REQUESTED";
+  return "EDIT_GRANTED";
 }
 
 export function transitionEntry<T extends EntryStateLike>(
@@ -134,35 +209,74 @@ export function transitionEntry<T extends EntryStateLike>(
   } as T;
 
   if (to === "DRAFT") {
-    (next as Record<string, unknown>).sentForConfirmationAtISO = null;
-    (next as Record<string, unknown>).confirmedAtISO = null;
-    (next as Record<string, unknown>).confirmedBy = null;
-    (next as Record<string, unknown>).confirmationRejectedReason = "";
     return next;
   }
 
-  if (to === "PENDING_CONFIRMATION") {
-    (next as Record<string, unknown>).sentForConfirmationAtISO = nowISO;
-    (next as Record<string, unknown>).confirmedAtISO = null;
-    (next as Record<string, unknown>).confirmedBy = null;
-    (next as Record<string, unknown>).confirmationRejectedReason = "";
+  if (to === "GENERATED" && from === "EDIT_GRANTED") {
+    // Re-generate after edit grant — update edit window
+    const editWindowExpiresAt = computeEditWindowExpiry(nowISO, entry);
+    (next as Record<string, unknown>).editWindowExpiresAt = editWindowExpiresAt;
+    (next as Record<string, unknown>).editRequestedAt = null;
+    (next as Record<string, unknown>).editRequestMessage = null;
+    (next as Record<string, unknown>).editGrantedAt = null;
+    (next as Record<string, unknown>).editGrantedBy = null;
     return next;
   }
 
-  if (to === "APPROVED") {
-    (next as Record<string, unknown>).confirmedAtISO = nowISO;
-    (next as Record<string, unknown>).confirmedBy = options?.adminEmail ?? null;
-    (next as Record<string, unknown>).confirmationRejectedReason = "";
+  if (to === "GENERATED") {
+    // First generation
+    const editWindowExpiresAt = computeEditWindowExpiry(nowISO, entry);
+    (next as Record<string, unknown>).editWindowExpiresAt = editWindowExpiresAt;
     return next;
   }
 
-  (next as Record<string, unknown>).confirmedAtISO = null;
-  (next as Record<string, unknown>).confirmedBy = null;
-  (next as Record<string, unknown>).confirmationRejectedReason =
-    options?.rejectionReason?.trim() ?? "";
+  if (to === "EDIT_REQUESTED") {
+    (next as Record<string, unknown>).editRequestedAt = nowISO;
+    return next;
+  }
+
+  if (to === "EDIT_GRANTED") {
+    (next as Record<string, unknown>).editGrantedAt = nowISO;
+    (next as Record<string, unknown>).editGrantedBy = options?.adminEmail ?? null;
+    return next;
+  }
+
   return next;
 }
 
-export function isEntryLocked(entry: EntryStateLike): boolean {
-  return normalizeEntryStatus(entry) === "APPROVED";
+// --- Remaining edit time ---
+
+export type EditTimeRemaining = {
+  hasEditWindow: boolean;
+  expired: boolean;
+  expiresAtISO: string | null;
+  remainingMs: number;
+  remainingLabel: string;
+};
+
+export function getEditTimeRemaining(entry: EntryStateLike, nowISO?: string): EditTimeRemaining {
+  const expiry = toOptionalISO(entry.editWindowExpiresAt);
+  if (!expiry) {
+    return { hasEditWindow: false, expired: false, expiresAtISO: null, remainingMs: 0, remainingLabel: "" };
+  }
+
+  const now = nowISO ?? new Date().toISOString();
+  const remainingMs = Math.max(0, Date.parse(expiry) - Date.parse(now));
+  const expired = remainingMs <= 0;
+
+  let remainingLabel = "";
+  if (!expired) {
+    const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    if (days > 0) {
+      remainingLabel = `${days}d ${hours % 24}h left`;
+    } else if (hours > 0) {
+      remainingLabel = `${hours}h left`;
+    } else {
+      const minutes = Math.max(1, Math.ceil(remainingMs / (1000 * 60)));
+      remainingLabel = `${minutes}m left`;
+    }
+  }
+
+  return { hasEditWindow: true, expired, expiresAtISO: expiry, remainingMs, remainingLabel };
 }

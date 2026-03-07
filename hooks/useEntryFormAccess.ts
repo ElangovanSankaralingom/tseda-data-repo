@@ -1,16 +1,19 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { getEntryApprovalStatus, isEntryLockedFromStatus } from "@/lib/confirmation";
+import { isEntryLockedFromStatus } from "@/lib/confirmation";
 import { canEditField } from "@/lib/pendingImmutability";
+import { isEntryEditable } from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type EntryLike = {
   status?: string | null;
   confirmationStatus?: string | null;
   requestEditStatus?: string | null;
-  sentForConfirmationAtISO?: string | null;
-  confirmedAtISO?: string | null;
+  committedAtISO?: string | null;
+  editWindowExpiresAt?: string | null;
+  editRequestedAt?: string | null;
+  editGrantedAt?: string | null;
 };
 
 type UseEntryFormAccessOptions<TEntry extends EntryLike> = {
@@ -26,7 +29,7 @@ export function useEntryFormAccess<TEntry extends EntryLike>({
 }: UseEntryFormAccessOptions<TEntry>) {
   const entryLocked = useMemo(() => isEntryLockedFromStatus(entry), [entry]);
   const controlsDisabled = isViewMode || entryLocked;
-  const pendingCoreLocked = getEntryApprovalStatus(entry) === "PENDING_CONFIRMATION";
+  const entryEditable = isEntryEditable(entry);
 
   const coreFieldDisabled = useCallback(
     (fieldKey: string) => controlsDisabled || !canEditField(entry, category, fieldKey),
@@ -36,8 +39,7 @@ export function useEntryFormAccess<TEntry extends EntryLike>({
   return {
     entryLocked,
     controlsDisabled,
-    pendingCoreLocked,
+    pendingCoreLocked: !entryEditable,
     coreFieldDisabled,
   };
 }
-

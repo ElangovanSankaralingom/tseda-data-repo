@@ -472,6 +472,7 @@ export function FdpAttendedPage({
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
+    smartGroupedEntries,
     handleCancel,
     hasUnsavedChanges,
     markAutoSaveSaved,
@@ -632,7 +633,7 @@ export function FdpAttendedPage({
       router.push(entryDetail("fdp-attended", entry.id), { scroll: false });
     },
     hideActions: (entry) => !!(activeEntryId && entry.id === activeEntryId),
-    enableWorkflowActions: (_entry, category) => category === "completed",
+    enableWorkflowActions: (_entry, group) => group === "locked_in",
     deleteLabel: "Delete entry",
     requestConfirmation,
     buildDeleteRequest: (entry) => ({
@@ -912,7 +913,7 @@ export function FdpAttendedPage({
           ? createGroupedEntryListCard({
               title: "Saved FDP Attended Entries",
               subtitle: "Your saved records are stored locally and keyed by your signed-in email.",
-              groupedEntries,
+              groupedEntries: smartGroupedEntries,
               renderEntry: renderSavedEntry,
             })
           : null

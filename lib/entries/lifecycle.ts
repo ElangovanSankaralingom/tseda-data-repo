@@ -16,15 +16,14 @@ export type { EntryEngineRecord, EntryStreakSummary } from "./internal/engine.ts
 
 // Public persisted lifecycle operations.
 export {
-  approveEntry,
   commitDraft,
   computeStreak,
   createEntry,
   deleteEntry,
+  grantEditAccess,
   listEntriesForCategory,
-  rejectEntry,
   replaceEntriesForCategory,
-  sendForConfirmation,
+  requestEdit,
   updateEntry,
 } from "./internal/engine.ts";
 

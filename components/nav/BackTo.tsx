@@ -1,26 +1,34 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { safeBack } from "@/lib/entryNavigation";
 
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M15 6 9 12l6 6"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+/** Derive a human label from a back-navigation href. */
+function labelFromHref(href: string): string {
+  // /data-entry → "Data Entry"
+  if (href === "/data-entry" || href === "/data-entry/") return "Data Entry";
+  // /dashboard → "Dashboard"
+  if (href === "/dashboard" || href === "/dashboard/") return "Dashboard";
+  // /admin → "Admin"
+  if (href === "/admin" || href === "/admin/") return "Admin";
+  // /data-entry/<category> → prettify slug
+  const catMatch = href.match(/^\/data-entry\/([a-z-]+)\/?$/);
+  if (catMatch) {
+    return catMatch[1]
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+  // /admin/<sub> → prettify
+  const adminMatch = href.match(/^\/admin\/([a-z-]+)\/?$/);
+  if (adminMatch) {
+    return adminMatch[1]
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+  return "Back";
 }
 
 type BackToProps = {
@@ -33,12 +41,14 @@ type BackToProps = {
 
 export default function BackTo({
   href,
-  label = "Back",
+  label,
   disabled = false,
   compact = false,
   onClick,
 }: BackToProps) {
   const router = useRouter();
+  const resolvedLabel = label || labelFromHref(href);
+
   const handleClick = () => {
     if (disabled) return;
     if (onClick) {
@@ -48,37 +58,21 @@ export default function BackTo({
     safeBack(router, href);
   };
 
-  if (compact) {
-    return (
-      <button
-        type="button"
-        aria-label={label}
-        disabled={disabled}
-        onClick={handleClick}
-        className={
-          disabled
-            ? "pointer-events-none inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-full border border-border text-muted-foreground opacity-50"
-            : "inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground cursor-pointer"
-        }
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-      </button>
-    );
-  }
+  const disabledClass =
+    "pointer-events-none cursor-not-allowed inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-400 opacity-50";
+  const enabledClass =
+    "group inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-slate-200 hover:text-slate-900 active:scale-95 cursor-pointer";
 
   return (
     <button
       type="button"
+      aria-label={resolvedLabel}
       disabled={disabled}
       onClick={handleClick}
-      className={
-        disabled
-          ? "pointer-events-none inline-flex cursor-not-allowed items-center gap-1.5 text-sm text-muted-foreground opacity-50"
-          : "inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground cursor-pointer"
-      }
+      className={disabled ? disabledClass : enabledClass}
     >
-      <ArrowLeftIcon className="h-4 w-4" />
-      <span>{label}</span>
+      <ArrowLeft className="size-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+      {!compact && <span>{resolvedLabel}</span>}
     </button>
   );
 }

@@ -23,12 +23,12 @@ export default function EntryPageHeader({
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           {showBack ? (
-            <BackTo href={backHref} disabled={backDisabled} compact onClick={onBack} />
+            <BackTo href={backHref} disabled={backDisabled} onClick={onBack} />
           ) : null}
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         </div>
 
-        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
       </div>
 
       {actions ? <div className="flex gap-2">{actions}</div> : null}
