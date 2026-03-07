@@ -27,7 +27,8 @@ test("buildSearchText normalizes text for token matching", () => {
       id: "w-1",
       eventName: "  AI/ML Workshop: 2026!  ",
       speakerName: "Dr. Jane Doe",
-      semesterType: "Odd",
+      yearOfStudy: "2nd year",
+      currentSemester: 3,
     },
     "workshops"
   );

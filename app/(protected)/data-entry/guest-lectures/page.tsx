@@ -55,10 +55,11 @@ import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdf
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
-  normalizeStudentYear,
-  STUDENT_YEAR_OPTIONS,
-  type StudentYear,
+  normalizeYearOfStudy,
+  YEAR_OF_STUDY_OPTIONS,
+  type YearOfStudy,
 } from "@/lib/student-academic";
+import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import {
   createOptimisticSnapshot,
   optimisticRemove,
@@ -93,7 +94,6 @@ type GuestLectureEntry = {
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
-  semesterType: "Odd" | "Even" | "";
   startDate: string;
   endDate: string;
   eventName: string;
@@ -101,8 +101,8 @@ type GuestLectureEntry = {
   organizationName: string;
   coordinator: FacultyRowValue;
   coCoordinators: FacultyRowValue[];
-  studentYear: StudentYear | "";
-  semesterNumber: number | null;
+  yearOfStudy: YearOfStudy | "";
+  currentSemester: number | null;
   participants: number | null;
   pdfMeta?: {
     storedPath: string;
@@ -132,11 +132,6 @@ const ACADEMIC_YEAR_DROPDOWN_OPTIONS = ACADEMIC_YEAR_OPTIONS.map((option) => ({
   label: option,
   value: option,
 }));
-
-const SEMESTER_TYPE_OPTIONS = [
-  { value: "Odd", label: "Odd Semester" },
-  { value: "Even", label: "Even Semester" },
-] as const;
 
 const UPLOAD_CONFIG: Array<{ slot: UploadSlot; label: string }> = [
   { slot: "permissionLetter", label: "Permission Letter" },
@@ -233,12 +228,11 @@ function formatFacultyDisplay(selection: FacultyRowValue) {
 }
 
 function createEmptyForm(currentFaculty?: FacultyRowValue): GuestLectureEntry {
-  return {
+  return withAcademicProgressionCompatibility({
     id: uuid(),
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     academicYear: "",
-    semesterType: "",
     startDate: "",
     endDate: "",
     eventName: "",
@@ -246,8 +240,8 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): GuestLectureEntry {
     organizationName: "",
     coordinator: currentFaculty?.email ? currentFaculty : emptyFacultySelection(),
     coCoordinators: [],
-    studentYear: "",
-    semesterNumber: null,
+    yearOfStudy: "",
+    currentSemester: null,
     participants: null,
     pdfMeta: null,
     pdfSourceHash: "",
@@ -259,11 +253,13 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): GuestLectureEntry {
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
-  };
+  }) as GuestLectureEntry;
 }
 
 function hydrateEntry(entry: GuestLectureEntry): GuestLectureEntry {
-  return hydratePdfSnapshot(entry, "guest-lectures") as GuestLectureEntry;
+  return withAcademicProgressionCompatibility(
+    hydratePdfSnapshot(entry, "guest-lectures") as GuestLectureEntry
+  ) as GuestLectureEntry;
 }
 
 function SectionCard({
@@ -443,10 +439,6 @@ export function GuestLecturesPage({
       nextErrors.academicYear = "Academic year is required.";
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.some((option) => option.value === form.semesterType)) {
-      nextErrors.semesterType = "Semester type is required.";
-    }
-
     if (!isISODate(form.startDate)) {
       nextErrors.startDate = "Starting date is required.";
     } else {
@@ -497,13 +489,13 @@ export function GuestLecturesPage({
       }
     });
 
-    const normalizedYear = normalizeStudentYear(form.studentYear);
+    const normalizedYear = normalizeYearOfStudy(form.yearOfStudy);
     if (!normalizedYear) {
-      nextErrors.studentYear = "Student year is required.";
+      nextErrors.yearOfStudy = "Year of study is required.";
     }
 
-    if (normalizedYear && !isSemesterAllowed(normalizedYear, form.semesterNumber ?? undefined)) {
-      nextErrors.semesterNumber = "Semester is required.";
+    if (normalizedYear && !isSemesterAllowed(normalizedYear, form.currentSemester ?? undefined)) {
+      nextErrors.currentSemester = "Current semester is required.";
     }
 
     if (form.participants === null) {
@@ -516,7 +508,7 @@ export function GuestLecturesPage({
   }, [form, currentFaculty.email]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const normalizedStudentYear = normalizeStudentYear(form.studentYear);
+  const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const { entryLocked, controlsDisabled, pendingCoreLocked, coreFieldDisabled } = useEntryFormAccess({
     entry: form,
@@ -643,7 +635,7 @@ export function GuestLecturesPage({
     const response = await fetch("/api/me/guest-lectures", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, entry: nextForm }),
+      body: JSON.stringify({ email, entry: withAcademicProgressionCompatibility(nextForm) }),
     });
     const { message, payload } = await parseApiError(response, "Save failed");
 
@@ -700,7 +692,7 @@ export function GuestLecturesPage({
       throw new Error(message);
     }
 
-    const persisted = payload as GuestLectureEntry;
+    const persisted = hydrateEntry(payload as GuestLectureEntry);
     void trackClientTelemetryEvent({
       event: eventName,
       category: "guest-lectures",
@@ -800,10 +792,10 @@ export function GuestLecturesPage({
       setList,
       buildEntryToSave: () => {
         const latestForm = formRef.current;
-        return {
+        return withAcademicProgressionCompatibility({
           ...latestForm,
           coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
-        };
+        }) as GuestLectureEntry;
       },
       buildOptimisticEntry: (entryToSave) =>
         hydrateEntry({
@@ -1120,7 +1112,7 @@ export function GuestLecturesPage({
           </div>
 
           <div className="text-sm text-muted-foreground">
-            {entry.academicYear} • {entry.semesterType} Semester
+            {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
           </div>
           <div className="text-sm text-muted-foreground">
             Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
@@ -1132,7 +1124,7 @@ export function GuestLecturesPage({
               : ""}
           </div>
           <div className="text-sm text-muted-foreground">
-            {entry.studentYear || "-"} • Semester {entry.semesterNumber ?? "-"} • Participants: {entry.participants ?? "-"}
+            {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"} • Participants: {entry.participants ?? "-"}
           </div>
 
           <div className="flex flex-wrap gap-3 text-sm">
@@ -1241,22 +1233,6 @@ export function GuestLecturesPage({
                 />
               </Field>
 
-              <Field label="Type of Semester" error={submitted ? errors.semesterType : undefined}>
-                <SelectDropdown
-                  value={form.semesterType}
-                  onChange={(value) =>
-                    setForm((current) => ({
-                      ...current,
-                      semesterType: value as GuestLectureEntry["semesterType"],
-                    }))
-                  }
-                  options={SEMESTER_TYPE_OPTIONS}
-                  placeholder="Select semester type"
-                  disabled={coreFieldDisabled("semesterType")}
-                  error={submitted && !!errors.semesterType}
-                />
-              </Field>
-
               <Field
                 label="Start Date"
                 error={submitted ? errors.startDate : undefined}
@@ -1360,50 +1336,52 @@ export function GuestLecturesPage({
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
 
-              <Field label="Student Year" error={submitted ? errors.studentYear : undefined}>
+              <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
                 <SelectDropdown
-                  value={form.studentYear}
+                  value={form.yearOfStudy}
                   onChange={(value) =>
                     setForm((current) => {
-                      const nextYear = normalizeStudentYear(value) ?? "";
-                      const nextSemester = isSemesterAllowed(nextYear || undefined, current.semesterNumber ?? undefined)
-                        ? current.semesterNumber
+                      const nextYear = normalizeYearOfStudy(value) ?? "";
+                      const nextSemester = isSemesterAllowed(nextYear || undefined, current.currentSemester ?? undefined)
+                        ? current.currentSemester
                         : null;
 
-                      return {
+                      return withAcademicProgressionCompatibility({
                         ...current,
-                        studentYear: nextYear,
-                        semesterNumber: nextSemester,
-                      };
+                        yearOfStudy: nextYear,
+                        currentSemester: nextSemester,
+                      }) as GuestLectureEntry;
                     })
                   }
-                  options={STUDENT_YEAR_OPTIONS}
+                  options={YEAR_OF_STUDY_OPTIONS}
                   placeholder="Select year"
-                  disabled={coreFieldDisabled("studentYear")}
-                  error={submitted && !!errors.studentYear}
+                  disabled={coreFieldDisabled("yearOfStudy")}
+                  error={submitted && !!errors.yearOfStudy}
                 />
               </Field>
 
               <Field
-                label="Semester"
-                error={submitted ? errors.semesterNumber : undefined}
-                hint={normalizedStudentYear ? "Select semester (based on year)" : "Select student year first"}
+                label="Current Semester"
+                error={submitted ? errors.currentSemester : undefined}
+                hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
               >
                 <SelectDropdown
-                  value={form.semesterNumber === null ? "" : String(form.semesterNumber)}
-                  disabled={coreFieldDisabled("semesterNumber") || !normalizedStudentYear}
+                  value={form.currentSemester === null ? "" : String(form.currentSemester)}
+                  disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
                   onChange={(value) =>
-                    setForm((current) => ({
-                      ...current,
-                      semesterNumber: value ? Number(value) : null,
-                    }))
+                    setForm((current) =>
+                      withAcademicProgressionCompatibility({
+                        ...current,
+                        currentSemester: value ? Number(value) : null,
+                      }) as GuestLectureEntry
+                    )
                   }
                   options={semesterOptions.map((option) => ({
                     label: String(option),
                     value: String(option),
                   }))}
-                  placeholder={normalizedStudentYear ? "Select semester (based on year)" : "Select student year first"}
-                  error={submitted && !!errors.semesterNumber}
+                  placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
+                  error={submitted && !!errors.currentSemester}
                 />
               </Field>
 

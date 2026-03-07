@@ -90,7 +90,6 @@ type GuestLectureEntry = {
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
-  semesterType: string;
   startDate: string;
   endDate: string;
   eventName: string;
@@ -115,7 +114,6 @@ const ACADEMIC_YEAR_OPTIONS = new Set([
   "Academic Year 2026-2027",
   "Academic Year 2027-2028",
 ]);
-const SEMESTER_TYPE_OPTIONS = new Set(["Odd", "Even"]);
 const REQUIRED_SLOTS: UploadSlot[] = [
   "permissionLetter",
   "brochure",
@@ -298,7 +296,6 @@ function normalizeEntry(value: unknown): GuestLectureEntry | null {
         ? record.requestEditRequestedAtISO.trim()
         : null,
     academicYear: String(record.academicYear ?? "").trim(),
-    semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
     endDate: String(record.endDate ?? "").trim(),
     eventName: String(record.eventName ?? "").trim(),
@@ -493,10 +490,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "academicYear required" }, { status: 400 });
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
-      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
-    }
-
     if (!isISODate(entry.startDate)) {
       return NextResponse.json({ error: "startDate required" }, { status: 400 });
     }
@@ -615,7 +608,6 @@ export async function POST(request: Request) {
       sourceEmail: email,
       committedAtISO: nextCommittedAtISO,
       academicYear: entry.academicYear,
-      semesterType: entry.semesterType,
       startDate: entry.startDate,
       endDate: entry.endDate,
       eventName: entry.eventName,
@@ -791,7 +783,6 @@ export async function PATCH(request: Request) {
     const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
 
     const hasAcademicYear = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "academicYear");
-    const hasSemesterType = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "semesterType");
     const hasStartDate = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "startDate");
     const hasEndDate = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "endDate");
     const hasEventName = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "eventName");
@@ -810,10 +801,6 @@ export async function PATCH(request: Request) {
 
     if (hasAcademicYear && entry.academicYear && !ACADEMIC_YEAR_OPTIONS.has(entry.academicYear)) {
       return NextResponse.json({ error: "academicYear invalid" }, { status: 400 });
-    }
-
-    if (hasSemesterType && entry.semesterType && !SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
-      return NextResponse.json({ error: "semesterType invalid" }, { status: 400 });
     }
 
     if (hasStartDate && entry.startDate && !isISODate(entry.startDate)) {
@@ -908,7 +895,6 @@ export async function PATCH(request: Request) {
         uploads: normalizeUploads(null),
         streak: normalizeStreakState(null),
         academicYear: "",
-        semesterType: "",
         startDate: "",
         endDate: "",
         eventName: "",
@@ -925,7 +911,6 @@ export async function PATCH(request: Request) {
       requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
       requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       academicYear: hasAcademicYear ? entry.academicYear : existing?.academicYear ?? "",
-      semesterType: hasSemesterType ? entry.semesterType : existing?.semesterType ?? "",
       startDate: hasStartDate ? entry.startDate : existing?.startDate ?? "",
       endDate: hasEndDate ? entry.endDate : existing?.endDate ?? "",
       eventName: hasEventName ? entry.eventName : existing?.eventName ?? "",

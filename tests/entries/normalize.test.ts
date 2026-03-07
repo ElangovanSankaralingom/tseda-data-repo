@@ -52,3 +52,19 @@ test("normalizeEntry guarantees timestamps and attachments shape", () => {
   assert.match(String(normalized.createdAt ?? ""), /^\d{4}-\d{2}-\d{2}T/);
   assert.match(String(normalized.updatedAt ?? ""), /^\d{4}-\d{2}-\d{2}T/);
 });
+
+test("normalizePayload maps academic progression aliases and derives semester type", () => {
+  const normalized = normalizePayload(
+    {
+      studentYear: "2nd year",
+      semesterNumber: "4",
+    },
+    workshopsSchema
+  );
+
+  assert.equal(normalized.yearOfStudy, "2nd year");
+  assert.equal(normalized.currentSemester, 4);
+  assert.equal(normalized.studentYear, "2nd year");
+  assert.equal(normalized.semesterNumber, 4);
+  assert.equal(normalized.semesterType, "EVEN");
+});

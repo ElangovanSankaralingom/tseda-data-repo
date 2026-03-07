@@ -75,7 +75,6 @@ type CaseStudyEntry = {
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
-  semesterType: string;
   startDate: string;
   endDate: string;
   coordinator: StaffSelection;
@@ -102,7 +101,6 @@ const ACADEMIC_YEAR_OPTIONS = new Set([
   "Academic Year 2026-2027",
   "Academic Year 2027-2028",
 ]);
-const SEMESTER_TYPE_OPTIONS = new Set(["Odd", "Even"]);
 
 function isISODate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
@@ -279,7 +277,6 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
         ? record.requestEditRequestedAtISO.trim()
         : null,
     academicYear: String(record.academicYear ?? "").trim(),
-    semesterType: String(record.semesterType ?? "").trim(),
     startDate: String(record.startDate ?? "").trim(),
     endDate: String(record.endDate ?? "").trim(),
     coordinator,
@@ -545,10 +542,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "academicYear required" }, { status: 400 });
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
-      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
-    }
-
     if (!isISODate(entry.startDate)) {
       return NextResponse.json({ error: "startDate required" }, { status: 400 });
     }
@@ -668,7 +661,6 @@ export async function POST(request: Request) {
       sourceEmail: email,
       committedAtISO: nextCommittedAtISO,
       academicYear: entry.academicYear,
-      semesterType: entry.semesterType,
       startDate: entry.startDate,
       endDate: entry.endDate,
       coordinator,
@@ -785,10 +777,6 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "academicYear required" }, { status: 400 });
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
-      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
-    }
-
     if (!isISODate(entry.startDate)) {
       return NextResponse.json({ error: "startDate required" }, { status: 400 });
     }
@@ -884,7 +872,6 @@ export async function PATCH(request: Request) {
         requestEditStatus: "none",
         requestEditRequestedAtISO: null,
         academicYear: "",
-        semesterType: "",
         startDate: "",
         endDate: "",
         coordinator,
@@ -912,7 +899,6 @@ export async function PATCH(request: Request) {
       requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
       requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       academicYear: entry.academicYear,
-      semesterType: entry.semesterType,
       startDate: entry.startDate,
       endDate: entry.endDate,
       coordinator,

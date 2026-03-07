@@ -36,7 +36,8 @@ test("computeStreak counts activated and wins entries consistently", async () =>
   await withSandbox("streak-counts", async () => {
     const activeEntry = await createEntry(ownerEmail, "workshops", {
       academicYear: "2025-2026",
-      semesterType: "Odd",
+      yearOfStudy: "2nd year",
+      currentSemester: 3,
       startDate: "2026-03-01",
       endDate: "2026-03-02",
       eventName: "Active streak workshop",
@@ -54,7 +55,8 @@ test("computeStreak counts activated and wins entries consistently", async () =>
 
     const workshopWin = await createEntry(ownerEmail, "workshops", {
       academicYear: "2025-2026",
-      semesterType: "Odd",
+      yearOfStudy: "2nd year",
+      currentSemester: 3,
       startDate: "2026-03-03",
       endDate: "2026-03-04",
       eventName: "Won streak workshop",
@@ -74,7 +76,8 @@ test("computeStreak counts activated and wins entries consistently", async () =>
 
     const fdpWin = await createEntry(ownerEmail, "fdp-attended", {
       academicYear: "2025-2026",
-      semesterType: "Odd",
+      yearOfStudy: "2nd year",
+      currentSemester: 3,
       startDate: "2026-03-05",
       endDate: "2026-03-06",
       programName: "FDP Won",

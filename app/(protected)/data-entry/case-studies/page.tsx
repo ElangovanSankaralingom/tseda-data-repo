@@ -56,10 +56,11 @@ import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
-  normalizeStudentYear,
-  STUDENT_YEAR_OPTIONS,
-  type StudentYear,
+  normalizeYearOfStudy,
+  YEAR_OF_STUDY_OPTIONS,
+  type YearOfStudy,
 } from "@/lib/student-academic";
+import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import {
   createOptimisticSnapshot,
   optimisticRemove,
@@ -102,15 +103,14 @@ type CaseStudyEntry = {
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
-  semesterType: "Odd" | "Even" | "";
   startDate: string;
   endDate: string;
   coordinator: FacultyRowValue;
   placeOfVisit: string;
   purposeOfVisit: string;
   staffAccompanying: StaffSelection[];
-  studentYear: StudentYear | "";
-  semesterNumber: number | null;
+  yearOfStudy: YearOfStudy | "";
+  currentSemester: number | null;
   participants: number | null;
   amountSupport: number | null;
   pdfMeta?: {
@@ -143,11 +143,6 @@ const ACADEMIC_YEAR_DROPDOWN_OPTIONS = ACADEMIC_YEAR_OPTIONS.map((option) => ({
   label: option,
   value: option,
 }));
-
-const SEMESTER_TYPE_OPTIONS = [
-  { value: "Odd", label: "Odd Semester" },
-  { value: "Even", label: "Even Semester" },
-] as const;
 
 const FACULTY_OPTIONS = FACULTY;
 const DEBUG_SAVE_FACULTY = false;
@@ -232,20 +227,19 @@ function emptyStaff(): StaffSelection {
 }
 
 function emptyForm(currentFaculty?: FacultyRowValue): CaseStudyEntry {
-  return {
+  return withAcademicProgressionCompatibility({
     id: uuid(),
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     academicYear: "",
-    semesterType: "",
     startDate: "",
     endDate: "",
     coordinator: currentFaculty?.email ? currentFaculty : emptyStaff(),
     placeOfVisit: "",
     purposeOfVisit: "",
     staffAccompanying: [],
-    studentYear: "",
-    semesterNumber: null,
+    yearOfStudy: "",
+    currentSemester: null,
     participants: null,
     amountSupport: null,
     pdfMeta: null,
@@ -257,11 +251,13 @@ function emptyForm(currentFaculty?: FacultyRowValue): CaseStudyEntry {
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
-  };
+  }) as CaseStudyEntry;
 }
 
 function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
-  return hydratePdfSnapshot(entry, "case-studies") as CaseStudyEntry;
+  return withAcademicProgressionCompatibility(
+    hydratePdfSnapshot(entry, "case-studies") as CaseStudyEntry
+  ) as CaseStudyEntry;
 }
 
 function SectionCard({
@@ -443,10 +439,6 @@ export function CaseStudiesPage({
       nextErrors.academicYear = "Academic year is required.";
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.some((option) => option.value === entry.semesterType)) {
-      nextErrors.semesterType = "Semester type is required.";
-    }
-
     if (!isISODate(entry.startDate)) {
       nextErrors.startDate = "Starting date is required.";
     } else {
@@ -494,13 +486,13 @@ export function CaseStudiesPage({
       }
     });
 
-    const normalizedStudentYear = normalizeStudentYear(entry.studentYear);
+    const normalizedStudentYear = normalizeYearOfStudy(entry.yearOfStudy);
     if (!normalizedStudentYear) {
-      nextErrors.studentYear = "Year is required.";
+      nextErrors.yearOfStudy = "Year of study is required.";
     }
 
-    if (normalizedStudentYear && !isSemesterAllowed(normalizedStudentYear, entry.semesterNumber ?? undefined)) {
-      nextErrors.semesterNumber = "Semester is required.";
+    if (normalizedStudentYear && !isSemesterAllowed(normalizedStudentYear, entry.currentSemester ?? undefined)) {
+      nextErrors.currentSemester = "Current semester is required.";
     }
 
     if (entry.amountSupport !== null) {
@@ -515,7 +507,7 @@ export function CaseStudiesPage({
   const errors = useMemo(() => buildEntryErrors(form), [form]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const normalizedStudentYear = normalizeStudentYear(form.studentYear);
+  const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const { entryLocked, controlsDisabled, pendingCoreLocked, coreFieldDisabled } = useEntryFormAccess({
     entry: form,
@@ -664,7 +656,7 @@ export function CaseStudiesPage({
     const response = await fetch("/api/me/case-studies", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, entry: nextForm }),
+      body: JSON.stringify({ email, entry: withAcademicProgressionCompatibility(nextForm) }),
     });
     const { message, payload } = await parseApiError(response, "Save failed");
 
@@ -721,7 +713,7 @@ export function CaseStudiesPage({
       throw new Error(message);
     }
 
-    const persisted = payload as CaseStudyEntry;
+    const persisted = hydrateEntry(payload as CaseStudyEntry);
     void trackClientTelemetryEvent({
       event: eventName,
       category: "case-studies",
@@ -804,10 +796,10 @@ export function CaseStudiesPage({
       setList,
       buildEntryToSave: () => {
         const latestForm = formRef.current;
-        return {
+        return withAcademicProgressionCompatibility({
           ...latestForm,
           coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
-        };
+        }) as CaseStudyEntry;
       },
       buildOptimisticEntry: (entryToSave) =>
         hydrateEntry({
@@ -893,10 +885,6 @@ export function CaseStudiesPage({
       return { ok: false, error: "Select academic year first." };
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.some((option) => option.value === entryDraft.semesterType)) {
-      return { ok: false, error: "Select semester type first." };
-    }
-
     if (!isISODate(entryDraft.startDate)) {
       return { ok: false, error: "Select a valid starting date first." };
     }
@@ -940,7 +928,8 @@ export function CaseStudiesPage({
           id: entryToSave.id,
           sharedEntryId: entryToSave.sharedEntryId ?? null,
           academicYear: entryToSave.academicYear,
-          semesterType: entryToSave.semesterType,
+          yearOfStudy: entryToSave.yearOfStudy,
+          currentSemester: entryToSave.currentSemester,
           startDate: entryToSave.startDate,
           endDate: entryToSave.endDate,
           staffAccompanying: entryToSave.staffAccompanying.map((item) => ({
@@ -966,7 +955,10 @@ export function CaseStudiesPage({
       const response = await fetch("/api/me/case-studies", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, entry: entryToSave }),
+        body: JSON.stringify({
+          email,
+          entry: withAcademicProgressionCompatibility(entryToSave),
+        }),
       });
       const { payload, message } = await parseApiError(response, "Save faculty failed");
 
@@ -974,7 +966,7 @@ export function CaseStudiesPage({
         throw new Error(message);
       }
 
-      const savedEntry = payload as CaseStudyEntry;
+      const savedEntry = hydrateEntry(payload as CaseStudyEntry);
       await refreshList(email);
       const mergedRows = nextRows.map((item) => {
         const savedStaff =
@@ -1162,7 +1154,7 @@ export function CaseStudiesPage({
                   streakState={getEntryStreakDisplayState(entry)}
                 />
                 <Link href={entryDetail("case-studies", entry.id)} className="text-base font-semibold hover:opacity-80">
-                  {entry.academicYear} • {entry.semesterType} Semester
+                  {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
                 </Link>
                 <EntryLockBadge deadlineState={deadlineState} />
                 <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
@@ -1170,7 +1162,7 @@ export function CaseStudiesPage({
                 </span>
               </div>
               <div className="mt-1 text-sm text-muted-foreground">
-                {entry.placeOfVisit} • {entry.studentYear || "-"} • Semester {entry.semesterNumber ?? "-"}
+                {entry.placeOfVisit} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
               </div>
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
@@ -1355,22 +1347,6 @@ export function CaseStudiesPage({
                 />
               </Field>
 
-              <Field label="Semester Type" error={attemptedSectionSave ? errors.semesterType : undefined}>
-                <SelectDropdown
-                  value={form.semesterType}
-                  onChange={(value) =>
-                    setForm((current) => ({
-                      ...current,
-                      semesterType: value as CaseStudyEntry["semesterType"],
-                    }))
-                  }
-                  options={SEMESTER_TYPE_OPTIONS}
-                  placeholder="Select semester type"
-                  disabled={coreFieldDisabled("semesterType")}
-                  error={attemptedSectionSave && !!errors.semesterType}
-                />
-              </Field>
-
               <Field
                 label="Starting Date"
                 error={attemptedSectionSave ? errors.startDate : undefined}
@@ -1432,50 +1408,52 @@ export function CaseStudiesPage({
                 />
               </Field>
 
-              <Field label="Year (Students)" error={attemptedSectionSave ? errors.studentYear : undefined}>
+              <Field label="Year of Study" error={attemptedSectionSave ? errors.yearOfStudy : undefined}>
                 <SelectDropdown
-                  value={form.studentYear}
+                  value={form.yearOfStudy}
                   onChange={(value) =>
                     setForm((current) => {
-                      const nextYear = normalizeStudentYear(value) ?? "";
-                      const nextSemester = isSemesterAllowed(nextYear || undefined, current.semesterNumber ?? undefined)
-                        ? current.semesterNumber
+                      const nextYear = normalizeYearOfStudy(value) ?? "";
+                      const nextSemester = isSemesterAllowed(nextYear || undefined, current.currentSemester ?? undefined)
+                        ? current.currentSemester
                         : null;
 
-                      return {
+                      return withAcademicProgressionCompatibility({
                         ...current,
-                        studentYear: nextYear,
-                        semesterNumber: nextSemester,
-                      };
+                        yearOfStudy: nextYear,
+                        currentSemester: nextSemester,
+                      }) as CaseStudyEntry;
                     })
                   }
-                  options={STUDENT_YEAR_OPTIONS}
+                  options={YEAR_OF_STUDY_OPTIONS}
                   placeholder="Select year"
-                  disabled={coreFieldDisabled("studentYear")}
-                  error={attemptedSectionSave && !!errors.studentYear}
+                  disabled={coreFieldDisabled("yearOfStudy")}
+                  error={attemptedSectionSave && !!errors.yearOfStudy}
                 />
               </Field>
 
               <Field
-                label="Semester"
-                error={attemptedSectionSave ? errors.semesterNumber : undefined}
-                hint={normalizedStudentYear ? "Select semester (based on year)" : "Select student year first"}
+                label="Current Semester"
+                error={attemptedSectionSave ? errors.currentSemester : undefined}
+                hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
               >
                 <SelectDropdown
-                  value={form.semesterNumber === null ? "" : String(form.semesterNumber)}
-                  disabled={coreFieldDisabled("semesterNumber") || !normalizedStudentYear}
+                  value={form.currentSemester === null ? "" : String(form.currentSemester)}
+                  disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
                   onChange={(value) =>
-                    setForm((current) => ({
-                      ...current,
-                      semesterNumber: value ? Number(value) : null,
-                    }))
+                    setForm((current) =>
+                      withAcademicProgressionCompatibility({
+                        ...current,
+                        currentSemester: value ? Number(value) : null,
+                      }) as CaseStudyEntry
+                    )
                   }
                   options={semesterOptions.map((option) => ({
                     label: String(option),
                     value: String(option),
                   }))}
-                  placeholder={normalizedStudentYear ? "Select semester (based on year)" : "Select student year first"}
-                  error={attemptedSectionSave && !!errors.semesterNumber}
+                  placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
+                  error={attemptedSectionSave && !!errors.currentSemester}
                 />
               </Field>
 

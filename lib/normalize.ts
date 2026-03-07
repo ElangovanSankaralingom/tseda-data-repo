@@ -1,4 +1,5 @@
 import type { EntrySchema } from "@/data/schemas/types";
+import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { Entry } from "@/lib/types/entry";
 
 export type NormalizedPayload = Record<string, unknown>;
@@ -123,7 +124,7 @@ export function normalizePayload(
   payload: Record<string, unknown>,
   schema: EntrySchema
 ): NormalizedPayload {
-  const normalized = normalizeRecordWithSchema(payload, schema);
+  const normalized = withAcademicProgressionCompatibility(normalizeRecordWithSchema(payload, schema));
 
   if (Object.prototype.hasOwnProperty.call(normalized, "attachments")) {
     if (!Array.isArray(normalized.attachments)) {
@@ -138,7 +139,9 @@ export function normalizeEntry(
   entry: Entry | Record<string, unknown>,
   schema?: EntrySchema
 ): Entry {
-  const normalized = normalizeRecordWithSchema(entry as Record<string, unknown>, schema) as Entry;
+  const normalized = withAcademicProgressionCompatibility(
+    normalizeRecordWithSchema(entry as Record<string, unknown>, schema)
+  ) as Entry;
   const withTimestamps = normalizeTimestamps(normalized);
   if (!Array.isArray(withTimestamps.attachments)) {
     withTimestamps.attachments = [];

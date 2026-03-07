@@ -1,0 +1,89 @@
+{
+  "version": 2,
+  "byId": {
+    "34ed2905-8c38-4163-905a-966786ae408a": {
+      "id": "34ed2905-8c38-4163-905a-966786ae408a",
+      "academicYear": "2025-2026",
+      "studentYear": "2nd year",
+      "semesterNumber": 3,
+      "startDate": "2026-03-03",
+      "endDate": "2026-03-04",
+      "eventName": "Won streak workshop",
+      "speakerName": "Speaker Won",
+      "organisationName": "Org Won",
+      "uploads": {
+        "permissionLetter": {
+          "storedPath": "uploads/workshops/win-permission.pdf"
+        },
+        "brochure": {
+          "storedPath": "uploads/workshops/win-brochure.pdf"
+        },
+        "attendance": {
+          "storedPath": "uploads/workshops/win-attendance.pdf"
+        },
+        "organiserProfile": {
+          "storedPath": "uploads/workshops/win-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "storedPath": "uploads/workshops/win-photo.jpg"
+          }
+        ]
+      },
+      "createdAt": "2026-03-07T01:54:36.600Z",
+      "updatedAt": "2026-03-07T01:54:36.636Z",
+      "confirmationStatus": "APPROVED",
+      "sentForConfirmationAtISO": "2026-03-07T01:54:36.626Z",
+      "confirmedAtISO": "2026-03-07T01:54:36.636Z",
+      "confirmedBy": "senarch@tce.edu",
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-07T01:54:36.619Z"
+    },
+    "69e80296-b751-490b-b7b2-ce72883bd307": {
+      "id": "69e80296-b751-490b-b7b2-ce72883bd307",
+      "academicYear": "2025-2026",
+      "studentYear": "2nd year",
+      "semesterNumber": 3,
+      "startDate": "2026-03-01",
+      "endDate": "2026-03-02",
+      "eventName": "Active streak workshop",
+      "speakerName": "Speaker Active",
+      "organisationName": "Org Active",
+      "uploads": {
+        "permissionLetter": {
+          "storedPath": "uploads/workshops/active-permission.pdf"
+        },
+        "brochure": {
+          "storedPath": "uploads/workshops/active-brochure.pdf"
+        },
+        "attendance": {
+          "storedPath": "uploads/workshops/active-attendance.pdf"
+        },
+        "organiserProfile": {
+          "storedPath": "uploads/workshops/active-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "storedPath": "uploads/workshops/active-photo.jpg"
+          }
+        ]
+      },
+      "createdAt": "2026-03-07T01:54:36.564Z",
+      "updatedAt": "2026-03-07T01:54:36.596Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1,
+      "committedAtISO": "2026-03-07T01:54:36.596Z"
+    }
+  },
+  "order": [
+    "34ed2905-8c38-4163-905a-966786ae408a",
+    "69e80296-b751-490b-b7b2-ce72883bd307"
+  ]
+}

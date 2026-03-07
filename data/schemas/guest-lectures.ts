@@ -1,15 +1,10 @@
 import { validateByFieldDefinitions } from "@/data/schemas/common";
 import type { EntrySchema } from "@/data/schemas/types";
+import { YEAR_OF_STUDY_VALUES } from "@/lib/types/academicProgression";
 
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
   { key: "academicYear", label: "Academic Year", kind: "string" },
-  {
-    key: "semesterType",
-    label: "Semester Type",
-    kind: "string",
-    enumValues: ["Odd", "Even", "odd", "even", "ODD", "EVEN"],
-  },
   { key: "startDate", label: "Start Date", kind: "date" },
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "eventName", label: "Event Name", kind: "string" },
@@ -17,8 +12,8 @@ const fields = [
   { key: "organizationName", label: "Organization Name", kind: "string" },
   { key: "coordinator", label: "Coordinator", kind: "object" },
   { key: "coCoordinators", label: "Co-Coordinators", kind: "array" },
-  { key: "studentYear", label: "Student Year", kind: "string" },
-  { key: "semesterNumber", label: "Semester Number", kind: "number" },
+  { key: "yearOfStudy", label: "Year of Study", kind: "string", enumValues: YEAR_OF_STUDY_VALUES },
+  { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10 },
   { key: "participants", label: "Participants", kind: "number" },
   { key: "uploads", label: "Uploads", kind: "object" },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
@@ -30,7 +25,6 @@ export const guestLecturesSchema: EntrySchema = {
   fields,
   immutableWhenPending: [
     "academicYear",
-    "semesterType",
     "startDate",
     "endDate",
     "eventName",
@@ -38,20 +32,19 @@ export const guestLecturesSchema: EntrySchema = {
     "organizationName",
     "coordinator",
     "coCoordinators",
-    "studentYear",
-    "semesterNumber",
+    "yearOfStudy",
+    "currentSemester",
     "participants",
   ],
   requiredForCommit: [
     "academicYear",
-    "semesterType",
     "startDate",
     "endDate",
     "eventName",
     "speakerName",
     "organizationName",
-    "studentYear",
-    "semesterNumber",
+    "yearOfStudy",
+    "currentSemester",
     "uploads.permissionLetter",
     "uploads.brochure",
     "uploads.attendance",

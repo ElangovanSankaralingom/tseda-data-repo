@@ -38,6 +38,11 @@ import {
   normalizeEntryStatus,
   type EntryStateLike,
 } from "@/lib/entries/stateMachine";
+import {
+  isSemesterAllowed,
+  normalizeStudentYear,
+  type StudentYear,
+} from "@/lib/student-academic";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
@@ -78,7 +83,8 @@ type WorkshopEntry = {
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
-  semesterType: string;
+  studentYear: StudentYear | "";
+  semesterNumber: number | null;
   startDate: string;
   endDate: string;
   eventName: string;
@@ -101,7 +107,6 @@ const ACADEMIC_YEAR_OPTIONS = new Set([
   "Academic Year 2026-2027",
   "Academic Year 2027-2028",
 ]);
-const SEMESTER_TYPE_OPTIONS = new Set(["Odd", "Even"]);
 const REQUIRED_SINGLE_SLOTS: Array<keyof Omit<Uploads, "geotaggedPhotos">> = [
   "permissionLetter",
   "brochure",
@@ -239,6 +244,14 @@ function normalizeEntry(value: unknown): WorkshopEntry | null {
   if (!value || typeof value !== "object") return null;
 
   const record = value as Record<string, unknown>;
+  let semesterNumber: number | null = null;
+  if (typeof record.semesterNumber === "number" && Number.isFinite(record.semesterNumber)) {
+    semesterNumber = record.semesterNumber;
+  } else if (typeof record.semesterNumber === "string" && record.semesterNumber.trim()) {
+    const parsed = Number(record.semesterNumber);
+    semesterNumber = Number.isFinite(parsed) ? parsed : null;
+  }
+
   const coordinator =
     record.coordinator && typeof record.coordinator === "object"
       ? normalizeFacultySelection(record.coordinator)
@@ -266,7 +279,8 @@ function normalizeEntry(value: unknown): WorkshopEntry | null {
         ? record.requestEditRequestedAtISO.trim()
         : null,
     academicYear: String(record.academicYear ?? "").trim(),
-    semesterType: String(record.semesterType ?? "").trim(),
+    studentYear: normalizeStudentYear(String(record.studentYear ?? "").trim()) ?? "",
+    semesterNumber,
     startDate: String(record.startDate ?? "").trim(),
     endDate: String(record.endDate ?? "").trim(),
     eventName: String(record.eventName ?? "").trim(),
@@ -464,8 +478,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "academicYear required" }, { status: 400 });
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
-      return NextResponse.json({ error: "semesterType required" }, { status: 400 });
+    if (!entry.studentYear) {
+      return NextResponse.json({ error: "studentYear required" }, { status: 400 });
+    }
+
+    if (!isSemesterAllowed(entry.studentYear, entry.semesterNumber ?? undefined)) {
+      return NextResponse.json({ error: "semesterNumber invalid" }, { status: 400 });
     }
 
     if (!isISODate(entry.startDate)) {
@@ -577,7 +595,8 @@ export async function POST(request: Request) {
       sourceEmail: email,
       committedAtISO: nextCommittedAtISO,
       academicYear: entry.academicYear,
-      semesterType: entry.semesterType,
+      studentYear: entry.studentYear,
+      semesterNumber: entry.semesterNumber,
       startDate: entry.startDate,
       endDate: entry.endDate,
       eventName: entry.eventName,
@@ -748,7 +767,8 @@ export async function PATCH(request: Request) {
     const sharedEntryId = existing?.sharedEntryId ?? entry.sharedEntryId ?? entry.id;
 
     const hasAcademicYear = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "academicYear");
-    const hasSemesterType = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "semesterType");
+    const hasStudentYear = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "studentYear");
+    const hasSemesterNumber = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "semesterNumber");
     const hasStartDate = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "startDate");
     const hasEndDate = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "endDate");
     const hasEventName = !!entryRecord && Object.prototype.hasOwnProperty.call(entryRecord, "eventName");
@@ -767,8 +787,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "academicYear invalid" }, { status: 400 });
     }
 
-    if (hasSemesterType && entry.semesterType && !SEMESTER_TYPE_OPTIONS.has(entry.semesterType)) {
-      return NextResponse.json({ error: "semesterType invalid" }, { status: 400 });
+    if (hasStudentYear && entry.studentYear && !normalizeStudentYear(entry.studentYear)) {
+      return NextResponse.json({ error: "studentYear invalid" }, { status: 400 });
+    }
+
+    const nextStudentYear = (hasStudentYear ? entry.studentYear : existing?.studentYear) ?? "";
+    const nextSemesterNumber = hasSemesterNumber ? entry.semesterNumber : existing?.semesterNumber ?? null;
+    if (nextStudentYear && !isSemesterAllowed(nextStudentYear, nextSemesterNumber ?? undefined)) {
+      return NextResponse.json({ error: "semesterNumber invalid" }, { status: 400 });
     }
 
     if (hasStartDate && entry.startDate && !isISODate(entry.startDate)) {
@@ -873,7 +899,8 @@ export async function PATCH(request: Request) {
         uploads: normalizeUploads(null),
         streak: normalizeStreakState(null),
         academicYear: "",
-        semesterType: "",
+        studentYear: "",
+        semesterNumber: null,
         startDate: "",
         endDate: "",
         eventName: "",
@@ -887,7 +914,8 @@ export async function PATCH(request: Request) {
       requestEditStatus: normalizeRequestEditStatus(entry.requestEditStatus, existing?.requestEditStatus ?? "none"),
       requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? existing?.requestEditRequestedAtISO ?? null,
       academicYear: hasAcademicYear ? entry.academicYear : existing?.academicYear ?? "",
-      semesterType: hasSemesterType ? entry.semesterType : existing?.semesterType ?? "",
+      studentYear: hasStudentYear ? entry.studentYear : existing?.studentYear ?? "",
+      semesterNumber: hasSemesterNumber ? entry.semesterNumber : existing?.semesterNumber ?? null,
       startDate: hasStartDate ? entry.startDate : existing?.startDate ?? "",
       endDate: hasEndDate ? entry.endDate : existing?.endDate ?? "",
       eventName: hasEventName ? entry.eventName : existing?.eventName ?? "",
