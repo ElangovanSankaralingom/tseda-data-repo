@@ -32,7 +32,7 @@ type SaveDraftOrchestrationOptions<TEntry extends { id?: string | null }> = {
   buildOptimisticEntry: (entry: TEntry) => TEntry;
   persistProgress: (entry: TEntry) => Promise<TEntry>;
   commitDraft: (entryId: string) => Promise<TEntry>;
-  applyPersistedEntry: (entry: TEntry) => void;
+  applyPersistedEntry: (entry: TEntry) => void | Promise<void>;
   afterPersistSuccess?: (entry: TEntry, intent: EntrySaveIntent) => void | Promise<void>;
   closeForm?: () => void | Promise<void>;
 };
@@ -114,7 +114,7 @@ export async function runSaveDraftOrchestration<TEntry extends { id?: string | n
       setList((current) => optimisticUpsert(current, finalEntry));
     }
 
-    applyPersistedEntry(finalEntry);
+    await applyPersistedEntry(finalEntry);
     await afterPersistSuccess?.(finalEntry, intent);
 
     if (showToast) {
@@ -232,6 +232,53 @@ export async function runGenerateEntryOrchestration<TEntry>({
   } finally {
     setSaving(false);
     afterGenerate?.();
+    saveLockRef.current = false;
+  }
+}
+
+type PersistCurrentEntryMutationOptions<
+  TEntry extends { id?: string | null },
+  TResult = TEntry,
+> = {
+  saveLockRef: MutableRefObject<boolean>;
+  formRef: MutableRefObject<TEntry>;
+  persistProgress: (entry: TEntry) => Promise<TEntry>;
+  applyPersistedEntry: (entry: TEntry) => void | Promise<void>;
+  afterPersistSuccess?: (entry: TEntry, intent: EntrySaveIntent) => void | Promise<void>;
+  buildNextEntry: (current: TEntry) => TEntry;
+  selectResult?: (entry: TEntry) => TResult;
+  lockedMessage?: string;
+  intent?: EntrySaveIntent;
+};
+
+export async function runPersistCurrentEntryMutation<
+  TEntry extends { id?: string | null },
+  TResult = TEntry,
+>({
+  saveLockRef,
+  formRef,
+  persistProgress,
+  applyPersistedEntry,
+  afterPersistSuccess,
+  buildNextEntry,
+  selectResult,
+  lockedMessage = "Please wait for the current save to finish.",
+  intent = "save",
+}: PersistCurrentEntryMutationOptions<TEntry, TResult>): Promise<TResult> {
+  if (saveLockRef.current) {
+    throw new Error(lockedMessage);
+  }
+
+  saveLockRef.current = true;
+
+  try {
+    const nextEntry = buildNextEntry(formRef.current);
+    const persisted = await persistProgress(nextEntry);
+    await applyPersistedEntry(persisted);
+    await afterPersistSuccess?.(persisted, intent);
+
+    return selectResult ? selectResult(persisted) : (persisted as unknown as TResult);
+  } finally {
     saveLockRef.current = false;
   }
 }
