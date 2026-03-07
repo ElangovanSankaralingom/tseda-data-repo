@@ -11,7 +11,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/entryNavigation";
 import { getEntryTitle } from "@/lib/search/getEntryTitle";
 import { computeCanonicalStreakSnapshot, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
-import type { Entry } from "@/lib/types/entry";
+import { incrementStatusCount, type Entry } from "@/lib/types/entry";
 
 type DashboardEntry = Entry;
 
@@ -184,18 +184,7 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
 
     for (const entry of categoryEntries) {
       const workflowStatus = getEntryWorkflowStatus(entry as Record<string, unknown>);
-      if (workflowStatus === "DRAFT") {
-        categorySummary.draftCount += 1;
-      }
-      if (workflowStatus === "PENDING_CONFIRMATION") {
-        categorySummary.pendingConfirmationCount += 1;
-      }
-      if (workflowStatus === "APPROVED") {
-        categorySummary.approvedCount += 1;
-      }
-      if (workflowStatus === "REJECTED") {
-        categorySummary.rejectedCount += 1;
-      }
+      incrementStatusCount(categorySummary, workflowStatus);
 
       const categoryConfig = getCategoryConfig(categoryKey);
       const updatedAtISO = toOptionalISO(entry.updatedAt) ?? toOptionalISO(entry.createdAt);

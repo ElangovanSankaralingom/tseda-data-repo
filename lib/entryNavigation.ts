@@ -69,6 +69,15 @@ export function adminBackups() {
   return "/admin/backups";
 }
 
+export function adminBackupsDownload(filename?: string) {
+  const base = `${adminBackups()}/download`;
+  return filename ? `${base}?filename=${encodeURIComponent(filename)}` : base;
+}
+
+export function adminBackupsCreate() {
+  return `${adminBackups()}/create`;
+}
+
 export function adminMaintenance() {
   return "/admin/maintenance";
 }
