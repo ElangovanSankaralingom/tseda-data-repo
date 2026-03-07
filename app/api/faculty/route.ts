@@ -1,4 +1,9 @@
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { authOptions } from "@/lib/auth";
+import { canAccessAdminConsole } from "@/lib/admin/roles";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { assertActionPayload } from "@/lib/security/limits";
 import { newId, readJson, writeJson } from "@/lib/storage";
 
 type FacultyProfile = {
@@ -15,13 +20,38 @@ type FacultyProfile = {
 
 const FILE = "faculty.json";
 
+async function requireSession() {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!email) return null;
+  return email;
+}
+
+function requireAdmin(email: string) {
+  return canAccessAdminConsole(email);
+}
+
 export async function GET() {
+  const email = await requireSession();
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const items = await readJson<FacultyProfile[]>(FILE, []);
   return NextResponse.json(items);
 }
 
 export async function POST(req: Request) {
+  const email = await requireSession();
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!requireAdmin(email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = (await req.json()) as Partial<FacultyProfile>;
+  assertActionPayload(body, "faculty.create");
 
   if (!body.fullName || !body.email || !body.department || !body.designation) {
     return NextResponse.json(
@@ -49,8 +79,18 @@ export async function POST(req: Request) {
 
   return NextResponse.json(newItem, { status: 201 });
 }
+
 export async function PUT(req: Request) {
+  const email = await requireSession();
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!requireAdmin(email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = (await req.json()) as Partial<FacultyProfile>;
+  assertActionPayload(body, "faculty.update");
 
   if (!body.id) {
     return NextResponse.json(
@@ -76,7 +116,16 @@ export async function PUT(req: Request) {
   await writeJson(FILE, items);
   return NextResponse.json(items[index]);
 }
+
 export async function DELETE(req: Request) {
+  const email = await requireSession();
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!requireAdmin(email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 

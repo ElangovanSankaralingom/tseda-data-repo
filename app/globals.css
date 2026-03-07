@@ -47,6 +47,8 @@
 
 :root {
   --radius: 0.625rem;
+  --color-brand: #1E3A5F;
+  --color-accent: #F59E0B;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -79,8 +81,9 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#FAFBFC] text-foreground;
   }
 }
 

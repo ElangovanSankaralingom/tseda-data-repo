@@ -26,6 +26,7 @@ import {
   normalizeStudentYear,
   type StudentYear,
 } from "@/lib/student-academic";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
@@ -358,6 +359,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "entry.create.fdp-attended",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
     const body = (await request.json()) as { entry?: unknown };
     const entryRecord =
       body?.entry && typeof body.entry === "object" ? (body.entry as Record<string, unknown>) : null;
