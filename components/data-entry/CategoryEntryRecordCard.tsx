@@ -4,9 +4,20 @@ import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { getConfirmationStatusLabel } from "@/lib/confirmation";
-import type { EntryDisplayCategory, EntryStreakDisplayState } from "@/lib/entries/displayLifecycle";
+import {
+  canSendForConfirmation,
+  getConfirmationStatusLabel,
+  getEntryApprovalStatus,
+  isEntryLockedFromStatus,
+} from "@/lib/confirmation";
+import {
+  getEntryStreakDisplayState,
+  type EntryDisplayCategory,
+  type EntryStreakDisplayState,
+} from "@/lib/entries/displayLifecycle";
+import { isEntryCommitted } from "@/lib/entries/stateMachine";
 import type { StreakDeadlineState } from "@/lib/streakDeadline";
+import { getStreakDeadlineState } from "@/lib/streakDeadline";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
@@ -26,6 +37,53 @@ type SendForConfirmationControls = {
   label?: string;
   pendingLabel?: string;
   sendingLabel?: string;
+};
+
+type DeleteConfirmationRequest = {
+  title: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "default" | "destructive";
+  onConfirm: () => void | Promise<void>;
+};
+
+type CategoryEntryRenderEntry = {
+  id: string;
+  status?: string | null;
+  confirmationStatus?: EntryStatus | string | null;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  committedAtISO?: string | null;
+  streak?: unknown;
+  startDate?: string | null;
+  endDate?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  pdfMeta?: {
+    url?: string | null;
+  } | null;
+};
+
+type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRenderEntry> = {
+  buildHref: (entry: TEntry) => string;
+  buildTitle: (entry: TEntry) => React.ReactNode;
+  buildSubtitle?: (entry: TEntry) => React.ReactNode;
+  renderBody: (entry: TEntry) => React.ReactNode;
+  onView: (entry: TEntry) => void;
+  onEdit?: (entry: TEntry) => void;
+  onPreview?: (entry: TEntry) => void;
+  previewUrl?: (entry: TEntry) => string | null | undefined;
+  hideActions?: (entry: TEntry, category: EntryDisplayCategory) => boolean;
+  enableWorkflowActions?: (entry: TEntry, category: EntryDisplayCategory) => boolean;
+  deleteLabel?: string | ((entry: TEntry) => string);
+  requestConfirmation?: (request: DeleteConfirmationRequest) => void;
+  buildDeleteRequest?: (entry: TEntry) => DeleteConfirmationRequest;
+  requestingEditIds: Record<string, boolean | undefined>;
+  sendingConfirmationIds: Record<string, boolean | undefined>;
+  requestEdit: (entry: TEntry) => void | Promise<void>;
+  cancelRequestEdit: (entry: TEntry) => void | Promise<void>;
+  sendForConfirmation: (entry: TEntry) => void | Promise<void>;
 };
 
 type CategoryEntryRecordCardProps = {
@@ -153,4 +211,88 @@ export default function CategoryEntryRecordCard({
       {children}
     </EntryListCardShell>
   );
+}
+
+export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRenderEntry>({
+  buildHref,
+  buildTitle,
+  buildSubtitle,
+  renderBody,
+  onView,
+  onEdit,
+  onPreview,
+  previewUrl,
+  hideActions,
+  enableWorkflowActions,
+  deleteLabel,
+  requestConfirmation,
+  buildDeleteRequest,
+  requestingEditIds,
+  sendingConfirmationIds,
+  requestEdit,
+  cancelRequestEdit,
+  sendForConfirmation,
+}: CategoryEntryRecordRendererOptions<TEntry>) {
+  function RenderCategoryEntryRecord(entry: TEntry, category: EntryDisplayCategory, index: number) {
+    const workflowEnabled = enableWorkflowActions?.(entry, category) ?? true;
+    const confirmationStatus = workflowEnabled ? getEntryApprovalStatus(entry) : undefined;
+    const lockApproved = workflowEnabled ? isEntryLockedFromStatus(entry) : false;
+    const canRenderSendAction = workflowEnabled && isEntryCommitted(entry);
+    const resolvedDeleteRequest = buildDeleteRequest?.(entry);
+    const resolvedPreviewUrl = previewUrl?.(entry) ?? entry.pdfMeta?.url ?? null;
+
+    return (
+      <CategoryEntryRecordCard
+        category={category}
+        index={index}
+        href={buildHref(entry)}
+        title={buildTitle(entry)}
+        subtitle={buildSubtitle?.(entry)}
+        streakState={getEntryStreakDisplayState(entry)}
+        deadlineState={getStreakDeadlineState(entry)}
+        confirmationStatus={confirmationStatus}
+        createdAt={entry.createdAt ?? undefined}
+        updatedAt={entry.updatedAt ?? undefined}
+        hideActions={hideActions?.(entry, category) ?? false}
+        onView={() => onView(entry)}
+        onPreview={
+          onPreview
+            ? () => onPreview(entry)
+            : resolvedPreviewUrl
+              ? () => window.open(resolvedPreviewUrl, "_blank", "noopener,noreferrer")
+              : undefined
+        }
+        onEdit={lockApproved || !onEdit ? undefined : () => onEdit(entry)}
+        onDelete={
+          lockApproved || !requestConfirmation || !resolvedDeleteRequest
+            ? undefined
+            : () => requestConfirmation(resolvedDeleteRequest)
+        }
+        deleteLabel={
+          typeof deleteLabel === "function" ? deleteLabel(entry) : deleteLabel
+        }
+        sendForConfirmation={
+          canRenderSendAction
+            ? {
+                disabled: !canSendForConfirmation(entry),
+                sending: !!sendingConfirmationIds[entry.id],
+                onClick: () => void sendForConfirmation(entry),
+              }
+            : undefined
+        }
+        requestEdit={{
+          locked: lockApproved,
+          status: entry.requestEditStatus,
+          requestedAtISO: entry.requestEditRequestedAtISO,
+          requesting: !!requestingEditIds[entry.id],
+          onRequest: () => void requestEdit(entry),
+          onCancel: () => void cancelRequestEdit(entry),
+        }}
+      >
+        {renderBody(entry)}
+      </CategoryEntryRecordCard>
+    );
+  }
+
+  return RenderCategoryEntryRecord;
 }

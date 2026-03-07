@@ -2,18 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import CategoryEntryRecordCard from "@/components/data-entry/CategoryEntryRecordCard";
-import CategoryEntryPageShell from "@/components/data-entry/CategoryEntryPageShell";
+import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
+import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
 import DateField from "@/components/controls/DateField";
-import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import Field from "@/components/data-entry/Field";
-import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
+import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
+import { createGroupedEntryListCard } from "@/components/data-entry/GroupedEntrySections";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
-import { EntryHeaderActionsBar } from "@/components/entry/EntryHeaderActions";
+import { EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import EntryUploader from "@/components/upload/EntryUploader";
-import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useCategoryEntryPageController } from "@/hooks/useCategoryEntryPageController";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
@@ -23,18 +22,8 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import {
-  canSendForConfirmation,
-  getEntryApprovalStatus,
-  isEntryLockedFromStatus,
-} from "@/lib/confirmation";
+import { getEntryApprovalStatus } from "@/lib/confirmation";
 import { FACULTY } from "@/lib/facultyDirectory";
-import { getStreakDeadlineState } from "@/lib/streakDeadline";
-import {
-  getEntryStreakDisplayState,
-  type EntryDisplayCategory,
-} from "@/lib/entries/displayLifecycle";
-import { isEntryCommitted } from "@/lib/entries/stateMachine";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
@@ -247,21 +236,11 @@ function hydrateEntry(entry: WorkshopEntry): WorkshopEntry {
   ) as WorkshopEntry;
 }
 
-function MiniButton(props: React.ComponentProps<typeof ActionButton>) {
-  return <ActionButton {...props} />;
-}
-
-type WorkshopsPageProps = {
-  viewEntryId?: string;
-  editEntryId?: string;
-  startInNewMode?: boolean;
-};
-
 export function WorkshopsPage({
   viewEntryId,
   editEntryId,
   startInNewMode = false,
-}: WorkshopsPageProps = {}) {
+}: CategoryAdapterPageProps = {}) {
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const router = useRouter();
   const categoryPath = entryList("workshops");
@@ -473,24 +452,21 @@ export function WorkshopsPage({
         ...entryToSave,
         updatedAt: new Date().toISOString(),
       }),
-    persistProgress: async (entryToSave) => hydrateEntry(await persistProgress(entryToSave)),
+    persistProgress,
+    normalizePersistedEntry: hydrateEntry,
     persistRequestEdit: async (entry) =>
-      hydrateEntry(
-        await persistProgress({
-          ...entry,
-          requestEditStatus: "pending",
-          requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
-        })
-      ),
+      persistProgress({
+        ...entry,
+        requestEditStatus: "pending",
+        requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
+      }),
     persistCancelRequestEdit: async (entry) =>
-      hydrateEntry(
-        await persistProgress({
-          ...entry,
-          requestEditStatus: "none",
-          requestEditRequestedAtISO: null,
-        })
-      ),
-    commitDraft: async (entryId) => commitDraftEntry(entryId),
+      persistProgress({
+        ...entry,
+        requestEditStatus: "none",
+        requestEditRequestedAtISO: null,
+      }),
+    commitDraft: commitDraftEntry,
     applyPersistedEntry: (entry) => {
       applyPersistedEntry(entry);
       setSubmitted(false);
@@ -523,21 +499,16 @@ export function WorkshopsPage({
   });
 
   const {
-    actionState,
     autoSaveStatus,
     cancelRequestEdit,
-    generateEntry,
+    getHeaderActionProps,
+    getPdfActionProps,
     groupedEntries,
     handleCancel,
-    handleSaveAndClose,
-    handleSaveDraft,
     hasUnsavedChanges,
-    lifecycle,
     persistCurrentMutation,
     requestEdit,
     requestingEditIds,
-    saveIntent,
-    saving,
     sendForConfirmation,
     sendingConfirmationIds,
     setToast,
@@ -849,125 +820,78 @@ export function WorkshopsPage({
     }
   }
 
-  function renderSavedEntry(entry: WorkshopEntry, category: EntryDisplayCategory, index: number) {
-    const deadlineState = getStreakDeadlineState(entry);
-    const completedEntry = isEntryCommitted(entry);
-    const confirmationStatus = getEntryApprovalStatus(entry);
-    const lockApproved = isEntryLockedFromStatus(entry);
-    const canSendConfirmation = canSendForConfirmation(entry);
-    const sendingConfirmation = !!sendingConfirmationIds[entry.id];
-    const days = getInclusiveDays(entry.startDate, entry.endDate);
+  const renderSavedEntry = createCategoryEntryRecordRenderer<WorkshopEntry>({
+    buildHref: (entry) => entryDetail("workshops", entry.id),
+    buildTitle: (entry) => entry.eventName,
+    buildSubtitle: (entry) => `Speaker: ${entry.speakerName} • ${entry.organisationName}`,
+    onView: (entry) => router.push(entryDetail("workshops", entry.id)),
+    onEdit: (entry) => router.push(entryDetail("workshops", entry.id)),
+    requestConfirmation,
+    buildDeleteRequest: (entry) => ({
+      title: "Delete entry?",
+      description: "This permanently deletes this workshop entry and its associated uploaded files.",
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "destructive",
+      onConfirm: () => deleteEntry(entry.id),
+    }),
+    requestingEditIds,
+    sendingConfirmationIds,
+    requestEdit: (entry) => void requestEdit(entry),
+    cancelRequestEdit: (entry) => void cancelRequestEdit(entry),
+    sendForConfirmation: (entry) => void sendForConfirmation(entry),
+    renderBody: (entry) => {
+      const days = getInclusiveDays(entry.startDate, entry.endDate);
 
-    return (
-      <CategoryEntryRecordCard
-        category={category}
-        index={index}
-        href={entryDetail("workshops", entry.id)}
-        title={entry.eventName}
-        streakState={getEntryStreakDisplayState(entry)}
-        deadlineState={deadlineState}
-        confirmationStatus={confirmationStatus}
-        subtitle={`Speaker: ${entry.speakerName} • ${entry.organisationName}`}
-        createdAt={entry.createdAt}
-        updatedAt={entry.updatedAt}
-        onView={() => router.push(entryDetail("workshops", entry.id))}
-        onPreview={
-          entry.pdfMeta?.url
-            ? () => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")
-            : undefined
-        }
-        onEdit={lockApproved ? undefined : () => router.push(entryDetail("workshops", entry.id))}
-        onDelete={
-          lockApproved
-            ? undefined
-            : () =>
-                requestConfirmation({
-                  title: "Delete entry?",
-                  description:
-                    "This permanently deletes this workshop entry and its associated uploaded files.",
-                  confirmLabel: "Delete",
-                  cancelLabel: "Cancel",
-                  variant: "destructive",
-                  onConfirm: () => deleteEntry(entry.id),
-                })
-        }
-        sendForConfirmation={
-          completedEntry
-            ? {
-                disabled: !canSendConfirmation,
-                sending: sendingConfirmation,
-                onClick: () => void sendForConfirmation(entry),
-              }
-            : undefined
-        }
-        requestEdit={{
-          locked: lockApproved,
-          status: entry.requestEditStatus,
-          requestedAtISO: entry.requestEditRequestedAtISO,
-          requesting: !!requestingEditIds[entry.id],
-          onRequest: () => void requestEdit(entry),
-          onCancel: () => void cancelRequestEdit(entry),
-        }}
-      >
-        <div className="text-sm text-muted-foreground">
-          {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Coordinator: {formatFacultyDisplay(entry.coordinator)}
-          {entry.coCoordinators.length > 0
-            ? ` • Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
-            : ""}
-        </div>
-        <div className="text-sm text-muted-foreground">Participants: {entry.participants ?? "-"}</div>
+      return (
+        <>
+          <div className="text-sm text-muted-foreground">
+            {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Coordinator: {formatFacultyDisplay(entry.coordinator)}
+            {entry.coCoordinators.length > 0
+              ? ` • Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
+              : ""}
+          </div>
+          <div className="text-sm text-muted-foreground">Participants: {entry.participants ?? "-"}</div>
 
-        <div className="flex flex-wrap gap-3 text-sm">
-          {UPLOAD_CONFIG.map(({ slot, label }) =>
-            entry.uploads[slot] ? (
+          <div className="flex flex-wrap gap-3 text-sm">
+            {UPLOAD_CONFIG.map(({ slot, label }) =>
+              entry.uploads[slot] ? (
+                <a
+                  key={slot}
+                  className="underline"
+                  href={entry.uploads[slot]?.url ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {label}
+                </a>
+              ) : null
+            )}
+            {entry.uploads.geotaggedPhotos.map((meta, photoIndex) => (
               <a
-                key={slot}
+                key={meta.storedPath}
                 className="underline"
-                href={entry.uploads[slot]?.url ?? "#"}
+                href={meta.url}
                 target="_blank"
                 rel="noreferrer"
               >
-                {label}
+                Geotagged Photo {photoIndex + 1}
               </a>
-            ) : null
-          )}
-          {entry.uploads.geotaggedPhotos.map((meta, photoIndex) => (
-            <a
-              key={meta.storedPath}
-              className="underline"
-              href={meta.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Geotagged Photo {photoIndex + 1}
-            </a>
-          ))}
-        </div>
-      </CategoryEntryRecordCard>
-    );
-  }
-
-  const toastBanner = toast ? (
-    <div
-      className={cx(
-        "rounded-lg border px-3 py-2 text-sm",
-        toast.type === "ok"
-          ? "border-green-200 bg-green-50 text-green-800"
-          : "border-red-200 bg-red-50 text-red-800"
-      )}
-    >
-      {toast.msg}
-    </div>
-  ) : null;
+            ))}
+          </div>
+        </>
+      );
+    },
+  });
 
   return (
-    <CategoryEntryPageShell
+    <CategoryEntryRuntime
       entryShell={{
         category: "workshops",
         mode: isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview",
@@ -980,30 +904,17 @@ export function WorkshopsPage({
         backHref,
         backDisabled,
         onBack: showForm || isViewMode ? () => handleCancel(categoryPath) : undefined,
-        actions: (
-          <EntryHeaderActionsBar
-            isEditing={showForm}
-            isViewMode={isViewMode}
-            loading={loading}
-            onAdd={() => {
-              resetForm();
-              router.push(entryNew("workshops"), { scroll: false });
-            }}
-            addLabel="+ Add Workshop"
-            onCancel={() => void handleCancel()}
-            cancelDisabled={actionState.cancelDisabled}
-            onSave={() => void handleSaveDraft()}
-            saveDisabled={actionState.saveDisabled}
-            onDone={() => void handleSaveAndClose()}
-            doneDisabled={actionState.doneDisabled}
-            saving={saving}
-            saveIntent={saveIntent}
-          />
-        ),
       }}
+      headerActions={getHeaderActionProps({
+        onAdd: () => {
+          resetForm();
+          router.push(entryNew("workshops"), { scroll: false });
+        },
+        addLabel: "+ Add Workshop",
+      })}
       loading={loading}
       showForm={showForm}
-      topContent={toastBanner}
+      toast={toast}
       formCard={
         showForm
           ? {
@@ -1219,17 +1130,7 @@ export function WorkshopsPage({
                   </div>
 
                   <div className="mt-5 space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {!isViewMode ? (
-                        <MiniButton onClick={() => void generateEntry()} disabled={actionState.generateDisabled}>
-                          {saving ? "Generating..." : "Generate Entry"}
-                        </MiniButton>
-                      ) : null}
-                      <EntryPdfActions
-                        pdfMeta={form.pdfMeta ?? null}
-                        disabled={isViewMode ? !form.pdfMeta?.url : !lifecycle.canPreview}
-                      />
-                    </div>
+                    <EntryPdfActionsBar {...getPdfActionProps(form.pdfMeta ?? null)} />
                     {pdfState.pdfStale ? (
                       <p className="text-sm text-muted-foreground">
                         Entry changed. Regenerate PDF to update Preview/Download.
@@ -1329,12 +1230,12 @@ export function WorkshopsPage({
       }
       listCard={
         !showForm
-          ? {
-              className: "bg-white/70 p-5",
+          ? createGroupedEntryListCard({
               title: "Saved Workshop Entries",
               subtitle: "Your saved workshop records are stored locally and keyed to your signed-in email.",
-              content: <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />,
-            }
+              groupedEntries,
+              renderEntry: renderSavedEntry,
+            })
           : null
       }
       confirmationDialog={confirmationDialog}

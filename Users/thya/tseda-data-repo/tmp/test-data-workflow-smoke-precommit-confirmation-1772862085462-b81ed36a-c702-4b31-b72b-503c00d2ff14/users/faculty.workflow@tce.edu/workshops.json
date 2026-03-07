@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "byId": {
+    "ddde6943-5b88-4015-aea7-599ed0f95c92": {
+      "academicYear": "Academic Year 2025-2026",
+      "yearOfStudy": "2nd year",
+      "currentSemester": 3,
+      "startDate": "2025-08-10",
+      "endDate": "2025-08-12",
+      "eventName": "Workflow Workshop",
+      "speakerName": "Initial Speaker",
+      "organisationName": "TCE",
+      "uploads": {
+        "permissionLetter": {
+          "fileName": "permission.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-07T05:41:25.462Z",
+          "url": "/uploads/permission.pdf",
+          "storedPath": "permission.pdf"
+        },
+        "brochure": {
+          "fileName": "brochure.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-07T05:41:25.462Z",
+          "url": "/uploads/brochure.pdf",
+          "storedPath": "brochure.pdf"
+        },
+        "attendance": {
+          "fileName": "attendance.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-07T05:41:25.462Z",
+          "url": "/uploads/attendance.pdf",
+          "storedPath": "attendance.pdf"
+        },
+        "organiserProfile": {
+          "fileName": "organiser-profile.pdf",
+          "mimeType": "application/pdf",
+          "size": 100,
+          "uploadedAt": "2026-03-07T05:41:25.462Z",
+          "url": "/uploads/organiser-profile.pdf",
+          "storedPath": "organiser-profile.pdf"
+        },
+        "geotaggedPhotos": [
+          {
+            "fileName": "photo-1.pdf",
+            "mimeType": "application/pdf",
+            "size": 100,
+            "uploadedAt": "2026-03-07T05:41:25.462Z",
+            "url": "/uploads/photo-1.pdf",
+            "storedPath": "photo-1.pdf"
+          }
+        ]
+      },
+      "id": "ddde6943-5b88-4015-aea7-599ed0f95c92",
+      "createdAt": "2026-03-07T05:41:25.462Z",
+      "updatedAt": "2026-03-07T05:41:25.462Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "studentYear": "2nd year",
+      "semesterNumber": 3,
+      "semesterType": "ODD",
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "ddde6943-5b88-4015-aea7-599ed0f95c92"
+  ]
+}
