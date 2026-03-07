@@ -23,7 +23,7 @@ export default function AppShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="relative min-h-screen bg-[#FAFBFC]">
       {/* Header */}
       <header className="h-14 border-b border-slate-200 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">

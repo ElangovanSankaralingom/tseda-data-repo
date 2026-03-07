@@ -5,13 +5,13 @@ export const STATUS_COLORS: Record<
   { badge: string; border: string; icon: string }
 > = {
   DRAFT: {
-    badge: "border-border bg-muted/40 text-muted-foreground",
+    badge: "border-slate-200 bg-slate-50 text-slate-500",
     border: "border-l-slate-300",
     icon: "text-slate-400",
   },
   PENDING_CONFIRMATION: {
     badge: "border-amber-200 bg-amber-100 text-amber-700",
-    border: "border-l-amber-400",
+    border: "border-l-amber-500",
     icon: "text-amber-500",
   },
   APPROVED: {
