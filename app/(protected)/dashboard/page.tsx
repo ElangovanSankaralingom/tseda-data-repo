@@ -44,6 +44,7 @@ export default async function DashboardPage() {
   });
 
   const summary = await getDashboardSummary(email);
+  const recentEntries = Array.isArray(summary?.recentEntries) ? summary.recentEntries : [];
   const userName = session?.user?.name?.trim() || email;
 
   return (
@@ -89,11 +90,11 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SectionCard title="Recent Entries" subtitle="Most recently updated records">
-          {summary.recentEntries.length === 0 ? (
+          {recentEntries.length === 0 ? (
             <p className="text-sm text-muted-foreground">No entries yet.</p>
           ) : (
             <div className="space-y-3">
-              {summary.recentEntries.map((row) => (
+              {recentEntries.map((row) => (
                 <Link
                   key={`${row.categoryKey}:${row.id}`}
                   href={row.route}
