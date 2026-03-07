@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import DateField from "@/components/controls/DateField";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
+import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
 import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
 import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
@@ -21,7 +22,7 @@ import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
-import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
+import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
@@ -42,6 +43,10 @@ import {
   getEntryStreakDisplayState,
   type EntryDisplayCategory,
 } from "@/lib/entries/displayLifecycle";
+import {
+  runGenerateEntryOrchestration,
+  runSaveDraftOrchestration,
+} from "@/lib/entries/pageOrchestration";
 import { isEntryCommitted } from "@/lib/entries/stateMachine";
 import { groupEntries } from "@/lib/entryCategorization";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
@@ -57,7 +62,6 @@ import {
 import {
   createOptimisticSnapshot,
   optimisticRemove,
-  optimisticUpsert,
 } from "@/lib/ui/optimistic";
 import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
@@ -530,6 +534,7 @@ export function GuestLecturesPage({
     !!form.uploads.attendance &&
     !!form.uploads.speakerProfile &&
     form.uploads.geotaggedPhotos.length > 0;
+  const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
   const pdfHash = useMemo(() => hashPrePdfFields(form, "guest-lectures"), [form]);
   const pdfState = useMemo(
     () =>
@@ -551,6 +556,17 @@ export function GuestLecturesPage({
     fieldDirty: formDirty,
   });
   const lifecycle = workflow.lifecycle;
+  const actionState = deriveEntryActionState({
+    showForm,
+    isViewMode,
+    entryLocked,
+    controlsDisabled,
+    loading,
+    saving,
+    hasBusyUploads,
+    canSave: lifecycle.canSave,
+    canGenerate: lifecycle.canGenerate,
+  });
   const generateEntrySnapshot = useGenerateEntry<GuestLectureEntry>({
     category: "guest-lectures",
     email,
@@ -560,12 +576,11 @@ export function GuestLecturesPage({
     category: "guest-lectures",
     hydrateEntry,
   });
-  const showForm = formOpen || (!!activeEntryId && (!isViewMode || !!viewedEntry));
   const {
     status: autoSaveStatus,
     markSaved: markAutoSaveSaved,
   } = useAutoSave<GuestLectureEntry>({
-    enabled: showForm && !isViewMode && !entryLocked && !saving && !hasBusyUploads && lifecycle.canSave,
+    enabled: actionState.autoSaveEnabled,
     value: form,
     debounceMs: 15000,
     onSave: async () => {
@@ -587,7 +602,7 @@ export function GuestLecturesPage({
   const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
     enabled: showForm && !isViewMode && !entryLocked,
     isDirty: formDirty,
-    isSaving: saving || hasBusyUploads || autoSaveStatus.phase === "saving",
+    isSaving: actionState.guardSaving || autoSaveStatus.phase === "saving",
   });
 
   async function parseApiError(response: Response, fallback: string) {
@@ -768,81 +783,45 @@ export function GuestLecturesPage({
     throwOnError?: boolean;
   }): Promise<GuestLectureEntry | null> {
     const intent = options?.intent ?? "save";
-    const source = options?.source ?? "manual";
-    const showToast = source !== "autosave";
-    if (saveLockRef.current) return null;
-    if (intent === "save" && !lifecycle.canSave) return null;
-    saveLockRef.current = true;
-    let rollbackSnapshot: GuestLectureEntry[] | null = null;
-    let lastPersistedEntry: GuestLectureEntry | null = null;
-
-    try {
-      if (hasBusyUploads) {
-        if (showToast) {
-          setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
-          setTimeout(() => setToast(null), 1800);
-        }
-        return null;
-      }
-
-      setSaving(true);
-      setSaveIntent(intent);
-      const entryToSave: GuestLectureEntry = {
-        ...form,
-        coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
-      };
-      const optimisticEntry = hydrateEntry({
-        ...entryToSave,
-        updatedAt: new Date().toISOString(),
-      });
-      setList((current) => {
-        rollbackSnapshot = createOptimisticSnapshot(current);
-        return optimisticUpsert(current, optimisticEntry);
-      });
-      const persisted = hydrateEntry(await persistProgress(entryToSave));
-      lastPersistedEntry = persisted;
-      setList((current) => optimisticUpsert(current, persisted));
-
-      const finalEntry: GuestLectureEntry =
-        intent === "done" ? await commitDraftEntry(String(persisted.id)) : persisted;
-      if (intent === "done") {
-        lastPersistedEntry = finalEntry;
-        setList((current) => optimisticUpsert<GuestLectureEntry>(current, finalEntry));
-      }
-
-      applyPersistedEntry(finalEntry);
-      setSubmitted(false);
-      setSubmitAttemptedFinal(false);
-      void refreshList(email);
-      if (showToast) {
-        setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
-        setTimeout(() => setToast(null), 1400);
-      }
-      if (options?.closeAfterSave) {
-        await closeForm();
-      }
-      return finalEntry;
-    } catch (error) {
-      const persistedEntry = lastPersistedEntry;
-      if (persistedEntry) {
-        setList((current) => optimisticUpsert<GuestLectureEntry>(current, persistedEntry));
-      } else if (rollbackSnapshot) {
-        setList(rollbackSnapshot);
-      }
-      if (showToast) {
-        const message = error instanceof Error ? error.message : "Save failed.";
-        setToast({ type: "err", msg: message });
-        setTimeout(() => setToast(null), 1800);
-      }
-      if (options?.throwOnError) {
-        throw error;
-      }
-      return null;
-    } finally {
-      setSaving(false);
-      setSaveIntent(null);
-      saveLockRef.current = false;
-    }
+    return runSaveDraftOrchestration<GuestLectureEntry>({
+      intent,
+      source: options?.source ?? "manual",
+      closeAfterSave: options?.closeAfterSave ?? false,
+      throwOnError: options?.throwOnError ?? false,
+      canSave: lifecycle.canSave,
+      hasBusyUploads,
+      busyMessage: "Please wait for uploads to finish before saving.",
+      saveSuccessMessage: "Saved",
+      doneSuccessMessage: "Draft committed.",
+      saveLockRef,
+      setSaving,
+      setSaveIntent,
+      setToast,
+      setList,
+      buildEntryToSave: () => {
+        const latestForm = formRef.current;
+        return {
+          ...latestForm,
+          coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
+        };
+      },
+      buildOptimisticEntry: (entryToSave) =>
+        hydrateEntry({
+          ...entryToSave,
+          updatedAt: new Date().toISOString(),
+        }),
+      persistProgress: async (entryToSave) => hydrateEntry(await persistProgress(entryToSave)),
+      commitDraft: async (entryId) => commitDraftEntry(entryId),
+      applyPersistedEntry: (entry) => {
+        applyPersistedEntry(entry);
+        setSubmitted(false);
+        setSubmitAttemptedFinal(false);
+      },
+      afterPersistSuccess: async () => {
+        void refreshList(email);
+      },
+      closeForm: () => closeForm(),
+    });
   }
 
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
@@ -866,46 +845,35 @@ export function GuestLecturesPage({
   }
 
   async function generateEntry() {
-    if (saveLockRef.current) return;
-    saveLockRef.current = true;
-
-    try {
-      setSubmitted(true);
-
-      if (Object.keys(errors).length > 0 || !lifecycle.canGenerate) {
-        setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
-        setTimeout(() => setToast(null), 1800);
-        return;
-      }
-
-      if (hasBusyUploads) {
-        setToast({ type: "err", msg: "Finish the current uploads before generating the entry." });
-        setTimeout(() => setToast(null), 1800);
-        return;
-      }
-
-      setSaving(true);
-      const draftEntry: GuestLectureEntry = {
-        ...form,
-        coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
-      };
-      const { entry: nextEntry } = await generateEntrySnapshot(draftEntry, persistProgress);
-
-      setForm(nextEntry);
-      setLastPersistedSnapshot(stableStringify(nextEntry));
-      setSubmitted(false);
-      setSubmitAttemptedFinal(false);
-      await refreshList(email);
-      setToast({ type: "ok", msg: "Entry generated." });
-      setTimeout(() => setToast(null), 1400);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Generate failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1800);
-    } finally {
-      setSaving(false);
-      saveLockRef.current = false;
-    }
+    await runGenerateEntryOrchestration<GuestLectureEntry>({
+      saveLockRef,
+      hasValidationErrors: Object.keys(errors).length > 0,
+      canGenerate: lifecycle.canGenerate,
+      hasBusyUploads,
+      validationMessage: "Complete all required fields before generating the entry.",
+      busyMessage: "Finish the current uploads before generating the entry.",
+      successMessage: "Entry generated.",
+      errorMessage: "Generate failed.",
+      setSaving,
+      setToast,
+      markSubmitAttempted: () => setSubmitted(true),
+      buildDraftEntry: () => {
+        const latestForm = formRef.current;
+        return {
+          ...latestForm,
+          coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
+        };
+      },
+      generateEntrySnapshot,
+      persistProgress,
+      applyGeneratedEntry: async (nextEntry) => {
+        setForm(nextEntry);
+        setLastPersistedSnapshot(stableStringify(nextEntry));
+        setSubmitted(false);
+        setSubmitAttemptedFinal(false);
+        await refreshList(email);
+      },
+    });
   }
 
   const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
@@ -1222,11 +1190,11 @@ export function GuestLecturesPage({
           }}
           addLabel="+ Add Guest Lecture"
           onCancel={() => void handleCancel()}
-          cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          cancelDisabled={actionState.cancelDisabled}
           onSave={() => void handleSaveDraft()}
-          saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+          saveDisabled={actionState.saveDisabled}
           onDone={() => void handleSaveAndClose()}
-          doneDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          doneDisabled={actionState.doneDisabled}
           saving={saving}
           saveIntent={saveIntent}
         />
@@ -1466,7 +1434,7 @@ export function GuestLecturesPage({
                 {!isViewMode ? (
                   <MiniButton
                     onClick={() => void generateEntry()}
-                    disabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canGenerate}
+                    disabled={actionState.generateDisabled}
                   >
                     {saving ? "Generating..." : "Generate Entry"}
                   </MiniButton>
@@ -1587,26 +1555,7 @@ export function GuestLecturesPage({
             {list.length === 0 ? (
               <div className="text-sm text-muted-foreground">No entries yet.</div>
             ) : (
-              <div className="space-y-3">
-                {groupedEntries.draft.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold">Drafts</div>
-                    {groupedEntries.draft.map((entry, index) => renderSavedEntry(entry, "draft", index))}
-                  </div>
-                ) : null}
-                {groupedEntries.activated.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold">Streak Activated</div>
-                    {groupedEntries.activated.map((entry, index) => renderSavedEntry(entry, "streak_active", index))}
-                  </div>
-                ) : null}
-                {groupedEntries.completed.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold">Completed</div>
-                    {groupedEntries.completed.map((entry, index) => renderSavedEntry(entry, "completed", index))}
-                  </div>
-                ) : null}
-              </div>
+              <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />
             )}
           </SectionCard>
         ) : null}

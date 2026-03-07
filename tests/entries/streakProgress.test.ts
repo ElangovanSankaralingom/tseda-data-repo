@@ -9,7 +9,6 @@ import {
 test("streak progress marks committed drafts as activated", () => {
   const snapshot = getStreakProgressSnapshot({
     id: "entry-1",
-    status: "final",
     confirmationStatus: "DRAFT",
     committedAtISO: "2026-03-06T10:00:00.000Z",
     updatedAt: "2026-03-06T10:05:00.000Z",
@@ -22,7 +21,6 @@ test("streak progress marks committed drafts as activated", () => {
 test("streak progress marks approved entries as wins", () => {
   const snapshot = getStreakProgressSnapshot({
     id: "entry-2",
-    status: "final",
     confirmationStatus: "APPROVED",
     committedAtISO: "2026-03-06T10:00:00.000Z",
     updatedAt: "2026-03-06T10:05:00.000Z",
@@ -35,7 +33,6 @@ test("streak progress marks approved entries as wins", () => {
 test("streak progress is not timer-dependent for activation", () => {
   const snapshot = getStreakProgressSnapshot({
     id: "entry-3",
-    status: "final",
     confirmationStatus: "PENDING_CONFIRMATION",
     streak: {
       activatedAtISO: "2026-02-01T10:00:00.000Z",
@@ -50,7 +47,6 @@ test("streak progress is not timer-dependent for activation", () => {
 test("streak progress defaults to zeroed state for incomplete drafts", () => {
   const snapshot = getStreakProgressSnapshot({
     id: "entry-4",
-    status: "draft",
     confirmationStatus: "DRAFT",
   });
 
@@ -58,6 +54,24 @@ test("streak progress defaults to zeroed state for incomplete drafts", () => {
   assert.equal(snapshot.isWin, false);
   assert.equal(snapshot.hasActivatedAt, false);
   assert.equal(snapshot.hasCompletedAt, false);
+});
+
+test("streak progress ignores legacy streak timestamps without commit milestone", () => {
+  const snapshot = getStreakProgressSnapshot({
+    id: "entry-legacy",
+    confirmationStatus: "DRAFT",
+    streak: {
+      activatedAtISO: "2026-02-01T10:00:00.000Z",
+      completedAtISO: "2026-02-02T10:00:00.000Z",
+      dueAtISO: "2026-02-05T23:59:59.999Z",
+    },
+  });
+
+  assert.equal(snapshot.isActivated, false);
+  assert.equal(snapshot.isWin, false);
+  assert.equal(snapshot.isCompleted, false);
+  assert.equal(snapshot.hasActivatedAt, true);
+  assert.equal(snapshot.hasCompletedAt, true);
 });
 
 test("streak progress aggregate uses one canonical activated/wins rule", () => {

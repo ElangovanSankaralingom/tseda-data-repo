@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "userEmail": "faculty.wal@tce.edu",
+  "updatedAt": "2026-03-06T17:37:14.430Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "countsByStatus": {
+    "DRAFT": 0,
+    "PENDING_CONFIRMATION": 1,
+    "APPROVED": 0,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T17:37:14.427Z"
+  },
+  "streakSnapshot": {
+    "ruleVersion": 2,
+    "streakActivatedCount": 1,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 1,
+        "wins": 0
+      }
+    },
+    "activeEntries": [
+      {
+        "id": "2f6432bb-528f-4437-97e5-a1ecc8378c8a",
+        "categoryKey": "workshops",
+        "dueAtISO": null,
+        "sortAtISO": "2026-03-06T17:37:14.427Z"
+      }
+    ],
+    "lastComputedAt": "2026-03-06T17:37:14.430Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:2f6432bb-528f-4437-97e5-a1ecc8378c8a": {
+      "entryId": "2f6432bb-528f-4437-97e5-a1ecc8378c8a",
+      "categoryKey": "workshops",
+      "title": "Recovery Workshop",
+      "text": "recovery workshop workshops pending confirmation academic year 2025 2026 odd recovery workshop speaker tce",
+      "status": "PENDING_CONFIRMATION",
+      "updatedAtISO": "2026-03-06T17:37:14.427Z",
+      "createdAtISO": "2026-03-06T17:37:14.415Z"
+    }
+  }
+}
