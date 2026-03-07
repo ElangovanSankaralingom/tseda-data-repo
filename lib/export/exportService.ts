@@ -33,7 +33,7 @@ export type ExportStatusOption = {
 };
 
 export type ExportCategorySelection = CategoryKey | "all";
-export type ExportFormat = "xlsx" | "csv";
+export type ExportFormat = "xlsx" | "csv" | "json";
 
 export type ExportFieldOption = {
   key: string;
@@ -697,6 +697,35 @@ export function parseExportStatuses(value: string): EntryStatus[] {
   }
   return Array.from(statuses);
 }
+
+export function generateJsonText(
+  headers: string[],
+  rows: Array<Array<string | number | boolean>>,
+  metadata?: { category?: string; exportedAt?: string }
+): Result<string> {
+  try {
+    const data = rows.map((row) => {
+      const obj: Record<string, string | number | boolean> = {};
+      for (let i = 0; i < headers.length; i++) {
+        obj[headers[i] ?? `col_${i}`] = row[i] ?? "";
+      }
+      return obj;
+    });
+
+    const output = {
+      exportedAt: metadata?.exportedAt ?? new Date().toISOString(),
+      category: metadata?.category ?? "all",
+      recordCount: data.length,
+      data,
+    };
+
+    return ok(JSON.stringify(output, null, 2));
+  } catch (error) {
+    return err(normalizeError(error));
+  }
+}
+
+export const CSV_BOM = "\uFEFF";
 
 export function parseExportFieldKeys(value: string): string[] {
   return Array.from(

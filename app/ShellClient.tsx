@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import {
   BookOpen,
+  ChevronDown,
   ClipboardList,
-  FileEdit,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -21,8 +22,8 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import AvatarMenu from "@/components/AvatarMenu";
-import { Button } from "@/components/ui/button";
+import NotificationBell from "@/components/confirmations/NotificationBell";
+import { useSearch } from "@/components/search/SearchProvider";
 import { CATEGORY_LIST, getCategoryConfig, type CategorySlug } from "@/data/categoryRegistry";
 import { isMasterAdmin } from "@/lib/admin";
 import {
@@ -34,6 +35,7 @@ import {
   profile,
   signin,
 } from "@/lib/entryNavigation";
+import { useConfirmation } from "@/components/confirmations/ConfirmationProvider";
 import Toast from "@/components/ui/Toast";
 import { safeAction } from "@/lib/safeAction";
 import { notifyError, notifySuccess } from "@/lib/ui/notify";
@@ -69,23 +71,35 @@ const CATEGORY_ACCENT_ICON: Record<CategorySlug, string> = {
 // --- Animated Hamburger Icon ---
 
 function HamburgerIcon({ isOpen }: { isOpen: boolean }) {
-  const base = "block h-0.5 w-5 rounded-full bg-slate-700 transition-all duration-300 ease-in-out";
   return (
-    <div className="flex flex-col items-center justify-center gap-[5px]">
+    <div className="group flex flex-col items-center justify-center gap-[5px]">
       <span
-        className={cn(base, isOpen && "translate-y-[7px] rotate-45")}
+        className={cn(
+          "block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ease-in-out",
+          isOpen
+            ? "translate-y-[7px] rotate-45"
+            : "group-hover:translate-x-[1px]"
+        )}
       />
       <span
-        className={cn(base, isOpen && "opacity-0")}
+        className={cn(
+          "block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ease-in-out",
+          isOpen && "opacity-0"
+        )}
       />
       <span
-        className={cn(base, isOpen && "-translate-y-[7px] -rotate-45")}
+        className={cn(
+          "block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ease-in-out",
+          isOpen
+            ? "-translate-y-[7px] -rotate-45"
+            : "group-hover:-translate-x-[1px]"
+        )}
       />
     </div>
   );
 }
 
-// --- Nav Item ---
+// --- Sidebar Nav Item ---
 
 type NavItemProps = {
   href: string;
@@ -160,11 +174,217 @@ function getInitials(name: string, email: string) {
   return source.slice(0, 2).toUpperCase();
 }
 
+// --- Search Trigger ---
+
+function SearchTrigger() {
+  const { open } = useSearch();
+  return (
+    <>
+      {/* Desktop: search bar */}
+      <button
+        type="button"
+        onClick={open}
+        className="hidden items-center gap-2 rounded-xl bg-slate-100 px-3 h-9 w-48 cursor-pointer transition-colors hover:bg-slate-200 lg:flex"
+      >
+        <Search className="size-4 text-slate-400" />
+        <span className="flex-1 text-left text-sm text-slate-400">Search...</span>
+        <kbd className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-500 shadow-sm">⌘K</kbd>
+      </button>
+      {/* Mobile/tablet: icon only */}
+      <button
+        type="button"
+        onClick={open}
+        className="flex size-9 items-center justify-center rounded-xl transition-colors hover:bg-slate-100 lg:hidden"
+        aria-label="Search (⌘K)"
+        title="Search (⌘K)"
+      >
+        <Search className="size-[18px] text-slate-500 hover:text-slate-900 transition-colors" />
+      </button>
+    </>
+  );
+}
+
+// --- Header Nav Pill ---
+
+function HeaderNavPill({
+  href,
+  icon: Icon,
+  label,
+  active,
+  hasDot,
+  dotColor = "bg-amber-500",
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  active: boolean;
+  hasDot?: boolean;
+  dotColor?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200",
+        active
+          ? "bg-slate-900 text-white shadow-sm"
+          : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+      )}
+    >
+      <Icon className="size-4" />
+      <span>{label}</span>
+      {hasDot && (
+        <span className={cn("size-1.5 rounded-full animate-subtle-pulse", dotColor)} />
+      )}
+      {/* Active indicator bar */}
+      {active && (
+        <span className="absolute -bottom-2.5 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-slate-900" />
+      )}
+    </Link>
+  );
+}
+
+// --- Profile Dropdown ---
+
+function ProfileDropdown({
+  name,
+  email,
+  photoUrl,
+  initials,
+  isAdmin,
+  onSignOut,
+}: {
+  name: string;
+  email: string;
+  photoUrl: string;
+  initials: string;
+  isAdmin: boolean;
+  onSignOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors hover:bg-slate-100 cursor-pointer"
+        aria-label="Account menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {/* Avatar */}
+        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-slate-100">
+          {photoUrl ? (
+            <span
+              className="h-full w-full bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url("${photoUrl}")` }}
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-xs font-bold text-white">
+              {initials}
+            </span>
+          )}
+        </span>
+        {/* Name + chevron (hidden on mobile) */}
+        <span className="hidden items-center gap-1 sm:flex">
+          <span className="max-w-[120px] truncate text-sm font-medium text-slate-700">{name}</span>
+          <ChevronDown className={cn(
+            "size-3 text-slate-400 transition-transform duration-200",
+            open && "rotate-180"
+          )} />
+        </span>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-slate-200 bg-white py-2 shadow-2xl animate-scale-in"
+        >
+          {/* User info */}
+          <div className="border-b border-slate-100 px-4 py-3">
+            <div className="text-sm font-semibold text-slate-900">{name}</div>
+            <div className="truncate font-mono text-xs text-slate-500">{email}</div>
+            {isAdmin && (
+              <span className="mt-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                Admin
+              </span>
+            )}
+          </div>
+
+          {/* Navigation items */}
+          <Link
+            href={profile()}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="mx-1 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+          >
+            <User className="size-4" />
+            My Account
+          </Link>
+
+          <div className="my-1 h-px bg-slate-100" />
+
+          {/* Sign out */}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+            className="mx-1 flex w-[calc(100%-0.5rem)] items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
+          >
+            <LogOut className="size-4" />
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Scroll state hook ---
+
+function useScrolled(threshold = 0) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > threshold);
+    }
+    onScroll(); // check initial state
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [threshold]);
+
+  return scrolled;
+}
+
 // --- Main Component ---
 
 export default function ShellClient({
   children,
-  title = "T'SEDA Data Repository",
 }: {
   children: React.ReactNode;
   title?: string;
@@ -172,16 +392,21 @@ export default function ShellClient({
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const { confirm: confirmAction } = useConfirmation();
+
+  // Refresh server components when user returns to the tab after 1+ minute away
+  useRefreshOnFocus({ minInterval: 60000 });
+
   const [canAccessAdmin, setCanAccessAdmin] = useState(() =>
     isMasterAdmin(session?.user?.email)
   );
   const [open, setOpen] = useState(false);
-  const [resetOpen, setResetOpen] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
   const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [menuProfile, setMenuProfile] = useState<ProfileSummary | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
+  const scrolled = useScrolled(0);
 
   // Fetch profile for menu
   useEffect(() => {
@@ -298,7 +523,6 @@ export default function ShellClient({
         return;
       }
 
-      setResetOpen(false);
       setOpen(false);
       setAvatarRefreshKey((value) => value + 1);
       notifySuccess("Account reset successfully", setToast);
@@ -308,20 +532,40 @@ export default function ShellClient({
     }
   }
 
+  function handleSignOut() {
+    void confirmAction({
+      type: "info",
+      title: "Sign out?",
+      message: "You'll need to sign in again with your Google account.",
+      confirmLabel: "Sign out",
+      confirmStyle: "primary",
+    }).then((confirmed) => {
+      if (confirmed) signOut({ callbackUrl: signin() });
+    });
+  }
+
   // Stagger animation delay base
   let navIndex = 0;
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-[#FAFBFC] text-slate-900">
-      {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/50 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
+      {/* ─── Fixed Header ─── */}
+      <header
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50 h-14 border-b backdrop-blur-xl transition-shadow duration-200",
+          scrolled
+            ? "bg-white/90 border-slate-200/80 shadow-sm"
+            : "bg-white/70 border-slate-200/50"
+        )}
+      >
+        <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-6">
+          {/* ── Left: Hamburger + Brand ── */}
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
               className={cn(
-                "flex size-10 items-center justify-center rounded-xl transition-colors",
+                "flex size-9 items-center justify-center rounded-xl transition-colors duration-150",
                 open ? "bg-slate-100" : "hover:bg-slate-100"
               )}
               aria-label={open ? "Close menu" : "Open menu"}
@@ -329,35 +573,60 @@ export default function ShellClient({
               <HamburgerIcon isOpen={open} />
             </button>
 
-            <Link href={dashboard()} className="truncate text-base font-semibold tracking-tight">
-              {title}
+            {/* Brand */}
+            <Link href={dashboard()} className="flex items-center gap-2 group">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 text-sm font-bold text-white transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105">
+                T
+              </span>
+              <span className="hidden text-base font-bold tracking-tight text-slate-900 sm:block">
+                T&apos;SEDA
+              </span>
             </Link>
-
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={dataEntryHome()}>
-                <ClipboardList />
-                <span className="hidden sm:inline">Data Entry</span>
-              </Link>
-            </Button>
-            {canAccessAdmin ? (
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={adminHome()}>
-                  <Shield />
-                  <span className="hidden sm:inline">Admin Console</span>
-                </Link>
-              </Button>
-            ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
-            <AvatarMenu refreshKey={avatarRefreshKey} showName />
+          {/* ── Center: Navigation Pills ── */}
+          <nav className="hidden items-center gap-1 md:flex">
+            <HeaderNavPill
+              href={dashboard()}
+              icon={LayoutDashboard}
+              label="Dashboard"
+              active={isActive(dashboard())}
+            />
+            <HeaderNavPill
+              href={dataEntryHome()}
+              icon={ClipboardList}
+              label="Data Entry"
+              active={isActive(dataEntryHome())}
+            />
+            {canAccessAdmin && (
+              <HeaderNavPill
+                href={adminHome()}
+                icon={Shield}
+                label="Admin"
+                active={isActive(adminHome())}
+              />
+            )}
+          </nav>
+
+          {/* ── Right: Utilities ── */}
+          <div className="flex items-center gap-1">
+            <SearchTrigger />
+            <NotificationBell />
+            <ProfileDropdown
+              name={profileName}
+              email={profileEmail}
+              photoUrl={profilePhoto}
+              initials={profileInitials}
+              isAdmin={canAccessAdmin}
+              onSignOut={handleSignOut}
+            />
           </div>
         </div>
       </header>
 
       <Toast toast={toast} position="fixed" />
 
-      {/* Sidebar drawer */}
+      {/* ─── Sidebar Drawer ─── */}
       {/* Backdrop */}
       <div
         className={cn(
@@ -514,7 +783,17 @@ export default function ShellClient({
               type="button"
               onClick={() => {
                 closeMenu();
-                setResetOpen(true);
+                void confirmAction({
+                  type: "danger",
+                  title: "Reset Account",
+                  message: "This will permanently delete all your entries and uploads. This cannot be undone.",
+                  confirmLabel: "Confirm Reset",
+                  confirmStyle: "danger",
+                  requireTypedConfirmation: "RESET",
+                  countdown: 3,
+                }).then((confirmed) => {
+                  if (confirmed) void handleResetConfirm();
+                });
               }}
               disabled={resetBusy}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 disabled:pointer-events-none disabled:opacity-60"
@@ -527,7 +806,10 @@ export default function ShellClient({
           {/* Sign Out */}
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: signin() })}
+            onClick={() => {
+              closeMenu();
+              handleSignOut();
+            }}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
           >
             <LogOut className="size-5" />
@@ -536,49 +818,8 @@ export default function ShellClient({
         </div>
       </aside>
 
-      {/* Reset confirmation dialog */}
-      {ENABLE_RESET && resetOpen ? (
-        <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => {
-              if (!resetBusy) setResetOpen(false);
-            }}
-          />
-          <div className="absolute left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg">
-              <h2 className="text-base font-semibold">Reset Account</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                This will permanently delete all your entries and uploads. This
-                cannot be undone.
-              </p>
-              <div className="mt-5 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setResetOpen(false)}
-                  disabled={resetBusy}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm transition hover:bg-slate-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleResetConfirm();
-                  }}
-                  disabled={resetBusy}
-                  className="rounded-lg border border-red-600 bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {resetBusy ? "Resetting..." : "Confirm Reset"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Page content */}
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      {/* ─── Page Content ─── */}
+      <main className="mx-auto max-w-6xl px-4 pb-6 pt-20">{children}</main>
     </div>
   );
 }

@@ -15,6 +15,8 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminBackupsCreate, adminBackupsDownload, adminHome, dashboard } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type AdminBackupsPageProps = {

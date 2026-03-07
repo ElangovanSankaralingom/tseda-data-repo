@@ -16,6 +16,8 @@ import {
 } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 
+export const dynamic = "force-dynamic";
+
 function toSafeCount(value: number) {
   if (!Number.isFinite(value) || value <= 0) return 0;
   return Math.floor(value);
@@ -52,23 +54,22 @@ export default async function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  const remaining = streakActivated - streakWins;
   const welcomeSubtext = !hasAnyEntries
     ? "Start your first entry to begin your streak"
-    : remaining > 0
-    ? `You have ${remaining} ${remaining === 1 ? "entry" : "entries"} to complete`
     : streakActivated > 0
+    ? `You have ${streakActivated} ${streakActivated === 1 ? "entry" : "entries"} to complete`
+    : streakWins > 0
     ? "All entries complete!"
     : "Here\u2019s your progress overview";
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3 animate-fade-in-up">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-slate-900">
-              {greeting}, {firstName}
+              {greeting}, {firstName} <span className="animate-wave">👋</span>
             </h1>
             {hasAnyEntries && (
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
@@ -92,7 +93,7 @@ export default async function DashboardPage() {
 
       {/* Empty state */}
       {!hasAnyEntries ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center animate-fade-in-up stagger-1">
           <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-slate-100">
             <ClipboardList className="size-10 text-slate-400" />
           </div>
@@ -104,7 +105,7 @@ export default async function DashboardPage() {
           </p>
           <Link
             href={dataEntryHome()}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#2D5F8A] hover:shadow"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#2D5F8A] hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
           >
             Go to Data Entry
           </Link>

@@ -52,6 +52,7 @@ import {
   computeCanonicalStreakSnapshot,
   type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
+import { getEditWindowDays, getStreakBufferDays } from "@/lib/settings/consumer";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { validateAndSanitizeOrThrow } from "@/lib/validation/validateEntryPayload";
 import type { Entry, EntryStatus as EntryWorkflowStatus } from "@/lib/types/entry";
@@ -911,10 +912,14 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
 
       const nowISO = new Date().toISOString();
       const streakEligible = checkStreakEligibility(existing);
+      const [editWindowDays, streakBufferDays] = await Promise.all([
+        getEditWindowDays(),
+        getStreakBufferDays(),
+      ]);
       const editWindowExpiresAt = computeEditWindowExpiry(nowISO, {
         endDate: existing.endDate,
         streakEligible,
-      });
+      }, { editWindowDays, streakBufferDays });
       const updated = prepareEntryForWrite(
         {
           ...existing,
@@ -1329,6 +1334,15 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
       durationMs: Date.now() - startedAt,
       source: "admin",
     });
+
+    // Fire-and-forget notification to entry owner (lazy import to avoid test-time issues)
+    void import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle }) => {
+      void notifyEditGranted(
+        normalizedOwner,
+        extractEntryTitle(grantedEntry as unknown as Record<string, unknown>),
+      );
+    }).catch(() => {});
+
     return grantedEntry;
   } catch (error) {
     await trackEntryMutationFailure(

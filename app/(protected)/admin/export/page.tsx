@@ -1,19 +1,21 @@
 import { getServerSession } from "next-auth";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import AdminExportForm from "@/components/admin/AdminExportForm";
-import SectionCard from "@/components/layout/SectionCard";
+import ExportDashboard from "@/components/admin/ExportDashboard";
 import { authOptions } from "@/lib/auth";
 import { canExport } from "@/lib/admin/roles";
 import { listUsers } from "@/lib/admin/integrity";
-import { toUserMessage } from "@/lib/errors";
 import {
   getExportCategoryOptions,
   getExportStatusOptions,
   getExportableFields,
 } from "@/lib/export/exportService";
+import { getExportTemplates } from "@/lib/export/templates";
+import { getExportHistory } from "@/lib/export/history";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminExportPage() {
   const session = await getServerSession(authOptions);
@@ -22,48 +24,44 @@ export default async function AdminExportPage() {
     redirect(dashboard());
   }
 
-  const usersResult = await listUsers();
-  const users = usersResult.ok ? usersResult.data : [];
-  const error = usersResult.ok ? null : toUserMessage(usersResult.error);
+  const [usersResult, historyResult] = await Promise.all([
+    listUsers(),
+    getExportHistory(10),
+  ]);
 
+  const users = usersResult.ok ? usersResult.data : [];
+  const templates = getExportTemplates();
   const categories = getExportCategoryOptions();
+  const statusOptions = getExportStatusOptions();
 
   const fieldOptionsByCategory = categories.reduce<Record<string, { key: string; label: string }[]>>(
-    (next, category) => {
+    (acc, category) => {
       const fields = getExportableFields(category.key);
-      next[category.key] = fields.map((field) => ({
+      acc[category.key] = fields.map((field) => ({
         key: field.key,
         label: field.label,
       }));
-      return next;
+      return acc;
     },
     {}
   );
-  const statusOptions = getExportStatusOptions();
+
+  const initialHistory = historyResult.ok ? historyResult.data : [];
 
   return (
     <AdminPageShell
-      title="Export Entries"
-      subtitle="Download schema-driven exports from canonical normalized DataStore records."
+      title="Export Center"
+      subtitle="Quick templates, custom exports, and download history."
       backHref={adminHome()}
     >
-      <SectionCard>
-        {error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        ) : users.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No users available for export.</div>
-        ) : (
-          <AdminExportForm
-            users={users}
-            categories={categories}
-            statusOptions={statusOptions}
-            fieldOptionsByCategory={fieldOptionsByCategory}
-            downloadPath="/api/admin/export/entries"
-          />
-        )}
-      </SectionCard>
+      <ExportDashboard
+        templates={templates}
+        users={users}
+        categories={categories}
+        statusOptions={statusOptions}
+        fieldOptionsByCategory={fieldOptionsByCategory}
+        initialHistory={initialHistory}
+      />
     </AdminPageShell>
   );
 }

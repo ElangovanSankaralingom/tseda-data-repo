@@ -113,26 +113,82 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
   return null;
 }
 
+function TimeInfo({ group, editTime, createdAt, updatedAt }: {
+  group: EntryListGroup;
+  editTime?: EditTimeRemaining;
+  createdAt?: string;
+  updatedAt?: string;
+}) {
+  // Editable entries with time remaining
+  if (editTime?.hasEditWindow && !editTime.expired) {
+    const hours = Math.floor(editTime.remainingMs / (60 * 60 * 1000));
+    const days = Math.floor(hours / 24);
+    const isUrgent = editTime.remainingMs < 24 * 60 * 60 * 1000;
+    const isWarning = editTime.remainingMs < 3 * 24 * 60 * 60 * 1000;
+
+    const colorClass = isUrgent
+      ? "text-red-600 font-semibold"
+      : isWarning
+        ? "text-amber-600"
+        : "text-slate-500";
+
+    return (
+      <span className={`inline-flex items-center gap-1 text-xs ${colorClass}`}>
+        <Clock className={`size-3 ${isUrgent ? "animate-subtle-pulse" : ""}`} />
+        {days > 0 ? `${days}d ${hours % 24}h remaining` : `${hours}h remaining`}
+      </span>
+    );
+  }
+
+  // Drafts
+  if (group === "in_the_works") {
+    const time = formatRelativeTime(createdAt);
+    return time ? <span className="text-xs text-slate-400">Created {time}</span> : null;
+  }
+
+  // Under review
+  if (group === "under_review") {
+    const time = formatRelativeTime(updatedAt || createdAt);
+    return time ? <span className="text-xs text-amber-600">Requested {time}</span> : null;
+  }
+
+  // Unlocked (edit granted)
+  if (group === "unlocked") {
+    const time = formatRelativeTime(updatedAt);
+    return time ? <span className="text-xs text-purple-600">Edit access granted {time}</span> : null;
+  }
+
+  // Finalized
+  if (group === "locked_in") {
+    const time = formatRelativeTime(updatedAt || createdAt);
+    return time ? <span className="text-xs text-slate-400">Finalized {time}</span> : null;
+  }
+
+  // Fallback
+  const time = formatRelativeTime(updatedAt || createdAt);
+  return time ? <span className="text-xs text-slate-400">Updated {time}</span> : null;
+}
+
 function EditWindowProgressBar({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
   if (!editTime?.hasEditWindow || editTime.expired) return null;
 
   const barColor = PROGRESS_BAR_COLORS[group];
   if (!barColor) return null;
 
-  // Estimate total window (remaining + elapsed)
-  // Use a rough heuristic: if we know expiresAt, we assume the window started at (expiresAt - totalWindow)
-  // Since we don't have the start time, use remaining ratio based on typical windows
   const totalWindowMs = editTime.remainingMs < 3 * 24 * 60 * 60 * 1000
-    ? 3 * 24 * 60 * 60 * 1000  // 3-day default window
-    : editTime.remainingMs * 1.5; // rough estimate
+    ? 3 * 24 * 60 * 60 * 1000
+    : editTime.remainingMs * 1.5;
   const elapsed = totalWindowMs - editTime.remainingMs;
   const progress = Math.min(100, Math.max(0, (elapsed / totalWindowMs) * 100));
-  const isLow = progress > 80;
+  const isUrgent = progress > 75;
+  const isWarning = progress > 50;
+
+  const fillColor = isUrgent ? "bg-red-400" : isWarning ? "bg-amber-400" : barColor;
 
   return (
-    <div className="mt-3 h-1 w-full rounded-full bg-slate-100">
+    <div className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden rounded-b-xl">
       <div
-        className={`h-1 rounded-full transition-all duration-500 ${isLow ? "bg-red-400" : barColor}`}
+        className={`h-full transition-all duration-700 ${fillColor}`}
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -168,53 +224,49 @@ export default function EntryListCardShell({
   actions,
   children,
 }: EntryListCardShellProps) {
-  const createdTime = createdAt ? new Date(createdAt).getTime() : Number.NaN;
-  const updatedTime = updatedAt ? new Date(updatedAt).getTime() : Number.NaN;
-  const showUpdated =
-    !Number.isNaN(createdTime) &&
-    !Number.isNaN(updatedTime) &&
-    Math.abs(updatedTime - createdTime) > 60 * 1000;
-
-  const relativeTime = formatRelativeTime(updatedAt || createdAt);
   const Icon = GROUP_ICONS[group];
   const iconColor = GROUP_ICON_COLORS[group];
+  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
 
   return (
-    <div className={getGroupCardClass(group)}>
-      <div className="space-y-2">
-        {/* Title row: icon + title + badge */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <Icon className={`size-4 shrink-0 ${iconColor}`} />
-              <Link href={href} className="text-base font-semibold text-slate-900 hover:opacity-80">
-                {title}
-              </Link>
-              <GroupBadge group={group} editTime={editTime} />
-              {badges}
-            </div>
-            {subtitle ? <div className="mt-1 pl-6 text-sm text-slate-600">{subtitle}</div> : null}
+    <div className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass}`}>
+      {/* Row 1 — Identity */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Icon className={`size-3.5 shrink-0 ${iconColor}`} />
+            <Link href={href} className="text-base font-semibold text-slate-900 hover:text-slate-700 truncate transition-colors">
+              {title}
+            </Link>
+            <GroupBadge group={group} editTime={editTime} />
+            {badges}
           </div>
+          {subtitle ? <div className="mt-0.5 pl-5.5 text-sm text-slate-600">{subtitle}</div> : null}
         </div>
-
-        {/* Metadata + actions row */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pl-6">
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
-            {metadata}
-            {!metadata && relativeTime ? (
-              <span title={`Created: ${formatEntryTimestamp(createdAt)}${showUpdated ? ` | Updated: ${formatEntryTimestamp(updatedAt)}` : ""}`}>
-                {showUpdated ? "Updated " : "Created "}{relativeTime}
-              </span>
-            ) : null}
-          </div>
-          {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
-        </div>
-
-        {children}
-
-        {/* Progress bar for timed entries */}
-        <EditWindowProgressBar group={group} editTime={editTime} />
       </div>
+
+      {/* Row 2 — Details */}
+      {(children || metadata) && (
+        <div className="mt-2 pl-5.5">
+          {children}
+          {metadata && !children ? (
+            <div className="text-xs text-slate-400">{metadata}</div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Row 3 — Footer: time info + actions */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
+        <TimeInfo group={group} editTime={editTime} createdAt={createdAt} updatedAt={updatedAt} />
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
+            {actions}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Time progress bar — flush bottom */}
+      <EditWindowProgressBar group={group} editTime={editTime} />
     </div>
   );
 }

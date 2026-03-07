@@ -668,24 +668,30 @@ export function WorkshopsPage({
     sendForConfirmation: (entry) => void sendForConfirmation(entry),
     renderBody: (entry) => {
       const days = getInclusiveDays(entry.startDate, entry.endDate);
+      const startStr = formatDisplayDate(entry.startDate);
+      const endStr = formatDisplayDate(entry.endDate);
+      const parts: string[] = [];
+      if (entry.academicYear) parts.push(entry.academicYear);
+      if (entry.currentSemester) parts.push(`Semester ${entry.currentSemester}`);
+      if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
+      else if (startStr !== "-") parts.push(startStr);
+      if (days) parts.push(`${days} days`);
+      if (entry.participants) parts.push(`${entry.participants} participants`);
+
+      const people: string[] = [];
+      const coord = formatFacultyDisplay(entry.coordinator);
+      if (coord) people.push(coord);
+      if (entry.coCoordinators.length > 0) people.push(...entry.coCoordinators.map(formatFacultyDisplay).filter(Boolean));
 
       return (
         <>
-          <div className="text-sm text-muted-foreground">
-            {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Coordinator: {formatFacultyDisplay(entry.coordinator)}
-            {entry.coCoordinators.length > 0
-              ? ` • Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
-              : ""}
-          </div>
-          <div className="text-sm text-muted-foreground">Participants: {entry.participants ?? "-"}</div>
-
-          <div className="flex flex-wrap gap-3 text-sm">
+          {parts.length > 0 && (
+            <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>
+          )}
+          {people.length > 0 && (
+            <div className="text-xs text-muted-foreground">{people.join(", ")}</div>
+          )}
+          <div className="mt-2 flex flex-wrap gap-2 text-sm">
             {UPLOAD_CONFIG.map(({ slot, label }) =>
               entry.uploads[slot] ? (
                 <a
@@ -736,7 +742,7 @@ export function WorkshopsPage({
           resetForm();
           router.push(entryNew("workshops"), { scroll: false });
         },
-        addLabel: "+ Add Workshop",
+        addLabel: "Add Workshop",
       })}
       loading={loading}
       showForm={showForm}
@@ -904,7 +910,7 @@ export function WorkshopsPage({
                     <FacultyRowPicker
                       title="Co-coordinator(s)"
                       helperText="Add co-coordinators only when applicable."
-                      addLabel="+ Add Co-coordinator"
+                      addLabel="Add Co-coordinator"
                       rowLabelPrefix="Co-coordinator"
                       rows={form.coCoordinators}
                       onRowsChange={(rows) => setForm((current) => ({ ...current, coCoordinators: rows }))}

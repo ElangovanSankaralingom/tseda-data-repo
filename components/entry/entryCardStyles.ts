@@ -53,7 +53,7 @@ const GROUP_CARD_STYLES: Record<EntryListGroup, { border: string; bg: string; ri
 export function getGroupCardClass(group: EntryListGroup): string {
   const s = GROUP_CARD_STYLES[group];
   return [
-    "rounded-lg border border-slate-200 border-l-4 p-4 transition-all duration-200 hover:shadow-md",
+    "rounded-xl border border-slate-200 border-l-4 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
     s.border,
     s.bg,
     s.ring,

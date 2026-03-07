@@ -72,7 +72,7 @@ export default function UploadField({
   }, [meta, needsEntry, pendingFile]);
 
   return (
-    <div className="space-y-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-5 transition-colors hover:border-slate-300 hover:bg-slate-50">
+    <div className="space-y-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-5 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm">
       <div className="text-sm font-semibold text-slate-700">{title}</div>
 
       {mode === "view" ? (

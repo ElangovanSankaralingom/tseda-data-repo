@@ -21,3 +21,9 @@ yarn-debug.log*
 .DS_Store
 tmp/
 Users/
+
+# Backups
+.data_backups/
+
+# Quarantine
+.data/quarantine/
