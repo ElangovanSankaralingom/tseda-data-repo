@@ -243,6 +243,7 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
 
     return (
       <CategoryEntryRecordCard
+        key={entry.id}
         category={category}
         index={index}
         href={buildHref(entry)}

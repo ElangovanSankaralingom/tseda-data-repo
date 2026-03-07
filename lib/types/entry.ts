@@ -16,6 +16,21 @@ export const ENTRY_STATUS_LABELS: Readonly<Record<EntryStatus, string>> = {
   REJECTED: "Rejected",
 };
 
+const STATUS_COUNT_KEYS: Readonly<Record<EntryStatus, string>> = {
+  DRAFT: "draftCount",
+  PENDING_CONFIRMATION: "pendingConfirmationCount",
+  APPROVED: "approvedCount",
+  REJECTED: "rejectedCount",
+};
+
+export function incrementStatusCount(
+  target: Record<string, number>,
+  status: EntryStatus,
+): void {
+  const key = STATUS_COUNT_KEYS[status];
+  if (key in target) target[key] += 1;
+}
+
 const ENTRY_STATUS_SET = new Set<string>(ENTRY_STATUSES);
 
 export function isEntryStatus(value: string): value is EntryStatus {
