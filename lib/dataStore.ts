@@ -65,28 +65,7 @@ export function normalizeDataStoreEntry(
     { ...migrated.data } as Entry,
     category ? getCategorySchema(category) : undefined
   ) as DataStoreEntry;
-  const rawStatus = String(next.status ?? "").trim().toLowerCase();
-  if (
-    !String(next.committedAtISO ?? "").trim() &&
-    (rawStatus === "final" || rawStatus === "completed")
-  ) {
-    next.committedAtISO =
-      (typeof next.updatedAt === "string" && next.updatedAt.trim()) ||
-      (typeof next.createdAt === "string" && next.createdAt.trim()) ||
-      new Date().toISOString();
-  }
   next.confirmationStatus = normalizeEntryStatus(next as EntryStateLike);
-  if (
-    rawStatus === "draft" ||
-    rawStatus === "final" ||
-    rawStatus === "completed" ||
-    rawStatus === "pending" ||
-    rawStatus === "pending_confirmation" ||
-    rawStatus === "approved" ||
-    rawStatus === "rejected"
-  ) {
-    delete next.status;
-  }
 
   if (!Array.isArray(next.attachments)) {
     next.attachments = [];

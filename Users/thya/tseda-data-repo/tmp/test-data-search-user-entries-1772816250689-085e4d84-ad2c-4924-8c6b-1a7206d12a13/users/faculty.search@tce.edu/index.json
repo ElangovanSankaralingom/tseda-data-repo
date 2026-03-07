@@ -1,0 +1,88 @@
+{
+  "version": 2,
+  "userEmail": "faculty.search@tce.edu",
+  "updatedAt": "2026-03-06T16:57:30.790Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 1,
+    "workshops": 1
+  },
+  "countsByStatus": {
+    "DRAFT": 2,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 0,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-06T16:57:30.691Z"
+  },
+  "streakSnapshot": {
+    "ruleVersion": 2,
+    "streakActivatedCount": 0,
+    "streakWinsCount": 0,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 0
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-06T16:57:30.790Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:9f5311ee-b0fa-4482-94dd-693e33115b09": {
+      "entryId": "9f5311ee-b0fa-4482-94dd-693e33115b09",
+      "categoryKey": "workshops",
+      "title": "AI Foundations Workshop",
+      "text": "ai foundations workshop workshops draft ai foundations workshop dr ada",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T16:57:30.691Z",
+      "createdAtISO": "2026-03-06T16:57:30.691Z"
+    },
+    "guest-lectures:69247087-2c73-4e54-a59a-3c187eb395cf": {
+      "entryId": "69247087-2c73-4e54-a59a-3c187eb395cf",
+      "categoryKey": "guest-lectures",
+      "title": "AI Ethics Lecture",
+      "text": "ai ethics lecture guest lectures draft ai ethics lecture dr turing",
+      "status": "DRAFT",
+      "updatedAtISO": "2026-03-06T16:57:30.777Z",
+      "createdAtISO": "2026-03-06T16:57:30.777Z"
+    }
+  }
+}

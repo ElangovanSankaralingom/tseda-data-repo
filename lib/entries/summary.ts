@@ -47,8 +47,7 @@ export const EMPTY_DATA_ENTRY_SUMMARY = CATEGORY_LIST.reduce<DataEntrySummary>((
 }, {} as DataEntrySummary);
 
 function isCompletedEntry(entry: SummaryEntry) {
-  const streak = getStreakProgressSnapshot(entry);
-  return isEntryCommitted(entry as EntryStateLike) || streak.hasCompletedAt;
+  return isEntryCommitted(entry as EntryStateLike);
 }
 
 function isActiveEntry(entry: SummaryEntry) {

@@ -61,3 +61,38 @@ export function useEntryWorkflow({
     canDone: lifecycle.canDone,
   };
 }
+
+type EntryActionStateOptions = {
+  showForm: boolean;
+  isViewMode: boolean;
+  entryLocked: boolean;
+  controlsDisabled: boolean;
+  loading: boolean;
+  saving: boolean;
+  hasBusyUploads: boolean;
+  canSave: boolean;
+  canGenerate: boolean;
+};
+
+export function deriveEntryActionState({
+  showForm,
+  isViewMode,
+  entryLocked,
+  controlsDisabled,
+  loading,
+  saving,
+  hasBusyUploads,
+  canSave,
+  canGenerate,
+}: EntryActionStateOptions) {
+  const blockingBusy = saving || loading || hasBusyUploads;
+
+  return {
+    autoSaveEnabled: showForm && !isViewMode && !entryLocked && !saving && !hasBusyUploads && canSave,
+    guardSaving: saving || hasBusyUploads,
+    cancelDisabled: controlsDisabled || blockingBusy,
+    saveDisabled: controlsDisabled || blockingBusy || !canSave,
+    doneDisabled: controlsDisabled || blockingBusy,
+    generateDisabled: controlsDisabled || blockingBusy || !canGenerate,
+  };
+}

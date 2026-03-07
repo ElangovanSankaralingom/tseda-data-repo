@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "byId": {
+    "approved-1": {
+      "id": "approved-1",
+      "category": "workshops",
+      "eventName": "Approved Entry",
+      "confirmationStatus": "APPROVED",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-05T10:00:00.000Z",
+      "attachments": [],
+      "schemaVersion": 1
+    },
+    "draft-1": {
+      "id": "draft-1",
+      "category": "workshops",
+      "eventName": "Draft Entry",
+      "confirmationStatus": "DRAFT",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-06T10:00:00.000Z",
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "approved-1",
+    "draft-1"
+  ]
+}

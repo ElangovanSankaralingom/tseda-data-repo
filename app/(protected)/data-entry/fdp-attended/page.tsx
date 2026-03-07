@@ -34,7 +34,7 @@ import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { useSeedEntry } from "@/hooks/useSeedEntry";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
-import { useEntryWorkflow } from "@/hooks/useEntryWorkflow";
+import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
@@ -43,11 +43,14 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
+import {
+  runGenerateEntryOrchestration,
+  runSaveDraftOrchestration,
+} from "@/lib/entries/pageOrchestration";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
   createOptimisticSnapshot,
   optimisticRemove,
-  optimisticUpsert,
 } from "@/lib/ui/optimistic";
 import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
@@ -466,19 +469,24 @@ export function FdpAttendedPage({
     fieldDirty: formDirty,
   });
   const lifecycle = workflow.lifecycle;
+  const actionState = deriveEntryActionState({
+    showForm,
+    isViewMode,
+    entryLocked,
+    controlsDisabled,
+    loading,
+    saving,
+    hasBusyUploads,
+    canSave: lifecycle.canSave,
+    canGenerate: lifecycle.canGenerate,
+  });
   const canGenerate = workflow.canGenerate;
   const groupedEntries = useMemo(() => groupEntries(list), [list]);
   const {
     status: autoSaveStatus,
     markSaved: markAutoSaveSaved,
   } = useAutoSave<FdpAttended>({
-    enabled:
-      showForm &&
-      !isViewMode &&
-      !entryLocked &&
-      !saving &&
-      !hasBusyUploads &&
-      lifecycle.canSave,
+    enabled: actionState.autoSaveEnabled,
     value: form,
     debounceMs: 15000,
     onSave: async () => {
@@ -500,7 +508,7 @@ export function FdpAttendedPage({
   const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
     enabled: showForm && !isViewMode && !entryLocked,
     isDirty: formDirty,
-    isSaving: saving || hasBusyUploads || autoSaveStatus.phase === "saving",
+    isSaving: actionState.guardSaving || autoSaveStatus.phase === "saving",
   });
 
   const resetUploadState = useCallback(() => {
@@ -730,87 +738,40 @@ export function FdpAttendedPage({
     throwOnError?: boolean;
   }): Promise<FdpAttended | null> {
     const intent = options?.intent ?? "save";
-    const source = options?.source ?? "manual";
-    const showToast = source !== "autosave";
-    if (saveLockRef.current) return null;
-    if (intent === "save" && !lifecycle.canSave) return null;
-    saveLockRef.current = true;
-    let rollbackSnapshot: FdpAttended[] | null = null;
-    let lastPersistedEntry: FdpAttended | null = null;
-
-    try {
-      if (hasBusyUploads) {
-        if (showToast) {
-          setToast({ type: "err", msg: "Please wait for uploads to finish before saving." });
-          setTimeout(() => setToast(null), 1800);
-        }
-        return null;
-      }
-
-      setSaving(true);
-      setSaveIntent(intent);
-      const entryToSave: FdpAttended = { ...form };
-      const optimisticEntry: FdpAttended = {
+    return runSaveDraftOrchestration<FdpAttended>({
+      intent,
+      source: options?.source ?? "manual",
+      closeAfterSave: options?.closeAfterSave ?? false,
+      throwOnError: options?.throwOnError ?? false,
+      canSave: lifecycle.canSave,
+      hasBusyUploads,
+      busyMessage: "Please wait for uploads to finish before saving.",
+      saveSuccessMessage: "Saved",
+      doneSuccessMessage: "Draft committed.",
+      saveLockRef,
+      setSaving,
+      setSaveIntent,
+      setToast,
+      setList,
+      buildEntryToSave: () => ({ ...formRef.current }),
+      buildOptimisticEntry: (entryToSave) => ({
         ...entryToSave,
         updatedAt: new Date().toISOString(),
-      };
-      setList((current) => {
-        rollbackSnapshot = createOptimisticSnapshot(current);
-        return optimisticUpsert(current, optimisticEntry);
-      });
-
-      const persisted = await persistProgress(entryToSave);
-      lastPersistedEntry = persisted;
-      setList((current) => optimisticUpsert(current, persisted));
-
-      const finalEntry: FdpAttended =
-        intent === "done" ? await commitDraftEntry(String(persisted.id)) : persisted;
-      if (intent === "done") {
-        lastPersistedEntry = finalEntry;
-        setList((current) => optimisticUpsert<FdpAttended>(current, finalEntry));
-      }
-
-      setEditorSeed(finalEntry);
-      editorActions.saveDraft(finalEntry);
-      markAutoSaveSaved(finalEntry);
-      setSubmitted(false);
-      setSubmitAttemptedFinal(false);
-      void refreshList();
-      if (options?.closeAfterSave) {
-        closeForm();
-        if (showToast) {
-          setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
-        }
-      } else {
-        if (showToast) {
-          setToast({ type: "ok", msg: intent === "done" ? "Draft committed." : "Saved" });
-        }
-      }
-      if (showToast) {
-        setTimeout(() => setToast(null), 1400);
-      }
-      return finalEntry;
-    } catch (error) {
-      const persistedEntry = lastPersistedEntry;
-      if (persistedEntry) {
-        setList((current) => optimisticUpsert<FdpAttended>(current, persistedEntry));
-      } else if (rollbackSnapshot) {
-        setList(rollbackSnapshot);
-      }
-      if (showToast) {
-        const message = error instanceof Error ? error.message : "Save failed.";
-        setToast({ type: "err", msg: message });
-        setTimeout(() => setToast(null), 1800);
-      }
-      if (options?.throwOnError) {
-        throw error;
-      }
-      return null;
-    } finally {
-      setSaving(false);
-      setSaveIntent(null);
-      saveLockRef.current = false;
-    }
+      }),
+      persistProgress,
+      commitDraft: async (entryId) => commitDraftEntry(entryId),
+      applyPersistedEntry: (entry) => {
+        setEditorSeed(entry);
+        editorActions.saveDraft(entry);
+        markAutoSaveSaved(entry);
+        setSubmitted(false);
+        setSubmitAttemptedFinal(false);
+      },
+      afterPersistSuccess: async () => {
+        void refreshList();
+      },
+      closeForm: () => closeForm(),
+    });
   }
 
   const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
@@ -826,55 +787,44 @@ export function FdpAttendedPage({
   });
 
   async function generateEntry() {
-    if (saveLockRef.current) return;
-    saveLockRef.current = true;
-
-    try {
-      setSubmitted(true);
-
-      if (Object.keys(errors).length > 0 || !lifecycle.canGenerate) {
-        setToast({ type: "err", msg: "Complete all required fields before generating the entry." });
-        setTimeout(() => setToast(null), 1800);
-        return;
-      }
-
-      if (hasBusyUploads) {
-        setToast({ type: "err", msg: "Finish the current uploads before saving." });
-        setTimeout(() => setToast(null), 1800);
-        return;
-      }
-
-      setSaving(true);
-      setSaveIntent("save");
-      const draftEntry: FdpAttended = {
-        ...form,
-        pdfStale: pdfState.pdfStale,
-        pdfSourceHash: form.pdfSourceHash || "",
-      };
-      const { entry: generatedEntry } = await generateEntrySnapshot(draftEntry, persistProgress);
-
-      const nextEntry = {
-        ...generatedEntry,
-        pdfSourceHash: prePdfFieldsHash,
-        pdfStale: false,
-      };
-      setEditorSeed(nextEntry);
-      editorActions.generatePdf(nextEntry);
-      markAutoSaveSaved(nextEntry);
-      setSubmitted(false);
-      setSubmitAttemptedFinal(false);
-      setToast({ type: "ok", msg: "Entry generated." });
-      await refreshList();
-      setTimeout(() => setToast(null), 1400);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Save failed.";
-      setToast({ type: "err", msg: message });
-      setTimeout(() => setToast(null), 1800);
-    } finally {
-      setSaving(false);
-      setSaveIntent(null);
-      saveLockRef.current = false;
-    }
+    await runGenerateEntryOrchestration<FdpAttended>({
+      saveLockRef,
+      hasValidationErrors: Object.keys(errors).length > 0,
+      canGenerate: lifecycle.canGenerate,
+      hasBusyUploads,
+      validationMessage: "Complete all required fields before generating the entry.",
+      busyMessage: "Finish the current uploads before saving.",
+      successMessage: "Entry generated.",
+      errorMessage: "Save failed.",
+      setSaving,
+      setToast,
+      markSubmitAttempted: () => setSubmitted(true),
+      beforeGenerate: () => setSaveIntent("save"),
+      afterGenerate: () => setSaveIntent(null),
+      buildDraftEntry: () => {
+        const latestForm = formRef.current;
+        return {
+          ...latestForm,
+          pdfStale: pdfState.pdfStale,
+          pdfSourceHash: latestForm.pdfSourceHash || "",
+        };
+      },
+      generateEntrySnapshot,
+      persistProgress,
+      applyGeneratedEntry: async (generatedEntry) => {
+        const nextEntry = {
+          ...generatedEntry,
+          pdfSourceHash: prePdfFieldsHash,
+          pdfStale: false,
+        };
+        setEditorSeed(nextEntry);
+        editorActions.generatePdf(nextEntry);
+        markAutoSaveSaved(nextEntry);
+        setSubmitted(false);
+        setSubmitAttemptedFinal(false);
+        await refreshList();
+      },
+    });
   }
 
   async function deleteEntry(id: string) {
@@ -1036,11 +986,11 @@ export function FdpAttendedPage({
           }}
           addLabel="+ Add FDP Entry"
           onCancel={() => void handleCancel()}
-          cancelDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          cancelDisabled={actionState.cancelDisabled}
           onSave={() => void handleSaveDraft()}
-          saveDisabled={controlsDisabled || saving || loading || hasBusyUploads || !lifecycle.canSave}
+          saveDisabled={actionState.saveDisabled}
           onDone={() => void handleSaveAndClose()}
-          doneDisabled={controlsDisabled || saving || loading || hasBusyUploads}
+          doneDisabled={actionState.doneDisabled}
           saving={saving}
           saveIntent={saveIntent}
         />

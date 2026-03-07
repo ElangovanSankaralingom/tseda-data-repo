@@ -26,7 +26,7 @@ import {
 } from "@/lib/migrations";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
-import type { Entry, EntryStatus, UploadedFile } from "@/lib/types/entry";
+import { ENTRY_STATUSES, type Entry, type EntryStatus, type UploadedFile } from "@/lib/types/entry";
 import { getUserCategoryStoreFile, getUsersRootDir, getUserStoreDir } from "@/lib/userStore";
 import { logger, withTimer } from "@/lib/logger";
 
@@ -122,12 +122,7 @@ type CategoryRawRead = {
 
 type EntryStatusCounts = Record<EntryStatus, number>;
 
-const ENTRY_STATUS_KEYS: readonly EntryStatus[] = [
-  "DRAFT",
-  "PENDING_CONFIRMATION",
-  "APPROVED",
-  "REJECTED",
-];
+const ENTRY_STATUS_KEYS: readonly EntryStatus[] = ENTRY_STATUSES;
 
 const INDEX_FILE_NAME = "index.json";
 const WAL_FILE_NAME = "events.log";

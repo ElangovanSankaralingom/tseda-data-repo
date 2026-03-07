@@ -251,24 +251,6 @@ export function status(state: StreakState) {
   return "expired" as const;
 }
 
-export function ensureActivated(state: StreakState | undefined, endDateISO?: string) {
-  const normalized = normalizeStreakState(state);
-  return {
-    ...normalized,
-    activatedAtISO: normalized.activatedAtISO || nowISTTimestampISO(),
-    dueAtISO: normalized.dueAtISO || (endDateISO ? computeDueAtISO(endDateISO) : null),
-    completedAtISO: normalized.completedAtISO || null,
-  };
-}
-
-export function markCompleted(state: StreakState | undefined) {
-  const normalized = normalizeStreakState(state);
-  return {
-    ...normalized,
-    completedAtISO: normalized.completedAtISO || nowISTTimestampISO(),
-  };
-}
-
 export function isEntryLockedByStreak(state: StreakState | undefined) {
   const normalized = normalizeStreakState(state);
   return !!normalized.dueAtISO && isOverdue(normalized.dueAtISO);
