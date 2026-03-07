@@ -1,4 +1,5 @@
 import { ClipboardList } from "lucide-react";
+import FilterTabs, { type FilterTab } from "@/components/ui/FilterTabs";
 import type { EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
 
 export type GroupedEntries<TEntry> = {
@@ -57,12 +58,26 @@ function Section<TEntry>({
 
 function DefaultEmptyState() {
   return (
-    <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
       <ClipboardList className="mx-auto size-12 text-slate-300" />
       <p className="mt-3 text-base font-medium text-slate-500">No entries yet</p>
       <p className="mt-1 text-sm text-slate-400">Create your first entry to get started</p>
     </div>
   );
+}
+
+function buildFilterTabs<TEntry>(groupedEntries: GroupedEntries<TEntry>): FilterTab[] {
+  const total =
+    groupedEntries.draft.length +
+    groupedEntries.activated.length +
+    groupedEntries.completed.length;
+
+  return [
+    { key: "all", label: "All", count: total },
+    { key: "draft", label: "Draft", count: groupedEntries.draft.length },
+    { key: "active", label: "In Progress", count: groupedEntries.activated.length },
+    { key: "completed", label: "Completed", count: groupedEntries.completed.length },
+  ];
 }
 
 export default function GroupedEntrySections<TEntry>({
@@ -82,8 +97,11 @@ export default function GroupedEntrySections<TEntry>({
     return <>{emptyState ?? <DefaultEmptyState />}</>;
   }
 
+  const tabs = buildFilterTabs(groupedEntries);
+
   return (
     <div className="space-y-4">
+      <FilterTabs tabs={tabs} activeKey="all" />
       <Section
         title={draftTitle}
         items={groupedEntries.draft}

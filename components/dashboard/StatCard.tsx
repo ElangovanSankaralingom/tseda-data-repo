@@ -21,33 +21,24 @@ export default function StatCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border p-4",
+        "rounded-xl p-5",
         hasGradient
-          ? cn("border-transparent text-white", gradient)
-          : "border-border bg-card"
+          ? cn("border border-transparent text-white shadow-lg", gradient)
+          : "border border-slate-200 bg-white shadow-sm"
       )}
     >
-      <div className="flex items-center gap-3">
+      <Icon
+        className={cn("size-5", hasGradient ? "text-white/80" : "text-muted-foreground")}
+      />
+      <div className="mt-3">
+        <div className="text-3xl font-bold tabular-nums">{value}</div>
         <div
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-lg",
-            hasGradient ? "bg-white/20" : "bg-muted"
+            "mt-0.5 text-xs font-medium uppercase tracking-wide",
+            hasGradient ? "text-white/80" : "text-muted-foreground"
           )}
         >
-          <Icon
-            className={cn("size-4", hasGradient ? "text-white" : "text-muted-foreground")}
-          />
-        </div>
-        <div className="min-w-0">
-          <div
-            className={cn(
-              "text-xs font-medium uppercase tracking-wide",
-              hasGradient ? "text-white/80" : "text-muted-foreground"
-            )}
-          >
-            {label}
-          </div>
-          <div className="text-3xl font-bold tabular-nums">{value}</div>
+          {label}
         </div>
       </div>
       {description && (

@@ -13,7 +13,6 @@ import {
   dashboard,
   dataEntryHome,
   dataEntrySearch,
-  helpHome,
   profile,
   signin,
 } from "@/lib/entryNavigation";
@@ -51,7 +50,6 @@ export default function ShellClient({
     { href: dashboard(), label: "Dashboard" },
     { href: dataEntryHome(), label: "Data Entry" },
     { href: dataEntrySearch(), label: "Search" },
-    { href: helpHome(), label: "Help" },
     { href: profile(), label: "My Account" },
   ];
   const drawerNav: NavLink[] = canAccessAdmin
@@ -116,15 +114,15 @@ export default function ShellClient({
   }
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="min-h-dvh overflow-x-hidden bg-[#FAFBFC] text-slate-900">
       {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted transition"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm transition hover:bg-slate-50"
               aria-label="Open menu"
             >
               ☰
@@ -143,20 +141,6 @@ export default function ShellClient({
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={helpHome()}
-              className="hidden rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition hover:bg-muted sm:inline-flex"
-            >
-              Help
-            </Link>
-            {canAccessAdmin ? (
-              <Link
-                href={adminHome()}
-                className="inline-flex items-center gap-1 rounded-lg border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
-              >
-                <span>Admin Console</span>
-              </Link>
-            ) : null}
             <AvatarMenu refreshKey={avatarRefreshKey} />
           </div>
         </div>
@@ -171,13 +155,13 @@ export default function ShellClient({
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-background border-r border-border p-4 flex flex-col">
+          <aside className="absolute left-0 top-0 flex h-full w-80 max-w-[85vw] flex-col border-r border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <div className="font-semibold">Menu</div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted transition"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm transition hover:bg-slate-50"
               >
                 Close
               </button>
@@ -192,8 +176,8 @@ export default function ShellClient({
                     href={n.href}
                     onClick={() => setOpen(false)}
                     className={[
-                      "block rounded-lg px-3 py-2 text-sm border transition",
-                      active ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted",
+                      "block rounded-lg border px-3 py-2 text-sm transition",
+                      active ? "border-[#1E3A5F] bg-[#1E3A5F] text-white" : "border-slate-200 hover:bg-slate-50",
                     ].join(" ")}
                   >
                     {n.label}
@@ -203,7 +187,7 @@ export default function ShellClient({
             </nav>
 
             {/* Bottom actions */}
-            <div className="pt-3 border-t border-border space-y-2">
+            <div className="space-y-2 border-t border-slate-200 pt-3">
               {ENABLE_RESET ? (
                 <button
                   type="button"
@@ -212,7 +196,7 @@ export default function ShellClient({
                     setResetOpen(true);
                   }}
                   disabled={resetBusy}
-                  className="w-full rounded-lg border border-red-300 px-3 py-2 text-left text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground disabled:opacity-60"
+                  className="w-full rounded-lg border border-red-300 px-3 py-2 text-left text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Reset Account
                 </button>
@@ -220,7 +204,7 @@ export default function ShellClient({
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: signin() })}
-                className="w-full rounded-lg px-3 py-2 text-sm border border-border hover:bg-muted transition text-left"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm transition hover:bg-slate-50"
               >
                 Sign Out
               </button>
@@ -238,9 +222,9 @@ export default function ShellClient({
             }}
           />
           <div className="absolute left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4">
-            <div className="rounded-2xl border border-border bg-background p-5 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg">
               <h2 className="text-base font-semibold">Reset Account</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-sm text-slate-500">
                 This will permanently delete all your entries and uploads. This
                 cannot be undone.
               </p>
@@ -249,7 +233,7 @@ export default function ShellClient({
                   type="button"
                   onClick={() => setResetOpen(false)}
                   disabled={resetBusy}
-                  className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm transition hover:bg-slate-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
@@ -259,7 +243,7 @@ export default function ShellClient({
                     void handleResetConfirm();
                   }}
                   disabled={resetBusy}
-                  className="rounded-lg border border-red-600 bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60"
+                  className="rounded-lg border border-red-600 bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {resetBusy ? "Resetting..." : "Confirm Reset"}
                 </button>

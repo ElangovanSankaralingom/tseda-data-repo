@@ -136,16 +136,16 @@ export default function FacultySelect({
         placeholder={placeholder ?? "Search or type staff name"}
         readOnly={disabled}
         className={cx(
-          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+          "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
           error
-            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20",
+            ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+            : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
           disabled && "pointer-events-none cursor-not-allowed opacity-60"
         )}
       />
 
       {open ? (
-        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-border bg-background p-1 shadow-lg">
+        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
           {filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">
               No matching faculty. Press Save to keep typed text.

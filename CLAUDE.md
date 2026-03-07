@@ -2,18 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Read DESIGN_SYSTEM.md before making any UI/styling changes. It defines the canonical color palette, component patterns, card styles, status badge styles, typography, animations, and page layout templates for the entire app.
+Read DESIGN_SYSTEMS.md before making any UI/styling changes. It defines the canonical color palette, component patterns, card styles, status badge styles, typography, animations, and page layout templates for the entire app.
 
 ## Documentation
-- ARCHITECTURE.md — canonical ownership rules (THE LAW)
-- DESIGN_SYSTEM.md — UI/UX patterns and components
-- DATA_MODEL.md — file-based storage structure and formats
-- API.md — all API endpoints with auth/rate-limit status
-- CONTRIBUTING.md — branch workflow, commit conventions, PR checklist
-- AUDIT.md — known issues and prioritized action plan
-- CHANGELOG.md — version history
 
 Read the relevant doc before making changes in that area.
+
+| File | When to read |
+|------|-------------|
+| `ARCHITECTURE.md` | Before changing any module ownership, data flow, or adding new features — canonical ownership rules |
+| `DESIGN_SYSTEMS.md` | Before any UI/styling changes — color palette, component patterns, typography, animations, layout templates |
+| `DATA_MODEL.md` | Before changing file storage, JSON schema, or data migration — documents the file-based storage structure |
+| `API.md` | Before adding/modifying API endpoints — lists all routes with auth, rate-limit, and request/response formats |
+| `CONTRIBUTING.md` | For branch workflow, commit conventions, and PR checklist |
+| `AUDIT.md` | For known issues and prioritized action plan — check before starting work to avoid duplicating effort |
+| `CHANGELOG.md` | Version history — update when shipping user-visible changes |
+| `README.md` | Project overview, setup instructions, and tech stack |
 
 ## Project Overview
 

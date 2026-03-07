@@ -21,7 +21,7 @@ export default function ProgressBar({
       <div className="w-32 shrink-0 truncate text-sm font-medium text-slate-700">
         {label}
       </div>
-      <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
         {pct > 0 && (
           <div
             className={cn("absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out", color)}

@@ -23,7 +23,7 @@ export default function EntryStatusBadge({ status, className }: EntryStatusBadge
         normalized === "APPROVED" && "border-emerald-200 bg-emerald-50 text-emerald-700",
         normalized === "PENDING_CONFIRMATION" && "border-amber-200 bg-amber-50 text-amber-800",
         normalized === "REJECTED" && "border-rose-200 bg-rose-50 text-rose-700",
-        normalized === "DRAFT" && "border-border bg-muted/40 text-muted-foreground",
+        normalized === "DRAFT" && "border-slate-200 bg-slate-50 text-slate-500",
         className
       )}
     >

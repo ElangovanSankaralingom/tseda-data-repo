@@ -22,7 +22,7 @@ export default function SectionCard({
   contentClassName,
 }: SectionCardProps) {
   return (
-    <section className={cx("rounded-2xl border border-border bg-card p-4 sm:p-5", className)}>
+    <section className={cx("rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5", className)}>
       {title || subtitle || actions ? (
         <div className={cx("mb-4 flex flex-wrap items-start justify-between gap-3", headerClassName)}>
           <div className="min-w-0">

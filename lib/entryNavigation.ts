@@ -29,10 +29,6 @@ export function dataEntrySearch() {
   return "/data-entry/search";
 }
 
-export function helpHome() {
-  return "/help";
-}
-
 export function profile() {
   return "/account";
 }
