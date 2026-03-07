@@ -2,7 +2,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import { CATEGORY_LIST, type CategorySummaryKey, getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
-import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { migrateCategoryStore } from "@/lib/migrations";
 import { getStreakProgressSnapshot } from "@/lib/streakProgress";

@@ -57,6 +57,8 @@ export function normalizeDataStoreEntry(
   entry: unknown,
   category?: CategoryKey
 ): EntryEngineRecord | null {
+  // Legacy workflow compatibility is owned by migrateEntry(); only
+  // canonical workflow state should reach DataStore normalization.
   const migrated = migrateEntry(entry);
   if (!migrated.ok) return null;
   if (!isPlainRecord(migrated.data)) return null;

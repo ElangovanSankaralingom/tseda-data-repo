@@ -1,32 +1,36 @@
-import {
-  getEditLockState as getSharedEditLockState,
-  isEntryEditable as isSharedEntryEditable,
-  isEntryLockedState as isSharedEntryLockedState,
-  isFutureDatedEntry as isSharedFutureDatedEntry,
-  isWithinRequestEditWindow as isSharedRequestEditWindow,
-  type EditLockState as SharedEditLockState,
-} from "../gamification.ts";
+import { isEntryLockedFromStatus } from "../confirmation.ts";
+import { isWithinRequestEditWindow as isSharedRequestEditWindow } from "../requestEditWindow.ts";
+import { isFutureDatedEntry as isSharedFutureDatedEntry } from "../streakTiming.ts";
 import type { LockStateColor } from "./types.ts";
 
-export type EditLockState = SharedEditLockState;
-export type EntryLockState = SharedEditLockState & { color: LockStateColor };
+type LockableEntryLike = {
+  status?: string | null;
+  confirmationStatus?: string | null;
+};
+
+export type EditLockState = {
+  isLocked: boolean;
+  expiresAtISO: string | null;
+  daysRemaining: number;
+};
+export type EntryLockState = EditLockState & { color: LockStateColor };
 
 export function getEditLockState(entry: unknown, mode?: "streak" | "generic") {
   void mode;
-  return getSharedEditLockState(
-    entry as Parameters<typeof getSharedEditLockState>[0]
-  );
+  return {
+    isLocked: isEntryLockedFromStatus(entry as LockableEntryLike),
+    expiresAtISO: null,
+    daysRemaining: 0,
+  };
 }
 
 export function isEntryEditable(entry: unknown) {
-  return isSharedEntryEditable(entry as Parameters<typeof isSharedEntryEditable>[0]);
+  return !isEntryLockedFromStatus(entry as LockableEntryLike);
 }
 
 export function isEntryLockedState(entry: unknown, mode?: "streak" | "generic") {
   void mode;
-  return isSharedEntryLockedState(
-    entry as Parameters<typeof isSharedEntryLockedState>[0]
-  );
+  return isEntryLockedFromStatus(entry as LockableEntryLike);
 }
 
 export function isFutureDatedEntry(startDate?: string, endDate?: string): boolean;
