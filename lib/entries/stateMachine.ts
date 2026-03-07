@@ -1,6 +1,17 @@
 import type { EntryStatus } from "@/lib/types/entry";
 export type { EntryStatus } from "@/lib/types/entry";
 
+/**
+ * Canonical pure rule layer for entry behavior.
+ *
+ * Ownership:
+ * - editor/action availability rules live here
+ * - workflow status normalization and transitions live here
+ * - persistence, validation, WAL/index updates, and telemetry do not
+ *   belong here and are owned by `engine.ts`
+ */
+
+// Editor/page lifecycle rules for Save / Generate / Done availability.
 export type EntryLifecycleStage = "pre" | "post";
 
 export type EntryLifecycleInput = {
@@ -105,6 +116,7 @@ export function markDone(current: EntryLifecycleState): EntryLifecycleState {
   };
 }
 
+// Canonical workflow status normalization and confirmation transitions.
 export type EntryTransitionAction =
   | "createEntry"
   | "sendForConfirmation"

@@ -5,7 +5,12 @@ import {
   normalizeEntryStatus,
   type EntryStateLike,
 } from "@/lib/entries/stateMachine";
-import { computeDueAtISO, normalizeStreakState, nowISTTimestampISO } from "@/lib/gamification";
+import {
+  computeDueAtISO,
+  normalizeStreakState,
+  nowISTTimestampISO,
+  type StreakState,
+} from "@/lib/gamification";
 
 export const STREAK_RULE_VERSION = 2;
 
@@ -60,6 +65,16 @@ export type CanonicalStreakSnapshot = {
   activeEntries: StreakActiveEntry[];
 };
 
+export type BuildCanonicalStreakMetadataArgs = {
+  streak: unknown;
+  endDateISO?: string | null;
+  hasPdf: boolean;
+  isEligible: boolean;
+  isCommitted: boolean;
+  completionSatisfied: boolean;
+  nowISO?: string | null;
+};
+
 function toOptionalISO(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -88,22 +103,65 @@ function hasCommittedMilestone(entry: StreakProgressEntryLike) {
   return isEntryCommitted(entry as EntryStateLike);
 }
 
-export function activateStreakMetadata(streakValue: unknown, endDateISO?: string | null) {
+export function clearStreakMetadata(streakValue: unknown): StreakState {
   const streak = normalizeStreakState(streakValue);
   return {
     ...streak,
-    activatedAtISO: streak.activatedAtISO ?? nowISTTimestampISO(),
+    activatedAtISO: null,
+    dueAtISO: null,
+    completedAtISO: null,
+  };
+}
+
+export function activateStreakMetadata(
+  streakValue: unknown,
+  endDateISO?: string | null,
+  activatedAtISO?: string | null
+) {
+  const streak = normalizeStreakState(streakValue);
+  return {
+    ...streak,
+    activatedAtISO: streak.activatedAtISO ?? activatedAtISO ?? nowISTTimestampISO(),
     dueAtISO: streak.dueAtISO ?? (endDateISO ? computeDueAtISO(endDateISO) : null),
     completedAtISO: streak.completedAtISO ?? null,
   };
 }
 
-export function completeStreakMetadata(streakValue: unknown) {
+export function completeStreakMetadata(streakValue: unknown, completedAtISO?: string | null) {
   const streak = normalizeStreakState(streakValue);
   return {
     ...streak,
-    completedAtISO: streak.completedAtISO ?? nowISTTimestampISO(),
+    completedAtISO: streak.completedAtISO ?? completedAtISO ?? nowISTTimestampISO(),
   };
+}
+
+function isOnOrBeforeDueAt(nowISO: string, dueAtISO: string | null | undefined) {
+  if (!dueAtISO) return false;
+  const nowTime = Date.parse(nowISO);
+  const dueAtTime = Date.parse(dueAtISO);
+  if (Number.isNaN(nowTime) || Number.isNaN(dueAtTime)) return false;
+  return nowTime <= dueAtTime;
+}
+
+export function buildCanonicalStreakMetadata(args: BuildCanonicalStreakMetadataArgs): StreakState {
+  const nowISO = toOptionalISO(args.nowISO) ?? nowISTTimestampISO();
+
+  if (!args.hasPdf || !args.isEligible || !args.isCommitted) {
+    return clearStreakMetadata(args.streak);
+  }
+
+  const activated = activateStreakMetadata(args.streak, args.endDateISO, nowISO);
+  if (
+    !args.completionSatisfied ||
+    !activated.activatedAtISO ||
+    !activated.dueAtISO ||
+    activated.completedAtISO ||
+    !isOnOrBeforeDueAt(nowISO, activated.dueAtISO)
+  ) {
+    return activated;
+  }
+
+  return completeStreakMetadata(activated, nowISO);
 }
 
 export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): StreakProgressSnapshot {
@@ -111,12 +169,14 @@ export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): Strea
   const streak = normalizeStreakState(entry.streak);
   const workflowStatus = normalizeEntryStatus(entry as EntryStateLike);
   const committed = hasCommittedMilestone(entry);
+  const endDateISO = typeof entry.endDate === "string" ? entry.endDate.trim() : "";
   // Canonical streak rule:
   // - Activated: committed draft milestone reached and not yet approved.
   // - Win: committed draft milestone that has been approved.
   const isWin = committed && workflowStatus === "APPROVED";
   const isActivated = committed && !isWin;
   const isCompleted = committed;
+  const dueAtISO = committed ? streak.dueAtISO ?? (endDateISO ? computeDueAtISO(endDateISO) : null) : null;
 
   return {
     id,
@@ -125,7 +185,7 @@ export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): Strea
     isWin,
     hasActivatedAt: !!streak.activatedAtISO,
     hasCompletedAt: !!streak.completedAtISO,
-    dueAtISO: streak.dueAtISO ?? null,
+    dueAtISO,
     sortAtISO: toStreakSortAtISO(entry),
   };
 }

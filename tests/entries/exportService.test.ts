@@ -157,22 +157,22 @@ test("buildExportRows filters by status/date and generates csv/xlsx", async () =
   });
 });
 
-test("buildExportRows applies canonical status filtering even for legacy status fields", async () => {
+test("buildExportRows applies canonical status filtering to normalized entries", async () => {
   await withSandbox("export-service-status", async (store) => {
     await store.writeCategory(email, "workshops", [
       {
-        id: "legacy-approved",
+        id: "approved-legacy-source",
         category: "workshops",
-        eventName: "Legacy Approved",
-        status: "approved",
+        eventName: "Approved Entry",
+        confirmationStatus: "APPROVED",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-02T10:00:00.000Z",
       },
       {
-        id: "legacy-draft",
+        id: "draft-canonical-source",
         category: "workshops",
-        eventName: "Legacy Draft",
-        status: "draft",
+        eventName: "Draft Entry",
+        confirmationStatus: "DRAFT",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-02T10:00:00.000Z",
       },
@@ -185,7 +185,7 @@ test("buildExportRows applies canonical status filtering even for legacy status 
     if (!built.ok) return;
 
     assert.equal(built.data.rows.length, 1);
-    assert.equal(String(built.data.rows[0]?.[0] ?? ""), "legacy-approved");
+    assert.equal(String(built.data.rows[0]?.[0] ?? ""), "approved-legacy-source");
     assert.equal(String(built.data.rows[0]?.[1] ?? ""), "APPROVED");
     assert.equal(built.data.countsByStatus.APPROVED, 1);
   });

@@ -27,12 +27,11 @@ import { normalizeError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { isEntryEditable } from "@/lib/entries/lock";
 import {
-  computeDueAtISO,
   isFutureDatedEntry,
-  isWithinDueWindow,
   normalizeStreakState,
   type StreakState,
 } from "@/lib/gamification";
+import { buildCanonicalStreakMetadata } from "@/lib/streakProgress";
 import {
   isEntryCommitted,
   normalizeEntryStatus,
@@ -335,7 +334,6 @@ function buildSavedStreak(
     "confirmationStatus" | "committedAtISO" | "pdfMeta" | "startDate" | "endDate" | "streak" | "uploads"
   >
 ) {
-  const normalized = normalizeStreakState(entry.streak);
   const eligible = isFutureDatedEntry(entry.startDate, entry.endDate);
   const uploadsComplete =
     isValidFileMeta(entry.uploads.permissionLetter) &&
@@ -344,24 +342,14 @@ function buildSavedStreak(
     isValidFileMeta(entry.uploads.speakerProfile) &&
     entry.uploads.geotaggedPhotos.length > 0;
 
-  if (!entry.pdfMeta || !eligible) {
-    return normalizeStreakState(null);
-  }
-
-  const dueAtISO = normalized.dueAtISO ?? computeDueAtISO(entry.endDate);
-  return {
-    ...normalized,
-    activatedAtISO: normalized.activatedAtISO ?? null,
-    dueAtISO,
-    completedAtISO:
-      isEntryCommitted(entry as EntryStateLike) &&
-      normalized.activatedAtISO &&
-      uploadsComplete &&
-      dueAtISO &&
-      isWithinDueWindow(dueAtISO)
-        ? normalized.completedAtISO ?? new Date().toISOString()
-        : normalized.completedAtISO ?? null,
-  };
+  return buildCanonicalStreakMetadata({
+    streak: entry.streak,
+    endDateISO: entry.endDate,
+    hasPdf: !!entry.pdfMeta,
+    isEligible: eligible,
+    isCommitted: isEntryCommitted(entry as EntryStateLike),
+    completionSatisfied: uploadsComplete,
+  });
 }
 
 async function getAuthorizedEmail() {
