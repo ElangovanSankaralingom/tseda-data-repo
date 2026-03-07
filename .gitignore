@@ -19,3 +19,5 @@ yarn-debug.log*
 
 # OS
 .DS_Store
+tmp/
+Users/

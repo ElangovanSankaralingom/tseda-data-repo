@@ -1,1 +1,0 @@
-{"v":1,"ts":"2026-03-07T05:26:04.893Z","event":"entry.create","actorEmail":"faculty.index@tce.edu","role":"user","category":"workshops","entryId":"1f9af06e-6e8e-42d8-88d9-2315bef5113b","status":"DRAFT","success":true,"durationMs":17,"meta":{"action":"create","source":"manual","fromStatus":null,"toStatus":"DRAFT","ownerEmail":"faculty.index@tce.edu"}}
