@@ -12,6 +12,7 @@ type GroupedEntrySectionsProps<TEntry> = {
   draftTitle?: string;
   activatedTitle?: string;
   completedTitle?: string;
+  emptyState?: React.ReactNode;
 };
 
 function Section<TEntry>({
@@ -41,7 +42,17 @@ export default function GroupedEntrySections<TEntry>({
   draftTitle = "Drafts",
   activatedTitle = "Streak Activated",
   completedTitle = "Completed",
+  emptyState = <div className="text-sm text-muted-foreground">No entries yet.</div>,
 }: GroupedEntrySectionsProps<TEntry>) {
+  const hasEntries =
+    groupedEntries.draft.length > 0 ||
+    groupedEntries.activated.length > 0 ||
+    groupedEntries.completed.length > 0;
+
+  if (!hasEntries) {
+    return <>{emptyState}</>;
+  }
+
   return (
     <div className="space-y-3">
       <Section
