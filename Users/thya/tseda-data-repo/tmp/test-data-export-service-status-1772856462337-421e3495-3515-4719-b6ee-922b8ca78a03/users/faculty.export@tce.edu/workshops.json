@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "byId": {
+    "approved-canonical-source": {
+      "id": "approved-canonical-source",
+      "category": "workshops",
+      "eventName": "Approved Entry",
+      "confirmationStatus": "APPROVED",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-02T10:00:00.000Z",
+      "attachments": [],
+      "schemaVersion": 1
+    },
+    "draft-canonical-source": {
+      "id": "draft-canonical-source",
+      "category": "workshops",
+      "eventName": "Draft Entry",
+      "confirmationStatus": "DRAFT",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-02T10:00:00.000Z",
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "approved-canonical-source",
+    "draft-canonical-source"
+  ]
+}

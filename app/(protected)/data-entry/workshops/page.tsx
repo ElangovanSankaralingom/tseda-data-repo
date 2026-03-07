@@ -1,36 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import CategoryEntryPageShell from "@/components/data-entry/CategoryEntryPageShell";
 import DateField from "@/components/controls/DateField";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
+import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
 import Field from "@/components/data-entry/Field";
 import GroupedEntrySections from "@/components/data-entry/GroupedEntrySections";
-import EntryCategoryMarker from "@/components/entry/EntryCategoryMarker";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
-import { getEntryListCardClass } from "@/components/entry/entryCardStyles";
 import { EntryHeaderActionsBar } from "@/components/entry/EntryHeaderActions";
 import EntryLockBadge from "@/components/entry/EntryLockBadge";
-import EntryShell from "@/components/entry/EntryShell";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
-import SectionCard from "@/components/layout/SectionCard";
 import EntryUploader from "@/components/upload/EntryUploader";
 import { ActionButton } from "@/components/ui/ActionButton";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import { useCategoryEntryPageController } from "@/hooks/useCategoryEntryPageController";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useCommitDraft } from "@/hooks/useCommitDraft";
 import { useGenerateEntry } from "@/hooks/useGenerateEntry";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
-import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
-import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
-import { useAutoSave } from "@/hooks/useAutoSave";
-import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import {
@@ -45,12 +39,7 @@ import {
   getEntryStreakDisplayState,
   type EntryDisplayCategory,
 } from "@/lib/entries/displayLifecycle";
-import {
-  runGenerateEntryOrchestration,
-  runSaveDraftOrchestration,
-} from "@/lib/entries/pageOrchestration";
 import { isEntryCommitted } from "@/lib/entries/stateMachine";
-import { groupEntries } from "@/lib/entryCategorization";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
@@ -66,7 +55,6 @@ import {
   createOptimisticSnapshot,
   optimisticRemove,
 } from "@/lib/ui/optimistic";
-import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
@@ -283,12 +271,9 @@ export function WorkshopsPage({
   const router = useRouter();
   const categoryPath = entryList("workshops");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saveIntent, setSaveIntent] = useState<"save" | "done" | null>(null);
   const [formOpen, setFormOpen] = useState(startInNewMode);
   const [submitted, setSubmitted] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
-  const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [email, setEmail] = useState("");
   const [currentFaculty, setCurrentFaculty] = useState<FacultyRowValue>(emptyFacultySelection);
   const [list, setList] = useState<WorkshopEntry[]>([]);
@@ -297,7 +282,6 @@ export function WorkshopsPage({
   const [singleUploadStatus, setSingleUploadStatus] =
     useState<Record<UploadSlot, UploadStatus>>(EMPTY_UPLOAD_STATUS);
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
-  const saveLockRef = useRef(false);
   const formRef = useRef(form);
   const seededViewEntryIdRef = useRef<string | null>(null);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
@@ -321,48 +305,6 @@ export function WorkshopsPage({
     () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
     [activeEntryId, list]
   );
-  const groupedEntries = useMemo(() => groupEntries(list), [list]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const meResponse = await fetch("/api/me", { cache: "no-store" });
-        const me = await meResponse.json();
-        const nextEmail = String(me?.email ?? "").trim();
-
-        if (!meResponse.ok || !nextEmail) {
-          throw new Error("Missing email. Please sign in again.");
-        }
-
-        setEmail(nextEmail);
-        const nextFaculty = {
-          email: nextEmail,
-          name: String(me?.officialName ?? me?.userPreferredName ?? nextEmail.split("@")[0]).trim(),
-        };
-        const nextForm = createEmptyForm(nextFaculty);
-        setCurrentFaculty(nextFaculty);
-        setForm(nextForm);
-        setLastPersistedSnapshot(stableStringify(nextForm));
-
-        const listResponse = await fetch(`/api/me/workshops?email=${encodeURIComponent(nextEmail)}`, {
-          cache: "no-store",
-        });
-        const items = await listResponse.json();
-
-        if (!listResponse.ok) {
-          throw new Error(items?.error || "Failed to load Workshops records.");
-        }
-
-        setList(Array.isArray(items) ? (items as WorkshopEntry[]).map((entry) => hydrateEntry(entry)) : []);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to load.";
-        setToast({ type: "err", msg: message });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     if (!activeEntryId) {
@@ -388,7 +330,6 @@ export function WorkshopsPage({
   function applyPersistedEntry(nextEntry: WorkshopEntry) {
     setForm(nextEntry);
     setLastPersistedSnapshot(stableStringify(nextEntry));
-    markAutoSaveSaved(nextEntry);
   }
 
   const errors = useMemo(() => {
@@ -469,8 +410,6 @@ export function WorkshopsPage({
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
-  const hasBusyUploads =
-    Object.values(singleUploadStatus).some((status) => status.busy) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
   const generateReady = validatePreUploadFields("workshops", form as Record<string, unknown>);
   const uploadsVisible = !!form.pdfMeta;
@@ -498,26 +437,6 @@ export function WorkshopsPage({
       }),
     [entryLocked, form.pdfMeta, form.pdfSourceHash, generateReady, pdfHash]
   );
-  const workflow = useEntryWorkflow({
-    isLocked: entryLocked,
-    coreValid: generateReady,
-    hasPdfSnapshot: uploadsVisible,
-    pdfStale: pdfState.pdfStale,
-    completionValid: requiredUploadsComplete,
-    fieldDirty: formDirty,
-  });
-  const lifecycle = workflow.lifecycle;
-  const actionState = deriveEntryActionState({
-    showForm,
-    isViewMode,
-    entryLocked,
-    controlsDisabled,
-    loading,
-    saving,
-    hasBusyUploads,
-    canSave: lifecycle.canSave,
-    canGenerate: lifecycle.canGenerate,
-  });
   const generateEntrySnapshot = useGenerateEntry<WorkshopEntry>({
     category: "workshops",
     email,
@@ -527,34 +446,127 @@ export function WorkshopsPage({
     category: "workshops",
     hydrateEntry,
   });
-  const {
-    status: autoSaveStatus,
-    markSaved: markAutoSaveSaved,
-  } = useAutoSave<WorkshopEntry>({
-    enabled: actionState.autoSaveEnabled,
-    value: form,
-    debounceMs: 15000,
-    onSave: async () => {
-      if (saveLockRef.current || hasBusyUploads || saving) return null;
-      const persisted = await saveDraftChanges({
-        intent: "save",
-        source: "autosave",
-        throwOnError: true,
-      });
-      if (!persisted) return null;
-      return ok(persisted);
+  const controller = useCategoryEntryPageController<WorkshopEntry>({
+    list,
+    setList,
+    form,
+    formRef,
+    showForm,
+    isViewMode,
+    entryLocked,
+    controlsDisabled,
+    loading,
+    busyUploadSources: [singleUploadStatus, photoUploadStatus],
+    coreValid: generateReady,
+    hasPdfSnapshot: uploadsVisible,
+    pdfStale: pdfState.pdfStale,
+    completionValid: requiredUploadsComplete,
+    fieldDirty: formDirty,
+    autoSaveSynced: stableStringify(form) === lastPersistedSnapshot,
+    defaultCancelTargetHref: categoryPath,
+    closeForm,
+    buildEntryToSave: () => {
+      const latestForm = formRef.current;
+      return withAcademicProgressionCompatibility({
+        ...latestForm,
+        coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
+      }) as WorkshopEntry;
+    },
+    buildOptimisticEntry: (entryToSave) =>
+      hydrateEntry({
+        ...entryToSave,
+        updatedAt: new Date().toISOString(),
+      }),
+    persistProgress: async (entryToSave) => hydrateEntry(await persistProgress(entryToSave)),
+    commitDraft: async (entryId) => commitDraftEntry(entryId),
+    applyPersistedEntry: (entry) => {
+      applyPersistedEntry(entry);
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
+    },
+    afterPersistSuccess: async () => {
+      void refreshList(email);
+    },
+    setSubmitAttemptedFinal,
+    saveAndCloseBusyMessage: "Finish the current uploads before continuing.",
+    hasValidationErrors: Object.keys(errors).length > 0,
+    markGenerateAttempted: () => setSubmitted(true),
+    buildDraftEntry: () => {
+      const latestForm = formRef.current;
+      return {
+        ...latestForm,
+        coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
+        pdfStale: pdfState.pdfStale,
+        pdfSourceHash: latestForm.pdfSourceHash || "",
+      };
+    },
+    generateEntrySnapshot,
+    applyGeneratedEntry: async (nextEntry) => {
+      setForm(nextEntry);
+      setLastPersistedSnapshot(stableStringify(nextEntry));
+      setSubmitted(false);
+      setSubmitAttemptedFinal(false);
+      await refreshList(email);
     },
   });
+
+  const {
+    actionState,
+    autoSaveStatus,
+    generateEntry,
+    groupedEntries,
+    handleCancel,
+    handleSaveAndClose,
+    handleSaveDraft,
+    hasUnsavedChanges,
+    lifecycle,
+    runWithSaveGuard,
+    saveIntent,
+    saving,
+    setToast,
+    toast,
+  } = controller;
+
   useEffect(() => {
-    if (stableStringify(form) === lastPersistedSnapshot) {
-      markAutoSaveSaved(form);
-    }
-  }, [form, lastPersistedSnapshot, markAutoSaveSaved]);
-  const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
-    enabled: showForm && !isViewMode && !entryLocked,
-    isDirty: formDirty,
-    isSaving: actionState.guardSaving || autoSaveStatus.phase === "saving",
-  });
+    (async () => {
+      try {
+        setLoading(true);
+        const meResponse = await fetch("/api/me", { cache: "no-store" });
+        const me = await meResponse.json();
+        const nextEmail = String(me?.email ?? "").trim();
+
+        if (!meResponse.ok || !nextEmail) {
+          throw new Error("Missing email. Please sign in again.");
+        }
+
+        setEmail(nextEmail);
+        const nextFaculty = {
+          email: nextEmail,
+          name: String(me?.officialName ?? me?.userPreferredName ?? nextEmail.split("@")[0]).trim(),
+        };
+        const nextForm = createEmptyForm(nextFaculty);
+        setCurrentFaculty(nextFaculty);
+        setForm(nextForm);
+        setLastPersistedSnapshot(stableStringify(nextForm));
+
+        const listResponse = await fetch(`/api/me/workshops?email=${encodeURIComponent(nextEmail)}`, {
+          cache: "no-store",
+        });
+        const items = await listResponse.json();
+
+        if (!listResponse.ok) {
+          throw new Error(items?.error || "Failed to load Workshops records.");
+        }
+
+        setList(Array.isArray(items) ? (items as WorkshopEntry[]).map((entry) => hydrateEntry(entry)) : []);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load.";
+        setToast({ type: "err", msg: message });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [setToast]);
   async function parseApiError(response: Response, fallback: string) {
     const text = await response.text();
     let message = `${fallback} (${response.status})`;
@@ -728,62 +740,8 @@ export function WorkshopsPage({
     setList(Array.isArray(items) ? (items as WorkshopEntry[]).map((entry) => hydrateEntry(entry)) : []);
   }
 
-  async function saveDraftChanges(options?: {
-    closeAfterSave?: boolean;
-    intent?: "save" | "done";
-    source?: "manual" | "autosave";
-    throwOnError?: boolean;
-  }): Promise<WorkshopEntry | null> {
-    const intent = options?.intent ?? "save";
-    return runSaveDraftOrchestration<WorkshopEntry>({
-      intent,
-      source: options?.source ?? "manual",
-      closeAfterSave: options?.closeAfterSave ?? false,
-      throwOnError: options?.throwOnError ?? false,
-      canSave: lifecycle.canSave,
-      hasBusyUploads,
-      busyMessage: "Please wait for uploads to finish before saving.",
-      saveSuccessMessage: "Saved",
-      doneSuccessMessage: "Draft committed.",
-      saveLockRef,
-      setSaving,
-      setSaveIntent,
-      setToast,
-      setList,
-      buildEntryToSave: () => {
-        const latestForm = formRef.current;
-        return withAcademicProgressionCompatibility({
-          ...latestForm,
-          coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
-        }) as WorkshopEntry;
-      },
-      buildOptimisticEntry: (entryToSave) =>
-        hydrateEntry({
-          ...entryToSave,
-          updatedAt: new Date().toISOString(),
-        }),
-      persistProgress: async (entryToSave) => hydrateEntry(await persistProgress(entryToSave)),
-      commitDraft: async (entryId) => commitDraftEntry(entryId),
-      applyPersistedEntry: (entry) => {
-        applyPersistedEntry(entry);
-        setSubmitted(false);
-        setSubmitAttemptedFinal(false);
-      },
-      afterPersistSuccess: async () => {
-        void refreshList(email);
-      },
-      closeForm: () => closeForm(),
-    });
-  }
-
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
-    if (saveLockRef.current) {
-      throw new Error("Please wait for the current save to finish.");
-    }
-
-    saveLockRef.current = true;
-
-    try {
+    return runWithSaveGuard(async () => {
       const persisted = hydrateEntry(await persistProgress({
         ...form,
         coordinator: currentFaculty.email ? currentFaculty : form.coordinator,
@@ -791,56 +749,8 @@ export function WorkshopsPage({
       }));
       applyPersistedEntry(persisted);
       return persisted.coCoordinators;
-    } finally {
-      saveLockRef.current = false;
-    }
-  }
-
-  async function generateEntry() {
-    await runGenerateEntryOrchestration<WorkshopEntry>({
-      saveLockRef,
-      hasValidationErrors: Object.keys(errors).length > 0,
-      canGenerate: lifecycle.canGenerate,
-      hasBusyUploads,
-      validationMessage: "Complete all required fields before generating the entry.",
-      busyMessage: "Finish the current uploads before generating the entry.",
-      successMessage: "Entry generated.",
-      errorMessage: "Generate failed.",
-      setSaving,
-      setToast,
-      markSubmitAttempted: () => setSubmitted(true),
-      buildDraftEntry: () => {
-        const latestForm = formRef.current;
-        return {
-          ...latestForm,
-          coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
-          pdfStale: pdfState.pdfStale,
-          pdfSourceHash: latestForm.pdfSourceHash || "",
-        };
-      },
-      generateEntrySnapshot,
-      persistProgress,
-      applyGeneratedEntry: async (nextEntry) => {
-        setForm(nextEntry);
-        setLastPersistedSnapshot(stableStringify(nextEntry));
-        setSubmitted(false);
-        setSubmitAttemptedFinal(false);
-        await refreshList(email);
-      },
     });
   }
-
-  const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
-    defaultCancelTargetHref: categoryPath,
-    hasBusyUploads,
-    confirmNavigate: () => confirmNavigate(),
-    closeForm,
-    saveDraftChanges,
-    setToast,
-    setSubmitAttemptedFinal,
-    cancelBusyMessage: "Please wait for upload to finish.",
-    saveAndCloseBusyMessage: "Finish the current uploads before continuing.",
-  });
 
   async function deleteEntry(id: string) {
     const startedAt = Date.now();
@@ -959,20 +869,8 @@ export function WorkshopsPage({
     },
   });
 
-  function formatEntryTimestamp(value?: string) {
-    if (!value) return "-";
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
-  }
-
   function renderSavedEntry(entry: WorkshopEntry, category: EntryDisplayCategory, index: number) {
     const deadlineState = getStreakDeadlineState(entry);
-    const createdTime = entry.createdAt ? new Date(entry.createdAt).getTime() : Number.NaN;
-    const updatedTime = entry.updatedAt ? new Date(entry.updatedAt).getTime() : Number.NaN;
-    const showUpdated =
-      !Number.isNaN(createdTime) &&
-      !Number.isNaN(updatedTime) &&
-      Math.abs(updatedTime - createdTime) > 60 * 1000;
     const completedEntry = isEntryCommitted(entry);
     const confirmationStatus = getEntryApprovalStatus(entry);
     const lockApproved = isEntryLockedFromStatus(entry);
@@ -981,526 +879,530 @@ export function WorkshopsPage({
     const days = getInclusiveDays(entry.startDate, entry.endDate);
 
     return (
-      <div key={entry.id} className={getEntryListCardClass(category)}>
-        <div className="space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <EntryCategoryMarker
-                  category={category}
-                  index={index}
-                  streakState={getEntryStreakDisplayState(entry)}
-                />
-                <Link href={entryDetail("workshops", entry.id)} className="text-base font-semibold hover:opacity-80">
-                  {entry.eventName}
-                </Link>
-                <EntryLockBadge deadlineState={deadlineState} />
-                <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                  {getConfirmationStatusLabel(confirmationStatus)}
-                </span>
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                Speaker: {entry.speakerName} • {entry.organisationName}
-              </div>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span>Added: {formatEntryTimestamp(entry.createdAt)}</span>
-                {showUpdated ? <span>Updated: {formatEntryTimestamp(entry.updatedAt)}</span> : null}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                <MiniButton onClick={() => router.push(entryDetail("workshops", entry.id))}>
-                  View
-                </MiniButton>
-                {lockApproved ? (
-                  entry.pdfMeta?.url ? (
-                    <MiniButton
-                      role="context"
-                      onClick={() => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")}
-                    >
-                      Preview
-                    </MiniButton>
-                  ) : (
-                    <MiniButton role="context" disabled>
-                      Preview
-                    </MiniButton>
-                  )
-                ) : (
-                  <>
-                    <MiniButton onClick={() => router.push(entryDetail("workshops", entry.id))}>
-                      Edit
-                    </MiniButton>
-                    <MiniButton
-                      role="destructive"
-                      onClick={() =>
-                        requestConfirmation({
-                          title: "Delete entry?",
-                          description:
-                            "This permanently deletes this workshop entry and its associated uploaded files.",
-                          confirmLabel: "Delete",
-                          cancelLabel: "Cancel",
-                          variant: "destructive",
-                          onConfirm: () => deleteEntry(entry.id),
-                        })
-                      }
-                    >
-                      Delete Entry
-                    </MiniButton>
-                    {completedEntry ? (
-                      <MiniButton
-                        onClick={() => void sendForConfirmation(entry)}
-                        disabled={!canSendConfirmation || sendingConfirmation}
-                      >
-                        {sendingConfirmation
-                          ? "Sending..."
-                          : confirmationStatus === "PENDING_CONFIRMATION"
-                            ? "Pending Confirmation"
-                            : "Send for Confirmation"}
-                      </MiniButton>
-                    ) : null}
-                  </>
-                )}
-                <RequestEditAction
-                  locked={lockApproved}
-                  status={entry.requestEditStatus}
-                  requestedAtISO={entry.requestEditRequestedAtISO}
-                  requesting={!!requestingEditIds[entry.id]}
-                  onRequest={() => void requestEdit(entry)}
-                  onCancel={() => void cancelRequestEdit(entry)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Coordinator: {formatFacultyDisplay(entry.coordinator)}
-            {entry.coCoordinators.length > 0
-              ? ` • Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
-              : ""}
-          </div>
-          <div className="text-sm text-muted-foreground">Participants: {entry.participants ?? "-"}</div>
-
-          <div className="flex flex-wrap gap-3 text-sm">
-            {UPLOAD_CONFIG.map(({ slot, label }) =>
-              entry.uploads[slot] ? (
-                <a
-                  key={slot}
-                  className="underline"
-                  href={entry.uploads[slot]?.url ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
+      <EntryListCardShell
+        category={category}
+        index={index}
+        href={entryDetail("workshops", entry.id)}
+        title={entry.eventName}
+        streakState={getEntryStreakDisplayState(entry)}
+        badges={
+          <>
+            <EntryLockBadge deadlineState={deadlineState} />
+            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+              {getConfirmationStatusLabel(confirmationStatus)}
+            </span>
+          </>
+        }
+        subtitle={`Speaker: ${entry.speakerName} • ${entry.organisationName}`}
+        createdAt={entry.createdAt}
+        updatedAt={entry.updatedAt}
+        actions={
+          <div className="flex items-center gap-2">
+            <MiniButton onClick={() => router.push(entryDetail("workshops", entry.id))}>
+              View
+            </MiniButton>
+            {lockApproved ? (
+              entry.pdfMeta?.url ? (
+                <MiniButton
+                  role="context"
+                  onClick={() => window.open(entry.pdfMeta?.url, "_blank", "noopener,noreferrer")}
                 >
-                  {label}
-                </a>
-              ) : null
+                  Preview
+                </MiniButton>
+              ) : (
+                <MiniButton role="context" disabled>
+                  Preview
+                </MiniButton>
+              )
+            ) : (
+              <>
+                <MiniButton onClick={() => router.push(entryDetail("workshops", entry.id))}>
+                  Edit
+                </MiniButton>
+                <MiniButton
+                  role="destructive"
+                  onClick={() =>
+                    requestConfirmation({
+                      title: "Delete entry?",
+                      description:
+                        "This permanently deletes this workshop entry and its associated uploaded files.",
+                      confirmLabel: "Delete",
+                      cancelLabel: "Cancel",
+                      variant: "destructive",
+                      onConfirm: () => deleteEntry(entry.id),
+                    })
+                  }
+                >
+                  Delete Entry
+                </MiniButton>
+                {completedEntry ? (
+                  <MiniButton
+                    onClick={() => void sendForConfirmation(entry)}
+                    disabled={!canSendConfirmation || sendingConfirmation}
+                  >
+                    {sendingConfirmation
+                      ? "Sending..."
+                      : confirmationStatus === "PENDING_CONFIRMATION"
+                        ? "Pending Confirmation"
+                        : "Send for Confirmation"}
+                  </MiniButton>
+                ) : null}
+              </>
             )}
-            {entry.uploads.geotaggedPhotos.map((meta, photoIndex) => (
+            <RequestEditAction
+              locked={lockApproved}
+              status={entry.requestEditStatus}
+              requestedAtISO={entry.requestEditRequestedAtISO}
+              requesting={!!requestingEditIds[entry.id]}
+              onRequest={() => void requestEdit(entry)}
+              onCancel={() => void cancelRequestEdit(entry)}
+            />
+          </div>
+        }
+      >
+        <div className="text-sm text-muted-foreground">
+          {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Coordinator: {formatFacultyDisplay(entry.coordinator)}
+          {entry.coCoordinators.length > 0
+            ? ` • Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`
+            : ""}
+        </div>
+        <div className="text-sm text-muted-foreground">Participants: {entry.participants ?? "-"}</div>
+
+        <div className="flex flex-wrap gap-3 text-sm">
+          {UPLOAD_CONFIG.map(({ slot, label }) =>
+            entry.uploads[slot] ? (
               <a
-                key={meta.storedPath}
+                key={slot}
                 className="underline"
-                href={meta.url}
+                href={entry.uploads[slot]?.url ?? "#"}
                 target="_blank"
                 rel="noreferrer"
               >
-                Geotagged Photo {photoIndex + 1}
+                {label}
               </a>
-            ))}
-          </div>
+            ) : null
+          )}
+          {entry.uploads.geotaggedPhotos.map((meta, photoIndex) => (
+            <a
+              key={meta.storedPath}
+              className="underline"
+              href={meta.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Geotagged Photo {photoIndex + 1}
+            </a>
+          ))}
         </div>
-      </div>
+      </EntryListCardShell>
     );
   }
 
-  return (
-    <EntryShell
-      category="workshops"
-      mode={isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview"}
-      entry={showForm ? (form as Record<string, unknown>) : null}
-      title="Workshops"
-      subtitle="Record workshop details and supporting documents."
-      status={showForm ? getEntryApprovalStatus(form) : undefined}
-      meta={showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null}
-      showUnsavedChanges={showForm && !isViewMode && hasUnsavedChanges}
-      backHref={backHref}
-      backDisabled={backDisabled}
-      onBack={showForm || isViewMode ? () => handleCancel(categoryPath) : undefined}
-      actions={
-        <EntryHeaderActionsBar
-          isEditing={showForm}
-          isViewMode={isViewMode}
-          loading={loading}
-          onAdd={() => {
-            resetForm();
-            router.push(entryNew("workshops"), { scroll: false });
-          }}
-          addLabel="+ Add Workshop"
-          onCancel={() => void handleCancel()}
-          cancelDisabled={actionState.cancelDisabled}
-          onSave={() => void handleSaveDraft()}
-          saveDisabled={actionState.saveDisabled}
-          onDone={() => void handleSaveAndClose()}
-          doneDisabled={actionState.doneDisabled}
-          saving={saving}
-          saveIntent={saveIntent}
-        />
-      }
+  const toastBanner = toast ? (
+    <div
+      className={cx(
+        "rounded-lg border px-3 py-2 text-sm",
+        toast.type === "ok"
+          ? "border-green-200 bg-green-50 text-green-800"
+          : "border-red-200 bg-red-50 text-red-800"
+      )}
     >
+      {toast.msg}
+    </div>
+  ) : null;
 
-      {toast ? (
-        <div
-          className={cx(
-            "mt-4 rounded-lg border px-3 py-2 text-sm",
-            toast.type === "ok"
-              ? "border-green-200 bg-green-50 text-green-800"
-              : "border-red-200 bg-red-50 text-red-800"
-          )}
-        >
-          {toast.msg}
-        </div>
-      ) : null}
+  return (
+    <CategoryEntryPageShell
+      entryShell={{
+        category: "workshops",
+        mode: isViewMode ? "view" : showForm ? (activeEntryId ? "edit" : "new") : "preview",
+        entry: showForm ? (form as Record<string, unknown>) : null,
+        title: "Workshops",
+        subtitle: "Record workshop details and supporting documents.",
+        status: showForm ? getEntryApprovalStatus(form) : undefined,
+        meta: showForm && !isViewMode ? <AutoSaveIndicator status={autoSaveStatus} /> : null,
+        showUnsavedChanges: showForm && !isViewMode && hasUnsavedChanges,
+        backHref,
+        backDisabled,
+        onBack: showForm || isViewMode ? () => handleCancel(categoryPath) : undefined,
+        actions: (
+          <EntryHeaderActionsBar
+            isEditing={showForm}
+            isViewMode={isViewMode}
+            loading={loading}
+            onAdd={() => {
+              resetForm();
+              router.push(entryNew("workshops"), { scroll: false });
+            }}
+            addLabel="+ Add Workshop"
+            onCancel={() => void handleCancel()}
+            cancelDisabled={actionState.cancelDisabled}
+            onSave={() => void handleSaveDraft()}
+            saveDisabled={actionState.saveDisabled}
+            onDone={() => void handleSaveAndClose()}
+            doneDisabled={actionState.doneDisabled}
+            saving={saving}
+            saveIntent={saveIntent}
+          />
+        ),
+      }}
+      loading={loading}
+      showForm={showForm}
+      topContent={toastBanner}
+      formCard={
+        showForm
+          ? {
+              className: "bg-white/70 p-5",
+              title: isViewMode ? "Workshop Entry" : "New Workshop Entry",
+              subtitle: "Add the entry details and generate the entry to unlock uploads.",
+              content: (
+                <>
+                  {pendingCoreLocked ? (
+                    <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      Pending confirmation — core fields cannot be edited.
+                    </p>
+                  ) : null}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
+                      <SelectDropdown
+                        value={form.academicYear}
+                        onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
+                        options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
+                        placeholder="Select academic year"
+                        disabled={coreFieldDisabled("academicYear")}
+                        error={submitted && !!errors.academicYear}
+                      />
+                    </Field>
 
-      <div className="mt-6 space-y-4">
-        {loading ? (
-          <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">Loading...</div>
-        ) : null}
+                    <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
+                      <SelectDropdown
+                        value={form.yearOfStudy}
+                        onChange={(value) =>
+                          setForm((current) => {
+                            const nextYear = normalizeYearOfStudy(value) ?? "";
+                            const nextSemester = isSemesterAllowed(
+                              nextYear || undefined,
+                              current.currentSemester ?? undefined
+                            )
+                              ? current.currentSemester
+                              : null;
 
-        {!loading && showForm ? (
-          <SectionCard
-            className="bg-white/70 p-5"
-            title={isViewMode ? "Workshop Entry" : "New Workshop Entry"}
-            subtitle="Add the entry details and generate the entry to unlock uploads."
-          >
-            {pendingCoreLocked ? (
-              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                Pending confirmation — core fields cannot be edited.
-              </p>
-            ) : null}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
-                <SelectDropdown
-                  value={form.academicYear}
-                  onChange={(value) => setForm((current) => ({ ...current, academicYear: value }))}
-                  options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
-                  placeholder="Select academic year"
-                  disabled={coreFieldDisabled("academicYear")}
-                  error={submitted && !!errors.academicYear}
-                />
-              </Field>
+                            return withAcademicProgressionCompatibility({
+                              ...current,
+                              yearOfStudy: nextYear,
+                              currentSemester: nextSemester,
+                            }) as WorkshopEntry;
+                          })
+                        }
+                        options={YEAR_OF_STUDY_OPTIONS}
+                        placeholder="Select year of study"
+                        disabled={coreFieldDisabled("yearOfStudy")}
+                        error={submitted && !!errors.yearOfStudy}
+                      />
+                    </Field>
 
-              <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
-                <SelectDropdown
-                  value={form.yearOfStudy}
-                  onChange={(value) =>
-                    setForm((current) => {
-                      const nextYear = normalizeYearOfStudy(value) ?? "";
-                      const nextSemester = isSemesterAllowed(nextYear || undefined, current.currentSemester ?? undefined)
-                        ? current.currentSemester
-                        : null;
+                    <Field
+                      label="Current Semester"
+                      error={submitted ? errors.currentSemester : undefined}
+                      hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
+                    >
+                      <SelectDropdown
+                        value={form.currentSemester === null ? "" : String(form.currentSemester)}
+                        onChange={(value) =>
+                          setForm((current) =>
+                            withAcademicProgressionCompatibility({
+                              ...current,
+                              currentSemester: value ? Number(value) : null,
+                            }) as WorkshopEntry
+                          )
+                        }
+                        options={semesterOptions.map((option) => ({
+                          label: String(option),
+                          value: String(option),
+                        }))}
+                        placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
+                        disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
+                        error={submitted && !!errors.currentSemester}
+                      />
+                    </Field>
 
-                      return withAcademicProgressionCompatibility({
-                        ...current,
-                        yearOfStudy: nextYear,
-                        currentSemester: nextSemester,
-                      }) as WorkshopEntry;
-                    })
-                  }
-                  options={YEAR_OF_STUDY_OPTIONS}
-                  placeholder="Select year of study"
-                  disabled={coreFieldDisabled("yearOfStudy")}
-                  error={submitted && !!errors.yearOfStudy}
-                />
-              </Field>
+                    <Field
+                      label="Start Date"
+                      error={submitted ? errors.startDate : undefined}
+                      hint={form.academicYear ? getAcademicYearRange(form.academicYear)?.label : undefined}
+                    >
+                      <DateField
+                        value={form.startDate}
+                        onChange={(next) => setForm((current) => ({ ...current, startDate: next }))}
+                        disabled={coreFieldDisabled("startDate")}
+                        error={submitted && !!errors.startDate}
+                      />
+                    </Field>
 
-              <Field
-                label="Current Semester"
-                error={submitted ? errors.currentSemester : undefined}
-                hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
-              >
-                <SelectDropdown
-                  value={form.currentSemester === null ? "" : String(form.currentSemester)}
-                  onChange={(value) =>
-                    setForm((current) =>
-                      withAcademicProgressionCompatibility({
-                        ...current,
-                        currentSemester: value ? Number(value) : null,
-                      }) as WorkshopEntry
-                    )
-                  }
-                  options={semesterOptions.map((option) => ({
-                    label: String(option),
-                    value: String(option),
-                  }))}
-                  placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
-                  disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
-                  error={submitted && !!errors.currentSemester}
-                />
-              </Field>
-
-              <Field
-                label="Start Date"
-                error={submitted ? errors.startDate : undefined}
-                hint={form.academicYear ? getAcademicYearRange(form.academicYear)?.label : undefined}
-              >
-                <DateField
-                  value={form.startDate}
-                  onChange={(next) => setForm((current) => ({ ...current, startDate: next }))}
-                  disabled={coreFieldDisabled("startDate")}
-                  error={submitted && !!errors.startDate}
-                />
-              </Field>
-
-              <Field
-                label="End Date"
-                error={submitted ? errors.endDate : undefined}
-                hint={inclusiveDays ? `Number of Days: ${inclusiveDays}` : "Number of Days will be calculated automatically."}
-              >
-                <DateField
-                  value={form.endDate}
-                  onChange={(next) => setForm((current) => ({ ...current, endDate: next }))}
-                  disabled={coreFieldDisabled("endDate")}
-                  error={submitted && !!errors.endDate}
-                />
-              </Field>
-
-              <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>
-                <input
-                  value={form.eventName}
-                  onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
-                  disabled={coreFieldDisabled("eventName")}
-                  className={cx(
-                    "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
-                    submitted && errors.eventName
-                      ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
-                  )}
-                />
-              </Field>
-
-              <Field label="Name of the Speaker" error={submitted ? errors.speakerName : undefined}>
-                <input
-                  value={form.speakerName}
-                  onChange={(event) => setForm((current) => ({ ...current, speakerName: event.target.value }))}
-                  disabled={coreFieldDisabled("speakerName")}
-                  className={cx(
-                    "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
-                    submitted && errors.speakerName
-                      ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
-                  )}
-                />
-              </Field>
-
-              <Field label="Name of the Organisation" error={submitted ? errors.organisationName : undefined}>
-                <input
-                  value={form.organisationName}
-                  onChange={(event) => setForm((current) => ({ ...current, organisationName: event.target.value }))}
-                  disabled={coreFieldDisabled("organisationName")}
-                  className={cx(
-                    "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
-                    submitted && errors.organisationName
-                      ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
-                  )}
-                />
-              </Field>
-
-            </div>
-
-            <div className="mt-5 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-              Coordinator: <span className="font-medium text-foreground">{currentFaculty.name || form.coordinator.name || "-"}</span>
-            </div>
-
-            <div className="mt-5">
-              <FacultyRowPicker
-                title="Co-coordinator(s)"
-                helperText="Add co-coordinators only when applicable."
-                addLabel="+ Add Co-coordinator"
-                rowLabelPrefix="Co-coordinator"
-                rows={form.coCoordinators}
-                onRowsChange={(rows) => setForm((current) => ({ ...current, coCoordinators: rows }))}
-                onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
-                facultyOptions={FACULTY_OPTIONS}
-                disableEmails={[currentFaculty.email || form.coordinator.email]}
-                parentLocked={coreFieldDisabled("coCoordinators")}
-                viewOnly={isViewMode}
-                sectionError={errors.coCoordinators}
-                showSectionError={submitted}
-                emptyStateText="No co-coordinators added."
-                validateRow={(rows, row, index) => {
-                  if (!row.email) return "Select a faculty member from the list.";
-                  const duplicates = rows.filter(
-                    (item, itemIndex) =>
-                      itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
-                  ).length;
-                  return duplicates > 0 ? "This faculty is already selected in another role." : null;
-                }}
-              />
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label="Number of Participants" error={submitted ? errors.participants : undefined} hint="Optional. Digits only">
-                <input
-                  inputMode="numeric"
-                  value={form.participants === null ? "" : String(form.participants)}
-                  onChange={(event) => {
-                    const digits = event.target.value.replace(/\D/g, "");
-                    setForm((current) => ({
-                      ...current,
-                      participants: digits === "" ? null : Number(digits),
-                    }));
-                  }}
-                  disabled={coreFieldDisabled("participants")}
-                  className={cx(
-                    "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
-                    submitted && errors.participants
-                      ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                      : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
-                  )}
-                />
-              </Field>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {!isViewMode ? (
-                  <MiniButton
-                    onClick={() => void generateEntry()}
-                    disabled={actionState.generateDisabled}
-                  >
-                    {saving ? "Generating..." : "Generate Entry"}
-                  </MiniButton>
-                ) : null}
-                <EntryPdfActions
-                  pdfMeta={form.pdfMeta ?? null}
-                  disabled={isViewMode ? !form.pdfMeta?.url : !lifecycle.canPreview}
-                />
-              </div>
-              {pdfState.pdfStale ? (
-                <p className="text-sm text-muted-foreground">
-                  Entry changed. Regenerate PDF to update Preview/Download.
-                </p>
-              ) : null}
-
-              {uploadsVisible ? (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {UPLOAD_CONFIG.map(({ slot, label }) => (
-                    <EntryUploader
-                      key={slot}
-                      title={label}
-                      mode={isViewMode ? "view" : "edit"}
-                      meta={form.uploads[slot]}
-                      uploadEndpoint="/api/me/workshops-file"
-                      email={email}
-                      recordId={form.id}
-                      slot={slot}
-                      disabled={controlsDisabled}
-                      showValidationError={submitAttemptedFinal}
-                      validationMessage="This upload is mandatory."
-                      onStatusChange={(status) =>
-                        setSingleUploadStatus((current) => ({
-                          ...current,
-                          [slot]: status,
-                        }))
+                    <Field
+                      label="End Date"
+                      error={submitted ? errors.endDate : undefined}
+                      hint={
+                        inclusiveDays
+                          ? `Number of Days: ${inclusiveDays}`
+                          : "Number of Days will be calculated automatically."
                       }
-                      onUploaded={async (meta) => {
-                        const latestForm = formRef.current;
-                        const nextForm = {
-                          ...latestForm,
-                          uploads: {
-                            ...latestForm.uploads,
-                            [slot]: meta,
-                          },
-                        };
-                        const persisted = hydrateEntry(await persistProgress(nextForm));
-                        applyPersistedEntry(persisted);
-                        await refreshList(email);
-                      }}
-                      onDeleted={async () => {
-                        const latestForm = formRef.current;
-                        const nextForm = {
-                          ...latestForm,
-                          uploads: {
-                            ...latestForm.uploads,
-                            [slot]: null,
-                          },
-                        };
-                        const persisted = hydrateEntry(await persistProgress(nextForm));
-                        applyPersistedEntry(persisted);
-                        await refreshList(email);
+                    >
+                      <DateField
+                        value={form.endDate}
+                        onChange={(next) => setForm((current) => ({ ...current, endDate: next }))}
+                        disabled={coreFieldDisabled("endDate")}
+                        error={submitted && !!errors.endDate}
+                      />
+                    </Field>
+
+                    <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>
+                      <input
+                        value={form.eventName}
+                        onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
+                        disabled={coreFieldDisabled("eventName")}
+                        className={cx(
+                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          submitted && errors.eventName
+                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
+                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                        )}
+                      />
+                    </Field>
+
+                    <Field label="Name of the Speaker" error={submitted ? errors.speakerName : undefined}>
+                      <input
+                        value={form.speakerName}
+                        onChange={(event) => setForm((current) => ({ ...current, speakerName: event.target.value }))}
+                        disabled={coreFieldDisabled("speakerName")}
+                        className={cx(
+                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          submitted && errors.speakerName
+                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
+                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                        )}
+                      />
+                    </Field>
+
+                    <Field label="Name of the Organisation" error={submitted ? errors.organisationName : undefined}>
+                      <input
+                        value={form.organisationName}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, organisationName: event.target.value }))
+                        }
+                        disabled={coreFieldDisabled("organisationName")}
+                        className={cx(
+                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          submitted && errors.organisationName
+                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
+                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                        )}
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                    Coordinator:{" "}
+                    <span className="font-medium text-foreground">
+                      {currentFaculty.name || form.coordinator.name || "-"}
+                    </span>
+                  </div>
+
+                  <div className="mt-5">
+                    <FacultyRowPicker
+                      title="Co-coordinator(s)"
+                      helperText="Add co-coordinators only when applicable."
+                      addLabel="+ Add Co-coordinator"
+                      rowLabelPrefix="Co-coordinator"
+                      rows={form.coCoordinators}
+                      onRowsChange={(rows) => setForm((current) => ({ ...current, coCoordinators: rows }))}
+                      onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
+                      facultyOptions={FACULTY_OPTIONS}
+                      disableEmails={[currentFaculty.email || form.coordinator.email]}
+                      parentLocked={coreFieldDisabled("coCoordinators")}
+                      viewOnly={isViewMode}
+                      sectionError={errors.coCoordinators}
+                      showSectionError={submitted}
+                      emptyStateText="No co-coordinators added."
+                      validateRow={(rows, row, index) => {
+                        if (!row.email) return "Select a faculty member from the list.";
+                        const duplicates = rows.filter(
+                          (item, itemIndex) =>
+                            itemIndex !== index &&
+                            item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
+                        ).length;
+                        return duplicates > 0 ? "This faculty is already selected in another role." : null;
                       }}
                     />
-                  ))}
+                  </div>
 
-              <MultiPhotoUpload
-                title="Geotagged Photos"
-                value={form.uploads.geotaggedPhotos}
-                onUploaded={async (meta) => {
-                  const latestForm = formRef.current;
-                  const nextForm = {
-                    ...latestForm,
-                    uploads: {
-                      ...latestForm.uploads,
-                      geotaggedPhotos: [...latestForm.uploads.geotaggedPhotos, meta],
-                    },
-                  };
-                  const persisted = hydrateEntry(await persistProgress(nextForm));
-                  applyPersistedEntry(persisted);
-                  await refreshList(email);
-                }}
-                onDeleted={async (meta) => {
-                  const latestForm = formRef.current;
-                  const nextForm = {
-                    ...latestForm,
-                    uploads: {
-                      ...latestForm.uploads,
-                      geotaggedPhotos: latestForm.uploads.geotaggedPhotos.filter(
-                        (item) => item.storedPath !== meta.storedPath
-                      ),
-                    },
-                  };
-                  const persisted = hydrateEntry(await persistProgress(nextForm));
-                  applyPersistedEntry(persisted);
-                  await refreshList(email);
-                }}
-                uploadEndpoint="/api/me/workshops-file"
-                email={email}
-                recordId={form.id}
-                slotName="geotaggedPhotos"
-                disabled={controlsDisabled}
-                viewOnly={isViewMode}
-                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
-                requiredErrorText="At least one geotagged photo is required."
-                onStatusChange={setPhotoUploadStatus}
-              />
-                </div>
-              ) : null}
-            </div>
-          </SectionCard>
-        ) : null}
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    <Field
+                      label="Number of Participants"
+                      error={submitted ? errors.participants : undefined}
+                      hint="Optional. Digits only"
+                    >
+                      <input
+                        inputMode="numeric"
+                        value={form.participants === null ? "" : String(form.participants)}
+                        onChange={(event) => {
+                          const digits = event.target.value.replace(/\D/g, "");
+                          setForm((current) => ({
+                            ...current,
+                            participants: digits === "" ? null : Number(digits),
+                          }));
+                        }}
+                        disabled={coreFieldDisabled("participants")}
+                        className={cx(
+                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          submitted && errors.participants
+                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
+                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                        )}
+                      />
+                    </Field>
+                  </div>
 
-        {!loading && !showForm ? (
-          <SectionCard
-            className="bg-white/70 p-5"
-            title="Saved Workshop Entries"
-            subtitle="Your saved workshop records are stored locally and keyed to your signed-in email."
-          >
-            {list.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No entries yet.</div>
-            ) : (
-              <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />
-            )}
-          </SectionCard>
-        ) : null}
-      </div>
-      {confirmationDialog}
-    </EntryShell>
+                  <div className="mt-5 space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {!isViewMode ? (
+                        <MiniButton onClick={() => void generateEntry()} disabled={actionState.generateDisabled}>
+                          {saving ? "Generating..." : "Generate Entry"}
+                        </MiniButton>
+                      ) : null}
+                      <EntryPdfActions
+                        pdfMeta={form.pdfMeta ?? null}
+                        disabled={isViewMode ? !form.pdfMeta?.url : !lifecycle.canPreview}
+                      />
+                    </div>
+                    {pdfState.pdfStale ? (
+                      <p className="text-sm text-muted-foreground">
+                        Entry changed. Regenerate PDF to update Preview/Download.
+                      </p>
+                    ) : null}
+
+                    {uploadsVisible ? (
+                      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {UPLOAD_CONFIG.map(({ slot, label }) => (
+                          <EntryUploader
+                            key={slot}
+                            title={label}
+                            mode={isViewMode ? "view" : "edit"}
+                            meta={form.uploads[slot]}
+                            uploadEndpoint="/api/me/workshops-file"
+                            email={email}
+                            recordId={form.id}
+                            slot={slot}
+                            disabled={controlsDisabled}
+                            showValidationError={submitAttemptedFinal}
+                            validationMessage="This upload is mandatory."
+                            onStatusChange={(status) =>
+                              setSingleUploadStatus((current) => ({
+                                ...current,
+                                [slot]: status,
+                              }))
+                            }
+                            onUploaded={async (meta) => {
+                              const latestForm = formRef.current;
+                              const nextForm = {
+                                ...latestForm,
+                                uploads: {
+                                  ...latestForm.uploads,
+                                  [slot]: meta,
+                                },
+                              };
+                              const persisted = hydrateEntry(await persistProgress(nextForm));
+                              applyPersistedEntry(persisted);
+                              await refreshList(email);
+                            }}
+                            onDeleted={async () => {
+                              const latestForm = formRef.current;
+                              const nextForm = {
+                                ...latestForm,
+                                uploads: {
+                                  ...latestForm.uploads,
+                                  [slot]: null,
+                                },
+                              };
+                              const persisted = hydrateEntry(await persistProgress(nextForm));
+                              applyPersistedEntry(persisted);
+                              await refreshList(email);
+                            }}
+                          />
+                        ))}
+
+                        <MultiPhotoUpload
+                          title="Geotagged Photos"
+                          value={form.uploads.geotaggedPhotos}
+                          onUploaded={async (meta) => {
+                            const latestForm = formRef.current;
+                            const nextForm = {
+                              ...latestForm,
+                              uploads: {
+                                ...latestForm.uploads,
+                                geotaggedPhotos: [...latestForm.uploads.geotaggedPhotos, meta],
+                              },
+                            };
+                            const persisted = hydrateEntry(await persistProgress(nextForm));
+                            applyPersistedEntry(persisted);
+                            await refreshList(email);
+                          }}
+                          onDeleted={async (meta) => {
+                            const latestForm = formRef.current;
+                            const nextForm = {
+                              ...latestForm,
+                              uploads: {
+                                ...latestForm.uploads,
+                                geotaggedPhotos: latestForm.uploads.geotaggedPhotos.filter(
+                                  (item) => item.storedPath !== meta.storedPath
+                                ),
+                              },
+                            };
+                            const persisted = hydrateEntry(await persistProgress(nextForm));
+                            applyPersistedEntry(persisted);
+                            await refreshList(email);
+                          }}
+                          uploadEndpoint="/api/me/workshops-file"
+                          email={email}
+                          recordId={form.id}
+                          slotName="geotaggedPhotos"
+                          disabled={controlsDisabled}
+                          viewOnly={isViewMode}
+                          showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                          requiredErrorText="At least one geotagged photo is required."
+                          onStatusChange={setPhotoUploadStatus}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              ),
+            }
+          : null
+      }
+      listCard={
+        !showForm
+          ? {
+              className: "bg-white/70 p-5",
+              title: "Saved Workshop Entries",
+              subtitle: "Your saved workshop records are stored locally and keyed to your signed-in email.",
+              content:
+                list.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No entries yet.</div>
+                ) : (
+                  <GroupedEntrySections groupedEntries={groupedEntries} renderEntry={renderSavedEntry} />
+                ),
+            }
+          : null
+      }
+      confirmationDialog={confirmationDialog}
+    />
   );
 }
 

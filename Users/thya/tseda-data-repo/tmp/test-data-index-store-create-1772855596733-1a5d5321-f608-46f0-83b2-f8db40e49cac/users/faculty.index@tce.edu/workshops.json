@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "byId": {
+    "35b0b997-e84e-405c-99e2-73d0d59abed0": {
+      "eventName": "Index Seed Entry",
+      "id": "35b0b997-e84e-405c-99e2-73d0d59abed0",
+      "createdAt": "2026-03-07T03:53:16.735Z",
+      "updatedAt": "2026-03-07T03:53:16.735Z",
+      "confirmationStatus": "DRAFT",
+      "sentForConfirmationAtISO": null,
+      "confirmedAtISO": null,
+      "confirmedBy": null,
+      "confirmationRejectedReason": null,
+      "attachments": [],
+      "schemaVersion": 1
+    }
+  },
+  "order": [
+    "35b0b997-e84e-405c-99e2-73d0d59abed0"
+  ]
+}

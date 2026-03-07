@@ -1,3 +1,11 @@
+/**
+ * Canonical business-progress / streak rule layer.
+ *
+ * Ownership:
+ * - activated / win counting lives here
+ * - canonical persisted streak metadata transitions live here
+ * - cache/snapshot readers may consume this output, but must not redefine it
+ */
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
 import {
@@ -7,10 +15,10 @@ import {
 } from "@/lib/entries/stateMachine";
 import {
   computeDueAtISO,
-  normalizeStreakState,
-  nowISTTimestampISO,
-  type StreakState,
-} from "@/lib/gamification";
+  isFutureDatedEntry,
+} from "@/lib/streakTiming";
+import { normalizeStreakState, type StreakState } from "@/lib/streakState";
+import { nowISTTimestampISO } from "@/lib/time";
 
 export const STREAK_RULE_VERSION = 2;
 
@@ -67,9 +75,9 @@ export type CanonicalStreakSnapshot = {
 
 export type BuildCanonicalStreakMetadataArgs = {
   streak: unknown;
+  startDateISO?: string | null;
   endDateISO?: string | null;
   hasPdf: boolean;
-  isEligible: boolean;
   isCommitted: boolean;
   completionSatisfied: boolean;
   nowISO?: string | null;
@@ -143,10 +151,15 @@ function isOnOrBeforeDueAt(nowISO: string, dueAtISO: string | null | undefined) 
   return nowTime <= dueAtTime;
 }
 
+export function isStreakProgressEligible(startDateISO?: string | null, endDateISO?: string | null) {
+  return isFutureDatedEntry(startDateISO ?? "", endDateISO ?? "");
+}
+
 export function buildCanonicalStreakMetadata(args: BuildCanonicalStreakMetadataArgs): StreakState {
   const nowISO = toOptionalISO(args.nowISO) ?? nowISTTimestampISO();
+  const isEligible = isStreakProgressEligible(args.startDateISO, args.endDateISO);
 
-  if (!args.hasPdf || !args.isEligible || !args.isCommitted) {
+  if (!args.hasPdf || !isEligible || !args.isCommitted) {
     return clearStreakMetadata(args.streak);
   }
 

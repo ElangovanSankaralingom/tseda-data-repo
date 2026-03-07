@@ -1,4 +1,4 @@
-import { computeDueAtISO } from "../gamification.ts";
+import { computeDueAtISO } from "../streakTiming.ts";
 import { getDaysLeft, getDaysLeftColor } from "../streakDeadline.ts";
 import {
   groupEntries,

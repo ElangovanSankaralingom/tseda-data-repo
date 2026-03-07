@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canTransition,
+  normalizeEntryStatus,
   transitionEntry,
-} from "../../lib/entries/stateMachine.ts";
+} from "../../lib/entries/workflow.ts";
 
 test("canTransition only allows canonical confirmation transitions", () => {
   assert.equal(canTransition("DRAFT", "PENDING_CONFIRMATION"), true);
@@ -56,4 +57,16 @@ test("resending after rejection refreshes sentForConfirmationAtISO", () => {
 
   assert.equal(next.confirmationStatus, "PENDING_CONFIRMATION");
   assert.equal(next.sentForConfirmationAtISO, "2026-03-06T10:00:00.000Z");
+});
+
+test("normalizeEntryStatus ignores legacy lowercase workflow strings outside migrations", () => {
+  const status = normalizeEntryStatus(
+    {
+      status: "draft",
+      sentForConfirmationAtISO: "2026-03-06T10:00:00.000Z",
+    },
+    "DRAFT"
+  );
+
+  assert.equal(status, "PENDING_CONFIRMATION");
 });

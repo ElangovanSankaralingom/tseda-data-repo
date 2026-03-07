@@ -6,7 +6,13 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
 import { normalizeEntry as normalizeEntryRecord } from "@/lib/normalize";
 import { err, ok, type Result } from "@/lib/result";
-import { ENTRY_STATUSES, isEntryStatus, type Entry, type EntryStatus } from "@/lib/types/entry";
+import {
+  createEntryStatusRecord,
+  ENTRY_STATUSES,
+  isEntryStatus,
+  type Entry,
+  type EntryStatus,
+} from "@/lib/types/entry";
 import type { UserIndex } from "@/lib/data/indexStore";
 import type { WalAction, WalActorRole, WalEvent } from "@/lib/data/wal";
 
@@ -61,14 +67,64 @@ function toOptionalISO(value: unknown): string | null {
   return Number.isNaN(parsed) ? null : candidate;
 }
 
-// Legacy lowercase workflow stages are accepted only while normalizing
-// persisted historical data. Active workflow code must use EntryStatus.
-function getLegacyWorkflowStage(value: unknown): "draft" | "final" | "completed" | null {
+type LegacyWorkflowCompatibilityStatus =
+  | "draft"
+  | "final"
+  | "completed"
+  | "pending"
+  | "pending_confirmation"
+  | "approved"
+  | "rejected";
+
+// Legacy and pre-canonical workflow strings are accepted only while
+// normalizing persisted historical data. Active workflow code must use
+// canonical EntryStatus values after this boundary.
+function getLegacyWorkflowCompatibilityStatus(value: unknown): LegacyWorkflowCompatibilityStatus | null {
   const normalized = toTrimmedString(value).toLowerCase();
   if (normalized === "draft") return "draft";
   if (normalized === "final") return "final";
   if (normalized === "completed") return "completed";
+  if (normalized === "pending") return "pending";
+  if (normalized === "pending_confirmation") return "pending_confirmation";
+  if (normalized === "approved") return "approved";
+  if (normalized === "rejected") return "rejected";
   return null;
+}
+
+function applyLegacyWorkflowStatusCompatibility(record: Record<string, unknown>, nowISO: string) {
+  const currentConfirmationStatus = toTrimmedString(record.confirmationStatus);
+  if (isEntryStatus(currentConfirmationStatus)) {
+    stripLegacyWorkflowStatus(record);
+    return;
+  }
+
+  const legacyConfirmationStatus = getLegacyWorkflowCompatibilityStatus(record.confirmationStatus);
+  const legacyStatus = getLegacyWorkflowCompatibilityStatus(record.status);
+  const workflowStatus = legacyConfirmationStatus ?? legacyStatus;
+
+  if (!workflowStatus) {
+    stripLegacyWorkflowStatus(record);
+    return;
+  }
+
+  if (
+    (workflowStatus === "final" || workflowStatus === "completed") &&
+    !toTrimmedString(record.committedAtISO)
+  ) {
+    record.committedAtISO = toISO(record.updatedAt, nowISO);
+  }
+
+  if (workflowStatus === "draft" || workflowStatus === "final" || workflowStatus === "completed") {
+    record.confirmationStatus = "DRAFT";
+  } else if (workflowStatus === "pending" || workflowStatus === "pending_confirmation") {
+    record.confirmationStatus = "PENDING_CONFIRMATION";
+  } else if (workflowStatus === "approved") {
+    record.confirmationStatus = "APPROVED";
+  } else {
+    record.confirmationStatus = "REJECTED";
+  }
+
+  stripLegacyWorkflowStatus(record);
 }
 
 function stripLegacyWorkflowStatus(record: Record<string, unknown>) {
@@ -157,11 +213,8 @@ function normalizeLegacyFinalization(record: Record<string, unknown>, nowISO: st
 function migrateEntryV0ToV1(raw: Record<string, unknown>, nowISO: string) {
   const next = { ...raw };
 
+  applyLegacyWorkflowStatusCompatibility(next, nowISO);
   normalizeLegacyFinalization(next, nowISO);
-  const legacyStage = getLegacyWorkflowStage(next.status);
-  if ((legacyStage === "final" || legacyStage === "completed") && !toTrimmedString(next.committedAtISO)) {
-    next.committedAtISO = toISO(next.updatedAt, nowISO);
-  }
   next.confirmationStatus = normalizeEntryStatus(next as EntryStateLike);
   stripLegacyWorkflowStatus(next);
 
@@ -228,13 +281,10 @@ export function migrateEntry(raw: unknown): Result<Entry> {
       isValidCategorySlug(categorySlug) ? getCategorySchema(categorySlug) : undefined
     ) as Record<string, unknown>;
 
-    const legacyStage = getLegacyWorkflowStage(normalized.status);
-    if ((legacyStage === "final" || legacyStage === "completed") && !toTrimmedString(normalized.committedAtISO)) {
-      normalized.committedAtISO = toISO(
-        normalized.updatedAt,
-        toISO(normalized.createdAt, nowISO)
-      );
-    }
+    applyLegacyWorkflowStatusCompatibility(
+      normalized,
+      toISO(normalized.updatedAt, toISO(normalized.createdAt, nowISO))
+    );
     normalized.confirmationStatus = normalizeEntryStatus(normalized as EntryStateLike);
     stripLegacyWorkflowStatus(normalized);
     if (!Array.isArray(normalized.attachments)) {
@@ -360,12 +410,7 @@ function migrateUserIndexV0ToV1(raw: Record<string, unknown>, nowISO: string) {
     userEmail,
     updatedAt: toISO(raw.updatedAt, nowISO),
     totalsByCategory: emptyCategoryMap(() => 0),
-    countsByStatus: {
-      DRAFT: 0,
-      PENDING_CONFIRMATION: 0,
-      APPROVED: 0,
-      REJECTED: 0,
-    },
+    countsByStatus: createEntryStatusRecord(() => 0),
     pendingByCategory: emptyCategoryMap(() => 0),
     approvedByCategory: emptyCategoryMap(() => 0),
     lastEntryAtByCategory: emptyCategoryMap(() => null),

@@ -223,6 +223,7 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
     summary.totals.rejectedCount += categorySummary.rejectedCount;
   }
 
+  // Dashboard presentation consumes the canonical streak snapshot directly.
   const streakSummary = computeCanonicalStreakSnapshot(streakInputs);
 
   for (const categoryKey of CATEGORY_KEYS) {

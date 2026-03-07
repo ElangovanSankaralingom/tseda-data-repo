@@ -67,7 +67,6 @@ test("DataStore normalization applies default attachments and canonical confirma
             attachments: null,
           },
           { id: "legacy-2", requestEditStatus: "pending" },
-          { id: "legacy-3", status: "draft" },
         ],
         null,
         2
@@ -76,7 +75,7 @@ test("DataStore normalization applies default attachments and canonical confirma
     );
 
     const entries = await store.readCategory(email, "guest-lectures");
-    assert.equal(entries.length, 3);
+    assert.equal(entries.length, 2);
     assert.deepEqual(entries[0]?.attachments, []);
     assert.equal(String(entries[0]?.eventName ?? ""), "Legacy no status");
     assert.equal(entries[0]?.speakerName, null);
@@ -84,8 +83,29 @@ test("DataStore normalization applies default attachments and canonical confirma
     assert.equal(entries[0]?.status, undefined);
     assert.equal(String(entries[0]?.confirmationStatus ?? ""), "DRAFT");
     assert.equal(String(entries[1]?.confirmationStatus ?? ""), "PENDING_CONFIRMATION");
-    assert.equal(entries[2]?.status, undefined);
-    assert.equal(String(entries[2]?.confirmationStatus ?? ""), "DRAFT");
+  });
+});
+
+test("DataStore accepts legacy workflow status only through migration compatibility", async () => {
+  await withSandbox("datastore-legacy-status-compat", async (store) => {
+    const filePath = store.categoryFilePath(email, "guest-lectures");
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(
+      filePath,
+      JSON.stringify(
+        [
+          { id: "legacy-draft", status: "draft" },
+        ],
+        null,
+        2
+      ),
+      "utf8"
+    );
+
+    const entries = await store.readCategory(email, "guest-lectures");
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0]?.status, undefined);
+    assert.equal(String(entries[0]?.confirmationStatus ?? ""), "DRAFT");
   });
 });
 

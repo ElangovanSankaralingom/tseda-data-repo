@@ -1,0 +1,79 @@
+{
+  "version": 2,
+  "userEmail": "faculty.workflow@tce.edu",
+  "updatedAt": "2026-03-07T04:27:23.299Z",
+  "totalsByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "countsByStatus": {
+    "DRAFT": 0,
+    "PENDING_CONFIRMATION": 0,
+    "APPROVED": 1,
+    "REJECTED": 0
+  },
+  "pendingByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 0
+  },
+  "approvedByCategory": {
+    "fdp-attended": 0,
+    "fdp-conducted": 0,
+    "case-studies": 0,
+    "guest-lectures": 0,
+    "workshops": 1
+  },
+  "lastEntryAtByCategory": {
+    "fdp-attended": null,
+    "fdp-conducted": null,
+    "case-studies": null,
+    "guest-lectures": null,
+    "workshops": "2026-03-07T04:27:23.298Z"
+  },
+  "streakSnapshot": {
+    "ruleVersion": 2,
+    "streakActivatedCount": 0,
+    "streakWinsCount": 1,
+    "byCategory": {
+      "fdp-attended": {
+        "activated": 0,
+        "wins": 0
+      },
+      "fdp-conducted": {
+        "activated": 0,
+        "wins": 0
+      },
+      "case-studies": {
+        "activated": 0,
+        "wins": 0
+      },
+      "guest-lectures": {
+        "activated": 0,
+        "wins": 0
+      },
+      "workshops": {
+        "activated": 0,
+        "wins": 1
+      }
+    },
+    "activeEntries": [],
+    "lastComputedAt": "2026-03-07T04:27:23.299Z"
+  },
+  "searchIndexByEntryId": {
+    "workshops:928df146-4bae-4944-a894-84bdb4a78969": {
+      "entryId": "928df146-4bae-4944-a894-84bdb4a78969",
+      "categoryKey": "workshops",
+      "title": "Workflow Workshop Draft Saved",
+      "text": "workflow workshop draft saved workshops approved academic year 2025 2026 2nd year workflow workshop draft saved reopened speaker tce",
+      "status": "APPROVED",
+      "updatedAtISO": "2026-03-07T04:27:23.298Z",
+      "createdAtISO": "2026-03-07T04:27:23.099Z"
+    }
+  }
+}

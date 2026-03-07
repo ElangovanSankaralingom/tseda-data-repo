@@ -19,11 +19,7 @@ import {
 import { normalizeError } from "@/lib/errors";
 import { mergeWithNulls } from "@/lib/mergeWithNulls";
 import { isEntryEditable } from "@/lib/entries/lock";
-import {
-  isFutureDatedEntry,
-  normalizeStreakState,
-  type StreakState,
-} from "@/lib/gamification";
+import { normalizeStreakState, type StreakState } from "@/lib/streakState";
 import { buildCanonicalStreakMetadata } from "@/lib/streakProgress";
 import {
   isEntryCommitted,
@@ -528,7 +524,6 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
-    const eligible = isFutureDatedEntry(validated.startDate, validated.endDate);
     const existingCommittedAtISO =
       typeof existing?.committedAtISO === "string" && existing.committedAtISO.trim()
         ? existing.committedAtISO
@@ -547,9 +542,9 @@ export async function POST(request: Request) {
         : null);
     const streak = buildCanonicalStreakMetadata({
       streak: existing?.streak ?? entry.streak,
+      startDateISO: validated.startDate,
       endDateISO: validated.endDate,
       hasPdf: !!entry.pdfMeta,
-      isEligible: eligible,
       isCommitted: nextCommitted,
       completionSatisfied: hasCompletedUploads(entry),
       nowISO: now,
@@ -809,12 +804,11 @@ export async function PATCH(request: Request) {
       !!savedEntry.pdfSourceHash &&
       getPrePdfFieldsHash(savedEntry) !== savedEntry.pdfSourceHash;
 
-    const eligible = isFutureDatedEntry(savedEntry.startDate, savedEntry.endDate);
     savedEntry.streak = buildCanonicalStreakMetadata({
       streak: savedEntry.streak,
+      startDateISO: savedEntry.startDate,
       endDateISO: savedEntry.endDate,
       hasPdf: !!savedEntry.pdfMeta,
-      isEligible: eligible,
       isCommitted: isEntryCommitted(savedEntry as EntryStateLike),
       completionSatisfied: hasCompletedUploads(savedEntry),
       nowISO: now,

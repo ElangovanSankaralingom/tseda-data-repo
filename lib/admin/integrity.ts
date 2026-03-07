@@ -27,6 +27,7 @@ import {
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import {
+  createEntryStatusRecord,
   ENTRY_STATUSES,
   isEntryStatus,
   type Entry,
@@ -182,12 +183,7 @@ function compareTime(left: string | null, right: string | null) {
 }
 
 function emptyStatusCounts(): EntryStatusCounts {
-  return {
-    DRAFT: 0,
-    PENDING_CONFIRMATION: 0,
-    APPROVED: 0,
-    REJECTED: 0,
-  };
+  return createEntryStatusRecord(() => 0);
 }
 
 function emptyCategoryCounts() {

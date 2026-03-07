@@ -161,7 +161,7 @@ test("buildExportRows applies canonical status filtering to normalized entries",
   await withSandbox("export-service-status", async (store) => {
     await store.writeCategory(email, "workshops", [
       {
-        id: "approved-legacy-source",
+        id: "approved-canonical-source",
         category: "workshops",
         eventName: "Approved Entry",
         confirmationStatus: "APPROVED",
@@ -185,7 +185,7 @@ test("buildExportRows applies canonical status filtering to normalized entries",
     if (!built.ok) return;
 
     assert.equal(built.data.rows.length, 1);
-    assert.equal(String(built.data.rows[0]?.[0] ?? ""), "approved-legacy-source");
+    assert.equal(String(built.data.rows[0]?.[0] ?? ""), "approved-canonical-source");
     assert.equal(String(built.data.rows[0]?.[1] ?? ""), "APPROVED");
     assert.equal(built.data.countsByStatus.APPROVED, 1);
   });

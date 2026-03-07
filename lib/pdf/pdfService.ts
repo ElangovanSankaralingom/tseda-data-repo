@@ -8,7 +8,7 @@ import { AppError, normalizeError } from "@/lib/errors";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { updateEntry } from "@/lib/entries/lifecycle";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { normalizeStreakState } from "@/lib/gamification";
+import { normalizeStreakState } from "@/lib/streakState";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
 import { buildEntryPdfData } from "@/lib/pdf/buildPdfData";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
