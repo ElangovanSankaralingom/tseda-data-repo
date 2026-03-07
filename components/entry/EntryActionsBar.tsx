@@ -86,7 +86,7 @@ export function HeaderEntryActionsBar({
 
   if (!isEditing && !isViewMode && onAdd) {
     return (
-      <ActionButton role="context" onClick={onAdd} disabled={loading}>
+      <ActionButton role="primary" onClick={onAdd} disabled={loading}>
         {addLabel}
       </ActionButton>
     );
@@ -124,7 +124,7 @@ export function PdfEntryActionsBar({
   return (
     <div className="flex flex-wrap gap-2">
       {!isViewMode ? (
-        <ActionButton role="context" onClick={onGenerate} disabled={!canGenerate || generating}>
+        <ActionButton role="primary" onClick={onGenerate} disabled={!canGenerate || generating}>
           {generating ? "Generating..." : "Generate Entry"}
         </ActionButton>
       ) : null}

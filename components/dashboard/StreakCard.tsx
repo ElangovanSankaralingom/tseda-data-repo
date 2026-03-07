@@ -35,10 +35,10 @@ export default function StreakCard({ type, value, isActive, subtext }: StreakCar
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border p-5 transition-shadow",
+        "relative overflow-hidden rounded-xl border p-5 transition-shadow duration-200",
         isActive
           ? cn(gradient, "ring-2 ring-amber-400/30")
-          : "border-dashed border-border bg-slate-50"
+          : "border-dashed border-slate-300 bg-slate-50"
       )}
     >
       {isActive && (

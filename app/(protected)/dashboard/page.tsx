@@ -18,7 +18,6 @@ import { authOptions } from "@/lib/auth";
 import { getDashboardSummary } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
-  adminHome,
   dataEntryHome,
   signin,
 } from "@/lib/entryNavigation";
@@ -78,29 +77,23 @@ export default async function DashboardPage() {
               {streakActivated}
             </div>
           )}
-          {canAccessAdmin && (
-            <Link
-              href={adminHome()}
-              className="inline-flex items-center rounded-xl border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted/60"
-            >
-              Admin Console
-            </Link>
-          )}
         </div>
       </div>
 
       {/* Empty state */}
       {!hasAnyEntries ? (
-        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
-          <p className="text-lg font-medium text-slate-600">No entries yet</p>
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+          <ClipboardList className="mx-auto size-12 text-slate-300" />
+          <p className="mt-3 text-base font-medium text-slate-500">
+            No entries yet
+          </p>
           <p className="mt-1 text-sm text-slate-400">
-            Start collecting data to see your progress here.
+            Start collecting data to build your streak!
           </p>
           <Link
             href={dataEntryHome()}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#2D5F8A] hover:shadow"
           >
-            <ClipboardList className="size-4" />
             Go to Data Entry
           </Link>
         </div>
@@ -108,7 +101,10 @@ export default async function DashboardPage() {
         <>
           {/* Section A — Your Streak */}
           <div>
-            <SectionHeader title="Your Streak" />
+            <SectionHeader
+              title="Your Streak"
+              description="Track your daily data entry consistency"
+            />
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               <StreakCard
                 type="active"
@@ -145,7 +141,7 @@ export default async function DashboardPage() {
           <div>
             <SectionHeader
               title="Your Progress"
-              description="Entry status across all categories"
+              description="Overview of your data entries"
             />
             <div
               className={cn(
@@ -183,9 +179,9 @@ export default async function DashboardPage() {
           <div>
             <SectionHeader
               title="Categories"
-              description="Progress per category"
+              description="Your progress by category"
             />
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
               {CATEGORY_LIST.map((slug) => {
                 const config = getCategoryConfig(slug);
                 const catData = summary.byCategory[slug];
@@ -205,33 +201,6 @@ export default async function DashboardPage() {
             </div>
           </div>
         </>
-      )}
-
-      {/* Muted streak section shown even with zero entries */}
-      {!hasAnyEntries && (
-        <div>
-          <SectionHeader title="Your Streak" />
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            <StreakCard
-              type="active"
-              value={0}
-              isActive={false}
-              subtext="Start your streak!"
-            />
-            <StreakCard
-              type="wins"
-              value={0}
-              isActive={false}
-              subtext="Complete streaks to earn wins"
-            />
-            <StreakCard
-              type="current"
-              value={0}
-              isActive={false}
-              subtext="Start your streak!"
-            />
-          </div>
-        </div>
       )}
     </div>
   );

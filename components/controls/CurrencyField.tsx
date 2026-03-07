@@ -32,10 +32,10 @@ export default function CurrencyField({
         onChange={(event) => onChange?.(event.target.value.replace(/\D/g, ""))}
         placeholder={placeholder}
         className={cx(
-          "w-full rounded-lg border bg-background pl-8 pr-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+          "w-full rounded-lg border bg-white pl-8 pr-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
           error
-            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20",
+            ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+            : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
           disabled && "opacity-60 pointer-events-none cursor-not-allowed"
         )}
       />

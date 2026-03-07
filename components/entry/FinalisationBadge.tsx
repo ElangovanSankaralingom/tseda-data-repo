@@ -22,7 +22,7 @@ function getBadgeClass(deadlineState: StreakDeadlineState) {
     return "border-amber-200 bg-amber-50 text-amber-700";
   }
 
-  return "border-border bg-background text-muted-foreground";
+  return "border-slate-200 bg-slate-50 text-slate-500";
 }
 
 export default function FinalisationBadge({

@@ -37,7 +37,7 @@ export default function CategoryEntryPageShell({
         {topContent}
 
         {loading ? (
-          <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-muted-foreground shadow-sm">
             {loadingMessage}
           </div>
         ) : null}

@@ -853,10 +853,10 @@ export function WorkshopsPage({
                         onChange={(event) => setForm((current) => ({ ...current, eventName: event.target.value }))}
                         disabled={coreFieldDisabled("eventName")}
                         className={cx(
-                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
                           submitted && errors.eventName
-                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                            ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                            : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20"
                         )}
                       />
                     </Field>
@@ -867,10 +867,10 @@ export function WorkshopsPage({
                         onChange={(event) => setForm((current) => ({ ...current, speakerName: event.target.value }))}
                         disabled={coreFieldDisabled("speakerName")}
                         className={cx(
-                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
                           submitted && errors.speakerName
-                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                            ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                            : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20"
                         )}
                       />
                     </Field>
@@ -883,16 +883,16 @@ export function WorkshopsPage({
                         }
                         disabled={coreFieldDisabled("organisationName")}
                         className={cx(
-                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
                           submitted && errors.organisationName
-                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                            ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                            : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20"
                         )}
                       />
                     </Field>
                   </div>
 
-                  <div className="mt-5 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                  <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-muted-foreground">
                     Coordinator:{" "}
                     <span className="font-medium text-foreground">
                       {currentFaculty.name || form.coordinator.name || "-"}
@@ -945,10 +945,10 @@ export function WorkshopsPage({
                         }}
                         disabled={coreFieldDisabled("participants")}
                         className={cx(
-                          "w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
                           submitted && errors.participants
-                            ? "border-red-300 focus-visible:border-red-300 focus-visible:ring-red-200/70"
-                            : "border-border hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/20"
+                            ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                            : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20"
                         )}
                       />
                     </Field>

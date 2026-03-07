@@ -74,17 +74,17 @@ export default function EntryShell({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <div className="rounded-2xl border border-border bg-card px-4 py-4 sm:px-5">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {showBack ? (
               <BackTo href={backHref} disabled={backDisabled} compact onClick={onBack} />
             ) : null}
-            <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500">
               {config.label}
             </span>
             {mode === "view" ? (
-              <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500">
                 Preview
               </span>
             ) : null}
@@ -97,7 +97,7 @@ export default function EntryShell({
           {resolvedSubtitle ? <p className="mt-2 text-sm text-muted-foreground">{resolvedSubtitle}</p> : null}
 
           {showStatusRow ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/20 px-3 py-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
               <StatusBadge status={resolvedStatus ?? "DRAFT"} />
               {meta ? <div>{meta}</div> : null}
               {showUnsavedChanges ? (
@@ -119,7 +119,7 @@ export default function EntryShell({
       {showWorkflowHelp && isEditingMode ? <WorkflowHelpStrip className="mt-4" /> : null}
 
       {isEditingMode && actions ? (
-        <div className="sticky top-14 z-20 mt-4 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
+        <div className="sticky top-14 z-40 mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           {actions}
         </div>
       ) : null}
