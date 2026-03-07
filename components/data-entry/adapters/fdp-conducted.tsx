@@ -340,7 +340,7 @@ export function FdpConductedPage({
   });
   const permissionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
-    entryId: form.id,
+    savedToServer: !!form.pdfMeta,
     upload: (file, onProgress) =>
       uploadConductedFileXHR({
         email,
