@@ -79,7 +79,8 @@ function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCat
     case "fdp-attended":
       return {
         academicYear: normalizeText(entry.academicYear),
-        semesterType: normalizeText(entry.semesterType),
+        studentYear: normalizeText(entry.studentYear),
+        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
         startDate: normalizeText(entry.startDate),
         endDate: normalizeText(entry.endDate),
         programName: normalizeText(entry.programName),
@@ -90,7 +91,8 @@ function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCat
     case "fdp-conducted":
       return {
         academicYear: normalizeText(entry.academicYear),
-        semesterType: normalizeText(entry.semesterType),
+        studentYear: normalizeText(entry.studentYear),
+        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
         startDate: normalizeText(entry.startDate),
         endDate: normalizeText(entry.endDate),
         eventName: normalizeText(entry.eventName),
@@ -100,7 +102,8 @@ function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCat
     case "case-studies":
       return {
         academicYear: normalizeText(entry.academicYear),
-        semesterType: normalizeText(entry.semesterType),
+        studentYear: normalizeText(entry.studentYear),
+        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
         startDate: normalizeText(entry.startDate),
         endDate: normalizeText(entry.endDate),
         placeOfVisit: normalizeText(entry.placeOfVisit),
@@ -111,20 +114,20 @@ function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCat
     case "guest-lectures":
       return {
         academicYear: normalizeText(entry.academicYear),
-        semesterType: normalizeText(entry.semesterType),
+        studentYear: normalizeText(entry.studentYear),
+        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
         startDate: normalizeText(entry.startDate),
         endDate: normalizeText(entry.endDate),
         eventName: normalizeText(entry.eventName),
         speakerName: normalizeText(entry.speakerName),
         organizationName: normalizeText(entry.organizationName),
-        studentYear: normalizeText(entry.studentYear),
-        semesterNumber: normalizeText(entry.semesterNumber),
       };
 
     case "workshops":
       return {
         academicYear: normalizeText(entry.academicYear),
-        semesterType: normalizeText(entry.semesterType),
+        studentYear: normalizeText(entry.studentYear),
+        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
         startDate: normalizeText(entry.startDate),
         endDate: normalizeText(entry.endDate),
         eventName: normalizeText(entry.eventName),

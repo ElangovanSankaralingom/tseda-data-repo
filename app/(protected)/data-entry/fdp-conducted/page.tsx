@@ -54,6 +54,14 @@ import {
 import { ok } from "@/lib/result";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import { uploadFile } from "@/lib/upload/uploadService";
+import {
+  allowedSemestersForYear,
+  isSemesterAllowed,
+  normalizeYearOfStudy,
+  YEAR_OF_STUDY_OPTIONS,
+  type YearOfStudy,
+} from "@/lib/student-academic";
+import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import {
@@ -67,7 +75,8 @@ type FdpConducted = {
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
-  semesterType: string;
+  yearOfStudy: YearOfStudy | "";
+  currentSemester: number | null;
   startDate: string;
   endDate: string;
   eventName: string;
@@ -100,12 +109,7 @@ const ACADEMIC_YEAR_OPTIONS = [
   "Academic Year 2027-2028",
 ] as const;
 
-const SEMESTER_TYPE_OPTIONS = ["Odd Semester", "Even Semester"] as const;
 const ACADEMIC_YEAR_DROPDOWN_OPTIONS = ACADEMIC_YEAR_OPTIONS.map((option) => ({
-  label: option,
-  value: option,
-}));
-const SEMESTER_TYPE_DROPDOWN_OPTIONS = SEMESTER_TYPE_OPTIONS.map((option) => ({
   label: option,
   value: option,
 }));
@@ -197,13 +201,14 @@ function getConductedEntrySubtitle(entry: FdpConducted) {
 }
 
 function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
-  return {
+  return withAcademicProgressionCompatibility({
     id: uuid(),
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     requestEditMessage: "",
     academicYear: "",
-    semesterType: "",
+    yearOfStudy: "",
+    currentSemester: null,
     startDate: "",
     endDate: "",
     eventName: "",
@@ -218,7 +223,7 @@ function emptyForm(currentFaculty?: CurrentFaculty): FdpConducted {
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
-  };
+  }) as FdpConducted;
 }
 
 function SectionCard({
@@ -344,11 +349,11 @@ export function FdpConductedPage({
   const generateEntrySnapshot = useGenerateEntry<FdpConducted>({
     category: "fdp-conducted",
     email,
-    hydrateEntry: (entry) => entry,
+    hydrateEntry: (entry) => withAcademicProgressionCompatibility(entry),
   });
   const commitDraftEntry = useCommitDraft<FdpConducted>({
     category: "fdp-conducted",
-    hydrateEntry: (entry) => entry,
+    hydrateEntry: (entry) => withAcademicProgressionCompatibility(entry),
   });
   const viewedEntry = useMemo(
     () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
@@ -395,7 +400,11 @@ export function FdpConductedPage({
           throw new Error(items?.error || "Failed to load FDP Conducted records.");
         }
 
-        setList(Array.isArray(items) ? (items as FdpConducted[]) : []);
+        setList(
+          Array.isArray(items)
+            ? items.map((item) => withAcademicProgressionCompatibility(item as FdpConducted))
+            : []
+        );
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to load.";
         setToast({ type: "err", msg: message });
@@ -412,8 +421,13 @@ export function FdpConductedPage({
       nextErrors.academicYear = "Academic year is required.";
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.includes(form.semesterType as (typeof SEMESTER_TYPE_OPTIONS)[number])) {
-      nextErrors.semesterType = "Semester type is required.";
+    const normalizedYear = normalizeYearOfStudy(form.yearOfStudy);
+    if (!normalizedYear) {
+      nextErrors.yearOfStudy = "Year of study is required.";
+    }
+
+    if (normalizedYear && !isSemesterAllowed(normalizedYear, form.currentSemester ?? undefined)) {
+      nextErrors.currentSemester = "Current semester is required.";
     }
 
     if (!isISODate(form.startDate)) {
@@ -454,6 +468,8 @@ export function FdpConductedPage({
   }, [form]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
+  const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
+  const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const { entryLocked, controlsDisabled, pendingCoreLocked, coreFieldDisabled } = useEntryFormAccess({
     entry: form,
     category: "fdp-conducted",
@@ -588,7 +604,9 @@ export function FdpConductedPage({
       throw new Error(items?.error || "Failed to refresh saved entries.");
     }
 
-    const nextItems = Array.isArray(items) ? (items as FdpConducted[]) : [];
+    const nextItems = Array.isArray(items)
+      ? items.map((item) => withAcademicProgressionCompatibility(item as FdpConducted))
+      : [];
     setList(nextItems);
     return nextItems;
   }
@@ -599,7 +617,7 @@ export function FdpConductedPage({
     const response = await fetch("/api/me/fdp-conducted", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, entry: nextForm }),
+      body: JSON.stringify({ email, entry: withAcademicProgressionCompatibility(nextForm) }),
     });
     const text = await response.text();
     let payload: FdpConducted | { error?: string } | null = null;
@@ -667,7 +685,7 @@ export function FdpConductedPage({
       throw new Error(message);
     }
 
-    const persisted = payload as FdpConducted;
+    const persisted = withAcademicProgressionCompatibility(payload as FdpConducted);
     void trackClientTelemetryEvent({
       event: eventName,
       category: "fdp-conducted",
@@ -813,7 +831,7 @@ export function FdpConductedPage({
       setSaveIntent,
       setToast,
       setList,
-      buildEntryToSave: () => ({ ...formRef.current }),
+      buildEntryToSave: () => withAcademicProgressionCompatibility({ ...formRef.current }),
       buildOptimisticEntry: (entryToSave) => ({
         ...entryToSave,
         updatedAt: new Date().toISOString(),
@@ -1097,14 +1115,52 @@ export function FdpConductedPage({
                 />
               </Field>
 
-              <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+              <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
                 <SelectDropdown
-                  value={form.semesterType}
-                  onChange={(value) => setForm((current) => ({ ...current, semesterType: value }))}
-                  options={SEMESTER_TYPE_DROPDOWN_OPTIONS}
-                  placeholder="Select semester type"
-                  disabled={coreFieldDisabled("semesterType")}
-                  error={submitted && !!errors.semesterType}
+                  value={form.yearOfStudy}
+                  onChange={(value) =>
+                    setForm((current) => {
+                      const nextYear = normalizeYearOfStudy(value) ?? "";
+                      const nextSemester = isSemesterAllowed(nextYear || undefined, current.currentSemester ?? undefined)
+                        ? current.currentSemester
+                        : null;
+
+                      return withAcademicProgressionCompatibility({
+                        ...current,
+                        yearOfStudy: nextYear,
+                        currentSemester: nextSemester,
+                      }) as FdpConducted;
+                    })
+                  }
+                  options={YEAR_OF_STUDY_OPTIONS}
+                  placeholder="Select year of study"
+                  disabled={coreFieldDisabled("yearOfStudy")}
+                  error={submitted && !!errors.yearOfStudy}
+                />
+              </Field>
+
+              <Field
+                label="Current Semester"
+                error={submitted ? errors.currentSemester : undefined}
+                hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
+              >
+                <SelectDropdown
+                  value={form.currentSemester === null ? "" : String(form.currentSemester)}
+                  onChange={(value) =>
+                    setForm((current) =>
+                      withAcademicProgressionCompatibility({
+                        ...current,
+                        currentSemester: value ? Number(value) : null,
+                      }) as FdpConducted
+                    )
+                  }
+                  options={semesterOptions.map((option) => ({
+                    label: String(option),
+                    value: String(option),
+                  }))}
+                  placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
+                  disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
+                  error={submitted && !!errors.currentSemester}
                 />
               </Field>
 
@@ -1351,7 +1407,8 @@ export function FdpConductedPage({
                             <div className="min-w-0">
                               <div className="text-xs text-muted-foreground">
                                 Academic Year: {entry.academicYear || "-"} {" • "}
-                                Semester: {entry.semesterType || "-"} {" • "}
+                                Year of Study: {entry.yearOfStudy || "-"} {" • "}
+                                Current Semester: {entry.currentSemester ?? "-"} {" • "}
                                 Start: {formatDisplayDate(entry.startDate)} {" • "}
                                 End: {formatDisplayDate(entry.endDate)} {" • "}
                                 Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
@@ -1450,7 +1507,8 @@ export function FdpConductedPage({
                             <div className="min-w-0">
                               <div className="text-xs text-muted-foreground">
                                 Academic Year: {entry.academicYear || "-"} {" • "}
-                                Semester: {entry.semesterType || "-"} {" • "}
+                                Year of Study: {entry.yearOfStudy || "-"} {" • "}
+                                Current Semester: {entry.currentSemester ?? "-"} {" • "}
                                 Start: {formatDisplayDate(entry.startDate)} {" • "}
                                 End: {formatDisplayDate(entry.endDate)} {" • "}
                                 Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}
@@ -1601,7 +1659,8 @@ export function FdpConductedPage({
                             <div className="min-w-0">
                               <div className="text-xs text-muted-foreground">
                                 Academic Year: {entry.academicYear || "-"} {" • "}
-                                Semester: {entry.semesterType || "-"} {" • "}
+                                Year of Study: {entry.yearOfStudy || "-"} {" • "}
+                                Current Semester: {entry.currentSemester ?? "-"} {" • "}
                                 Start: {formatDisplayDate(entry.startDate)} {" • "}
                                 End: {formatDisplayDate(entry.endDate)} {" • "}
                                 Days: {getInclusiveDays(entry.startDate, entry.endDate) ?? "-"}

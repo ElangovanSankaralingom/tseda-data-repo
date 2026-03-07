@@ -53,6 +53,14 @@ import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigatio
 import { nowISTTimestampISO } from "@/lib/gamification";
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
+  allowedSemestersForYear,
+  isSemesterAllowed,
+  normalizeYearOfStudy,
+  YEAR_OF_STUDY_OPTIONS,
+  type YearOfStudy,
+} from "@/lib/student-academic";
+import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
+import {
   createOptimisticSnapshot,
   optimisticRemove,
 } from "@/lib/ui/optimistic";
@@ -86,7 +94,8 @@ type WorkshopEntry = {
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
   academicYear: string;
-  semesterType: "Odd" | "Even" | "";
+  yearOfStudy: YearOfStudy | "";
+  currentSemester: number | null;
   startDate: string;
   endDate: string;
   eventName: string;
@@ -123,11 +132,6 @@ const ACADEMIC_YEAR_DROPDOWN_OPTIONS = ACADEMIC_YEAR_OPTIONS.map((option) => ({
   label: option,
   value: option,
 }));
-
-const SEMESTER_TYPE_OPTIONS = [
-  { value: "Odd", label: "Odd Semester" },
-  { value: "Even", label: "Even Semester" },
-] as const;
 
 const UPLOAD_CONFIG: Array<{ slot: UploadSlot; label: string }> = [
   { slot: "permissionLetter", label: "Permission Letter" },
@@ -224,12 +228,13 @@ function formatFacultyDisplay(selection: FacultyRowValue) {
 }
 
 function createEmptyForm(currentFaculty?: FacultyRowValue): WorkshopEntry {
-  return {
+  return withAcademicProgressionCompatibility({
     id: uuid(),
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     academicYear: "",
-    semesterType: "",
+    yearOfStudy: "",
+    currentSemester: null,
     startDate: "",
     endDate: "",
     eventName: "",
@@ -248,11 +253,13 @@ function createEmptyForm(currentFaculty?: FacultyRowValue): WorkshopEntry {
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
-  };
+  }) as WorkshopEntry;
 }
 
 function hydrateEntry(entry: WorkshopEntry): WorkshopEntry {
-  return hydratePdfSnapshot(entry, "workshops") as WorkshopEntry;
+  return withAcademicProgressionCompatibility(
+    hydratePdfSnapshot(entry, "workshops") as WorkshopEntry
+  ) as WorkshopEntry;
 }
 
 function SectionCard({
@@ -432,8 +439,13 @@ export function WorkshopsPage({
       nextErrors.academicYear = "Academic year is required.";
     }
 
-    if (!SEMESTER_TYPE_OPTIONS.some((option) => option.value === form.semesterType)) {
-      nextErrors.semesterType = "Semester type is required.";
+    const normalizedYear = normalizeYearOfStudy(form.yearOfStudy);
+    if (!normalizedYear) {
+      nextErrors.yearOfStudy = "Year of study is required.";
+    }
+
+    if (normalizedYear && !isSemesterAllowed(normalizedYear, form.currentSemester ?? undefined)) {
+      nextErrors.currentSemester = "Current semester is required.";
     }
 
     if (!isISODate(form.startDate)) {
@@ -496,6 +508,8 @@ export function WorkshopsPage({
   }, [form, currentFaculty.email]);
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
+  const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
+  const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const hasBusyUploads =
     Object.values(singleUploadStatus).some((status) => status.busy) || photoUploadStatus.busy;
   const formDirty = stableStringify(form) !== lastPersistedSnapshot;
@@ -620,7 +634,7 @@ export function WorkshopsPage({
     const response = await fetch("/api/me/workshops", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, entry: nextForm }),
+      body: JSON.stringify({ email, entry: withAcademicProgressionCompatibility(nextForm) }),
     });
     const { message, payload } = await parseApiError(response, "Save failed");
 
@@ -677,7 +691,7 @@ export function WorkshopsPage({
       throw new Error(message);
     }
 
-    const persisted = payload as WorkshopEntry;
+    const persisted = hydrateEntry(payload as WorkshopEntry);
     void trackClientTelemetryEvent({
       event: eventName,
       category: "workshops",
@@ -779,10 +793,10 @@ export function WorkshopsPage({
       setList,
       buildEntryToSave: () => {
         const latestForm = formRef.current;
-        return {
+        return withAcademicProgressionCompatibility({
           ...latestForm,
           coordinator: currentFaculty.email ? currentFaculty : latestForm.coordinator,
-        };
+        }) as WorkshopEntry;
       },
       buildOptimisticEntry: (entryToSave) =>
         hydrateEntry({
@@ -1101,7 +1115,7 @@ export function WorkshopsPage({
           </div>
 
           <div className="text-sm text-muted-foreground">
-            {entry.academicYear} • {entry.semesterType} Semester
+            {entry.academicYear} • {entry.yearOfStudy || "-"} • Semester {entry.currentSemester ?? "-"}
           </div>
           <div className="text-sm text-muted-foreground">
             Start: {formatDisplayDate(entry.startDate)} • End: {formatDisplayDate(entry.endDate)} • Days: {days ?? "-"}
@@ -1220,19 +1234,52 @@ export function WorkshopsPage({
                 />
               </Field>
 
-              <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+              <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
                 <SelectDropdown
-                  value={form.semesterType}
+                  value={form.yearOfStudy}
                   onChange={(value) =>
-                    setForm((current) => ({
-                      ...current,
-                      semesterType: value as WorkshopEntry["semesterType"],
-                    }))
+                    setForm((current) => {
+                      const nextYear = normalizeYearOfStudy(value) ?? "";
+                      const nextSemester = isSemesterAllowed(nextYear || undefined, current.currentSemester ?? undefined)
+                        ? current.currentSemester
+                        : null;
+
+                      return withAcademicProgressionCompatibility({
+                        ...current,
+                        yearOfStudy: nextYear,
+                        currentSemester: nextSemester,
+                      }) as WorkshopEntry;
+                    })
                   }
-                  options={SEMESTER_TYPE_OPTIONS}
-                  placeholder="Select semester type"
-                  disabled={coreFieldDisabled("semesterType")}
-                  error={submitted && !!errors.semesterType}
+                  options={YEAR_OF_STUDY_OPTIONS}
+                  placeholder="Select year of study"
+                  disabled={coreFieldDisabled("yearOfStudy")}
+                  error={submitted && !!errors.yearOfStudy}
+                />
+              </Field>
+
+              <Field
+                label="Current Semester"
+                error={submitted ? errors.currentSemester : undefined}
+                hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
+              >
+                <SelectDropdown
+                  value={form.currentSemester === null ? "" : String(form.currentSemester)}
+                  onChange={(value) =>
+                    setForm((current) =>
+                      withAcademicProgressionCompatibility({
+                        ...current,
+                        currentSemester: value ? Number(value) : null,
+                      }) as WorkshopEntry
+                    )
+                  }
+                  options={semesterOptions.map((option) => ({
+                    label: String(option),
+                    value: String(option),
+                  }))}
+                  placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
+                  disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
+                  error={submitted && !!errors.currentSemester}
                 />
               </Field>
 

@@ -31,7 +31,8 @@ function buildUploadedFile(seed: string) {
 function buildCompleteWorkshopPayload() {
   return {
     academicYear: "Academic Year 2025-2026",
-    semesterType: "Odd",
+    yearOfStudy: "2nd year",
+    currentSemester: 3,
     startDate: "2025-08-10",
     endDate: "2025-08-12",
     eventName: "WAL Workshop",
