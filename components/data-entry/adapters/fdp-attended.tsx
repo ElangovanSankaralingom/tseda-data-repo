@@ -306,7 +306,7 @@ export function FdpAttendedPage({
   });
   const permissionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
-    entryId: form.id,
+    savedToServer: !!form.pdfMeta,
     upload: (file, onProgress) =>
       uploadFdpFileXHR({
         recordId: form.id,
@@ -328,7 +328,7 @@ export function FdpAttendedPage({
   });
   const completionController = useUploadController<FileMeta>({
     locked: controlsDisabled,
-    entryId: form.id,
+    savedToServer: !!form.pdfMeta,
     upload: (file, onProgress) =>
       uploadFdpFileXHR({
         recordId: form.id,
