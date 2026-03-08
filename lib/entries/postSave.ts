@@ -1,13 +1,17 @@
 /**
  * Post-save entry normalization.
  *
- * Called from engine.ts before every entry write to ensure streak fields
- * are correct. This is the SINGLE SOURCE OF TRUTH for deriving
- * pdfGenerated and streakEligible from entry data.
+ * Called from engine.ts's prepareEntryForWrite() before every entry write.
+ * This is the SINGLE SOURCE OF TRUTH for deriving pdfGenerated and
+ * streakEligible from entry data.
  *
- * Why here: 5 separate API routes save entries independently. Rather than
- * patching each route, this function runs in the engine's single write
- * chokepoint so no route can miss it.
+ * Architecture: All 5 category API routes call createEntry()/updateEntry()
+ * from lib/entries/lifecycle.ts → engine.ts. The engine's
+ * prepareEntryForWrite() calls normalizeEntryStreakFields() before every
+ * upsert, so no route can miss it.
+ *
+ * Also exported for read-time normalization (e.g. dashboard) to fix old
+ * entries that were created before these fields existed.
  */
 
 import { nowISTDateISO } from "@/lib/time";
@@ -28,7 +32,9 @@ function hasPdfMeta(entry: Record<string, unknown>): boolean {
 }
 
 /**
- * Normalizes streak-related fields on an entry before it is persisted.
+ * Normalizes streak-related fields on an entry.
+ *
+ * Called both at write-time (engine.ts) and read-time (dashboard).
  *
  * Rules:
  * 1. pdfGenerated must be true if pdfMeta exists with valid data, or if
@@ -37,7 +43,9 @@ function hasPdfMeta(entry: Record<string, unknown>): boolean {
  * 2. streakEligible is only set when pdfGenerated is true (checkpoint 1
  *    rule: Generate PDF is the gate to streak eligibility). Based on
  *    whether endDate is in the future (IST).
- * 3. Does NOT touch pdfStale — that is computed by the routes using
+ * 3. editWindowExpiresAt safety net: if status is GENERATED but field is
+ *    missing, backfill from committedAtISO + 3 days.
+ * 4. Does NOT touch pdfStale — that is computed by the routes using
  *    pdfSourceHash comparison.
  */
 export function normalizeEntryStreakFields(
@@ -73,6 +81,49 @@ export function normalizeEntryStreakFields(
   }
   // If pdfGenerated is not true, don't touch streakEligible — it stays
   // as whatever it was (typically undefined/false for draft entries).
+
+  // 3. editWindowExpiresAt safety net: if GENERATED but missing expiry,
+  //    backfill from committedAtISO/generatedAt + DEFAULT_EDIT_WINDOW_DAYS.
+  //    The canonical path (commitDraft in engine.ts) always sets this via
+  //    computeEditWindowExpiry(), but old entries may lack it.
+  const status = entry.confirmationStatus ?? entry.status;
+  if (
+    status === "GENERATED" &&
+    !entry.editWindowExpiresAt &&
+    entry.pdfGenerated === true
+  ) {
+    const baseISO =
+      (typeof entry.committedAtISO === "string" && entry.committedAtISO.trim()
+        ? entry.committedAtISO
+        : typeof entry.generatedAt === "string" && entry.generatedAt.trim()
+          ? entry.generatedAt
+          : typeof entry.pdfGeneratedAt === "string" && entry.pdfGeneratedAt.trim()
+            ? entry.pdfGeneratedAt
+            : null) as string | null;
+
+    if (baseISO) {
+      const DEFAULT_EDIT_WINDOW_DAYS = 3;
+      const STREAK_BUFFER_DAYS = 8;
+      const defaultExpiry = new Date(
+        new Date(baseISO).getTime() + DEFAULT_EDIT_WINDOW_DAYS * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      if (
+        entry.streakEligible === true &&
+        typeof entry.endDate === "string" &&
+        entry.endDate.trim()
+      ) {
+        const endDateExpiry = new Date(
+          new Date(entry.endDate.trim() + "T23:59:59.999Z").getTime() +
+            STREAK_BUFFER_DAYS * 24 * 60 * 60 * 1000
+        ).toISOString();
+        entry.editWindowExpiresAt =
+          endDateExpiry > defaultExpiry ? endDateExpiry : defaultExpiry;
+      } else {
+        entry.editWindowExpiresAt = defaultExpiry;
+      }
+    }
+  }
 
   return entry;
 }
