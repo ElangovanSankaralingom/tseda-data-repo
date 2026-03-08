@@ -6,32 +6,26 @@ import { signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import {
-  BookOpen,
   ChevronDown,
   ClipboardList,
-  FileText,
   LayoutDashboard,
   LogOut,
-  Mic,
-  Presentation,
   Search,
   Shield,
   Sun,
   User,
-  Wrench,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import AdminNotificationBell from "@/components/confirmations/AdminNotificationBell";
 import NotificationBell from "@/components/confirmations/NotificationBell";
 import { useSearch } from "@/components/search/SearchProvider";
-import { CATEGORY_LIST, getCategoryConfig, type CategorySlug } from "@/data/categoryRegistry";
 import { isMasterAdmin } from "@/lib/admin";
 import {
   adminHome,
   dashboard,
   dataEntryHome,
   dataEntrySearch,
-  entryList,
   profile,
   signin,
 } from "@/lib/entryNavigation";
@@ -42,31 +36,6 @@ import { notifyError, notifySuccess } from "@/lib/ui/notify";
 import { cn } from "@/lib/utils";
 
 const ENABLE_RESET = true;
-
-// Category icons & accent colors for the sidebar
-const CATEGORY_ICONS: Record<CategorySlug, LucideIcon> = {
-  "fdp-attended": BookOpen,
-  "fdp-conducted": Presentation,
-  "case-studies": FileText,
-  "guest-lectures": Mic,
-  workshops: Wrench,
-};
-
-const CATEGORY_ACCENT_BG: Record<CategorySlug, string> = {
-  "fdp-attended": "bg-blue-100",
-  "fdp-conducted": "bg-emerald-100",
-  "case-studies": "bg-purple-100",
-  "guest-lectures": "bg-amber-100",
-  workshops: "bg-rose-100",
-};
-
-const CATEGORY_ACCENT_ICON: Record<CategorySlug, string> = {
-  "fdp-attended": "text-blue-600",
-  "fdp-conducted": "text-emerald-600",
-  "case-studies": "text-purple-600",
-  "guest-lectures": "text-amber-600",
-  workshops: "text-rose-600",
-};
 
 // --- Animated Hamburger Icon ---
 
@@ -408,6 +377,10 @@ export default function ShellClient({
   const panelRef = useRef<HTMLElement | null>(null);
   const scrolled = useScrolled(0);
 
+  // Coordinate bell panels — only one open at a time
+  const [adminBellOpen, setAdminBellOpen] = useState(false);
+  const [userBellOpen, setUserBellOpen] = useState(false);
+
   // Fetch profile for menu
   useEffect(() => {
     let ignore = false;
@@ -487,21 +460,6 @@ export default function ShellClient({
   const profilePhoto = String(menuProfile?.googlePhotoURL ?? "").trim();
   const profileInitials = getInitials(profileName, profileEmail);
   const profileDesignation = menuProfile?.designation ?? null;
-
-  // Category items
-  const categoryItems = useMemo(() => {
-    return CATEGORY_LIST.map((slug) => {
-      const config = getCategoryConfig(slug);
-      return {
-        slug,
-        label: config.label,
-        href: entryList(slug),
-        Icon: CATEGORY_ICONS[slug],
-        accentBg: CATEGORY_ACCENT_BG[slug],
-        accentIcon: CATEGORY_ACCENT_ICON[slug],
-      };
-    });
-  }, []);
 
   async function handleResetConfirm() {
     if (resetBusy) return;
@@ -611,7 +569,16 @@ export default function ShellClient({
           {/* ── Right: Utilities ── */}
           <div className="flex items-center gap-1">
             <SearchTrigger />
-            <NotificationBell />
+            {canAccessAdmin && (
+              <AdminNotificationBell
+                onPanelToggle={setAdminBellOpen}
+                forceClose={userBellOpen}
+              />
+            )}
+            <NotificationBell
+              onPanelToggle={setUserBellOpen}
+              forceClose={adminBellOpen}
+            />
             <ProfileDropdown
               name={profileName}
               email={profileEmail}
@@ -739,33 +706,6 @@ export default function ShellClient({
             </>
           ) : null}
 
-          {/* 3. Category quick links */}
-          <div className="my-2 h-px bg-slate-100" />
-          <div className="px-3 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Categories</span>
-          </div>
-          <nav className="space-y-0.5 overflow-y-auto sm:max-h-none max-h-[40vh]">
-            {categoryItems.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={cat.href}
-                onClick={closeMenu}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150",
-                  isActive(cat.href)
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-50",
-                  open ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-                )}
-                style={{ transitionDelay: open ? `${30 * navIndex++}ms` : "0ms" }}
-              >
-                <span className={cn("flex size-6 items-center justify-center rounded-full", cat.accentBg)}>
-                  <cat.Icon className={cn("size-3.5", isActive(cat.href) ? "text-white" : cat.accentIcon)} />
-                </span>
-                <span className="flex-1 truncate">{cat.label}</span>
-              </Link>
-            ))}
-          </nav>
         </div>
 
         {/* 4. Bottom section */}

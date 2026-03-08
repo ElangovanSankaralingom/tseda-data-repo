@@ -7,6 +7,7 @@ import { canManageEditRequests } from "@/lib/admin/roles";
 import { getPendingEditRequests } from "@/lib/admin/pendingConfirmations";
 import {
   grantEditAccess,
+  rejectEditRequest,
 } from "@/lib/entries/lifecycle";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -55,13 +56,15 @@ export async function PATCH(request: Request) {
       ownerEmail?: string;
       categoryKey?: string;
       entryId?: string;
-      decision?: "grant";
+      decision?: "grant" | "reject";
+      reason?: string;
     };
     assertActionPayload(body, "admin edit request", SECURITY_LIMITS.actionPayloadMaxBytes);
     const ownerEmail = normalizeEmail(String(body.ownerEmail ?? ""));
     const categoryKey = String(body.categoryKey ?? "").trim();
     const entryId = String(body.entryId ?? "").trim();
     const decision = body.decision;
+    const reason = String(body.reason ?? "").trim();
 
     if (!ownerEmail || !ownerEmail.endsWith("@tce.edu")) {
       return NextResponse.json({ error: "ownerEmail required" }, { status: 400 });
@@ -72,11 +75,16 @@ export async function PATCH(request: Request) {
     if (!entryId) {
       return NextResponse.json({ error: "entryId required" }, { status: 400 });
     }
-    if (decision !== "grant") {
-      return NextResponse.json({ error: "decision must be 'grant'" }, { status: 400 });
+    if (decision !== "grant" && decision !== "reject") {
+      return NextResponse.json({ error: "decision must be 'grant' or 'reject'" }, { status: 400 });
     }
 
-    const updatedEntry = await grantEditAccess(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId);
+    let updatedEntry;
+    if (decision === "reject") {
+      updatedEntry = await rejectEditRequest(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId, reason || undefined);
+    } else {
+      updatedEntry = await grantEditAccess(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId);
+    }
 
     const categoryRoute = entryList(categoryKey as CategoryKey);
     revalidatePath(dashboard());

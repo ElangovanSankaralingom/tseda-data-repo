@@ -230,6 +230,8 @@ export default function CategoryEntryPageShell({
     const editable = entry ? isEntryEditable(entry) : true;
     const editTime = entry ? getEditTimeRemaining(entry) : null;
     const status = typeof entry?.confirmationStatus === "string" ? entry.confirmationStatus : null;
+    const allFieldsComplete = progress.total > 0 && progress.completed === progress.total;
+    const canFinalise = isGenerated && editable && allFieldsComplete;
 
     return (
       <EntryShell {...entryShell}>
@@ -241,6 +243,7 @@ export default function CategoryEntryPageShell({
             isGenerated={isGenerated}
             streakEligible={streakEligible}
             editTimeLabel={editTime?.hasEditWindow && !editTime.expired ? editTime.remainingLabel : undefined}
+            canFinalise={canFinalise}
           />
 
           {/* Status banners */}
@@ -249,6 +252,8 @@ export default function CategoryEntryPageShell({
             isEditable={editable}
             editTimeLabel={editTime?.hasEditWindow && !editTime.expired ? editTime.remainingLabel : undefined}
             editTimeMs={editTime?.remainingMs}
+            expiresAtISO={editTime?.expiresAtISO}
+            hasPdf={!!entry?.pdfMeta}
             onRequestEdit={onRequestEdit}
             onCancelRequest={onCancelRequestEdit}
           />

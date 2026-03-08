@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { ScrollText } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AuditDashboard from "@/components/admin/AuditDashboard";
 import { authOptions } from "@/lib/auth";
@@ -30,6 +31,7 @@ export default async function AdminAuditPage() {
       title="Audit Trail"
       subtitle="Complete history of all entry mutations, uploads, and workflow changes across all users."
       backHref={adminHome()}
+      icon={ScrollText}
     >
       <AuditDashboard initialEvents={events} initialStats={stats} />
     </AdminPageShell>

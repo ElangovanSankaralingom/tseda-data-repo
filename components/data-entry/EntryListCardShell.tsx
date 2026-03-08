@@ -113,29 +113,29 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
   return null;
 }
 
+function getEditTimeUrgencyClass(remainingMs: number): string {
+  if (remainingMs < 24 * 60 * 60 * 1000) return "text-red-600 font-semibold";
+  if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-600";
+  return "text-slate-500";
+}
+
 function TimeInfo({ group, editTime, createdAt, updatedAt }: {
   group: EntryListGroup;
   editTime?: EditTimeRemaining;
   createdAt?: string;
   updatedAt?: string;
 }) {
-  // Editable entries with time remaining
-  if (editTime?.hasEditWindow && !editTime.expired) {
-    const hours = Math.floor(editTime.remainingMs / (60 * 60 * 1000));
-    const days = Math.floor(hours / 24);
-    const isUrgent = editTime.remainingMs < 24 * 60 * 60 * 1000;
-    const isWarning = editTime.remainingMs < 3 * 24 * 60 * 60 * 1000;
+  const showCountdown = group === "streak_runners" || group === "on_the_clock" || group === "unlocked";
 
-    const colorClass = isUrgent
-      ? "text-red-600 font-semibold"
-      : isWarning
-        ? "text-amber-600"
-        : "text-slate-500";
+  // Editable entries with time remaining
+  if (showCountdown && editTime?.hasEditWindow && !editTime.expired) {
+    const isUrgent = editTime.remainingMs < 24 * 60 * 60 * 1000;
+    const colorClass = getEditTimeUrgencyClass(editTime.remainingMs);
 
     return (
       <span className={`inline-flex items-center gap-1 text-xs ${colorClass}`}>
-        <Clock className={`size-3 ${isUrgent ? "animate-subtle-pulse" : ""}`} />
-        {days > 0 ? `${days}d ${hours % 24}h remaining` : `${hours}h remaining`}
+        <Clock className={`size-3.5 ${isUrgent ? "animate-subtle-pulse" : ""}`} />
+        {isUrgent && editTime.remainingMs < 60 * 60 * 1000 ? "Expires today!" : editTime.remainingLabel}
       </span>
     );
   }
@@ -150,12 +150,6 @@ function TimeInfo({ group, editTime, createdAt, updatedAt }: {
   if (group === "under_review") {
     const time = formatRelativeTime(updatedAt || createdAt);
     return time ? <span className="text-xs text-amber-600">Requested {time}</span> : null;
-  }
-
-  // Unlocked (edit granted)
-  if (group === "unlocked") {
-    const time = formatRelativeTime(updatedAt);
-    return time ? <span className="text-xs text-purple-600">Edit access granted {time}</span> : null;
   }
 
   // Finalized
