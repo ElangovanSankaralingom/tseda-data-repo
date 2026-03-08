@@ -15,7 +15,7 @@ const fields = [
   { key: "yearOfStudy", label: "Year of Study", kind: "string", enumValues: YEAR_OF_STUDY_VALUES },
   { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10 },
   { key: "participants", label: "Participants", kind: "number" },
-  { key: "uploads", label: "Uploads", kind: "object" },
+  { key: "uploads", label: "Uploads", kind: "object", upload: true },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
@@ -45,11 +45,6 @@ export const guestLecturesSchema: EntrySchema = {
     "organizationName",
     "yearOfStudy",
     "currentSemester",
-    "uploads.permissionLetter",
-    "uploads.brochure",
-    "uploads.attendance",
-    "uploads.speakerProfile",
-    "uploads.geotaggedPhotos",
   ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);
