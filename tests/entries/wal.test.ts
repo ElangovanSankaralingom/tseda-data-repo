@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   commitDraft,
   createEntry,
+  finalizeEntry,
   requestEdit,
   grantEditAccess,
   updateEntry,
@@ -66,6 +67,7 @@ test("entry mutations append WAL events with action and actor metadata", async (
       eventName: "WAL Workshop Updated",
     });
     await commitDraft(ownerEmail, "workshops", String(created.id));
+    await finalizeEntry(ownerEmail, "workshops", String(created.id));
     await requestEdit(ownerEmail, "workshops", String(created.id));
     await grantEditAccess(adminEmail, "workshops", ownerEmail, String(created.id));
 

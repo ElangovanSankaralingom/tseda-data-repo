@@ -12,8 +12,8 @@ const fields = [
   { key: "programName", label: "Program Name", kind: "string" },
   { key: "organisingBody", label: "Organising Body", kind: "string" },
   { key: "supportAmount", label: "Support Amount", kind: "number" },
-  { key: "permissionLetter", label: "Permission Letter", kind: "object" },
-  { key: "completionCertificate", label: "Completion Certificate", kind: "object" },
+  { key: "permissionLetter", label: "Permission Letter", kind: "object", upload: true },
+  { key: "completionCertificate", label: "Completion Certificate", kind: "object", upload: true },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
@@ -39,8 +39,6 @@ export const fdpAttendedSchema: EntrySchema = {
     "endDate",
     "programName",
     "organisingBody",
-    "permissionLetter",
-    "completionCertificate",
   ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);

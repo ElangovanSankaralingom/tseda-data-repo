@@ -23,6 +23,8 @@ export type SchemaFieldDefinition = {
   label: string;
   kind: SchemaFieldKind;
   required?: boolean;
+  /** If true, this field is a file upload and is excluded from mandatory-for-streak checks. */
+  upload?: boolean;
   maxLength?: number;
   min?: number;
   max?: number;

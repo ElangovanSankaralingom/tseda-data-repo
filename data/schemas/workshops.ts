@@ -15,7 +15,7 @@ const fields = [
   { key: "coordinator", label: "Coordinator", kind: "object" },
   { key: "coCoordinators", label: "Co-Coordinators", kind: "array" },
   { key: "participants", label: "Participants", kind: "number" },
-  { key: "uploads", label: "Uploads", kind: "object" },
+  { key: "uploads", label: "Uploads", kind: "object", upload: true },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
@@ -45,11 +45,6 @@ export const workshopsSchema: EntrySchema = {
     "eventName",
     "speakerName",
     "organisationName",
-    "uploads.permissionLetter",
-    "uploads.brochure",
-    "uploads.attendance",
-    "uploads.organiserProfile",
-    "uploads.geotaggedPhotos",
   ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);

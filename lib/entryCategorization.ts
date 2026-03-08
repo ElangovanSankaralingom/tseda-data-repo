@@ -25,6 +25,11 @@ export type CategorizableEntry = {
   updatedAt?: string | null;
   status?: string | null;
   streak?: unknown;
+  streakEligible?: boolean | null;
+  streakPermanentlyRemoved?: boolean | null;
+  pdfGenerated?: boolean | null;
+  pdfGeneratedAt?: string | null;
+  editWindowExpiresAt?: string | null;
 };
 
 function parseTimestamp(value?: string | null) {
@@ -43,22 +48,32 @@ export function isEntryCompleted(entry: CategorizableEntry): boolean {
   return isEntryCommitted(entry as EntryStateLike);
 }
 
+function hasGeneratedPdf(entry: CategorizableEntry): boolean {
+  if (entry.pdfGenerated === true) return true;
+  if (typeof entry.pdfGeneratedAt === "string" && entry.pdfGeneratedAt.trim()) return true;
+  return false;
+}
+
 export function isStreakCompleted(entry: CategorizableEntry): boolean {
-  const explicitState = normalizeTextValue(entry.streakState);
-  if (explicitState === "completed") return true;
-  const explicitCompletion = normalizeTextValue(entry.completionState);
-  if (explicitCompletion === "completed") return true;
+  // Canonical: streak-eligible + pdfGenerated + finalized
+  if (entry.streakEligible === true && hasGeneratedPdf(entry)) {
+    return isEntryFinalized(entry as EntryStateLike);
+  }
   return false;
 }
 
 export function isStreakActivated(entry: CategorizableEntry): boolean {
-  if (isStreakCompleted(entry)) return false;
+  // Canonical: streak-eligible + pdfGenerated + GENERATED + not finalized + not permanently removed
+  if (entry.streakEligible !== true) return false;
+  if (entry.streakPermanentlyRemoved === true) return false;
+  if (!hasGeneratedPdf(entry)) return false;
 
-  const explicitState = normalizeTextValue(entry.streakState);
-  if (explicitState === "activated") return true;
-  if (explicitState === "none") return false;
+  const status = normalizeEntryStatus(entry as EntryStateLike);
+  if (status === "DRAFT" || status === "ARCHIVED") return false;
 
-  return isEntryCommitted(entry as EntryStateLike);
+  if (isEntryFinalized(entry as EntryStateLike)) return false;
+
+  return true;
 }
 
 export function getEntryCompletionState(entry: CategorizableEntry): EntryCompletionState {

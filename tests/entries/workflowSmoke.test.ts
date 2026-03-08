@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   commitDraft,
   createEntry,
+  finalizeEntry,
   requestEdit,
   grantEditAccess,
   updateEntry,
@@ -86,7 +87,12 @@ test("workflow smoke: draft, generate, edit request, grant, and export", async (
     assert.equal(String(reopened.speakerName ?? ""), "Reopened Speaker");
     assert.equal(isEntryEditable(reopened), true);
 
-    // Request edit after generation
+    // Finalise the entry (required before requesting edit — only finalized entries)
+    const finalized = await finalizeEntry(ownerEmail, "workshops", entryId);
+    assert.equal(String(finalized.confirmationStatus ?? ""), "GENERATED");
+    assert.equal(isEntryEditable(finalized), false);
+
+    // Request edit after finalization
     const editRequested = await requestEdit(ownerEmail, "workshops", entryId);
     assert.equal(String(editRequested.confirmationStatus ?? ""), "EDIT_REQUESTED");
     assert.ok(editRequested.editRequestedAt);

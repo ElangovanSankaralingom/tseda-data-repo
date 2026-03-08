@@ -61,6 +61,7 @@ export type EntryStateLike = {
   archiveReason?: unknown;
   endDate?: unknown;
   streakEligible?: unknown;
+  streakPermanentlyRemoved?: unknown;
   updatedAt?: unknown;
   pdfGenerated?: unknown;
   pdfGeneratedAt?: unknown;

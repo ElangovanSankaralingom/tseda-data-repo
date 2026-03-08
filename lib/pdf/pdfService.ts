@@ -6,9 +6,10 @@ import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { readCategoryEntryById } from "@/lib/dataStore";
 import { AppError, normalizeError } from "@/lib/errors";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { updateEntry } from "@/lib/entries/lifecycle";
+import { commitDraft, updateEntry } from "@/lib/entries/lifecycle";
+import { normalizeEntryStatus } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { normalizeStreakState } from "@/lib/streakState";
+import { checkStreakEligibility } from "@/lib/streakProgress";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
 import { buildEntryPdfData } from "@/lib/pdf/buildPdfData";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
@@ -56,13 +57,15 @@ async function getAuthorizedTceEmail() {
 }
 
 function buildPdfPatch(entry: Entry, category: CategoryKey, pdfMeta: Entry["pdfMeta"]) {
-  const nextStreak = normalizeStreakState(entry.streak);
+  const streakEligible = checkStreakEligibility(entry);
 
   return {
     pdfMeta,
     pdfSourceHash: hashPrePdfFields(entry as Record<string, unknown>, category),
     pdfStale: false,
-    streak: nextStreak,
+    pdfGenerated: true,
+    pdfGeneratedAt: pdfMeta?.generatedAtISO ?? new Date().toISOString(),
+    streakEligible,
   };
 }
 
@@ -72,7 +75,7 @@ export async function generateAndPersistEntryPdf(args: GeneratePdfArgs) {
     throw new AppError({ code: "VALIDATION_ERROR", message: "id required" });
   }
 
-  const entry = await readCategoryEntryById(args.email, args.category, entryId);
+  let entry = await readCategoryEntryById(args.email, args.category, entryId);
   if (!entry) {
     throw new AppError({ code: "NOT_FOUND", message: "Entry not found" });
   }
@@ -81,6 +84,12 @@ export async function generateAndPersistEntryPdf(args: GeneratePdfArgs) {
       code: "VALIDATION_ERROR",
       message: "Complete all required fields before generating the entry.",
     });
+  }
+
+  // Auto-transition DRAFT → GENERATED when generating PDF
+  const currentStatus = normalizeEntryStatus(entry as Entry);
+  if (currentStatus === "DRAFT") {
+    entry = await commitDraft(args.email, args.category, entryId);
   }
 
   const pdfData = buildEntryPdfData(args.category, entry as Entry);

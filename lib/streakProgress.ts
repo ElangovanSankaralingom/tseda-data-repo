@@ -6,24 +6,27 @@
  * - streak eligibility checking lives here
  * - cache/snapshot readers may consume this output, but must not redefine it
  *
- * Rules:
- * - streakActivated: eligible generated entries that are NOT yet fully complete (in-progress)
- * - streakWins: eligible generated entries that ARE fully complete (all fields filled)
- * - activated and wins are mutually exclusive — an entry is either one or the other
- * - streakActivated + streakWins = total eligible generated entries
- * - An entry is streak-eligible ONLY if its endDate was in the future at Generate time
- * - Eligibility is checked once at Generate time and stored as streakEligible: true
- * - Both are lifetime counters computed from actual entry data
- * - No daily streaks, no time windows, no consecutive days
+ * Two counters (mutually exclusive):
+ * - **Activated** = streak-eligible + GENERATED + pdfGenerated + not finalized + not permanently removed
+ * - **Wins** = streak-eligible + all mandatory fields + valid PDF + finalized + not permanently removed
+ * An entry is in ONE counter or NEITHER, never both.
+ *
+ * Two primary checkpoints:
+ * 1. Generate PDF — the gate to Activated (checks end date, sets pdfGenerated)
+ * 2. Finalise — the gate to Wins (checks mandatory fields + valid PDF + finalized)
+ *
+ * Exception: end date → past on save = immediate removal from Activated (recoverable).
+ * Permanent removal: edit/delete request on a Win, or archive/restore.
  */
 import { ENTRY_SCHEMAS } from "@/data/schemas";
 import type { SchemaFieldDefinition } from "@/data/schemas/types";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
+import { isEntryFinalized, normalizeEntryStatus } from "@/lib/entries/workflow";
 import { normalizeStreakState, type StreakState } from "@/lib/streakState";
 import { nowISTDateISO } from "@/lib/time";
 
-export const STREAK_RULE_VERSION = 4;
+export const STREAK_RULE_VERSION = 5;
 
 /** All categories use "endDate" as the end date field. */
 const END_DATE_FIELD = "endDate";
@@ -32,13 +35,19 @@ export type StreakProgressEntryLike = {
   id?: unknown;
   status?: unknown;
   confirmationStatus?: unknown;
+  generatedAt?: unknown;
   committedAtISO?: unknown;
   streakEligible?: unknown;
+  streakPermanentlyRemoved?: unknown;
+  pdfGenerated?: unknown;
+  pdfGeneratedAt?: unknown;
+  pdfStale?: unknown;
   streak?: unknown;
   startDate?: unknown;
   endDate?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
+  editWindowExpiresAt?: unknown;
   [key: string]: unknown;
 };
 
@@ -69,6 +78,7 @@ export type StreakProgressAggregateEntry = StreakProgressEntryLike & {
 export type StreakProgressAggregate = {
   activatedCount: number;
   winsCount: number;
+  eligibleCount: number;
   byCategory: StreakProgressAggregateByCategory;
   activatedEntries: StreakActiveEntry[];
 };
@@ -77,6 +87,7 @@ export type CanonicalStreakSnapshot = {
   ruleVersion: number;
   streakActivatedCount: number;
   streakWinsCount: number;
+  streakEligibleCount: number;
   byCategory: StreakProgressAggregateByCategory;
   activeEntries: StreakActiveEntry[];
 };
@@ -129,7 +140,7 @@ export function getEndDateField(_category?: CategoryKey): string {
 
 /**
  * Check if an entry's end date is in the future (after today in IST).
- * Called at Generate time to determine the streakEligible flag value.
+ * Called at Generate PDF time and on end date save to determine streak eligibility.
  */
 export function checkStreakEligibility(entry: StreakProgressEntryLike): boolean {
   const endDate = entry[END_DATE_FIELD];
@@ -143,19 +154,55 @@ export function checkStreakEligibility(entry: StreakProgressEntryLike): boolean 
 
 /**
  * Returns true if the entry has been marked as streak-eligible.
- * Entries without the flag (e.g., pre-migration entries) are treated as not eligible.
  */
 export function isEntryStreakEligible(entry: StreakProgressEntryLike): boolean {
   return entry.streakEligible === true;
 }
 
+/**
+ * Returns true if the entry has been permanently removed from streaks.
+ * This happens when: a Win entry gets an edit/delete request, or an entry is archived/restored.
+ */
+export function isStreakPermanentlyRemoved(entry: StreakProgressEntryLike): boolean {
+  return entry.streakPermanentlyRemoved === true;
+}
+
+/**
+ * Check if an entry has a generated PDF.
+ * Accepts both the canonical `pdfGenerated` flag and the legacy `pdfGeneratedAt` timestamp
+ * for backward compatibility with entries created before `pdfGenerated` was introduced.
+ */
+function hasPdfGenerated(entry: StreakProgressEntryLike): boolean {
+  if (entry.pdfGenerated === true) return true;
+  // Fallback: if pdfGeneratedAt is a non-empty string, treat as generated
+  if (typeof entry.pdfGeneratedAt === "string" && entry.pdfGeneratedAt.trim()) return true;
+  return false;
+}
+
 // --- Core streak rules ---
 
 /**
- * An entry is "activated" if it is streak-eligible AND has been generated (committedAtISO set).
+ * An entry is "activated" when:
+ * - streak-eligible (streakEligible === true)
+ * - NOT disqualified (streakPermanentlyRemoved !== true)
+ * - Status is GENERATED (not DRAFT, not ARCHIVED)
+ * - PDF has been generated (pdfGenerated === true)
+ * - Entry is NOT finalized (timer still running)
  */
 export function isEntryActivated(entry: StreakProgressEntryLike): boolean {
-  return isEntryStreakEligible(entry) && !!toOptionalISO(entry.committedAtISO);
+  if (!isEntryStreakEligible(entry)) return false;
+  if (isStreakPermanentlyRemoved(entry)) return false;
+
+  const status = normalizeEntryStatus(entry);
+  if (status === "DRAFT" || status === "ARCHIVED") return false;
+
+  // Must have generated a PDF
+  if (!hasPdfGenerated(entry)) return false;
+
+  // Must NOT be finalized
+  if (isEntryFinalized(entry)) return false;
+
+  return true;
 }
 
 /**
@@ -179,17 +226,30 @@ function isFieldFilled(entry: StreakProgressEntryLike, field: SchemaFieldDefinit
 }
 
 /**
- * An entry is "won" if it is activated AND every user-facing schema field
- * (exportable !== false) has a non-empty value.
+ * An entry is a "win" when:
+ * - streak-eligible (streakEligible === true)
+ * - NOT disqualified
+ * - All mandatory fields complete
+ * - Valid (non-stale) PDF exists
+ * - Entry is finalized (timer expired OR manually finalised)
  */
 export function isEntryWon(
   entry: StreakProgressEntryLike,
   fields: readonly SchemaFieldDefinition[]
 ): boolean {
-  if (!isEntryActivated(entry)) return false;
+  if (!isEntryStreakEligible(entry)) return false;
+  if (isStreakPermanentlyRemoved(entry)) return false;
 
-  const userFields = fields.filter((f) => f.exportable !== false);
-  return userFields.every((field) => isFieldFilled(entry, field));
+  // Must be finalized
+  if (!isEntryFinalized(entry)) return false;
+
+  // Must have a valid (non-stale) PDF
+  if (!hasPdfGenerated(entry)) return false;
+  if (entry.pdfStale === true) return false;
+
+  // All user-facing (exportable) DATA fields must be filled — NOT file uploads
+  const userDataFields = fields.filter((f) => f.exportable !== false && f.upload !== true);
+  return userDataFields.every((field) => isFieldFilled(entry, field));
 }
 
 // --- Backward-compat per-entry snapshot (without schema) ---
@@ -197,7 +257,6 @@ export function isEntryWon(
 /**
  * Per-entry snapshot without schema context.
  * isWin is always false here — use isEntryWon() with schema for accurate win detection.
- * isActivated checks streakEligible AND committedAtISO.
  */
 export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): StreakProgressSnapshot {
   const id = String(entry.id ?? "").trim();
@@ -260,6 +319,7 @@ export function createEmptyStreakProgressAggregate(): StreakProgressAggregate {
   return {
     activatedCount: 0,
     winsCount: 0,
+    eligibleCount: 0,
     byCategory: emptyAggregateByCategory(),
     activatedEntries: [],
   };
@@ -270,6 +330,15 @@ function getSchemaFields(categoryKey: CategoryKey): readonly SchemaFieldDefiniti
   return schema?.fields ?? [];
 }
 
+/**
+ * Compute streak counters from a flat list of entries.
+ *
+ * Rules (per spec):
+ * - Skip ARCHIVED, DRAFT, and disqualified entries
+ * - Eligible = streakEligible === true
+ * - Activated = eligible + pdfGenerated + not finalized
+ * - Won = eligible + pdfGenerated + not stale + all fields complete + finalized
+ */
 export function computeStreakProgressAggregate(
   entries: ReadonlyArray<StreakProgressAggregateEntry>
 ): StreakProgressAggregate {
@@ -279,23 +348,38 @@ export function computeStreakProgressAggregate(
     const categoryKey = entry.categoryKey;
     if (!CATEGORY_KEYS.includes(categoryKey)) continue;
 
-    if (!isEntryActivated(entry)) continue;
+    const status = normalizeEntryStatus(entry);
+    if (status === "ARCHIVED" || status === "DRAFT") continue;
+    if (isStreakPermanentlyRemoved(entry)) continue;
+    if (!isEntryStreakEligible(entry)) continue;
 
+    summary.eligibleCount += 1;
+
+    // Must have generated a PDF to be in either counter
+    if (!hasPdfGenerated(entry)) continue;
+
+    const finalized = isEntryFinalized(entry);
     const fields = getSchemaFields(categoryKey);
-    const won = isEntryWon(entry, fields);
 
-    if (won) {
-      // Won entries count as wins only — not activated
-      summary.winsCount += 1;
-      summary.byCategory[categoryKey].wins += 1;
+    if (finalized) {
+      // Win check: complete mandatory DATA fields (NOT file uploads) + valid (non-stale) PDF
+      const userDataFields = fields.filter((f) => f.exportable !== false && f.upload !== true);
+      const complete = userDataFields.every((field) => isFieldFilled(entry, field));
+      const validPdf = entry.pdfStale !== true;
+
+      if (complete && validPdf) {
+        summary.winsCount += 1;
+        summary.byCategory[categoryKey].wins += 1;
+      }
+      // If finalized but not complete or stale PDF: not in either counter
     } else {
-      // Activated but not yet won — in-progress eligible entries
+      // Not finalized + has PDF = Activated
       summary.activatedCount += 1;
       summary.byCategory[categoryKey].activated += 1;
     }
 
     const id = String(entry.id ?? "").trim();
-    if (id) {
+    if (id && !finalized) {
       summary.activatedEntries.push({
         id,
         categoryKey,
@@ -317,6 +401,7 @@ export function computeCanonicalStreakSnapshot(
     ruleVersion: STREAK_RULE_VERSION,
     streakActivatedCount: aggregate.activatedCount,
     streakWinsCount: aggregate.winsCount,
+    streakEligibleCount: aggregate.eligibleCount,
     byCategory: CATEGORY_KEYS.reduce<StreakProgressAggregateByCategory>((next, categoryKey) => {
       next[categoryKey] = {
         activated: aggregate.byCategory[categoryKey].activated,

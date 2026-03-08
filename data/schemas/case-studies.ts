@@ -15,9 +15,9 @@ const fields = [
   { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10 },
   { key: "participants", label: "Participants", kind: "number" },
   { key: "amountSupport", label: "Amount Support", kind: "number" },
-  { key: "permissionLetter", label: "Permission Letter", kind: "object" },
-  { key: "travelPlan", label: "Travel Plan", kind: "object" },
-  { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array" },
+  { key: "permissionLetter", label: "Permission Letter", kind: "object", upload: true },
+  { key: "travelPlan", label: "Travel Plan", kind: "object", upload: true },
+  { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array", upload: true },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
@@ -47,9 +47,6 @@ export const caseStudiesSchema: EntrySchema = {
     "staffAccompanying",
     "yearOfStudy",
     "currentSemester",
-    "permissionLetter",
-    "travelPlan",
-    "geotaggedPhotos",
   ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);

@@ -81,6 +81,7 @@ export type Entry = Record<string, unknown> & {
   status?: string;
   confirmationStatus?: EntryStatus;
   streakEligible?: boolean;
+  streakPermanentlyRemoved?: boolean;
   createdAt?: string;
   updatedAt?: string;
 
