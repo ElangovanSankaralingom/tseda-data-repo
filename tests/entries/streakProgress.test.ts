@@ -48,28 +48,31 @@ test("entry without streakEligible flag is not eligible", () => {
 
 // --- isEntryActivated ---
 
-test("eligible entry with committedAtISO is activated", () => {
+test("eligible entry with pdfGenerated and GENERATED status is activated", () => {
   assert.equal(
     isEntryActivated({
       streakEligible: true,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z", // not expired = not finalized
     }),
     true
   );
 });
 
-test("non-eligible entry with committedAtISO is NOT activated", () => {
+test("non-eligible entry with pdfGenerated is NOT activated", () => {
   assert.equal(
     isEntryActivated({
       streakEligible: false,
-      committedAtISO: "2026-03-06T10:00:00.000Z",
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
     }),
     false
   );
 });
 
-test("eligible entry without committedAtISO is NOT activated", () => {
-  assert.equal(isEntryActivated({ streakEligible: true }), false);
+test("eligible entry without pdfGenerated is NOT activated", () => {
+  assert.equal(isEntryActivated({ streakEligible: true, confirmationStatus: "GENERATED" }), false);
 });
 
 test("entry with no flags is not activated", () => {
@@ -78,7 +81,7 @@ test("entry with no flags is not activated", () => {
 
 // --- isEntryWon ---
 
-test("eligible activated entry with all exportable fields filled is a win", () => {
+test("eligible finalized entry with all exportable fields filled is a win", () => {
   const fields = [
     { key: "id", label: "ID", kind: "string" as const, exportable: false },
     { key: "title", label: "Title", kind: "string" as const },
@@ -86,7 +89,9 @@ test("eligible activated entry with all exportable fields filled is a win", () =
   ];
   const entry = {
     streakEligible: true,
-    committedAtISO: "2026-03-06T10:00:00.000Z",
+    confirmationStatus: "GENERATED",
+    pdfGenerated: true,
+    editWindowExpiresAt: "2020-01-01T00:00:00.000Z", // expired = finalized
     id: "e1",
     title: "My Entry",
     date: "2026-03-06",
@@ -100,20 +105,24 @@ test("non-eligible entry with all fields filled is NOT a win", () => {
   ];
   const entry = {
     streakEligible: false,
-    committedAtISO: "2026-03-06T10:00:00.000Z",
+    confirmationStatus: "GENERATED",
+    pdfGenerated: true,
+    editWindowExpiresAt: "2020-01-01T00:00:00.000Z",
     title: "Filled",
   };
   assert.equal(isEntryWon(entry, fields), false);
 });
 
-test("eligible entry missing a field is NOT a win", () => {
+test("eligible finalized entry missing a field is NOT a win", () => {
   const fields = [
     { key: "title", label: "Title", kind: "string" as const },
     { key: "date", label: "Date", kind: "date" as const },
   ];
   const entry = {
     streakEligible: true,
-    committedAtISO: "2026-03-06T10:00:00.000Z",
+    confirmationStatus: "GENERATED",
+    pdfGenerated: true,
+    editWindowExpiresAt: "2020-01-01T00:00:00.000Z",
     title: "My Entry",
     // date missing
   };
@@ -129,7 +138,9 @@ test("non-exportable fields are skipped for win check", () => {
   ];
   const entry = {
     streakEligible: true,
-    committedAtISO: "2026-03-06T10:00:00.000Z",
+    confirmationStatus: "GENERATED",
+    pdfGenerated: true,
+    editWindowExpiresAt: "2020-01-01T00:00:00.000Z",
     id: "e1",
     title: "Filled",
   };
@@ -138,12 +149,15 @@ test("non-exportable fields are skipped for win check", () => {
 
 // --- Aggregate computation ---
 
-// Helper: create a complete workshops entry (all exportable fields filled)
+// Helper: create a complete workshops entry (all exportable fields filled, finalized = win)
 function completeWorkshopEntry(id: string, committedAt: string) {
   return {
     categoryKey: "workshops" as const,
     id,
     streakEligible: true,
+    confirmationStatus: "GENERATED",
+    pdfGenerated: true,
+    editWindowExpiresAt: "2020-01-01T00:00:00.000Z", // expired = finalized → eligible for win
     committedAtISO: committedAt,
     academicYear: "2025-26",
     yearOfStudy: "I",
@@ -160,12 +174,15 @@ function completeWorkshopEntry(id: string, committedAt: string) {
   };
 }
 
-// Helper: create an incomplete workshops entry (missing some fields)
+// Helper: create an incomplete workshops entry (missing some fields, not finalized = activated)
 function incompleteWorkshopEntry(id: string, committedAt: string) {
   return {
     categoryKey: "workshops" as const,
     id,
     streakEligible: true,
+    confirmationStatus: "GENERATED",
+    pdfGenerated: true,
+    editWindowExpiresAt: "2099-12-31T23:59:59.999Z", // not expired = not finalized → activated
     committedAtISO: committedAt,
     eventName: "Workshop " + id,
     // other exportable fields missing
@@ -228,6 +245,9 @@ test("3 generated entries, 2 eligible, 1 not: only eligible ones counted", () =>
       categoryKey: "workshops",
       id: "e3",
       streakEligible: false,
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
       committedAtISO: "2026-03-06T12:00:00.000Z",
     },
   ]);
@@ -271,12 +291,18 @@ test("entries across multiple categories all count", () => {
       categoryKey: "fdp-attended",
       id: "e2",
       streakEligible: true,
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
       committedAtISO: "2026-03-06T11:00:00.000Z",
     },
     {
       categoryKey: "guest-lectures",
       id: "e3",
       streakEligible: true,
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
       committedAtISO: "2026-03-06T12:00:00.000Z",
     },
   ]);
@@ -317,6 +343,9 @@ test("eligibility flag is permanent — not rechecked against current date", () 
       categoryKey: "workshops",
       id: "e1",
       streakEligible: true,
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
       committedAtISO: "2025-01-01T10:00:00.000Z",
       endDate: "2025-01-15", // past date
     },
@@ -334,6 +363,9 @@ test("deleting non-eligible entry has no effect on counters", () => {
       categoryKey: "workshops",
       id: "e2",
       streakEligible: false,
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
       committedAtISO: "2026-03-06T11:00:00.000Z",
     },
   ]);
