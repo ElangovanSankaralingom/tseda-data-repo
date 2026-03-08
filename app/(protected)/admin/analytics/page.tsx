@@ -1,5 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { BarChart3 } from "lucide-react";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import { authOptions } from "@/lib/auth";
 import { canViewAnalytics } from "@/lib/admin/roles";
@@ -28,17 +30,29 @@ export default async function AdminAnalyticsPage() {
 
   if (!result.ok) {
     return (
-      <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      <AdminPageShell
+        title="Analytics"
+        subtitle="Charts, trends, and insights across all faculty data"
+        backHref={adminHome()}
+        icon={BarChart3}
+        maxWidthClassName="max-w-6xl"
+      >
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Failed to load analytics. Please try again later.
         </div>
-      </div>
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+    <AdminPageShell
+      title="Analytics"
+      subtitle="Charts, trends, and insights across all faculty data"
+      backHref={adminHome()}
+      icon={BarChart3}
+      maxWidthClassName="max-w-6xl"
+    >
       <AnalyticsDashboard snapshot={result.data} />
-    </div>
+    </AdminPageShell>
   );
 }

@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Inbox } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import PageHeader from "@/components/layout/PageHeader";
 import SectionCard from "@/components/layout/SectionCard";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { toUserMessage } from "@/lib/errors";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
-import { adminHome } from "@/lib/entryNavigation";
 import { safeAction } from "@/lib/safeAction";
 
 type PendingConfirmationRow = {
@@ -97,10 +95,13 @@ export default function AdminConfirmationsClient() {
 
   const pendingCount = useMemo(() => rows.length, [rows]);
 
-  async function resolve(row: PendingConfirmationRow, decision: "approve" | "reject") {
+  async function resolve(row: PendingConfirmationRow, decision: "approve" | "reject", reason?: string) {
     const key = getRowKey(row);
     setBusyKey(key);
     setError(null);
+
+    // Map UI decision labels to API values
+    const apiDecision = decision === "approve" ? "grant" : "reject";
 
     const result = await safeAction(
       async () => {
@@ -111,7 +112,8 @@ export default function AdminConfirmationsClient() {
             ownerEmail: row.ownerEmail,
             categoryKey: row.categoryKey,
             entryId: row.entryId,
-            decision,
+            decision: apiDecision,
+            ...(reason ? { reason } : {}),
           }),
         });
         const payload = (await response.json()) as { error?: string };
@@ -146,26 +148,7 @@ export default function AdminConfirmationsClient() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      {/* Gradient Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 mb-6">
-        <PageHeader
-          title="Entry Confirmations"
-          subtitle="Review entries sent for confirmation. Locked mode activates only after approval."
-          backHref={adminHome()}
-          showBack
-          titleClassName="text-white"
-          subtitleClassName="text-slate-300"
-        />
-        {pendingCount > 0 && (
-          <div className="mt-4">
-            <span className="rounded-full bg-amber-500 px-3 py-1 text-sm font-medium text-white">
-              {pendingCount} pending
-            </span>
-          </div>
-        )}
-      </div>
-
+    <div>
       <SectionCard>
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading...</div>
@@ -220,18 +203,27 @@ export default function AdminConfirmationsClient() {
                       </Link>
                       <ActionButton
                         role="context"
-                        onClick={() => void resolve(row, "approve")}
+                        onClick={() =>
+                          requestConfirmation({
+                            title: "Grant edit access?",
+                            description:
+                              "This will allow the user to edit and re-generate this entry.",
+                            confirmLabel: "Grant",
+                            cancelLabel: "Cancel",
+                            onConfirm: () => resolve(row, "approve"),
+                          })
+                        }
                         disabled={busy}
                       >
-                        {busy ? "Saving..." : "Approve"}
+                        {busy ? "Saving..." : "Grant"}
                       </ActionButton>
                       <ActionButton
                         role="destructive"
                         onClick={() =>
                           requestConfirmation({
-                            title: "Reject confirmation request?",
+                            title: "Reject edit request?",
                             description:
-                              "This changes the entry status to Rejected and sends it back for user edits.",
+                              "This will deny the edit request and return the entry to its finalized state. The user will be notified.",
                             confirmLabel: "Reject",
                             cancelLabel: "Cancel",
                             variant: "destructive",

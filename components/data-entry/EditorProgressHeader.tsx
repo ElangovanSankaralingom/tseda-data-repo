@@ -59,6 +59,7 @@ type EditorProgressHeaderProps = {
   isGenerated: boolean;
   streakEligible?: boolean;
   editTimeLabel?: string;
+  canFinalise?: boolean;
 };
 
 export default function EditorProgressHeader({
@@ -67,6 +68,7 @@ export default function EditorProgressHeader({
   isGenerated,
   streakEligible,
   editTimeLabel,
+  canFinalise,
 }: EditorProgressHeaderProps) {
   const accent = ACCENT_COLORS[category] ?? ACCENT_COLORS["fdp-attended"];
 
@@ -80,8 +82,8 @@ export default function EditorProgressHeader({
           </span>
         ) : null}
         {editTimeLabel ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
-            &#128275; Edit Access: {editTimeLabel}
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500">
+            ⏱️ {editTimeLabel}
           </span>
         ) : null}
       </div>
@@ -98,6 +100,13 @@ export default function EditorProgressHeader({
           {progress.completed} of {progress.total}
         </span>
       </div>
+
+      {/* Finalise hint */}
+      {canFinalise ? (
+        <p className="mt-2 text-xs text-emerald-600">
+          All fields complete — you can finalise this entry now or wait for the timer.
+        </p>
+      ) : null}
 
       {/* Phase indicators */}
       {progress.hasPhases ? (

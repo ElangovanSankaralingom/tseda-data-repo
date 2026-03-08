@@ -63,11 +63,16 @@ type HeaderActionBindings = {
   saveIntent: EntrySaveIntent | null;
   workflowAction?: {
     label: string;
-    onClick: () => void;
+    onClick: () => void | Promise<boolean>;
     disabled?: boolean;
     busyLabel?: string;
   };
   workflowDisabledHint?: string;
+  entryStatus?: string | null;
+  onRequestEdit?: () => void;
+  onCancelRequestEdit?: () => void;
+  onFinalise?: () => void;
+  editTimeLabel?: string;
 };
 
 type PdfActionBindings = {
@@ -75,7 +80,10 @@ type PdfActionBindings = {
   canGenerate: boolean;
   onGenerate: () => void;
   generating: boolean;
-  pdfMeta: { url?: string | null; fileName?: string } | null | undefined;
+  pdfMeta: { url?: string | null; fileName?: string; generatedAtISO?: string } | null | undefined;
+  pdfStale: boolean;
+  canPreview: boolean;
+  canDownload: boolean;
   pdfDisabled: boolean;
 };
 
@@ -320,8 +328,8 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     ]
   );
 
-  const generateEntry = useCallback(async () => {
-    await runGenerateEntryOrchestration<TEntry>({
+  const generateEntry = useCallback(async (): Promise<boolean> => {
+    const success = await runGenerateEntryOrchestration<TEntry>({
       saveLockRef,
       hasValidationErrors,
       canGenerate: lifecycle.canGenerate,
@@ -341,6 +349,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       applyGeneratedEntry,
     });
     nextRouter.refresh();
+    return success;
   }, [
     afterGenerate,
     applyGeneratedEntry,
@@ -463,12 +472,48 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     onError: (message) => showToast("err", message, 1800),
   });
 
+  const [finalisingIds, setFinalisingIds] = useState<Record<string, boolean>>({});
+
+  const finaliseEntry = useCallback(
+    async (entry: TEntry) => {
+      const entryId = entry.id;
+      if (finalisingIds[entryId]) return;
+      setFinalisingIds((prev) => ({ ...prev, [entryId]: true }));
+      try {
+        const res = await fetch("/api/me/entry/finalise", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ categoryKey: category, entryId }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error((data as { error?: string }).error || "Finalise failed.");
+        }
+        const updated = (await res.json()) as TEntry;
+        setList((prev) => prev.map((e) => (e.id === entryId ? updated : e)));
+        showToast("ok", "Entry finalised.", 1400);
+        nextRouter.refresh();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Finalise failed.";
+        showToast("err", message, 1800);
+      } finally {
+        setFinalisingIds((prev) => ({ ...prev, [entryId]: false }));
+      }
+    },
+    [category, finalisingIds, nextRouter, setList, showToast]
+  );
+
   const getHeaderActionProps = useCallback(
     (options?: {
       onAdd?: () => void;
       addLabel?: string;
       workflowAction?: HeaderActionBindings["workflowAction"];
       workflowDisabledHint?: string;
+      entryStatus?: string | null;
+      onRequestEdit?: () => void;
+      onCancelRequestEdit?: () => void;
+      onFinalise?: () => void;
+      editTimeLabel?: string;
     }): HeaderActionBindings => ({
       isEditing: showForm,
       isViewMode,
@@ -485,6 +530,11 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       saveIntent,
       workflowAction: options?.workflowAction,
       workflowDisabledHint: options?.workflowDisabledHint,
+      entryStatus: options?.entryStatus,
+      onRequestEdit: options?.onRequestEdit,
+      onCancelRequestEdit: options?.onCancelRequestEdit,
+      onFinalise: options?.onFinalise,
+      editTimeLabel: options?.editTimeLabel,
     }),
     [
       actionState.cancelDisabled,
@@ -508,15 +558,20 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       onGenerate: () => void generateEntry(),
       generating: saving,
       pdfMeta,
+      pdfStale: workflow.coreDirty && workflow.hasPdfSnapshot,
+      canPreview: lifecycle.canPreview,
+      canDownload: lifecycle.canDownload,
       pdfDisabled: !lifecycle.canPreview,
     }),
-    [actionState.generateDisabled, generateEntry, isViewMode, lifecycle.canPreview, saving]
+    [actionState.generateDisabled, generateEntry, isViewMode, lifecycle.canDownload, lifecycle.canPreview, saving, workflow.coreDirty, workflow.hasPdfSnapshot]
   );
 
   return {
     actionState,
     autoSaveStatus,
     cancelRequestEdit,
+    finaliseEntry,
+    finalisingIds,
     generateEntry,
     getHeaderActionProps,
     getPdfActionProps,

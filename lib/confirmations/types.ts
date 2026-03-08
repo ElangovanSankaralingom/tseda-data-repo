@@ -90,6 +90,37 @@ export type NotificationStore = {
   notifications: PersistentNotification[];
 };
 
+// --- Admin Notification ---
+
+export type AdminNotificationType =
+  | "edit_request"
+  | "pending_requests_reminder"
+  | "backup_overdue"
+  | "integrity_issues"
+  | "wal_warning"
+  | "new_user"
+  | "user_status_change"
+  | "settings_changed"
+  | "migration_complete"
+  | "system_error";
+
+export type AdminNotification = {
+  id: string;
+  type: AdminNotificationType;
+  title: string;
+  message: string;
+  createdAt: string;
+  readBy: string[];
+  actionUrl?: string;
+  actionLabel?: string;
+  triggeredBy?: string;
+  triggeredByName?: string;
+};
+
+export type AdminNotificationStore = {
+  notifications: AdminNotification[];
+};
+
 // --- Context API ---
 
 export type ConfirmFn = (options: ConfirmationDialogOptions) => Promise<boolean>;

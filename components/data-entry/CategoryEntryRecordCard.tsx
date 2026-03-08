@@ -1,5 +1,6 @@
 "use client";
 
+import { Lock } from "lucide-react";
 import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -79,6 +80,7 @@ type CategoryEntryRecordCardProps = {
   onPreview?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onFinalise?: () => void;
   deleteLabel?: string;
   sendForConfirmation?: SendForConfirmationControls;
   requestEdit?: RequestEditControls;
@@ -106,14 +108,17 @@ export default function CategoryEntryRecordCard({
   onPreview,
   onEdit,
   onDelete,
+  onFinalise,
   deleteLabel = "Delete",
   sendForConfirmation,
   requestEdit,
   children,
 }: CategoryEntryRecordCardProps) {
-  const isLocked = requestEdit?.locked ?? false;
+  const isDraft = group === "in_the_works";
   const isFinalized = group === "locked_in";
   const isUnderReview = group === "under_review";
+  const isUnlocked = group === "unlocked";
+  const isEditable = !isDraft && !isFinalized && !isUnderReview;
 
   return (
     <EntryListCardShell
@@ -129,21 +134,12 @@ export default function CategoryEntryRecordCard({
       actions={
         !hideActions ? (
           <div className="flex items-center gap-2">
-            {/* Finalized or Under Review: View as primary action */}
-            {(isFinalized || isUnderReview) ? (
-              <ActionButton role="context" onClick={onView}>View</ActionButton>
-            ) : null}
-
-            {/* Editable groups: Edit/Continue as primary */}
-            {!isFinalized && !isUnderReview && !isLocked ? (
+            {/* DRAFT: Continue | Delete */}
+            {isDraft ? (
               <>
                 {onEdit ? (
-                  <ActionButton role="primary" onClick={onEdit}>
-                    {getActionLabel(group, "Edit")}
-                  </ActionButton>
-                ) : (
-                  <ActionButton role="context" onClick={onView}>View</ActionButton>
-                )}
+                  <ActionButton role="primary" onClick={onEdit}>Continue</ActionButton>
+                ) : null}
                 {onDelete ? (
                   <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
                     {deleteLabel}
@@ -152,41 +148,79 @@ export default function CategoryEntryRecordCard({
               </>
             ) : null}
 
-            {/* Locked (finalized): show request edit */}
-            {isFinalized && requestEdit ? (
-              <RequestEditAction
-                locked={requestEdit.locked}
-                status={requestEdit.status}
-                requestedAtISO={requestEdit.requestedAtISO}
-                requesting={requestEdit.requesting}
-                onRequest={requestEdit.onRequest}
-                onCancel={requestEdit.onCancel}
-              />
+            {/* EDITABLE (generated, streak_runners, on_the_clock, unlocked): Edit | View | Finalise | Delete */}
+            {isEditable ? (
+              <>
+                {onEdit ? (
+                  <ActionButton
+                    role="primary"
+                    onClick={onEdit}
+                    className={isUnlocked ? "!bg-purple-600 hover:!bg-purple-700" : undefined}
+                  >
+                    Edit
+                  </ActionButton>
+                ) : null}
+                <ActionButton role="context" onClick={onView}>View</ActionButton>
+                {onFinalise ? (
+                  <button
+                    type="button"
+                    onClick={onFinalise}
+                    className="inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
+                  >
+                    <Lock className="size-3.5" />
+                    Finalise Now
+                  </button>
+                ) : null}
+                {onDelete ? (
+                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    {deleteLabel}
+                  </ActionButton>
+                ) : null}
+              </>
             ) : null}
 
-            {/* Under review: cancel request */}
-            {isUnderReview && requestEdit ? (
-              <RequestEditAction
-                locked={requestEdit.locked}
-                status={requestEdit.status}
-                requestedAtISO={requestEdit.requestedAtISO}
-                requesting={requestEdit.requesting}
-                onRequest={requestEdit.onRequest}
-                onCancel={requestEdit.onCancel}
-              />
+            {/* FINALIZED: View | Request Edit | Delete */}
+            {isFinalized ? (
+              <>
+                <ActionButton role="context" onClick={onView}>View</ActionButton>
+                {requestEdit ? (
+                  <RequestEditAction
+                    locked={requestEdit.locked}
+                    status={requestEdit.status}
+                    requestedAtISO={requestEdit.requestedAtISO}
+                    requesting={requestEdit.requesting}
+                    onRequest={requestEdit.onRequest}
+                    onCancel={requestEdit.onCancel}
+                  />
+                ) : null}
+                {onDelete ? (
+                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    {deleteLabel}
+                  </ActionButton>
+                ) : null}
+              </>
             ) : null}
 
-            {/* Send for confirmation (non-finalized, non-review) */}
-            {!isFinalized && !isUnderReview && sendForConfirmation ? (
-              <ActionButton
-                role="primary"
-                onClick={sendForConfirmation.onClick}
-                disabled={sendForConfirmation.disabled || sendForConfirmation.sending}
-              >
-                {sendForConfirmation.sending
-                  ? (sendForConfirmation.sendingLabel ?? "Sending...")
-                  : (sendForConfirmation.label ?? "Send for Confirmation")}
-              </ActionButton>
+            {/* UNDER REVIEW: View | Cancel Request | Delete */}
+            {isUnderReview ? (
+              <>
+                <ActionButton role="context" onClick={onView}>View</ActionButton>
+                {requestEdit ? (
+                  <RequestEditAction
+                    locked={requestEdit.locked}
+                    status={requestEdit.status}
+                    requestedAtISO={requestEdit.requestedAtISO}
+                    requesting={requestEdit.requesting}
+                    onRequest={requestEdit.onRequest}
+                    onCancel={requestEdit.onCancel}
+                  />
+                ) : null}
+                {onDelete ? (
+                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    {deleteLabel}
+                  </ActionButton>
+                ) : null}
+              </>
             ) : null}
           </div>
         ) : null
@@ -204,6 +238,8 @@ type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRenderEntry>
   renderBody: (entry: TEntry) => React.ReactNode;
   onView: (entry: TEntry) => void;
   onEdit?: (entry: TEntry) => void;
+  onFinalise?: (entry: TEntry) => void;
+  canFinalise?: (entry: TEntry) => boolean;
   onPreview?: (entry: TEntry) => void;
   previewUrl?: (entry: TEntry) => string | null | undefined;
   hideActions?: (entry: TEntry, group: EntryListGroup) => boolean;
@@ -225,6 +261,8 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
   renderBody,
   onView,
   onEdit,
+  onFinalise,
+  canFinalise,
   onPreview,
   previewUrl,
   hideActions,
@@ -269,8 +307,13 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
               : undefined
         }
         onEdit={lockApproved || !onEdit ? undefined : () => onEdit(entry)}
+        onFinalise={
+          onFinalise && canFinalise?.(entry)
+            ? () => onFinalise(entry)
+            : undefined
+        }
         onDelete={
-          lockApproved || !requestConfirmation || !resolvedDeleteRequest
+          !requestConfirmation || !resolvedDeleteRequest
             ? undefined
             : () => requestConfirmation(resolvedDeleteRequest)
         }

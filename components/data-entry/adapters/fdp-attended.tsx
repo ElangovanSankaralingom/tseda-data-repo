@@ -9,7 +9,7 @@ import Field from "@/components/data-entry/Field";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { createGroupedEntryListCard } from "@/components/data-entry/GroupedEntrySections";
 import DateField from "@/components/controls/DateField";
-import { EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
+import EntryDocumentSection from "@/components/data-entry/EntryDocumentSection";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
 import UploadField from "@/components/entry/UploadField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
@@ -28,6 +28,8 @@ import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useUploadController } from "@/hooks/useUploadController";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
+import { computeFieldProgress } from "@/lib/entries/fieldProgress";
+import { isEntryEditable } from "@/lib/entries/workflow";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
   createDeleteEntry,
@@ -402,10 +404,10 @@ export function FdpAttendedPage({
     persistProgress,
     normalizePersistedEntry: (entry) => withAcademicProgressionCompatibility(entry),
     persistRequestEdit: async (entry) => {
-      const response = await fetch(`/api/me/fdp-attended/${encodeURIComponent(entry.id)}`, {
-        method: "PATCH",
+      const response = await fetch("/api/me/entry/confirmation", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "request_edit" }),
+        body: JSON.stringify({ categoryKey: "fdp-attended", entryId: entry.id }),
       });
       const payload = (await response.json()) as FdpAttended | { error?: string };
 
@@ -416,10 +418,10 @@ export function FdpAttendedPage({
       return payload as FdpAttended;
     },
     persistCancelRequestEdit: async (entry) => {
-      const response = await fetch(`/api/me/fdp-attended/${encodeURIComponent(entry.id)}`, {
-        method: "PATCH",
+      const response = await fetch("/api/me/entry/confirmation", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "cancel_request_edit" }),
+        body: JSON.stringify({ categoryKey: "fdp-attended", entryId: entry.id }),
       });
       const payload = (await response.json()) as FdpAttended | { error?: string };
 
@@ -469,6 +471,7 @@ export function FdpAttendedPage({
   const {
     autoSaveStatus,
     cancelRequestEdit,
+    finaliseEntry,
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
@@ -632,6 +635,12 @@ export function FdpAttendedPage({
     onEdit: (entry) => {
       router.push(entryDetail("fdp-attended", entry.id), { scroll: false });
     },
+    onFinalise: (entry) => void finaliseEntry(entry),
+    canFinalise: (entry) => {
+      if (!isEntryEditable(entry)) return false;
+      const progress = computeFieldProgress("fdp-attended", entry as Record<string, unknown>);
+      return progress.total > 0 && progress.completed === progress.total;
+    },
     hideActions: (entry) => !!(activeEntryId && entry.id === activeEntryId),
     enableWorkflowActions: (_entry, group) => group === "locked_in",
     deleteLabel: "Delete entry",
@@ -705,6 +714,19 @@ export function FdpAttendedPage({
           router.push(entryNew("fdp-attended"), { scroll: false });
         },
         addLabel: "Add FDP Entry",
+        workflowAction: showForm && !isViewMode ? {
+          label: "Generate Entry",
+          onClick: () => controller.generateEntry(),
+          disabled: controller.actionState.generateDisabled,
+          busyLabel: "Generating...",
+        } : undefined,
+        entryStatus: form.confirmationStatus,
+        onRequestEdit: () => void controller.requestEdit(form),
+        onCancelRequestEdit: () => void controller.cancelRequestEdit(form),
+        onFinalise: isViewMode && isEntryEditable(form) && (() => {
+          const progress = computeFieldProgress("fdp-attended", form as Record<string, unknown>);
+          return progress.total > 0 && progress.completed === progress.total;
+        })() ? () => void finaliseEntry(form) : undefined,
       })}
       loading={loading}
       showForm={showForm}
@@ -858,12 +880,15 @@ export function FdpAttendedPage({
             </div>
 
                   <div className="mt-5 space-y-4">
-              <EntryPdfActionsBar {...getPdfActionProps(form.pdfMeta ?? null)} />
-              {pdfState.pdfStale ? (
-                <p className="text-sm text-muted-foreground">
-                  Entry changed. Regenerate PDF to update Preview/Download.
-                </p>
-              ) : null}
+              <EntryDocumentSection
+                pdfMeta={form.pdfMeta ?? null}
+                pdfStale={pdfState.pdfStale}
+                canPreview={getPdfActionProps(form.pdfMeta ?? null).canPreview}
+                canDownload={getPdfActionProps(form.pdfMeta ?? null).canDownload}
+                onRegenerate={() => void controller.generateEntry()}
+                generating={controller.saving}
+                isViewMode={isViewMode}
+              />
               <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
               {uploadsVisible ? (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -922,6 +947,8 @@ export function FdpAttendedPage({
           : null
       }
       confirmationDialog={confirmationDialog}
+      onRequestEdit={() => void controller.requestEdit(form)}
+      onCancelRequestEdit={() => void controller.cancelRequestEdit(form)}
     />
   );
 }

@@ -5,15 +5,26 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
+import ProgressBar from "@/components/dashboard/ProgressBar";
 import SectionHeader from "@/components/dashboard/SectionHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import StreakCard from "@/components/dashboard/StreakCard";
+
+type CategoryDataItem = {
+  slug: string;
+  label: string;
+  count: number;
+  href: string;
+};
+
 type DashboardClientProps = {
   streakActivated: number;
   streakWins: number;
   totalEntries: number;
   generatedCount: number;
   editRequestedCount: number;
+  categoryData: CategoryDataItem[];
+  maxCategoryCount: number;
 };
 
 export default function DashboardClient({
@@ -22,6 +33,8 @@ export default function DashboardClient({
   totalEntries,
   generatedCount,
   editRequestedCount,
+  categoryData,
+  maxCategoryCount,
 }: DashboardClientProps) {
   return (
     <>
@@ -103,6 +116,27 @@ export default function DashboardClient({
         </div>
       </div>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent animate-grow-width" />
+
+      {/* Section C — By Category */}
+      <div>
+        <SectionHeader
+          title="By Category"
+          description="Entry counts across each category"
+        />
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm divide-y divide-slate-100 animate-fade-in-up stagger-6">
+          {categoryData.map((item, index) => (
+            <ProgressBar
+              key={item.slug}
+              label={item.label}
+              count={item.count}
+              maxCount={maxCategoryCount}
+              href={item.href}
+              index={index}
+            />
+          ))}
+        </div>
+      </div>
     </>
   );
 }

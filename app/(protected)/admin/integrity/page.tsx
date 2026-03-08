@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import IntegrityDashboard from "@/components/admin/IntegrityDashboard";
 import { authOptions } from "@/lib/auth";
@@ -30,6 +31,7 @@ export default async function AdminIntegrityOverviewPage() {
       title="Data Integrity"
       subtitle="Keep your data healthy, consistent, and corruption-free."
       backHref={adminHome()}
+      icon={ShieldCheck}
       maxWidthClassName="max-w-7xl"
     >
       <IntegrityDashboard

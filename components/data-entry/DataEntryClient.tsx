@@ -27,6 +27,7 @@ type CategoryOverview = {
   editGrantedCount: number;
   streakActivated: number;
   streakWins: number;
+  completedNonStreak: number;
   lastActivity: string | null;
 };
 
@@ -38,6 +39,7 @@ type Totals = {
   editGrantedCount: number;
   streakActivatedCount: number;
   streakWinsCount: number;
+  completedNonStreakCount: number;
 };
 
 type Props = {
@@ -169,6 +171,48 @@ function HeroSection({ greeting, userName, totals }: { greeting: string; userNam
   );
 }
 
+function EntryTypeBadges({ cat }: { cat: CategoryOverview }) {
+  const hasBadges = cat.streakActivated > 0 || cat.streakWins > 0 || cat.draftCount > 0 || cat.completedNonStreak > 0;
+  if (!hasBadges) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {cat.streakActivated > 0 && (
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
+          title={`${cat.streakActivated} streak ${cat.streakActivated === 1 ? "entry" : "entries"} in progress`}
+        >
+          ⚡ {cat.streakActivated}
+        </span>
+      )}
+      {cat.streakWins > 0 && (
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
+          title={`${cat.streakWins} streak ${cat.streakWins === 1 ? "entry" : "entries"} completed`}
+        >
+          🏆 {cat.streakWins}
+        </span>
+      )}
+      {cat.draftCount > 0 && (
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+          title={`${cat.draftCount} ${cat.draftCount === 1 ? "draft" : "drafts"}`}
+        >
+          📝 {cat.draftCount}
+        </span>
+      )}
+      {cat.completedNonStreak > 0 && (
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
+          title={`${cat.completedNonStreak} completed ${cat.completedNonStreak === 1 ? "entry" : "entries"}`}
+        >
+          ✓ {cat.completedNonStreak}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function CategoryCard({
   cat,
   maxEntries,
@@ -181,16 +225,24 @@ function CategoryCard({
   const Icon = ICON_MAP[cat.slug] ?? FileText;
   const accent = ACCENT[cat.slug] ?? DEFAULT_ACCENT;
   const hasActivity = cat.totalEntries > 0;
-  const needsAttention = cat.draftCount > 0 || cat.editRequestedCount > 0;
+  // Actionable items only: streak in-progress + drafts
+  const actionableCount = cat.streakActivated + cat.draftCount;
   const barWidth = hasActivity ? Math.max((cat.totalEntries / maxEntries) * 100, 8) : 0;
 
   return (
     <Link
       href={cat.href}
       className={`group relative flex overflow-visible rounded-xl border bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up ${
-        needsAttention ? "border-amber-200 hover:border-amber-300" : "border-slate-200 hover:border-slate-300"
+        actionableCount > 0 ? "border-amber-200 hover:border-amber-300" : "border-slate-200 hover:border-slate-300"
       } stagger-${Math.min(index + 1, 5)}`}
     >
+      {/* Notification badge — actionable items only */}
+      {actionableCount > 0 && (
+        <span className="absolute -top-2 -right-2 z-10 flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm">
+          {actionableCount}
+        </span>
+      )}
+
       <div className={`w-1 shrink-0 rounded-l-xl transition-all duration-200 group-hover:w-1.5 ${accent.strip}`} />
 
       <div className="flex flex-1 flex-col p-4 min-w-0">
@@ -202,12 +254,7 @@ function CategoryCard({
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-slate-900 truncate">{cat.label}</h3>
-              {needsAttention && (
-                <span className="shrink-0 flex size-2 rounded-full bg-amber-400 animate-subtle-pulse" />
-              )}
-            </div>
+            <h3 className="text-base font-semibold text-slate-900 truncate">{cat.label}</h3>
             <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">{cat.subtitle}</p>
           </div>
 
@@ -215,38 +262,24 @@ function CategoryCard({
         </div>
 
         {hasActivity ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <span className="font-medium text-slate-700">
+          <>
+            <div className="mt-3 text-xs font-medium text-slate-700">
               {cat.totalEntries} {cat.totalEntries === 1 ? "entry" : "entries"}
-            </span>
-            {cat.draftCount > 0 && (
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-600 font-medium">
-                {cat.draftCount} {cat.draftCount === 1 ? "draft" : "drafts"}
-              </span>
-            )}
-            {cat.editRequestedCount > 0 && (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-600 font-medium">
-                {cat.editRequestedCount} pending
-              </span>
-            )}
-            {cat.streakWins > 0 && (
-              <span className="inline-flex items-center gap-0.5 text-emerald-600">
-                <Trophy className="size-3" />
-                {cat.streakWins}
-              </span>
-            )}
-          </div>
+            </div>
+
+            <div className="mt-2">
+              <EntryTypeBadges cat={cat} />
+            </div>
+
+            <div className="mt-2 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${accent.bar}`}
+                style={{ width: `${barWidth}%` }}
+              />
+            </div>
+          </>
         ) : (
           <p className="mt-3 text-xs text-slate-400 italic">No entries yet — get started!</p>
-        )}
-
-        {hasActivity && (
-          <div className="mt-2 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${accent.bar}`}
-              style={{ width: `${barWidth}%` }}
-            />
-          </div>
         )}
 
         {cat.lastActivity && (

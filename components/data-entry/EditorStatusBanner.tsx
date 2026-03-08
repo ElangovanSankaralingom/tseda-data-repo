@@ -63,15 +63,37 @@ type EditorStatusBannersProps = {
   isEditable: boolean;
   editTimeLabel?: string;
   editTimeMs?: number;
+  expiresAtISO?: string | null;
+  hasPdf?: boolean;
   onRequestEdit?: () => void;
   onCancelRequest?: () => void;
 };
+
+function formatFinalizedAgo(expiresAtISO: string): string {
+  const expiry = new Date(expiresAtISO);
+  if (Number.isNaN(expiry.getTime())) return "";
+  const diff = Date.now() - expiry.getTime();
+  if (diff < 0) return "";
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days} ${days === 1 ? "day" : "days"} ago`;
+  if (hours > 0) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  return "just now";
+}
+
+function getEditTimeUrgencyClass(remainingMs: number): string {
+  if (remainingMs < 24 * 60 * 60 * 1000) return "text-red-600 font-semibold";
+  if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-600";
+  return "text-slate-500";
+}
 
 export function EditorStatusBanners({
   status,
   isEditable,
   editTimeLabel,
   editTimeMs,
+  expiresAtISO,
+  hasPdf,
   onRequestEdit,
   onCancelRequest,
 }: EditorStatusBannersProps) {
@@ -91,7 +113,7 @@ export function EditorStatusBanners({
     return (
       <EditorStatusBanner
         variant="edit_granted"
-        message={`Edit access granted${editTimeLabel ? ` — expires in ${editTimeLabel}` : ""}`}
+        message={editTimeLabel ? `🔓 Edit access expires in ${editTimeLabel}` : "🔓 Edit access granted"}
       />
     );
   }
@@ -108,13 +130,26 @@ export function EditorStatusBanners({
   }
 
   if (!isEditable && status === "GENERATED") {
+    const agoText = expiresAtISO ? formatFinalizedAgo(expiresAtISO) : null;
+    const pdfHint = hasPdf ? " You can still preview and download the document below." : "";
     return (
       <EditorStatusBanner
         variant="finalized"
-        message="This entry has been finalized. All fields are read-only."
+        message={`🔒 This entry was finalized${agoText ? ` ${agoText}` : ""} and is read-only.${pdfHint}`}
         actionLabel="Request Edit"
         onAction={onRequestEdit}
       />
+    );
+  }
+
+  // Editable GENERATED entry with edit window — show countdown
+  if (isEditable && status === "GENERATED" && editTimeLabel && editTimeMs !== undefined) {
+    const urgencyClass = getEditTimeUrgencyClass(editTimeMs);
+    return (
+      <div className={`flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm ${urgencyClass} animate-fade-in`}>
+        <span>⏱️</span>
+        <span>Entry finalizes in {editTimeLabel.replace(/ left$/, "")}</span>
+      </div>
     );
   }
 

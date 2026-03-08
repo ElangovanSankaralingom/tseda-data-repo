@@ -35,12 +35,28 @@ function formatRelative(ts: string): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({
+  onPanelToggle,
+  forceClose,
+}: {
+  onPanelToggle?: (isOpen: boolean) => void;
+  forceClose?: boolean;
+} = {}) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<PersistentNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Force close from parent (when admin bell opens)
+  useEffect(() => {
+    if (forceClose && open) setOpen(false);
+  }, [forceClose, open]);
+
+  // Notify parent of panel state
+  useEffect(() => {
+    onPanelToggle?.(open);
+  }, [open, onPanelToggle]);
 
   // Fetch unread count on mount and periodically
   const fetchUnreadCount = useCallback(async () => {

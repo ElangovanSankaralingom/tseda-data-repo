@@ -31,6 +31,7 @@ import {
 } from "@/lib/data/wal";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import type { CategoryKey } from "@/lib/entries/types";
+import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import { AppError, logError, normalizeError } from "@/lib/errors";
 import {
   computeEditWindowExpiry,
@@ -251,6 +252,9 @@ const ENTRY_MUTATION_EVENT_BY_ACTION = {
   commitDraft: "entry.commit_draft",
   requestEdit: "entry.request_edit",
   grantEdit: "entry.grant_edit",
+  cancelEditRequest: "entry.cancel_edit_request",
+  rejectEdit: "entry.reject_edit",
+  finalize: "entry.finalize",
 } as const;
 
 type EntryMutationActionName = keyof typeof ENTRY_MUTATION_EVENT_BY_ACTION;
@@ -1200,6 +1204,20 @@ export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecor
       durationMs: Date.now() - startedAt,
       source: "manual",
     });
+
+    // Fire-and-forget admin notification (lazy import to avoid test-time issues)
+    void import("@/lib/confirmations/adminNotificationHelpers").then(({ notifyAdminEditRequest }) => {
+      void import("@/lib/confirmations/notificationHelpers").then(({ extractEntryTitle }) => {
+        void notifyAdminEditRequest(
+          normalizedOwner,
+          undefined,
+          extractEntryTitle(updatedEntry as unknown as Record<string, unknown>),
+          category,
+          id,
+        );
+      });
+    }).catch(() => {});
+
     return updatedEntry;
   } catch (error) {
     await trackEntryMutationFailure(
@@ -1358,6 +1376,429 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
         toStatus: trackedToStatus,
         durationMs: Date.now() - startedAt,
         source: "admin",
+      },
+      error
+    );
+    throw error;
+  }
+}
+
+export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngineRecord>(
+  userEmail: string,
+  category: CategoryKey,
+  entryId: string
+): Promise<T> {
+  const normalizedOwner = normalizeEmail(userEmail);
+  const id = normalizeId(entryId);
+  const startedAt = Date.now();
+  let trackedFromStatus: string | null = null;
+  let trackedToStatus: string | null = null;
+  logger.info({
+    event: "entry.mutation.start",
+    action: "cancelEditRequest",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+  });
+  try {
+    enforceEntryMutationGuards(normalizedOwner, `entry.edit.cancel.${category}`, { entryId: id });
+    if (!id) {
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: "Entry ID is required.",
+      });
+    }
+    const updatedEntry = await withUserDataLock(normalizedOwner, async () => {
+      const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+      if (!existingEntry) {
+        throw new AppError({
+          code: "NOT_FOUND",
+          message: "Entry not found",
+        });
+      }
+
+      const existing = existingEntry as EntryLike;
+      trackedFromStatus = String(getWorkflowStatus(existing));
+
+      const currentStatus = normalizeEntryStatus(existing as WorkflowEntryLike);
+      if (currentStatus !== "EDIT_REQUESTED") {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "Entry is not in EDIT_REQUESTED state.",
+        });
+      }
+
+      const nowISO = new Date().toISOString();
+      const transitioned = transitionEntry(existing as WorkflowEntryLike, "cancelEditRequest", {
+        nowISO,
+      });
+      const updated = normalizeEntry(
+        transitioned as Entry,
+        ENTRY_SCHEMAS[category]
+      ) as EntryLike;
+      trackedToStatus = String(updated.confirmationStatus ?? "");
+      await appendWalEventOrThrow(
+        normalizedOwner,
+        buildEvent({
+          actorEmail: normalizedOwner,
+          actorRole: "user",
+          userEmail: normalizedOwner,
+          category,
+          entryId: id,
+          action: "CANCEL_EDIT_REQUEST",
+          before: existing as EntryEngineRecord,
+          after: updated as EntryEngineRecord,
+        })
+      );
+
+      await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+      await refreshIndexForMutation(
+        normalizedOwner,
+        category,
+        existing as EntryEngineRecord,
+        updated as EntryEngineRecord
+      );
+      revalidateDashboardSummary(normalizedOwner);
+      logger.info({
+        event: "entry.mutation.end",
+        action: "cancelEditRequest",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        status: String(updated.confirmationStatus ?? ""),
+        durationMs: Date.now() - startedAt,
+      });
+      return updated as T;
+    });
+
+    await trackEntryMutationSuccess({
+      action: "cancelEditRequest",
+      actorEmail: normalizedOwner,
+      role: "user",
+      ownerEmail: normalizedOwner,
+      category,
+      entryId: id,
+      status: trackedToStatus,
+      fromStatus: trackedFromStatus,
+      toStatus: trackedToStatus,
+      durationMs: Date.now() - startedAt,
+      source: "manual",
+    });
+
+    return updatedEntry;
+  } catch (error) {
+    await trackEntryMutationFailure(
+      {
+        action: "cancelEditRequest",
+        actorEmail: normalizedOwner,
+        role: "user",
+        ownerEmail: normalizedOwner,
+        category,
+        entryId: id || null,
+        status: trackedToStatus ?? trackedFromStatus,
+        fromStatus: trackedFromStatus,
+        toStatus: trackedToStatus,
+        durationMs: Date.now() - startedAt,
+        source: "manual",
+      },
+      error
+    );
+    throw error;
+  }
+}
+
+export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngineRecord>(
+  adminEmail: string,
+  category: CategoryKey,
+  ownerEmail: string,
+  entryId: string,
+  reason?: string
+): Promise<T> {
+  const normalizedAdmin = normalizeEmail(adminEmail);
+  const normalizedOwner = normalizeEmail(ownerEmail);
+  const startedAt = Date.now();
+  const id = normalizeId(entryId);
+  let trackedFromStatus: string | null = null;
+  let trackedToStatus: string | null = null;
+  logger.info({
+    event: "entry.mutation.start",
+    action: "rejectEdit",
+    actorEmail: normalizedAdmin,
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+  });
+  try {
+    if (!canManageEditRequests(normalizedAdmin)) {
+      throw new AppError({
+        code: "FORBIDDEN",
+        message: "Forbidden",
+      });
+    }
+
+    enforceAdminMutationGuards(normalizedAdmin, "entry.edit.reject", {
+      category,
+      ownerEmail: normalizedOwner,
+      entryId,
+    });
+    if (!id) {
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: "Entry ID is required.",
+      });
+    }
+    if (!CATEGORY_KEYS.includes(category)) {
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: `Unsupported category: ${category}`,
+      });
+    }
+    const rejectedEntry = await withUserDataLock(normalizedOwner, async () => {
+      const existing = await readEntryRaw(normalizedOwner, category, id);
+      if (!existing) {
+        throw new AppError({
+          code: "NOT_FOUND",
+          message: "Entry not found",
+        });
+      }
+      trackedFromStatus = String(normalizeEntryStatus(existing));
+
+      const nowISO = new Date().toISOString();
+      const transitioned = transitionEntry(existing as WorkflowEntryLike, "rejectEdit", {
+        nowISO,
+        adminEmail: normalizedAdmin,
+      });
+      if (reason?.trim()) {
+        (transitioned as Record<string, unknown>).editRejectedReason = reason.trim();
+      }
+      const updated = normalizeEntry(
+        transitioned as Entry,
+        ENTRY_SCHEMAS[category]
+      ) as EntryLike;
+      trackedToStatus = String(updated.confirmationStatus ?? "");
+      await appendWalEventOrThrow(
+        normalizedOwner,
+        buildEvent({
+          actorEmail: normalizedAdmin,
+          actorRole: "admin",
+          userEmail: normalizedOwner,
+          category,
+          entryId: id,
+          action: "REJECT_EDIT",
+          before: existing,
+          after: updated as EntryEngineRecord,
+        })
+      );
+
+      await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+      await refreshIndexForMutation(
+        normalizedOwner,
+        category,
+        existing,
+        updated as EntryEngineRecord
+      );
+      revalidateDashboardSummary(normalizedOwner);
+      logger.info({
+        event: "entry.mutation.end",
+        action: "rejectEdit",
+        actorEmail: normalizedAdmin,
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        status: String(updated.confirmationStatus ?? ""),
+        durationMs: Date.now() - startedAt,
+      });
+      return updated as T;
+    });
+
+    await trackEntryMutationSuccess({
+      action: "rejectEdit",
+      actorEmail: normalizedAdmin,
+      role: "admin",
+      ownerEmail: normalizedOwner,
+      category,
+      entryId: id,
+      status: trackedToStatus,
+      fromStatus: trackedFromStatus,
+      toStatus: trackedToStatus,
+      durationMs: Date.now() - startedAt,
+      source: "admin",
+    });
+
+    // Fire-and-forget notification to entry owner
+    void import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle }) => {
+      void notifyEditRejected(
+        normalizedOwner,
+        extractEntryTitle(rejectedEntry as unknown as Record<string, unknown>),
+        reason?.trim(),
+      );
+    }).catch(() => {});
+
+    return rejectedEntry;
+  } catch (error) {
+    await trackEntryMutationFailure(
+      {
+        action: "rejectEdit",
+        actorEmail: normalizedAdmin,
+        role: "admin",
+        ownerEmail: normalizedOwner,
+        category,
+        entryId: id || null,
+        status: trackedToStatus ?? trackedFromStatus,
+        fromStatus: trackedFromStatus,
+        toStatus: trackedToStatus,
+        durationMs: Date.now() - startedAt,
+        source: "admin",
+      },
+      error
+    );
+    throw error;
+  }
+}
+
+export async function finalizeEntry<T extends EntryEngineRecord = EntryEngineRecord>(
+  userEmail: string,
+  category: CategoryKey,
+  entryId: string
+): Promise<T> {
+  const normalizedOwner = normalizeEmail(userEmail);
+  const id = normalizeId(entryId);
+  const startedAt = Date.now();
+  let trackedFromStatus: string | null = null;
+  let trackedToStatus: string | null = null;
+  logger.info({
+    event: "entry.mutation.start",
+    action: "finalize",
+    userEmail: normalizedOwner,
+    category,
+    entryId: id,
+  });
+  try {
+    enforceEntryMutationGuards(normalizedOwner, `entry.finalize.${category}`, { entryId: id });
+    if (!id) {
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: "Entry ID is required.",
+      });
+    }
+    if (!CATEGORY_KEYS.includes(category)) {
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: `Unsupported category: ${category}`,
+      });
+    }
+    const finalizedEntry = await withUserDataLock(normalizedOwner, async () => {
+      const existingEntry = await readEntryRaw(normalizedOwner, category, id);
+      if (!existingEntry) {
+        throw new AppError({
+          code: "NOT_FOUND",
+          message: "Entry not found",
+        });
+      }
+
+      const existing = existingEntry as EntryLike;
+      trackedFromStatus = String(getWorkflowStatus(existing));
+
+      // Must be GENERATED and currently editable
+      const currentStatus = normalizeEntryStatus(existing as WorkflowEntryLike);
+      if (currentStatus !== "GENERATED") {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "Only generated entries can be finalised.",
+        });
+      }
+      if (!isEntryEditable(existing as WorkflowEntryLike)) {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "Entry is already finalised.",
+        });
+      }
+
+      // All fields must be complete
+      const progress = computeFieldProgress(category, existing as Record<string, unknown>);
+      if (progress.total > 0 && progress.completed < progress.total) {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "All fields must be complete before finalising.",
+        });
+      }
+
+      // Finalise by expiring the edit window now
+      const nowISO = new Date().toISOString();
+      const updated = normalizeEntry(
+        {
+          ...existing,
+          editWindowExpiresAt: nowISO,
+          updatedAt: nowISO,
+        } as Entry,
+        ENTRY_SCHEMAS[category]
+      ) as EntryLike;
+      trackedToStatus = String(updated.confirmationStatus ?? "GENERATED");
+
+      await appendWalEventOrThrow(
+        normalizedOwner,
+        buildEvent({
+          actorEmail: normalizedOwner,
+          actorRole: "user",
+          userEmail: normalizedOwner,
+          category,
+          entryId: id,
+          action: "FINALIZE",
+          before: existing as EntryEngineRecord,
+          after: updated as EntryEngineRecord,
+        })
+      );
+
+      await upsertEntryRaw(normalizedOwner, category, updated as EntryEngineRecord);
+      await refreshIndexForMutation(
+        normalizedOwner,
+        category,
+        existing as EntryEngineRecord,
+        updated as EntryEngineRecord
+      );
+      revalidateDashboardSummary(normalizedOwner);
+      logger.info({
+        event: "entry.mutation.end",
+        action: "finalize",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        status: trackedToStatus,
+        durationMs: Date.now() - startedAt,
+      });
+      return updated as T;
+    });
+
+    await trackEntryMutationSuccess({
+      action: "finalize",
+      actorEmail: normalizedOwner,
+      role: "user",
+      ownerEmail: normalizedOwner,
+      category,
+      entryId: id,
+      status: trackedToStatus,
+      fromStatus: trackedFromStatus,
+      toStatus: trackedToStatus,
+      durationMs: Date.now() - startedAt,
+      source: "manual",
+      meta: { trigger: "manual" },
+    });
+
+    return finalizedEntry;
+  } catch (error) {
+    await trackEntryMutationFailure(
+      {
+        action: "finalize",
+        actorEmail: normalizedOwner,
+        role: "user",
+        ownerEmail: normalizedOwner,
+        category,
+        entryId: id || null,
+        status: trackedToStatus ?? trackedFromStatus,
+        fromStatus: trackedFromStatus,
+        toStatus: trackedToStatus,
+        durationMs: Date.now() - startedAt,
+        source: "manual",
       },
       error
     );

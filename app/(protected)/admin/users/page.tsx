@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { Users } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import UserManagement from "@/components/admin/UserManagement";
 import { authOptions } from "@/lib/auth";
@@ -30,6 +31,7 @@ export default async function AdminUsersPage() {
       title="User Management"
       subtitle="Every faculty member, their data, their journey"
       backHref={adminHome()}
+      icon={Users}
     >
       <UserManagement initialUsers={users} initialStats={stats} />
     </AdminPageShell>

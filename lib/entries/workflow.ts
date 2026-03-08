@@ -28,7 +28,9 @@ export type EntryTransitionAction =
   | "createEntry"
   | "generateEntry"
   | "requestEdit"
-  | "grantEdit";
+  | "grantEdit"
+  | "rejectEdit"
+  | "cancelEditRequest";
 
 export type EntryStateLike = {
   confirmationStatus?: unknown;
@@ -182,7 +184,7 @@ export function isEntryLocked(entry: EntryStateLike): boolean {
 export function canTransition(from: EntryStatus, to: EntryStatus): boolean {
   if (from === "DRAFT") return to === "GENERATED";
   if (from === "GENERATED") return to === "EDIT_REQUESTED";
-  if (from === "EDIT_REQUESTED") return to === "EDIT_GRANTED";
+  if (from === "EDIT_REQUESTED") return to === "EDIT_GRANTED" || to === "GENERATED";
   if (from === "EDIT_GRANTED") return to === "GENERATED";
   return false;
 }
@@ -191,6 +193,7 @@ function statusForAction(action: EntryTransitionAction): EntryStatus {
   if (action === "createEntry") return "DRAFT";
   if (action === "generateEntry") return "GENERATED";
   if (action === "requestEdit") return "EDIT_REQUESTED";
+  if (action === "rejectEdit" || action === "cancelEditRequest") return "GENERATED";
   return "EDIT_GRANTED";
 }
 
@@ -225,6 +228,13 @@ export function transitionEntry<T extends EntryStateLike>(
     (next as Record<string, unknown>).editRequestMessage = null;
     (next as Record<string, unknown>).editGrantedAt = null;
     (next as Record<string, unknown>).editGrantedBy = null;
+    return next;
+  }
+
+  if (to === "GENERATED" && from === "EDIT_REQUESTED") {
+    // Reject or cancel — revert to GENERATED, clear edit request fields
+    (next as Record<string, unknown>).editRequestedAt = null;
+    (next as Record<string, unknown>).editRequestMessage = null;
     return next;
   }
 
@@ -274,12 +284,12 @@ export function getEditTimeRemaining(entry: EntryStateLike, nowISO?: string): Ed
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
     if (days > 0) {
-      remainingLabel = `${days}d ${hours % 24}h left`;
+      remainingLabel = `${days} ${days === 1 ? "day" : "days"} left`;
     } else if (hours > 0) {
-      remainingLabel = `${hours}h left`;
+      remainingLabel = `${hours} ${hours === 1 ? "hour" : "hours"} left`;
     } else {
       const minutes = Math.max(1, Math.ceil(remainingMs / (1000 * 60)));
-      remainingLabel = `${minutes}m left`;
+      remainingLabel = `${minutes} ${minutes === 1 ? "minute" : "minutes"} left`;
     }
   }
 

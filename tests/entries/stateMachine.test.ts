@@ -55,7 +55,7 @@ test("valid pre-stage with no pdf enables generate", () => {
   assert.equal(state.canDownload, false);
 });
 
-test("existing up-to-date pdf disables generate and enables preview/download", () => {
+test("existing up-to-date pdf keeps generate enabled and enables preview/download", () => {
   const state = computeEntryLifecycle({
     isLocked: false,
     hasPdfSnapshot: true,
@@ -66,7 +66,7 @@ test("existing up-to-date pdf disables generate and enables preview/download", (
   });
 
   assert.equal(state.stage, "post");
-  assert.equal(state.canGenerate, false);
+  assert.equal(state.canGenerate, true);
   assert.equal(state.canPreview, true);
   assert.equal(state.canDownload, true);
 });

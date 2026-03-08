@@ -197,23 +197,24 @@ export async function runGenerateEntryOrchestration<TEntry>({
   generateEntrySnapshot,
   persistProgress,
   applyGeneratedEntry,
-}: GenerateEntryOrchestrationOptions<TEntry>) {
-  if (saveLockRef.current) return;
+}: GenerateEntryOrchestrationOptions<TEntry>): Promise<boolean> {
+  if (saveLockRef.current) return false;
   saveLockRef.current = true;
 
+  let success = false;
   try {
     markSubmitAttempted();
 
     if (hasValidationErrors || !canGenerate) {
       setToast({ type: "err", msg: validationMessage });
       scheduleToastClear(setToast, errorToastMs);
-      return;
+      return false;
     }
 
     if (hasBusyUploads) {
       setToast({ type: "err", msg: busyMessage });
       scheduleToastClear(setToast, errorToastMs);
-      return;
+      return false;
     }
 
     beforeGenerate?.();
@@ -225,6 +226,7 @@ export async function runGenerateEntryOrchestration<TEntry>({
 
     setToast({ type: "ok", msg: successMessage });
     scheduleToastClear(setToast, successToastMs);
+    success = true;
   } catch (error) {
     const message = error instanceof Error ? error.message : errorMessage;
     setToast({ type: "err", msg: message });
@@ -234,6 +236,7 @@ export async function runGenerateEntryOrchestration<TEntry>({
     afterGenerate?.();
     saveLockRef.current = false;
   }
+  return success;
 }
 
 type PersistCurrentEntryMutationOptions<

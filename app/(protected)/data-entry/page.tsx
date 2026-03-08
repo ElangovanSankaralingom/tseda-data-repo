@@ -44,6 +44,7 @@ export default async function DataEntryHomePage() {
       editGrantedCount: catData?.editGrantedCount ?? 0,
       streakActivated: catData?.streakActivatedCount ?? 0,
       streakWins: catData?.streakWinsCount ?? 0,
+      completedNonStreak: catData?.completedNonStreakCount ?? 0,
       lastActivity: lastActivityMap[slug] ?? null,
     };
   });
@@ -56,6 +57,7 @@ export default async function DataEntryHomePage() {
     editGrantedCount: 0,
     streakActivatedCount: 0,
     streakWinsCount: 0,
+    completedNonStreakCount: 0,
   };
 
   return (
