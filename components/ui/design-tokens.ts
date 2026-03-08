@@ -19,10 +19,20 @@ export const STATUS_COLORS: Record<
     border: "border-l-amber-500",
     icon: "text-amber-500",
   },
+  DELETE_REQUESTED: {
+    badge: "border-red-200 bg-red-100 text-red-700",
+    border: "border-l-red-500",
+    icon: "text-red-500",
+  },
   EDIT_GRANTED: {
     badge: "border-emerald-200 bg-emerald-100 text-emerald-700",
     border: "border-l-emerald-500",
     icon: "text-emerald-500",
+  },
+  ARCHIVED: {
+    badge: "border-slate-300 bg-slate-100 text-slate-500",
+    border: "border-l-slate-400",
+    icon: "text-slate-400",
   },
 };
 
