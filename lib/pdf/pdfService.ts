@@ -55,7 +55,7 @@ async function getAuthorizedTceEmail() {
   return email;
 }
 
-function buildPdfPatch(entry: Entry, category: CategoryKey, pdfMeta: unknown) {
+function buildPdfPatch(entry: Entry, category: CategoryKey, pdfMeta: Entry["pdfMeta"]) {
   const nextStreak = normalizeStreakState(entry.streak);
 
   return {

@@ -4,11 +4,14 @@ export type { EntryStatus } from "@/lib/types/entry";
 /**
  * Canonical pure workflow-rule layer for entries.
  *
- * The new workflow replaces DRAFT/PENDING/APPROVED/REJECTED with:
+ * State machine (6 statuses):
  *   DRAFT → GENERATED → (EDIT_REQUESTED → EDIT_GRANTED → GENERATED)
+ *                      → (DELETE_REQUESTED → ARCHIVED | GENERATED)
+ *                      → ARCHIVED (auto, timer expired without valid PDF)
  *
- * Finalization is time-based: once `editWindowExpiresAt` has passed, the entry
- * is effectively read-only. There is no explicit FINALIZED status.
+ * Finalization is time-based: once `editWindowExpiresAt` has passed and the
+ * entry has a valid PDF, it is effectively read-only. No explicit FINALIZED
+ * status exists.
  *
  * Edit this module when changing status normalization, edit-window rules,
  * or transition logic. Persistence lives in `lifecycle.ts` / `engine.ts`.
@@ -28,23 +31,41 @@ export type EntryTransitionAction =
   | "createEntry"
   | "generateEntry"
   | "requestEdit"
+  | "requestDelete"
   | "grantEdit"
   | "rejectEdit"
-  | "cancelEditRequest";
+  | "cancelEditRequest"
+  | "cancelDeleteRequest"
+  | "approveDelete"
+  | "archiveEntry"
+  | "restoreEntry";
 
 export type EntryStateLike = {
   confirmationStatus?: unknown;
   requestEditStatus?: unknown;
   status?: unknown;
+  generatedAt?: unknown;
   committedAtISO?: unknown;
   editWindowExpiresAt?: unknown;
   editRequestedAt?: unknown;
   editRequestMessage?: unknown;
   editGrantedAt?: unknown;
   editGrantedBy?: unknown;
+  editGrantedDays?: unknown;
+  editRejectedReason?: unknown;
+  deleteRequestedAt?: unknown;
+  requestType?: unknown;
+  requestCount?: unknown;
+  requestCountResetAt?: unknown;
+  archivedAt?: unknown;
+  archiveReason?: unknown;
   endDate?: unknown;
   streakEligible?: unknown;
   updatedAt?: unknown;
+  pdfGenerated?: unknown;
+  pdfGeneratedAt?: unknown;
+  pdfUrl?: unknown;
+  timerWarningShown?: unknown;
   // Legacy fields for migration
   sentForConfirmationAtISO?: unknown;
   confirmedAtISO?: unknown;
@@ -55,6 +76,8 @@ export type EntryStateLike = {
 type TransitionOptions = {
   nowISO?: string;
   adminEmail?: string;
+  editGrantedDays?: number;
+  archiveReason?: "auto_no_pdf" | "delete_approved";
 };
 
 function normalizeStatusValue(value: unknown): EntryStatus | null {
@@ -94,8 +117,8 @@ export function normalizeEntryStatus(
     return "GENERATED";
   }
 
-  // If it has committedAtISO, it's GENERATED
-  if (toOptionalISO(entry.committedAtISO)) {
+  // If it has generatedAt or committedAtISO, it's GENERATED
+  if (toOptionalISO(entry.generatedAt) || toOptionalISO(entry.committedAtISO)) {
     return "GENERATED";
   }
 
@@ -109,7 +132,7 @@ export function normalizeEntryStatus(
 }
 
 export function isEntryCommitted(entry: EntryStateLike): boolean {
-  if (toOptionalISO(entry.committedAtISO)) {
+  if (toOptionalISO(entry.generatedAt) || toOptionalISO(entry.committedAtISO)) {
     return true;
   }
 
@@ -144,6 +167,18 @@ export function computeEditWindowExpiry(
   return defaultExpiry;
 }
 
+/**
+ * Compute the edit grant expiry.
+ * When an admin grants edit access, the timer is based on the grant, not the
+ * original entry timer.
+ */
+export function computeEditGrantExpiry(
+  grantedAtISO: string,
+  grantedDays: number
+): string {
+  return addDays(grantedAtISO, grantedDays);
+}
+
 // --- Editability ---
 
 export function isEditWindowExpired(entry: EntryStateLike, nowISO?: string): boolean {
@@ -156,8 +191,9 @@ export function isEditWindowExpired(entry: EntryStateLike, nowISO?: string): boo
 export function isEntryFinalized(entry: EntryStateLike, nowISO?: string): boolean {
   const status = normalizeEntryStatus(entry);
   if (status === "DRAFT") return false;
-  // EDIT_REQUESTED and EDIT_GRANTED are not finalized
-  if (status === "EDIT_REQUESTED" || status === "EDIT_GRANTED") return false;
+  if (status === "ARCHIVED") return false;
+  // EDIT_REQUESTED, DELETE_REQUESTED, and EDIT_GRANTED are not finalized
+  if (status === "EDIT_REQUESTED" || status === "DELETE_REQUESTED" || status === "EDIT_GRANTED") return false;
   // GENERATED: finalized if edit window has expired
   return isEditWindowExpired(entry, nowISO);
 }
@@ -170,7 +206,7 @@ export function isEntryEditable(entry: EntryStateLike, nowISO?: string): boolean
     // Editable if edit window hasn't expired
     return !isEditWindowExpired(entry, nowISO);
   }
-  // EDIT_REQUESTED: not editable until granted
+  // EDIT_REQUESTED, DELETE_REQUESTED, ARCHIVED: not editable
   return false;
 }
 
@@ -183,9 +219,13 @@ export function isEntryLocked(entry: EntryStateLike): boolean {
 
 export function canTransition(from: EntryStatus, to: EntryStatus): boolean {
   if (from === "DRAFT") return to === "GENERATED";
-  if (from === "GENERATED") return to === "EDIT_REQUESTED";
+  if (from === "GENERATED") {
+    return to === "EDIT_REQUESTED" || to === "DELETE_REQUESTED" || to === "ARCHIVED";
+  }
   if (from === "EDIT_REQUESTED") return to === "EDIT_GRANTED" || to === "GENERATED";
-  if (from === "EDIT_GRANTED") return to === "GENERATED";
+  if (from === "DELETE_REQUESTED") return to === "ARCHIVED" || to === "GENERATED";
+  if (from === "EDIT_GRANTED") return to === "GENERATED" || to === "ARCHIVED";
+  if (from === "ARCHIVED") return to === "GENERATED"; // restore
   return false;
 }
 
@@ -193,8 +233,13 @@ function statusForAction(action: EntryTransitionAction): EntryStatus {
   if (action === "createEntry") return "DRAFT";
   if (action === "generateEntry") return "GENERATED";
   if (action === "requestEdit") return "EDIT_REQUESTED";
+  if (action === "requestDelete") return "DELETE_REQUESTED";
+  if (action === "grantEdit") return "EDIT_GRANTED";
   if (action === "rejectEdit" || action === "cancelEditRequest") return "GENERATED";
-  return "EDIT_GRANTED";
+  if (action === "cancelDeleteRequest") return "GENERATED";
+  if (action === "approveDelete" || action === "archiveEntry") return "ARCHIVED";
+  if (action === "restoreEntry") return "GENERATED";
+  return "DRAFT";
 }
 
 export function transitionEntry<T extends EntryStateLike>(
@@ -220,39 +265,97 @@ export function transitionEntry<T extends EntryStateLike>(
     return next;
   }
 
+  // GENERATED from EDIT_GRANTED: re-generate after edit grant
   if (to === "GENERATED" && from === "EDIT_GRANTED") {
-    // Re-generate after edit grant — update edit window
     const editWindowExpiresAt = computeEditWindowExpiry(nowISO, entry);
     (next as Record<string, unknown>).editWindowExpiresAt = editWindowExpiresAt;
     (next as Record<string, unknown>).editRequestedAt = null;
     (next as Record<string, unknown>).editRequestMessage = null;
     (next as Record<string, unknown>).editGrantedAt = null;
     (next as Record<string, unknown>).editGrantedBy = null;
+    (next as Record<string, unknown>).editGrantedDays = null;
+    (next as Record<string, unknown>).requestType = null;
     return next;
   }
 
+  // GENERATED from EDIT_REQUESTED: reject or cancel edit request
   if (to === "GENERATED" && from === "EDIT_REQUESTED") {
-    // Reject or cancel — revert to GENERATED, clear edit request fields
     (next as Record<string, unknown>).editRequestedAt = null;
     (next as Record<string, unknown>).editRequestMessage = null;
+    (next as Record<string, unknown>).requestType = null;
     return next;
   }
 
-  if (to === "GENERATED") {
-    // First generation
+  // GENERATED from DELETE_REQUESTED: reject or cancel delete request
+  if (to === "GENERATED" && from === "DELETE_REQUESTED") {
+    (next as Record<string, unknown>).deleteRequestedAt = null;
+    (next as Record<string, unknown>).requestType = null;
+    return next;
+  }
+
+  // GENERATED from ARCHIVED: restore
+  if (to === "GENERATED" && from === "ARCHIVED") {
     const editWindowExpiresAt = computeEditWindowExpiry(nowISO, entry);
     (next as Record<string, unknown>).editWindowExpiresAt = editWindowExpiresAt;
+    (next as Record<string, unknown>).generatedAt = nowISO;
+    (next as Record<string, unknown>).archivedAt = null;
+    (next as Record<string, unknown>).archiveReason = null;
+    // Reset PDF state — user must regenerate after restore
+    (next as Record<string, unknown>).pdfGenerated = false;
+    (next as Record<string, unknown>).pdfGeneratedAt = null;
+    (next as Record<string, unknown>).pdfUrl = null;
+    return next;
+  }
+
+  // GENERATED from DRAFT: first generation (auto-transition)
+  if (to === "GENERATED" && from === "DRAFT") {
+    const editWindowExpiresAt = computeEditWindowExpiry(nowISO, entry);
+    (next as Record<string, unknown>).editWindowExpiresAt = editWindowExpiresAt;
+    (next as Record<string, unknown>).generatedAt = nowISO;
+    // Also set committedAtISO for backwards compatibility
+    (next as Record<string, unknown>).committedAtISO = nowISO;
+    return next;
+  }
+
+  // Fallback GENERATED (shouldn't normally hit this)
+  if (to === "GENERATED") {
     return next;
   }
 
   if (to === "EDIT_REQUESTED") {
     (next as Record<string, unknown>).editRequestedAt = nowISO;
+    (next as Record<string, unknown>).requestType = "edit";
+    return next;
+  }
+
+  if (to === "DELETE_REQUESTED") {
+    (next as Record<string, unknown>).deleteRequestedAt = nowISO;
+    (next as Record<string, unknown>).requestType = "delete";
+    // Cancel any pending edit request
+    (next as Record<string, unknown>).editRequestedAt = null;
+    (next as Record<string, unknown>).editRequestMessage = null;
     return next;
   }
 
   if (to === "EDIT_GRANTED") {
+    const grantedDays = options?.editGrantedDays ?? DEFAULT_EDIT_WINDOW_DAYS;
     (next as Record<string, unknown>).editGrantedAt = nowISO;
     (next as Record<string, unknown>).editGrantedBy = options?.adminEmail ?? null;
+    (next as Record<string, unknown>).editGrantedDays = grantedDays;
+    // Edit grant timer replaces original entry timer
+    (next as Record<string, unknown>).editWindowExpiresAt = computeEditGrantExpiry(nowISO, grantedDays);
+    (next as Record<string, unknown>).requestType = null;
+    return next;
+  }
+
+  if (to === "ARCHIVED") {
+    (next as Record<string, unknown>).archivedAt = nowISO;
+    (next as Record<string, unknown>).archiveReason = options?.archiveReason ?? null;
+    // Clear pending request state
+    (next as Record<string, unknown>).editRequestedAt = null;
+    (next as Record<string, unknown>).editRequestMessage = null;
+    (next as Record<string, unknown>).deleteRequestedAt = null;
+    (next as Record<string, unknown>).requestType = null;
     return next;
   }
 
@@ -294,4 +397,24 @@ export function getEditTimeRemaining(entry: EntryStateLike, nowISO?: string): Ed
   }
 
   return { hasEditWindow: true, expired, expiresAtISO: expiry, remainingMs, remainingLabel };
+}
+
+// --- Request limit helpers ---
+
+const MAX_REQUESTS_PER_MONTH = 3;
+
+export function canRequestAction(entry: EntryStateLike): boolean {
+  const status = normalizeEntryStatus(entry);
+  // Only finalized GENERATED entries can have actions requested
+  if (status !== "GENERATED") return false;
+  if (!isEntryFinalized(entry)) return false;
+
+  // Check monthly limit
+  const count = typeof entry.requestCount === "number" ? entry.requestCount : 0;
+  return count < MAX_REQUESTS_PER_MONTH;
+}
+
+export function getRequestCountRemaining(entry: EntryStateLike): number {
+  const count = typeof entry.requestCount === "number" ? entry.requestCount : 0;
+  return Math.max(0, MAX_REQUESTS_PER_MONTH - count);
 }
