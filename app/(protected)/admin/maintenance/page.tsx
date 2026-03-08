@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { Wrench } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { authOptions } from "@/lib/auth";
 import { canRunMaintenance } from "@/lib/admin/roles";
@@ -37,6 +38,7 @@ export default async function AdminMaintenancePage() {
       title="Mission Control"
       subtitle="Monitor system health, run maintenance jobs, and review action history."
       backHref={adminHome()}
+      icon={Wrench}
       maxWidthClassName="max-w-7xl"
     >
       <MaintenanceDashboard

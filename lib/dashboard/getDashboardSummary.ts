@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { getDashboardTag } from "@/lib/dashboard/tags";
+import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
 import type { CategoryKey } from "@/lib/entries/types";
 import { logError } from "@/lib/errors";
@@ -42,6 +43,7 @@ type CategoryDashboardSummary = {
   editGrantedCount: number;
   streakActivatedCount: number;
   streakWinsCount: number;
+  completedNonStreakCount: number;
 };
 
 export type DashboardSummary = {
@@ -54,6 +56,7 @@ export type DashboardSummary = {
     editGrantedCount: number;
     streakActivatedCount: number;
     streakWinsCount: number;
+    completedNonStreakCount: number;
     // Keep old names as aliases for dashboard page compatibility
     pendingConfirmationCount: number;
     approvedCount: number;
@@ -76,6 +79,7 @@ function emptyCategorySummary(): CategoryDashboardSummary {
     editGrantedCount: 0,
     streakActivatedCount: 0,
     streakWinsCount: 0,
+    completedNonStreakCount: 0,
   };
 }
 
@@ -98,6 +102,7 @@ function emptySummary(): DashboardSummary {
       editGrantedCount: 0,
       streakActivatedCount: 0,
       streakWinsCount: 0,
+      completedNonStreakCount: 0,
       pendingConfirmationCount: 0,
       approvedCount: 0,
       rejectedCount: 0,
@@ -128,6 +133,7 @@ function normalizeSummary(summary: unknown): DashboardSummary {
         editGrantedCount: toFiniteCount(raw?.editGrantedCount),
         streakActivatedCount: toFiniteCount(raw?.streakActivatedCount),
         streakWinsCount: toFiniteCount(raw?.streakWinsCount),
+        completedNonStreakCount: toFiniteCount(raw?.completedNonStreakCount),
       };
       return next;
     },
@@ -146,6 +152,7 @@ function normalizeSummary(summary: unknown): DashboardSummary {
     editGrantedCount,
     streakActivatedCount: toFiniteCount(rawTotals.streakActivatedCount),
     streakWinsCount: toFiniteCount(rawTotals.streakWinsCount),
+    completedNonStreakCount: toFiniteCount(rawTotals.completedNonStreakCount),
     // Compatibility aliases
     pendingConfirmationCount: editRequestedCount,
     approvedCount: generatedCount + editGrantedCount,
@@ -225,11 +232,25 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
       });
     }
 
+    // Count non-streak entries that are generated and have all required fields complete
+    let completedNonStreak = 0;
+    for (const entry of categoryEntries) {
+      const ws = getEntryWorkflowStatus(entry as Record<string, unknown>);
+      if (ws === "DRAFT") continue;
+      if (entry.streakEligible) continue;
+      const progress = computeFieldProgress(categoryKey, entry as Record<string, unknown>);
+      if (progress.total > 0 && progress.completed === progress.total) {
+        completedNonStreak++;
+      }
+    }
+    categorySummary.completedNonStreakCount = completedNonStreak;
+
     summary.totals.totalEntries += categorySummary.totalEntries;
     summary.totals.draftCount += categorySummary.draftCount;
     summary.totals.generatedCount += categorySummary.generatedCount;
     summary.totals.editRequestedCount += categorySummary.editRequestedCount;
     summary.totals.editGrantedCount += categorySummary.editGrantedCount;
+    summary.totals.completedNonStreakCount += completedNonStreak;
   }
 
   // Compatibility aliases

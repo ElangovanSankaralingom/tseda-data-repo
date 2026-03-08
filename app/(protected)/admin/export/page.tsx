@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { Download } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import ExportDashboard from "@/components/admin/ExportDashboard";
 import { authOptions } from "@/lib/auth";
@@ -53,6 +54,7 @@ export default async function AdminExportPage() {
       title="Export Center"
       subtitle="Quick templates, custom exports, and download history."
       backHref={adminHome()}
+      icon={Download}
     >
       <ExportDashboard
         templates={templates}

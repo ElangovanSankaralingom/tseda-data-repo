@@ -47,8 +47,8 @@ export function computeEntryLifecycle({
 }: EntryLifecycleInput): EntryLifecycleState {
   const dirty = preStageDirty || postStageDirty;
   const stage: EntryLifecycleStage = hasPdfSnapshot ? "post" : "pre";
-  const canGenerate = !isLocked && preStageValid && preStageDirty;
-  const canPreview = hasPdfSnapshot && preStageValid && !preStageDirty;
+  const canGenerate = !isLocked && preStageValid;
+  const canPreview = hasPdfSnapshot && !preStageDirty;
   const canDownload = canPreview;
   const canDone = !isLocked && hasPdfSnapshot && preStageValid && postStageValid && !preStageDirty;
   const canSave = !isLocked && dirty;

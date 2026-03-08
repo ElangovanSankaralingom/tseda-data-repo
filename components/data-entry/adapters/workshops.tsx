@@ -9,7 +9,7 @@ import Field from "@/components/data-entry/Field";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { createGroupedEntryListCard } from "@/components/data-entry/GroupedEntrySections";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
-import { EntryPdfActionsBar } from "@/components/entry/EntryHeaderActions";
+import EntryDocumentSection from "@/components/data-entry/EntryDocumentSection";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import EntryUploader from "@/components/upload/EntryUploader";
@@ -22,10 +22,12 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
+import { computeFieldProgress } from "@/lib/entries/fieldProgress";
+import { isEntryEditable } from "@/lib/entries/workflow";
 import { getEntryApprovalStatus } from "@/lib/confirmation";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
-import { nowISTTimestampISO } from "@/lib/gamification";
+
 import { computePdfState, hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,
@@ -468,18 +470,26 @@ export function WorkshopsPage({
       }),
     persistProgress,
     normalizePersistedEntry: hydrateEntry,
-    persistRequestEdit: async (entry) =>
-      persistProgress({
-        ...entry,
-        requestEditStatus: "pending",
-        requestEditRequestedAtISO: entry.requestEditRequestedAtISO ?? nowISTTimestampISO(),
-      }),
-    persistCancelRequestEdit: async (entry) =>
-      persistProgress({
-        ...entry,
-        requestEditStatus: "none",
-        requestEditRequestedAtISO: null,
-      }),
+    persistRequestEdit: async (entry) => {
+      const response = await fetch("/api/me/entry/confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryKey: "workshops", entryId: entry.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || "Request failed.");
+      return hydrateEntry(payload);
+    },
+    persistCancelRequestEdit: async (entry) => {
+      const response = await fetch("/api/me/entry/confirmation", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryKey: "workshops", entryId: entry.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || "Cancel request failed.");
+      return hydrateEntry(payload);
+    },
     commitDraft: commitDraftEntry,
     applyPersistedEntry: (entry) => {
       applyPersistedEntry(entry);
@@ -515,6 +525,7 @@ export function WorkshopsPage({
   const {
     autoSaveStatus,
     cancelRequestEdit,
+    finaliseEntry,
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
@@ -652,6 +663,12 @@ export function WorkshopsPage({
     buildSubtitle: (entry) => `Speaker: ${entry.speakerName} • ${entry.organisationName}`,
     onView: (entry) => router.push(entryDetail("workshops", entry.id)),
     onEdit: (entry) => router.push(entryDetail("workshops", entry.id)),
+    onFinalise: (entry) => void finaliseEntry(entry),
+    canFinalise: (entry) => {
+      if (!isEntryEditable(entry)) return false;
+      const progress = computeFieldProgress("workshops", entry as Record<string, unknown>);
+      return progress.total > 0 && progress.completed === progress.total;
+    },
     requestConfirmation,
     buildDeleteRequest: (entry) => ({
       title: "Delete entry?",
@@ -743,6 +760,19 @@ export function WorkshopsPage({
           router.push(entryNew("workshops"), { scroll: false });
         },
         addLabel: "Add Workshop",
+        workflowAction: showForm && !isViewMode ? {
+          label: "Generate Entry",
+          onClick: () => controller.generateEntry(),
+          disabled: controller.actionState.generateDisabled,
+          busyLabel: "Generating...",
+        } : undefined,
+        entryStatus: form.confirmationStatus,
+        onRequestEdit: () => void controller.requestEdit(form),
+        onCancelRequestEdit: () => void controller.cancelRequestEdit(form),
+        onFinalise: isViewMode && isEntryEditable(form) && (() => {
+          const progress = computeFieldProgress("workshops", form as Record<string, unknown>);
+          return progress.total > 0 && progress.completed === progress.total;
+        })() ? () => void finaliseEntry(form) : undefined,
       })}
       loading={loading}
       showForm={showForm}
@@ -962,12 +992,15 @@ export function WorkshopsPage({
                   </div>
 
                   <div className="mt-5 space-y-4">
-                    <EntryPdfActionsBar {...getPdfActionProps(form.pdfMeta ?? null)} />
-                    {pdfState.pdfStale ? (
-                      <p className="text-sm text-muted-foreground">
-                        Entry changed. Regenerate PDF to update Preview/Download.
-                      </p>
-                    ) : null}
+                    <EntryDocumentSection
+                      pdfMeta={form.pdfMeta ?? null}
+                      pdfStale={pdfState.pdfStale}
+                      canPreview={getPdfActionProps(form.pdfMeta ?? null).canPreview}
+                      canDownload={getPdfActionProps(form.pdfMeta ?? null).canDownload}
+                      onRegenerate={() => void controller.generateEntry()}
+                      generating={controller.saving}
+                      isViewMode={isViewMode}
+                    />
 
                     {uploadsVisible ? (
                       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -1071,6 +1104,8 @@ export function WorkshopsPage({
           : null
       }
       confirmationDialog={confirmationDialog}
+      onRequestEdit={() => void controller.requestEdit(form)}
+      onCancelRequestEdit={() => void controller.cancelRequestEdit(form)}
     />
   );
 }
