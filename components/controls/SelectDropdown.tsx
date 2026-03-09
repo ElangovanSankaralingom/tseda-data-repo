@@ -1,12 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-
-export type SelectDropdownOption = {
-  label: string;
-  value: string;
-  disabled?: boolean;
-};
+export { type SelectDropdownOption } from "@/lib/types/ui";
+import { type SelectDropdownOption } from "@/lib/types/ui";
 
 type SelectDropdownProps = {
   value: string;

@@ -2,19 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
-
-type Option = {
-  key: string;
-  label: string;
-};
-
-type AdminExportFormProps = {
-  users: string[];
-  categories: Option[];
-  statusOptions: Option[];
-  fieldOptionsByCategory: Record<string, Option[]>;
-  downloadPath: string;
-};
+import { type Option } from "./adminLocalTypes";
 
 export default function AdminExportForm({
   users,
@@ -22,7 +10,13 @@ export default function AdminExportForm({
   statusOptions,
   fieldOptionsByCategory,
   downloadPath,
-}: AdminExportFormProps) {
+}: {
+  users: string[];
+  categories: Option[];
+  statusOptions: Option[];
+  fieldOptionsByCategory: Record<string, Option[]>;
+  downloadPath: string;
+}) {
   const defaultUser = users[0] ?? "";
   const defaultCategory = categories[0]?.key ?? "all";
 

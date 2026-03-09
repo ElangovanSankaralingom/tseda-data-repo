@@ -31,21 +31,13 @@ function labelFromHref(href: string): string {
   return "Back";
 }
 
-type BackToProps = {
-  href: string;
-  label?: string;
-  disabled?: boolean;
-  compact?: boolean;
-  onClick?: (() => void | Promise<void>) | undefined;
-};
-
 export default function BackTo({
   href,
   label,
   disabled = false,
   compact = false,
   onClick,
-}: BackToProps) {
+}: { href: string; label?: string; disabled?: boolean; compact?: boolean; onClick?: (() => void | Promise<void>) | undefined }) {
   const router = useRouter();
   const resolvedLabel = label || labelFromHref(href);
 

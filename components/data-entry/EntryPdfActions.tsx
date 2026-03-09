@@ -2,18 +2,12 @@
 
 import { ActionButton } from "@/components/ui/ActionButton";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
+import { type EntryPdfMeta } from "./dataEntryTypes";
 
-type EntryPdfMeta = {
-  url: string;
-  fileName?: string;
-} | null | undefined;
-
-type EntryPdfActionsProps = {
+export default function EntryPdfActions({ pdfMeta, disabled = false }: {
   pdfMeta: EntryPdfMeta;
   disabled?: boolean;
-};
-
-export default function EntryPdfActions({ pdfMeta, disabled = false }: EntryPdfActionsProps) {
+}) {
   const hasPdf = !!pdfMeta?.url && !disabled;
 
   return (

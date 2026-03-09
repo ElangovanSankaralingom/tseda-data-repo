@@ -25,7 +25,7 @@ type Props = {
   initialStats: AuditStats | null;
 };
 
-type ViewMode = "timeline" | "table";
+import { type ViewMode } from "./adminLocalTypes";
 
 const DEFAULT_FILTERS: Filters = { search: "", action: "", category: "", dateRange: "" };
 

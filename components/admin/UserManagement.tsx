@@ -274,12 +274,7 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
 // Filter Bar
 // ---------------------------------------------------------------------------
 
-type Filters = {
-  search: string;
-  role: "all" | "user" | "admin";
-  activity: "all" | "active" | "inactive";
-  sort: string;
-};
+import { type UserManagementFilters as Filters } from "./adminLocalTypes";
 
 const DEFAULT_FILTERS: Filters = {
   search: "",

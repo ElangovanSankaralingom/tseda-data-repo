@@ -9,12 +9,11 @@ import {
   type CategorySlug,
 } from "@/data/categoryRegistry";
 import { normalizeEntryApprovalStatus } from "@/lib/confirmation";
+import { type EntryShellMode } from "@/lib/types/ui";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
-
-type EntryShellMode = "new" | "edit" | "view" | "preview";
 
 type EntryShellProps = {
   category: CategorySlug;

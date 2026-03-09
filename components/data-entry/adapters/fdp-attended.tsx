@@ -27,42 +27,9 @@ import {
   type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
-import type { EntryStatus, FileMeta } from "@/lib/types/entry";
-import type { RequestEditStatus } from "@/lib/types/requestEdit";
+import type { FileMeta } from "@/lib/types/entry";
 import { uploadFile } from "@/lib/upload/uploadService";
-import { type StreakState } from "@/lib/gamification";
-
-type FdpAttended = {
-  id: string;
-  confirmationStatus?: EntryStatus;
-  requestEditStatus?: RequestEditStatus;
-  requestEditRequestedAtISO?: string | null;
-  requestEditMessage?: string;
-  academicYear: string;
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
-  startDate: string;
-  endDate: string;
-  programName: string;
-  organisingBody: string;
-  supportAmount: number | null;
-  pdfMeta?: {
-    storedPath: string;
-    url: string;
-    fileName: string;
-    generatedAtISO: string;
-  } | null;
-  pdfStale?: boolean;
-  pdfSourceHash?: string;
-  pdfGenerated?: boolean;
-  pdfGeneratedAt?: string | null;
-  permanentlyLocked?: boolean;
-  permissionLetter: FileMeta | null;
-  completionCertificate: FileMeta | null;
-  streak: StreakState;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
 
 // ---------------------------------------------------------------------------
 // Helpers

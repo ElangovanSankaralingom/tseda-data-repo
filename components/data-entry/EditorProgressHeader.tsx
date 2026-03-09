@@ -1,8 +1,7 @@
 "use client";
 
 import { CheckCircle2, Lock } from "lucide-react";
-import type { CategorySlug } from "@/data/categoryRegistry";
-import type { FieldProgress } from "@/lib/entries/fieldProgress";
+import { type EditorProgressHeaderProps } from "./dataEntryTypes";
 
 const ACCENT_COLORS: Record<string, { bar: string; bg: string; text: string }> = {
   "fdp-attended": { bar: "from-blue-400 to-blue-600", bg: "bg-blue-100", text: "text-blue-600" },
@@ -52,16 +51,6 @@ function PhasePill({
     </span>
   );
 }
-
-type EditorProgressHeaderProps = {
-  category: CategorySlug;
-  progress: FieldProgress;
-  isGenerated: boolean;
-  streakEligible?: boolean;
-  editTimeLabel?: string;
-  showFinalise?: boolean;
-  canFinalise?: boolean;
-};
 
 export default function EditorProgressHeader({
   category,

@@ -4,13 +4,7 @@ import { useMemo } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
-
-type FileMetaLike = {
-  fileName: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-} | null;
+import { type FileMetaLike } from "./entryComponentTypes";
 
 type UploadFieldProps = {
   title: string;

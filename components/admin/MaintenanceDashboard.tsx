@@ -27,16 +27,7 @@ type Props = {
   actionLog: MaintenanceAction[];
 };
 
-type JobDef = {
-  id: string;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  endpoint: string;
-  method: "POST" | "GET";
-  accent: string;
-  iconBg: string;
-};
+import { type JobDef } from "./adminLocalTypes";
 
 const JOBS: JobDef[] = [
   {

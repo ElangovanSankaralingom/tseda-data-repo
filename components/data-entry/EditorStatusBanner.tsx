@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, Clock, Lock, Unlock } from "lucide-react";
-
-type BannerVariant = "finalized" | "edit_requested" | "edit_granted" | "expiring_soon";
+import { type BannerVariant } from "@/lib/types/ui";
+import { type EditorStatusBannersProps } from "./dataEntryTypes";
 
 const BANNER_STYLES: Record<BannerVariant, { bg: string; border: string; iconColor: string }> = {
   finalized: { bg: "bg-slate-50", border: "border-slate-200", iconColor: "text-slate-500" },
@@ -18,19 +18,17 @@ const BANNER_ICONS: Record<BannerVariant, React.ElementType> = {
   expiring_soon: AlertTriangle,
 };
 
-type EditorStatusBannerProps = {
-  variant: BannerVariant;
-  message: string;
-  actionLabel?: string;
-  onAction?: () => void;
-};
-
 export default function EditorStatusBanner({
   variant,
   message,
   actionLabel,
   onAction,
-}: EditorStatusBannerProps) {
+}: {
+  variant: BannerVariant;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
   const style = BANNER_STYLES[variant];
   const Icon = BANNER_ICONS[variant];
   const isUrgent = variant === "expiring_soon";
@@ -57,17 +55,6 @@ export default function EditorStatusBanner({
     </div>
   );
 }
-
-type EditorStatusBannersProps = {
-  status?: string | null;
-  isEditable: boolean;
-  editTimeLabel?: string;
-  editTimeMs?: number;
-  expiresAtISO?: string | null;
-  hasPdf?: boolean;
-  permanentlyLocked?: boolean;
-  onCancelRequest?: () => void;
-};
 
 function formatFinalizedAgo(expiresAtISO: string): string {
   const expiry = new Date(expiresAtISO);

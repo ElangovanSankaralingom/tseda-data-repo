@@ -30,44 +30,8 @@ import {
   type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
-import type { EntryStatus } from "@/lib/types/entry";
-import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import { uploadFile } from "@/lib/upload/uploadService";
-import { type StreakState } from "@/lib/gamification";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type FdpConducted = {
-  id: string;
-  confirmationStatus?: EntryStatus;
-  requestEditStatus?: RequestEditStatus;
-  requestEditRequestedAtISO?: string | null;
-  requestEditMessage?: string;
-  academicYear: string;
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
-  startDate: string;
-  endDate: string;
-  eventName: string;
-  coordinatorName: string;
-  coordinatorEmail: string;
-  coCoordinators: FacultyRowValue[];
-  pdfMeta?: {
-    storedPath: string;
-    url: string;
-    fileName: string;
-    generatedAtISO: string;
-  } | null;
-  pdfStale?: boolean;
-  pdfSourceHash?: string;
-  permissionLetter: FileMeta | null;
-  geotaggedPhotos: FileMeta[];
-  streak: StreakState;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { FdpConducted } from "@/components/data-entry/adapters/adapterTypes";
 
 // ---------------------------------------------------------------------------
 // Constants

@@ -44,7 +44,7 @@ function formatRelative(ts: string): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-type AdminNotificationWithRead = AdminNotification & { read: boolean };
+import { type AdminNotificationWithRead } from "./confirmTypes";
 
 export default function AdminNotificationBell({
   onPanelToggle,

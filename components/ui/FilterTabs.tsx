@@ -1,21 +1,15 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+export { type FilterTab } from "@/lib/types/ui";
+import { type FilterTab } from "@/lib/types/ui";
 
-export type FilterTab = {
-  key: string;
-  label: string;
-  count?: number;
-};
-
-type FilterTabsProps = {
+export default function FilterTabs({ tabs, activeKey, onChange, activeClassName }: {
   tabs: FilterTab[];
   activeKey: string;
   onChange?: (key: string) => void;
   activeClassName?: string;
-};
-
-export default function FilterTabs({ tabs, activeKey, onChange, activeClassName }: FilterTabsProps) {
+}) {
   return (
     <div className="flex flex-wrap gap-2">
       {tabs.map((tab) => (

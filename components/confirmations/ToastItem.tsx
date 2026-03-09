@@ -12,11 +12,6 @@ import {
 } from "lucide-react";
 import type { Toast, ToastType } from "@/lib/confirmations/types";
 
-type Props = {
-  toast: Toast;
-  onDismiss: (id: string) => void;
-};
-
 const TYPE_CONFIG: Record<
   ToastType,
   {
@@ -71,7 +66,7 @@ const TYPE_CONFIG: Record<
   },
 };
 
-export default function ToastItem({ toast, onDismiss }: Props) {
+export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
   const config = TYPE_CONFIG[toast.type];
   const duration = toast.duration ?? config.defaultDuration;
   const [exiting, setExiting] = useState(false);

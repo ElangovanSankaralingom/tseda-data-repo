@@ -11,15 +11,8 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export type ActionButtonVariant =
-  | "context"
-  | "primary"
-  | "destructive"
-  | "ghost"
-  | "link"
-  | "default"
-  | "danger"
-  | "dark";
+export { type ActionButtonVariant } from "@/lib/types/ui";
+import { type ActionButtonVariant } from "@/lib/types/ui";
 
 type ActionButtonProps = {
   children: React.ReactNode;

@@ -3,12 +3,7 @@
 import type { Toast } from "@/lib/confirmations/types";
 import ToastItem from "./ToastItem";
 
-type Props = {
-  toasts: Toast[];
-  onDismiss: (id: string) => void;
-};
-
-export default function ToastContainer({ toasts, onDismiss }: Props) {
+export default function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
   if (toasts.length === 0) return null;
 
   return (

@@ -9,21 +9,13 @@ import SectionHeader from "@/components/dashboard/SectionHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import StreakCard from "@/components/dashboard/StreakCard";
 
-type DashboardClientProps = {
-  streakActivated: number;
-  streakWins: number;
-  totalEntries: number;
-  generatedCount: number;
-  editRequestedCount: number;
-};
-
 export default function DashboardClient({
   streakActivated,
   streakWins,
   totalEntries,
   generatedCount,
   editRequestedCount,
-}: DashboardClientProps) {
+}: { streakActivated: number; streakWins: number; totalEntries: number; generatedCount: number; editRequestedCount: number }) {
   return (
     <>
       {/* Section A — Your Streak */}

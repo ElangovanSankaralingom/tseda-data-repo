@@ -13,34 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
-
-type CategoryOverview = {
-  slug: string;
-  label: string;
-  subtitle: string;
-  href: string;
-  newHref: string;
-  totalEntries: number;
-  draftCount: number;
-  generatedCount: number;
-  editRequestedCount: number;
-  editGrantedCount: number;
-  streakActivated: number;
-  streakWins: number;
-  completedNonStreak: number;
-  lastActivity: string | null;
-};
-
-type Totals = {
-  totalEntries: number;
-  draftCount: number;
-  generatedCount: number;
-  editRequestedCount: number;
-  editGrantedCount: number;
-  streakActivatedCount: number;
-  streakWinsCount: number;
-  completedNonStreakCount: number;
-};
+import { type CategoryOverview, type Totals } from "./dataEntryTypes";
 
 type Props = {
   greeting: string;

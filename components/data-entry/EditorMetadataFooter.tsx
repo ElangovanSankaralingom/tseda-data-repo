@@ -1,14 +1,5 @@
 "use client";
 
-type EditorMetadataFooterProps = {
-  entryId?: string;
-  category?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  committedAt?: string;
-  streakEligible?: boolean;
-  editWindowExpires?: string;
-};
 
 function formatRelative(iso?: string): string | null {
   if (!iso) return null;
@@ -40,7 +31,15 @@ export default function EditorMetadataFooter({
   committedAt,
   streakEligible,
   editWindowExpires,
-}: EditorMetadataFooterProps) {
+}: {
+  entryId?: string;
+  category?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  committedAt?: string;
+  streakEligible?: boolean;
+  editWindowExpires?: string;
+}) {
   const items: string[] = [];
 
   if (entryId) items.push(`ID: ${entryId.slice(0, 8)}`);

@@ -2,15 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-type Props = {
-  message: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  autoCancel?: number;
-  variant?: "danger" | "warning";
-};
-
 /**
  * Contextual confirmation strip that replaces a trigger button.
  * Auto-cancels after `autoCancel` milliseconds (default 5s).
@@ -22,7 +13,14 @@ export default function InlineConfirm({
   onCancel,
   autoCancel = 5000,
   variant = "danger",
-}: Props) {
+}: {
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  autoCancel?: number;
+  variant?: "danger" | "warning";
+}) {
   const [visible, setVisible] = useState(false);
 
   // Animate in

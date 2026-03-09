@@ -6,6 +6,7 @@ import { uploadDocXHR } from "./uploadHelpers";
 import {
   cx,
   getErrorMessage,
+  type DocType,
   type Profile,
   type SaveTabOptions,
 } from "./types";
@@ -16,8 +17,6 @@ interface UploadsTabProps {
   saveCurrentTab: (options: SaveTabOptions) => Promise<void>;
   showToast: (type: "ok" | "err", msg: string) => void;
 }
-
-type DocType = "appointmentLetter" | "joiningLetter" | "aadhar" | "panCard";
 
 export default function UploadsTab({ draft, setDraft, saveCurrentTab, showToast }: UploadsTabProps) {
   const [pendingDocFile, setPendingDocFile] = useState<Record<DocType, File | null>>({

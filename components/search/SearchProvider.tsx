@@ -10,12 +10,7 @@ import {
 import { useSession } from "next-auth/react";
 import { isMasterAdmin } from "@/lib/admin";
 import CommandPalette from "@/components/search/CommandPalette";
-
-type SearchContextValue = {
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
-};
+import { type SearchContextValue } from "./searchTypes";
 
 const SearchContext = createContext<SearchContextValue>({
   isOpen: false,

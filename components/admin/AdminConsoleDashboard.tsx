@@ -15,44 +15,7 @@ import {
   Wrench,
 } from "lucide-react";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type HealthStatus = "green" | "amber" | "red";
-
-type DashboardData = {
-  metrics: {
-    totalUsers: number;
-    totalEntries: number;
-    activeStreaks: number;
-    streakWins: number;
-    pendingRequests: number;
-    completionRate: number;
-    entryGrowth: number;
-    newUsersThisMonth: number;
-  };
-  recentActivity: unknown[];
-  entryTrend: unknown[];
-  health: {
-    backup: { status: HealthStatus; lastBackup: string | null; count: number; size: string };
-    integrity: { status: HealthStatus; lastScan: string | null; score: number | null; issues: number; isOverdue: boolean };
-    storage: { status: HealthStatus; totalSize: string; backupSize: string };
-    audit: { status: HealthStatus; totalEvents: number; eventsToday: number };
-    system: { maintenanceMode: boolean };
-  };
-  leaderboard: unknown[];
-  categoryOverview: {
-    slug: string;
-    name: string;
-    totalEntries: number;
-    statusBreakdown: Record<string, number>;
-    streakActivated: number;
-    streakWins: number;
-  }[];
-  pendingItems: unknown[];
-  settingsChanged: number;
-};
+import { type HealthStatus, type DashboardData, type FeatureCard } from "./adminLocalTypes";
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -80,18 +43,6 @@ function SectionHeader({ title }: { title: string }) {
 // ---------------------------------------------------------------------------
 // Feature Card (large, prominent — Section 1)
 // ---------------------------------------------------------------------------
-
-type FeatureCard = {
-  title: string;
-  description: string;
-  href: string;
-  icon: typeof Shield;
-  accent: string;
-  accentBg: string;
-  badge?: number;
-  badgeColor?: string;
-  badgeDot?: boolean;
-};
 
 function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) {
   const Icon = card.icon;

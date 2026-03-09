@@ -31,56 +31,12 @@ import {
   type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
-import type { EntryStatus, FileMeta } from "@/lib/types/entry";
-import type { RequestEditStatus } from "@/lib/types/requestEdit";
-import type { StreakState } from "@/lib/gamification";
+import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
 
-type StaffSelection = FacultyRowValue;
-
-type UploadSlot = "permissionLetter" | "travelPlan";
-
-const SINGLE_UPLOAD_SLOTS: Array<{ slot: UploadSlot; label: string }> = [
+const SINGLE_UPLOAD_SLOTS: Array<{ slot: "permissionLetter" | "travelPlan"; label: string }> = [
   { slot: "permissionLetter", label: "Permission Letter" },
   { slot: "travelPlan", label: "Travel Plan" },
 ];
-
-type CaseStudyEntry = {
-  id: string;
-  sharedEntryId?: string;
-  sourceEmail?: string;
-  sharedRole?: "staffAccompanying";
-  confirmationStatus?: EntryStatus;
-  requestEditStatus?: RequestEditStatus;
-  requestEditRequestedAtISO?: string | null;
-  academicYear: string;
-  startDate: string;
-  endDate: string;
-  coordinator: FacultyRowValue;
-  placeOfVisit: string;
-  purposeOfVisit: string;
-  staffAccompanying: StaffSelection[];
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
-  participants: number | null;
-  amountSupport: number | null;
-  pdfMeta?: {
-    storedPath: string;
-    url: string;
-    fileName: string;
-    generatedAtISO: string;
-  } | null;
-  pdfSourceHash?: string;
-  pdfStale?: boolean;
-  pdfGenerated?: boolean;
-  pdfGeneratedAt?: string | null;
-  permanentlyLocked?: boolean;
-  permissionLetter: FileMeta | null;
-  travelPlan: FileMeta | null;
-  geotaggedPhotos: FileMeta[];
-  streak: StreakState;
-  createdAt: string;
-  updatedAt: string;
-};
 
 const FACULTY_OPTIONS = FACULTY;
 
@@ -259,7 +215,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
 
   const [singleUploadStatus, setSingleUploadStatus] = useState<
-    Record<UploadSlot, { hasPending: boolean; busy: boolean }>
+    Record<"permissionLetter" | "travelPlan", { hasPending: boolean; busy: boolean }>
   >({
     permissionLetter: { hasPending: false, busy: false },
     travelPlan: { hasPending: false, busy: false },

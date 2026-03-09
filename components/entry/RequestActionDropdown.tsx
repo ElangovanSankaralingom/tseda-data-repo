@@ -3,18 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 
-type RequestActionDropdownProps = {
-  /** Whether an edit request is already pending */
-  editRequestPending?: boolean;
-  /** Whether a delete request is already pending */
-  deleteRequestPending?: boolean;
-  /** Whether any request is currently in-flight */
-  requesting?: boolean;
-  onRequestEdit: () => void;
-  onRequestDelete: () => void;
-  onCancelRequest?: () => void;
-};
-
 export default function RequestActionDropdown({
   editRequestPending = false,
   deleteRequestPending = false,
@@ -22,7 +10,14 @@ export default function RequestActionDropdown({
   onRequestEdit,
   onRequestDelete,
   onCancelRequest,
-}: RequestActionDropdownProps) {
+}: {
+  editRequestPending?: boolean;
+  deleteRequestPending?: boolean;
+  requesting?: boolean;
+  onRequestEdit: () => void;
+  onRequestDelete: () => void;
+  onCancelRequest?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

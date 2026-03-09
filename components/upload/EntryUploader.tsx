@@ -6,24 +6,7 @@ import { useUploadController } from "@/hooks/useUploadController";
 import { toUserMessage } from "@/lib/errors";
 import { safeAction } from "@/lib/safeAction";
 import { deleteFile, uploadFile, type UploadedFile } from "@/lib/upload/uploadService";
-
-type UploadMeta = {
-  fileName: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  storedPath: string;
-  id?: string;
-  name?: string;
-  type?: string;
-  path?: string;
-};
-
-type EntryUploaderStatus = {
-  busy: boolean;
-  hasPending: boolean;
-};
+import { type UploadMeta, type EntryUploaderStatus } from "./uploadTypes";
 
 type EntryUploaderProps = {
   title: string;

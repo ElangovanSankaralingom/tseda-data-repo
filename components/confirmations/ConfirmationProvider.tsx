@@ -42,14 +42,7 @@ export function useConfirm() {
   return useConfirmation().confirm;
 }
 
-// ---------------------------------------------------------------------------
-// Internal types
-// ---------------------------------------------------------------------------
-
-type PendingConfirm = {
-  options: ConfirmationDialogOptions;
-  resolve: (value: boolean) => void;
-};
+import { type PendingConfirm } from "./confirmTypes";
 
 const MAX_TOASTS = 5;
 

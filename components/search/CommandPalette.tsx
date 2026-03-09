@@ -31,14 +31,7 @@ import { cn } from "@/lib/utils";
 // Quick actions
 // ---------------------------------------------------------------------------
 
-type QuickAction = {
-  id: string;
-  title: string;
-  subtitle: string;
-  path: string;
-  icon: "zap" | "file" | "layout";
-  adminOnly: boolean;
-};
+import { type QuickAction } from "./searchTypes";
 
 const QUICK_ACTIONS: QuickAction[] = [
   { id: "qa-fdp-a", title: "New FDP Attended Entry", subtitle: "Start a new entry", path: "/data-entry/fdp-attended/new", icon: "file", adminOnly: false },

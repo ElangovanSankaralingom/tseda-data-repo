@@ -39,19 +39,7 @@ type Props = {
   snapshot: AnalyticsSnapshot;
 };
 
-// ---------------------------------------------------------------------------
-// Time range
-// ---------------------------------------------------------------------------
-
-const RANGES = [
-  { key: "7d", label: "7 days", days: 7 },
-  { key: "30d", label: "30 days", days: 30 },
-  { key: "3m", label: "3 months", days: 90 },
-  { key: "12m", label: "12 months", days: 365 },
-  { key: "all", label: "All time", days: 0 },
-] as const;
-
-type RangeKey = (typeof RANGES)[number]["key"];
+import { RANGES, type RangeKey } from "./adminLocalTypes";
 
 function rangeToDateBounds(key: RangeKey, now: Date) {
   const r = RANGES.find((x) => x.key === key)!;

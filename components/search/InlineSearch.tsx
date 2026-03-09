@@ -4,21 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type InlineSearchProps = {
-  placeholder?: string;
-  onSearch: (query: string) => void;
-  onClear?: () => void;
-  className?: string;
-  debounceMs?: number;
-};
-
 export default function InlineSearch({
   placeholder = "Search...",
   onSearch,
   onClear,
   className,
   debounceMs = 200,
-}: InlineSearchProps) {
+}: { placeholder?: string; onSearch: (query: string) => void; onClear?: () => void; className?: string; debounceMs?: number }) {
   const [value, setValue] = useState("");
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 

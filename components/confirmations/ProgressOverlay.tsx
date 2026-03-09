@@ -3,12 +3,7 @@
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import type { ProgressNotification } from "@/lib/confirmations/types";
 
-type Props = {
-  progress: ProgressNotification;
-  onDismiss: () => void;
-};
-
-export default function ProgressOverlay({ progress: p, onDismiss }: Props) {
+export default function ProgressOverlay({ progress: p, onDismiss }: { progress: ProgressNotification; onDismiss: () => void }) {
   const isComplete = p.status !== "running";
 
   return (

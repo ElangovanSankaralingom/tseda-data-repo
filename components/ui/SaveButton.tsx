@@ -2,8 +2,6 @@
 
 import { ActionButton } from "@/components/ui/ActionButton";
 
-type SaveButtonProps = React.ComponentProps<typeof ActionButton>;
-
-export function SaveButton(props: SaveButtonProps) {
+export function SaveButton(props: React.ComponentProps<typeof ActionButton>) {
   return <ActionButton role="primary" {...props} />;
 }

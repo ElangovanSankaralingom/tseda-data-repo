@@ -17,8 +17,7 @@ import {
   HistoryRow,
   TemplateCard,
 } from "./ExportDashboardParts";
-
-type Option = { key: string; label: string };
+import { type Option, type PreviewData } from "./adminLocalTypes";
 
 type Props = {
   templates: ExportTemplate[];
@@ -27,13 +26,6 @@ type Props = {
   statusOptions: Option[];
   fieldOptionsByCategory: Record<string, Option[]>;
   initialHistory: ExportHistoryEntry[];
-};
-
-type PreviewData = {
-  recordCount: number;
-  userCount: number;
-  categoryBreakdown: Record<string, number>;
-  statusBreakdown: Record<string, number>;
 };
 
 export default function ExportDashboard({
