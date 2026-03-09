@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { getCategoryConfig } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { ensureUserIndex, type UserIndex } from "@/lib/data/indexStore";
 import { getDashboardTag } from "@/lib/dashboard/tags";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
@@ -11,8 +12,9 @@ import { logError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/entryNavigation";
 import { getEntryTitle } from "@/lib/search/getEntryTitle";
+import { logger } from "@/lib/logger";
 import { computeCanonicalStreakSnapshot, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
-import { incrementStatusCount, type Entry } from "@/lib/types/entry";
+import { incrementStatusCount, ENTRY_STATUSES, type Entry } from "@/lib/types/entry";
 
 type DashboardEntry = Entry;
 
@@ -193,7 +195,98 @@ function toSortTimestamp(value: string | null | undefined) {
   return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
 }
 
+function computeDashboardFromIndex(index: UserIndex): DashboardSummary {
+  const summary = emptySummary();
+
+  for (const categoryKey of CATEGORY_KEYS) {
+    const categorySummary = summary.byCategory[categoryKey];
+    categorySummary.totalEntries = index.totalsByCategory[categoryKey] ?? 0;
+    categorySummary.draftCount = 0; // Computed below from countsByStatus
+    categorySummary.generatedCount = 0;
+    categorySummary.editRequestedCount = 0;
+    categorySummary.editGrantedCount = 0;
+
+    const streakCat = index.streakSnapshot.byCategory[categoryKey];
+    categorySummary.streakActivatedCount = streakCat?.activated ?? 0;
+    categorySummary.streakWinsCount = streakCat?.wins ?? 0;
+    // completedNonStreakCount is not tracked in the index — leave as 0
+  }
+
+  // Global status counts from index
+  for (const status of ENTRY_STATUSES) {
+    const count = index.countsByStatus[status] ?? 0;
+    if (status === "DRAFT") summary.totals.draftCount = count;
+    else if (status === "GENERATED") summary.totals.generatedCount = count;
+    else if (status === "EDIT_REQUESTED") summary.totals.editRequestedCount = count;
+    else if (status === "EDIT_GRANTED") summary.totals.editGrantedCount = count;
+  }
+
+  summary.totals.totalEntries = Object.values(index.totalsByCategory).reduce((s, v) => s + v, 0);
+  summary.totals.streakActivatedCount = index.streakSnapshot.streakActivatedCount;
+  summary.totals.streakWinsCount = index.streakSnapshot.streakWinsCount;
+  summary.totals.pendingConfirmationCount = summary.totals.editRequestedCount;
+  summary.totals.approvedCount = summary.totals.generatedCount + summary.totals.editGrantedCount;
+  summary.totals.rejectedCount = 0;
+
+  // Streak activated rows from index snapshot
+  const streakRows = (index.streakSnapshot.activeEntries ?? []).map((row, i) => {
+    const categoryConfig = getCategoryConfig(row.categoryKey);
+    return {
+      id: row.id,
+      categoryKey: row.categoryKey,
+      categoryLabel: categoryConfig.label,
+      tag: `P${i + 1}`,
+      route: entryDetail(row.categoryKey, row.id),
+      dueAtISO: row.dueAtISO ?? null,
+    } satisfies DashboardPendingRow;
+  });
+  summary.streakActivatedRows = streakRows;
+
+  // Recent entries from search index snapshots
+  const searchEntries = Object.values(index.searchIndexByEntryId ?? {});
+  summary.recentEntries = searchEntries
+    .filter((snap) => !!snap.entryId)
+    .sort((a, b) => toSortTimestamp(b.updatedAtISO) - toSortTimestamp(a.updatedAtISO))
+    .slice(0, 8)
+    .map((snap) => {
+      const categoryConfig = getCategoryConfig(snap.categoryKey);
+      return {
+        id: snap.entryId,
+        categoryKey: snap.categoryKey,
+        categoryLabel: categoryConfig.label,
+        title: snap.title || snap.entryId,
+        status: snap.status,
+        updatedAtISO: snap.updatedAtISO,
+        route: entryDetail(snap.categoryKey, snap.entryId),
+      } satisfies DashboardRecentRow;
+    });
+
+  return summary;
+}
+
 async function computeDashboardSummary(normalizedEmail: string): Promise<DashboardSummary> {
+  // Fast path: try to derive dashboard from pre-computed index
+  const startMs = Date.now();
+  const indexResult = await ensureUserIndex(normalizedEmail);
+  if (indexResult.ok) {
+    const index = indexResult.data;
+    if (index.streakSnapshot && index.searchIndexByEntryId) {
+      const fromIndex = computeDashboardFromIndex(index);
+      logger.info({
+        event: "dashboard.computed.from-index",
+        userEmail: normalizedEmail,
+        durationMs: Date.now() - startMs,
+      });
+      return fromIndex;
+    }
+  }
+
+  // Slow path: full category reads (fallback when index is incomplete)
+  logger.info({
+    event: "dashboard.computed.full-read",
+    userEmail: normalizedEmail,
+  });
+
   const summary = emptySummary();
   const streakInputs: StreakProgressAggregateEntry[] = [];
   const recentRows: DashboardRecentRow[] = [];
