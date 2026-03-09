@@ -1,178 +1,36 @@
 "use client";
 
+/**
+ * Main orchestration hook for category entry pages.
+ *
+ * Composes focused sub-hooks:
+ *   controllerTypes.ts              — shared types and helpers
+ *   useEntrySaveOrchestration.ts    — save, persist, auto-save, unsaved-changes
+ *   useEntryGenerateAndFinalise.ts  — generate PDF and finalise
+ *   useEntryRequestActions.ts       — request edit/delete and confirmation
+ */
 import {
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
-  type Dispatch,
-  type MutableRefObject,
-  type SetStateAction,
 } from "react";
-import { useRouter } from "next/navigation";
-import { useAutoSave } from "@/hooks/useAutoSave";
-import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
-import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
-import { useRequestDelete } from "@/hooks/useRequestDelete";
-import { useRequestEdit } from "@/hooks/useRequestEdit";
-import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
-import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import {
-  runGenerateEntryOrchestration,
-  runPersistCurrentEntryMutation,
-  runSaveDraftOrchestration,
-  type EntrySaveIntent,
-  type EntrySaveSource,
-} from "@/lib/entries/pageOrchestration";
-import type { CategoryKey, RequestEditableEntry } from "@/lib/entries/types";
-import { groupEntries, groupEntriesForList, type CategorizableEntry } from "@/lib/entryCategorization";
-import { ok } from "@/lib/result";
-import type { EntryStatus } from "@/lib/types/entry";
+  hasBusyValue,
+  type CategoryPageEntry,
+  type HeaderActionBindings,
+  type PdfActionBindings,
+  type ToastState,
+  type UseCategoryEntryPageControllerOptions,
+} from "@/hooks/controllerTypes";
+import { useEntrySaveOrchestration } from "@/hooks/useEntrySaveOrchestration";
+import { useEntryGenerateAndFinalise } from "@/hooks/useEntryGenerateAndFinalise";
+import { useEntryRequestActions } from "@/hooks/useEntryRequestActions";
+import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
+import { groupEntries, groupEntriesForList } from "@/lib/entryCategorization";
+import type { EntrySaveIntent } from "@/lib/entries/pageOrchestration";
 
-type ToastState = {
-  type: "ok" | "err";
-  msg: string;
-};
-
-type BusyUploadSource =
-  | boolean
-  | null
-  | undefined
-  | { busy?: boolean | null }
-  | Record<string, unknown>
-  | Array<unknown>;
-
-type GenerateEntrySnapshot<TEntry> = (
-  draftEntry: TEntry,
-  persistDraft: (entry: TEntry) => Promise<TEntry>
-) => Promise<{ entry: TEntry }>;
-
-type HeaderActionBindings = {
-  isEditing: boolean;
-  isViewMode: boolean;
-  loading: boolean;
-  formHasData?: boolean;
-  onAdd?: () => void;
-  addLabel?: string;
-  onCancel: () => void;
-  cancelDisabled: boolean;
-  onSave: () => void;
-  saveDisabled: boolean;
-  onDone: () => void;
-  doneDisabled: boolean;
-  saving: boolean;
-  saveIntent: EntrySaveIntent | null;
-  workflowAction?: {
-    label: string;
-    onClick: () => void | Promise<boolean>;
-    disabled?: boolean;
-    busyLabel?: string;
-  };
-  workflowDisabledHint?: string;
-  finalise?: {
-    canFinalise: boolean;
-    onFinalise: () => void | Promise<boolean>;
-    onAfterFinalise?: () => void;
-    disabledReason?: string;
-    editWindowExpiresAt?: string | null;
-  };
-  entryStatus?: string | null;
-  onRequestEdit?: () => void;
-  onCancelRequestEdit?: () => void;
-  onRequestDelete?: () => void;
-  onCancelRequestDelete?: () => void;
-  editTimeLabel?: string;
-  onBack?: () => void;
-  permanentlyLocked?: boolean;
-};
-
-type PdfActionBindings = {
-  isViewMode: boolean;
-  canGenerate: boolean;
-  onGenerate: () => void;
-  generating: boolean;
-  pdfMeta: { url?: string | null; fileName?: string; generatedAtISO?: string } | null | undefined;
-  pdfStale: boolean;
-  canPreview: boolean;
-  canDownload: boolean;
-  pdfDisabled: boolean;
-};
-
-type ConfirmableEntryLike = {
-  id: string;
-  status?: string | null;
-  confirmationStatus?: EntryStatus;
-};
-
-type CategoryPageEntry = CategorizableEntry & RequestEditableEntry & ConfirmableEntryLike;
-
-type UseCategoryEntryPageControllerOptions<TEntry extends CategoryPageEntry> = {
-  category: CategoryKey;
-  list: TEntry[];
-  setList: Dispatch<SetStateAction<TEntry[]>>;
-  form: TEntry;
-  formRef: MutableRefObject<TEntry>;
-  showForm: boolean;
-  isViewMode: boolean;
-  entryLocked: boolean;
-  controlsDisabled: boolean;
-  loading: boolean;
-  busyUploadSources: BusyUploadSource[];
-  coreValid: boolean;
-  hasPdfSnapshot: boolean;
-  pdfStale: boolean;
-  completionValid: boolean;
-  fieldDirty: boolean;
-  autoSaveSynced: boolean;
-  defaultCancelTargetHref: string;
-  closeForm: (targetHref?: string) => void | Promise<void>;
-  buildEntryToSave: () => TEntry;
-  buildOptimisticEntry: (entry: TEntry) => TEntry;
-  persistProgress: (entry: TEntry) => Promise<TEntry>;
-  persistRequestEdit: (entry: TEntry) => Promise<TEntry>;
-  persistCancelRequestEdit: (entry: TEntry) => Promise<TEntry>;
-  persistRequestDelete?: (entry: TEntry) => Promise<TEntry>;
-  persistCancelRequestDelete?: (entry: TEntry) => Promise<TEntry>;
-  commitDraft: (entryId: string) => Promise<TEntry>;
-  normalizePersistedEntry?: (entry: TEntry) => TEntry;
-  applyPersistedEntry: (entry: TEntry) => void | Promise<void>;
-  afterPersistSuccess?: (entry: TEntry, intent: EntrySaveIntent) => void | Promise<void>;
-  setSubmitAttemptedFinal?: Dispatch<SetStateAction<boolean>>;
-  saveBusyMessage?: string;
-  saveSuccessMessage?: string;
-  doneSuccessMessage?: string;
-  saveErrorMessage?: string;
-  cancelBusyMessage?: string;
-  saveAndCloseBusyMessage?: string;
-  autoSaveDebounceMs?: number;
-  hasValidationErrors: boolean;
-  markGenerateAttempted: () => void;
-  beforeGenerate?: () => void;
-  afterGenerate?: () => void;
-  buildDraftEntry: () => TEntry;
-  generateEntrySnapshot: GenerateEntrySnapshot<TEntry>;
-  applyGeneratedEntry: (entry: TEntry) => void | Promise<void>;
-  generateValidationMessage?: string;
-  generateBusyMessage?: string;
-  generateSuccessMessage?: string;
-  generateErrorMessage?: string;
-};
-
-function hasBusyValue(value: BusyUploadSource): boolean {
-  if (typeof value === "boolean") return value;
-  if (!value || typeof value !== "object") return false;
-
-  if (Array.isArray(value)) {
-    return value.some((item) => hasBusyValue(item as BusyUploadSource));
-  }
-
-  if ("busy" in value && typeof (value as { busy?: unknown }).busy === "boolean") {
-    return Boolean((value as { busy?: boolean }).busy);
-  }
-
-  return Object.values(value).some((item) => hasBusyValue(item as BusyUploadSource));
-}
+export { type CategoryPageEntry, type UseCategoryEntryPageControllerOptions } from "@/hooks/controllerTypes";
 
 export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>({
   category,
@@ -225,26 +83,18 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   generateSuccessMessage = "Entry generated.",
   generateErrorMessage = "Generate failed.",
 }: UseCategoryEntryPageControllerOptions<TEntry>) {
-  const nextRouter = useRouter();
+  // ── Shared state ────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [saveIntent, setSaveIntent] = useState<EntrySaveIntent | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const saveLockRef = useRef(false);
 
-  // Wrap afterPersistSuccess to also refresh server components
-  const afterPersistSuccessWithRefresh = useCallback(
-    async (entry: TEntry, intent: EntrySaveIntent) => {
-      await afterPersistSuccess?.(entry, intent);
-      nextRouter.refresh();
-    },
-    [afterPersistSuccess, nextRouter]
-  );
-
   const hasBusyUploads = useMemo(
     () => busyUploadSources.some((source) => hasBusyValue(source)),
-    [busyUploadSources]
+    [busyUploadSources],
   );
 
+  // ── Workflow ────────────────────────────────────────────────────────────
   const workflow = useEntryWorkflow({
     isLocked: entryLocked,
     coreValid,
@@ -254,6 +104,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     fieldDirty,
   });
   const lifecycle = workflow.lifecycle;
+
   const actionState = deriveEntryActionState({
     showForm,
     isViewMode,
@@ -265,285 +116,114 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     canSave: lifecycle.canSave,
     canGenerate: lifecycle.canGenerate,
   });
+
+  // ── Grouped entries ─────────────────────────────────────────────────────
   const groupedEntries = useMemo(() => groupEntries(list), [list]);
   const smartGroupedEntries = useMemo(() => groupEntriesForList(list), [list]);
 
+  // ── Normalize persist wrapper ───────────────────────────────────────────
   const normalizePersisted = useCallback(
     (entry: TEntry) => (normalizePersistedEntry ? normalizePersistedEntry(entry) : entry),
-    [normalizePersistedEntry]
-  );
-
-  const persistEntry = useCallback(
-    async (entry: TEntry) => normalizePersisted(await persistProgress(entry)),
-    [normalizePersisted, persistProgress]
+    [normalizePersistedEntry],
   );
 
   const persistRequestEditEntry = useCallback(
     async (entry: TEntry) => normalizePersisted(await persistRequestEdit(entry)),
-    [normalizePersisted, persistRequestEdit]
+    [normalizePersisted, persistRequestEdit],
   );
-
   const persistCancelRequestEditEntry = useCallback(
     async (entry: TEntry) => normalizePersisted(await persistCancelRequestEdit(entry)),
-    [normalizePersisted, persistCancelRequestEdit]
+    [normalizePersisted, persistCancelRequestEdit],
   );
-
   const persistRequestDeleteEntry = useCallback(
     async (entry: TEntry) => {
       if (!persistRequestDelete) throw new Error("persistRequestDelete not configured");
       return normalizePersisted(await persistRequestDelete(entry));
     },
-    [normalizePersisted, persistRequestDelete]
+    [normalizePersisted, persistRequestDelete],
   );
-
   const persistCancelRequestDeleteEntry = useCallback(
     async (entry: TEntry) => {
       if (!persistCancelRequestDelete) throw new Error("persistCancelRequestDelete not configured");
       return normalizePersisted(await persistCancelRequestDelete(entry));
     },
-    [normalizePersisted, persistCancelRequestDelete]
+    [normalizePersisted, persistCancelRequestDelete],
   );
 
-  const commitDraftEntry = useCallback(
-    async (entryId: string) => normalizePersisted(await commitDraft(entryId)),
-    [commitDraft, normalizePersisted]
-  );
-
-  const saveDraftChanges = useCallback(
-    async (options?: {
-      closeAfterSave?: boolean;
-      intent?: EntrySaveIntent;
-      source?: EntrySaveSource;
-      throwOnError?: boolean;
-    }): Promise<TEntry | null> => {
-      const intent = options?.intent ?? "save";
-      return runSaveDraftOrchestration<TEntry>({
-        intent,
-        source: options?.source ?? "manual",
-        closeAfterSave: options?.closeAfterSave ?? false,
-        throwOnError: options?.throwOnError ?? false,
-        canSave: lifecycle.canSave,
-        hasBusyUploads,
-        busyMessage: saveBusyMessage,
-        saveSuccessMessage,
-        doneSuccessMessage,
-        saveErrorMessage,
-        saveLockRef,
-        setSaving,
-        setSaveIntent,
-        setToast,
-        setList,
-        buildEntryToSave,
-        buildOptimisticEntry,
-        persistProgress: persistEntry,
-        commitDraft: commitDraftEntry,
-        applyPersistedEntry,
-        afterPersistSuccess: afterPersistSuccessWithRefresh,
-        closeForm: async () => closeForm(),
-      });
-    },
-    [
-      afterPersistSuccessWithRefresh,
-      applyPersistedEntry,
-      buildEntryToSave,
-      buildOptimisticEntry,
-      closeForm,
-      doneSuccessMessage,
-      hasBusyUploads,
-      lifecycle.canSave,
-      persistEntry,
-      saveBusyMessage,
-      saveErrorMessage,
-      saveSuccessMessage,
-      setList,
-      commitDraftEntry,
-    ]
-  );
-
-  const generateEntry = useCallback(async (): Promise<boolean> => {
-    const success = await runGenerateEntryOrchestration<TEntry>({
-      saveLockRef,
-      hasValidationErrors,
-      canGenerate: lifecycle.canGenerate,
-      hasBusyUploads,
-      validationMessage: generateValidationMessage,
-      busyMessage: generateBusyMessage,
-      successMessage: generateSuccessMessage,
-      errorMessage: generateErrorMessage,
-      setSaving,
-      setToast,
-      markSubmitAttempted: markGenerateAttempted,
-      beforeGenerate,
-      afterGenerate,
-      buildDraftEntry,
-      generateEntrySnapshot,
-      persistProgress: persistEntry,
-      applyGeneratedEntry,
-    });
-    nextRouter.refresh();
-    return success;
-  }, [
-    afterGenerate,
-    applyGeneratedEntry,
-    beforeGenerate,
-    buildDraftEntry,
-    generateBusyMessage,
-    generateEntrySnapshot,
-    generateErrorMessage,
-    generateSuccessMessage,
-    generateValidationMessage,
-    hasBusyUploads,
-    hasValidationErrors,
-    lifecycle.canGenerate,
-    markGenerateAttempted,
-    nextRouter,
-    persistEntry,
-  ]);
-
-  const showToast = useCallback(
-    (type: ToastState["type"], msg: string, durationMs = 1800) => {
-      setToast({ type, msg });
-      setTimeout(() => setToast(null), durationMs);
-    },
-    []
-  );
-
-  const runWithSaveGuard = useCallback(
-    async <T,>(task: () => Promise<T>, lockedMessage = "Please wait for the current save to finish.") => {
-      if (saveLockRef.current) {
-        throw new Error(lockedMessage);
-      }
-
-      saveLockRef.current = true;
-      try {
-        return await task();
-      } finally {
-        saveLockRef.current = false;
-      }
-    },
-    []
-  );
-
-  const persistCurrentMutation = useCallback(
-    async <TResult = TEntry,>(options: {
-      buildNextEntry: (current: TEntry) => TEntry;
-      selectResult?: (entry: TEntry) => TResult;
-      lockedMessage?: string;
-      intent?: EntrySaveIntent;
-    }): Promise<TResult> => {
-      return runPersistCurrentEntryMutation<TEntry, TResult>({
-        saveLockRef,
-        formRef,
-        persistProgress: persistEntry,
-        applyPersistedEntry,
-        afterPersistSuccess: afterPersistSuccessWithRefresh,
-        buildNextEntry: options.buildNextEntry,
-        selectResult: options.selectResult,
-        lockedMessage: options.lockedMessage,
-        intent: options.intent,
-      });
-    },
-    [afterPersistSuccessWithRefresh, applyPersistedEntry, formRef, persistEntry]
-  );
-
-  const {
-    status: autoSaveStatus,
-    markSaved: markAutoSaveSaved,
-  } = useAutoSave<TEntry>({
-    enabled: actionState.autoSaveEnabled,
-    value: form,
-    debounceMs: autoSaveDebounceMs,
-    onSave: async () => {
-      if (saving || hasBusyUploads) return null;
-      const persisted = await saveDraftChanges({
-        intent: "save",
-        source: "autosave",
-        throwOnError: true,
-      });
-      if (!persisted) return null;
-      return ok(persisted);
-    },
-  });
-
-  useEffect(() => {
-    if (autoSaveSynced) {
-      markAutoSaveSaved(form);
-    }
-  }, [autoSaveSynced, form, markAutoSaveSaved]);
-
-  const { hasUnsavedChanges, confirmNavigate } = useUnsavedChangesGuard({
-    enabled: showForm && !isViewMode && !entryLocked,
-    isDirty: fieldDirty,
-    isSaving: actionState.guardSaving || autoSaveStatus.phase === "saving",
-  });
-
-  const { handleCancel, handleSaveDraft, handleSaveAndClose } = useEntryPrimaryActions({
-    defaultCancelTargetHref,
-    hasBusyUploads,
-    confirmNavigate,
-    closeForm,
-    saveDraftChanges,
+  // ── Save orchestration ──────────────────────────────────────────────────
+  const saveOrch = useEntrySaveOrchestration<TEntry>({
+    saving,
+    setSaving,
+    setSaveIntent,
     setToast,
+    saveLockRef,
+    hasBusyUploads,
+    form,
+    formRef,
+    setList,
+    showForm,
+    isViewMode,
+    entryLocked,
+    fieldDirty,
+    autoSaveSynced,
+    canSave: lifecycle.canSave,
+    autoSaveEnabled: actionState.autoSaveEnabled,
+    guardSaving: actionState.guardSaving,
+    persistProgress,
+    normalizePersistedEntry,
+    commitDraft,
+    applyPersistedEntry,
+    afterPersistSuccess,
+    buildEntryToSave,
+    buildOptimisticEntry,
+    closeForm,
+    defaultCancelTargetHref,
     setSubmitAttemptedFinal,
+    saveBusyMessage,
+    saveSuccessMessage,
+    doneSuccessMessage,
+    saveErrorMessage,
     cancelBusyMessage,
     saveAndCloseBusyMessage,
+    autoSaveDebounceMs,
   });
 
-  const { requestingIds: requestingEditIds, requestEdit, cancelRequestEdit } = useRequestEdit<TEntry>({
-    setItems: setList,
-    persistRequest: persistRequestEditEntry,
-    persistCancel: persistCancelRequestEditEntry,
-    onSuccess: (message) => showToast("ok", message, 1400),
-    onError: (message) => showToast("err", message, 1800),
-  });
-
-  const { requestingIds: requestingDeleteIds, requestDelete, cancelRequestDelete } = useRequestDelete<TEntry>({
-    setItems: setList,
-    persistRequest: persistRequestDeleteEntry,
-    persistCancel: persistCancelRequestDeleteEntry,
-    onSuccess: (message) => showToast("ok", message, 1400),
-    onError: (message) => showToast("err", message, 1800),
-  });
-
-  const { sendingIds: sendingConfirmationIds, sendForConfirmation } = useEntryConfirmation<TEntry>({
+  // ── Generate & finalise ─────────────────────────────────────────────────
+  const genFin = useEntryGenerateAndFinalise<TEntry>({
     category,
-    setItems: setList,
-    onSuccess: (message) => showToast("ok", message, 1400),
-    onError: (message) => showToast("err", message, 1800),
+    saveLockRef,
+    setSaving,
+    setToast,
+    setList,
+    showToast: saveOrch.showToast,
+    hasBusyUploads,
+    hasValidationErrors,
+    canGenerate: lifecycle.canGenerate,
+    persistEntry: saveOrch.persistEntry,
+    markGenerateAttempted,
+    beforeGenerate,
+    afterGenerate,
+    buildDraftEntry,
+    generateEntrySnapshot,
+    applyGeneratedEntry,
+    generateValidationMessage,
+    generateBusyMessage,
+    generateSuccessMessage,
+    generateErrorMessage,
   });
 
-  const [finalisingIds, setFinalisingIds] = useState<Record<string, boolean>>({});
+  // ── Request actions ─────────────────────────────────────────────────────
+  const requests = useEntryRequestActions<TEntry>({
+    category,
+    setList,
+    showToast: saveOrch.showToast,
+    persistRequestEdit: persistRequestEditEntry,
+    persistCancelRequestEdit: persistCancelRequestEditEntry,
+    persistRequestDelete: persistRequestDeleteEntry,
+    persistCancelRequestDelete: persistCancelRequestDeleteEntry,
+  });
 
-  const finaliseEntry = useCallback(
-    async (entry: TEntry): Promise<boolean> => {
-      const entryId = entry.id;
-      if (finalisingIds[entryId]) return false;
-      setFinalisingIds((prev) => ({ ...prev, [entryId]: true }));
-      try {
-        const res = await fetch("/api/me/entry/finalise", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ categoryKey: category, entryId }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error((data as { error?: string }).error || "Finalise failed.");
-        }
-        const updated = (await res.json()) as TEntry;
-        setList((prev) => prev.map((e) => (e.id === entryId ? updated : e)));
-        nextRouter.refresh();
-        return true;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Finalise failed.";
-        showToast("err", message, 1800);
-        return false;
-      } finally {
-        setFinalisingIds((prev) => ({ ...prev, [entryId]: false }));
-      }
-    },
-    [category, finalisingIds, nextRouter, setList, showToast]
-  );
-
+  // ── Header & PDF action bindings ────────────────────────────────────────
   const getHeaderActionProps = useCallback(
     (options?: {
       onAdd?: () => void;
@@ -567,11 +247,11 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       formHasData: options?.formHasData,
       onAdd: options?.onAdd,
       addLabel: options?.addLabel,
-      onCancel: () => void handleCancel(),
+      onCancel: () => void saveOrch.handleCancel(),
       cancelDisabled: actionState.cancelDisabled,
-      onSave: () => void handleSaveDraft(),
+      onSave: () => void saveOrch.handleSaveDraft(),
       saveDisabled: actionState.saveDisabled,
-      onDone: () => void handleSaveAndClose(),
+      onDone: () => void saveOrch.handleSaveAndClose(),
       doneDisabled: actionState.doneDisabled,
       saving,
       saveIntent,
@@ -591,22 +271,22 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       actionState.cancelDisabled,
       actionState.doneDisabled,
       actionState.saveDisabled,
-      handleCancel,
-      handleSaveAndClose,
-      handleSaveDraft,
+      saveOrch.handleCancel,
+      saveOrch.handleSaveAndClose,
+      saveOrch.handleSaveDraft,
       isViewMode,
       loading,
       saveIntent,
       saving,
       showForm,
-    ]
+    ],
   );
 
   const getPdfActionProps = useCallback(
     (pdfMeta: PdfActionBindings["pdfMeta"]): PdfActionBindings => ({
       isViewMode,
       canGenerate: !actionState.generateDisabled,
-      onGenerate: () => void generateEntry(),
+      onGenerate: () => void genFin.generateEntry(),
       generating: saving,
       pdfMeta,
       pdfStale: workflow.coreDirty && workflow.hasPdfSnapshot,
@@ -614,41 +294,42 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       canDownload: lifecycle.canDownload,
       pdfDisabled: !lifecycle.canPreview,
     }),
-    [actionState.generateDisabled, generateEntry, isViewMode, lifecycle.canDownload, lifecycle.canPreview, saving, workflow.coreDirty, workflow.hasPdfSnapshot]
+    [actionState.generateDisabled, genFin.generateEntry, isViewMode, lifecycle.canDownload, lifecycle.canPreview, saving, workflow.coreDirty, workflow.hasPdfSnapshot],
   );
 
+  // ── Return ──────────────────────────────────────────────────────────────
   return {
     actionState,
-    autoSaveStatus,
-    cancelRequestDelete,
-    cancelRequestEdit,
-    finaliseEntry,
-    finalisingIds,
-    generateEntry,
+    autoSaveStatus: saveOrch.autoSaveStatus,
+    cancelRequestDelete: requests.cancelRequestDelete,
+    cancelRequestEdit: requests.cancelRequestEdit,
+    finaliseEntry: genFin.finaliseEntry,
+    finalisingIds: genFin.finalisingIds,
+    generateEntry: genFin.generateEntry,
     getHeaderActionProps,
     getPdfActionProps,
     groupedEntries,
     smartGroupedEntries,
-    handleCancel,
-    handleSaveAndClose,
-    handleSaveDraft,
+    handleCancel: saveOrch.handleCancel,
+    handleSaveAndClose: saveOrch.handleSaveAndClose,
+    handleSaveDraft: saveOrch.handleSaveDraft,
     hasBusyUploads,
-    hasUnsavedChanges,
+    hasUnsavedChanges: saveOrch.hasUnsavedChanges,
     lifecycle,
-    markAutoSaveSaved,
-    persistCurrentMutation,
-    requestDelete,
-    requestEdit,
-    requestingDeleteIds,
-    requestingEditIds,
-    runWithSaveGuard,
-    saveDraftChanges,
+    markAutoSaveSaved: saveOrch.markAutoSaveSaved,
+    persistCurrentMutation: saveOrch.persistCurrentMutation,
+    requestDelete: requests.requestDelete,
+    requestEdit: requests.requestEdit,
+    requestingDeleteIds: requests.requestingDeleteIds,
+    requestingEditIds: requests.requestingEditIds,
+    runWithSaveGuard: saveOrch.runWithSaveGuard,
+    saveDraftChanges: saveOrch.saveDraftChanges,
     saveIntent,
     saving,
-    sendForConfirmation,
-    sendingConfirmationIds,
+    sendForConfirmation: requests.sendForConfirmation,
+    sendingConfirmationIds: requests.sendingConfirmationIds,
     setToast,
-    showToast,
+    showToast: saveOrch.showToast,
     toast,
     workflow,
     saveLockRef,
