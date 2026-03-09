@@ -3,15 +3,40 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle, Loader2, Lock, Zap } from "lucide-react";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
+import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
 import { ActionButton } from "@/components/ui/ActionButton";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { SaveButton } from "@/components/ui/SaveButton";
 
 type GenerateButtonState = "idle" | "generating" | "success";
+
+type FinaliseState = {
+  canFinalise: boolean;
+  onFinalise: () => void | Promise<boolean>;
+  onAfterFinalise?: () => void;
+  disabledReason?: string;
+  editWindowExpiresAt?: string | null;
+};
+
+function formatTimeRemaining(expiresAt: string | null | undefined): string | null {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return null;
+  const hours = ms / (1000 * 60 * 60);
+  if (hours < 1) return "Your entry will finalise very soon.";
+  if (hours < 24) {
+    const h = Math.ceil(hours);
+    return `You still have ${h} ${h === 1 ? "hour" : "hours"} left until this entry finalises automatically.`;
+  }
+  const days = Math.ceil(hours / 24);
+  return `You still have ${days} ${days === 1 ? "day" : "days"} left until this entry finalises automatically.`;
+}
 
 type HeaderEntryActionsBarProps = {
   isEditing: boolean;
   isViewMode: boolean;
   loading: boolean;
+  formHasData?: boolean;
   onAdd?: () => void;
   addLabel?: string;
   onCancel: () => void;
@@ -29,17 +54,22 @@ type HeaderEntryActionsBarProps = {
     busyLabel?: string;
   };
   workflowDisabledHint?: string;
+  finalise?: FinaliseState;
   entryStatus?: string | null;
   onRequestEdit?: () => void;
   onCancelRequestEdit?: () => void;
-  onFinalise?: () => void;
+  onRequestDelete?: () => void;
+  onCancelRequestDelete?: () => void;
   editTimeLabel?: string;
+  onBack?: () => void;
+  permanentlyLocked?: boolean;
 };
 
 export function HeaderEntryActionsBar({
   isEditing,
   isViewMode,
   loading,
+  formHasData = true,
   onAdd,
   addLabel = "+ Add Entry",
   onCancel,
@@ -52,55 +82,63 @@ export function HeaderEntryActionsBar({
   saveIntent,
   workflowAction,
   workflowDisabledHint = "Fill all required fields to generate",
+  finalise,
   entryStatus,
   onRequestEdit,
   onCancelRequestEdit,
-  onFinalise,
+  onRequestDelete,
+  onCancelRequestDelete,
   editTimeLabel,
+  onBack,
+  permanentlyLocked = false,
 }: HeaderEntryActionsBarProps) {
-  // View mode: show Request Edit or Cancel Request
+  // View mode: mirror edit-mode layout with disabled save buttons
   if (isEditing && isViewMode) {
     const isEditRequested = entryStatus === "EDIT_REQUESTED";
+    const isDeleteRequested = entryStatus === "DELETE_REQUESTED";
     const isEditGranted = entryStatus === "EDIT_GRANTED";
+    const hasPendingRequest = isEditRequested || isDeleteRequested;
 
     return (
-      <div className="flex w-full flex-wrap items-center justify-end gap-2">
-        {/* Edit granted with time badge */}
-        {isEditGranted && editTimeLabel ? (
-          <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
-            ⏱️ {editTimeLabel}
-          </span>
-        ) : null}
+      <div className="flex w-full flex-wrap items-center justify-between gap-3">
+        {/* Left: workflow action area */}
+        <div className="flex items-center gap-3">
+          {/* Edit granted with time badge */}
+          {isEditGranted && editTimeLabel ? (
+            <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
+              ⏱️ {editTimeLabel}
+            </span>
+          ) : null}
 
-        {/* Edit requested: Cancel Request */}
-        {isEditRequested && onCancelRequestEdit ? (
-          <ActionButton role="context" onClick={onCancelRequestEdit}>
-            Cancel Request
+          {/* Pending request: Cancel Request */}
+          {hasPendingRequest && (onCancelRequestEdit || onCancelRequestDelete) ? (
+            <ActionButton
+              role="context"
+              onClick={isEditRequested ? onCancelRequestEdit : onCancelRequestDelete}
+            >
+              Cancel Request
+            </ActionButton>
+          ) : null}
+
+          {/* Finalized: Request Action dropdown (hidden when permanently locked) */}
+          {!permanentlyLocked && !hasPendingRequest && !isEditGranted && onRequestEdit && onRequestDelete ? (
+            <RequestActionDropdown
+              onRequestEdit={onRequestEdit}
+              onRequestDelete={onRequestDelete}
+            />
+          ) : null}
+        </div>
+
+        {/* Right: Cancel (enabled) + Save buttons (disabled) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionButton role="ghost" onClick={onCancel}>
+            Cancel
           </ActionButton>
-        ) : null}
-
-        {/* Editable & complete: Finalise Now */}
-        {onFinalise ? (
-          <button
-            type="button"
-            onClick={onFinalise}
-            className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
-          >
-            <Lock className="size-3.5" />
-            Finalise Now
-          </button>
-        ) : null}
-
-        {/* Finalized (GENERATED): Request Edit */}
-        {!isEditRequested && !isEditGranted && onRequestEdit ? (
-          <button
-            type="button"
-            onClick={onRequestEdit}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-purple-700 active:scale-[0.97]"
-          >
-            Request Edit
-          </button>
-        ) : null}
+          <SaveButton disabled>Save Draft</SaveButton>
+          <ActionButton role="primary" disabled>
+            Save &amp; Close
+          </ActionButton>
+        </div>
       </div>
     );
   }
@@ -110,6 +148,8 @@ export function HeaderEntryActionsBar({
       <EditModeActionBar
         workflowAction={workflowAction}
         workflowDisabledHint={workflowDisabledHint}
+        finalise={finalise}
+        formHasData={formHasData}
         saving={saving}
         saveIntent={saveIntent}
         onCancel={onCancel}
@@ -136,6 +176,8 @@ export function HeaderEntryActionsBar({
 function EditModeActionBar({
   workflowAction,
   workflowDisabledHint,
+  finalise,
+  formHasData,
   saving,
   saveIntent,
   onCancel,
@@ -147,6 +189,8 @@ function EditModeActionBar({
 }: {
   workflowAction?: HeaderEntryActionsBarProps["workflowAction"];
   workflowDisabledHint: string;
+  finalise?: FinaliseState;
+  formHasData: boolean;
   saving: boolean;
   saveIntent: "save" | "done" | null;
   onCancel: () => void;
@@ -157,11 +201,36 @@ function EditModeActionBar({
   doneDisabled: boolean;
 }) {
   const [genState, setGenState] = useState<GenerateButtonState>("idle");
+  const [finaliseState, setFinaliseState] = useState<"idle" | "finalising" | "done">("idle");
+  const [showFinaliseConfirm, setShowFinaliseConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finaliseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [celebrationPhase, setCelebrationPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
+  const celebrationShownRef = useRef(false);
+  const prevCanFinaliseRef = useRef(finalise?.canFinalise ?? false);
+
+  useEffect(() => {
+    const canNow = finalise?.canFinalise ?? false;
+    const wasBefore = prevCanFinaliseRef.current;
+    prevCanFinaliseRef.current = canNow;
+
+    if (canNow && !wasBefore && !celebrationShownRef.current) {
+      celebrationShownRef.current = true;
+      setCelebrationPhase("entering");
+      // Trigger enter animation on next frame
+      requestAnimationFrame(() => setCelebrationPhase("visible"));
+      const hideTimer = setTimeout(() => {
+        setCelebrationPhase("exiting");
+        setTimeout(() => setCelebrationPhase("hidden"), 300);
+      }, 3000);
+      return () => clearTimeout(hideTimer);
+    }
+  }, [finalise?.canFinalise]);
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (finaliseTimerRef.current) clearTimeout(finaliseTimerRef.current);
     };
   }, []);
 
@@ -182,6 +251,25 @@ function EditModeActionBar({
     }
   }, [genState, workflowAction]);
 
+  const handleFinalise = useCallback(async () => {
+    if (finaliseState !== "idle" || !finalise?.canFinalise) return;
+    setFinaliseState("finalising");
+    try {
+      const result = finalise.onFinalise();
+      const success = result instanceof Promise ? await result : true;
+      if (success !== false) {
+        setFinaliseState("done");
+        finaliseTimerRef.current = setTimeout(() => {
+          finalise.onAfterFinalise?.();
+        }, 1500);
+      } else {
+        setFinaliseState("idle");
+      }
+    } catch {
+      setFinaliseState("idle");
+    }
+  }, [finalise, finaliseState]);
+
   const workflowDisabled = workflowAction?.disabled ?? false;
   const isGenerating = genState === "generating";
   const isSuccess = genState === "success";
@@ -194,15 +282,31 @@ function EditModeActionBar({
       : "bg-slate-900 text-white hover:bg-slate-800";
 
   return (
-    <div className="flex w-full flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        {workflowAction ? (
-          <div className="flex flex-col items-start gap-1">
+    <div className="flex w-full flex-col gap-2">
+      {celebrationPhase !== "hidden" ? (
+        <div
+          className={`rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 transition-all duration-300 ${
+            celebrationPhase === "entering"
+              ? "translate-y-2 opacity-0"
+              : celebrationPhase === "exiting"
+                ? "opacity-0"
+                : "translate-y-0 opacity-100"
+          }`}
+        >
+          <span className="text-sm font-medium text-emerald-700">
+            🎉 All fields complete — ready to finalise!
+          </span>
+        </div>
+      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col items-start gap-1">
+        <div className="flex items-center gap-3">
+          {workflowAction ? (
             <button
               type="button"
               onClick={handleGenerate}
               disabled={buttonDisabled}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${buttonClass}`}
+              className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${buttonClass}`}
             >
               {isGenerating ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -217,10 +321,43 @@ function EditModeActionBar({
                   ? "Generated Successfully"
                   : workflowAction.label}
             </button>
-            {workflowDisabled && !isGenerating && !isSuccess ? (
-              <p className="text-xs text-slate-500">{workflowDisabledHint}</p>
-            ) : null}
-          </div>
+          ) : null}
+          {finalise ? (
+            <button
+              type="button"
+              onClick={finaliseState === "idle" && finalise.canFinalise ? () => setShowFinaliseConfirm(true) : undefined}
+              disabled={!finalise.canFinalise || finaliseState !== "idle"}
+              className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
+                finaliseState === "done"
+                  ? "bg-slate-200 text-slate-500 opacity-75 cursor-not-allowed"
+                  : finaliseState === "finalising"
+                    ? "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+                    : finalise.canFinalise
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+              }`}
+              title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
+            >
+              {finaliseState === "finalising" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : finaliseState === "done" ? (
+                <CheckCircle className="size-4" />
+              ) : (
+                <Lock className="size-4" />
+              )}
+              {finaliseState === "finalising"
+                ? "Finalising..."
+                : finaliseState === "done"
+                  ? "Finalised"
+                  : "Finalise Now"}
+            </button>
+          ) : null}
+        </div>
+        {finalise && !finalise.canFinalise && finalise.disabledReason ? (
+          <p className="text-xs text-amber-600 mt-1">{finalise.disabledReason}</p>
+        ) : null}
+        {workflowAction && workflowDisabled && !isGenerating && !isSuccess ? (
+          <p className="text-xs text-slate-500">{workflowDisabledHint}</p>
         ) : null}
       </div>
 
@@ -228,13 +365,38 @@ function EditModeActionBar({
         <ActionButton role="ghost" onClick={onCancel} disabled={cancelDisabled}>
           Cancel
         </ActionButton>
-        <SaveButton onClick={onSave} disabled={saveDisabled}>
+        <SaveButton onClick={onSave} disabled={saveDisabled || !formHasData}>
           {saving && saveIntent === "save" ? "Saving..." : "Save Draft"}
         </SaveButton>
-        <ActionButton role="primary" onClick={onDone} disabled={doneDisabled}>
+        <ActionButton role="primary" onClick={onDone} disabled={doneDisabled || !formHasData}>
           {saving && saveIntent === "done" ? "Saving..." : "Save & Close"}
         </ActionButton>
       </div>
+      </div>
+
+      {/* Finalise confirmation dialog */}
+      <ConfirmDialog
+        open={showFinaliseConfirm}
+        title="Finalise this entry?"
+        description={
+          <>
+            <p>Once finalised, all fields become read-only. You&apos;ll need admin approval to make any further changes.</p>
+            {(() => {
+              const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt);
+              return timeInfo ? (
+                <p className="mt-2 text-xs text-amber-700">{timeInfo}</p>
+              ) : null;
+            })()}
+          </>
+        }
+        confirmLabel="Yes, Finalise Now"
+        confirmClassName="border-emerald-600 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+        onConfirm={() => {
+          setShowFinaliseConfirm(false);
+          void handleFinalise();
+        }}
+        onCancel={() => setShowFinaliseConfirm(false)}
+      />
     </div>
   );
 }

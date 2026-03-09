@@ -99,6 +99,12 @@ type GuestLectureEntry = {
   pdfMeta?: PdfMeta | null;
   pdfSourceHash?: string | null;
   pdfStale?: boolean;
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string | null;
+  editWindowExpiresAt?: string | null;
+  streakEligible?: boolean;
+  streakPermanentlyRemoved?: boolean;
+  permanentlyLocked?: boolean;
   uploads: Uploads;
   streak?: StreakState;
   createdAt: string;
@@ -307,6 +313,18 @@ function normalizeEntry(value: unknown): GuestLectureEntry | null {
       : null,
     pdfSourceHash: typeof record.pdfSourceHash === "string" ? record.pdfSourceHash : "",
     pdfStale: record.pdfStale === true,
+    pdfGenerated: record.pdfGenerated === true,
+    pdfGeneratedAt:
+      typeof record.pdfGeneratedAt === "string" && record.pdfGeneratedAt.trim()
+        ? record.pdfGeneratedAt.trim()
+        : null,
+    editWindowExpiresAt:
+      typeof record.editWindowExpiresAt === "string" && record.editWindowExpiresAt.trim()
+        ? record.editWindowExpiresAt.trim()
+        : null,
+    streakEligible: record.streakEligible === true,
+    streakPermanentlyRemoved: record.streakPermanentlyRemoved === true,
+    permanentlyLocked: record.permanentlyLocked === true,
     uploads: normalizeUploads(record.uploads),
     streak: normalizeStreakState(record.streak),
     createdAt: String(record.createdAt ?? "").trim(),

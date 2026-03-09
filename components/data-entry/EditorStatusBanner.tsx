@@ -65,7 +65,7 @@ type EditorStatusBannersProps = {
   editTimeMs?: number;
   expiresAtISO?: string | null;
   hasPdf?: boolean;
-  onRequestEdit?: () => void;
+  permanentlyLocked?: boolean;
   onCancelRequest?: () => void;
 };
 
@@ -94,7 +94,7 @@ export function EditorStatusBanners({
   editTimeMs,
   expiresAtISO,
   hasPdf,
-  onRequestEdit,
+  permanentlyLocked = false,
   onCancelRequest,
 }: EditorStatusBannersProps) {
   const isExpiringSoon = editTimeMs !== undefined && editTimeMs > 0 && editTimeMs < 24 * 60 * 60 * 1000;
@@ -130,15 +130,25 @@ export function EditorStatusBanners({
   }
 
   if (!isEditable && status === "GENERATED") {
-    const agoText = expiresAtISO ? formatFinalizedAgo(expiresAtISO) : null;
-    const pdfHint = hasPdf ? " You can still preview and download the document below." : "";
     return (
-      <EditorStatusBanner
-        variant="finalized"
-        message={`🔒 This entry was finalized${agoText ? ` ${agoText}` : ""} and is read-only.${pdfHint}`}
-        actionLabel="Request Edit"
-        onAction={onRequestEdit}
-      />
+      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-5 animate-fade-in-up">
+        <div className="flex items-start gap-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
+            <Lock className="size-5 text-emerald-600" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-emerald-900">Entry Finalised</h3>
+            <p className="text-sm text-emerald-700">
+              This entry is now locked and read-only.{hasPdf ? " You can still preview and download the generated document below." : ""}
+            </p>
+            <p className="mt-2 text-xs text-emerald-600/70">
+              {permanentlyLocked
+                ? "This entry is permanently locked and cannot be modified."
+                : "Need to make changes? Use Request Action above to request edit or delete access from your admin."}
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 

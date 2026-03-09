@@ -8,10 +8,11 @@ type ConfirmDialogVariant = "default" | "destructive";
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: ConfirmDialogVariant;
+  confirmClassName?: string;
   confirming?: boolean;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
@@ -28,6 +29,7 @@ export default function ConfirmDialog({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   variant = "default",
+  confirmClassName,
   confirming = false,
   onConfirm,
   onCancel,
@@ -65,7 +67,13 @@ export default function ConfirmDialog({
         className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl"
       >
         <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-        {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
+        {description ? (
+          typeof description === "string" ? (
+            <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+          ) : (
+            <div className="mt-2 text-sm text-muted-foreground">{description}</div>
+          )
+        ) : null}
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <ActionButton
             role="context"
@@ -74,14 +82,29 @@ export default function ConfirmDialog({
           >
             {cancelLabel}
           </ActionButton>
-          <ActionButton
-            role={variant === "destructive" ? "destructive" : "primary"}
-            onClick={onConfirm}
-            disabled={confirming}
-            className={cx(variant === "default" && "font-medium")}
-          >
-            {confirming ? "Please wait..." : confirmLabel}
-          </ActionButton>
+          {confirmClassName ? (
+            <button
+              type="button"
+              onClick={() => void onConfirm()}
+              disabled={confirming}
+              className={cx(
+                "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm font-medium transition-all duration-150 active:scale-[0.97]",
+                confirming && "pointer-events-none opacity-60",
+                confirmClassName,
+              )}
+            >
+              {confirming ? "Please wait..." : confirmLabel}
+            </button>
+          ) : (
+            <ActionButton
+              role={variant === "destructive" ? "destructive" : "primary"}
+              onClick={onConfirm}
+              disabled={confirming}
+              className={cx(variant === "default" && "font-medium")}
+            >
+              {confirming ? "Please wait..." : confirmLabel}
+            </ActionButton>
+          )}
         </div>
       </div>
     </div>

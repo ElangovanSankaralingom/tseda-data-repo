@@ -32,6 +32,7 @@ import {
   normalizeStudentYear,
   type StudentYear,
 } from "@/lib/student-academic";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import { safeEmailDir } from "@/lib/userStore";
@@ -72,6 +73,12 @@ type FdpConducted = {
   pdfMeta?: PdfMeta | null;
   pdfStale?: boolean;
   pdfSourceHash?: string;
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string | null;
+  editWindowExpiresAt?: string | null;
+  streakEligible?: boolean;
+  streakPermanentlyRemoved?: boolean;
+  permanentlyLocked?: boolean;
   permissionLetter: FileMeta | null;
   geotaggedPhotos: FileMeta[];
   streak: StreakState;
@@ -217,24 +224,8 @@ function normalizeRequestEditStatus(
     : fallback;
 }
 
-function getPrePdfFieldsHash(
-  entry: Pick<FdpConducted, "academicYear" | "studentYear" | "semesterNumber" | "startDate" | "endDate" | "eventName" | "coCoordinators">
-) {
-  return JSON.stringify({
-    academicYear: String(entry.academicYear ?? "").trim(),
-    studentYear: String(entry.studentYear ?? "").trim(),
-    semesterNumber:
-      typeof entry.semesterNumber === "number" && Number.isFinite(entry.semesterNumber)
-        ? entry.semesterNumber
-        : null,
-    startDate: String(entry.startDate ?? "").trim(),
-    endDate: String(entry.endDate ?? "").trim(),
-    eventName: String(entry.eventName ?? "").trim(),
-    coCoordinators: entry.coCoordinators.map((value) => ({
-      id: String(value.id ?? ""),
-      email: String(value.email ?? "").trim().toLowerCase(),
-    })),
-  });
+function getPrePdfFieldsHash(entry: Record<string, unknown>) {
+  return hashPrePdfFields(entry, "fdp-conducted");
 }
 
 function normalizeEntry(value: unknown): FdpConducted | null {
@@ -289,6 +280,18 @@ function normalizeEntry(value: unknown): FdpConducted | null {
       : null,
     pdfStale: record.pdfStale === true,
     pdfSourceHash: typeof record.pdfSourceHash === "string" ? record.pdfSourceHash : "",
+    pdfGenerated: record.pdfGenerated === true,
+    pdfGeneratedAt:
+      typeof record.pdfGeneratedAt === "string" && record.pdfGeneratedAt.trim()
+        ? record.pdfGeneratedAt.trim()
+        : null,
+    editWindowExpiresAt:
+      typeof record.editWindowExpiresAt === "string" && record.editWindowExpiresAt.trim()
+        ? record.editWindowExpiresAt.trim()
+        : null,
+    streakEligible: record.streakEligible === true,
+    streakPermanentlyRemoved: record.streakPermanentlyRemoved === true,
+    permanentlyLocked: record.permanentlyLocked === true,
     permissionLetter: (record.permissionLetter as FileMeta | null) ?? null,
     geotaggedPhotos: normalizeFileMetaArray(record.geotaggedPhotos, record.geotaggedPhoto),
     streak: normalizeStreakState(record.streak),

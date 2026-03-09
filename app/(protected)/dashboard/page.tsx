@@ -6,14 +6,12 @@ import {
   Flame,
 } from "lucide-react";
 import DashboardClient from "@/components/dashboard/DashboardClient";
-import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { getDashboardSummary } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   dataEntryHome,
-  entryList,
   signin,
 } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
@@ -49,14 +47,6 @@ export default async function DashboardPage() {
   const totalEntries = toSafeCount(summary.totals.totalEntries);
   const generatedCount = toSafeCount(summary.totals.generatedCount);
   const editRequestedCount = toSafeCount(summary.totals.editRequestedCount);
-
-  const categoryData = CATEGORY_LIST.map((slug) => {
-    const config = getCategoryConfig(slug);
-    const catData = summary.byCategory[slug];
-    const count = catData ? toSafeCount(catData.totalEntries) : 0;
-    return { slug, label: config.label, count, href: entryList(slug) };
-  });
-  const maxCategoryCount = Math.max(...categoryData.map((c) => c.count), 1);
 
   const hasAnyEntries = totalEntries > 0;
   const firstName = userName.split(/\s+/)[0] ?? userName;
@@ -127,8 +117,6 @@ export default async function DashboardPage() {
           totalEntries={totalEntries}
           generatedCount={generatedCount}
           editRequestedCount={editRequestedCount}
-          categoryData={categoryData}
-          maxCategoryCount={maxCategoryCount}
         />
       )}
     </div>

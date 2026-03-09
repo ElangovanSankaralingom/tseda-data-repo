@@ -27,6 +27,7 @@ import {
   type StudentYear,
 } from "@/lib/student-academic";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 
@@ -57,6 +58,12 @@ type FdpAttended = {
   pdfMeta?: PdfMeta | null;
   pdfStale?: boolean;
   pdfSourceHash?: string;
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string | null;
+  editWindowExpiresAt?: string | null;
+  streakEligible?: boolean;
+  streakPermanentlyRemoved?: boolean;
+  permanentlyLocked?: boolean;
   permissionLetter: FileMeta | null;
   completionCertificate: FileMeta | null;
   streak: StreakState;
@@ -111,26 +118,8 @@ function normalizeRequestEditStatus(
     : fallback;
 }
 
-function getPrePdfFieldsHash(
-  entry: Pick<
-    FdpAttended,
-    "academicYear" | "studentYear" | "semesterNumber" | "startDate" | "endDate" | "programName" | "organisingBody" | "supportAmount"
-  >
-) {
-  return JSON.stringify({
-    academicYear: String(entry.academicYear ?? "").trim(),
-    studentYear: String(entry.studentYear ?? "").trim(),
-    semesterNumber:
-      typeof entry.semesterNumber === "number" && Number.isFinite(entry.semesterNumber)
-        ? entry.semesterNumber
-        : null,
-    startDate: String(entry.startDate ?? "").trim(),
-    endDate: String(entry.endDate ?? "").trim(),
-    programName: String(entry.programName ?? "").trim(),
-    organisingBody: String(entry.organisingBody ?? "").trim(),
-    supportAmount:
-      typeof entry.supportAmount === "number" && Number.isFinite(entry.supportAmount) ? entry.supportAmount : null,
-  });
+function getPrePdfFieldsHash(entry: Record<string, unknown>) {
+  return hashPrePdfFields(entry, "fdp-attended");
 }
 
 function normalizeEntry(value: unknown): FdpAttended | null {
@@ -177,6 +166,18 @@ function normalizeEntry(value: unknown): FdpAttended | null {
       : null,
     pdfStale: record.pdfStale === true,
     pdfSourceHash: typeof record.pdfSourceHash === "string" ? record.pdfSourceHash : "",
+    pdfGenerated: record.pdfGenerated === true,
+    pdfGeneratedAt:
+      typeof record.pdfGeneratedAt === "string" && record.pdfGeneratedAt.trim()
+        ? record.pdfGeneratedAt.trim()
+        : null,
+    editWindowExpiresAt:
+      typeof record.editWindowExpiresAt === "string" && record.editWindowExpiresAt.trim()
+        ? record.editWindowExpiresAt.trim()
+        : null,
+    streakEligible: record.streakEligible === true,
+    streakPermanentlyRemoved: record.streakPermanentlyRemoved === true,
+    permanentlyLocked: record.permanentlyLocked === true,
     permissionLetter: isValidFileMeta((record.permissionLetter as FileMeta | null) ?? null)
       ? ((record.permissionLetter as FileMeta | null) ?? null)
       : null,
