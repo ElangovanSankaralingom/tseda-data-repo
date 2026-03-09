@@ -4,9 +4,15 @@ import { getServerSession } from "next-auth";
 import { NextResponse, type NextRequest } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
+  cancelDeleteRequest,
+  cancelEditRequest,
+  commitDraft,
   createEntry,
   deleteEntry as deleteEngineEntry,
+  finalizeEntry,
   listEntriesForCategory,
+  requestDelete,
+  requestEdit,
   updateEntry,
 } from "@/lib/entries/lifecycle";
 import { isValidCategorySlug, getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
@@ -16,16 +22,6 @@ import { normalizeError } from "@/lib/errors";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { assertEntryMutationInput, assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { isEntryEditable } from "@/lib/entries/lock";
-import { hashPrePdfFields } from "@/lib/pdfSnapshot";
-import type { PdfSnapshotCategory } from "@/lib/pdfSnapshot";
-import {
-  normalizeEntryStatus,
-  isEntryCommitted,
-  isEntryFinalized,
-  transitionEntry,
-  type EntryStateLike,
-  type EntryTransitionAction,
-} from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
 
 /**
@@ -295,39 +291,15 @@ export async function handleCategoryPatch(
       assertActionPayload(body, `${action} payload`, SECURITY_LIMITS.actionPayloadMaxBytes);
     }
 
-    // Load existing entry
-    const existingEntries = await listEntriesForCategory(
-      auth.email,
-      category as CategoryKey,
-    );
-    const existing = existingEntries.find(
-      (e) => String((e as Record<string, unknown>).id ?? "") === entryId,
-    ) ?? null;
-
-    if (!existing) {
-      return errorResponse("Entry not found", 404);
-    }
-
-    const existingRecord = existing as Record<string, unknown>;
-    const existingStatus = normalizeEntryStatus(existingRecord as EntryStateLike);
-    const now = new Date().toISOString();
-
     // --- Action-based dispatch ---
+    // Each action delegates to the corresponding engine function which handles
+    // validation, WAL logging, index updates, streak logic, and telemetry.
 
     if (action === "request_edit") {
-      if (!isEntryCommitted(existingRecord as EntryStateLike)) {
-        return errorResponse("Request edit is allowed only for completed entries.", 400);
-      }
-      const updated = transitionEntry(
-        existingRecord as EntryStateLike,
-        "requestEdit",
-        { nowISO: now },
-      );
-      const persisted = await updateEntry(
+      const persisted = await requestEdit(
         auth.email,
         category as CategoryKey,
         entryId,
-        updated as Record<string, unknown>,
       );
       return NextResponse.json(
         entryToApiResponse(persisted as Record<string, unknown>, category),
@@ -336,19 +308,10 @@ export async function handleCategoryPatch(
     }
 
     if (action === "request_delete") {
-      if (!isEntryCommitted(existingRecord as EntryStateLike)) {
-        return errorResponse("Request delete is allowed only for completed entries.", 400);
-      }
-      const updated = transitionEntry(
-        existingRecord as EntryStateLike,
-        "requestDelete",
-        { nowISO: now },
-      );
-      const persisted = await updateEntry(
+      const persisted = await requestDelete(
         auth.email,
         category as CategoryKey,
         entryId,
-        updated as Record<string, unknown>,
       );
       return NextResponse.json(
         entryToApiResponse(persisted as Record<string, unknown>, category),
@@ -357,22 +320,10 @@ export async function handleCategoryPatch(
     }
 
     if (action === "cancel_request_edit") {
-      if (existingStatus !== "EDIT_REQUESTED") {
-        return NextResponse.json(
-          entryToApiResponse(existingRecord, category),
-          { status: 200 },
-        );
-      }
-      const updated = transitionEntry(
-        existingRecord as EntryStateLike,
-        "cancelEditRequest",
-        { nowISO: now },
-      );
-      const persisted = await updateEntry(
+      const persisted = await cancelEditRequest(
         auth.email,
         category as CategoryKey,
         entryId,
-        updated as Record<string, unknown>,
       );
       return NextResponse.json(
         entryToApiResponse(persisted as Record<string, unknown>, category),
@@ -381,22 +332,10 @@ export async function handleCategoryPatch(
     }
 
     if (action === "cancel_request_delete") {
-      if (existingStatus !== "DELETE_REQUESTED") {
-        return NextResponse.json(
-          entryToApiResponse(existingRecord, category),
-          { status: 200 },
-        );
-      }
-      const updated = transitionEntry(
-        existingRecord as EntryStateLike,
-        "cancelDeleteRequest",
-        { nowISO: now },
-      );
-      const persisted = await updateEntry(
+      const persisted = await cancelDeleteRequest(
         auth.email,
         category as CategoryKey,
         entryId,
-        updated as Record<string, unknown>,
       );
       return NextResponse.json(
         entryToApiResponse(persisted as Record<string, unknown>, category),
@@ -405,29 +344,18 @@ export async function handleCategoryPatch(
     }
 
     if (action === "generate") {
-      if (existingStatus !== "DRAFT" && existingStatus !== "EDIT_GRANTED") {
-        return errorResponse("Entry cannot be generated from its current status.", 400);
-      }
-      const transitionAction: EntryTransitionAction =
-        existingStatus === "EDIT_GRANTED" ? "generateEntry" : "generateEntry";
-      const updated = transitionEntry(
-        existingRecord as EntryStateLike,
-        transitionAction,
-        { nowISO: now },
-      );
-      // Merge any incoming fields (e.g., PDF data sent along with generate)
-      const merged: Record<string, unknown> = {
-        ...(updated as Record<string, unknown>),
-        ...(entryRecord ?? {}),
-        confirmationStatus: (updated as EntryStateLike).confirmationStatus,
-        updatedAt: now,
-      };
-      normalizeEntryStreakFields(merged);
-      const persisted = await updateEntry(
+      const extraFields = entryRecord
+        ? Object.fromEntries(
+            Object.entries(entryRecord).filter(
+              ([k]) => k !== "id" && k !== "ownerEmail" && k !== "category" && k !== "confirmationStatus",
+            ),
+          )
+        : undefined;
+      const persisted = await commitDraft(
         auth.email,
         category as CategoryKey,
         entryId,
-        merged,
+        extraFields,
       );
       return NextResponse.json(
         entryToApiResponse(persisted as Record<string, unknown>, category),
@@ -436,24 +364,10 @@ export async function handleCategoryPatch(
     }
 
     if (action === "finalise") {
-      if (isEntryFinalized(existingRecord as EntryStateLike)) {
-        return NextResponse.json(
-          entryToApiResponse(existingRecord, category),
-          { status: 200 },
-        );
-      }
-      // Finalise = set editWindowExpiresAt to now (forces finalization)
-      const updated: Record<string, unknown> = {
-        ...existingRecord,
-        editWindowExpiresAt: now,
-        updatedAt: now,
-      };
-      normalizeEntryStreakFields(updated);
-      const persisted = await updateEntry(
+      const persisted = await finalizeEntry(
         auth.email,
         category as CategoryKey,
         entryId,
-        updated,
       );
       return NextResponse.json(
         entryToApiResponse(persisted as Record<string, unknown>, category),
@@ -462,10 +376,6 @@ export async function handleCategoryPatch(
     }
 
     // --- Regular field update (action === "save" or default) ---
-
-    if (!isEntryEditable(existing)) {
-      return errorResponse("This entry is locked.", 403);
-    }
 
     if (!entryRecord) {
       return errorResponse("entry required", 400);
@@ -478,37 +388,13 @@ export async function handleCategoryPatch(
       return errorResponse(validationErrors[0].message, 400, "VALIDATION_ERROR");
     }
 
-    // Merge incoming fields into existing entry
-    const merged: Record<string, unknown> = {
-      ...existingRecord,
-    };
-
-    // Apply each field from the incoming record
-    for (const [key, value] of Object.entries(entryRecord)) {
-      // Don't allow overwriting lifecycle fields from client
-      if (key === "id" || key === "ownerEmail" || key === "category") continue;
-      merged[key] = value;
-    }
-
-    merged.updatedAt = now;
-    merged.createdAt = existingRecord.createdAt ?? now;
-
-    // Recompute PDF staleness after field merge
-    if (merged.pdfMeta && merged.pdfSourceHash) {
-      merged.pdfStale =
-        hashPrePdfFields(merged, category as PdfSnapshotCategory) !==
-        String(merged.pdfSourceHash);
-    }
-
-    // Normalize streak fields
-    normalizeEntryStreakFields(merged);
-
-    // Persist
+    // Pass incoming fields to engine — it handles merge, editability check,
+    // PDF staleness, streak normalization, WAL logging, and index refresh.
     const persisted = await updateEntry(
       auth.email,
       category as CategoryKey,
       entryId,
-      merged,
+      entryRecord as Record<string, unknown>,
     );
 
     return NextResponse.json(
