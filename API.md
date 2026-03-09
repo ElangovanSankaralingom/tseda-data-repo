@@ -140,6 +140,25 @@ All routes are under `/api/`. Authentication uses NextAuth v4 with Google OAuth 
 |---|---|---|---|---|
 | GET, POST | `/api/cron/nightly` | Cron secret header | No | Nightly maintenance job |
 
+## Health Routes
+
+| Method | Path | Auth | Rate Limited | Description |
+|---|---|---|---|---|
+| GET | `/api/health` | No | No | System health check (storage, user count, version, node) |
+
+## Admin Maintenance Routes (`/api/admin/maintenance/*`)
+
+| Method | Path | Auth | Rate Limited | Description |
+|---|---|---|---|---|
+| POST | `/api/admin/maintenance/backup` | Admin | No | Create full .data backup zip |
+| POST | `/api/admin/maintenance/integrity-check` | Admin | No | Scan all users for data issues |
+| POST | `/api/admin/maintenance/wal-compact` | Admin | No | Trim old WAL event log entries |
+| POST | `/api/admin/maintenance/cleanup` | Admin | No | Remove temp files and empty dirs |
+| POST | `/api/admin/maintenance/rebuild-indexes` | Admin | No | Rebuild user index files from stores |
+| POST | `/api/admin/maintenance/migrate` | Admin | No | Apply data migrations to all users |
+| GET | `/api/admin/maintenance/stats` | Admin | No | System stats (users, storage, WAL, backups) |
+| GET | `/api/admin/maintenance/log` | Admin | No | Recent maintenance action log |
+
 ## Debug Routes
 
 | Method | Path | Auth | Rate Limited | Description |

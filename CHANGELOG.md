@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-03-09
+
+Backend hardening, background jobs, testing, and performance.
+
+### Added
+- Nightly maintenance pipeline with 7 steps: backup, integrity, housekeeping, auto-archive, edit grant expiry, timer warnings, WAL compaction
+- Auto-archive cron job for GENERATED entries with expired edit windows and no valid PDF
+- Edit grant expiry job to revert stale EDIT_GRANTED entries to GENERATED
+- Timer warning notifications for entries within 24h of expiry
+- WAL compaction with 30-day retention for per-user and telemetry event logs
+- Persistent notification system (`notificationStore.ts`) with 5 notification types: edit_granted, edit_rejected, delete_approved, auto_archived, timer_warning
+- Health check endpoint (`GET /api/health`) -- unauthenticated, returns storage/user/version status
+- Admin maintenance dashboard with individual job controls and action history
+- Split engine internals into focused modules (engineWrite, engineRead, engineCommit, engineAdmin, engineRequests, engineMutationRunner, engineHelpers)
+- Comprehensive test suite: 77 engine tests, 24 workflow tests, 13 streak tests, 32 API response tests
+- Custom ESM test loader (`tests/helpers/pathAliasLoader.mjs`) for `@/` alias and `.ts` extension resolution
+- Dashboard fast path via pre-computed UserIndex (skips 5 category file reads)
+- Structured JSON logger (`lib/logger.ts`) with level filtering, key redaction, `withTimer` utility
+
+### Changed
+- Dashboard computation uses UserIndex fast path when available, falls back to full category reads
+- All engine mutations invalidate dashboard cache via `revalidateTag`
+
+### Removed
+- `lib/entries/stateMachine.ts` -- deprecated wrapper (imports migrated to `workflow.ts`/`editorLifecycle.ts`)
+- `lib/entries/engine.ts` -- deprecated wrapper (imports migrated to `internal/engine.ts`)
+- `lib/gamification.ts` -- deprecated wrapper (imports migrated to `streakState.ts`/`streakTiming.ts`/`time.ts`)
+
 ## [0.2.0] - 2026-03-09
 
 Entry lifecycle overhaul, streak system, and finalization flow.
