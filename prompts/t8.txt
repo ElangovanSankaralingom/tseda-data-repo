@@ -1,0 +1,59 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+Four more files over 500 lines:
+- components/account/ExperienceTab.tsx (632 lines)
+- components/admin/analytics/AnalyticsCharts.tsx (627 lines)
+- lib/migrations/index.ts (609 lines)
+- components/admin/ExportDashboard.tsx (576 lines)
+
+## Read First
+1. Each file listed above (scan for major sections via grep)
+
+## The Fix
+
+### components/account/ExperienceTab.tsx (632 lines)
+Split into:
+- `components/account/ExperienceTab.tsx` — main tab layout (~100 lines)
+- `components/account/ExperienceForm.tsx` — form fields for adding/editing experience
+- `components/account/ExperienceList.tsx` — list of experience entries
+- `components/account/ExperienceCertUpload.tsx` — certificate upload section
+
+### components/admin/analytics/AnalyticsCharts.tsx (627 lines)
+Split into:
+- `components/admin/analytics/AnalyticsCharts.tsx` — chart layout/grid (~100 lines)
+- `components/admin/analytics/EntryTrendChart.tsx` — entries over time chart
+- `components/admin/analytics/CategoryBreakdownChart.tsx` — category distribution
+- `components/admin/analytics/StreakAnalyticsChart.tsx` — streak metrics
+- `components/admin/analytics/UserActivityChart.tsx` — user activity heatmap
+
+### lib/migrations/index.ts (609 lines)
+Split into:
+- `lib/migrations/index.ts` — migration runner orchestration (~100 lines)
+- `lib/migrations/entryMigrations.ts` — entry schema migrations (legacy status, field normalization)
+- `lib/migrations/storeMigrations.ts` — store format migrations (v0→v2)
+- `lib/migrations/indexMigrations.ts` — user index migrations
+
+### components/admin/ExportDashboard.tsx (576 lines)
+Split into:
+- `components/admin/ExportDashboard.tsx` — main layout (~100 lines)
+- `components/admin/export/ExportFilterPanel.tsx` — filter controls (category, date, status)
+- `components/admin/export/ExportPreview.tsx` — preview table
+- `components/admin/export/ExportActions.tsx` — download buttons, format selection
+- `components/admin/export/ExportTemplates.tsx` — saved templates management
+
+## Scope
+- MODIFY + CREATE: all files listed above
+- DO NOT MODIFY: engine, routes, workflow, types
+
+## Verification
+1. npm run build — passes
+2. find app/ components/ hooks/ lib/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -10 — NO file over 500 lines
+3. Account experience tab still works
+4. Admin analytics page still renders charts
+5. Migration runs without errors
+6. Export dashboard still works
