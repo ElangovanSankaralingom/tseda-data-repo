@@ -1,0 +1,51 @@
+## Task Type
+CLEANUP
+
+## Priority
+CRITICAL (user data in public repo)
+
+## Context
+The `.data/` directory contains runtime user data (real faculty entries, telemetry logs, admin notifications) and is committed to a PUBLIC GitHub repo. This is a security and repository hygiene issue. The `.bak` backup files from migrations are also committed.
+
+## Read First
+1. .gitignore
+
+## The Fix
+
+### Step 1: Update .gitignore
+Add these lines to `.gitignore`:
+
+```
+# Runtime data (NEVER commit)
+.data/
+
+# Backup files
+*.bak
+*.bak.*
+```
+
+### Step 2: Remove tracked .data/ files from git
+Run these commands (do NOT delete the actual files, just untrack them):
+
+```bash
+git rm -r --cached .data/
+git rm --cached '*.bak' '*.bak.*' 2>/dev/null || true
+```
+
+### Step 3: Commit
+```bash
+git add .gitignore
+git commit -m "security: remove .data/ from tracking, add to gitignore"
+```
+
+## Scope
+- MODIFY: .gitignore
+- GIT OPERATION: git rm --cached (untrack without deleting local files)
+- DO NOT MODIFY: any .ts/.tsx files
+- DO NOT DELETE: the actual .data/ directory (app needs it at runtime)
+
+## Verification
+1. git ls-files .data/ — returns nothing
+2. git ls-files '*.bak' — returns nothing
+3. ls .data/users/ — files still exist locally
+4. npm run dev — app still works

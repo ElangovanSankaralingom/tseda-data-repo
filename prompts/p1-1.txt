@@ -1,0 +1,158 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+The codebase has no single canonical Entry type. `lib/entries/workflow.ts` uses `EntryStateLike` with `unknown` for every field. Components define their own inline types. API routes cast to `Record<string, unknown>`. This causes type safety gaps — fields can be silently missing and TypeScript won't catch it.
+
+Additionally, the Two-Stage Field Model (Stage 1 = data fields affecting PDF hash, Stage 2 = file uploads not affecting PDF hash) exists only in developer knowledge. It must be codified in the type system so `getHashPayload` in `pdfSnapshot.ts` can derive Stage 1 fields from the schema instead of hardcoding exclusions.
+
+## Read First
+1. lib/types/entry.ts (current type definitions)
+2. lib/entries/workflow.ts (EntryStateLike — see all fields it expects)
+3. lib/pdfSnapshot.ts (getHashPayload — see which fields are excluded from hash)
+4. data/schemas/types.ts (EntrySchema contract)
+5. data/schemas/fdp-attended.ts (example category schema — field definitions)
+6. hooks/useEntryEditor.ts (what the client expects)
+
+## The Implementation
+
+### Step 1: Enhance lib/types/entry.ts
+
+Keep existing EntryStatus type and helpers. ADD these new types:
+
+```typescript
+/** Field stage for the two-stage model */
+export type FieldStage = 1 | 2;
+
+/**
+ * Lifecycle fields managed by the engine.
+ * These are NEVER user-editable. The engine sets them during transitions.
+ */
+export interface EntryLifecycleFields {
+  id: string;
+  category: string;
+  ownerEmail: string;
+  schemaVersion: number;
+  confirmationStatus: EntryStatus;
+  createdAt: string;
+  updatedAt: string;
+
+  // Generation & timer
+  committedAtISO?: string;
+  generatedAt?: string;
+  editWindowExpiresAt?: string;
+
+  // PDF state
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string;
+  pdfUrl?: string;
+  pdfSourceHash?: string;
+  pdfStale?: boolean;
+
+  // Streak state
+  streakEligible?: boolean;
+  streakPermanentlyRemoved?: boolean;
+
+  // Lock state
+  permanentlyLocked?: boolean;
+
+  // Edit request state
+  editRequestedAt?: string;
+  editRequestMessage?: string;
+  editGrantedAt?: string;
+  editGrantedBy?: string;
+  editGrantedDays?: number;
+  editRejectedReason?: string;
+
+  // Delete request state
+  deleteRequestedAt?: string;
+
+  // Request tracking
+  requestType?: 'edit' | 'delete' | null;
+  requestCount?: number;
+  requestCountResetAt?: string;
+
+  // Archive state
+  archivedAt?: string;
+  archiveReason?: 'auto_no_pdf' | 'delete_approved' | null;
+
+  // Timer warning
+  timerWarningShown?: boolean;
+}
+
+/**
+ * Canonical entry type.
+ * Lifecycle fields are typed, category-specific data fields are in `data`.
+ * File upload fields are top-level (Stage 2).
+ */
+export interface CanonicalEntry extends EntryLifecycleFields {
+  /** Category-specific data fields (Stage 1 — affects PDF hash) */
+  [key: string]: unknown;
+}
+
+/**
+ * What the API MUST return after any entry mutation.
+ * Includes computed fields the client needs for UI decisions.
+ */
+export interface EntryApiResponse extends CanonicalEntry {
+  isEditable: boolean;
+  isFinalized: boolean;
+  editTimeRemaining: {
+    hasEditWindow: boolean;
+    expired: boolean;
+    expiresAtISO: string | null;
+    remainingMs: number;
+    remainingLabel: string;
+  };
+}
+```
+
+### Step 2: Add stage annotation to schema contract
+
+In `data/schemas/types.ts`, add a `stage` property to the field definition type:
+
+Find the field definition interface (may be called `FieldDefinition`, `SchemaField`, or similar) and add:
+
+```typescript
+/** Stage 1 = data field (affects PDF hash), Stage 2 = upload field (does NOT affect PDF hash) */
+stage?: 1 | 2;  // Default: 1
+```
+
+### Step 3: Annotate upload fields as Stage 2 in EACH category schema
+
+In each schema file under `data/schemas/`:
+- fdp-attended.ts
+- fdp-conducted.ts  
+- guest-lectures.ts
+- case-studies.ts
+- workshops.ts
+
+Find every field definition for file upload fields (permissionLetter, completionCertificate, brochure, geotaggedPhoto, etc.) and add `stage: 2`.
+
+All other data fields are Stage 1 by default (no annotation needed, or explicitly `stage: 1`).
+
+## Associations & Side Effects
+- lib/pdfSnapshot.ts will be updated in P1.2 to use schema stages instead of hardcoded exclusions
+- lib/entries/workflow.ts will be updated in P1.3 to use CanonicalEntry instead of EntryStateLike
+- No runtime behavior changes in this prompt — types only
+
+## Scope
+- MODIFY: lib/types/entry.ts (add new types, keep existing)
+- MODIFY: data/schemas/types.ts (add stage property)
+- MODIFY: data/schemas/fdp-attended.ts (annotate upload fields as stage 2)
+- MODIFY: data/schemas/fdp-conducted.ts (annotate upload fields as stage 2)
+- MODIFY: data/schemas/guest-lectures.ts (annotate upload fields as stage 2)
+- MODIFY: data/schemas/case-studies.ts (annotate upload fields as stage 2)
+- MODIFY: data/schemas/workshops.ts (annotate upload fields as stage 2)
+- DO NOT MODIFY: lib/entries/workflow.ts (that's P1.3)
+- DO NOT MODIFY: lib/pdfSnapshot.ts (that's P1.2)
+- DO NOT MODIFY: any API routes or components
+
+## Verification
+1. npm run typecheck — passes (new types are additive, not breaking)
+2. npm run build — passes
+3. grep -rn "stage.*2" data/schemas/ — shows all upload fields annotated
+4. grep -n "EntryLifecycleFields\|CanonicalEntry\|EntryApiResponse" lib/types/entry.ts — all three types exist
