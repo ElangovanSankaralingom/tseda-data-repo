@@ -1,0 +1,87 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+`getHashPayload` in `lib/pdfSnapshot.ts` manually excludes file upload fields from the PDF hash. This is fragile — if a new upload field is added to a category, someone must remember to add it to the exclusion list, or PDFs will be incorrectly marked as stale.
+
+After P1.1, category schemas now have `stage: 2` annotations on upload fields. `getHashPayload` should read from the schema to determine which fields to exclude.
+
+## Read First
+1. lib/pdfSnapshot.ts (getHashPayload — see current hardcoded exclusions)
+2. data/schemas/types.ts (field definitions with stage property)
+3. data/categoryRegistry.ts (how to get schema for a category)
+4. data/schemas/fdp-attended.ts (example: see stage annotations from P1.1)
+
+## The Fix
+
+In `lib/pdfSnapshot.ts`, modify `getHashPayload`:
+
+### Current (hardcoded exclusions):
+The function likely has a list like:
+```typescript
+const EXCLUDED_FIELDS = ['permissionLetter', 'completionCertificate', 'brochure', ...];
+```
+Or it manually filters specific field names.
+
+### Target (schema-driven):
+```typescript
+import { getCategorySchema } from '@/data/categoryRegistry'; // or wherever the getter is
+
+function getStage2FieldNames(category: string): Set<string> {
+  const schema = getCategorySchema(category);
+  if (!schema?.fields) return new Set();
+  return new Set(
+    schema.fields
+      .filter(f => f.stage === 2)
+      .map(f => f.name || f.key) // use whatever the field identifier is
+  );
+}
+
+export function getHashPayload(entry: Record<string, unknown>, category: string): Record<string, unknown> {
+  const stage2Fields = getStage2FieldNames(category);
+  const lifecycleFields = new Set([
+    'id', 'category', 'ownerEmail', 'schemaVersion',
+    'confirmationStatus', 'createdAt', 'updatedAt',
+    'committedAtISO', 'generatedAt', 'editWindowExpiresAt',
+    'pdfGenerated', 'pdfGeneratedAt', 'pdfUrl', 'pdfSourceHash', 'pdfStale',
+    'streakEligible', 'streakPermanentlyRemoved', 'permanentlyLocked',
+    'editRequestedAt', 'editRequestMessage', 'editGrantedAt', 'editGrantedBy',
+    'editGrantedDays', 'editRejectedReason', 'deleteRequestedAt',
+    'requestType', 'requestCount', 'requestCountResetAt',
+    'archivedAt', 'archiveReason', 'timerWarningShown',
+    'attachments', // attachments array is metadata, not content
+  ]);
+
+  const payload: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(entry)) {
+    if (stage2Fields.has(key)) continue;  // Skip Stage 2 (uploads)
+    if (lifecycleFields.has(key)) continue; // Skip lifecycle fields
+    if (value !== undefined && value !== null && value !== '') {
+      payload[key] = value;
+    }
+  }
+  return payload;
+}
+```
+
+**IMPORTANT**: The `category` parameter must be passed to `getHashPayload`. If it currently doesn't accept a category parameter, add it and update ALL callers.
+
+## Associations & Side Effects
+- Every caller of `getHashPayload` must now pass `category` — grep for all callers and update them
+- This includes: pdfService.ts, any route that computes staleness, useEntryEditor if it calls this client-side
+
+## Scope
+- MODIFY: lib/pdfSnapshot.ts (getHashPayload and computePdfState)
+- MODIFY: any files that call getHashPayload (add category parameter)
+- DO NOT MODIFY: data/schemas/*.ts (already done in P1.1)
+- DO NOT MODIFY: API routes (will be unified in Phase 2)
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. grep -rn "getHashPayload" lib/ app/ hooks/ — all callers pass category
+4. Manual test: edit an upload field on an entry → PDF should NOT become stale
+5. Manual test: edit a data field (programName) → PDF SHOULD become stale

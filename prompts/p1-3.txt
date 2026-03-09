@@ -1,0 +1,99 @@
+## Task Type
+FEATURE
+
+## Priority
+HIGH
+
+## Context
+After P1.1 defined the `EntryApiResponse` type, we need a canonical function that converts a raw stored entry into the full API response shape with all computed fields. This function will be the SINGLE place that computes isEditable, isFinalized, editTimeRemaining — instead of these being computed independently in 5 different routes and on the client.
+
+## Read First
+1. lib/types/entry.ts (EntryApiResponse type from P1.1)
+2. lib/entries/workflow.ts (isEntryEditable, isEntryFinalized, getEditTimeRemaining)
+3. lib/entries/postSave.ts (normalizeEntryStreakFields)
+4. lib/pdfSnapshot.ts (computePdfState)
+
+## The Implementation
+
+Create `lib/entries/toApiResponse.ts`:
+
+```typescript
+import { type EntryApiResponse } from '@/lib/types/entry';
+import { normalizeEntryStatus, isEntryEditable, isEntryFinalized, getEditTimeRemaining } from '@/lib/entries/workflow';
+import { normalizeEntryStreakFields } from '@/lib/entries/postSave';
+import { computePdfState } from '@/lib/pdfSnapshot';
+
+/**
+ * Convert a raw stored entry to the canonical API response shape.
+ * 
+ * This is the SINGLE function that ensures the client always gets:
+ * - Normalized status
+ * - All lifecycle fields present (not undefined)
+ * - Computed fields (isEditable, isFinalized, editTimeRemaining)
+ * - PDF state (pdfStale computed from hash)
+ * - Streak fields normalized
+ *
+ * Every API route MUST use this before returning entry data.
+ */
+export function entryToApiResponse(
+  rawEntry: Record<string, unknown>,
+  category: string
+): EntryApiResponse {
+  // Step 1: Normalize streak fields (backfill pdfGenerated from pdfGeneratedAt, etc.)
+  const normalized = normalizeEntryStreakFields(rawEntry);
+
+  // Step 2: Ensure confirmationStatus is canonical
+  const confirmationStatus = normalizeEntryStatus(normalized);
+  normalized.confirmationStatus = confirmationStatus;
+
+  // Step 3: Compute PDF state
+  const pdfState = computePdfState(normalized, category);
+  normalized.pdfStale = pdfState?.isStale ?? false;
+
+  // Step 4: Compute editability and finalization
+  const isEditable = isEntryEditable(normalized);
+  const isFinalized = isEntryFinalized(normalized);
+  const editTimeRemaining = getEditTimeRemaining(normalized);
+
+  // Step 5: Return with all computed fields
+  return {
+    ...normalized,
+    confirmationStatus,
+    isEditable,
+    isFinalized,
+    editTimeRemaining,
+  } as EntryApiResponse;
+}
+
+/**
+ * Convert an array of entries (e.g., for list endpoints).
+ */
+export function entriesToApiResponse(
+  entries: Record<string, unknown>[],
+  category: string
+): EntryApiResponse[] {
+  return entries.map(e => entryToApiResponse(e, category));
+}
+```
+
+### Key design decisions:
+- normalizeEntryStreakFields runs first (backfills missing fields)
+- computePdfState needs category (from P1.2 changes)
+- The function accepts `Record<string, unknown>` as input because stored entries don't have strict types yet (that comes in Phase 2)
+- Returns `EntryApiResponse` — the canonical shape the client can rely on
+
+## Associations & Side Effects
+- This function will be used by the unified route handler in Phase 2
+- For now, it exists but is not yet wired into the 5 routes (Phase 2 does that)
+- getDashboardSummary could also use this for consistent normalization
+
+## Scope
+- CREATE: lib/entries/toApiResponse.ts
+- DO NOT MODIFY: any existing files (this is additive only)
+- DO NOT MODIFY: API routes (Phase 2 wires this in)
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. grep -rn "entryToApiResponse" lib/entries/toApiResponse.ts — function exists
+4. The function imports resolve correctly (no circular dependencies)

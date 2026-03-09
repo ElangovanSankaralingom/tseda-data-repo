@@ -1,0 +1,79 @@
+## Task Type
+BUG_FIX
+
+## Priority
+CRITICAL (build is broken)
+
+## Context
+Build fails: `Module not found: Can't resolve '@/lib/users/service'`
+The admin users page (`app/(protected)/admin/users/page.tsx`) imports `listAllUsers` and `getUserStats` from `@/lib/users/service` which does not exist.
+
+## Read First
+1. app/(protected)/admin/users/page.tsx
+2. components/admin/UserManagement.tsx (lines 1-65 for types)
+3. lib/userStore.ts (getUserStoreDir pattern)
+4. lib/dataStore.ts (reading category stores)
+5. lib/admin/roles.ts (admin role checks)
+6. lib/dashboard/getDashboardSummary.ts (streak computation pattern)
+7. lib/streakProgress.ts (computeCanonicalStreakSnapshot)
+
+## The Fix
+Create `lib/users/service.ts` that exports `listAllUsers()` and `getUserStats()`.
+
+Implementation:
+1. Read `.data/users/` directory to find all user email directories
+2. For each user, read their `index.json` for pre-computed aggregates (totalsByCategory, countsByStatus, streakSnapshot)
+3. For each user, read profile from `data/profiles/<email>.json` if it exists
+4. Build UserProfile objects matching these types from UserManagement.tsx:
+
+```typescript
+type ActivityTrend = "rising" | "stable" | "declining" | "inactive";
+
+type UserProfile = {
+  email: string;
+  name: string;
+  image?: string;
+  department?: string;
+  designation?: string;
+  role: "user" | "admin";
+  adminRoles: string[];
+  isActive: boolean;
+  firstSeenAt: string | null;
+  lastActiveAt: string | null;
+  totalEntries: number;
+  entriesByCategory: Record<string, number>;
+  entriesByStatus: Record<string, number>;
+  completionRate: number;
+  streakActivated: number;
+  streakWins: number;
+  editRequests: number;
+  activityTrend: ActivityTrend;
+};
+
+type UserStats = {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  adminUsers: number;
+  averageEntriesPerUser: number;
+  averageCompletionRate: number;
+};
+```
+
+Key patterns:
+- Use `fs.readdir` on `.data/users/` to list user directories
+- Use same file reading pattern as `lib/dataStore.ts` (readFile + JSON.parse)
+- Handle missing files gracefully (user may have no entries yet)
+- isActive: lastActiveAt within 30 days
+- activityTrend: based on recent vs older entry timestamps
+- completionRate: entries with status GENERATED that are finalized / total entries
+- editRequests: count entries with requestType === 'edit' or requestType === 'delete'
+- Admin roles from lib/admin/roles.ts
+
+## Scope
+- CREATE: lib/users/service.ts
+- DO NOT MODIFY: any existing files
+
+## Verification
+1. npm run build — must pass
+2. npm run dev — /admin/users page loads without error

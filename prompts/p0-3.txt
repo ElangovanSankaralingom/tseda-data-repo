@@ -1,0 +1,58 @@
+## Task Type
+BUG_FIX (security)
+
+## Priority
+CRITICAL (completely unauthenticated endpoint)
+
+## Context
+Per AUDIT.md: "/api/faculty is completely unauthenticated. Anyone can GET the full faculty list, POST new entries, PUT updates, or DELETE records. This is a critical vulnerability."
+
+## Read First
+1. app/api/faculty/route.ts
+2. lib/auth.ts (authOptions pattern)
+3. lib/admin/roles.ts (canAccessAdminConsole or similar)
+
+## The Fix
+In `app/api/faculty/route.ts`:
+
+1. Add auth check to ALL HTTP methods (GET, POST, PUT, DELETE):
+```typescript
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+// At the top of each handler:
+const session = await getServerSession(authOptions);
+if (!session?.user?.email) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+```
+
+2. For write operations (POST, PUT, DELETE), add admin guard:
+```typescript
+import { canAccessAdminConsole } from "@/lib/admin/roles";
+
+// After session check, for POST/PUT/DELETE only:
+if (!canAccessAdminConsole(session.user.email)) {
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+}
+```
+
+3. GET can remain accessible to any authenticated @tce.edu user (they need to see the directory).
+
+## Scope
+- MODIFY: app/api/faculty/route.ts
+- DO NOT MODIFY: any other files
+
+## Verification
+1. npm run build — passes
+2. Unauthenticated GET /api/faculty — returns 401
+3. Authenticated non-admin POST /api/faculty — returns 403
+4. Authenticated admin POST /api/faculty — succeeds
+
+
+# ============================================================
+# ============================================================
+# PHASE 1: CANONICAL TYPE SYSTEM (3 prompts)
+# Prerequisite: Phase 0 complete (build passes)
+# ============================================================
+# ============================================================
