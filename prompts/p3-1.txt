@@ -1,0 +1,70 @@
+## Task Type
+AUDIT
+
+## Priority
+HIGH
+
+## Context
+Phase 2 created a shared route handler (`lib/api/categoryRouteHandler.ts`). That handler may still write directly to JSON files instead of calling `lib/entries/internal/engine.ts`. This prompt audits the gap and produces a concrete list of what needs to change.
+
+The goal: EVERY entry mutation (create, update, generate, finalise, request edit, request delete, archive, restore) must go through engine.ts. No direct JSON file reads/writes in the route handler.
+
+## Read First
+1. lib/api/categoryRouteHandler.ts (the shared handler from Phase 2)
+2. lib/entries/internal/engine.ts (the canonical persistence layer)
+3. lib/entries/lifecycle.ts (public API re-exports from engine)
+4. lib/entries/workflow.ts (transition logic)
+5. lib/dataStore.ts (low-level file read/write — should ONLY be called by engine)
+6. lib/data/fileAtomic.ts (atomic write — should ONLY be called by engine/dataStore)
+
+## The Task
+
+### Step 1: Find all direct file operations in the shared handler
+
+Search for these patterns in `lib/api/categoryRouteHandler.ts`:
+```bash
+grep -n "readFile\|writeFile\|atomicWrite\|JSON.parse\|JSON.stringify\|fs\.\|readCategoryStore\|writeCategoryStore" lib/api/categoryRouteHandler.ts
+```
+
+Every hit is a bypass of engine.ts.
+
+### Step 2: Map each bypass to the engine.ts function that should replace it
+
+For each direct file operation found, identify which engine.ts function should be called instead:
+
+| Route operation | Direct file op (current) | Engine function (target) |
+|----------------|--------------------------|--------------------------|
+| Create entry | Read store, add to byId, write store | engine.createEntry() |
+| Update entry fields | Read store, merge fields, write store | engine.updateEntry() |
+| Generate PDF / DRAFT→GENERATED | Read store, set fields, write store | engine.commitDraft() or engine.generateEntry() |
+| Finalise entry | Read store, set finalized fields, write store | engine.finalizeEntry() |
+| Request edit | Read store, set request fields, write store | engine.requestEdit() |
+| Request delete | Read store, set request fields, write store | engine.requestDelete() |
+| Delete entry | Read store, remove from byId, write store | engine.deleteEntry() |
+| List entries | Read store, return entries | engine.listEntries() or keep as read-only (acceptable) |
+
+### Step 3: Check what engine.ts functions exist vs what's needed
+
+```bash
+grep -n "export.*function\|export async function" lib/entries/internal/engine.ts | head -30
+grep -n "export.*function\|export async function" lib/entries/lifecycle.ts | head -20
+```
+
+List which functions exist and which are missing. If engine.ts doesn't have a function for a specific operation, note that it needs to be created in P3.2.
+
+### Step 4: Write the gap report
+
+Create a file `prompts/p3-gap-report.txt` listing:
+- Every direct file operation in the shared handler (file, line number)
+- The engine function that should replace it
+- Whether that engine function exists or needs creation
+- Any parameter mismatches (engine expects X but handler has Y)
+
+## Scope
+- CREATE: prompts/p3-gap-report.txt (audit output)
+- DO NOT MODIFY: any source files (this is analysis only)
+
+## Verification
+1. The gap report is complete and actionable
+2. Every direct file operation in the shared handler is accounted for
+3. Every needed engine function is identified as existing or missing

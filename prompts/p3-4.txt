@@ -1,0 +1,91 @@
+## Task Type
+CLEANUP
+
+## Priority
+MEDIUM
+
+## Context
+`lib/entries/postSave.ts` was created as a workaround for the routes bypassing engine.ts. It normalizes entry fields at READ time (when dashboard or other consumers load entries). Now that ALL mutations go through engine.ts (from P3.3), entries are saved correctly at WRITE time. The read-time normalization is no longer needed.
+
+However, we must be careful: existing entries in `.data/` may have been saved BEFORE the engine fix. We need a one-time migration, then we can remove the runtime normalization.
+
+## Read First
+1. lib/entries/postSave.ts (normalizeEntryStreakFields — see what it does)
+2. lib/dashboard/getDashboardSummary.ts (calls postSave normalization)
+3. lib/entries/toApiResponse.ts (from P1.3 — also calls postSave)
+4. lib/entries/internal/engine.ts (now correctly sets all fields)
+
+## The Fix
+
+### Step 1: Create a one-time migration script
+
+Create `scripts/migrate-normalize-entries.ts`:
+
+```typescript
+/**
+ * One-time migration: normalize all existing entries to have correct
+ * lifecycle fields that engine.ts now sets on every mutation.
+ * 
+ * Run once: npx ts-node scripts/migrate-normalize-entries.ts
+ * Safe to run multiple times (idempotent).
+ */
+```
+
+The script should:
+1. Read all user directories from `.data/users/`
+2. For each user, read each category store file
+3. For each entry, run normalizeEntryStreakFields (from postSave.ts)
+4. If the entry changed, write it back
+5. Log how many entries were migrated
+
+### Step 2: Remove postSave calls from read paths
+
+In `lib/dashboard/getDashboardSummary.ts`:
+- Find where it calls `normalizeEntryStreakFields`
+- Remove the call — entries are now correct at write time
+- If it was mapping over entries, just use them directly
+
+In `lib/entries/toApiResponse.ts`:
+- Find where it calls `normalizeEntryStreakFields`
+- Remove the call — engine.ts now handles this
+- Keep the rest of the function (computePdfState, isEditable, etc.)
+
+### Step 3: Deprecate postSave.ts
+
+Don't delete it yet (the migration script uses it). Add a deprecation notice:
+
+```typescript
+/**
+ * @deprecated This module was a workaround for routes bypassing engine.ts.
+ * As of Phase 3, all mutations go through engine.ts which sets fields correctly.
+ * This module is kept only for the one-time migration script.
+ * Do NOT add new callers.
+ */
+```
+
+### Step 4: Verify no other callers remain
+
+```bash
+grep -rn "normalizeEntryStreakFields\|from.*postSave" lib/ app/ hooks/ components/ --include="*.ts" --include="*.tsx"
+```
+
+Should show ONLY:
+- The migration script
+- The deprecated postSave.ts itself
+- toApiResponse.ts should NOT show it (removed in step 2)
+- getDashboardSummary.ts should NOT show it (removed in step 2)
+
+## Scope
+- CREATE: scripts/migrate-normalize-entries.ts
+- MODIFY: lib/dashboard/getDashboardSummary.ts (remove postSave call)
+- MODIFY: lib/entries/toApiResponse.ts (remove postSave call)
+- MODIFY: lib/entries/postSave.ts (add deprecation notice only)
+- DO NOT MODIFY: engine.ts, workflow.ts, or any route files
+
+## Verification
+1. npm run build — passes
+2. Run the migration: `npx ts-node scripts/migrate-normalize-entries.ts`
+3. npm run dev — dashboard loads with correct streak counts
+4. Create a new entry → generate → check data file → all fields present WITHOUT normalization
+5. grep -rn "normalizeEntryStreakFields" lib/ app/ hooks/ — only shows postSave.ts itself and the migration script
+6. No runtime performance regression (removed unnecessary computation on every read)
