@@ -4,14 +4,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { profile as profileRoute, signin } from "@/lib/entryNavigation";
-
-type ProfileSummary = {
-  email?: string;
-  officialName?: string;
-  userPreferredName?: string;
-  googleName?: string;
-  googlePhotoURL?: string;
-};
+import type { ProfileSummary } from "@/components/shell/shellTypes";
 
 function getInitials(name: string, email: string) {
   const source = name.trim() || email.split("@")[0] || "U";

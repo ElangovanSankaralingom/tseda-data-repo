@@ -2,9 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import type { ConfirmDialogVariant } from "@/lib/types/ui";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
-
-type ConfirmDialogVariant = "default" | "destructive";
 
 export type ConfirmActionRequest = {
   title: string;

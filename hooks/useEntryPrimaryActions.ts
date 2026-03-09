@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import type { ToastState } from "@/lib/types/ui";
 
 type SaveIntent = "save" | "done";
 
@@ -10,11 +11,6 @@ type SaveDraftChangesOptions = {
   intent?: SaveIntent;
   source?: "manual" | "autosave";
   throwOnError?: boolean;
-};
-
-type ToastState = {
-  type: "ok" | "err";
-  msg: string;
 };
 
 type UseEntryPrimaryActionsOptions = {

@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 
-type ConfirmDialogVariant = "default" | "destructive";
+export type { ConfirmDialogVariant } from "@/lib/types/ui";
+import type { ConfirmDialogVariant } from "@/lib/types/ui";
 
 type ConfirmDialogProps = {
   open: boolean;

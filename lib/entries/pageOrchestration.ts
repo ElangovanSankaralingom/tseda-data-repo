@@ -1,13 +1,9 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { createOptimisticSnapshot, optimisticUpsert } from "@/lib/ui/optimistic";
+import type { ToastState } from "@/lib/types/ui";
 
 export type EntrySaveIntent = "save" | "done";
 export type EntrySaveSource = "manual" | "autosave";
-
-type ToastState = {
-  type: "ok" | "err";
-  msg: string;
-};
 
 type SaveDraftOrchestrationOptions<TEntry extends { id?: string | null }> = {
   intent: EntrySaveIntent;
