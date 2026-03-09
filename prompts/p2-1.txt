@@ -1,0 +1,97 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+The app has 5 nearly identical API route files (fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops), each 690-1075 lines. They share 90%+ of their logic — only the category key, field names, and validation schema differ.
+
+This prompt creates a shared handler module that all 5 routes will delegate to. We start with GET (list entries) and POST (create entry).
+
+## Read First
+1. app/api/me/fdp-attended/route.ts (the reference implementation — read the full GET and POST handlers)
+2. data/categoryRegistry.ts (how to resolve category → schema)
+3. data/schemas/types.ts (schema contract)
+4. lib/entries/internal/engine.ts (createEntry, updateEntry)
+5. lib/entries/toApiResponse.ts (from P1.3 — entryToApiResponse)
+6. lib/dataStore.ts (readCategoryStore pattern)
+7. lib/auth.ts (authOptions)
+8. lib/security/rateLimit.ts (rate limiting pattern)
+9. lib/security/limits.ts (payload size limits)
+
+## The Implementation
+
+Create `lib/api/categoryRouteHandler.ts`:
+
+```typescript
+/**
+ * Shared route handler for all 5 category API routes.
+ * 
+ * Each category route becomes a thin wrapper:
+ *   export const GET = (req) => handleCategoryGet(req, 'fdp-attended');
+ *   export const POST = (req) => handleCategoryPost(req, 'fdp-attended');
+ * 
+ * This module owns:
+ * - Auth checks
+ * - Category validation
+ * - Schema-based field validation
+ * - Delegation to engine.ts for persistence
+ * - Response formatting via entryToApiResponse
+ * 
+ * This module does NOT own:
+ * - Business rules (those live in workflow.ts)
+ * - Persistence internals (those live in engine.ts)
+ * - PDF generation (that lives in pdfService.ts)
+ */
+```
+
+### handleCategoryGet(req, categoryKey)
+Extract the GET handler logic from fdp-attended/route.ts:
+1. Authenticate via `getServerSession(authOptions)` — return 401 if no session
+2. Validate categoryKey against the category registry — return 400 if invalid
+3. Read the user's category store file (same pattern as current route)
+4. Convert each entry via `entryToApiResponse(entry, categoryKey)`
+5. Return the list as JSON
+
+### handleCategoryPost(req, categoryKey)
+Extract the POST handler logic from fdp-attended/route.ts:
+1. Authenticate — return 401 if no session
+2. Rate limit check — use the `entryMutations` preset
+3. Validate payload size via `assertEntryMutationInput`
+4. Validate categoryKey
+5. Get the category schema, validate the body against it
+6. Create entry via engine.ts `createEntry` (NOT direct JSON write)
+   - If engine.ts doesn't have a suitable createEntry, create the entry object manually but still use the atomic write pattern from the current route
+7. Set initial lifecycle fields: id, category, ownerEmail, createdAt, updatedAt, confirmationStatus: 'DRAFT'
+8. Save to the category store file
+9. Return `entryToApiResponse(savedEntry, categoryKey)`
+
+### Shared helpers in the same file:
+
+```typescript
+/** Authenticate request, return session or throw */
+async function requireAuth(req: NextRequest): Promise<Session> { ... }
+
+/** Validate category key against registry */
+function validateCategory(key: string): CategoryKey { ... }
+
+/** Standard error response */
+function errorResponse(message: string, status: number, code?: string): NextResponse { ... }
+```
+
+### IMPORTANT: Match existing behavior exactly
+- Read the current fdp-attended/route.ts GET and POST handlers line by line
+- The shared handler must produce IDENTICAL behavior and response shapes
+- The only difference: entryToApiResponse adds the computed fields (isEditable, isFinalized, editTimeRemaining) that the old routes may not have included
+
+## Scope
+- CREATE: lib/api/categoryRouteHandler.ts (GET + POST handlers only)
+- DO NOT MODIFY: any existing route files yet (that's P2.3-P2.4)
+- DO NOT MODIFY: engine.ts, workflow.ts, or any lib/ files
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. The new file compiles without errors
+4. No existing routes are changed (purely additive)
