@@ -1,0 +1,82 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+127 inline type definitions exist in components. Most should be in canonical `lib/types/` files. This reduces duplication and ensures type consistency across the app.
+
+## Read First
+1. lib/types/ directory (see what type files exist)
+2. Run diagnostic:
+   ```bash
+   grep -rn "^type \|^interface \|^export type \|^export interface " components/ hooks/ --include="*.tsx" --include="*.ts" | grep -v node_modules
+   ```
+
+## The Fix
+
+### Step 1: Categorize all 127 inline types
+
+Run the diagnostic above and categorize each type:
+
+**MOVE** — Type is used by multiple components or matches a concept in lib/:
+→ Move to appropriate `lib/types/*.ts` file
+
+**KEEP** — Type is purely local UI state (e.g., `type TabValue = 'all' | 'active'`):
+→ Leave inline, it's component-specific
+
+**MERGE** — Type duplicates one already in lib/types/:
+→ Delete inline version, import from lib/types/
+
+### Step 2: Create missing type files
+
+If these don't exist, create them:
+
+**`lib/types/admin.ts`**:
+- UserProfile, UserStats (from UserManagement.tsx)
+- AuditFinding, IntegrityReport (from admin components)
+- AdminNotification, NotificationItem (from notification components)
+
+**`lib/types/dashboard.ts`**:
+- DashboardSummary, CategoryProgress, StreakDisplay
+- Any dashboard-specific types
+
+**`lib/types/ui.ts`**:
+- Common UI types used across multiple components
+- ButtonVariant, StatusColor, etc.
+
+### Step 3: Batch migrate
+
+For each type being moved:
+1. Add to the canonical type file with export
+2. In the component, replace the inline definition with an import
+3. If the type was not exported, make sure it's exported from the new location
+
+### Step 4: Verify no duplicates
+
+```bash
+# Check for duplicate type names across all files
+grep -rn "^type \|^export type " lib/types/ components/ hooks/ --include="*.ts" --include="*.tsx" | \
+  awk -F'[ =]' '{print $NF}' | sort | uniq -c | sort -rn | head -20
+```
+
+Any count > 1 means a duplicate that needs resolving.
+
+## Scope
+- CREATE: lib/types/admin.ts (if not exists)
+- CREATE: lib/types/dashboard.ts (if not exists)
+- CREATE: lib/types/ui.ts (if needed)
+- MODIFY: lib/types/entry.ts (add any entry-related types)
+- MODIFY: ~30-50 component/hook files (replace inline types with imports)
+- DO NOT MODIFY: any business logic
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. grep -rn "^type \|^interface " components/ --include="*.tsx" | wc -l — under 40 (down from 127)
+4. No duplicate type definitions:
+   ```bash
+   grep -rn "^export type\|^export interface" lib/types/ | wc -l
+   ```
+   Should show all canonical types in one place

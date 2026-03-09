@@ -1,0 +1,99 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+Phase 2 created BaseEntryAdapter.tsx (649 lines) but case-studies (748) and guest-lectures (681) adapters still have their own large implementations instead of delegating to the base. Either these adapters weren't migrated, or they have category-specific logic that wasn't absorbed into the base.
+
+## Read First
+1. components/data-entry/adapters/BaseEntryAdapter.tsx (what the base provides)
+2. components/data-entry/adapters/case-studies.tsx (748 lines — find what's NOT in the base)
+3. components/data-entry/adapters/guest-lectures.tsx (681 lines — find what's NOT in the base)
+4. components/data-entry/adapters/fdp-attended.tsx (if already migrated, see the thin pattern)
+
+## The Fix
+
+### Step 1: Diff adapters against the base
+
+```bash
+# Find functions/sections unique to case-studies
+grep -n "function\|const.*=.*=>\|return" components/data-entry/adapters/case-studies.tsx | head -30
+
+# Compare with base
+grep -n "function\|const.*=.*=>" components/data-entry/adapters/BaseEntryAdapter.tsx | head -30
+```
+
+### Step 2: Identify category-specific vs duplicated code
+
+For each large adapter, categorize every section:
+- **Duplicated**: Same logic as BaseEntryAdapter → DELETE, use base
+- **Category-specific field rendering**: Different fields → Should be driven by schema, not hardcoded
+- **Truly unique UI**: Special layout, custom widgets → Keep, but extract into a small category-specific component
+
+### Step 3: Absorb missing features into BaseEntryAdapter
+
+If the base is missing features that case-studies and guest-lectures need:
+- Add the feature to BaseEntryAdapter with a prop or schema-driven flag
+- Example: if case-studies has a special "methodology" section with custom layout, add a `renderCustomSection` prop to the base
+
+### Step 4: Slim down each adapter
+
+**Target: each adapter under 50 lines** (thin wrapper around BaseEntryAdapter)
+
+```typescript
+// components/data-entry/adapters/case-studies.tsx
+import BaseEntryAdapter from './BaseEntryAdapter';
+
+export default function CaseStudiesAdapter(props) {
+  return <BaseEntryAdapter category="case-studies" {...props} />;
+}
+```
+
+If truly unique rendering exists:
+```typescript
+export default function CaseStudiesAdapter(props) {
+  return (
+    <BaseEntryAdapter
+      category="case-studies"
+      {...props}
+      customSections={{
+        methodology: (value, onChange) => <MethodologyEditor value={value} onChange={onChange} />
+      }}
+    />
+  );
+}
+```
+
+### Step 5: Also check other adapters
+```bash
+wc -l components/data-entry/adapters/*.tsx
+```
+If fdp-attended, fdp-conducted, or workshops are also still large, apply the same treatment.
+
+### Step 6: Slim down BaseEntryAdapter if possible
+
+At 649 lines, the base itself is borderline. If it has sections that can be extracted:
+- Extract field group rendering to `components/data-entry/FieldGroup.tsx`
+- Extract upload section to `components/data-entry/UploadSection.tsx`
+- Extract action bar integration to a helper
+
+Target: BaseEntryAdapter under 400 lines.
+
+## Scope
+- MODIFY: components/data-entry/adapters/case-studies.tsx (slim to thin wrapper)
+- MODIFY: components/data-entry/adapters/guest-lectures.tsx (slim to thin wrapper)
+- MODIFY: components/data-entry/adapters/BaseEntryAdapter.tsx (absorb missing features, then extract sub-components)
+- CREATE: components/data-entry/FieldGroup.tsx (if extracted from base)
+- CREATE: components/data-entry/UploadSection.tsx (if extracted from base)
+- MODIFY: any other adapter still over 100 lines
+- DO NOT MODIFY: lib/ files, API routes, hooks
+
+## Verification
+1. npm run build — passes
+2. wc -l components/data-entry/adapters/*.tsx — each adapter under 100 lines, BaseEntryAdapter under 500
+3. Test case-studies: create → fill all fields → generate → finalise
+4. Test guest-lectures: create → fill all fields → generate → finalise
+5. All field types render correctly (text, date, select, textarea, file uploads)
+6. View mode works for finalized entries in both categories

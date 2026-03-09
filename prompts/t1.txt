@@ -1,0 +1,105 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH (largest file in the codebase)
+
+## Context
+`lib/entries/internal/engine.ts` grew to 2680 lines after Phase 3 additions. It now handles: entry CRUD, status transitions, PDF operations, streak logic, request handling, WAL, index updates, and validation. This must be decomposed while keeping the public API surface unchanged.
+
+## Read First
+1. lib/entries/internal/engine.ts (scan for all exported functions and major sections)
+2. lib/entries/lifecycle.ts (re-exports — these must keep working)
+
+## The Fix
+
+### Step 1: Identify sections
+```bash
+grep -n "export.*function\|// ---\|// ===\|/\*\*" lib/entries/internal/engine.ts | head -50
+```
+
+### Step 2: Split into focused modules
+
+Create these files inside `lib/entries/internal/`:
+
+**`lib/entries/internal/engineRead.ts`** — Read-only operations
+- listEntries
+- getEntry
+- getEntryById
+- Any read helpers
+
+**`lib/entries/internal/engineWrite.ts`** — Core mutations
+- createEntry
+- updateEntry
+- deleteEntry
+- The atomic write/save helper used by all mutations
+
+**`lib/entries/internal/engineTransitions.ts`** — Status transition operations
+- generateEntry (DRAFT → GENERATED)
+- finalizeEntry
+- requestEdit
+- requestDelete
+- grantEdit / rejectEdit
+- cancelEditRequest / cancelDeleteRequest
+- approveDelete
+- archiveEntry
+- restoreEntry
+
+**`lib/entries/internal/engineValidation.ts`** — Validation helpers
+- validateEntryFields
+- assertEntryEditable
+- assertCanTransition
+- checkRequestLimit
+- Any Zod schema validation calls
+
+**`lib/entries/internal/engineIndex.ts`** — Index and WAL operations
+- updateUserIndex (or calls to indexStore)
+- appendToWal
+- rebuildIndex
+- Any cache invalidation
+
+**`lib/entries/internal/engine.ts`** — Becomes the barrel file
+```typescript
+// lib/entries/internal/engine.ts — barrel re-export
+export { listEntries, getEntry, getEntryById } from './engineRead';
+export { createEntry, updateEntry, deleteEntry } from './engineWrite';
+export { generateEntry, finalizeEntry, requestEdit, requestDelete, grantEdit, rejectEdit, approveDelete, archiveEntry, restoreEntry } from './engineTransitions';
+export { validateEntryFields, assertEntryEditable } from './engineValidation';
+```
+
+### Step 3: Share internal helpers
+
+Create `lib/entries/internal/engineHelpers.ts` for shared internal utilities:
+- withUserLock wrapper
+- readCategoryStore / writeCategoryStore (if engine owns these)
+- nowISO helper
+- Any shared type guards
+
+Each module imports from engineHelpers. No circular dependencies.
+
+### CRITICAL: lifecycle.ts must still work
+`lib/entries/lifecycle.ts` imports from `./internal/engine`. Since engine.ts becomes a barrel, all re-exports from lifecycle.ts continue to work without changes.
+
+```bash
+# Verify after split:
+grep "from.*internal/engine" lib/entries/lifecycle.ts
+# These imports must still resolve
+```
+
+## Scope
+- CREATE: lib/entries/internal/engineRead.ts
+- CREATE: lib/entries/internal/engineWrite.ts
+- CREATE: lib/entries/internal/engineTransitions.ts
+- CREATE: lib/entries/internal/engineValidation.ts
+- CREATE: lib/entries/internal/engineIndex.ts
+- CREATE: lib/entries/internal/engineHelpers.ts
+- MODIFY: lib/entries/internal/engine.ts (replace content with barrel re-exports)
+- DO NOT MODIFY: lib/entries/lifecycle.ts (must keep working as-is)
+- DO NOT MODIFY: lib/api/categoryRouteHandler.ts
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. wc -l lib/entries/internal/engine*.ts — each under 500 lines, engine.ts under 50 (barrel only)
+4. grep "from.*internal/engine" lib/entries/lifecycle.ts — imports still resolve
+5. Full flow test: create → edit → generate → finalise still works

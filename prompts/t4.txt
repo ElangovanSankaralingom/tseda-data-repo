@@ -1,0 +1,64 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+Remaining files over 500 lines after T1-T3:
+- lib/admin/integrityCheck.ts (863 lines)
+- lib/data/indexStore.ts (769 lines)
+- lib/export/exportService.ts (739 lines)
+- components/admin/AuditDashboard.tsx (704 lines)
+
+## Read First
+1. Each of the 4 files listed above (scan for major sections)
+
+## The Fix
+
+### lib/admin/integrityCheck.ts (863 lines)
+Split into:
+- `lib/admin/integrityCheck.ts` — main orchestration (scanIntegrity, runRepair)
+- `lib/admin/integrityRules.ts` — individual check rules (checkOrphanedFiles, checkMissingFields, checkStatusConsistency, etc.)
+- `lib/admin/integrityReport.ts` — report formatting and history
+
+### lib/data/indexStore.ts (769 lines)
+Split into:
+- `lib/data/indexStore.ts` — core index read/write/rebuild
+- `lib/data/indexStreakCompute.ts` — streak snapshot computation within index
+- `lib/data/indexSearchCompute.ts` — search index computation within index
+
+### lib/export/exportService.ts (739 lines)
+Split into:
+- `lib/export/exportService.ts` — main pipeline orchestration
+- `lib/export/exportFormatters.ts` — CSV/XLSX row formatting, field mapping
+- `lib/export/exportFilters.ts` — status/date/category filters
+
+### components/admin/AuditDashboard.tsx (704 lines)
+Split into:
+- `components/admin/AuditDashboard.tsx` — main layout + data fetching
+- `components/admin/AuditSummaryCard.tsx` — summary statistics card
+- `components/admin/AuditFindingsList.tsx` — list of findings/issues
+- `components/admin/AuditHistoryPanel.tsx` — history of past audits
+- `components/admin/AuditActionPanel.tsx` — repair/scan action buttons
+
+### For each split:
+1. Extract the section
+2. Import it back in the original
+3. Build and verify
+4. Move to next file
+
+## Scope
+- MODIFY + CREATE: files listed above
+- DO NOT MODIFY: any API routes, engine, workflow, or entry logic
+
+## Verification
+1. npm run build — passes
+2. Final check:
+   ```bash
+   find app/ components/ hooks/ lib/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -10
+   ```
+   NO file over 500 lines
+3. Admin integrity page still works
+4. Export still works
+5. Audit dashboard still works
