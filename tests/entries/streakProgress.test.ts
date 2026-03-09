@@ -7,6 +7,7 @@ import {
   isEntryActivated,
   isEntryStreakEligible,
   isEntryWon,
+  isStreakPermanentlyRemoved,
 } from "../../lib/streakProgress.ts";
 
 // --- checkStreakEligibility ---
@@ -414,6 +415,143 @@ test("deleting an incomplete entry decreases activated, not wins", () => {
   assert.equal(before.winsCount, 1);
   assert.equal(after.activatedCount, 1, "activated decreases when incomplete entry deleted");
   assert.equal(after.winsCount, 1, "wins unchanged");
+});
+
+// --- isStreakPermanentlyRemoved ---
+
+test("streakPermanentlyRemoved=true marks entry as permanently removed", () => {
+  assert.equal(isStreakPermanentlyRemoved({ streakPermanentlyRemoved: true }), true);
+});
+
+test("streakPermanentlyRemoved=false or absent is NOT removed", () => {
+  assert.equal(isStreakPermanentlyRemoved({}), false);
+  assert.equal(isStreakPermanentlyRemoved({ streakPermanentlyRemoved: false }), false);
+  assert.equal(isStreakPermanentlyRemoved({ streakPermanentlyRemoved: undefined }), false);
+});
+
+// --- Permanent removal blocks activation and win ---
+
+test("permanently removed entry is NOT activated even if otherwise eligible", () => {
+  assert.equal(
+    isEntryActivated({
+      streakEligible: true,
+      streakPermanentlyRemoved: true,
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
+    }),
+    false,
+  );
+});
+
+test("permanently removed entry is NOT a win even if all fields filled", () => {
+  const fields = [
+    { key: "title", label: "Title", kind: "string" as const },
+  ];
+  assert.equal(
+    isEntryWon(
+      {
+        streakEligible: true,
+        streakPermanentlyRemoved: true,
+        confirmationStatus: "GENERATED",
+        pdfGenerated: true,
+        editWindowExpiresAt: "2020-01-01T00:00:00.000Z",
+        title: "Filled",
+      },
+      fields,
+    ),
+    false,
+  );
+});
+
+// --- PDF stale blocks win but not activation ---
+
+test("entry with pdfStale=true is still activated (stale doesn't block activation)", () => {
+  assert.equal(
+    isEntryActivated({
+      streakEligible: true,
+      confirmationStatus: "GENERATED",
+      pdfGenerated: true,
+      pdfStale: true,
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
+    }),
+    true,
+  );
+});
+
+test("entry with pdfStale=true is NOT a win", () => {
+  const fields = [
+    { key: "title", label: "Title", kind: "string" as const },
+  ];
+  assert.equal(
+    isEntryWon(
+      {
+        streakEligible: true,
+        confirmationStatus: "GENERATED",
+        pdfGenerated: true,
+        pdfStale: true,
+        editWindowExpiresAt: "2020-01-01T00:00:00.000Z",
+        title: "Filled",
+      },
+      fields,
+    ),
+    false,
+  );
+});
+
+// --- ARCHIVED entries ---
+
+test("ARCHIVED entry is NOT activated", () => {
+  assert.equal(
+    isEntryActivated({
+      streakEligible: true,
+      confirmationStatus: "ARCHIVED",
+      pdfGenerated: true,
+    }),
+    false,
+  );
+});
+
+test("ARCHIVED entries are not counted in aggregate", () => {
+  const summary = computeStreakProgressAggregate([
+    {
+      categoryKey: "workshops",
+      id: "e1",
+      streakEligible: true,
+      confirmationStatus: "ARCHIVED",
+      pdfGenerated: true,
+      committedAtISO: "2026-03-06T10:00:00.000Z",
+    },
+  ]);
+  assert.equal(summary.activatedCount, 0);
+  assert.equal(summary.winsCount, 0);
+});
+
+// --- DRAFT entries ---
+
+test("DRAFT entry is NOT activated even if eligible", () => {
+  assert.equal(
+    isEntryActivated({
+      streakEligible: true,
+      confirmationStatus: "DRAFT",
+      pdfGenerated: true,
+    }),
+    false,
+  );
+});
+
+// --- Legacy pdfGeneratedAt fallback ---
+
+test("entry with pdfGeneratedAt string (no pdfGenerated flag) is activated", () => {
+  assert.equal(
+    isEntryActivated({
+      streakEligible: true,
+      confirmationStatus: "GENERATED",
+      pdfGeneratedAt: "2024-01-01T00:00:00.000Z",
+      editWindowExpiresAt: "2099-12-31T23:59:59.999Z",
+    }),
+    true,
+  );
 });
 
 test("per-category counts are also mutually exclusive", () => {
