@@ -1,0 +1,42 @@
+## Task Type
+CLEANUP
+
+## Priority
+LOW
+
+## Context
+Remove deprecated wrappers, unused exports, and commented-out code.
+
+## Read First
+1. lib/entries/stateMachine.ts (deprecated — check if still imported)
+2. lib/entries/engine.ts (deprecated wrapper — NOT internal/engine.ts)
+3. lib/gamification.ts (deprecated)
+
+## The Fix
+
+### Step 1: Find truly unused files
+```bash
+for f in lib/entries/stateMachine.ts lib/entries/engine.ts lib/gamification.ts; do
+  if [ -f "$f" ]; then
+    importers=$(grep -rn "from.*$(basename $f .ts)" lib/ app/ components/ hooks/ --include="*.ts" --include="*.tsx" | grep -v "$(basename $f)" | wc -l)
+    echo "$f: $importers importers"
+  fi
+done
+```
+
+### Step 2: Delete files with 0 importers
+### Step 3: For files with importers, update imports to point to canonical modules
+### Step 4: Find and remove commented-out code blocks (>5 lines)
+
+```bash
+grep -rn "^[[:space:]]*//" lib/ app/ --include="*.ts" | head -30
+```
+
+## Scope
+- DELETE: unused deprecated files
+- MODIFY: files that imported deprecated modules (update imports)
+- DO NOT MODIFY: business logic
+
+## Verification
+1. npm run build — passes
+2. No imports reference deleted files

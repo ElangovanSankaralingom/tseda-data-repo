@@ -1,0 +1,54 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+Build warning: `The "middleware" file convention is deprecated. Please use "proxy" instead.`
+Next.js 16 replaces `middleware.ts` with a new `proxy` convention. This must be migrated.
+
+## Read First
+1. middleware.ts (current implementation)
+2. https://nextjs.org/docs/messages/middleware-to-proxy (Next.js migration guide)
+3. lib/auth.ts (what the middleware checks)
+
+## The Fix
+
+### Step 1: Understand current middleware
+```bash
+cat middleware.ts
+```
+It likely:
+- Checks auth tokens for protected routes
+- Redirects unauthenticated users to /signin
+- Protects /admin/* routes with admin checks
+
+### Step 2: Migrate to proxy convention
+Follow the Next.js 16 migration guide. The new pattern typically involves:
+- Renaming or replacing `middleware.ts` with `proxy.ts` or the new convention
+- Updating the matcher config
+- Adjusting any imports
+
+### Step 3: If the migration guide is unclear or the proxy convention is too different
+As a fallback, keep middleware.ts but suppress the warning by adding to next.config.ts:
+```typescript
+// Only if proxy migration is too complex
+experimental: {
+  // ... existing
+}
+```
+
+### IMPORTANT: Don't break auth protection
+The middleware protects routes. Whatever we migrate to must provide the same protection. Test thoroughly.
+
+## Scope
+- MODIFY/REPLACE: middleware.ts → proxy.ts (or whatever Next.js 16 requires)
+- MODIFY: next.config.ts (if needed)
+- DO NOT MODIFY: lib/auth.ts, any route files
+
+## Verification
+1. npm run build — passes WITHOUT the middleware deprecation warning
+2. npm run dev — unauthenticated access to /dashboard redirects to /signin
+3. Non-admin access to /admin/* is blocked
+4. Authenticated access works normally

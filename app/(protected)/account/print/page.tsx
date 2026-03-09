@@ -1,12 +1,13 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
 import { getProfileByEmail } from "@/lib/profileStore";
 import { profile as profileRoute, signin } from "@/lib/entryNavigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function PrintProfile() {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) redirect(signin());
   const profile = await getProfileByEmail(email);

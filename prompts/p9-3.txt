@@ -1,0 +1,38 @@
+## Task Type
+FEATURE
+
+## Priority
+MEDIUM
+
+## Context
+Prepare the app for production deployment.
+
+## The Fix
+
+### Step 1: Environment validation
+Create `lib/env.ts`:
+```typescript
+const required = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'NEXTAUTH_SECRET', 'NEXTAUTH_URL'];
+for (const key of required) {
+  if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
+}
+```
+Import at app startup.
+
+### Step 2: Update .env.example with ALL required vars
+
+### Step 3: Production build check
+```bash
+NODE_ENV=production npm run build
+```
+Ensure no dev-only code leaks into production.
+
+### Step 4: Create deployment checklist in DEPLOY.md
+- Required env vars
+- .data/ directory must be writable
+- Cron job setup (external scheduler hitting /api/cron/nightly)
+- First-time setup steps
+
+## Verification
+1. npm run build — passes in production mode
+2. DEPLOY.md is complete and actionable

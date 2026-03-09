@@ -1,0 +1,45 @@
+## Task Type
+AUDIT + BUG_FIX
+
+## Priority
+MEDIUM
+
+## Context
+Next.js `unstable_cache` is used for dashboard. Ensure cache tags are correctly invalidated after every mutation.
+
+## Read First
+1. lib/dashboard/getDashboardSummary.ts (cache setup)
+2. lib/entries/internal/engine.ts (where revalidateTag should be called)
+3. grep -rn "revalidateTag\|unstable_cache" lib/ app/
+
+## The Fix
+
+### Step 1: Map all cache tags
+```bash
+grep -rn "unstable_cache\|revalidateTag" lib/ app/ --include="*.ts"
+```
+
+### Step 2: Verify every mutation calls revalidateTag
+After every entry mutation in engine, the dashboard cache must be invalidated:
+```typescript
+revalidateTag(`dashboard:${email}`);
+```
+
+Check that ALL engine functions (create, update, generate, finalise, requestEdit, requestDelete, delete, archive, restore) call this.
+
+### Step 3: Fix any missing invalidations
+
+## Scope
+- MODIFY: engine modules (add missing revalidateTag calls)
+- DO NOT MODIFY: dashboard, cache setup
+
+## Verification
+1. npm run build — passes
+2. Create entry → dashboard immediately reflects new count (no stale data)
+
+
+# ============================================================
+# ============================================================
+# PHASE 9: POLISH & DEPLOY (3 prompts)
+# ============================================================
+# ============================================================

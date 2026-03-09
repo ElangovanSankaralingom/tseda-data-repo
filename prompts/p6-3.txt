@@ -1,0 +1,57 @@
+## Task Type
+FEATURE
+
+## Priority
+MEDIUM
+
+## Context
+Users should be warned 24 hours before their entry timer expires. This gives them time to complete uploads and finalise.
+
+## Read First
+1. lib/jobs/autoArchive.ts or app/api/cron/nightly/route.ts (cron logic)
+2. lib/entries/workflow.ts (getEditTimeRemaining)
+3. lib/notifications/create.ts (from P6.2)
+
+## The Fix
+
+Add to the nightly cron:
+
+```typescript
+async function sendTimerWarnings() {
+  const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+  let warned = 0;
+
+  for (const userDir of userDirs) {
+    for (const cat of categories) {
+      const entries = await listEntries(userDir, cat);
+      for (const entry of entries) {
+        if (normalizeEntryStatus(entry) !== 'GENERATED') continue;
+        if (isEditWindowExpired(entry)) continue;
+        if (entry.timerWarningShown) continue; // Already warned
+
+        const remaining = getEditTimeRemaining(entry);
+        if (remaining.remainingMs > 0 && remaining.remainingMs <= TWENTY_FOUR_HOURS_MS) {
+          await createUserNotification(userDir, 'timer_warning', {
+            entryId: entry.id,
+            category: cat,
+            message: `Your entry expires in ${remaining.remainingLabel}. Finalise now to keep your streak.`
+          });
+          // Mark warning sent so we don't re-send
+          await updateEntryField(userDir, cat, entry.id, { timerWarningShown: true });
+          warned++;
+        }
+      }
+    }
+  }
+  return { warned };
+}
+```
+
+## Scope
+- MODIFY: cron route or lib/jobs/ (add timer warning logic)
+- DO NOT MODIFY: workflow.ts, engine.ts, UI components
+
+## Verification
+1. npm run build — passes
+2. Create entry expiring within 24h → trigger cron → notification created
+3. Trigger cron again → no duplicate notification (timerWarningShown = true)

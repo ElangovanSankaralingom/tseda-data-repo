@@ -1,0 +1,57 @@
+## Task Type
+FEATURE
+
+## Priority
+LOW
+
+## Context
+A health check endpoint is needed for monitoring and deployment verification.
+
+## The Fix
+
+Create `app/api/health/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server";
+import fs from "fs/promises";
+
+export async function GET() {
+  try {
+    // Check data directory accessible
+    await fs.access('.data/users');
+    const userDirs = await fs.readdir('.data/users');
+
+    return NextResponse.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      storage: "accessible",
+      users: userDirs.length,
+      version: process.env.npm_package_version || "unknown",
+      node: process.version,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: "unhealthy",
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : "Unknown error",
+    }, { status: 503 });
+  }
+}
+```
+
+No auth required — health checks must be accessible by load balancers.
+
+## Scope
+- CREATE: app/api/health/route.ts
+- DO NOT MODIFY: anything else
+
+## Verification
+1. npm run build — passes
+2. curl localhost:3000/api/health — returns healthy status
+
+
+# ============================================================
+# ============================================================
+# PHASE 7: TESTING (3 prompts)
+# ============================================================
+# ============================================================
