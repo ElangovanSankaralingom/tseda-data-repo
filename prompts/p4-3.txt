@@ -1,0 +1,70 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+After P4.1 and P4.2, audit for any remaining files over 500 lines and split them.
+
+## Read First
+1. Run diagnostic first (see below)
+
+## The Implementation
+
+### Step 1: Find all oversized files
+
+```bash
+find app/ components/ hooks/ lib/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -30
+```
+
+### Step 2: For each file over 500 lines, determine if splitting is appropriate
+
+**Split if:**
+- The file has multiple distinct responsibilities
+- It defines multiple components/functions that could be independent
+- It has inline type definitions that should be in a types file
+
+**Don't split if:**
+- It's a single complex function that can't be meaningfully decomposed (e.g., a large switch statement)
+- It's a generated/config file
+- Splitting would create artificial boundaries that hurt readability
+
+### Step 3: Common candidates
+
+**lib/entries/internal/engine.ts** — may be large after P3.2. If over 500 lines:
+- Extract helper functions into `lib/entries/internal/engineHelpers.ts`
+- Keep the public API functions in engine.ts
+- Move validation logic into `lib/entries/internal/validation.ts`
+
+**components/admin/UserManagement.tsx** — has inline types:
+- Move types to `lib/types/admin.ts`
+- Extract filter UI to `components/admin/UserFilters.tsx`
+- Extract user card to `components/admin/UserCard.tsx`
+- Extract stats grid to `components/admin/UserStatsGrid.tsx`
+
+**hooks/useCategoryEntryPageController.ts** — if large:
+- Extract sub-hooks: `useEntryActions.ts`, `useEntryNavigation.ts`
+
+**lib/api/categoryRouteHandler.ts** — if over 500 lines after P3.3:
+- Extract request validation to `lib/api/validateRequest.ts`
+- Extract response building to `lib/api/buildResponse.ts`
+
+### Step 4: Apply each split
+
+For each file identified:
+1. Extract the section into a new file
+2. Update imports in the original file
+3. Verify build passes
+4. Verify functionality unchanged
+
+## Scope
+- MODIFY/CREATE: any files identified in Step 1 over 500 lines
+- DO NOT MODIFY: files under 500 lines
+- DO NOT MODIFY: any business logic — structural changes only
+
+## Verification
+1. npm run build — passes
+2. find app/ components/ hooks/ lib/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -10 — NO file over 500 lines (excluding generated/config)
+3. npm run dev — full app works as before
+4. All tests pass (if any exist)

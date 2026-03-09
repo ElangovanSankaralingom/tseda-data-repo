@@ -1,0 +1,77 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+Multiple components define their own types inline instead of importing from shared type files. This causes duplication and drift. All types should live in canonical locations under `lib/types/`.
+
+## Read First
+1. lib/types/entry.ts (canonical entry types from P1.1)
+2. lib/types/ directory (see what type files exist)
+3. components/admin/UserManagement.tsx (defines UserProfile, UserStats inline)
+4. components/data-entry/CategoryEntryRecordCard.tsx (may define entry card types inline)
+5. hooks/useEntryEditor.ts (may define form state types inline)
+
+## The Implementation
+
+### Step 1: Find all inline type definitions in components and hooks
+
+```bash
+grep -rn "^type \|^interface \|^export type \|^export interface " components/ hooks/ --include="*.ts" --include="*.tsx" | grep -v "node_modules\|\.d\.ts"
+```
+
+### Step 2: Group types by domain
+
+**Entry types** → `lib/types/entry.ts` (already exists, extend if needed)
+- EntryStatus, CanonicalEntry, EntryApiResponse (from P1.1)
+- Add: EntryCardProps, EntryFormState if defined inline in components
+
+**Admin types** → `lib/types/admin.ts` (create)
+- UserProfile (from UserManagement.tsx)
+- UserStats (from UserManagement.tsx)
+- AdminNotification, ConfirmationItem if defined inline
+
+**Dashboard types** → `lib/types/dashboard.ts` (create)
+- DashboardSummary, StreakSnapshot, CategoryProgress if defined inline
+
+**Category types** → `lib/types/category.ts` (create or use existing)
+- CategoryKey, CategoryMetadata if defined inline
+
+### Step 3: Move types and update imports
+
+For each inline type:
+1. Move the type definition to the canonical file
+2. Export it
+3. Replace the inline definition with an import in the component/hook
+4. Verify no duplicate definitions exist
+
+```bash
+# After moving, verify no duplicates
+grep -rn "type UserProfile" lib/ components/ hooks/ --include="*.ts" --include="*.tsx"
+# Should show exactly ONE definition (in lib/types/admin.ts) and imports elsewhere
+```
+
+### CRITICAL: Don't break anything
+- Move types one at a time
+- Build after each move
+- If a type is used by only ONE component and is truly component-specific (like internal UI state), leave it inline
+
+## Scope
+- CREATE: lib/types/admin.ts (if it doesn't exist)
+- CREATE: lib/types/dashboard.ts (if needed)
+- MODIFY: lib/types/entry.ts (add any entry-related types found inline)
+- MODIFY: components that had inline types (replace with imports)
+- MODIFY: hooks that had inline types (replace with imports)
+- DO NOT MODIFY: any business logic
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. grep -rn "^type \|^interface " components/ hooks/ --include="*.tsx" — minimal results (only truly component-specific UI types remain)
+4. Each canonical type file has clear exports:
+   ```bash
+   grep "export" lib/types/admin.ts lib/types/dashboard.ts lib/types/entry.ts
+   ```
+5. No duplicate type definitions across files

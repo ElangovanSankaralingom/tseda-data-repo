@@ -1,0 +1,92 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+`app/ShellClient.tsx` is 23KB — the main app shell with navigation, sidebar, notification bell, user menu, search, and mobile responsive logic all in one file. This should be broken into focused components.
+
+## Read First
+1. app/ShellClient.tsx (read the full file — identify all sections)
+2. app/(protected)/shell.tsx (the server wrapper)
+3. components/nav/ (check what nav components already exist)
+4. components/layout/ (check what layout components exist)
+
+## The Implementation
+
+### Step 1: Analyze the file
+
+```bash
+wc -l app/ShellClient.tsx
+grep -n "function\|const.*=.*=>" app/ShellClient.tsx | head -30
+```
+
+### Step 2: Extract components
+
+**Likely components:**
+- `components/shell/TopNav.tsx` — top navigation bar (logo, title, breadcrumb)
+- `components/shell/Sidebar.tsx` — sidebar navigation (category links, admin links)
+- `components/shell/MobileSidebar.tsx` — mobile hamburger + slide-out sidebar
+- `components/shell/NotificationBell.tsx` — bell icon with unread count + dropdown
+- `components/shell/UserMenu.tsx` — avatar dropdown (profile, settings, sign out)
+- `components/shell/SearchTrigger.tsx` — search bar or command palette trigger
+
+### Step 3: Refactor ShellClient to compose
+
+```typescript
+// app/ShellClient.tsx — AFTER refactor
+"use client";
+
+import TopNav from "@/components/shell/TopNav";
+import Sidebar from "@/components/shell/Sidebar";
+import MobileSidebar from "@/components/shell/MobileSidebar";
+import NotificationBell from "@/components/shell/NotificationBell";
+import UserMenu from "@/components/shell/UserMenu";
+
+export default function ShellClient({ children, session }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen flex">
+      <Sidebar className="hidden lg:block" />
+      <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex-1 flex flex-col">
+        <TopNav
+          onMenuClick={() => setSidebarOpen(true)}
+          rightSlot={
+            <>
+              <NotificationBell />
+              <UserMenu session={session} />
+            </>
+          }
+        />
+        <main className="flex-1">{children}</main>
+      </div>
+    </div>
+  );
+}
+```
+
+### State management
+If the shell manages global state (notification count, sidebar open, etc.), keep that state in ShellClient and pass down as props. Don't create a context unless absolutely necessary.
+
+## Scope
+- CREATE: components/shell/TopNav.tsx
+- CREATE: components/shell/Sidebar.tsx
+- CREATE: components/shell/MobileSidebar.tsx
+- CREATE: components/shell/NotificationBell.tsx
+- CREATE: components/shell/UserMenu.tsx
+- CREATE: components/shell/SearchTrigger.tsx (if search exists in shell)
+- MODIFY: app/ShellClient.tsx (replace inline code with composed components)
+- DO NOT MODIFY: app/(protected)/shell.tsx, layout.tsx, or any page files
+
+## Verification
+1. npm run build — passes
+2. wc -l app/ShellClient.tsx — under 100 lines
+3. wc -l components/shell/*.tsx — each under 300 lines
+4. npm run dev → app shell renders correctly on desktop and mobile
+5. Navigation works (all links navigate correctly)
+6. Notification bell shows unread count (if implemented)
+7. User menu dropdown works (profile, sign out)
+8. Mobile hamburger menu works
