@@ -1,0 +1,90 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+The shared handlers from P2.1 and P2.2 are ready. Now we migrate the first route (fdp-attended) to use them. This is the PROOF OF CONCEPT — if this works, the other 4 are trivial.
+
+## Read First
+1. lib/api/categoryRouteHandler.ts (our shared handlers)
+2. app/api/me/fdp-attended/route.ts (current implementation — ~1000 lines)
+3. lib/entries/toApiResponse.ts
+
+## The Fix
+
+### Step 1: Create a backup
+Copy the current file:
+```bash
+cp app/api/me/fdp-attended/route.ts app/api/me/fdp-attended/route.ts.backup
+```
+
+### Step 2: Replace the route file
+
+Replace the ENTIRE content of `app/api/me/fdp-attended/route.ts` with a thin wrapper:
+
+```typescript
+import { type NextRequest } from "next/server";
+import {
+  handleCategoryGet,
+  handleCategoryPost,
+  handleCategoryPatch,
+  handleCategoryDelete,
+} from "@/lib/api/categoryRouteHandler";
+
+const CATEGORY = "fdp-attended" as const;
+
+export async function GET(req: NextRequest) {
+  return handleCategoryGet(req, CATEGORY);
+}
+
+export async function POST(req: NextRequest) {
+  return handleCategoryPost(req, CATEGORY);
+}
+
+export async function PATCH(req: NextRequest) {
+  return handleCategoryPatch(req, CATEGORY);
+}
+
+export async function DELETE(req: NextRequest) {
+  return handleCategoryDelete(req, CATEGORY);
+}
+```
+
+That's it. ~20 lines instead of ~1000.
+
+### Step 3: Fix any issues
+
+If the shared handler is missing something fdp-attended-specific:
+- Check if it's truly category-specific or if it was just implemented differently
+- If category-specific: add a hook point in the shared handler
+- If not: fix the shared handler
+
+## Scope
+- MODIFY: app/api/me/fdp-attended/route.ts (replace with thin wrapper)
+- MODIFY: lib/api/categoryRouteHandler.ts (ONLY if the migration reveals missing functionality)
+- DO NOT MODIFY: the other 4 category routes yet
+
+## Verification
+1. npm run build — passes
+2. npm run dev — test the COMPLETE fdp-attended flow:
+   a. Create new entry → verify it appears in list
+   b. Edit fields → save → verify fields persisted
+   c. Generate PDF → verify status becomes GENERATED
+   d. Check dashboard → streak activated (if end date is future)
+   e. Finalise Now → verify entry becomes read-only
+   f. View finalized entry → verify view mode works
+3. Compare API responses before and after:
+   ```bash
+   # Before migration (from backup): save a response
+   # After migration: compare response shape
+   # All fields must be present, values must match
+   ```
+4. Check data file:
+   ```bash
+   cat .data/users/senarch@tce.edu/fdp-attended.json | python3 -c "
+   import sys,json; d=json.load(sys.stdin)
+   for eid,e in d['byId'].items():
+     print(f'status={e.get(\"confirmationStatus\")}, pdf={e.get(\"pdfGenerated\")}, streak={e.get(\"streakEligible\")}')"
+   ```

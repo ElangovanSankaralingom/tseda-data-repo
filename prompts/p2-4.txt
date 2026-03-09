@@ -1,0 +1,86 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+fdp-attended was successfully migrated in P2.3. Now apply the same pattern to the remaining 4 routes. This is mechanical — same thin wrapper pattern.
+
+## Read First
+1. app/api/me/fdp-attended/route.ts (the thin wrapper from P2.3 — use as template)
+2. app/api/me/fdp-conducted/route.ts (current — to understand any differences)
+3. app/api/me/guest-lectures/route.ts
+4. app/api/me/case-studies/route.ts
+5. app/api/me/workshops/route.ts
+
+## The Fix
+
+### Before migrating, check for category-specific differences:
+
+```bash
+# Find functions/logic unique to each route
+diff <(grep -n "function\|const.*=" app/api/me/fdp-attended/route.ts) \
+     <(grep -n "function\|const.*=" app/api/me/fdp-conducted/route.ts)
+```
+
+If routes have category-specific logic beyond field names, note it and ensure the shared handler supports it via the category schema or a hook.
+
+### Replace each route file:
+
+**app/api/me/fdp-conducted/route.ts:**
+```typescript
+import { type NextRequest } from "next/server";
+import { handleCategoryGet, handleCategoryPost, handleCategoryPatch, handleCategoryDelete } from "@/lib/api/categoryRouteHandler";
+const CATEGORY = "fdp-conducted" as const;
+export async function GET(req: NextRequest) { return handleCategoryGet(req, CATEGORY); }
+export async function POST(req: NextRequest) { return handleCategoryPost(req, CATEGORY); }
+export async function PATCH(req: NextRequest) { return handleCategoryPatch(req, CATEGORY); }
+export async function DELETE(req: NextRequest) { return handleCategoryDelete(req, CATEGORY); }
+```
+
+**app/api/me/guest-lectures/route.ts:**
+Same pattern, `CATEGORY = "guest-lectures"`
+
+**app/api/me/case-studies/route.ts:**
+Same pattern, `CATEGORY = "case-studies"`
+
+**app/api/me/workshops/route.ts:**
+Same pattern, `CATEGORY = "workshops"`
+
+### Also handle any category-specific sub-routes
+
+Check if there are category-specific file upload routes or PDF routes that also need migration:
+```bash
+ls app/api/me/fdp-file/ app/api/me/fdp-conducted-file/ app/api/me/guest-lectures-file/ 2>/dev/null
+ls app/api/me/*/[id]/ 2>/dev/null
+```
+
+If file upload routes exist, they may also need to use a shared handler. If they're small enough, leave them for now.
+
+### Delete backup files
+```bash
+rm app/api/me/fdp-attended/route.ts.backup 2>/dev/null
+```
+
+## Scope
+- MODIFY: app/api/me/fdp-conducted/route.ts (replace with thin wrapper)
+- MODIFY: app/api/me/guest-lectures/route.ts (replace with thin wrapper)
+- MODIFY: app/api/me/case-studies/route.ts (replace with thin wrapper)
+- MODIFY: app/api/me/workshops/route.ts (replace with thin wrapper)
+- MODIFY: lib/api/categoryRouteHandler.ts (ONLY if category-specific logic requires it)
+- DO NOT MODIFY: app/api/me/fdp-attended/route.ts (already migrated)
+
+## Verification
+1. npm run build — passes
+2. Test EACH category (create → edit → generate → finalise):
+   - fdp-conducted: create + save + generate
+   - guest-lectures: create + save + generate
+   - case-studies: create + save + generate
+   - workshops: create + save + generate
+3. Dashboard still shows correct counts for all categories
+4. Line count check:
+   ```bash
+   wc -l app/api/me/fdp-attended/route.ts app/api/me/fdp-conducted/route.ts app/api/me/guest-lectures/route.ts app/api/me/case-studies/route.ts app/api/me/workshops/route.ts
+   ```
+   Each should be ~20 lines, total ~100 lines (down from ~5000)

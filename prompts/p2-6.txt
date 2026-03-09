@@ -1,0 +1,114 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+BaseEntryAdapter from P2.5 works for fdp-attended. Now migrate the remaining 4 adapters and do a comprehensive verification.
+
+## Read First
+1. components/data-entry/adapters/BaseEntryAdapter.tsx (from P2.5)
+2. components/data-entry/adapters/fdp-attended.tsx (thin wrapper from P2.5)
+3. components/data-entry/adapters/fdp-conducted.tsx (current — check for differences)
+4. components/data-entry/adapters/guest-lectures.tsx
+5. components/data-entry/adapters/case-studies.tsx
+6. components/data-entry/adapters/workshops.tsx
+
+## The Fix
+
+### Step 1: Check for category-specific rendering
+
+Before converting, diff each adapter against fdp-attended to find unique logic:
+```bash
+diff components/data-entry/adapters/fdp-attended.tsx components/data-entry/adapters/fdp-conducted.tsx | head -40
+```
+
+Common differences:
+- Different field names (handled by schema)
+- Different upload fields (handled by schema stage annotation)
+- Category-specific validation messages (should be in schema)
+- Special field layouts (may need override mechanism)
+
+### Step 2: Convert each adapter
+
+**fdp-conducted:**
+```typescript
+import BaseEntryAdapter from './BaseEntryAdapter';
+export default function FdpConductedAdapter(props) {
+  return <BaseEntryAdapter category="fdp-conducted" {...props} />;
+}
+```
+
+Same for guest-lectures, case-studies, workshops.
+
+If any adapter has truly unique rendering that can't be driven by the schema, keep that specific rendering but delegate everything else to BaseEntryAdapter:
+
+```typescript
+export default function WorkshopsAdapter(props) {
+  return (
+    <BaseEntryAdapter
+      category="workshops"
+      {...props}
+      renderCustomField={(field, value, onChange) => {
+        if (field.name === 'specialWorkshopField') {
+          return <SpecialWidget value={value} onChange={onChange} />;
+        }
+        return null; // use default rendering
+      }}
+    />
+  );
+}
+```
+
+### Step 3: Comprehensive verification
+
+Test EVERY category end-to-end:
+
+For each of [fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops]:
+1. Create new entry
+2. Fill all fields
+3. Save
+4. Generate PDF
+5. Check streak activation
+6. Finalise
+7. View finalized entry
+8. Request Edit on a finalized entry
+
+### Step 4: Line count victory lap
+```bash
+echo "=== Routes ==="
+wc -l app/api/me/fdp-attended/route.ts app/api/me/fdp-conducted/route.ts app/api/me/guest-lectures/route.ts app/api/me/case-studies/route.ts app/api/me/workshops/route.ts
+
+echo "=== Shared Handler ==="
+wc -l lib/api/categoryRouteHandler.ts
+
+echo "=== Adapters ==="
+wc -l components/data-entry/adapters/*.tsx
+
+echo "=== Shared Adapter ==="
+wc -l components/data-entry/adapters/BaseEntryAdapter.tsx components/data-entry/FieldRenderer.tsx
+```
+
+Expected:
+- 5 routes: ~100 lines total (was ~5000)
+- 1 shared handler: ~400-600 lines
+- 5 adapters: ~100 lines total (was likely ~3000+)
+- 1 shared adapter + field renderer: ~300-500 lines
+
+## Scope
+- MODIFY: components/data-entry/adapters/fdp-conducted.tsx
+- MODIFY: components/data-entry/adapters/guest-lectures.tsx
+- MODIFY: components/data-entry/adapters/case-studies.tsx
+- MODIFY: components/data-entry/adapters/workshops.tsx
+- MODIFY: components/data-entry/adapters/BaseEntryAdapter.tsx (if issues found)
+- MODIFY: components/data-entry/FieldRenderer.tsx (if issues found)
+- DO NOT MODIFY: lib/api/categoryRouteHandler.ts (already stable)
+
+## Verification
+1. npm run build — passes with zero warnings
+2. npm run typecheck — passes
+3. All 5 categories: full create→edit→generate→finalise→view flow works
+4. Dashboard streak counts correct
+5. Entry grouping (locked_in, streak_runners, etc.) still works
+6. Admin confirmations page still shows entries from all categories
