@@ -117,6 +117,9 @@ export type Entry = Record<string, unknown> & {
   requestCount?: number;
   requestCountResetAt?: string | null;
 
+  // --- Permanent lock (set after re-finalization from EDIT_GRANTED) ---
+  permanentlyLocked?: boolean;
+
   // --- Archive ---
   archivedAt?: string | null;
   archiveReason?: "auto_no_pdf" | "delete_approved" | null;

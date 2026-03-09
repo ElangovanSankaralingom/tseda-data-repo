@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useEntryConfirmation } from "@/hooks/useEntryConfirmation";
 import { useEntryPrimaryActions } from "@/hooks/useEntryPrimaryActions";
+import { useRequestDelete } from "@/hooks/useRequestDelete";
 import { useRequestEdit } from "@/hooks/useRequestEdit";
 import { deriveEntryActionState, useEntryWorkflow } from "@/hooks/useEntryWorkflow";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
@@ -51,6 +52,7 @@ type HeaderActionBindings = {
   isEditing: boolean;
   isViewMode: boolean;
   loading: boolean;
+  formHasData?: boolean;
   onAdd?: () => void;
   addLabel?: string;
   onCancel: () => void;
@@ -68,11 +70,21 @@ type HeaderActionBindings = {
     busyLabel?: string;
   };
   workflowDisabledHint?: string;
+  finalise?: {
+    canFinalise: boolean;
+    onFinalise: () => void | Promise<boolean>;
+    onAfterFinalise?: () => void;
+    disabledReason?: string;
+    editWindowExpiresAt?: string | null;
+  };
   entryStatus?: string | null;
   onRequestEdit?: () => void;
   onCancelRequestEdit?: () => void;
-  onFinalise?: () => void;
+  onRequestDelete?: () => void;
+  onCancelRequestDelete?: () => void;
   editTimeLabel?: string;
+  onBack?: () => void;
+  permanentlyLocked?: boolean;
 };
 
 type PdfActionBindings = {
@@ -120,6 +132,8 @@ type UseCategoryEntryPageControllerOptions<TEntry extends CategoryPageEntry> = {
   persistProgress: (entry: TEntry) => Promise<TEntry>;
   persistRequestEdit: (entry: TEntry) => Promise<TEntry>;
   persistCancelRequestEdit: (entry: TEntry) => Promise<TEntry>;
+  persistRequestDelete?: (entry: TEntry) => Promise<TEntry>;
+  persistCancelRequestDelete?: (entry: TEntry) => Promise<TEntry>;
   commitDraft: (entryId: string) => Promise<TEntry>;
   normalizePersistedEntry?: (entry: TEntry) => TEntry;
   applyPersistedEntry: (entry: TEntry) => void | Promise<void>;
@@ -185,6 +199,8 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   persistProgress,
   persistRequestEdit,
   persistCancelRequestEdit,
+  persistRequestDelete,
+  persistCancelRequestDelete,
   commitDraft,
   normalizePersistedEntry,
   applyPersistedEntry,
@@ -270,6 +286,22 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   const persistCancelRequestEditEntry = useCallback(
     async (entry: TEntry) => normalizePersisted(await persistCancelRequestEdit(entry)),
     [normalizePersisted, persistCancelRequestEdit]
+  );
+
+  const persistRequestDeleteEntry = useCallback(
+    async (entry: TEntry) => {
+      if (!persistRequestDelete) throw new Error("persistRequestDelete not configured");
+      return normalizePersisted(await persistRequestDelete(entry));
+    },
+    [normalizePersisted, persistRequestDelete]
+  );
+
+  const persistCancelRequestDeleteEntry = useCallback(
+    async (entry: TEntry) => {
+      if (!persistCancelRequestDelete) throw new Error("persistCancelRequestDelete not configured");
+      return normalizePersisted(await persistCancelRequestDelete(entry));
+    },
+    [normalizePersisted, persistCancelRequestDelete]
   );
 
   const commitDraftEntry = useCallback(
@@ -465,6 +497,14 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     onError: (message) => showToast("err", message, 1800),
   });
 
+  const { requestingIds: requestingDeleteIds, requestDelete, cancelRequestDelete } = useRequestDelete<TEntry>({
+    setItems: setList,
+    persistRequest: persistRequestDeleteEntry,
+    persistCancel: persistCancelRequestDeleteEntry,
+    onSuccess: (message) => showToast("ok", message, 1400),
+    onError: (message) => showToast("err", message, 1800),
+  });
+
   const { sendingIds: sendingConfirmationIds, sendForConfirmation } = useEntryConfirmation<TEntry>({
     category,
     setItems: setList,
@@ -475,9 +515,9 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   const [finalisingIds, setFinalisingIds] = useState<Record<string, boolean>>({});
 
   const finaliseEntry = useCallback(
-    async (entry: TEntry) => {
+    async (entry: TEntry): Promise<boolean> => {
       const entryId = entry.id;
-      if (finalisingIds[entryId]) return;
+      if (finalisingIds[entryId]) return false;
       setFinalisingIds((prev) => ({ ...prev, [entryId]: true }));
       try {
         const res = await fetch("/api/me/entry/finalise", {
@@ -491,11 +531,12 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
         }
         const updated = (await res.json()) as TEntry;
         setList((prev) => prev.map((e) => (e.id === entryId ? updated : e)));
-        showToast("ok", "Entry finalised.", 1400);
         nextRouter.refresh();
+        return true;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Finalise failed.";
         showToast("err", message, 1800);
+        return false;
       } finally {
         setFinalisingIds((prev) => ({ ...prev, [entryId]: false }));
       }
@@ -507,17 +548,23 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     (options?: {
       onAdd?: () => void;
       addLabel?: string;
+      formHasData?: boolean;
       workflowAction?: HeaderActionBindings["workflowAction"];
       workflowDisabledHint?: string;
+      finalise?: HeaderActionBindings["finalise"];
       entryStatus?: string | null;
       onRequestEdit?: () => void;
       onCancelRequestEdit?: () => void;
-      onFinalise?: () => void;
+      onRequestDelete?: () => void;
+      onCancelRequestDelete?: () => void;
       editTimeLabel?: string;
+      onBack?: () => void;
+      permanentlyLocked?: boolean;
     }): HeaderActionBindings => ({
       isEditing: showForm,
       isViewMode,
       loading,
+      formHasData: options?.formHasData,
       onAdd: options?.onAdd,
       addLabel: options?.addLabel,
       onCancel: () => void handleCancel(),
@@ -530,11 +577,15 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       saveIntent,
       workflowAction: options?.workflowAction,
       workflowDisabledHint: options?.workflowDisabledHint,
+      finalise: options?.finalise,
       entryStatus: options?.entryStatus,
       onRequestEdit: options?.onRequestEdit,
       onCancelRequestEdit: options?.onCancelRequestEdit,
-      onFinalise: options?.onFinalise,
+      onRequestDelete: options?.onRequestDelete,
+      onCancelRequestDelete: options?.onCancelRequestDelete,
       editTimeLabel: options?.editTimeLabel,
+      onBack: options?.onBack,
+      permanentlyLocked: options?.permanentlyLocked,
     }),
     [
       actionState.cancelDisabled,
@@ -569,6 +620,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   return {
     actionState,
     autoSaveStatus,
+    cancelRequestDelete,
     cancelRequestEdit,
     finaliseEntry,
     finalisingIds,
@@ -585,7 +637,9 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     lifecycle,
     markAutoSaveSaved,
     persistCurrentMutation,
+    requestDelete,
     requestEdit,
+    requestingDeleteIds,
     requestingEditIds,
     runWithSaveGuard,
     saveDraftChanges,

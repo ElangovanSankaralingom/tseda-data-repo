@@ -1,7 +1,7 @@
 "use client";
 
-import { Lock } from "lucide-react";
 import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
+import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
 import RequestEditAction from "@/components/entry/RequestEditAction";
 import { ActionButton } from "@/components/ui/ActionButton";
 import {
@@ -22,6 +22,12 @@ type RequestEditControls = {
   locked: boolean;
   status?: RequestEditStatus;
   requestedAtISO?: string | null;
+  requesting: boolean;
+  onRequest: () => void;
+  onCancel: () => void;
+};
+
+type RequestDeleteControls = {
   requesting: boolean;
   onRequest: () => void;
   onCancel: () => void;
@@ -59,6 +65,7 @@ type CategoryEntryRenderEntry = {
   endDate?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  permanentlyLocked?: boolean;
   pdfMeta?: {
     url?: string | null;
   } | null;
@@ -80,10 +87,11 @@ type CategoryEntryRecordCardProps = {
   onPreview?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  onFinalise?: () => void;
   deleteLabel?: string;
   sendForConfirmation?: SendForConfirmationControls;
   requestEdit?: RequestEditControls;
+  requestDelete?: RequestDeleteControls;
+  permanentlyLocked?: boolean;
   children?: React.ReactNode;
 };
 
@@ -108,10 +116,11 @@ export default function CategoryEntryRecordCard({
   onPreview,
   onEdit,
   onDelete,
-  onFinalise,
   deleteLabel = "Delete",
   sendForConfirmation,
   requestEdit,
+  requestDelete,
+  permanentlyLocked = false,
   children,
 }: CategoryEntryRecordCardProps) {
   const isDraft = group === "in_the_works";
@@ -148,28 +157,29 @@ export default function CategoryEntryRecordCard({
               </>
             ) : null}
 
-            {/* EDITABLE (generated, streak_runners, on_the_clock, unlocked): Edit | View | Finalise | Delete */}
-            {isEditable ? (
+            {/* GENERATED (editable): Edit · Delete */}
+            {isEditable && !isUnlocked ? (
               <>
                 {onEdit ? (
-                  <ActionButton
-                    role="primary"
-                    onClick={onEdit}
-                    className={isUnlocked ? "!bg-purple-600 hover:!bg-purple-700" : undefined}
-                  >
+                  <ActionButton role="primary" onClick={onEdit}>
                     Edit
                   </ActionButton>
                 ) : null}
-                <ActionButton role="context" onClick={onView}>View</ActionButton>
-                {onFinalise ? (
-                  <button
-                    type="button"
-                    onClick={onFinalise}
-                    className="inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
-                  >
-                    <Lock className="size-3.5" />
-                    Finalise Now
-                  </button>
+                {onDelete ? (
+                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    {deleteLabel}
+                  </ActionButton>
+                ) : null}
+              </>
+            ) : null}
+
+            {/* EDIT_GRANTED (unlocked): Edit · Delete */}
+            {isUnlocked ? (
+              <>
+                {onEdit ? (
+                  <ActionButton role="primary" onClick={onEdit} className="!bg-purple-600 hover:!bg-purple-700">
+                    Edit
+                  </ActionButton>
                 ) : null}
                 {onDelete ? (
                   <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
@@ -179,32 +189,36 @@ export default function CategoryEntryRecordCard({
               </>
             ) : null}
 
-            {/* FINALIZED: View | Request Edit | Delete */}
+            {/* FINALIZED: View · Request Action dropdown */}
             {isFinalized ? (
               <>
-                <ActionButton role="context" onClick={onView}>View</ActionButton>
-                {requestEdit ? (
-                  <RequestEditAction
-                    locked={requestEdit.locked}
-                    status={requestEdit.status}
-                    requestedAtISO={requestEdit.requestedAtISO}
-                    requesting={requestEdit.requesting}
-                    onRequest={requestEdit.onRequest}
-                    onCancel={requestEdit.onCancel}
+                <button
+                  type="button"
+                  onClick={onView}
+                  className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
+                >
+                  View
+                </button>
+                {!permanentlyLocked && requestEdit && requestDelete ? (
+                  <RequestActionDropdown
+                    onRequestEdit={requestEdit.onRequest}
+                    onRequestDelete={requestDelete.onRequest}
+                    requesting={requestEdit.requesting || requestDelete.requesting}
                   />
-                ) : null}
-                {onDelete ? (
-                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                    {deleteLabel}
-                  </ActionButton>
                 ) : null}
               </>
             ) : null}
 
-            {/* UNDER REVIEW: View | Cancel Request | Delete */}
+            {/* UNDER REVIEW (EDIT_REQUESTED / DELETE_REQUESTED): View · Cancel Request */}
             {isUnderReview ? (
               <>
-                <ActionButton role="context" onClick={onView}>View</ActionButton>
+                <button
+                  type="button"
+                  onClick={onView}
+                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-slate-100 px-3 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-slate-200 active:scale-[0.97]"
+                >
+                  View
+                </button>
                 {requestEdit ? (
                   <RequestEditAction
                     locked={requestEdit.locked}
@@ -214,11 +228,6 @@ export default function CategoryEntryRecordCard({
                     onRequest={requestEdit.onRequest}
                     onCancel={requestEdit.onCancel}
                   />
-                ) : null}
-                {onDelete ? (
-                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                    {deleteLabel}
-                  </ActionButton>
                 ) : null}
               </>
             ) : null}
@@ -238,8 +247,6 @@ type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRenderEntry>
   renderBody: (entry: TEntry) => React.ReactNode;
   onView: (entry: TEntry) => void;
   onEdit?: (entry: TEntry) => void;
-  onFinalise?: (entry: TEntry) => void;
-  canFinalise?: (entry: TEntry) => boolean;
   onPreview?: (entry: TEntry) => void;
   previewUrl?: (entry: TEntry) => string | null | undefined;
   hideActions?: (entry: TEntry, group: EntryListGroup) => boolean;
@@ -248,9 +255,12 @@ type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRenderEntry>
   requestConfirmation?: (request: DeleteConfirmationRequest) => void;
   buildDeleteRequest?: (entry: TEntry) => DeleteConfirmationRequest;
   requestingEditIds: Record<string, boolean | undefined>;
+  requestingDeleteIds: Record<string, boolean | undefined>;
   sendingConfirmationIds: Record<string, boolean | undefined>;
   requestEdit: (entry: TEntry) => void | Promise<void>;
   cancelRequestEdit: (entry: TEntry) => void | Promise<void>;
+  requestDelete: (entry: TEntry) => void | Promise<void>;
+  cancelRequestDelete: (entry: TEntry) => void | Promise<void>;
   sendForConfirmation: (entry: TEntry) => void | Promise<void>;
 };
 
@@ -261,8 +271,6 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
   renderBody,
   onView,
   onEdit,
-  onFinalise,
-  canFinalise,
   onPreview,
   previewUrl,
   hideActions,
@@ -271,9 +279,12 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
   requestConfirmation,
   buildDeleteRequest,
   requestingEditIds,
+  requestingDeleteIds,
   sendingConfirmationIds,
   requestEdit,
   cancelRequestEdit,
+  requestDelete,
+  cancelRequestDelete,
   sendForConfirmation,
 }: CategoryEntryRecordRendererOptions<TEntry>) {
   function RenderCategoryEntryRecord(entry: TEntry, group: EntryListGroup, index: number) {
@@ -307,11 +318,6 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
               : undefined
         }
         onEdit={lockApproved || !onEdit ? undefined : () => onEdit(entry)}
-        onFinalise={
-          onFinalise && canFinalise?.(entry)
-            ? () => onFinalise(entry)
-            : undefined
-        }
         onDelete={
           !requestConfirmation || !resolvedDeleteRequest
             ? undefined
@@ -337,6 +343,12 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
           onRequest: () => void requestEdit(entry),
           onCancel: () => void cancelRequestEdit(entry),
         }}
+        requestDelete={{
+          requesting: !!requestingDeleteIds[entry.id],
+          onRequest: () => void requestDelete(entry),
+          onCancel: () => void cancelRequestDelete(entry),
+        }}
+        permanentlyLocked={entry.permanentlyLocked === true}
       >
         {renderBody(entry)}
       </CategoryEntryRecordCard>

@@ -67,6 +67,11 @@ test("entry mutations append WAL events with action and actor metadata", async (
       eventName: "WAL Workshop Updated",
     });
     await commitDraft(ownerEmail, "workshops", String(created.id));
+    // Simulate PDF generation before finalise
+    await updateEntry(ownerEmail, "workshops", String(created.id), {
+      pdfGeneratedAt: new Date().toISOString(),
+      pdfStale: false,
+    } as Record<string, unknown>);
     await finalizeEntry(ownerEmail, "workshops", String(created.id));
     await requestEdit(ownerEmail, "workshops", String(created.id));
     await grantEditAccess(adminEmail, "workshops", ownerEmail, String(created.id));
