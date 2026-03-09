@@ -907,7 +907,8 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
 export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
-  entryId: string
+  entryId: string,
+  extraFields?: Record<string, unknown>,
 ): Promise<T> {
   const normalizedOwner = normalizeEmail(userEmail);
   const id = normalizeId(entryId);
@@ -958,6 +959,7 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       const updated = prepareEntryForWrite(
         {
           ...existing,
+          ...(extraFields ?? {}),
           committedAtISO: nowISO,
           streakEligible,
           confirmationStatus: "GENERATED" as const,
