@@ -71,6 +71,9 @@ export type ProgressNotification = {
 export type PersistentNotificationType =
   | "edit_request_granted"
   | "edit_request_rejected"
+  | "delete_approved"
+  | "auto_archived"
+  | "timer_warning"
   | "entry_finalized"
   | "streak_won"
   | "system_announcement";
