@@ -9,13 +9,10 @@ import type {
 import type { CategoryKey, RequestEditableEntry } from "@/lib/entries/types";
 import type { CategorizableEntry } from "@/lib/entryCategorization";
 import type { EntryStatus } from "@/lib/types/entry";
+export type { ToastState } from "@/lib/types/ui";
+import type { ToastState } from "@/lib/types/ui";
 
 // ── Core types ──────────────────────────────────────────────────────────────
-
-export type ToastState = {
-  type: "ok" | "err";
-  msg: string;
-};
 
 export type BusyUploadSource =
   | boolean
