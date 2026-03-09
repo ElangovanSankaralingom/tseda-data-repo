@@ -15,7 +15,7 @@ import {
 import type { Entry } from "@/lib/types/entry";
 import { getUserCategoryStoreFile } from "@/lib/userStore";
 import { logger, withTimer } from "@/lib/logger";
-import { readJsonFileDetailed } from "./integrityCheck";
+import { readJsonFileDetailed } from "./integrityCheckCategory";
 import {
   isUploadedFileLike,
   normalizeId,
