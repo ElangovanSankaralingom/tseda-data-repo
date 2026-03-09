@@ -266,6 +266,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
             {lastRun.autoArchive ? <NightlyStepRow label="Auto-Archive" step={lastRun.autoArchive} /> : null}
             {lastRun.editGrantExpiry ? <NightlyStepRow label="Edit Grant Expiry" step={lastRun.editGrantExpiry} /> : null}
             {lastRun.timerWarnings ? <NightlyStepRow label="Timer Warnings" step={lastRun.timerWarnings} /> : null}
+            {lastRun.walCompaction ? <NightlyStepRow label="WAL Compaction" step={lastRun.walCompaction} /> : null}
           </div>
         </div>
       ) : null}
