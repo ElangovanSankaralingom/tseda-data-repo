@@ -1,93 +1,51 @@
-import fs from "node:fs";
-import path from "node:path";
+/**
+ * Custom ESM loader for Node's built-in test runner.
+ * Resolves `@/` path alias to the project root, adds `.ts` extensions,
+ * and stubs `server-only`.
+ */
+import { resolve as pathResolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { existsSync } from "node:fs";
 
-const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs"];
-const SERVER_ONLY_STUB = path.join(process.cwd(), "tests", "helpers", "serverOnlyStub.mjs");
+const PROJECT_ROOT = pathResolve(import.meta.dirname, "..", "..");
 
-function resolveAliasToFile(specifier) {
-  const withoutPrefix = specifier.slice(2);
-  const basePath = path.join(process.cwd(), withoutPrefix);
-
-  if (fs.existsSync(basePath) && fs.statSync(basePath).isFile()) {
-    return basePath;
+function tryResolveTs(absPath) {
+  // If it already has an extension, use as-is
+  if (/\.\w+$/.test(absPath)) return absPath;
+  // Try .ts, then .tsx, then /index.ts
+  for (const ext of [".ts", ".tsx", "/index.ts", "/index.tsx"]) {
+    const candidate = absPath + ext;
+    if (existsSync(candidate)) return candidate;
   }
-
-  for (const extension of EXTENSIONS) {
-    const withExtension = `${basePath}${extension}`;
-    if (fs.existsSync(withExtension)) {
-      return withExtension;
-    }
-  }
-
-  for (const extension of EXTENSIONS) {
-    const asIndex = path.join(basePath, `index${extension}`);
-    if (fs.existsSync(asIndex)) {
-      return asIndex;
-    }
-  }
-
-  return null;
+  return absPath;
 }
 
-function resolveRelativeToFile(specifier, parentURL) {
-  if (!parentURL) return null;
-  const parentPath = new URL(parentURL).pathname;
-  const parentDir = path.dirname(parentPath);
-  const basePath = path.resolve(parentDir, specifier);
-
-  if (fs.existsSync(basePath) && fs.statSync(basePath).isFile()) {
-    return basePath;
-  }
-
-  for (const extension of EXTENSIONS) {
-    const withExtension = `${basePath}${extension}`;
-    if (fs.existsSync(withExtension)) {
-      return withExtension;
-    }
-  }
-
-  for (const extension of EXTENSIONS) {
-    const asIndex = path.join(basePath, `index${extension}`);
-    if (fs.existsSync(asIndex)) {
-      return asIndex;
-    }
-  }
-
-  return null;
-}
-
-export async function resolve(specifier, context, defaultResolve) {
+export async function resolve(specifier, context, nextResolve) {
+  // Stub out `server-only` — it throws at import time outside Next.js
   if (specifier === "server-only") {
     return {
-      url: pathToFileURL(SERVER_ONLY_STUB).href,
       shortCircuit: true,
+      url: "data:text/javascript,export default {};",
     };
   }
 
+  // Resolve @/ alias
   if (specifier.startsWith("@/")) {
-    const filePath = resolveAliasToFile(specifier);
-    if (filePath) {
-      return {
-        url: pathToFileURL(filePath).href,
-        shortCircuit: true,
-      };
+    const bare = pathResolve(PROJECT_ROOT, specifier.slice(2));
+    const resolved = tryResolveTs(bare);
+    return nextResolve(pathToFileURL(resolved).href, context);
+  }
+
+  // Resolve relative .ts imports (handles internal cross-module imports)
+  if (specifier.startsWith(".") && context.parentURL) {
+    const parentPath = new URL(context.parentURL).pathname;
+    const parentDir = parentPath.substring(0, parentPath.lastIndexOf("/"));
+    const bare = pathResolve(parentDir, specifier);
+    const resolved = tryResolveTs(bare);
+    if (resolved !== bare) {
+      return nextResolve(pathToFileURL(resolved).href, context);
     }
   }
 
-  // Handle relative imports without extensions (e.g. "./indexStoreInternal")
-  if (specifier.startsWith("./") || specifier.startsWith("../")) {
-    const hasExtension = EXTENSIONS.some((ext) => specifier.endsWith(ext));
-    if (!hasExtension) {
-      const filePath = resolveRelativeToFile(specifier, context.parentURL);
-      if (filePath) {
-        return {
-          url: pathToFileURL(filePath).href,
-          shortCircuit: true,
-        };
-      }
-    }
-  }
-
-  return defaultResolve(specifier, context, defaultResolve);
+  return nextResolve(specifier, context);
 }
