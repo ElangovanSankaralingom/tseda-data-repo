@@ -30,7 +30,6 @@ import {
   type EntryStateLike,
 } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { normalizeEntryStreakFields } from "@/lib/entries/postSave";
 import { normalizeEntry } from "@/lib/normalize";
 import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
@@ -402,7 +401,6 @@ export function prepareEntryForWrite(entry: EntryLike, nowISO: string, category:
     confirmationStatus: existingStatus,
   };
   const normalized = normalizeEntry(base as Entry, ENTRY_SCHEMAS[category]) as EntryLike;
-  normalizeEntryStreakFields(normalized as Record<string, unknown>);
   return normalized;
 }
 
