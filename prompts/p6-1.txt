@@ -1,0 +1,80 @@
+## Task Type
+FEATURE
+
+## Priority
+HIGH
+
+## Context
+Entries with expired timers and no valid PDF should be automatically archived. The cron route exists at `app/api/cron/nightly/route.ts` but auto-archive may not be fully implemented.
+
+## Read First
+1. app/api/cron/nightly/route.ts (current implementation)
+2. lib/entries/workflow.ts (isEditWindowExpired, isEntryFinalized)
+3. lib/entries/internal/engine.ts (archiveEntry function)
+4. lib/jobs/ directory (if exists — check for job definitions)
+
+## The Fix
+
+### In the nightly cron handler, add auto-archive logic:
+
+```typescript
+async function autoArchiveExpiredEntries() {
+  const userDirs = await fs.readdir('.data/users/');
+  const categories = ['fdp-attended','fdp-conducted','guest-lectures','case-studies','workshops'];
+  let archived = 0;
+
+  for (const userDir of userDirs) {
+    for (const cat of categories) {
+      const entries = await listEntries(userDir, cat);
+      for (const entry of entries) {
+        const status = normalizeEntryStatus(entry);
+        if (status !== 'GENERATED') continue;
+        if (!isEditWindowExpired(entry)) continue;
+        // Timer expired — check if valid PDF exists
+        if (!entry.pdfGenerated || entry.pdfStale) {
+          // No valid PDF → auto-archive
+          await archiveEntry(userDir, cat, entry.id, { archiveReason: 'auto_no_pdf' });
+          archived++;
+        }
+        // If valid PDF exists → entry is finalized (read-only), no action needed
+      }
+    }
+  }
+  return { archived };
+}
+```
+
+### Add edit grant expiry check:
+```typescript
+async function expireEditGrants() {
+  // Find all EDIT_GRANTED entries past their editWindowExpiresAt
+  // Transition back to GENERATED (the grant expired without re-submission)
+  let expired = 0;
+  // ... similar pattern to above
+  return { expired };
+}
+```
+
+### Wire into the nightly handler:
+```typescript
+export async function GET(req) {
+  // Verify cron secret
+  const results = {
+    autoArchive: await autoArchiveExpiredEntries(),
+    editGrantExpiry: await expireEditGrants(),
+    timestamp: new Date().toISOString(),
+  };
+  return NextResponse.json(results);
+}
+```
+
+## Scope
+- MODIFY: app/api/cron/nightly/route.ts
+- CREATE: lib/jobs/autoArchive.ts (if extracting logic to a module)
+- CREATE: lib/jobs/editGrantExpiry.ts (if extracting)
+- DO NOT MODIFY: engine.ts, workflow.ts
+
+## Verification
+1. npm run build — passes
+2. Create a test entry with expired timer and no PDF → trigger cron → entry is archived
+3. Create a test EDIT_GRANTED entry with expired grant → trigger cron → reverts to GENERATED

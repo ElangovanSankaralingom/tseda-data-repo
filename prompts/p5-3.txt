@@ -1,0 +1,66 @@
+## Task Type
+AUDIT + BUG_FIX
+
+## Priority
+MEDIUM
+
+## Context
+Ensure all mutation routes validate input with Zod schemas, enforce payload size limits, and sanitize user input before storage.
+
+## Read First
+1. lib/security/limits.ts (assertEntryMutationInput, assertActionPayload)
+2. lib/api/categoryRouteHandler.ts (check if validation is applied)
+3. data/schemas/types.ts (Zod schema contract)
+4. data/schemas/fdp-attended.ts (example schema with validation)
+
+## The Fix
+
+### Step 1: Audit all POST/PATCH routes for validation
+```bash
+for f in $(find app/api -name "route.ts"); do
+  methods=$(grep -c "export.*async.*function.*POST\|export.*async.*function.*PATCH\|export.*async.*function.*PUT" "$f")
+  if [ "$methods" -gt "0" ]; then
+    validation=$(grep -c "assertEntryMutation\|assertActionPayload\|schema.*parse\|zod\|validate" "$f")
+    if [ "$validation" -eq "0" ]; then
+      echo "NO VALIDATION: $f (has $methods mutation methods)"
+    fi
+  fi
+done
+```
+
+### Step 2: For each route missing validation, add it
+
+**Payload size check** (on all POST/PATCH):
+```typescript
+import { assertEntryMutationInput } from "@/lib/security/limits";
+// At top of handler:
+assertEntryMutationInput(body); // Throws if > 200KB
+```
+
+**Schema validation** (on entry mutations):
+```typescript
+const schema = getCategorySchema(category);
+const result = schema.safeParse(body.data);
+if (!result.success) {
+  return NextResponse.json({ error: "Validation failed", details: result.error.issues }, { status: 400 });
+}
+```
+
+### Step 3: Sanitize string inputs
+Verify that `lib/security/limits.ts` or the entry save path sanitizes:
+- String length (max 5000 chars per field)
+- No script injection (strip HTML tags if not needed)
+- Trim whitespace
+
+If sanitization is missing, add it to the engine's updateEntry function so ALL saves are sanitized.
+
+## Scope
+- MODIFY: any routes missing validation
+- MODIFY: lib/entries/internal/engineWrite.ts (add sanitization if missing)
+- DO NOT MODIFY: schemas, types, or UI
+
+## Verification
+1. npm run build — passes
+2. The audit script from Step 1 returns NO results
+3. Test: send oversized payload (>200KB) → returns 413
+4. Test: send invalid field types → returns 400 with validation errors

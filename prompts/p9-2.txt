@@ -1,0 +1,32 @@
+## Task Type
+DOCS
+
+## Priority
+MEDIUM
+
+## Context
+After the full overhaul, all MD files need updating to reflect the new architecture. Run the upmd command pattern.
+
+## The Fix
+
+Update ALL markdown files to reflect:
+- Unified route handler (lib/api/categoryRouteHandler.ts)
+- Split engine modules (lib/entries/internal/engine*.ts)
+- New type system (lib/types/entry.ts with CanonicalEntry, EntryApiResponse)
+- Split components (components/account/, components/shell/)
+- Background jobs (lib/jobs/, cron enhancements)
+- Test coverage
+- Health check endpoint
+
+Key files to update:
+- CLAUDE.md — update module ownership table, add new modules
+- ARCHITECTURE.md — update canonical modules, add unified handler pattern
+- API.md — add /api/health, update route descriptions
+- CHANGELOG.md — add v0.3.0 entry for the overhaul
+- README.md — update if needed
+- TSEDA-CONTEXT-HANDOFF.txt — update for next session
+- tseda-url-index.md — regenerate with new files
+
+## Verification
+1. All MDs reference current file structure
+2. CLAUDE.md module ownership table is complete

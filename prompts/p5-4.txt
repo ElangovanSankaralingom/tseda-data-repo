@@ -1,0 +1,81 @@
+## Task Type
+CLEANUP (security)
+
+## Priority
+HIGH
+
+## Context
+.data/ was already added to .gitignore and untracked (P0.2), but the data still exists in git HISTORY. Anyone who clones the repo can access past commits and see user data. This must be purged from history.
+
+WARNING: This rewrites git history. All collaborators must re-clone after this.
+
+## Read First
+1. .gitignore (verify .data/ is listed)
+
+## The Fix
+
+### Option A: BFG Repo Cleaner (faster, recommended)
+```bash
+# Install BFG
+brew install bfg
+
+# Create a backup first
+cp -r .git .git-backup
+
+# Remove .data/ from all history
+bfg --delete-folders .data --no-blob-protection
+
+# Clean up
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+
+# Force push
+git push origin main --force
+```
+
+### Option B: git filter-repo (if BFG not available)
+```bash
+pip install git-filter-repo
+
+git filter-repo --path .data/ --invert-paths
+
+git push origin main --force
+```
+
+### Also remove .bak files from history
+```bash
+bfg --delete-files '*.bak' --no-blob-protection
+# or
+git filter-repo --path-glob '*.bak' --invert-paths
+```
+
+### After purging
+```bash
+# Verify
+git log --all --diff-filter=A -- '.data/' | head -5
+# Should return nothing
+
+# Re-clone to verify
+cd /tmp
+git clone https://github.com/ElangovanSankaralingom/tseda-data-repo test-clone
+ls test-clone/.data/ 2>/dev/null && echo "STILL EXISTS" || echo "CLEAN"
+rm -rf test-clone
+```
+
+## Scope
+- GIT HISTORY: purge .data/ and *.bak from all commits
+- DO NOT MODIFY: any source files
+- FORCE PUSH required after purge
+
+## Verification
+1. git log --all -- '.data/' — returns nothing
+2. Fresh clone has no .data/ directory
+3. npm run build — still passes
+4. Local .data/ directory still exists (not deleted, just untracked)
+
+
+# ============================================================
+# ============================================================
+# PHASE 6: BACKGROUND JOBS & CRON (5 prompts)
+# ============================================================
+# ============================================================

@@ -1,0 +1,59 @@
+## Task Type
+FEATURE
+
+## Priority
+LOW
+
+## Context
+WAL files (events.log) grow unbounded. The telemetry events.log was 2.4MB. Nightly cron should compact/rotate old WAL entries.
+
+## Read First
+1. lib/data/wal.ts (WAL structure)
+2. app/api/cron/nightly/route.ts
+
+## The Fix
+
+Add WAL compaction to nightly cron:
+
+```typescript
+async function compactWalFiles() {
+  const RETENTION_DAYS = 30;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - RETENTION_DAYS);
+  const cutoffISO = cutoff.toISOString();
+  let compacted = 0;
+
+  for (const userDir of userDirs) {
+    const walPath = `.data/users/${userDir}/events.log`;
+    if (!existsSync(walPath)) continue;
+
+    const content = await fs.readFile(walPath, 'utf-8');
+    const lines = content.split('\n').filter(Boolean);
+    const kept = lines.filter(line => {
+      try {
+        const event = JSON.parse(line);
+        return event.ts >= cutoffISO;
+      } catch { return true; } // Keep unparseable lines
+    });
+
+    if (kept.length < lines.length) {
+      await atomicWriteTextFile(walPath, kept.join('\n') + '\n');
+      compacted += lines.length - kept.length;
+    }
+  }
+
+  // Also compact global telemetry
+  const telemetryPath = '.data/telemetry/events.log';
+  // Same pattern
+
+  return { compacted };
+}
+```
+
+## Scope
+- MODIFY: cron route (add WAL compaction)
+- DO NOT MODIFY: lib/data/wal.ts, engine
+
+## Verification
+1. npm run build — passes
+2. Trigger cron → WAL files are trimmed to last 30 days

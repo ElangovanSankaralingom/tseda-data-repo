@@ -1,0 +1,88 @@
+## Task Type
+FEATURE (tests)
+
+## Priority
+HIGH
+
+## Context
+The engine is the core of the app after Phase 3. It needs comprehensive tests covering every operation and status transition.
+
+## Read First
+1. tests/ directory (see existing test patterns)
+2. lib/entries/internal/engine.ts (barrel exports)
+3. lib/entries/workflow.ts (all transitions)
+4. tests/helpers/pathAliasLoader.mjs (test setup)
+
+## The Implementation
+
+Create `tests/entries/engine.test.ts`:
+
+Test every engine function with Node's built-in test runner:
+
+```typescript
+import { describe, it, before, after } from 'node:test';
+import assert from 'node:assert';
+```
+
+### Test categories:
+
+**Create:**
+- Creates entry with correct initial fields
+- Sets confirmationStatus to DRAFT
+- Generates unique ID
+- Sets createdAt and updatedAt
+
+**Update:**
+- Updates allowed fields
+- Rejects update on non-editable entry
+- Sets updatedAt
+- Does not overwrite lifecycle fields
+
+**Generate (DRAFT → GENERATED):**
+- Sets confirmationStatus to GENERATED
+- Sets editWindowExpiresAt (3 days for non-streak)
+- Sets pdfGenerated, pdfGeneratedAt, committedAtISO
+- Sets streakEligible if endDate is future
+- Does NOT set streakEligible if endDate is past
+
+**Finalise:**
+- Succeeds for GENERATED entry with valid PDF
+- Sets permanentlyLocked on second finalization
+- Rejects if no PDF
+- Rejects if PDF is stale
+
+**Request edit:**
+- Transitions GENERATED (finalized) → EDIT_REQUESTED
+- Increments requestCount
+- Sets streakPermanentlyRemoved if entry is a Win
+- Rejects if not finalized
+- Rejects if at request limit (3/month)
+
+**Request delete:**
+- Transitions GENERATED (finalized) → DELETE_REQUESTED
+- Cancels pending edit request
+- Rejects if not finalized
+
+**Delete:**
+- Deletes DRAFT entries
+- Deletes editable GENERATED entries
+- Rejects delete on finalized entries
+
+**Archive / Restore:**
+- Archives entry, sets archivedAt
+- Restore resets to GENERATED, clears PDF state
+
+### Setup: use a temp .data directory
+```typescript
+const TEST_DATA_DIR = '/tmp/tseda-test-data';
+before(() => { mkdirSync(TEST_DATA_DIR, { recursive: true }); });
+after(() => { rmSync(TEST_DATA_DIR, { recursive: true }); });
+```
+
+## Scope
+- CREATE: tests/entries/engine.test.ts
+- DO NOT MODIFY: any source files
+
+## Verification
+1. npm test — all new tests pass
+2. At least 20 test cases covering all operations

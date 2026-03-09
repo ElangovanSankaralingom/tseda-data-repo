@@ -1,0 +1,44 @@
+## Task Type
+FEATURE (tests)
+
+## Priority
+MEDIUM
+
+## Context
+Verify that API responses match the EntryApiResponse type. Every response must include isEditable, isFinalized, editTimeRemaining, and all lifecycle fields.
+
+## Read First
+1. lib/types/entry.ts (EntryApiResponse type)
+2. lib/entries/toApiResponse.ts (entryToApiResponse function)
+
+## The Implementation
+
+Create `tests/entries/apiResponse.test.ts`:
+
+Test that entryToApiResponse:
+- Always includes isEditable (boolean)
+- Always includes isFinalized (boolean)
+- Always includes editTimeRemaining (object with hasEditWindow, expired, etc.)
+- Always includes confirmationStatus (valid EntryStatus)
+- Never returns undefined for lifecycle fields
+- Correctly computes pdfStale
+- Correctly handles all 6 statuses
+
+Test edge cases:
+- Entry with no pdfGenerated field → should default to false
+- Entry with no editWindowExpiresAt → isFinalized should be false
+- Entry with corrupted dates → should not crash
+
+## Scope
+- CREATE: tests/entries/apiResponse.test.ts
+- DO NOT MODIFY: source files
+
+## Verification
+1. npm test — all tests pass
+
+
+# ============================================================
+# ============================================================
+# PHASE 8: PERFORMANCE (3 prompts)
+# ============================================================
+# ============================================================

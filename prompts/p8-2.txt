@@ -1,0 +1,37 @@
+## Task Type
+FEATURE
+
+## Priority
+LOW
+
+## Context
+Replace scattered console.log with structured logging for debuggability.
+
+## Read First
+1. lib/logger.ts (if exists — current logging setup)
+2. grep -rn "console.log\|console.error" lib/ app/ --include="*.ts" | wc -l
+
+## The Fix
+
+Enhance `lib/logger.ts`:
+```typescript
+export const logger = {
+  info: (msg: string, data?: Record<string, unknown>) => {
+    console.log(JSON.stringify({ level: 'info', msg, ...data, ts: new Date().toISOString() }));
+  },
+  warn: (msg: string, data?: Record<string, unknown>) => { ... },
+  error: (msg: string, data?: Record<string, unknown>) => { ... },
+};
+```
+
+Replace key console.log calls in engine and routes with structured logger calls.
+Don't need to replace ALL — focus on mutations, errors, and cron jobs.
+
+## Scope
+- MODIFY: lib/logger.ts
+- MODIFY: key files (engine, cron, auth) to use structured logger
+- DO NOT do a mass find-replace — targeted changes only
+
+## Verification
+1. npm run build — passes
+2. Create an entry → see structured JSON log output

@@ -1,0 +1,31 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+Dashboard reads ALL 5 category files per user per load. The index.json already has pre-computed aggregates. Use the index as the primary data source, only falling back to full reads when the index is stale.
+
+## Read First
+1. lib/dashboard/getDashboardSummary.ts (current — how many file reads?)
+2. lib/data/indexStore.ts (what the index contains)
+
+## The Fix
+
+In getDashboardSummary:
+1. Read index.json first
+2. If index version matches and streakSnapshot exists, use it directly
+3. Only read full category files if index is stale or missing
+4. After rebuilding, save the updated index
+
+This reduces dashboard load from 6 file reads (5 categories + index) to 1 (just index).
+
+## Scope
+- MODIFY: lib/dashboard/getDashboardSummary.ts
+- DO NOT MODIFY: indexStore.ts, engine.ts
+
+## Verification
+1. npm run build — passes
+2. Dashboard loads correctly
+3. Add timing log: dashboard should load in <100ms for cached index
