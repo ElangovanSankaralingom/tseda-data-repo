@@ -1,3 +1,4 @@
+import { getCategorySchema } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type PdfMetaLike = {
@@ -74,68 +75,84 @@ function normalizeFacultyRows(rows: unknown) {
   });
 }
 
-function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCategory) {
-  switch (category) {
-    case "fdp-attended":
-      return {
-        academicYear: normalizeText(entry.academicYear),
-        studentYear: normalizeText(entry.studentYear),
-        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
-        startDate: normalizeText(entry.startDate),
-        endDate: normalizeText(entry.endDate),
-        programName: normalizeText(entry.programName),
-        organisingBody: normalizeText(entry.organisingBody),
-        supportAmount: normalizeNullableNumber(entry.supportAmount),
-      };
+/** Lifecycle and metadata fields excluded from the PDF hash */
+const LIFECYCLE_FIELDS = new Set([
+  'id', 'category', 'ownerEmail', 'schemaVersion', 'v',
+  'status', 'confirmationStatus', 'createdAt', 'updatedAt',
+  'committedAtISO', 'generatedAt', 'editWindowExpiresAt',
+  'pdfGenerated', 'pdfGeneratedAt', 'pdfUrl', 'pdfSourceHash', 'pdfStale',
+  'streakEligible', 'streakPermanentlyRemoved', 'permanentlyLocked',
+  'editRequestedAt', 'editRequestMessage', 'editGrantedAt', 'editGrantedBy',
+  'editGrantedDays', 'editRejectedReason', 'deleteRequestedAt',
+  'requestType', 'requestCount', 'requestCountResetAt',
+  'archivedAt', 'archiveReason', 'timerWarningShown',
+  'attachments', 'data',
+  'pdfMeta', 'streak',
+]);
 
-    case "fdp-conducted":
-      return {
-        academicYear: normalizeText(entry.academicYear),
-        studentYear: normalizeText(entry.studentYear),
-        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
-        startDate: normalizeText(entry.startDate),
-        endDate: normalizeText(entry.endDate),
-        eventName: normalizeText(entry.eventName),
-        coCoordinators: normalizeFacultyRows(entry.coCoordinators),
-      };
+/** Cache of Stage 2 field keys per category */
+const stage2Cache = new Map<string, Set<string>>();
 
-    case "case-studies":
-      return {
-        academicYear: normalizeText(entry.academicYear),
-        studentYear: normalizeText(entry.studentYear),
-        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
-        startDate: normalizeText(entry.startDate),
-        endDate: normalizeText(entry.endDate),
-        placeOfVisit: normalizeText(entry.placeOfVisit),
-        purposeOfVisit: normalizeText(entry.purposeOfVisit),
-        staffAccompanying: normalizeFacultyRows(entry.staffAccompanying),
-      };
-
-    case "guest-lectures":
-      return {
-        academicYear: normalizeText(entry.academicYear),
-        studentYear: normalizeText(entry.studentYear),
-        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
-        startDate: normalizeText(entry.startDate),
-        endDate: normalizeText(entry.endDate),
-        eventName: normalizeText(entry.eventName),
-        speakerName: normalizeText(entry.speakerName),
-        organizationName: normalizeText(entry.organizationName),
-      };
-
-    case "workshops":
-      return {
-        academicYear: normalizeText(entry.academicYear),
-        studentYear: normalizeText(entry.studentYear),
-        semesterNumber: normalizeNullableNumber(entry.semesterNumber),
-        startDate: normalizeText(entry.startDate),
-        endDate: normalizeText(entry.endDate),
-        eventName: normalizeText(entry.eventName),
-        speakerName: normalizeText(entry.speakerName),
-        organizationName: normalizeText(entry.organizationName),
-        coCoordinators: normalizeFacultyRows(entry.coCoordinators),
-      };
+function getStage2FieldKeys(category: string): Set<string> {
+  let cached = stage2Cache.get(category);
+  if (cached) return cached;
+  try {
+    const schema = getCategorySchema(category);
+    cached = new Set(
+      schema.fields
+        .filter(f => f.stage === 2)
+        .map(f => f.key)
+    );
+  } catch {
+    cached = new Set();
   }
+  stage2Cache.set(category, cached);
+  return cached;
+}
+
+function normalizeValue(value: unknown, key: string): unknown {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value === 'number') return normalizeNullableNumber(value);
+  if (typeof value === 'string') {
+    // Check if it looks like a number field
+    if (key === 'semesterNumber' || key === 'supportAmount' || key === 'participants' || key === 'amountSupport' || key === 'currentSemester') {
+      return normalizeNullableNumber(value);
+    }
+    return normalizeText(value);
+  }
+  if (Array.isArray(value)) {
+    // Normalize faculty row arrays (coCoordinators, staffAccompanying)
+    if (value.length > 0 && typeof value[0] === 'object' && value[0] !== null && ('id' in value[0] || 'email' in value[0])) {
+      return normalizeFacultyRows(value);
+    }
+    return value;
+  }
+  if (typeof value === 'object') {
+    // Coordinator objects
+    const obj = value as Record<string, unknown>;
+    if ('id' in obj || 'email' in obj) {
+      return { id: normalizeText(obj.id), email: normalizeEmail(obj.email) };
+    }
+    return value;
+  }
+  return value;
+}
+
+function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCategory) {
+  const stage2Fields = getStage2FieldKeys(category);
+  const payload: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(entry)) {
+    if (LIFECYCLE_FIELDS.has(key)) continue;
+    if (stage2Fields.has(key)) continue;
+
+    const normalized = normalizeValue(value, key);
+    if (normalized !== undefined) {
+      payload[key] = normalized;
+    }
+  }
+
+  return payload;
 }
 
 export function hashPrePdfFields(entry: unknown, category: PdfSnapshotCategory) {
