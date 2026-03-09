@@ -1,0 +1,307 @@
+## Task Type
+CLEANUP + DOCS
+
+## Priority
+CRITICAL
+
+## Context
+Every MD file in the repo root references an OUTDATED entry status model. The codebase evolved significantly in the March 8-9 sessions but none of the docs were updated.
+
+### THE CORE PROBLEM:
+All MDs reference these OLD statuses: DRAFT, PENDING_CONFIRMATION, APPROVED, REJECTED
+The ACTUAL statuses (from context handoff + codebase) are: DRAFT, GENERATED, EDIT_REQUESTED, DELETE_REQUESTED, EDIT_GRANTED, ARCHIVED
+
+This means CLAUDE.md — the master index Claude Code reads first — is feeding incorrect information, causing drift in every subsequent prompt.
+
+## Read First (in this order)
+1. PROMPT-ENGINEERING-FRAMEWORK.md (this is the SOURCE OF TRUTH for current architecture)
+2. CLAUDE.md
+3. ARCHITECTURE.md
+4. DATA_MODEL.md
+5. CONTRIBUTING.md
+6. DESIGN_SYSTEMS.md
+7. API.md
+8. CHANGELOG.md
+9. README.md
+10. AUDIT.md
+
+## Files to CREATE
+
+### 1. CREATE: STREAK-SPECIFICATION.md
+The definitive streak system spec. Content:
+
+```markdown
+# Streak System Specification
+
+## Two Checkpoints Only
+1. **Generate PDF → gate to Activated** (check end date, if future = streak eligible)
+2. **Finalise Entry → gate to Wins** (eligible + all mandatory fields + valid PDF + finalized)
+
+## Activated Conditions (ALL must be true)
+- Status is GENERATED (not DRAFT, not ARCHIVED)
+- pdfGenerated === true (or pdfGeneratedAt exists as fallback)
+- streakEligible === true (end date was future at Generate PDF time)
+- NOT finalized
+- streakPermanentlyRemoved !== true
+
+## Win Conditions (ALL must be true)
+- Entry is finalized (timer expired or manual Finalise Now)
+- All mandatory fields complete
+- Valid (non-stale) PDF exists
+- streakEligible === true
+- streakPermanentlyRemoved !== true
+
+## End Date Exception
+- End date changed to past (on save) → immediately removes from Activated (recoverable: change back + regenerate)
+- End date changed to future (on save) → does NOT auto-restore, must regenerate PDF
+
+## Permanent Removal
+- Edit/Delete request on a WIN entry → permanent removal (streakPermanentlyRemoved = true)
+- Does NOT apply to Activated entries — only Wins
+- Archive or restore → permanent removal
+
+## What Does NOT Affect Streaks
+- Editing any field except end date
+- PDF becoming stale
+- GENERATED → DRAFT revert
+- Admin granting/rejecting requests
+- Sending edit/delete request on Activated entries
+
+## Dashboard Display
+- Journey funnel: [Eligible: X] → [⚡ Activated: Y] → [🏆 Wins: Z]
+
+## Entry Fields for Streak
+- streakEligible?: boolean (set at Generate PDF)
+- streakPermanentlyRemoved?: boolean (set when Win gets request or entry restored)
+- pdfGenerated?: boolean (set at Generate PDF)
+- pdfGeneratedAt?: string (ISO timestamp)
+- pdfStale?: boolean (computed from pdfSourceHash comparison)
+- permanentlyLocked?: boolean (set after second finalization)
+
+## Source of Truth Files
+- lib/streakProgress.ts — isEntryActivated, isEntryWon, computeCanonicalStreakSnapshot
+- lib/entries/postSave.ts — normalizeEntryStreakFields
+- lib/pdfSnapshot.ts — hashPrePdfFields, computePdfState, getHashPayload
+```
+
+## Files to UPDATE
+
+### 2. UPDATE: CLAUDE.md
+This is the MOST IMPORTANT file — Claude Code reads this first. Replace the ENTIRE content with:
+
+**Changes needed:**
+a) Replace Entry Workflow States section — change from DRAFT/PENDING_CONFIRMATION/APPROVED/REJECTED to DRAFT/GENERATED/EDIT_REQUESTED/DELETE_REQUESTED/EDIT_GRANTED/ARCHIVED
+b) Add reference to PROMPT-ENGINEERING-FRAMEWORK.md and STREAK-SPECIFICATION.md in the documentation table
+c) Add reference to tseda-url-index.md in the documentation table
+d) Update Key Module Ownership table — add postSave.ts, remove editorLifecycle.ts if it no longer exists, add pdfSnapshot.ts
+e) Add a "CRITICAL RULES" section at the top:
+   - Five Category Route Rule: any change to one route/adapter must apply to ALL FIVE
+   - Routes bypass engine.ts — postSave.ts is the normalization workaround
+   - Two-stage field model: Stage 1 (data fields, affects PDF staleness) vs Stage 2 (file uploads, does NOT affect staleness)
+f) Add "Entry Lifecycle" section documenting the timer system (3 days non-streak, endDate+8 days streak, never resets)
+g) Add "Permanently Locked" rule: after second finalization, Request Edit is blocked, Request Delete always available
+h) Remove any reference to deprecated files: lib/entries/stateMachine.ts, lib/entries/engine.ts, lib/gamification.ts (if they don't exist)
+i) Update the Commands section if needed
+j) Master admin email: senarch@tce.edu
+
+### 3. UPDATE: ARCHITECTURE.md
+**Changes needed:**
+a) Replace ALL references to DRAFT/PENDING_CONFIRMATION/APPROVED/REJECTED with DRAFT/GENERATED/EDIT_REQUESTED/DELETE_REQUESTED/EDIT_GRANTED/ARCHIVED
+b) Replace all local file paths (/Users/thya/tseda-data-repo/...) with repo-relative paths (lib/entries/workflow.ts)
+c) Add the "5 Routes Bypass engine.ts" pattern as a documented architectural pattern
+d) Add postSave.ts to the Canonical Source-of-Truth Modules table
+e) Add the Two-Stage Field Model (Stage 1 data fields vs Stage 2 file uploads)
+f) Add the Timer System to the Entry Lifecycle section
+g) Update the Canonical Workflow State Model section with all 6 statuses and their transitions:
+   DRAFT → GENERATED → EDIT_REQUESTED → EDIT_GRANTED → (re-finalized)
+                     → DELETE_REQUESTED → ARCHIVED
+h) Remove or clearly mark editorLifecycle.ts as deprecated if it no longer matches reality
+i) Add pdfSnapshot.ts and pdfService.ts to the canonical modules
+
+### 4. UPDATE: DATA_MODEL.md
+**Changes needed:**
+a) Replace Workflow Statuses section: DRAFT, GENERATED, EDIT_REQUESTED, DELETE_REQUESTED, EDIT_GRANTED, ARCHIVED
+b) Add these entry fields to the Entry Shape table:
+   - committedAtISO (string, ISO timestamp of first GENERATED transition)
+   - editWindowExpiresAt (string, ISO timestamp when timer expires)
+   - pdfGenerated (boolean)
+   - pdfGeneratedAt (string, ISO timestamp)
+   - pdfSourceHash (string, hash of Stage 1 fields at PDF generation time)
+   - pdfStale (boolean, computed)
+   - streakEligible (boolean)
+   - streakPermanentlyRemoved (boolean)
+   - permanentlyLocked (boolean)
+   - pdfUrl (string, path to generated PDF)
+   - permissionLetter (string, uploaded file path)
+   - completionCertificate (string, uploaded file path)
+c) Document the Two-Stage Field Model in a new section
+
+### 5. UPDATE: CONTRIBUTING.md
+**Changes needed:**
+a) Replace branch strategy: remove "Work on feature branches off dev" — now it's "Work directly on main (single branch)"
+b) Fix reference: DESIGN_SYSTEM.md → DESIGN_SYSTEMS.md
+c) Update status references from old to new
+d) Add the Five Category Route Rule as a required check before PR
+
+### 6. UPDATE: DESIGN_SYSTEMS.md
+**Changes needed:**
+a) Replace ALL status badge definitions from DRAFT/PENDING_CONFIRMATION/APPROVED/REJECTED to:
+   - DRAFT: bg-slate-100 text-slate-600
+   - GENERATED: bg-blue-100 text-blue-700
+   - EDIT_REQUESTED: bg-amber-100 text-amber-700
+   - DELETE_REQUESTED: bg-red-100 text-red-700
+   - EDIT_GRANTED: bg-emerald-100 text-emerald-700
+   - ARCHIVED: bg-zinc-100 text-zinc-500
+b) Update the Entry Card left-border status colors to match new statuses
+c) Remove the "Claude Code Prompt for Phase 1" section at the bottom (outdated, should not be in a design system doc)
+
+### 7. UPDATE: README.md
+Replace with a proper README:
+```markdown
+# TSEDA — Faculty Data Collection App
+
+Gamified professional development data collection system for TCE (Thiagarajar College of Engineering), Madurai.
+
+Faculty members log activities across 5 categories: FDPs attended, FDPs conducted, guest lectures, case studies, and workshops. A streak system encourages timely submissions.
+
+## Tech Stack
+- Next.js 16 (App Router)
+- React 19, TypeScript 5
+- Tailwind CSS 4, shadcn/ui, lucide-react
+- NextAuth.js 4 (Google OAuth, @tce.edu domain)
+- File-based JSON storage (no database)
+- pdf-lib for PDF generation
+
+## Setup
+1. Clone the repo
+2. Copy .env.example to .env.local and fill in credentials
+3. npm install
+4. npm run dev
+5. Open http://localhost:3000
+
+## Commands
+- npm run dev — development server
+- npm run build — production build
+- npm run lint — lint check
+- npm test — run tests
+
+## Documentation
+- CLAUDE.md — AI assistant guidance (master index)
+- ARCHITECTURE.md — canonical ownership rules
+- DESIGN_SYSTEMS.md — UI/UX style guide
+- DATA_MODEL.md — file storage structure
+- API.md — API endpoint reference
+- STREAK-SPECIFICATION.md — streak system rules
+- PROMPT-ENGINEERING-FRAMEWORK.md — prompt standards for Claude Code
+- AUDIT.md — security & architecture audit
+- CONTRIBUTING.md — contribution guidelines
+- CHANGELOG.md — version history
+```
+
+### 8. UPDATE: CHANGELOG.md
+Add a new entry:
+```markdown
+## [0.2.0] - 2026-03-09
+
+Entry lifecycle overhaul, streak system, and finalization flow.
+
+### Added
+- Six-status entry lifecycle: DRAFT → GENERATED → EDIT_REQUESTED/DELETE_REQUESTED → EDIT_GRANTED → ARCHIVED
+- Streak system with two checkpoints: Generate PDF (Activated) and Finalise (Win)
+- PDF generation with staleness detection (Stage 1 fields only)
+- Finalise Now flow with confirmation dialog
+- Timer system (3 days non-streak, endDate+8 days streak)
+- View mode for finalized entries
+- Request Edit / Request Delete dropdown
+- Permanently locked after second finalization
+- postSave.ts normalization workaround for route bypass
+- Entry grouping (locked_in, streak_runners, on_the_clock, unlocked, under_review, in_the_works)
+- Dashboard streak journey funnel
+- tseda-url-index.md for repo file access
+- PROMPT-ENGINEERING-FRAMEWORK.md
+
+### Fixed
+- pdfGenerated field never being set by API routes
+- editWindowExpiresAt set to NOW instead of future
+- File uploads incorrectly triggering PDF staleness
+- Dashboard showing 0 streaks due to missing field normalization
+- Finalized entries showing Edit/Delete instead of View/Request
+- Finalise Now always disabled due to missing PDF checks
+
+### Changed
+- Entry statuses changed from DRAFT/PENDING_CONFIRMATION/APPROVED/REJECTED to DRAFT/GENERATED/EDIT_REQUESTED/DELETE_REQUESTED/EDIT_GRANTED/ARCHIVED
+- Removed dev branch, working directly on main
+- Cleaned up phantom git worktrees
+```
+
+### 9. UPDATE: AUDIT.md
+**Changes needed:**
+a) Change "Performed against claude/hopeful-booth branch" → "Performed against main branch"
+b) Note which findings have been resolved since March 7
+
+## Files to DELETE
+None — all existing files serve a purpose, just need updating.
+
+## Scope
+- CREATE: STREAK-SPECIFICATION.md
+- MODIFY: CLAUDE.md, ARCHITECTURE.md, DATA_MODEL.md, CONTRIBUTING.md, DESIGN_SYSTEMS.md, README.md, CHANGELOG.md, AUDIT.md
+- DO NOT MODIFY: PROMPT-ENGINEERING-FRAMEWORK.md (this is correct and current)
+- DO NOT MODIFY: tseda-url-index.md (this is auto-generated)
+- DO NOT MODIFY: Any .ts/.tsx files
+
+## Verification
+1. After all changes: grep -rn "PENDING_CONFIRMATION\|APPROVED\|REJECTED" *.md — should return ZERO hits (except inside AUDIT.md historical findings)
+2. grep -rn "hopeful-booth" *.md — should return ZERO hits
+3. grep -rn "dev branch\|off dev\|into dev" *.md — should return ZERO hits
+4. grep -rn "/Users/thya/" *.md — should return ZERO hits
+5. CLAUDE.md must reference: ARCHITECTURE.md, DESIGN_SYSTEMS.md, DATA_MODEL.md, API.md, CONTRIBUTING.md, AUDIT.md, CHANGELOG.md, README.md, STREAK-SPECIFICATION.md, PROMPT-ENGINEERING-FRAMEWORK.md, tseda-url-index.md
+6. npm run build — must still pass (no code changes, docs only)
+
+## IMPORTANT SIZE NOTE
+This prompt is large (~300 lines). If Claude Code struggles, split into:
+- Prompt 1: CREATE STREAK-SPECIFICATION.md + UPDATE CLAUDE.md + UPDATE README.md
+- Prompt 2: UPDATE ARCHITECTURE.md + UPDATE DATA_MODEL.md
+- Prompt 3: UPDATE CONTRIBUTING.md + DESIGN_SYSTEMS.md + CHANGELOG.md + AUDIT.md
+
+## ALSO UPDATE: tseda-url-index.md
+
+After all MD file creates/updates/deletes, update the ROOT CONFIG & DOCS section in tseda-url-index.md to reflect the current state.
+
+Add this URL (new file):
+```
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/STREAK-SPECIFICATION.md
+```
+
+The full ROOT CONFIG & DOCS section should now list:
+```
+============================================================
+## ROOT CONFIG & DOCS
+============================================================
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/CLAUDE.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/ARCHITECTURE.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/API.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/AUDIT.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/CHANGELOG.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/CONTRIBUTING.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/DATA_MODEL.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/DESIGN_SYSTEMS.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/PROMPT-ENGINEERING-FRAMEWORK.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/README.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/STREAK-SPECIFICATION.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/tseda-url-index.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/package.json
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/tsconfig.json
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/next.config.ts
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/middleware.ts
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/eslint.config.mjs
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/postcss.config.mjs
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/.env.example
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/.gitignore
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/components.json
+```
+
+Also update the TOTAL FILES count at the bottom of tseda-url-index.md.
+
+## Additional Verification
+7. cat tseda-url-index.md | grep "STREAK-SPECIFICATION" — must return 1 hit
+8. cat tseda-url-index.md | grep "tseda-url-index.md" — must return 1 hit (self-reference)
