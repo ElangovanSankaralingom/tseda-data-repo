@@ -3,19 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Download,
-  FileSpreadsheet,
-  Braces,
   CheckCircle,
-  BarChart3,
-  Calendar,
-  FileWarning,
   RefreshCw,
-  Clock,
   ChevronDown,
+  Clock,
 } from "lucide-react";
 import type { ExportTemplate } from "@/lib/export/templates";
 import type { ExportHistoryEntry } from "@/lib/export/history";
-import { useCountUp } from "@/hooks/useCountUp";
+import {
+  AnimatedCount,
+  FormatBadge,
+  FormatSelector,
+  HistoryRow,
+  TemplateCard,
+} from "./ExportDashboardParts";
 
 type Option = { key: string; label: string };
 
@@ -35,160 +36,6 @@ type PreviewData = {
   statusBreakdown: Record<string, number>;
 };
 
-const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
-  CheckCircle: <CheckCircle className="size-5" />,
-  BarChart3: <BarChart3 className="size-5" />,
-  Calendar: <Calendar className="size-5" />,
-  FileWarning: <FileWarning className="size-5" />,
-};
-
-const TEMPLATE_ICON_BG: Record<string, string> = {
-  CheckCircle: "bg-emerald-50 text-emerald-600",
-  BarChart3: "bg-blue-50 text-blue-600",
-  Calendar: "bg-violet-50 text-violet-600",
-  FileWarning: "bg-amber-50 text-amber-600",
-};
-
-const FORMAT_BADGE: Record<string, { bg: string; label: string }> = {
-  xlsx: { bg: "bg-emerald-100 text-emerald-700", label: "XLSX" },
-  csv: { bg: "bg-blue-100 text-blue-700", label: "CSV" },
-  json: { bg: "bg-violet-100 text-violet-700", label: "JSON" },
-};
-
-function formatTimeAgo(isoString: string) {
-  const ms = Date.now() - Date.parse(isoString);
-  if (ms < 60_000) return "just now";
-  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
-  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
-  return `${Math.floor(ms / 86_400_000)}d ago`;
-}
-
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  const value = bytes / Math.pow(1024, i);
-  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-}
-
-function FormatBadge({ format }: { format: string }) {
-  const info = FORMAT_BADGE[format] ?? FORMAT_BADGE.csv;
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${info.bg}`}>
-      {info.label}
-    </span>
-  );
-}
-
-function AnimatedCount({ value }: { value: number }) {
-  const animated = useCountUp(value);
-  return <>{animated.toLocaleString("en-IN")}</>;
-}
-
-// ---------- Template Card ----------
-
-function TemplateCard({
-  template,
-  index,
-  onExport,
-  running,
-}: {
-  template: ExportTemplate;
-  index: number;
-  onExport: (id: string) => void;
-  running: boolean;
-}) {
-  const icon = TEMPLATE_ICONS[template.icon] ?? <Download className="size-5" />;
-  const iconBg = TEMPLATE_ICON_BG[template.icon] ?? "bg-slate-50 text-slate-600";
-
-  return (
-    <div className={`group rounded-xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}>
-      <div className="flex items-start gap-3">
-        <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${iconBg} transition-transform duration-200 group-hover:scale-110`}>
-          {icon}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-slate-800">{template.name}</div>
-          <div className="mt-0.5 text-xs text-slate-500">{template.description}</div>
-          <div className="mt-0.5 text-xs italic text-slate-400">{template.funSubtitle}</div>
-        </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between">
-        <FormatBadge format={template.config.format} />
-        <button
-          type="button"
-          disabled={running}
-          onClick={() => onExport(template.id)}
-          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-all duration-150 hover:bg-slate-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {running ? (
-            <span className="flex items-center gap-1.5">
-              <RefreshCw className="size-3 animate-spin" /> Generating...
-            </span>
-          ) : (
-            <span className="flex items-center gap-1">
-              <Download className="size-3" /> Export
-            </span>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Format Selector ----------
-
-function FormatSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const formats = [
-    { key: "xlsx", label: "Excel", sub: "Opens in Excel, Google Sheets", icon: <FileSpreadsheet className="size-5" /> },
-    { key: "csv", label: "CSV", sub: "Universal spreadsheet format", icon: <FileSpreadsheet className="size-5" /> },
-    { key: "json", label: "JSON", sub: "Structured data for developers", icon: <Braces className="size-5" /> },
-  ];
-
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      {formats.map((fmt) => (
-        <button
-          key={fmt.key}
-          type="button"
-          onClick={() => onChange(fmt.key)}
-          className={`rounded-xl border p-4 text-left transition-all duration-200 ${
-            value === fmt.key
-              ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900"
-              : "border-slate-200 hover:border-slate-300"
-          }`}
-        >
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            {fmt.icon} {fmt.label}
-          </div>
-          <div className="mt-1 text-xs text-slate-400">{fmt.sub}</div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ---------- History Row ----------
-
-function HistoryRow({ entry }: { entry: ExportHistoryEntry }) {
-  return (
-    <div className="flex items-center gap-3 border-b border-slate-100 px-1 py-2.5 last:border-0">
-      <FormatBadge format={entry.format} />
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-slate-700">
-          {entry.templateId ?? entry.scope} &middot; {entry.category}
-        </div>
-        <div className="text-xs text-slate-400">
-          {entry.recordCount} entries &middot; {formatBytes(entry.fileSize)} &middot; {entry.durationMs}ms
-        </div>
-      </div>
-      <div className="text-xs text-slate-400">{formatTimeAgo(entry.createdAt)}</div>
-    </div>
-  );
-}
-
-// ---------- Main Dashboard ----------
-
 export default function ExportDashboard({
   templates,
   users,
@@ -197,11 +44,8 @@ export default function ExportDashboard({
   fieldOptionsByCategory,
   initialHistory,
 }: Props) {
-  // Template state
   const [runningTemplate, setRunningTemplate] = useState<string | null>(null);
   const [history, setHistory] = useState(initialHistory);
-
-  // Builder state
   const [format, setFormat] = useState("xlsx");
   const [allUsers, setAllUsers] = useState(true);
   const [selectedUser, setSelectedUser] = useState(users[0] ?? "");
@@ -222,12 +66,10 @@ export default function ExportDashboard({
     [selectedCategory, fieldOptionsByCategory]
   );
 
-  // Reset fields when category changes
   useEffect(() => {
     setSelectedFields(fieldOptions.map((f) => f.key));
   }, [fieldOptions]);
 
-  // Fetch preview (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
       void fetchPreview();
@@ -263,9 +105,7 @@ export default function ExportDashboard({
   const handleTemplateExport = useCallback(async (templateId: string) => {
     setRunningTemplate(templateId);
     try {
-      // Trigger download
       window.location.assign(`/api/admin/export/template/${templateId}`);
-      // Wait a bit then refresh history
       await new Promise((r) => setTimeout(r, 2000));
       const res = await fetch("/api/admin/export/history");
       const body = await res.json() as { data?: ExportHistoryEntry[] };
@@ -283,12 +123,11 @@ export default function ExportDashboard({
     if (!allUsers && selectedUser) {
       params.set("userEmail", selectedUser);
     }
-    // For all-users, we use the first user as a fallback (the existing API requires userEmail)
     if (allUsers) {
       params.set("userEmail", users[0] ?? "");
     }
     params.set("category", selectedCategory);
-    params.set("format", format === "json" ? "csv" : format); // JSON handled differently
+    params.set("format", format === "json" ? "csv" : format);
     if (selectedFields.length > 0 && selectedFields.length < fieldOptions.length) {
       params.set("fields", selectedFields.join(","));
     }
@@ -298,7 +137,6 @@ export default function ExportDashboard({
 
     window.location.assign(`/api/admin/export/entries?${params.toString()}`);
 
-    // Show success after a delay
     setTimeout(() => {
       setExporting(false);
       setExportSuccess(true);
@@ -320,7 +158,6 @@ export default function ExportDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Quick Export Templates */}
       <div>
         <div className="mb-3">
           <div className="text-sm font-semibold text-slate-800">Quick Exports</div>
@@ -339,7 +176,6 @@ export default function ExportDashboard({
         </div>
       </div>
 
-      {/* Custom Export Builder */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-fade-in-up">
         <div className="mb-5">
           <div className="text-sm font-semibold text-slate-800">Custom Export</div>
@@ -347,13 +183,11 @@ export default function ExportDashboard({
         </div>
 
         <div className="space-y-5">
-          {/* Step 1: Format */}
           <div>
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Format</div>
             <FormatSelector value={format} onChange={setFormat} />
           </div>
 
-          {/* Step 2: Scope */}
           <div>
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Scope</div>
             <div className="flex flex-wrap gap-2">
@@ -400,7 +234,6 @@ export default function ExportDashboard({
             </div>
           </div>
 
-          {/* Step 3: Filters (collapsible) */}
           <div>
             <button
               type="button"
@@ -455,7 +288,6 @@ export default function ExportDashboard({
             ) : null}
           </div>
 
-          {/* Step 4: Fields (collapsible) */}
           <div>
             <button
               type="button"
@@ -500,7 +332,6 @@ export default function ExportDashboard({
             ) : null}
           </div>
 
-          {/* Step 5: Preview + Export */}
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             {loadingPreview ? (
               <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -555,7 +386,6 @@ export default function ExportDashboard({
         </div>
       </div>
 
-      {/* Export History */}
       {history.length > 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">

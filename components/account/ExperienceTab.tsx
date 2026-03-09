@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import DateField from "@/components/controls/DateField";
 import { INDIAN_INSTITUTIONS } from "@/lib/institutions-in";
 import { computeExperienceTotals } from "@/lib/experience";
-import { SectionCard, Field, MiniButton, ProgressBar } from "./AccountUI";
-import { uploadCertificateXHR } from "./uploadHelpers";
+import { SectionCard, Field, MiniButton } from "./AccountUI";
+import CertificateBlock from "./ExperienceCertBlock";
 import {
   cx,
   formatYMD,
@@ -13,8 +13,6 @@ import {
   rangeValid,
   todayISO,
   uuid,
-  getErrorMessage,
-  findExperienceEntry,
   updateExperienceCategoryCertificate,
   type Experience,
   type FileMeta,
@@ -50,11 +48,6 @@ export default function ExperienceTab({
   showToast,
   getErrorsForTab,
 }: ExperienceTabProps) {
-  const [pendingCertFile, setPendingCertFile] = useState<Record<string, File | null>>({});
-  const [certProgress, setCertProgress] = useState<Record<string, number>>({});
-  const [certBusy, setCertBusy] = useState<Record<string, boolean>>({});
-  const [certError, setCertError] = useState<Record<string, string | null>>({});
-
   const exp = useMemo(
     () => draft.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] },
     [draft.experience]
@@ -76,182 +69,16 @@ export default function ExperienceTab({
     });
   }, [draft, exp]);
 
-  async function deleteCertificate(category: "academicOutsideTCE" | "industry", entryId: string) {
-    try {
-      const e = draft.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
-      const entry = findExperienceEntry(e, category, entryId);
-      const meta: FileMeta | null | undefined = entry?.certificate;
-
-      if (!meta?.storedPath) {
-        showToast("err", "File path missing. Re-upload the certificate once.");
-        return;
-      }
-
-      const r = await fetch("/api/me/file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || "Delete failed");
-
-      const e2 = draft.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
-      const nextDraft = {
-        ...draft,
-        experience: updateExperienceCategoryCertificate(e2, category, entryId, null),
-      };
-
-      setDraft(nextDraft);
-
-      const key = `cert:${category}:${entryId}`;
-      setPendingCertFile((m) => ({ ...m, [key]: null }));
-      setCertProgress((m) => ({ ...m, [key]: 0 }));
-      setCertBusy((m) => ({ ...m, [key]: false }));
-      setCertError((m) => ({ ...m, [key]: null }));
-
-      await saveCurrentTab({ tab: "experience", draftOverride: nextDraft });
-    } catch (error: unknown) {
-      showToast("err", getErrorMessage(error, "Delete failed."));
-    }
-  }
-
-  async function uploadAndSaveCertificate(category: "academicOutsideTCE" | "industry", entryId: string) {
-    const key = `cert:${category}:${entryId}`;
-    const file = pendingCertFile[key];
-
-    if (!file) {
-      setCertError((m) => ({ ...m, [key]: "Select a file first." }));
-      return;
-    }
-
-    const max = 20 * 1024 * 1024;
-    const allowed =
-      file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg";
-
-    if (!allowed) {
-      setCertError((m) => ({ ...m, [key]: "Only PDF/JPG/PNG allowed." }));
-      return;
-    }
-    if (file.size > max) {
-      setCertError((m) => ({ ...m, [key]: "Max file size is 20MB." }));
-      return;
-    }
-
-    try {
-      setCertError((m) => ({ ...m, [key]: null }));
-      setCertBusy((m) => ({ ...m, [key]: true }));
-      setCertProgress((m) => ({ ...m, [key]: 0 }));
-
-      const meta = await uploadCertificateXHR({
-        category,
-        entryId,
-        file,
-        onProgress: (pct) => setCertProgress((m) => ({ ...m, [key]: pct })),
-      });
-
+  function handleCertChange(category: "academicOutsideTCE" | "industry", entryId: string) {
+    return async (meta: FileMeta | null) => {
       const e = draft.experience ?? { lopPeriods: [], academicOutsideTCE: [], industry: [] };
       const nextDraft = {
         ...draft,
         experience: updateExperienceCategoryCertificate(e, category, entryId, meta),
       };
-
       setDraft(nextDraft);
-
-      setPendingCertFile((m) => ({ ...m, [key]: null }));
-      setCertBusy((m) => ({ ...m, [key]: false }));
-      setCertProgress((m) => ({ ...m, [key]: 100 }));
-
       await saveCurrentTab({ tab: "experience", draftOverride: nextDraft });
-    } catch (error: unknown) {
-      setCertBusy((m) => ({ ...m, [key]: false }));
-      setCertError((m) => ({ ...m, [key]: getErrorMessage(error, "Upload failed.") }));
-    }
-  }
-
-  function renderCertificateBlock(
-    category: "academicOutsideTCE" | "industry",
-    entryId: string,
-    certificate: FileMeta | null | undefined,
-    certErrorKey: string,
-  ) {
-    const key = `cert:${category}:${entryId}`;
-    const pending = pendingCertFile[key];
-    const busy = !!certBusy[key];
-    const pct = certProgress[key] ?? 0;
-    const localErr = certError[key];
-    const canUploadAndSave = !busy && !!pending;
-
-    return (
-      <div className="rounded-xl border border-border p-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-sm font-medium">Certificate (mandatory)</div>
-
-            {certificate ? (
-              <div className="mt-1 text-xs text-muted-foreground">
-                <a className="underline" href={certificate.url} target="_blank">
-                  {certificate.fileName}
-                </a>{" "}
-                • {new Date(certificate.uploadedAt).toLocaleString()}
-              </div>
-            ) : shouldShowError(certErrorKey) ? (
-              <div className="mt-1 text-xs text-red-600">{errors[certErrorKey] || "Certificate is mandatory."}</div>
-            ) : null}
-
-            <div className="mt-2 text-xs text-muted-foreground">
-              {pending ? `Selected: ${pending.name}` : "Select a file to enable Upload & Save."}
-            </div>
-
-            {busy ? (
-              <div className="mt-2 space-y-2">
-                <ProgressBar value={pct} />
-                <div className="text-xs text-muted-foreground">{pct}% uploading…</div>
-              </div>
-            ) : null}
-
-            {localErr ? <div className="mt-2 text-xs text-red-600">{localErr}</div> : null}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {certificate ? (
-              <MiniButton variant="danger" onClick={() => void deleteCertificate(category, entryId)} disabled={busy}>
-                Delete Certificate
-              </MiniButton>
-            ) : null}
-
-            <label
-              className={cx(
-                "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
-                busy
-                  ? "pointer-events-none cursor-not-allowed opacity-60"
-                  : "cursor-pointer transition hover:bg-muted"
-              )}
-            >
-              Choose file
-              <input
-                type="file"
-                className="hidden"
-                accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] || null;
-                  e.currentTarget.value = "";
-                  setPendingCertFile((m) => ({ ...m, [key]: f }));
-                  setCertError((m) => ({ ...m, [key]: null }));
-                  setCertProgress((m) => ({ ...m, [key]: 0 }));
-                }}
-              />
-            </label>
-
-            <MiniButton
-              onClick={() => void uploadAndSaveCertificate(category, entryId)}
-              disabled={!canUploadAndSave}
-            >
-              Upload & Save
-            </MiniButton>
-          </div>
-        </div>
-      </div>
-    );
+    };
   }
 
   return (
@@ -465,7 +292,15 @@ export default function ExperienceTab({
                   </div>
                 </div>
 
-                {renderCertificateBlock("academicOutsideTCE", a.id, a.certificate, `ao.cert.${a.id}`)}
+                <CertificateBlock
+                  category="academicOutsideTCE"
+                  entryId={a.id}
+                  certificate={a.certificate}
+                  certErrorKey={`ao.cert.${a.id}`}
+                  errors={errors}
+                  shouldShowError={shouldShowError}
+                  onCertificateChange={handleCertChange("academicOutsideTCE", a.id)}
+                />
 
                 <div className="flex justify-end">
                   <MiniButton
@@ -473,7 +308,6 @@ export default function ExperienceTab({
                     onClick={() =>
                       setExp((e) => ({ ...e, academicOutsideTCE: e.academicOutsideTCE.filter((x) => x.id !== a.id) }))
                     }
-                    disabled={!!certBusy[`cert:academicOutsideTCE:${a.id}`]}
                   >
                     Delete entry
                   </MiniButton>
@@ -592,13 +426,20 @@ export default function ExperienceTab({
                   </div>
                 </div>
 
-                {renderCertificateBlock("industry", x.id, x.certificate, `in.cert.${x.id}`)}
+                <CertificateBlock
+                  category="industry"
+                  entryId={x.id}
+                  certificate={x.certificate}
+                  certErrorKey={`in.cert.${x.id}`}
+                  errors={errors}
+                  shouldShowError={shouldShowError}
+                  onCertificateChange={handleCertChange("industry", x.id)}
+                />
 
                 <div className="flex justify-end">
                   <MiniButton
                     variant="danger"
                     onClick={() => setExp((e) => ({ ...e, industry: e.industry.filter((it) => it.id !== x.id) }))}
-                    disabled={!!certBusy[`cert:industry:${x.id}`]}
                   >
                     Delete entry
                   </MiniButton>
