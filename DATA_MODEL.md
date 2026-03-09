@@ -15,13 +15,20 @@ File-based JSON storage with no external database. All runtime data lives under 
 │       ├── case-studies.json
 │       ├── guest-lectures.json
 │       └── workshops.json
+├── admin/
+│   ├── admin-users.json            # Admin role assignments
+│   └── notifications.json          # Admin notification queue
 ├── telemetry/
 │   └── events.log                  # App-wide telemetry events
+├── maintenance/                    # Maintenance logs
 └── profiles/
     └── <email>.json                # User profile data
+
+public/uploads/
+└── <email>/                        # Uploaded files (PDFs, permission letters, certificates)
 ```
 
-Path resolution: `lib/userStore.ts` — `getUserStoreDir(email)` returns `.data/users/<safeEmailDir(email)>/`.
+Path resolution: `lib/userStore.ts` -- `getUserStoreDir(email)` returns `.data/users/<safeEmailDir(email)>/`.
 
 ## Category Store Format
 
@@ -38,8 +45,8 @@ Each category file uses **version 2** format (defined in `lib/migrations/index.t
 }
 ```
 
-- `byId` — map of entry ID to entry object
-- `order` — array of entry IDs preserving insertion order
+- `byId` -- map of entry ID to entry object
+- `order` -- array of entry IDs preserving insertion order
 
 ### Entry Shape
 
@@ -54,6 +61,18 @@ Defined in `lib/types/entry.ts`. Every entry is a `Record<string, unknown>` with
 | `confirmationStatus` | `EntryStatus` | Canonical workflow status |
 | `createdAt` | `string` | ISO 8601 timestamp |
 | `updatedAt` | `string` | ISO 8601 timestamp |
+| `committedAtISO` | `string` | ISO 8601 timestamp of first GENERATED transition |
+| `editWindowExpiresAt` | `string` | ISO 8601 timestamp when edit timer expires |
+| `pdfGenerated` | `boolean` | Whether PDF has been generated |
+| `pdfGeneratedAt` | `string` | ISO 8601 timestamp of last PDF generation |
+| `pdfSourceHash` | `string` | Hash of Stage 1 fields at PDF generation time |
+| `pdfStale` | `boolean` | Computed: true if current fields don't match pdfSourceHash |
+| `pdfUrl` | `string` | Path to generated PDF file |
+| `streakEligible` | `boolean` | Whether entry qualifies for streak (end date was future at Generate time) |
+| `streakPermanentlyRemoved` | `boolean` | Whether entry was permanently removed from streak counts |
+| `permanentlyLocked` | `boolean` | Set true after second finalization; blocks Request Edit |
+| `permissionLetter` | `string` | Uploaded permission letter file path (Stage 2) |
+| `completionCertificate` | `string` | Uploaded completion certificate file path (Stage 2) |
 | `attachments` | `UploadedFile[]` | Uploaded file metadata |
 | `data` | `Record<string, unknown>` | Category-specific field values |
 
@@ -61,10 +80,18 @@ Defined in `lib/types/entry.ts`. Every entry is a `Record<string, unknown>` with
 
 Canonical values (defined in `lib/types/entry.ts`):
 
-- `DRAFT` — initial state, editable
-- `PENDING_CONFIRMATION` — submitted for admin review
-- `APPROVED` — confirmed by admin, locked
-- `REJECTED` — rejected by admin, can resubmit
+- `DRAFT` -- initial state, editable
+- `GENERATED` -- committed with PDF generated, in edit window or finalized
+- `EDIT_REQUESTED` -- user requested edit on finalized entry, awaiting admin
+- `DELETE_REQUESTED` -- user requested deletion, awaiting admin
+- `EDIT_GRANTED` -- admin granted edit access, user can modify and re-finalize
+- `ARCHIVED` -- entry deleted/archived after admin approval
+
+### Two-Stage Field Model
+
+**Stage 1 (data fields):** Text inputs, dates, selections, descriptions. Changes to these fields mark the PDF as stale. The PDF must be regenerated before finalizing. Stage 1 fields are hashed by `lib/pdfSnapshot.ts:hashPrePdfFields()` to detect staleness.
+
+**Stage 2 (file uploads):** Permission letters, completion certificates, geotagged photos, brochures. Changes to these fields do NOT affect PDF staleness. Users can upload/remove files freely without regenerating the PDF.
 
 ### Uploaded File Shape
 
@@ -91,8 +118,8 @@ Canonical values (defined in `lib/types/entry.ts`):
   updatedAt: string,                                    // ISO 8601
   totalsByCategory: Record<CategoryKey, number>,        // Entry count per category
   countsByStatus: Record<EntryStatus, number>,          // Count by workflow status
-  pendingByCategory: Record<CategoryKey, number>,       // Pending confirmations per category
-  approvedByCategory: Record<CategoryKey, number>,      // Approved entries per category
+  pendingByCategory: Record<CategoryKey, number>,       // Pending requests per category
+  approvedByCategory: Record<CategoryKey, number>,      // Finalized entries per category
   lastEntryAtByCategory: Record<CategoryKey, string | null>,  // Latest entry timestamp
   streakSnapshot: {
     ruleVersion: number,                                // Streak computation rule version
@@ -124,7 +151,7 @@ Canonical values (defined in `lib/types/entry.ts`):
 
 **Incremental update** via `updateIndexForEntryMutation()`:
 
-- Adjusts `totalsByCategory`, `countsByStatus`, `pendingByCategory`, `approvedByCategory`
+- Adjusts `totalsByCategory`, `countsByStatus`, `pendingByCategory`
 - Updates `searchIndexByEntryId` for changed entries
 - Recomputes streak snapshot from loaded entries
 
@@ -149,7 +176,7 @@ Each line is a `WalEvent`:
   before: Entry | null,           // State before mutation (null for CREATE)
   after: Entry | null,            // State after mutation (null for DELETE)
   meta?: {
-    reason?: string,              // Admin rejection/approval reason
+    reason?: string,              // Admin reason
     ip?: string,
     userAgent?: string,
     notes?: string,
@@ -161,7 +188,7 @@ Each line is a `WalEvent`:
 
 ```
 CREATE | UPDATE | DELETE
-SEND_FOR_CONFIRMATION | APPROVE | REJECT
+REQUEST_EDIT | REQUEST_DELETE | GRANT_EDIT | ARCHIVE
 UPLOAD_ADD | UPLOAD_REMOVE | UPLOAD_REPLACE
 ```
 
@@ -178,7 +205,7 @@ Defined in `lib/data/fileAtomic.ts`:
 2. Write to temporary file: `{filePath}.tmp.{pid}.{timestamp}.{uuid}`
 3. Atomically rename temp file to target path via `fs.rename()`
 
-This guarantees no partial writes — if the process crashes during write, the original file remains intact.
+This guarantees no partial writes -- if the process crashes during write, the original file remains intact.
 
 ## Locking
 
@@ -186,14 +213,14 @@ Defined in `lib/data/locks.ts`:
 
 - **Scope:** In-process promise-chain locks keyed by user email
 - **Key format:** `user:<normalizedEmail>`
-- **Mechanism:** Each lock waiter chains onto a `Promise` queue — sequential execution guaranteed
+- **Mechanism:** Each lock waiter chains onto a `Promise` queue -- sequential execution guaranteed
 - **Reentrant:** Uses `AsyncLocalStorage` to detect already-held locks (allows nested calls within the same lock)
 
 ### Limitations
 
-- **Single-process only** — locks are in-memory, no cross-process coordination
-- **WAL grows unbounded** — no compaction or rotation implemented
-- **No cross-process safety** — running multiple instances against the same `.data/` directory risks corruption
+- **Single-process only** -- locks are in-memory, no cross-process coordination
+- **WAL grows unbounded** -- no compaction or rotation implemented
+- **No cross-process safety** -- running multiple instances against the same `.data/` directory risks corruption
 
 ## Migration Boundary
 
@@ -210,8 +237,8 @@ Defined in `lib/data/locks.ts`:
 
 ### What Migrations Handle
 
-- **Entry:** Legacy lowercase statuses (`draft`, `final`, `pending`) → canonical uppercase (`DRAFT`, `PENDING_CONFIRMATION`). Finalization flags (`finalised`, `finalized`) → `PENDING_CONFIRMATION`. Missing timestamps filled.
-- **Category store:** Array format (v0) → `{ version, byId, order }` (v2). Missing entry IDs generated.
+- **Entry:** Legacy lowercase statuses (`draft`, `final`, `pending`) -> canonical uppercase (`DRAFT`, `GENERATED`). Finalization flags -> `GENERATED`. Missing timestamps filled.
+- **Category store:** Array format (v0) -> `{ version, byId, order }` (v2). Missing entry IDs generated.
 - **User index:** Schema version bumps, search index normalization, streak snapshot structure.
 - **WAL event:** Event structure normalization, nested entry migration.
 

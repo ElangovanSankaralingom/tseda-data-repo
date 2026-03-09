@@ -112,10 +112,12 @@ ring-2 ring-amber-400/30 (when streak is active)
 ```
 bg-white rounded-lg border border-slate-200 p-4
 Left accent border for status:
-  border-l-4 border-l-emerald-500  (approved)
-  border-l-4 border-l-amber-500    (pending)
-  border-l-4 border-l-slate-300    (draft)
-  border-l-4 border-l-red-500      (rejected)
+  border-l-4 border-l-slate-300    (DRAFT)
+  border-l-4 border-l-blue-500     (GENERATED)
+  border-l-4 border-l-amber-500    (EDIT_REQUESTED)
+  border-l-4 border-l-red-500      (DELETE_REQUESTED)
+  border-l-4 border-l-emerald-500  (EDIT_GRANTED)
+  border-l-4 border-l-zinc-300     (ARCHIVED)
 ```
 
 **Inactive/Empty State Card:**
@@ -128,10 +130,12 @@ text-slate-400 text-center
 
 Consistent across ALL pages — entries, dashboard, lists:
 ```
-DRAFT:                bg-slate-100 text-slate-600 text-xs px-2.5 py-0.5 rounded-full font-medium
-PENDING_CONFIRMATION: bg-amber-100 text-amber-700 text-xs px-2.5 py-0.5 rounded-full font-medium
-APPROVED:             bg-emerald-100 text-emerald-700 text-xs px-2.5 py-0.5 rounded-full font-medium
-REJECTED:             bg-red-100 text-red-700 text-xs px-2.5 py-0.5 rounded-full font-medium
+DRAFT:             bg-slate-100 text-slate-600 text-xs px-2.5 py-0.5 rounded-full font-medium
+GENERATED:         bg-blue-100 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-medium
+EDIT_REQUESTED:    bg-amber-100 text-amber-700 text-xs px-2.5 py-0.5 rounded-full font-medium
+DELETE_REQUESTED:  bg-red-100 text-red-700 text-xs px-2.5 py-0.5 rounded-full font-medium
+EDIT_GRANTED:      bg-emerald-100 text-emerald-700 text-xs px-2.5 py-0.5 rounded-full font-medium
+ARCHIVED:          bg-zinc-100 text-zinc-500 text-xs px-2.5 py-0.5 rounded-full font-medium
 ```
 
 ### 3. Buttons
@@ -409,119 +413,3 @@ Not implementing now, but prepare by:
 - Using `bg-white` / `bg-slate-50` for surfaces (easy to swap with dark: prefix later)
 - Avoiding pure black (#000) or pure white (#FFF) in custom values
 
----
-
-## Implementation Strategy
-
-### Phase 1 — Foundation (do this first)
-1. Create `components/ui/design-tokens.ts` — export color constants, cn() helpers for status badges, card variants
-2. Create `components/dashboard/StatCard.tsx` — reusable stat card with icon, value, label, optional gradient
-3. Create `components/dashboard/StreakCard.tsx` — streak-specific card with flame/trophy, active/inactive states
-4. Create `components/ui/StatusBadge.tsx` — single source of truth for status badge rendering
-5. Update globals.css — set page background to #FAFBFC, define CSS variables for brand colors
-
-### Phase 2 — Dashboard (high visibility, motivates adoption)
-1. Restructure dashboard into sections (Streak → Progress → Categories)
-2. Apply StatCard and StreakCard components
-3. Add section headers with descriptions
-4. Add progress bars for categories
-5. Add entrance animations
-
-### Phase 3 — Data Entry Pages (where users spend most time)
-1. Standardize entry list cards with left-border status indicator
-2. Standardize form field styling
-3. Standardize action button bar (sticky top)
-4. Standardize empty states
-5. Apply consistent section grouping in editors
-
-### Phase 4 — Polish (final pass)
-1. Mobile responsive audit on every page
-2. Loading/skeleton states for all data-fetching sections
-3. Toast notification styling
-4. Error state consistency
-5. Transition/animation pass
-
----
-
-## File Mapping for Implementation
-
-| New/Modified File | Purpose |
-|-------------------|---------|
-| `components/ui/design-tokens.ts` | Color constants, status helpers, card variant helpers |
-| `components/ui/StatusBadge.tsx` | Canonical status badge component |
-| `components/dashboard/StatCard.tsx` | Reusable stat card |
-| `components/dashboard/StreakCard.tsx` | Gamification streak card |
-| `components/dashboard/SectionHeader.tsx` | Section title + description |
-| `components/dashboard/ProgressBar.tsx` | Category progress bar |
-| `app/globals.css` | CSS variables, background color |
-| `app/(protected)/dashboard/page.tsx` | Restructured dashboard |
-| `components/data-entry/EntryListCardShell.tsx` | Left-border status style |
-| `components/data-entry/CategoryEntryPageShell.tsx` | Consistent page layout |
-
----
-
-## Claude Code Prompt for Phase 1
-
-```
-## Task Type
-REFACTOR + STYLE
-
-## Priority
-HIGH
-
-## Context
-Implementing the TSEDA design system foundation. This creates shared UI components and design tokens that all pages will use. No page restructuring yet — just the building blocks.
-
-## Requirements
-
-### 1. Create components/ui/design-tokens.ts
-Export:
-- STATUS_COLORS object mapping DRAFT/PENDING_CONFIRMATION/APPROVED/REJECTED to Tailwind class strings for badges, card borders, and icons
-- GAMIFICATION_GRADIENTS object with streak-active, streak-record, progress, achievement gradient class strings
-- Helper: statusBadgeClasses(status: string) → returns the right badge classes
-- Helper: statusBorderClasses(status: string) → returns left-border classes for entry cards
-
-### 2. Create components/ui/StatusBadge.tsx
-- Receives status prop (EntryStatus type from lib/types/entry.ts)
-- Renders a pill badge with correct colors from design-tokens
-- Uses: bg-{color}-100 text-{color}-700 text-xs px-2.5 py-0.5 rounded-full font-medium
-- Single source of truth — all status badges across the app should use this
-
-### 3. Create components/dashboard/StatCard.tsx
-Props: icon (LucideIcon), label (string), value (string|number), description? (string), gradient? (string for bg gradient classes)
-- Default: white card with slate border, icon top-left
-- With gradient: colored background, white text
-- Value is hero-sized (text-3xl font-bold)
-- Uses cn() for conditional classes
-
-### 4. Create components/dashboard/StreakCard.tsx
-Props: type ('active' | 'wins' | 'current'), value (number), isActive (boolean)
-- active: Flame icon, amber→orange gradient when active, muted when not
-- wins: Trophy icon, yellow→amber gradient
-- current: Flame icon with count, shows "X days" with motivational subtext
-- Inactive state: bg-slate-50, dashed border, muted icon and text
-
-### 5. Create components/dashboard/SectionHeader.tsx
-Props: title (string), description? (string)
-- text-lg font-semibold text-slate-800 for title
-- text-sm text-slate-500 for description
-- mb-4 spacing
-
-### 6. Update app/globals.css
-- Set body/html background to #FAFBFC
-- Add CSS custom properties: --color-brand: #1E3A5F, --color-accent: #F59E0B
-
-## Architecture Constraints
-- Read ARCHITECTURE.md
-- StatusBadge must use canonical EntryStatus from lib/types/entry.ts — import the type, do not redefine status values
-- These are presentational components only — no data fetching, no business logic
-- Use existing shadcn/ui Card as base where appropriate
-- Use lucide-react for all icons
-- Use cn() from lib/utils for class merging
-
-## Verification
-- npm run build passes
-- npm run dev → components render without errors (can test by temporarily importing in dashboard)
-- No new business logic added anywhere
-- StatusBadge uses canonical status values only
-```

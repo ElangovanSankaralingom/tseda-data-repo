@@ -11,62 +11,104 @@ Its purpose is to prevent future drift. If code and this document disagree, fix 
 - Compatibility wrappers do not own business rules.
 - Category pages are composition shells, not controller implementations.
 - Schema and registry drive category-specific behavior.
+- Five Category Route Rule: any change to one route/adapter must apply to ALL FIVE.
 
 ## Canonical Source-of-Truth Modules
 
 | Concern | Canonical module(s) | Notes |
 | --- | --- | --- |
-| Entry workflow statuses | [lib/types/entry.ts](/Users/thya/tseda-data-repo/lib/types/entry.ts) | Owns `ENTRY_STATUSES`, `EntryStatus`, and canonical status labels. |
-| Workflow rules | [lib/entries/workflow.ts](/Users/thya/tseda-data-repo/lib/entries/workflow.ts) | Owns status normalization, commitment semantics, transitions, and approval locking. |
-| Editor action-state rules | [lib/entries/editorLifecycle.ts](/Users/thya/tseda-data-repo/lib/entries/editorLifecycle.ts) | Owns Save / Generate / Done availability rules. |
-| Persisted entry lifecycle operations | [lib/entries/lifecycle.ts](/Users/thya/tseda-data-repo/lib/entries/lifecycle.ts) | Public server-side facade for create/update/commit/send/approve/reject/delete/list operations. |
-| Persisted entry engine internals | [lib/entries/internal/engine.ts](/Users/thya/tseda-data-repo/lib/entries/internal/engine.ts) | Owns persistence, validation, WAL/index refresh, and telemetry. |
-| Streak/progress business rules | [lib/streakProgress.ts](/Users/thya/tseda-data-repo/lib/streakProgress.ts) | Only canonical business-progress / streak rule layer. |
-| Streak cache/snapshot | [lib/data/indexStore.ts](/Users/thya/tseda-data-repo/lib/data/indexStore.ts) | May cache canonical streak output only. |
-| Dashboard summary | [lib/dashboard/getDashboardSummary.ts](/Users/thya/tseda-data-repo/lib/dashboard/getDashboardSummary.ts) | Must present canonical summary output only. |
-| Export pipeline | [lib/export/exportService.ts](/Users/thya/tseda-data-repo/lib/export/exportService.ts) | Canonical schema-driven export/reporting path. |
-| Cross-category export fields | [data/schemas/exportConfig.ts](/Users/thya/tseda-data-repo/data/schemas/exportConfig.ts) | Base export columns common to all categories. |
-| Category registry | [data/categoryRegistry.ts](/Users/thya/tseda-data-repo/data/categoryRegistry.ts) | Canonical category list, labels, schema binding, summary keys, and UI metadata. |
-| Category schema contract | [data/schemas/types.ts](/Users/thya/tseda-data-repo/data/schemas/types.ts) | Defines the schema shape every category must implement. |
-| Category schemas | `data/schemas/*.ts` | Own per-category fields, validation, commit requirements, pending immutability, and export metadata. |
-| Canonical navigation helpers | [lib/entryNavigation.ts](/Users/thya/tseda-data-repo/lib/entryNavigation.ts) | Owns route construction and safe back-navigation helpers. |
-| Migration / legacy normalization boundary | [lib/migrations/index.ts](/Users/thya/tseda-data-repo/lib/migrations/index.ts), [lib/dataStore.ts](/Users/thya/tseda-data-repo/lib/dataStore.ts) | Only place legacy persisted shapes/statuses may be accepted. |
+| Entry workflow statuses | `lib/types/entry.ts` | Owns `ENTRY_STATUSES`, `EntryStatus`, and canonical status labels. |
+| Workflow rules | `lib/entries/workflow.ts` | Owns status normalization, commitment semantics, transitions, and finalization locking. |
+| Persisted entry lifecycle operations | `lib/entries/lifecycle.ts` | Public server-side facade for create/update/commit/request/approve/delete/list operations. |
+| Persisted entry engine internals | `lib/entries/internal/engine.ts` | Owns persistence, validation, WAL/index refresh, and telemetry. |
+| Post-save normalization | `lib/entries/postSave.ts` | Normalizes streak fields and PDF state after route-level saves. Workaround for routes bypassing engine.ts. |
+| PDF staleness and hashing | `lib/pdfSnapshot.ts` | Owns hashPrePdfFields, computePdfState, getHashPayload. Determines if PDF needs regeneration. |
+| Streak/progress business rules | `lib/streakProgress.ts` | Only canonical business-progress / streak rule layer. |
+| Streak cache/snapshot | `lib/data/indexStore.ts` | May cache canonical streak output only. |
+| Dashboard summary | `lib/dashboard/getDashboardSummary.ts` | Must present canonical summary output only. |
+| Export pipeline | `lib/export/exportService.ts` | Canonical schema-driven export/reporting path. |
+| Cross-category export fields | `data/schemas/exportConfig.ts` | Base export columns common to all categories. |
+| Category registry | `data/categoryRegistry.ts` | Canonical category list, labels, schema binding, summary keys, and UI metadata. |
+| Category schema contract | `data/schemas/types.ts` | Defines the schema shape every category must implement. |
+| Category schemas | `data/schemas/*.ts` | Own per-category fields, validation, commit requirements, and export metadata. |
+| Canonical navigation helpers | `lib/entryNavigation.ts` | Owns route construction and safe back-navigation helpers. |
+| Migration / legacy normalization boundary | `lib/migrations/index.ts`, `lib/dataStore.ts` | Only place legacy persisted shapes/statuses may be accepted. |
 
 ## Canonical Workflow State Model
 
 Internal workflow state is canonical and uppercase only:
 
-- `DRAFT`
-- `PENDING_CONFIRMATION`
-- `APPROVED`
-- `REJECTED`
+- `DRAFT` -- initial state, editable
+- `GENERATED` -- entry committed with PDF generated, in edit window
+- `EDIT_REQUESTED` -- user requested edit on finalized entry, awaiting admin
+- `DELETE_REQUESTED` -- user requested deletion, awaiting admin
+- `EDIT_GRANTED` -- admin granted edit access, user can modify and re-finalize
+- `ARCHIVED` -- entry deleted/archived after admin approval
 
 Canonical type source:
 
-- [lib/types/entry.ts](/Users/thya/tseda-data-repo/lib/types/entry.ts)
+- `lib/types/entry.ts`
 
 Canonical rule source:
 
-- [lib/entries/workflow.ts](/Users/thya/tseda-data-repo/lib/entries/workflow.ts)
+- `lib/entries/workflow.ts`
 
 Allowed transitions:
 
-- `DRAFT -> PENDING_CONFIRMATION`
-- `REJECTED -> PENDING_CONFIRMATION`
-- `PENDING_CONFIRMATION -> APPROVED`
-- `PENDING_CONFIRMATION -> REJECTED`
+- `DRAFT` -> `GENERATED` (commit / Generate PDF)
+- `GENERATED` -> `EDIT_REQUESTED` (user requests edit)
+- `GENERATED` -> `DELETE_REQUESTED` (user requests deletion)
+- `EDIT_REQUESTED` -> `EDIT_GRANTED` (admin grants)
+- `EDIT_REQUESTED` -> `GENERATED` (admin rejects / user cancels)
+- `DELETE_REQUESTED` -> `ARCHIVED` (admin approves)
+- `DELETE_REQUESTED` -> `GENERATED` (admin rejects / user cancels)
+- `EDIT_GRANTED` -> `GENERATED` (user re-finalizes)
 
 Important invariants:
 
-- Approved entries are locked by canonical workflow state only.
+- Finalized entries (timer expired or Finalise Now) are locked by workflow state.
+- After second finalization (re-finalization from EDIT_GRANTED), `permanentlyLocked = true`. Request Edit is blocked; Request Delete remains available.
 - Legacy lowercase workflow values such as `"draft"` and `"final"` are not valid internal workflow state.
 - Legacy workflow values may be accepted only at the migration/datastore boundary, then normalized immediately.
+
+## Entry Lifecycle and Timer System
+
+Entries follow a time-based finalization flow:
+
+1. **Create** -- entry starts as DRAFT
+2. **Generate PDF** -- entry transitions to GENERATED, timer starts
+3. **Edit window** -- user can edit Stage 1 fields (marks PDF stale) and upload Stage 2 files
+4. **Finalize** -- happens automatically when timer expires, or manually via "Finalise Now"
+5. **Post-finalization** -- entry is read-only; user can Request Edit or Request Delete
+
+Timer durations:
+- Non-streak entries: **3 days** from first GENERATED transition
+- Streak entries: **endDate + 8 days**
+- Timer never resets once `editWindowExpiresAt` is set
+
+## Two-Stage Field Model
+
+### Stage 1: Data fields
+Text inputs, dates, selections, descriptions. Changes to Stage 1 fields mark the PDF as stale (`pdfStale = true`). User must regenerate PDF before finalizing.
+
+### Stage 2: File uploads
+Permission letters, completion certificates, geotagged photos, brochures. Changes to Stage 2 fields do NOT affect PDF staleness. Users can upload/remove files without regenerating the PDF.
+
+Source: `lib/pdfSnapshot.ts` -- `hashPrePdfFields()` only hashes Stage 1 fields.
+
+## 5 Routes Bypass engine.ts
+
+The 5 category API routes (`app/api/me/<category>/route.ts`) handle their own read/write logic and field normalization. They do not fully route through `lib/entries/internal/engine.ts` for all operations.
+
+**Consequence:** Any field normalization that engine.ts would do must be replicated in `lib/entries/postSave.ts`, which runs after each route-level save to ensure consistency of streak fields, PDF state, and computed values.
+
+**Rule:** When adding new computed fields or normalization logic, add it to BOTH `engine.ts` AND `postSave.ts`.
 
 ## Lifecycle Ownership
 
 ### Public persisted lifecycle entrypoint
 
-- [lib/entries/lifecycle.ts](/Users/thya/tseda-data-repo/lib/entries/lifecycle.ts)
+- `lib/entries/lifecycle.ts`
 
 Edit this file when:
 
@@ -77,7 +119,7 @@ Do not put business rules here.
 
 ### Internal persistence/orchestration
 
-- [lib/entries/internal/engine.ts](/Users/thya/tseda-data-repo/lib/entries/internal/engine.ts)
+- `lib/entries/internal/engine.ts`
 
 Edit this file when:
 
@@ -90,35 +132,33 @@ Do not put canonical workflow semantics here.
 
 ### Workflow rules
 
-- [lib/entries/workflow.ts](/Users/thya/tseda-data-repo/lib/entries/workflow.ts)
+- `lib/entries/workflow.ts`
 
 Edit this file when:
 
 - changing workflow normalization
 - changing commitment semantics
-- changing approval/rejection transitions
-- changing approval lock behavior
+- changing request/grant transitions
+- changing finalization lock behavior
 
-### Editor action-state rules
+### Post-save normalization
 
-- [lib/entries/editorLifecycle.ts](/Users/thya/tseda-data-repo/lib/entries/editorLifecycle.ts)
+- `lib/entries/postSave.ts`
 
 Edit this file when:
 
-- changing Save Draft / Generate / Save & Close availability
-- changing dirty-stage semantics
-- changing action enable/disable rules for the editor
+- adding new computed fields that routes must normalize
+- changing streak field logic
+- changing PDF staleness computation at the route level
 
 ## Compatibility Wrappers
 
 These files exist for compatibility and migration only. New business logic should not be added to them.
 
-- [lib/entries/stateMachine.ts](/Users/thya/tseda-data-repo/lib/entries/stateMachine.ts)
-  - deprecated wrapper around `workflow.ts` and `editorLifecycle.ts`
-- [lib/entries/engine.ts](/Users/thya/tseda-data-repo/lib/entries/engine.ts)
-  - deprecated wrapper around `internal/engine.ts`
-- [lib/gamification.ts](/Users/thya/tseda-data-repo/lib/gamification.ts)
-  - deprecated wrapper around streak utilities; canonical streak business rules do not live here
+- `lib/entries/stateMachine.ts` -- deprecated wrapper around `workflow.ts`
+- `lib/entries/engine.ts` -- deprecated wrapper around `internal/engine.ts`
+- `lib/gamification.ts` -- deprecated wrapper around streak utilities; canonical streak business rules do not live here
+- `lib/entries/editorLifecycle.ts` -- legacy editor action-state rules; may not reflect current behavior
 
 Rule:
 
@@ -128,7 +168,7 @@ Rule:
 
 Canonical business-progress ownership:
 
-- [lib/streakProgress.ts](/Users/thya/tseda-data-repo/lib/streakProgress.ts)
+- `lib/streakProgress.ts`
 
 This module owns:
 
@@ -137,18 +177,18 @@ This module owns:
 - streak eligibility decisions
 - canonical aggregate/snapshot computation
 
+See `STREAK-SPECIFICATION.md` for the full streak system spec.
+
 Consumers:
 
-- [lib/data/indexStore.ts](/Users/thya/tseda-data-repo/lib/data/indexStore.ts)
-  - may cache canonical output
-- [lib/dashboard/getDashboardSummary.ts](/Users/thya/tseda-data-repo/lib/dashboard/getDashboardSummary.ts)
-  - may present canonical output
+- `lib/data/indexStore.ts` -- may cache canonical output
+- `lib/dashboard/getDashboardSummary.ts` -- may present canonical output
 
 Utility-only streak helpers:
 
-- [lib/streakState.ts](/Users/thya/tseda-data-repo/lib/streakState.ts)
-- [lib/streakTiming.ts](/Users/thya/tseda-data-repo/lib/streakTiming.ts)
-- [lib/time.ts](/Users/thya/tseda-data-repo/lib/time.ts)
+- `lib/streakState.ts`
+- `lib/streakTiming.ts`
+- `lib/time.ts`
 
 Hard rule:
 
@@ -166,10 +206,10 @@ Canonical export pipeline:
 
 Canonical modules:
 
-- [lib/export/exportService.ts](/Users/thya/tseda-data-repo/lib/export/exportService.ts)
-- [data/categoryRegistry.ts](/Users/thya/tseda-data-repo/data/categoryRegistry.ts)
-- [data/schemas/types.ts](/Users/thya/tseda-data-repo/data/schemas/types.ts)
-- [data/schemas/exportConfig.ts](/Users/thya/tseda-data-repo/data/schemas/exportConfig.ts)
+- `lib/export/exportService.ts`
+- `data/categoryRegistry.ts`
+- `data/schemas/types.ts`
+- `data/schemas/exportConfig.ts`
 - category schema files in `data/schemas/*.ts`
 
 Hard rules:
@@ -182,7 +222,7 @@ Hard rules:
 
 Canonical category registry:
 
-- [data/categoryRegistry.ts](/Users/thya/tseda-data-repo/data/categoryRegistry.ts)
+- `data/categoryRegistry.ts`
 
 It owns:
 
@@ -195,7 +235,7 @@ It owns:
 
 Canonical schema contract:
 
-- [data/schemas/types.ts](/Users/thya/tseda-data-repo/data/schemas/types.ts)
+- `data/schemas/types.ts`
 
 Each category schema owns:
 
@@ -204,7 +244,6 @@ Each category schema owns:
 - field kinds
 - validation rules
 - `requiredForCommit`
-- `immutableWhenPending`
 - export metadata on fields
 
 There is no active separate schema registry module. The registry is the category registry plus the individual schema files.
@@ -215,11 +254,11 @@ The category data-entry pages are intentionally thin composition shells.
 
 Shared controller/rendering modules:
 
-- [hooks/useCategoryEntryPageController.ts](/Users/thya/tseda-data-repo/hooks/useCategoryEntryPageController.ts)
-- [hooks/useEntryWorkflow.ts](/Users/thya/tseda-data-repo/hooks/useEntryWorkflow.ts)
-- [components/data-entry/CategoryEntryPageShell.tsx](/Users/thya/tseda-data-repo/components/data-entry/CategoryEntryPageShell.tsx)
-- [components/data-entry/EntryListCardShell.tsx](/Users/thya/tseda-data-repo/components/data-entry/EntryListCardShell.tsx)
-- [components/data-entry/GroupedEntrySections.tsx](/Users/thya/tseda-data-repo/components/data-entry/GroupedEntrySections.tsx)
+- `hooks/useCategoryEntryPageController.ts`
+- `hooks/useEntryWorkflow.ts`
+- `components/data-entry/CategoryEntryPageShell.tsx`
+- `components/data-entry/EntryListCardShell.tsx`
+- `components/data-entry/GroupedEntrySections.tsx`
 
 Category pages should own only:
 
@@ -241,7 +280,7 @@ Category pages should not own:
 
 Canonical navigation helpers:
 
-- [lib/entryNavigation.ts](/Users/thya/tseda-data-repo/lib/entryNavigation.ts)
+- `lib/entryNavigation.ts`
 
 Hard rule:
 
@@ -251,8 +290,8 @@ Hard rule:
 
 Legacy compatibility is allowed only at explicit boundaries:
 
-- [lib/migrations/index.ts](/Users/thya/tseda-data-repo/lib/migrations/index.ts)
-- [lib/dataStore.ts](/Users/thya/tseda-data-repo/lib/dataStore.ts)
+- `lib/migrations/index.ts`
+- `lib/dataStore.ts`
 
 This includes:
 
@@ -271,7 +310,7 @@ Do not duplicate:
 - workflow status unions
 - status arrays
 - workflow transitions
-- approval lock rules
+- finalization lock rules
 - streak business rules
 - export columns/labels
 - category lists
@@ -279,26 +318,28 @@ Do not duplicate:
 
 Do not add new business logic to:
 
-- [lib/entries/stateMachine.ts](/Users/thya/tseda-data-repo/lib/entries/stateMachine.ts)
-- [lib/entries/engine.ts](/Users/thya/tseda-data-repo/lib/entries/engine.ts)
-- [lib/gamification.ts](/Users/thya/tseda-data-repo/lib/gamification.ts)
+- `lib/entries/stateMachine.ts`
+- `lib/entries/engine.ts`
+- `lib/gamification.ts`
+- `lib/entries/editorLifecycle.ts`
 
 When changing behavior, edit the canonical owner directly:
 
-- workflow rules -> [workflow.ts](/Users/thya/tseda-data-repo/lib/entries/workflow.ts)
-- editor action-state rules -> [editorLifecycle.ts](/Users/thya/tseda-data-repo/lib/entries/editorLifecycle.ts)
-- persisted lifecycle operations -> [lifecycle.ts](/Users/thya/tseda-data-repo/lib/entries/lifecycle.ts) and [internal/engine.ts](/Users/thya/tseda-data-repo/lib/entries/internal/engine.ts)
-- streak/progress rules -> [streakProgress.ts](/Users/thya/tseda-data-repo/lib/streakProgress.ts)
-- exports -> [exportService.ts](/Users/thya/tseda-data-repo/lib/export/exportService.ts)
-- category definitions -> [categoryRegistry.ts](/Users/thya/tseda-data-repo/data/categoryRegistry.ts) and `data/schemas/*.ts`
+- workflow rules -> `lib/entries/workflow.ts`
+- post-save normalization -> `lib/entries/postSave.ts`
+- PDF staleness -> `lib/pdfSnapshot.ts`
+- persisted lifecycle operations -> `lib/entries/lifecycle.ts` and `lib/entries/internal/engine.ts`
+- streak/progress rules -> `lib/streakProgress.ts`
+- exports -> `lib/export/exportService.ts`
+- category definitions -> `data/categoryRegistry.ts` and `data/schemas/*.ts`
 
 ## How To Add A New Category Safely
 
 1. Add a schema file in `data/schemas/<category>.ts`.
-   - Implement [EntrySchema](/Users/thya/tseda-data-repo/data/schemas/types.ts).
-   - Define fields, labels, validation, `requiredForCommit`, `immutableWhenPending`, and export metadata.
+   - Implement `EntrySchema` from `data/schemas/types.ts`.
+   - Define fields, labels, validation, `requiredForCommit`, and export metadata.
 
-2. Register the category in [data/categoryRegistry.ts](/Users/thya/tseda-data-repo/data/categoryRegistry.ts).
+2. Register the category in `data/categoryRegistry.ts`.
    - Add slug, label, schema, summary key, capabilities, title field, and fallback title.
 
 3. Let registry-derived systems pick it up automatically where applicable.
@@ -309,24 +350,28 @@ When changing behavior, edit the canonical owner directly:
    - category store file mapping derived from `CATEGORY_LIST`
 
 4. Add the category page at `app/(protected)/data-entry/<category>/page.tsx`.
-   - Use [useCategoryEntryPageController.ts](/Users/thya/tseda-data-repo/hooks/useCategoryEntryPageController.ts).
-   - Use [CategoryEntryPageShell.tsx](/Users/thya/tseda-data-repo/components/data-entry/CategoryEntryPageShell.tsx).
-   - Use [EntryListCardShell.tsx](/Users/thya/tseda-data-repo/components/data-entry/EntryListCardShell.tsx).
-   - Use [GroupedEntrySections.tsx](/Users/thya/tseda-data-repo/components/data-entry/GroupedEntrySections.tsx).
+   - Use `hooks/useCategoryEntryPageController.ts`.
+   - Use `components/data-entry/CategoryEntryPageShell.tsx`.
+   - Use `components/data-entry/EntryListCardShell.tsx`.
+   - Use `components/data-entry/GroupedEntrySections.tsx`.
    - Keep the page thin.
 
 5. Add the category API route(s) under `app/api/me/<category>/`.
-   - Use canonical lifecycle operations from [lifecycle.ts](/Users/thya/tseda-data-repo/lib/entries/lifecycle.ts).
-   - Use canonical workflow rules from [workflow.ts](/Users/thya/tseda-data-repo/lib/entries/workflow.ts).
-   - Use canonical streak helpers from [streakProgress.ts](/Users/thya/tseda-data-repo/lib/streakProgress.ts).
+   - Use canonical lifecycle operations from `lib/entries/lifecycle.ts`.
+   - Use canonical workflow rules from `lib/entries/workflow.ts`.
+   - Call `postSave.ts` normalization after saves.
+   - Use canonical streak helpers from `lib/streakProgress.ts`.
 
-6. Add or update tests.
+6. Add the adapter component in `components/data-entry/adapters/<category>.tsx`.
+   - Follow the Five Category Route Rule -- match the pattern of existing adapters.
+
+7. Add or update tests.
    - schema validation coverage
    - persisted lifecycle behavior
    - any category-specific route behavior
    - search/export behavior if the category introduces meaningful new fields
 
-7. Validate the architecture invariants.
+8. Validate the architecture invariants.
    - no duplicated status arrays
    - no duplicated workflow rules
    - no page-local export logic
@@ -336,12 +381,12 @@ When changing behavior, edit the canonical owner directly:
 
 Important invariant coverage currently lives in:
 
-- [tests/entries/confirmationStateMachine.test.ts](/Users/thya/tseda-data-repo/tests/entries/confirmationStateMachine.test.ts)
-- [tests/entries/stateMachine.test.ts](/Users/thya/tseda-data-repo/tests/entries/stateMachine.test.ts)
-- [tests/entries/streakProgress.test.ts](/Users/thya/tseda-data-repo/tests/entries/streakProgress.test.ts)
-- [tests/entries/exportService.test.ts](/Users/thya/tseda-data-repo/tests/entries/exportService.test.ts)
-- [tests/entries/dataStore.test.ts](/Users/thya/tseda-data-repo/tests/entries/dataStore.test.ts)
-- [tests/entries/migrations.test.ts](/Users/thya/tseda-data-repo/tests/entries/migrations.test.ts)
-- [tests/entries/indexStore.test.ts](/Users/thya/tseda-data-repo/tests/entries/indexStore.test.ts)
+- `tests/entries/confirmationStateMachine.test.ts`
+- `tests/entries/stateMachine.test.ts`
+- `tests/entries/streakProgress.test.ts`
+- `tests/entries/exportService.test.ts`
+- `tests/entries/dataStore.test.ts`
+- `tests/entries/migrations.test.ts`
+- `tests/entries/indexStore.test.ts`
 
 When changing canonical architecture, update the relevant invariant tests in the same change.
