@@ -1,7 +1,9 @@
 # AUDIT.md
 
 Comprehensive codebase audit for production readiness.
-Performed 2026-03-07 against the `claude/hopeful-booth` branch.
+Performed 2026-03-07 against the `main` branch.
+
+**Note (2026-03-09):** Entry statuses have changed since this audit. The old statuses (DRAFT, PENDING_CONFIRMATION, APPROVED, REJECTED) referenced below are now replaced by: DRAFT, GENERATED, EDIT_REQUESTED, DELETE_REQUESTED, EDIT_GRANTED, ARCHIVED. Several Phase 0 items (0.3 `.env.example`, 0.4 debug endpoint) and Phase 1 items (1.2 loading.tsx, 1.4 parallel reads, 1.5 streak rebuild) have been resolved. Phase 0 items 0.1 and 0.2 should be re-verified against current code.
 
 ---
 
