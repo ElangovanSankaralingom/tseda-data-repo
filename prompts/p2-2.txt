@@ -1,0 +1,72 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+Continuing P2.1. The shared handler now needs PATCH (update entry) and DELETE (delete entry) handlers. These are the most complex operations because they involve status transitions, streak logic, PDF staleness, and request handling.
+
+## Read First
+1. lib/api/categoryRouteHandler.ts (from P2.1 — our new shared handler)
+2. app/api/me/fdp-attended/route.ts (the PATCH and DELETE handlers — read carefully)
+3. lib/entries/workflow.ts (isEntryEditable, transitionEntry, canTransition)
+4. lib/entries/postSave.ts (normalizeEntryStreakFields)
+5. lib/pdfSnapshot.ts (computePdfState, getHashPayload)
+6. lib/entries/toApiResponse.ts (entryToApiResponse)
+7. lib/streakProgress.ts (streak field handling on save)
+
+## The Implementation
+
+Add to `lib/api/categoryRouteHandler.ts`:
+
+### handleCategoryPatch(req, categoryKey)
+Extract the PATCH handler logic from fdp-attended/route.ts:
+1. Authenticate — return 401
+2. Rate limit — `entryMutations` preset
+3. Validate payload size
+4. Extract entry ID from body
+5. Read the entry from the category store
+6. Check editability via `isEntryEditable(entry)` — return 403 if not editable
+7. Determine what kind of PATCH this is:
+   a. **Regular field update**: merge new fields into entry, save
+   b. **Generate entry (DRAFT→GENERATED)**: if the patch includes a generate action, transition via workflow.ts `transitionEntry(entry, 'generateEntry')`
+   c. **Finalise entry**: if the patch includes a finalise action, set entry as finalized
+   d. **Request edit/delete**: transition via workflow.ts
+8. After any save, normalize via postSave.ts
+9. Save to category store via atomic write
+10. Return `entryToApiResponse(savedEntry, categoryKey)`
+
+### handleCategoryDelete(req, categoryKey)
+Extract the DELETE handler logic:
+1. Authenticate — return 401
+2. Extract entry ID from query params or body
+3. Read entry from store
+4. Check if direct delete is allowed (DRAFT, editable GENERATED, EDIT_GRANTED can delete directly)
+5. If finalized: return error — must use request delete flow instead
+6. Remove from store's byId and order array
+7. Atomic write the store
+8. Return success response
+
+### CRITICAL: Handle all the action sub-types the PATCH currently handles
+
+The current PATCH route likely handles multiple action types via a body field like `action` or by checking which fields changed. Read the ACTUAL fdp-attended PATCH handler and replicate ALL its branches:
+- Save fields (regular update)
+- Save & close
+- Generate entry (PDF + status transition)
+- Finalise now
+- Request edit
+- Request delete
+- Cancel request
+
+Each of these is a different code path within PATCH. The shared handler must support ALL of them.
+
+## Scope
+- MODIFY: lib/api/categoryRouteHandler.ts (add PATCH + DELETE handlers)
+- DO NOT MODIFY: any existing route files
+- DO NOT MODIFY: engine.ts, workflow.ts
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. grep -n "handleCategoryPatch\|handleCategoryDelete" lib/api/categoryRouteHandler.ts — both exist

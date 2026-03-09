@@ -1,0 +1,125 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+The client side has 5 adapter components with 90%+ shared logic. Like the routes, they differ only in which fields they render. This prompt extracts the shared logic into a base component.
+
+## Read First
+1. components/data-entry/adapters/fdp-attended.tsx (reference adapter)
+2. components/data-entry/adapters/fdp-conducted.tsx (compare differences)
+3. data/categoryRegistry.ts (category metadata)
+4. data/schemas/fdp-attended.ts (field definitions)
+5. hooks/useEntryEditor.ts (form state)
+6. hooks/useCategoryEntryPageController.ts (page controller)
+
+## The Implementation
+
+### Step 1: Identify shared vs category-specific code
+
+Run this diagnostic:
+```bash
+# Count total lines per adapter
+wc -l components/data-entry/adapters/*.tsx
+
+# Find functions defined in each
+grep -n "function\|const.*=.*(" components/data-entry/adapters/fdp-attended.tsx | head -20
+```
+
+### Step 2: Create shared base component
+
+Create `components/data-entry/adapters/BaseEntryAdapter.tsx`:
+
+This component should:
+1. Accept `category` as a prop
+2. Look up the schema from the category registry
+3. Render the standard editor shell (progress header, status banner, action bar)
+4. Render fields by iterating the schema's field definitions
+5. Use a `FieldRenderer` component that switches on field type (text, date, select, textarea, file upload, etc.)
+6. Handle all shared logic: form state, dirty tracking, save, generate, finalise
+
+```typescript
+interface BaseEntryAdapterProps {
+  category: CategoryKey;
+  entryId?: string;
+  isNew?: boolean;
+}
+
+export default function BaseEntryAdapter({ category, entryId, isNew }: BaseEntryAdapterProps) {
+  const schema = getCategorySchema(category);
+  const controller = useCategoryEntryPageController(category, entryId);
+
+  return (
+    <CategoryEntryPageShell category={category} controller={controller}>
+      <EditorProgressHeader ... />
+      <EditorStatusBanner ... />
+      
+      {schema.fields.map(field => (
+        <FieldRenderer
+          key={field.name}
+          field={field}
+          value={controller.formState[field.name]}
+          onChange={(val) => controller.setField(field.name, val)}
+          disabled={!controller.isEditable}
+          error={controller.errors[field.name]}
+        />
+      ))}
+
+      <EntryActionsBar ... />
+    </CategoryEntryPageShell>
+  );
+}
+```
+
+### Step 3: Create FieldRenderer component
+
+Create `components/data-entry/FieldRenderer.tsx`:
+
+```typescript
+function FieldRenderer({ field, value, onChange, disabled, error }) {
+  switch (field.kind) {
+    case 'text': return <TextInput ... />;
+    case 'date': return <DateInput ... />;
+    case 'select': return <SelectInput options={field.options} ... />;
+    case 'textarea': return <TextareaInput ... />;
+    case 'number': return <NumberInput ... />;
+    case 'file': return <FileUpload ... />;
+    default: return <TextInput ... />;
+  }
+}
+```
+
+### Step 4: Simplify each adapter
+
+Each adapter becomes:
+```typescript
+// components/data-entry/adapters/fdp-attended.tsx
+import BaseEntryAdapter from './BaseEntryAdapter';
+
+export default function FdpAttendedAdapter(props) {
+  return <BaseEntryAdapter category="fdp-attended" {...props} />;
+}
+```
+
+If a category has truly unique rendering needs (e.g., a special layout for certain fields), it can override specific fields while still using the base for everything else.
+
+### IMPORTANT: Don't break existing adapters
+- First create BaseEntryAdapter and FieldRenderer
+- Then convert ONE adapter (fdp-attended) to use it
+- Test thoroughly
+- Then convert the rest
+
+## Scope
+- CREATE: components/data-entry/adapters/BaseEntryAdapter.tsx
+- CREATE: components/data-entry/FieldRenderer.tsx
+- MODIFY: components/data-entry/adapters/fdp-attended.tsx (convert to thin wrapper as proof of concept)
+- DO NOT MODIFY: the other 4 adapters yet (do those in P2.6 after testing)
+
+## Verification
+1. npm run build — passes
+2. npm run dev — fdp-attended entry creation and editing works identically
+3. All fields render correctly (text, dates, selects, file uploads)
+4. Generate, Finalise, Save, Cancel all work
+5. View mode works for finalized entries
