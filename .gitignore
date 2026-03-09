@@ -22,8 +22,12 @@ yarn-debug.log*
 tmp/
 Users/
 
+# Runtime data (NEVER commit)
+.data/
+
 # Backups
 .data_backups/
 
-# Quarantine
-.data/quarantine/
+# Backup files
+*.bak
+*.bak.*
