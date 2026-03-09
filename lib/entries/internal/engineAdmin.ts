@@ -86,6 +86,12 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
         adminEmail: normalizedAdmin,
         archiveReason: "delete_approved",
       }) as EntryLike,
+    afterSuccess: (entry) => {
+      const normalized = normalizeEmail(ownerEmail);
+      void import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteApproved, extractEntryTitle }) => {
+        void notifyDeleteApproved(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>));
+      }).catch(() => {});
+    },
   });
 }
 

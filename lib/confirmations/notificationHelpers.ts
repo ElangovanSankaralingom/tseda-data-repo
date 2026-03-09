@@ -100,3 +100,52 @@ export async function notifyStreakWon(
     `Streak completed! '${entryTitle}' is fully done`,
   );
 }
+
+/**
+ * Notify user that delete request was approved and entry archived.
+ */
+export async function notifyDeleteApproved(
+  ownerEmail: string,
+  entryTitle: string,
+): Promise<void> {
+  await notifyUser(
+    ownerEmail,
+    "delete_approved",
+    "Entry deleted",
+    `Your delete request for '${entryTitle}' was approved`,
+  );
+}
+
+/**
+ * Notify user that an entry was auto-archived (expired without valid PDF).
+ */
+export async function notifyAutoArchived(
+  ownerEmail: string,
+  entryTitle: string,
+  category: string,
+): Promise<void> {
+  await notifyUser(
+    ownerEmail,
+    "auto_archived",
+    "Entry auto-archived",
+    `'${entryTitle}' was archived — the edit window expired without a valid PDF`,
+    `/data-entry/${category}`,
+  );
+}
+
+/**
+ * Notify user that an entry's edit window expires in ~24 hours.
+ */
+export async function notifyTimerWarning(
+  ownerEmail: string,
+  entryTitle: string,
+  category: string,
+): Promise<void> {
+  await notifyUser(
+    ownerEmail,
+    "timer_warning",
+    "Entry expiring soon",
+    `'${entryTitle}' will finalize in ~24 hours — generate a PDF now to keep it`,
+    `/data-entry/${category}`,
+  );
+}
