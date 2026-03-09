@@ -6,7 +6,7 @@ import FacultySelect, {
   type FacultySelection,
 } from "@/components/controls/FacultySelect";
 import { RoleButton } from "@/components/ui/RoleButton";
-import { nowISTTimestampISO } from "@/lib/gamification";
+import { nowISTTimestampISO } from "@/lib/time";
 
 export type FacultyRowValue = {
   id?: string;

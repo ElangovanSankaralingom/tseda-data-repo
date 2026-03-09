@@ -14,7 +14,7 @@ import {
   getEntryListGroup,
   type EntryListGroup,
 } from "@/lib/entryCategorization";
-import { isEntryCommitted } from "@/lib/entries/stateMachine";
+import { isEntryCommitted } from "@/lib/entries/workflow";
 import {
   type CategoryEntryRenderEntry,
   type CategoryEntryRecordCardProps,

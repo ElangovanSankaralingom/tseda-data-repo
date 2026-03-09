@@ -6,7 +6,7 @@ import {
   normalizeEntryStatus,
   type EditTimeRemaining,
   type EntryStateLike,
-} from "./entries/stateMachine.ts";
+} from "./entries/workflow.ts";
 
 export type EntryCategoryBucket = "draft" | "activated" | "completed";
 export type EntryDisplayCategory = "draft" | "streak_active" | "completed";

@@ -11,7 +11,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { getGroupCardClass } from "@/components/entry/entryCardStyles";
 import type { EntryListGroup } from "@/lib/entryCategorization";
-import type { EditTimeRemaining } from "@/lib/entries/stateMachine";
+import type { EditTimeRemaining } from "@/lib/entries/workflow";
 
 function formatRelativeTime(value?: string) {
   if (!value) return null;
