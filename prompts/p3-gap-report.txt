@@ -1,0 +1,189 @@
+# P3 Gap Report: categoryRouteHandler.ts vs engine.ts
+
+## Executive Summary
+
+The shared route handler (`lib/api/categoryRouteHandler.ts`) has **zero direct file
+operations** — all persistence goes through `createEntry`, `updateEntry`,
+`deleteEntry`, and `listEntriesForCategory` from `lib/entries/lifecycle.ts`.
+
+However, the handler **bypasses engine-level orchestration** for 6 of 7 mutation
+types. Instead of calling the dedicated engine functions (which handle WAL logging,
+index updates, streak logic, edit-window computation, field progress, telemetry,
+and atomic locking), the handler manually applies workflow transitions and then
+calls the raw `updateEntry()` — losing all those engine-level side effects.
+
+---
+
+## Findings by Operation
+
+### 1. GET (list entries) — Line 108
+- **Current:** Calls `listEntriesForCategory()` → ✅ CORRECT
+- **Status:** No bypass. Read-only, acceptable as-is.
+
+### 2. POST (create/update entry) — Line 140
+- **Current:** Calls `createEntry()` or `updateEntry()` → ✅ CORRECT for persistence
+- **Bypass detail:** The handler manually sets lifecycle fields (`createdAt`,
+  `updatedAt`, `confirmationStatus`, `ownerEmail`), normalizes streak fields,
+  and does schema validation — all of which `createEntry()` and `updateEntry()`
+  in engine.ts also handle internally.
+- **Risk:** Duplicated normalization (minor). The engine will re-normalize, so this
+  is safe but redundant.
+- **Action:** LOW priority. Could simplify by letting engine handle lifecycle fields,
+  but no functional gap.
+
+### 3. PATCH action="save" (regular field update) — Line 464
+- **Current:** Manually merges fields, recomputes PDF staleness, normalizes streaks,
+  then calls `updateEntry()`.
+- **Bypass detail:** `updateEntry()` in engine.ts (line 757) already does:
+  - Field merging with the existing entry
+  - `prepareEntryForWrite()` (normalization, streak fields)
+  - WAL event logging
+  - Index refresh
+  - Dashboard tag revalidation
+  - Telemetry tracking
+- **Risk:** The handler's manual merge at lines 482-504 duplicates what engine does.
+  The handler also recomputes `pdfStale` (lines 497-501) which engine doesn't do
+  (engine relies on caller or postSave).
+- **Action:** MEDIUM priority. The handler should pass the incoming fields to
+  `updateEntry()` and let engine handle the merge. The `pdfStale` recomputation
+  may need to be added to engine's `prepareEntryForWrite()`.
+
+### 4. PATCH action="generate" — Line 407
+- **Current:** Manually calls `transitionEntry()` for the DRAFT→GENERATED
+  transition, merges fields, normalizes streaks, then calls `updateEntry()`.
+- **Engine equivalent:** `commitDraft(email, category, entryId)` (line 907)
+- **Bypass detail:** `commitDraft()` in engine.ts does significantly more:
+  - Validates the entry exists and is in the right state
+  - Computes streak eligibility
+  - Computes `editWindowExpiresAt` (critical for timer system)
+  - Sets `committedAtISO`
+  - WAL event logging with proper action inference
+  - Index refresh + dashboard revalidation
+  - Telemetry tracking (duration, from/to status)
+- **Risk:** HIGH. The handler's manual generate **skips edit-window computation,
+  streak eligibility, committedAtISO**, and WAL logging. Entries generated via
+  the shared handler won't have correct timer windows.
+- **Parameter mismatch:** `commitDraft(email, category, entryId)` doesn't accept
+  incoming field data (e.g., PDF metadata sent with generate). The handler merges
+  `entryRecord` fields into the transition result (line 419-424). Engine's
+  `commitDraft` would need to accept optional extra fields, OR the handler should
+  call `commitDraft()` first, then `updateEntry()` for the PDF data.
+- **Action:** HIGH priority. Replace manual transition with `commitDraft()`. Need
+  to handle the field-merge gap (PDF data sent along with generate action).
+
+### 5. PATCH action="finalise" — Line 438
+- **Current:** Manually sets `editWindowExpiresAt = now` and calls `updateEntry()`.
+- **Engine equivalent:** `finalizeEntry(email, category, entryId)` (line 1718)
+- **Bypass detail:** `finalizeEntry()` in engine.ts does:
+  - Validates GENERATED or EDIT_GRANTED status
+  - Validates entry is currently editable
+  - Validates all data fields are complete (`computeFieldProgress`)
+  - Validates all upload fields are present (schema-driven)
+  - Sets `editWindowExpiresAt = now` + `permanentlyLocked` logic for re-finalized entries
+  - Handles `EDIT_GRANTED → GENERATED` re-finalization (sets `permanentlyLocked = true`)
+  - WAL event logging
+  - Index refresh + dashboard revalidation
+  - Telemetry
+- **Risk:** HIGH. The handler's manual finalise **skips field completeness
+  validation, upload validation, permanentlyLocked logic**, and WAL logging.
+  Users could finalise entries with missing fields/uploads.
+- **Action:** HIGH priority. Replace with `finalizeEntry()`.
+
+### 6. PATCH action="request_edit" — Line 317
+- **Current:** Manually calls `transitionEntry()` then `updateEntry()`.
+- **Engine equivalent:** `requestEdit(email, category, entryId, message?)` (line 1134)
+- **Bypass detail:** `requestEdit()` in engine.ts does:
+  - Validates `permanentlyLocked` flag
+  - Validates `isEntryCommitted` AND `canRequestAction` (monthly limit check)
+  - Handles streak permanent removal (if entry was a Win)
+  - WAL event logging
+  - Admin notification triggers
+  - Telemetry
+- **Risk:** HIGH. The handler skips `permanentlyLocked` check, monthly request
+  limit enforcement, streak permanent removal, and WAL logging.
+- **Action:** HIGH priority. Replace with `requestEdit()`.
+
+### 7. PATCH action="request_delete" — Line 338
+- **Current:** Manually calls `transitionEntry()` then `updateEntry()`.
+- **Engine equivalent:** `requestDelete(email, category, entryId, message?)` (line 1921)
+- **Bypass detail:** Same as request_edit — engine handles permanentlyLocked,
+  canRequestAction, streak removal, WAL, notifications, telemetry.
+- **Risk:** HIGH. Same bypasses as request_edit.
+- **Action:** HIGH priority. Replace with `requestDelete()`.
+
+### 8. PATCH action="cancel_request_edit" — Line 359
+- **Current:** Manually calls `transitionEntry()` then `updateEntry()`.
+- **Engine equivalent:** `cancelEditRequest(email, category, entryId)` (line 1445)
+- **Bypass detail:** Engine validates EDIT_REQUESTED status (throws if not),
+  does WAL logging, index refresh, telemetry.
+- **Risk:** MEDIUM. The handler does check `existingStatus !== "EDIT_REQUESTED"`
+  but returns the existing entry silently instead of erroring. Missing WAL/telemetry.
+- **Action:** MEDIUM priority. Replace with `cancelEditRequest()`.
+
+### 9. PATCH action="cancel_request_delete" — Line 383
+- **Current:** Manually calls `transitionEntry()` then `updateEntry()`.
+- **Engine equivalent:** `cancelDeleteRequest(email, category, entryId)` (line 2074)
+- **Bypass detail:** Same as cancel_request_edit.
+- **Risk:** MEDIUM. Same bypasses.
+- **Action:** MEDIUM priority. Replace with `cancelDeleteRequest()`.
+
+### 10. DELETE — Line 527
+- **Current:** Calls `deleteEngineEntry()` → ✅ CORRECT
+- **Status:** No bypass. Properly delegates to engine.
+
+---
+
+## Engine Function Inventory
+
+| Engine Function          | Exists? | Used by Handler? | Should Replace Handler Code? |
+|--------------------------|---------|------------------|------------------------------|
+| listEntriesForCategory   | ✅ Yes  | ✅ Yes (GET)      | N/A (already correct)        |
+| createEntry              | ✅ Yes  | ✅ Yes (POST)     | Already used                 |
+| updateEntry              | ✅ Yes  | ✅ Yes (all PATCH) | Over-used; should be replaced by specific functions below |
+| deleteEntry              | ✅ Yes  | ✅ Yes (DELETE)   | Already correct              |
+| commitDraft              | ✅ Yes  | ❌ No            | Should replace action="generate" |
+| finalizeEntry            | ✅ Yes  | ❌ No            | Should replace action="finalise" |
+| requestEdit              | ✅ Yes  | ❌ No            | Should replace action="request_edit" |
+| requestDelete            | ✅ Yes  | ❌ No            | Should replace action="request_delete" |
+| cancelEditRequest        | ✅ Yes  | ❌ No            | Should replace action="cancel_request_edit" |
+| cancelDeleteRequest      | ✅ Yes  | ❌ No            | Should replace action="cancel_request_delete" |
+
+**No new engine functions need to be created.** All required operations already exist.
+
+---
+
+## Parameter Mismatches
+
+| Operation | Handler Sends | Engine Expects | Gap |
+|-----------|---------------|----------------|-----|
+| generate  | entry fields (PDF data) merged with transition | `commitDraft(email, cat, id)` — no extra fields | Need to pass PDF data separately after commit, or extend commitDraft |
+| request_edit | No message | `requestEdit(email, cat, id, message?)` | None (message is optional) |
+| request_delete | No message | `requestDelete(email, cat, id, message?)` | None (message is optional) |
+| save (PATCH default) | Full merged entry object | `updateEntry(email, cat, id, data)` | Compatible — engine does its own merge |
+
+---
+
+## Priority Summary
+
+| Priority | Operations | Key Risk |
+|----------|-----------|----------|
+| HIGH | generate, finalise, request_edit, request_delete | Missing WAL, timer windows, streak logic, permanentlyLocked checks |
+| MEDIUM | cancel_request_edit, cancel_request_delete, save | Missing WAL/telemetry, redundant merge logic |
+| LOW | POST (create) | Redundant normalization (functionally safe) |
+| NONE | GET, DELETE | Already correct |
+
+---
+
+## Recommended P3.2 Implementation Plan
+
+1. Replace `action="generate"` with `commitDraft()` + optional follow-up
+   `updateEntry()` for PDF metadata fields
+2. Replace `action="finalise"` with `finalizeEntry()`
+3. Replace `action="request_edit"` with `requestEdit()`
+4. Replace `action="request_delete"` with `requestDelete()`
+5. Replace `action="cancel_request_edit"` with `cancelEditRequest()`
+6. Replace `action="cancel_request_delete"` with `cancelDeleteRequest()`
+7. Simplify `action="save"` to pass fields directly to `updateEntry()` without
+   manual merge (let engine handle it)
+8. Verify all error codes match (engine throws AppError with codes that
+   `mutationErrorResponse` already handles)

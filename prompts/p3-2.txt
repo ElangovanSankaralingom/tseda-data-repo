@@ -1,0 +1,131 @@
+## Task Type
+FEATURE
+
+## Priority
+HIGH
+
+## Context
+The gap report from P3.1 identified engine.ts functions that are missing or incomplete. This prompt fills those gaps so that the shared handler can delegate ALL mutations to engine.ts.
+
+## Read First
+1. prompts/p3-gap-report.txt (from P3.1 — the gap analysis)
+2. lib/entries/internal/engine.ts (current engine implementation)
+3. lib/entries/lifecycle.ts (public re-exports)
+4. lib/entries/workflow.ts (transitionEntry, status logic)
+5. lib/entries/toApiResponse.ts (from P1.3 — response formatting)
+6. lib/dataStore.ts (file operations the engine should use internally)
+7. lib/data/fileAtomic.ts (atomic writes)
+8. lib/data/locks.ts (user-level locking)
+
+## The Implementation
+
+For EACH missing function identified in the gap report, implement it in engine.ts following this pattern:
+
+```typescript
+export async function operationName(
+  email: string,
+  category: CategoryKey,
+  entryId: string,
+  payload: Record<string, unknown>,
+  options?: { nowISO?: string }
+): Promise<CanonicalEntry> {
+  // 1. Acquire user lock
+  return withUserLock(email, async () => {
+    // 2. Read the category store
+    const store = await readCategoryStore(email, category);
+
+    // 3. Find the entry
+    const entry = store.byId[entryId];
+    if (!entry) throw new NotFoundError(`Entry ${entryId} not found`);
+
+    // 4. Validate the operation is allowed (status checks via workflow.ts)
+    // 5. Apply the mutation (transition via workflow.ts if status changes)
+    // 6. Set lifecycle fields (updatedAt, etc.)
+    // 7. Write the store atomically
+    // 8. Update the user index
+    // 9. Append to WAL
+    // 10. Return the updated entry
+  });
+}
+```
+
+### Key functions likely needed (verify against gap report):
+
+**If missing: `createEntry(email, category, initialData)`**
+- Generate UUID
+- Set: id, category, ownerEmail, confirmationStatus: 'DRAFT', createdAt, updatedAt, schemaVersion
+- Merge initialData (category-specific fields)
+- Add to store.byId and store.order
+- Write store, update index, append WAL
+
+**If missing: `updateEntry(email, category, entryId, updates)`**
+- Read entry, check isEntryEditable
+- Merge updates into entry (only allow data fields, not lifecycle fields)
+- Set updatedAt
+- Write store, update index, append WAL
+
+**If missing: `generateEntry(email, category, entryId)`**
+- Transition DRAFT → GENERATED via transitionEntry(entry, 'generateEntry')
+- Set editWindowExpiresAt via computeEditWindowExpiry
+- Set pdfGenerated, pdfGeneratedAt, committedAtISO
+- Compute streakEligible based on endDate
+- Write store, update index, append WAL
+
+**If missing: `finalizeEntry(email, category, entryId)`**
+- Verify entry is GENERATED and has valid PDF
+- Mark as finalized (set permanentlyLocked if second finalization)
+- Write store, update index, append WAL
+
+**If missing: `requestEdit(email, category, entryId, message?)`**
+- Verify entry is finalized GENERATED
+- Check request count limit (max 3/month)
+- Transition via transitionEntry(entry, 'requestEdit')
+- Handle streak permanent removal if entry is a Win
+- Write store, update index, append WAL
+
+**If missing: `requestDelete(email, category, entryId)`**
+- Verify entry is finalized GENERATED
+- Check request count limit
+- Transition via transitionEntry(entry, 'requestDelete')
+- Cancel any pending edit request
+- Handle streak permanent removal if entry is a Win
+- Write store, update index, append WAL
+
+**If missing: `deleteEntry(email, category, entryId)`**
+- Verify entry is deletable (DRAFT, editable GENERATED, or EDIT_GRANTED)
+- Remove from store.byId and store.order
+- Write store, update index, append WAL
+
+### Every function must:
+- Use `withUserLock` for concurrency safety
+- Call `transitionEntry` from workflow.ts for status changes
+- Set `updatedAt` on every mutation
+- Write via `atomicWriteTextFile` (through dataStore)
+- Update user index
+- Append to WAL
+- Return the complete entry (not a partial)
+
+### Re-export from lifecycle.ts
+For every new function added to engine.ts, add a re-export in `lib/entries/lifecycle.ts`.
+
+## Scope
+- MODIFY: lib/entries/internal/engine.ts (add missing functions)
+- MODIFY: lib/entries/lifecycle.ts (add re-exports)
+- DO NOT MODIFY: lib/entries/workflow.ts (engine calls it, doesn't change it)
+- DO NOT MODIFY: lib/api/categoryRouteHandler.ts (that's P3.3)
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. Every function in the gap report now exists:
+   ```bash
+   grep -n "export.*async.*function" lib/entries/internal/engine.ts
+   ```
+4. Every function uses withUserLock:
+   ```bash
+   grep -c "withUserLock" lib/entries/internal/engine.ts
+   ```
+5. lifecycle.ts re-exports all public functions:
+   ```bash
+   grep "export" lib/entries/lifecycle.ts
+   ```
