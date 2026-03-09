@@ -10,6 +10,7 @@ import { rebuildUserIndex } from "@/lib/data/indexStore";
 import { AppError, normalizeError } from "@/lib/errors";
 import { runAutoArchive, type AutoArchiveResult } from "@/lib/jobs/autoArchive";
 import { runEditGrantExpiry, type EditGrantExpiryResult } from "@/lib/jobs/editGrantExpiry";
+import { runTimerWarnings, type TimerWarningResult } from "@/lib/jobs/timerWarning";
 import { logger } from "@/lib/logger";
 import { type Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -47,6 +48,7 @@ export type NightlyMaintenanceSummary = {
   housekeeping: JobStepResult<NightlyHousekeepingResult>;
   autoArchive: JobStepResult<AutoArchiveResult>;
   editGrantExpiry: JobStepResult<EditGrantExpiryResult>;
+  timerWarnings: JobStepResult<TimerWarningResult>;
 };
 
 function maintenanceDirPath() {
@@ -238,6 +240,7 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
     const housekeepingResult = await runNightlyExportHousekeeping();
     const autoArchiveResult = await runAutoArchive();
     const editGrantExpiryResult = await runEditGrantExpiry();
+    const timerWarningsResult = await runTimerWarnings();
 
     const summary: NightlyMaintenanceSummary = {
       startedAt,
@@ -247,7 +250,8 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
         integrityResult.ok &&
         housekeepingResult.ok &&
         autoArchiveResult.ok &&
-        editGrantExpiryResult.ok,
+        editGrantExpiryResult.ok &&
+        timerWarningsResult.ok,
       backup: backupResult.ok ? stepSuccess(backupResult.data) : stepFailure(backupResult.error),
       integrity: integrityResult.ok
         ? stepSuccess(integrityResult.data)
@@ -261,6 +265,9 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
       editGrantExpiry: editGrantExpiryResult.ok
         ? stepSuccess(editGrantExpiryResult.data)
         : stepFailure(editGrantExpiryResult.error),
+      timerWarnings: timerWarningsResult.ok
+        ? stepSuccess(timerWarningsResult.data)
+        : stepFailure(timerWarningsResult.error),
     };
 
     await writeLastRun(summary);
