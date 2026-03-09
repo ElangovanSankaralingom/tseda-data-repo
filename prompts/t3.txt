@@ -1,0 +1,88 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+`hooks/useCategoryEntryPageController.ts` at 657 lines is the main orchestration hook for entry pages. It manages form state, save actions, generate, finalise, navigation, and more. This should be decomposed into focused sub-hooks.
+
+## Read First
+1. hooks/useCategoryEntryPageController.ts (scan for all responsibilities)
+2. hooks/useEntryEditor.ts (may already handle some concerns)
+3. hooks/useEntryWorkflow.ts (may already handle some concerns)
+
+## The Fix
+
+### Step 1: Map responsibilities
+
+```bash
+grep -n "function\|const.*=.*use\|return {" hooks/useCategoryEntryPageController.ts | head -30
+```
+
+### Step 2: Extract sub-hooks
+
+**`hooks/useEntrySaveActions.ts`** — Save orchestration
+- handleSave
+- handleSaveAndClose
+- handleCancel
+- Auto-save logic (if any)
+- Dirty tracking integration
+
+**`hooks/useEntryGenerateAndFinalise.ts`** — PDF + finalization
+- handleGenerate
+- handleFinalise
+- PDF state tracking
+- Generate button state logic
+
+**`hooks/useEntryRequests.ts`** — Edit/Delete request actions
+- handleRequestEdit
+- handleRequestDelete
+- handleCancelRequest
+- Request count tracking
+
+**`hooks/useEntryNavigation.ts`** — Navigation and routing
+- Back navigation
+- Entry list navigation
+- URL parameter handling
+- New vs edit mode detection
+
+### Step 3: Compose in the main controller
+
+```typescript
+// hooks/useCategoryEntryPageController.ts — AFTER refactor
+export function useCategoryEntryPageController(category, entryId) {
+  const editor = useEntryEditor(category, entryId);
+  const workflow = useEntryWorkflow(editor.entry);
+  const saveActions = useEntrySaveActions(category, entryId, editor);
+  const generateAndFinalise = useEntryGenerateAndFinalise(category, entryId, editor);
+  const requests = useEntryRequests(category, entryId, editor);
+  const navigation = useEntryNavigation(category);
+
+  return {
+    ...editor,
+    ...workflow,
+    ...saveActions,
+    ...generateAndFinalise,
+    ...requests,
+    ...navigation,
+  };
+}
+```
+
+### CRITICAL: Return type must not change
+Components that use `useCategoryEntryPageController` expect a specific shape. The composed return must include ALL the same properties. Don't rename anything.
+
+## Scope
+- CREATE: hooks/useEntrySaveActions.ts
+- CREATE: hooks/useEntryGenerateAndFinalise.ts
+- CREATE: hooks/useEntryRequests.ts
+- CREATE: hooks/useEntryNavigation.ts (if not exists — check first)
+- MODIFY: hooks/useCategoryEntryPageController.ts (compose sub-hooks)
+- DO NOT MODIFY: any components that consume this hook
+
+## Verification
+1. npm run build — passes
+2. wc -l hooks/useCategoryEntryPageController.ts — under 100 lines
+3. wc -l hooks/useEntry*.ts — each under 200 lines
+4. All entry operations still work: save, generate, finalise, request edit, navigation
