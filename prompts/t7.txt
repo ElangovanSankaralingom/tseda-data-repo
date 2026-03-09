@@ -1,0 +1,67 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+`lib/entries/internal/engineAdmin.ts` (742 lines) and `engineRequests.ts` (595 lines) are still too large after the T1 engine split. They need further decomposition.
+
+## Read First
+1. lib/entries/internal/engineAdmin.ts (identify sections)
+2. lib/entries/internal/engineRequests.ts (identify sections)
+
+## The Fix
+
+### engineAdmin.ts (742 lines) → split into:
+
+**`lib/entries/internal/engineAdmin.ts`** (keep, ~200 lines) — Admin action orchestration
+- grantEdit, rejectEdit
+- approveDelete
+- adminArchive, adminRestore
+
+**`lib/entries/internal/engineAdminConfirmations.ts`** (~200 lines) — Confirmation workflow
+- listPendingConfirmations
+- getConfirmationDetails
+- batchApprove/reject
+
+**`lib/entries/internal/engineAdminBulk.ts`** (~200 lines) — Bulk operations
+- bulkArchive
+- bulkExport helpers
+- adminListAllEntries
+- Any admin search/filter logic
+
+### engineRequests.ts (595 lines) → split into:
+
+**`lib/entries/internal/engineRequests.ts`** (keep, ~200 lines) — Core request operations
+- requestEdit
+- requestDelete
+- cancelRequest
+
+**`lib/entries/internal/engineRequestValidation.ts`** (~200 lines) — Request validation and limits
+- checkRequestLimit (max 3/month)
+- validateRequestEligibility
+- computeStreakImpact (permanent removal check)
+
+**`lib/entries/internal/engineRequestNotify.ts`** (~100 lines) — Request notifications
+- notifyAdminOfRequest
+- notifyUserOfDecision
+
+### Update the barrel in engine.ts
+Add re-exports for any new modules.
+
+## Scope
+- CREATE: lib/entries/internal/engineAdminConfirmations.ts
+- CREATE: lib/entries/internal/engineAdminBulk.ts
+- CREATE: lib/entries/internal/engineRequestValidation.ts
+- CREATE: lib/entries/internal/engineRequestNotify.ts
+- MODIFY: lib/entries/internal/engineAdmin.ts (extract sections)
+- MODIFY: lib/entries/internal/engineRequests.ts (extract sections)
+- MODIFY: lib/entries/internal/engine.ts (barrel — add new re-exports)
+- DO NOT MODIFY: lifecycle.ts, workflow.ts, routes
+
+## Verification
+1. npm run build — passes
+2. wc -l lib/entries/internal/engine*.ts — all under 300 lines
+3. All admin operations still work
+4. Request edit/delete flow still works
