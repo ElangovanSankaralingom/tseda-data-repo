@@ -7,15 +7,9 @@ import { AppError, toUserMessage } from "@/lib/errors";
 import { safeAction } from "@/lib/safeAction";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { deleteFile, uploadFile } from "@/lib/upload/uploadService";
+import { type FileMeta } from "@/lib/types/entry";
 
-export type FileMeta = {
-  fileName: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  storedPath: string;
-};
+export type { FileMeta };
 
 type MultiPhotoUploadProps = {
   title: string;
