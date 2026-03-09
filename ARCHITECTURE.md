@@ -20,7 +20,11 @@ Its purpose is to prevent future drift. If code and this document disagree, fix 
 | Entry workflow statuses | `lib/types/entry.ts` | Owns `ENTRY_STATUSES`, `EntryStatus`, and canonical status labels. |
 | Workflow rules | `lib/entries/workflow.ts` | Owns status normalization, commitment semantics, transitions, and finalization locking. |
 | Persisted entry lifecycle operations | `lib/entries/lifecycle.ts` | Public server-side facade for create/update/commit/request/approve/delete/list operations. |
-| Persisted entry engine internals | `lib/entries/internal/engine.ts` | Owns persistence, validation, WAL/index refresh, and telemetry. |
+| Persisted entry engine internals | `lib/entries/internal/engine*.ts` | Split into engineWrite, engineRead, engineCommit, engineAdmin, engineRequests, engineMutationRunner, engineHelpers. Barrel-exported from `engine.ts`. |
+| Nightly maintenance pipeline | `lib/jobs/nightly.ts` | Orchestrates backup, integrity, housekeeping, auto-archive, edit grant expiry, timer warnings, WAL compaction. |
+| Background jobs | `lib/jobs/autoArchive.ts`, `lib/jobs/editGrantExpiry.ts`, `lib/jobs/timerWarning.ts`, `lib/jobs/walCompaction.ts` | Individual cron job steps. |
+| Persistent notifications | `lib/confirmations/notificationStore.ts`, `lib/confirmations/notificationHelpers.ts` | Per-user notification persistence and fire-and-forget helpers. |
+| Structured logging | `lib/logger.ts` | JSON structured logger with level filtering, key redaction, `withTimer` utility. |
 | Post-save normalization | `lib/entries/postSave.ts` | Normalizes streak fields and PDF state after route-level saves. Workaround for routes bypassing engine.ts. |
 | PDF staleness and hashing | `lib/pdfSnapshot.ts` | Owns hashPrePdfFields, computePdfState, getHashPayload. Determines if PDF needs regeneration. |
 | Streak/progress business rules | `lib/streakProgress.ts` | Only canonical business-progress / streak rule layer. |
@@ -119,9 +123,16 @@ Do not put business rules here.
 
 ### Internal persistence/orchestration
 
-- `lib/entries/internal/engine.ts`
+- `lib/entries/internal/engine.ts` (barrel re-export)
+- `lib/entries/internal/engineWrite.ts` -- create, update, delete, replace
+- `lib/entries/internal/engineRead.ts` -- list, get
+- `lib/entries/internal/engineCommit.ts` -- commitDraft, finalizeEntry
+- `lib/entries/internal/engineAdmin.ts` -- grantEditAccess, rejectEditRequest, approveDelete, archiveEntry, restoreEntry
+- `lib/entries/internal/engineRequests.ts` -- requestEdit, requestDelete, cancelEditRequest, cancelDeleteRequest
+- `lib/entries/internal/engineMutationRunner.ts` -- generic user/admin mutation runner with cache invalidation
+- `lib/entries/internal/engineHelpers.ts` -- shared helpers (revalidateDashboardSummary, etc.)
 
-Edit this file when:
+Edit these files when:
 
 - changing datastore writes/reads
 - changing validation/orchestration around persisted operations
@@ -371,16 +382,45 @@ When changing behavior, edit the canonical owner directly:
    - no page-local export logic
    - no page-local streak logic
 
+## Background Jobs and Nightly Maintenance
+
+The nightly cron pipeline (`lib/jobs/nightly.ts`) runs 7 steps sequentially:
+
+1. **Backup** -- full `.data` directory zip
+2. **Integrity check** -- scan all users for data issues
+3. **Housekeeping** -- clean up temp files
+4. **Auto-archive** (`lib/jobs/autoArchive.ts`) -- archive GENERATED entries with expired edit windows and no valid PDF
+5. **Edit grant expiry** (`lib/jobs/editGrantExpiry.ts`) -- revert EDIT_GRANTED entries past `editWindowExpiresAt` to GENERATED
+6. **Timer warnings** (`lib/jobs/timerWarning.ts`) -- notify users of entries within 24h of expiry
+7. **WAL compaction** (`lib/jobs/walCompaction.ts`) -- trim event logs older than 30 days
+
+Triggered via `GET/POST /api/cron/nightly` with cron secret header, or manually via the admin maintenance dashboard.
+
+## Notification System
+
+Persistent per-user notifications stored in `.data/users/<email>/notifications.json`.
+
+- `lib/confirmations/notificationStore.ts` -- CRUD operations
+- `lib/confirmations/notificationHelpers.ts` -- fire-and-forget helpers (`notifyEditGranted`, `notifyEditRejected`, `notifyDeleteApproved`, `notifyAutoArchived`, `notifyTimerWarning`)
+- `lib/confirmations/types.ts` -- notification type definitions
+
+Notification types: `edit_granted`, `edit_rejected`, `delete_approved`, `auto_archived`, `timer_warning`.
+
 ## Test-Backed Architecture Invariants
 
 Important invariant coverage currently lives in:
 
+- `tests/entries/engine.test.ts` -- workflow transitions, edit windows, finalization, canTransition (77 tests)
+- `tests/entries/workflow.test.ts` -- cancel/approve edge cases, exhaustive invalid transitions (24 tests)
+- `tests/entries/streakProgress.test.ts` -- streak activation/win, permanent removal, PDF stale (13+ tests)
+- `tests/entries/apiResponse.test.ts` -- entry API response shape, computed fields, all statuses/categories (32 tests)
 - `tests/entries/confirmationStateMachine.test.ts`
-- `tests/entries/engine.test.ts`
-- `tests/entries/streakProgress.test.ts`
 - `tests/entries/exportService.test.ts`
 - `tests/entries/dataStore.test.ts`
 - `tests/entries/migrations.test.ts`
 - `tests/entries/indexStore.test.ts`
+- `tests/entries/lifecycle.test.ts`
+- `tests/entries/searchIndex.test.ts`
+- `tests/entries/normalize.test.ts`
 
 When changing canonical architecture, update the relevant invariant tests in the same change.

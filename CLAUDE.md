@@ -99,12 +99,19 @@ After second finalization (entry was EDIT_GRANTED, user re-generates), `permanen
 |---|---|
 | Workflow transitions/rules | `lib/entries/workflow.ts` |
 | Server-side lifecycle (create/update/commit/approve) | `lib/entries/lifecycle.ts` + `lib/entries/internal/engine.ts` |
+| Engine internals (split modules) | `lib/entries/internal/engine*.ts` (engineWrite, engineRead, engineCommit, engineAdmin, engineRequests, engineMutationRunner, engineHelpers) |
 | Post-save normalization (streak fields, PDF state) | `lib/entries/postSave.ts` |
 | PDF staleness detection and hash computation | `lib/pdfSnapshot.ts` |
 | Streak/progress business rules | `lib/streakProgress.ts` |
 | Export pipeline | `lib/export/exportService.ts` |
 | Category definitions | `data/categoryRegistry.ts` + `data/schemas/*.ts` |
 | Navigation helpers | `lib/entryNavigation.ts` |
+| Nightly maintenance pipeline | `lib/jobs/nightly.ts` (orchestrator) |
+| Background jobs (auto-archive, edit grant expiry, timer warnings) | `lib/jobs/autoArchive.ts`, `lib/jobs/editGrantExpiry.ts`, `lib/jobs/timerWarning.ts` |
+| WAL compaction | `lib/jobs/walCompaction.ts` + `lib/maintenance/walCompact.ts` |
+| Persistent notifications | `lib/confirmations/notificationStore.ts` + `lib/confirmations/notificationHelpers.ts` |
+| Dashboard summary (with index fast path) | `lib/dashboard/getDashboardSummary.ts` |
+| Structured logging | `lib/logger.ts` |
 
 **Legacy modules (do not add new business logic):**
 - `lib/entries/editorLifecycle.ts` -- legacy editor action-state rules
