@@ -1,0 +1,121 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+`app/(protected)/account/page.tsx` is 74KB — likely 2000+ lines in a single file. This violates maintainability principles. A single component should never exceed 500 lines. The file likely contains multiple sections (profile info, experience, data summary, settings) that should be independent components.
+
+## Read First
+1. app/(protected)/account/page.tsx (read the FULL file — identify all major sections)
+2. components/ directory (check what account components already exist)
+
+## The Implementation
+
+### Step 1: Analyze the file structure
+
+```bash
+wc -l 'app/(protected)/account/page.tsx'
+grep -n "function\|const.*=.*=>\|return.*(" 'app/(protected)/account/page.tsx' | head -40
+grep -n "section\|Section\|<h2\|<h3\|{/\*.*\*/}" 'app/(protected)/account/page.tsx' | head -30
+```
+
+Identify every major section/block in the file. Common patterns:
+- Profile header (name, avatar, email, department)
+- Professional info (designation, experience, qualifications)
+- Data summary (entry counts per category, streak stats)
+- Upload sections (certificates, permission letters)
+- Settings/preferences
+- Action buttons (export, print, reset)
+
+### Step 2: Create component directory
+
+```bash
+mkdir -p components/account
+```
+
+### Step 3: Extract each section into its own component
+
+For each major section found in Step 1, create a component:
+
+**Pattern for extraction:**
+```typescript
+// components/account/ProfileHeader.tsx
+"use client";
+
+// Move all imports this section needs
+// Move any helper functions this section uses
+// Move any types this section defines
+
+interface ProfileHeaderProps {
+  user: { name: string; email: string; image?: string; department?: string };
+  // ... whatever props this section needs from the parent
+}
+
+export default function ProfileHeader({ user }: ProfileHeaderProps) {
+  // Move the JSX for this section here
+}
+```
+
+**Likely components to create:**
+- `components/account/ProfileHeader.tsx` — avatar, name, email, department
+- `components/account/ProfessionalInfo.tsx` — designation, experience, qualifications
+- `components/account/DataSummary.tsx` — entry counts, category breakdown, streak stats
+- `components/account/CertificatesSection.tsx` — experience certificate uploads
+- `components/account/AccountActions.tsx` — export data, print, reset account buttons
+- `components/account/AccountPageShell.tsx` — the outer layout wrapper if there is one
+
+### Step 4: Refactor the page to compose the sections
+
+```typescript
+// app/(protected)/account/page.tsx — AFTER refactor
+import ProfileHeader from "@/components/account/ProfileHeader";
+import ProfessionalInfo from "@/components/account/ProfessionalInfo";
+import DataSummary from "@/components/account/DataSummary";
+import CertificatesSection from "@/components/account/CertificatesSection";
+import AccountActions from "@/components/account/AccountActions";
+
+export default async function AccountPage() {
+  const session = await getServerSession(authOptions);
+  // ... fetch data
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
+      <ProfileHeader user={user} />
+      <ProfessionalInfo profile={profile} />
+      <DataSummary stats={stats} />
+      <CertificatesSection certificates={certificates} />
+      <AccountActions email={email} />
+    </div>
+  );
+}
+```
+
+### Step 5: Handle client vs server split
+
+The page itself is a server component (async, fetches data). Sections that need interactivity (form inputs, file uploads, toggles) must be client components ("use client"). Sections that just display data can stay as server components.
+
+**Rule: Only add "use client" to components that actually need it (onClick, useState, useEffect, etc.)**
+
+### IMPORTANT: Preserve ALL existing functionality
+- Every section must render exactly the same as before
+- Every interaction (button clicks, form submissions, file uploads) must still work
+- No visual changes — this is purely structural
+
+## Scope
+- CREATE: components/account/ProfileHeader.tsx
+- CREATE: components/account/ProfessionalInfo.tsx
+- CREATE: components/account/DataSummary.tsx
+- CREATE: components/account/CertificatesSection.tsx
+- CREATE: components/account/AccountActions.tsx
+- CREATE: any additional section components discovered during analysis
+- MODIFY: app/(protected)/account/page.tsx (replace inline code with composed components)
+- DO NOT MODIFY: any other pages, routes, or lib files
+
+## Verification
+1. npm run build — passes
+2. wc -l 'app/(protected)/account/page.tsx' — under 100 lines
+3. wc -l components/account/*.tsx — each under 500 lines
+4. npm run dev → /account page renders identically
+5. All interactive features still work (edit profile, upload certificate, etc.)
