@@ -20,7 +20,7 @@ import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import { getEditTimeRemaining, isEntryEditable } from "@/lib/entries/workflow";
 import { getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
 import { dataEntryHome } from "@/lib/entryNavigation";
-import type { ListStats } from "@/components/data-entry/GroupedEntrySections";
+import { type CardContent, type ListStats } from "./dataEntryTypes";
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
   "fdp-attended": "from-blue-600 via-blue-700 to-blue-900",
@@ -44,14 +44,6 @@ const ACCENT_TEXT: Record<string, string> = {
   "case-studies": "text-amber-700",
   "guest-lectures": "text-purple-700",
   workshops: "text-rose-700",
-};
-
-type CardContent = {
-  title: string;
-  subtitle?: string;
-  className?: string;
-  content: React.ReactNode;
-  stats?: ListStats;
 };
 
 type CategoryEntryPageShellProps = {

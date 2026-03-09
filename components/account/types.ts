@@ -14,6 +14,8 @@ import {
 export type { Experience, FileMeta } from "@/lib/experience";
 export { uuid, todayISO, formatYMD, durationInclusive, rangeValid } from "@/lib/experience";
 
+export type DocType = "appointmentLetter" | "joiningLetter" | "aadhar" | "panCard";
+
 export type BloodGroup = "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
 export type Designation = "Assistant" | "Senior Assistant" | "Associate" | "Professor";
 export type PhdStatus = "Not Enrolled" | "Pursuing" | "Completed";

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
-
-type Pill = { label: string; color?: string };
+import { type Pill } from "./adminLocalTypes";
 
 type AdminPageShellProps = {
   title: string;

@@ -3,13 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { UiToast } from "@/lib/ui/notify";
 
-type ToastProps = {
-  toast: UiToast | null | undefined;
-  position?: "fixed" | "inline";
-  className?: string;
-};
-
-export default function Toast({ toast, position = "inline", className }: ToastProps) {
+export default function Toast({ toast, position = "inline", className }: { toast: UiToast | null | undefined; position?: "fixed" | "inline"; className?: string }) {
   if (!toast) return null;
 
   const colors =

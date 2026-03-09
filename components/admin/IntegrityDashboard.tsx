@@ -99,15 +99,7 @@ function HealthRing({ percentage, status }: { percentage: number; status: Integr
 
 // ---------- Category Card ----------
 
-type CategoryCardDef = {
-  key: keyof IntegrityReport["checks"];
-  label: string;
-  icon: React.ReactNode;
-  accentRing: string;
-  iconBg: string;
-  passText: string;
-  failText: string;
-};
+import { type CategoryCardDef } from "./adminLocalTypes";
 
 const CATEGORIES: CategoryCardDef[] = [
   {

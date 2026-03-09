@@ -1,8 +1,3 @@
-type NotificationBadgeProps = {
-  count: number;
-  className?: string;
-};
-
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
@@ -10,7 +5,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
 export default function NotificationBadge({
   count,
   className,
-}: NotificationBadgeProps) {
+}: { count: number; className?: string }) {
   if (count <= 0) return null;
 
   return (

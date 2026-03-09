@@ -1,13 +1,5 @@
 "use client";
 
-type CurrencyFieldProps = {
-  value?: string;
-  onChange?: (value: string) => void;
-  disabled?: boolean;
-  error?: boolean;
-  placeholder?: string;
-};
-
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
@@ -19,7 +11,7 @@ export default function CurrencyField({
   disabled,
   error,
   placeholder,
-}: CurrencyFieldProps) {
+}: { value?: string; onChange?: (value: string) => void; disabled?: boolean; error?: boolean; placeholder?: string }) {
   return (
     <div className="relative">
       <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">

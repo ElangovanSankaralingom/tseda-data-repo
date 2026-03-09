@@ -10,11 +10,6 @@ import {
 } from "lucide-react";
 import type { ConfirmationDialogOptions, ConfirmationType } from "@/lib/confirmations/types";
 
-type Props = {
-  options: ConfirmationDialogOptions;
-  onResult: (confirmed: boolean) => void;
-};
-
 const TYPE_CONFIG: Record<
   ConfirmationType,
   {
@@ -54,7 +49,7 @@ const CONFIRM_STYLE: Record<string, string> = {
   warning: "bg-amber-500 text-white hover:bg-amber-600",
 };
 
-export default function ConfirmDialog({ options, onResult }: Props) {
+export default function ConfirmDialog({ options, onResult }: { options: ConfirmationDialogOptions; onResult: (confirmed: boolean) => void }) {
   const {
     type,
     title,

@@ -7,16 +7,12 @@ import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
 import { ActionButton } from "@/components/ui/ActionButton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { SaveButton } from "@/components/ui/SaveButton";
-
-type GenerateButtonState = "idle" | "generating" | "success";
-
-type FinaliseState = {
-  canFinalise: boolean;
-  onFinalise: () => void | Promise<boolean>;
-  onAfterFinalise?: () => void;
-  disabledReason?: string;
-  editWindowExpiresAt?: string | null;
-};
+import { type GenerateButtonState } from "@/lib/types/ui";
+import {
+  type FinaliseState,
+  type HeaderEntryActionsBarProps,
+  type PdfEntryActionsBarProps,
+} from "./entryComponentTypes";
 
 function formatTimeRemaining(expiresAt: string | null | undefined): string | null {
   if (!expiresAt) return null;
@@ -31,39 +27,6 @@ function formatTimeRemaining(expiresAt: string | null | undefined): string | nul
   const days = Math.ceil(hours / 24);
   return `You still have ${days} ${days === 1 ? "day" : "days"} left until this entry finalises automatically.`;
 }
-
-type HeaderEntryActionsBarProps = {
-  isEditing: boolean;
-  isViewMode: boolean;
-  loading: boolean;
-  formHasData?: boolean;
-  onAdd?: () => void;
-  addLabel?: string;
-  onCancel: () => void;
-  cancelDisabled: boolean;
-  onSave: () => void;
-  saveDisabled: boolean;
-  onDone: () => void;
-  doneDisabled: boolean;
-  saving: boolean;
-  saveIntent: "save" | "done" | null;
-  workflowAction?: {
-    label: string;
-    onClick: () => void | Promise<boolean>;
-    disabled?: boolean;
-    busyLabel?: string;
-  };
-  workflowDisabledHint?: string;
-  finalise?: FinaliseState;
-  entryStatus?: string | null;
-  onRequestEdit?: () => void;
-  onCancelRequestEdit?: () => void;
-  onRequestDelete?: () => void;
-  onCancelRequestDelete?: () => void;
-  editTimeLabel?: string;
-  onBack?: () => void;
-  permanentlyLocked?: boolean;
-};
 
 export function HeaderEntryActionsBar({
   isEditing,
@@ -400,15 +363,6 @@ function EditModeActionBar({
     </div>
   );
 }
-
-type PdfEntryActionsBarProps = {
-  isViewMode: boolean;
-  canGenerate: boolean;
-  onGenerate: () => void;
-  generating: boolean;
-  pdfMeta: { url?: string | null; fileName?: string } | null | undefined;
-  pdfDisabled: boolean;
-};
 
 export function PdfEntryActionsBar({
   isViewMode,

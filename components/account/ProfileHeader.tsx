@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { getInitials, type Profile } from "./types";
 
-interface ProfileHeaderProps {
-  draft: Profile;
-  employeeLabel: string;
-}
-
-export default function ProfileHeader({ draft, employeeLabel }: ProfileHeaderProps) {
+export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile; employeeLabel: string }) {
   const photo = draft.googlePhotoURL || "";
   const avatarFallback = getInitials(employeeLabel || draft.email || "");
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
