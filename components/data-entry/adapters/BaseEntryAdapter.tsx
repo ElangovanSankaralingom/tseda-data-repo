@@ -75,10 +75,17 @@ export type FormFieldsContext<T extends EntryRecord> = {
   pdfState: { pdfStale: boolean; canGenerate: boolean; canPreviewDownload: boolean };
   uploadsVisible: boolean;
   /** Call to persist a mutation to the entry (e.g., after upload) */
-  persistCurrentMutation: (opts: { buildNextEntry: (current: T) => T }) => Promise<void>;
+  persistCurrentMutation: <TResult = T>(opts: {
+    buildNextEntry: (current: T) => T;
+    selectResult?: (persisted: T) => TResult;
+  }) => Promise<TResult>;
   showToast: (type: "ok" | "err", msg: string, ms?: number) => void;
   uploadPersisting: boolean;
   setUploadPersistingCount: React.Dispatch<React.SetStateAction<number>>;
+  /** Authenticated user email */
+  email: string;
+  /** Display name of the authenticated user */
+  userDisplayName: string;
 };
 
 /**
@@ -180,6 +187,8 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   const [formOpen, setFormOpen] = useState(startInNewMode);
   const [submitted, setSubmitted] = useState(false);
   const [submitAttemptedFinal, setSubmitAttemptedFinal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [userDisplayName, setUserDisplayName] = useState("");
   const [list, setList] = useState<T[]>([]);
   const [editorSeed, setEditorSeed] = useState<T>(() => createEmptyForm());
   const [uploadPersistingCount, setUploadPersistingCount] = useState(0);
@@ -404,9 +413,14 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         setLoading(true);
         const meResponse = await fetch("/api/me", { cache: "no-store" });
         const me = await meResponse.json();
-        if (!meResponse.ok || !String(me?.email || "").trim()) {
+        const nextEmail = String(me?.email ?? "").trim();
+        if (!meResponse.ok || !nextEmail) {
           throw new Error("Missing email. Please sign in again.");
         }
+        setEmail(nextEmail);
+        setUserDisplayName(
+          String(me?.officialName ?? me?.userPreferredName ?? nextEmail.split("@")[0]).trim(),
+        );
         const listResponse = await fetch(endpoint, { cache: "no-store" });
         const items = await listResponse.json();
         if (!listResponse.ok) {
@@ -523,6 +537,8 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     showToast,
     uploadPersisting,
     setUploadPersistingCount,
+    email,
+    userDisplayName,
   };
 
   // --- Render ---
