@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { authOptions } from "@/lib/auth";
+import { assertUploadMetadataInput } from "@/lib/security/limits";
 
 type Category = "academic_outside" | "industry";
 type ExperienceCertificate = {
@@ -115,6 +116,13 @@ export async function POST(req: Request) {
   }
   if (!ALLOWED_MIME.has(file.type)) {
     return NextResponse.json({ error: "Only pdf/jpg/png allowed" }, { status: 400 });
+  }
+
+  try {
+    assertUploadMetadataInput({ category, entryId, fileName: file.name, size: file.size, mimeType: file.type }, "experience certificate upload");
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Metadata validation failed";
+    return NextResponse.json({ error: message }, { status: 413 });
   }
 
   const profile = await readProfile(email);

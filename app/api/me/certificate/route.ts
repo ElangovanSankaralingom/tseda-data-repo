@@ -5,6 +5,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { authOptions } from "@/lib/auth";
 import { getProfileByEmail, upsertProfile, StoredFile, type OutsideAcademic, type IndustryExp } from "@/lib/profileStore";
+import { assertUploadMetadataInput } from "@/lib/security/limits";
 
 const ACCEPT = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const MAX_MB = 20;
@@ -42,6 +43,13 @@ export async function POST(req: Request) {
 
   if (!ACCEPT.has(file.type)) return NextResponse.json({ error: "Only PDF/JPG/PNG allowed" }, { status: 400 });
   if (file.size > MAX_MB * 1024 * 1024) return NextResponse.json({ error: "Max 20MB" }, { status: 400 });
+
+  try {
+    assertUploadMetadataInput({ category: categoryRaw, entryId, fileName: file.name, size: file.size, mimeType: file.type }, "certificate upload");
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Metadata validation failed";
+    return NextResponse.json({ error: message }, { status: 413 });
+  }
 
   const profile = await getProfileByEmail(email);
   if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });

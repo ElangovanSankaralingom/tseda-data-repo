@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureDirs, PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
+import { assertActionPayload } from "@/lib/security/limits";
 
 type AnyObj = Record<string, unknown>;
 
@@ -131,6 +132,13 @@ export async function PUT(req: Request) {
     patch = (await req.json()) as AnyObj;
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
+  }
+
+  try {
+    assertActionPayload(patch, "profile update");
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Payload validation failed";
+    return NextResponse.json({ error: message }, { status: 413 });
   }
   const current = readProfile(email);
   const canonical = findFacultyByEmail(email);

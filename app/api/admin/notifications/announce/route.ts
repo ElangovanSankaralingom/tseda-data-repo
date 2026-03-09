@@ -5,6 +5,7 @@ import { canAccessSettings } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { listUsers } from "@/lib/admin/integrity";
 import { addNotificationForAllUsers } from "@/lib/confirmations/notificationStore";
+import { assertActionPayload } from "@/lib/security/limits";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -14,6 +15,14 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as { title?: string; message?: string };
+
+  try {
+    assertActionPayload(body, "announcement");
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Payload validation failed";
+    return NextResponse.json({ error: message }, { status: 413 });
+  }
+
   if (!body.title || !body.message) {
     return NextResponse.json({ error: "title and message are required" }, { status: 400 });
   }

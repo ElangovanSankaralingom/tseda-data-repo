@@ -263,6 +263,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
             <NightlyStepRow label="Backup" step={lastRun.backup} />
             <NightlyStepRow label="Integrity Check" step={lastRun.integrity} />
             <NightlyStepRow label="Export Housekeeping" step={lastRun.housekeeping} />
+            {lastRun.autoArchive ? <NightlyStepRow label="Auto-Archive" step={lastRun.autoArchive} /> : null}
+            {lastRun.editGrantExpiry ? <NightlyStepRow label="Edit Grant Expiry" step={lastRun.editGrantExpiry} /> : null}
           </div>
         </div>
       ) : null}
@@ -331,7 +333,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
             </button>
           </form>
           <span className="text-xs text-slate-400">
-            Runs backup + integrity check + housekeeping in sequence. Rate limited to 2/hour.
+            Runs backup + integrity check + housekeeping + auto-archive + edit grant expiry in sequence. Rate limited to 2/hour.
           </span>
         </div>
       </div>
