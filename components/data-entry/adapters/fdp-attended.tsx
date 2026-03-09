@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useState } from "react";
+import { useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -9,6 +9,16 @@ import SelectDropdown from "@/components/controls/SelectDropdown";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { useUploadController } from "@/hooks/useUploadController";
+import {
+  cx,
+  uuid,
+  isISODate,
+  getAcademicYearRange,
+  getInclusiveDays,
+  formatDisplayDate,
+  ACADEMIC_YEAR_OPTIONS,
+  ACADEMIC_YEAR_DROPDOWN_OPTIONS,
+} from "@/components/data-entry/adapters/shared";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -55,65 +65,8 @@ type FdpAttended = {
 };
 
 // ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const ACADEMIC_YEAR_OPTIONS = [
-  "Academic Year 2025-2026",
-  "Academic Year 2026-2027",
-  "Academic Year 2027-2028",
-] as const;
-
-const ACADEMIC_YEAR_DROPDOWN_OPTIONS = ACADEMIC_YEAR_OPTIONS.map((option) => ({
-  label: option,
-  value: option,
-}));
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
-
-function uuid() {
-  const cryptoApi = globalThis.crypto;
-  if (cryptoApi && typeof cryptoApi.randomUUID === "function") {
-    return cryptoApi.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
-    const r = (Math.random() * 16) | 0;
-    const v = ch === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function isISODate(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
-}
-
-function getAcademicYearRange(academicYear: string) {
-  const match = academicYear.match(/^Academic Year (\d{4})-(\d{4})$/);
-  if (!match) return null;
-  return {
-    start: `${match[1]}-07-01`,
-    end: `${match[2]}-06-30`,
-    label: `Jul 1, ${match[1]} to Jun 30, ${match[2]}`,
-  };
-}
-
-function getInclusiveDays(startDate: string, endDate: string) {
-  if (!isISODate(startDate) || !isISODate(endDate) || endDate < startDate) return null;
-  const start = new Date(`${startDate}T00:00:00Z`);
-  const end = new Date(`${endDate}T00:00:00Z`);
-  return Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
-}
-
-function formatDisplayDate(value: string) {
-  if (!isISODate(value)) return "-";
-  return new Date(`${value}T00:00:00Z`).toLocaleDateString();
-}
 
 function emptyForm(): FdpAttended {
   return withAcademicProgressionCompatibility({
