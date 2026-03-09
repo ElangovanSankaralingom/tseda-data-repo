@@ -1,10 +1,17 @@
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { authOptions } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
 import { logError, normalizeError } from "@/lib/errors";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { runGenerateEntryRequest } from "@/lib/server/generateEntry";
 
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = (await request.json()) as {
       categoryKey?: string;
