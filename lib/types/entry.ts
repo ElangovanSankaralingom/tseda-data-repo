@@ -62,6 +62,91 @@ export function createEntryStatusRecord<T>(
   }, {} as Record<EntryStatus, T>);
 }
 
+/** Field stage for the two-stage model */
+export type FieldStage = 1 | 2;
+
+/**
+ * Lifecycle fields managed by the engine.
+ * These are NEVER user-editable. The engine sets them during transitions.
+ */
+export interface EntryLifecycleFields {
+  id: string;
+  category: string;
+  ownerEmail: string;
+  schemaVersion: number;
+  confirmationStatus: EntryStatus;
+  createdAt: string;
+  updatedAt: string;
+
+  // Generation & timer
+  committedAtISO?: string;
+  generatedAt?: string;
+  editWindowExpiresAt?: string;
+
+  // PDF state
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string;
+  pdfUrl?: string;
+  pdfSourceHash?: string;
+  pdfStale?: boolean;
+
+  // Streak state
+  streakEligible?: boolean;
+  streakPermanentlyRemoved?: boolean;
+
+  // Lock state
+  permanentlyLocked?: boolean;
+
+  // Edit request state
+  editRequestedAt?: string;
+  editRequestMessage?: string;
+  editGrantedAt?: string;
+  editGrantedBy?: string;
+  editGrantedDays?: number;
+  editRejectedReason?: string;
+
+  // Delete request state
+  deleteRequestedAt?: string;
+
+  // Request tracking
+  requestType?: 'edit' | 'delete' | null;
+  requestCount?: number;
+  requestCountResetAt?: string;
+
+  // Archive state
+  archivedAt?: string;
+  archiveReason?: 'auto_no_pdf' | 'delete_approved' | null;
+
+  // Timer warning
+  timerWarningShown?: boolean;
+}
+
+/**
+ * Canonical entry type.
+ * Lifecycle fields are typed, category-specific data fields are in `data`.
+ * File upload fields are top-level (Stage 2).
+ */
+export interface CanonicalEntry extends EntryLifecycleFields {
+  /** Category-specific data fields (Stage 1 — affects PDF hash) */
+  [key: string]: unknown;
+}
+
+/**
+ * What the API MUST return after any entry mutation.
+ * Includes computed fields the client needs for UI decisions.
+ */
+export interface EntryApiResponse extends CanonicalEntry {
+  isEditable: boolean;
+  isFinalized: boolean;
+  editTimeRemaining: {
+    hasEditWindow: boolean;
+    expired: boolean;
+    expiresAtISO: string | null;
+    remainingMs: number;
+    remainingLabel: string;
+  };
+}
+
 export type UploadedFile = {
   id?: string;
   fileName: string;

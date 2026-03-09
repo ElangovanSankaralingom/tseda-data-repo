@@ -15,7 +15,7 @@ const fields = [
   { key: "coordinator", label: "Coordinator", kind: "object" },
   { key: "coCoordinators", label: "Co-Coordinators", kind: "array" },
   { key: "participants", label: "Participants", kind: "number" },
-  { key: "uploads", label: "Uploads", kind: "object", upload: true },
+  { key: "uploads", label: "Uploads", kind: "object", upload: true, stage: 2 },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;

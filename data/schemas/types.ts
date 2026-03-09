@@ -25,6 +25,8 @@ export type SchemaFieldDefinition = {
   required?: boolean;
   /** If true, this field is a file upload and is excluded from mandatory-for-streak checks. */
   upload?: boolean;
+  /** Stage 1 = data field (affects PDF hash), Stage 2 = upload field (does NOT affect PDF hash). Default: 1 */
+  stage?: 1 | 2;
   maxLength?: number;
   min?: number;
   max?: number;

@@ -13,8 +13,8 @@ const fields = [
   { key: "coordinatorName", label: "Coordinator Name", kind: "string" },
   { key: "coordinatorEmail", label: "Coordinator Email", kind: "string" },
   { key: "coCoordinators", label: "Co-Coordinators", kind: "array" },
-  { key: "permissionLetter", label: "Permission Letter", kind: "object", upload: true },
-  { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array", upload: true },
+  { key: "permissionLetter", label: "Permission Letter", kind: "object", upload: true, stage: 2 },
+  { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array", upload: true, stage: 2 },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
