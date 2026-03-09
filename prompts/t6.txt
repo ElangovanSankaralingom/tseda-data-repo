@@ -1,0 +1,87 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+case-studies.tsx (701 lines) and guest-lectures.tsx (636 lines) are STILL large despite BaseEntryAdapter existing at 649 lines. These adapters are NOT using the base. They must be converted to thin wrappers.
+
+## Read First
+1. components/data-entry/adapters/BaseEntryAdapter.tsx (what the base provides)
+2. components/data-entry/adapters/fdp-attended.tsx (if this IS a thin wrapper, use as template)
+3. components/data-entry/adapters/case-studies.tsx (lines 1-30 to see structure)
+4. components/data-entry/adapters/guest-lectures.tsx (lines 1-30 to see structure)
+
+## The Fix
+
+### Step 1: Check which adapters are already thin
+```bash
+wc -l components/data-entry/adapters/*.tsx
+```
+Any adapter under 100 lines is already using the base. Any over 500 is NOT.
+
+### Step 2: For case-studies.tsx — REPLACE the entire file
+
+The file should become:
+```typescript
+import BaseEntryAdapter from "./BaseEntryAdapter";
+import type { CategoryKey } from "@/lib/types/category";
+
+const CATEGORY: CategoryKey = "case-studies";
+
+export default function CaseStudiesAdapter(props: { entryId?: string; isNew?: boolean }) {
+  return <BaseEntryAdapter category={CATEGORY} {...props} />;
+}
+```
+
+If case-studies has TRULY unique rendering that BaseEntryAdapter can't handle, identify EXACTLY what it is:
+```bash
+diff <(grep -n "return\|<.*>" components/data-entry/adapters/case-studies.tsx) \
+     <(grep -n "return\|<.*>" components/data-entry/adapters/BaseEntryAdapter.tsx) | head -40
+```
+
+If unique rendering exists, extract it into a small component and pass it to the base via a prop:
+```typescript
+export default function CaseStudiesAdapter(props) {
+  return (
+    <BaseEntryAdapter
+      category="case-studies"
+      {...props}
+      renderField={(field, value, onChange, disabled) => {
+        if (field.name === "uniqueField") {
+          return <UniqueFieldWidget value={value} onChange={onChange} />;
+        }
+        return null; // fallback to base rendering
+      }}
+    />
+  );
+}
+```
+
+### Step 3: Same for guest-lectures.tsx — REPLACE the entire file
+
+Same pattern as case-studies.
+
+### Step 4: If BaseEntryAdapter doesn't support something these need
+
+Add support to BaseEntryAdapter via props. DO NOT keep duplicate logic in the adapters. The base is the single source of truth for editor rendering.
+
+Common missing features:
+- Category-specific field grouping/sections → add `fieldGroups` prop to base
+- Category-specific validation messages → should come from schema
+- Custom upload widget → add `renderUpload` prop to base
+
+## Scope
+- MODIFY: components/data-entry/adapters/case-studies.tsx (replace with thin wrapper, target <50 lines)
+- MODIFY: components/data-entry/adapters/guest-lectures.tsx (replace with thin wrapper, target <50 lines)
+- MODIFY: components/data-entry/adapters/BaseEntryAdapter.tsx (add props if needed to support category-specific rendering)
+- DO NOT MODIFY: lib/ files, API routes, hooks
+
+## Verification
+1. npm run build — passes
+2. wc -l components/data-entry/adapters/case-studies.tsx — under 50 lines
+3. wc -l components/data-entry/adapters/guest-lectures.tsx — under 50 lines
+4. Test case-studies: create → fill fields → generate → finalise
+5. Test guest-lectures: create → fill fields → generate → finalise
+6. All field types render correctly in both categories

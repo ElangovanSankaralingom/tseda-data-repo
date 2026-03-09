@@ -82,10 +82,6 @@ type CaseStudyEntry = {
   updatedAt: string;
 };
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const FACULTY_OPTIONS = FACULTY;
 
 function buildStaffKey(selection: StaffSelection) {
@@ -97,10 +93,6 @@ function buildStaffKey(selection: StaffSelection) {
 function emptyStaff(): StaffSelection {
   return { id: uuid(), name: "", email: "", isLocked: false, savedAtISO: null };
 }
-
-// ---------------------------------------------------------------------------
-// Empty form & hydration
-// ---------------------------------------------------------------------------
 
 function emptyForm(): CaseStudyEntry {
   return withAcademicProgressionCompatibility({
@@ -135,10 +127,6 @@ function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
     hydratePdfSnapshot(entry, "case-studies") as CaseStudyEntry,
   ) as CaseStudyEntry;
 }
-
-// ---------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------
 
 function validateFields(form: CaseStudyEntry): Record<string, string> {
   const errors: Record<string, string> = {};
@@ -211,10 +199,6 @@ function validateFields(form: CaseStudyEntry): Record<string, string> {
   return errors;
 }
 
-// ---------------------------------------------------------------------------
-// Staff row validation (for FacultyRowPicker save)
-// ---------------------------------------------------------------------------
-
 function validateRowForFacultySave(entryDraft: CaseStudyEntry, row: StaffSelection) {
   const selectedEmail = row.email.trim().toLowerCase();
   if (!selectedEmail) {
@@ -252,10 +236,6 @@ function validateRowForFacultySave(entryDraft: CaseStudyEntry, row: StaffSelecti
 
   return { ok: true, error: null };
 }
-
-// ---------------------------------------------------------------------------
-// Form fields component
-// ---------------------------------------------------------------------------
 
 function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }) {
   const {
@@ -624,10 +604,6 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
 
 export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
   return (

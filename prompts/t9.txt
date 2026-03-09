@@ -1,0 +1,60 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+124 inline type/interface definitions remain in components. The goal is to get this under 40 (keeping only truly component-local UI types).
+
+## Read First
+1. lib/types/ directory — see what canonical type files exist
+2. Run: grep -rn "^type \|^interface \|^export type \|^export interface " components/ hooks/ --include="*.tsx" --include="*.ts" | grep -v node_modules
+
+## The Fix
+
+### Step 1: Auto-categorize
+
+Run this diagnostic to find the most duplicated type names:
+```bash
+grep -rn "^type \|^export type \|^interface \|^export interface " components/ hooks/ --include="*.tsx" --include="*.ts" | \
+  sed 's/.*\(type\|interface\) \([A-Za-z]*\).*/\2/' | sort | uniq -c | sort -rn | head -20
+```
+
+Types appearing more than once are definitely candidates for extraction.
+
+### Step 2: Create/extend canonical type files
+
+Ensure these exist in `lib/types/`:
+- `entry.ts` — CanonicalEntry, EntryApiResponse, EntryStatus, FieldStage (from P1.1)
+- `admin.ts` — UserProfile, UserStats, AdminNotification, AuditFinding, IntegrityReport
+- `dashboard.ts` — DashboardSummary, CategoryProgress, StreakSnapshot
+- `category.ts` — CategoryKey, CategoryMetadata, CategorySchema
+- `export.ts` — ExportConfig, ExportTemplate, ExportFilter
+- `ui.ts` — Shared UI prop types if any (StatusColor, BadgeVariant, etc.)
+
+### Step 3: Move types in batches
+
+Process by file — open each component that has inline types:
+1. If the type is used only in that one file AND is purely UI state → KEEP
+2. If the type represents a domain concept (Entry, User, Status, etc.) → MOVE to lib/types/
+3. If the type is a duplicate of one in lib/types/ → DELETE and import
+
+### Step 4: Target count
+After this prompt, the count should be:
+```bash
+grep -rn "^type \|^interface " components/ --include="*.tsx" | wc -l
+# Target: under 40
+```
+
+## Scope
+- MODIFY: lib/types/admin.ts, lib/types/dashboard.ts, lib/types/export.ts (add types)
+- CREATE: lib/types/export.ts, lib/types/ui.ts (if not exists)
+- MODIFY: ~40-60 component files (replace inline types with imports)
+- DO NOT MODIFY: business logic
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. grep -rn "^type \|^interface " components/ --include="*.tsx" | wc -l — under 40
+4. No duplicate type names across lib/types/ files

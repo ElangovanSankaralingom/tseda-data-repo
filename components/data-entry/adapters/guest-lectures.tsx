@@ -78,10 +78,6 @@ type GuestLectureEntry = {
   updatedAt: string;
 };
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const UPLOAD_CONFIG: Array<{ slot: UploadSlot; label: string }> = [
   { slot: "permissionLetter", label: "Permission Letter" },
   { slot: "brochure", label: "Brochure" },
@@ -95,10 +91,6 @@ const EMPTY_UPLOAD_STATUS: Record<UploadSlot, UploadStatus> = {
   speakerProfile: { hasPending: false, busy: false },
 };
 const FACULTY_OPTIONS = FACULTY;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function emptyUploads(): Record<UploadSlot, FileMeta | null> {
   return {
@@ -147,10 +139,6 @@ function hydrateEntry(entry: GuestLectureEntry): GuestLectureEntry {
     hydratePdfSnapshot(entry, "guest-lectures") as GuestLectureEntry,
   ) as GuestLectureEntry;
 }
-
-// ---------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------
 
 function validateFields(form: GuestLectureEntry): Record<string, string> {
   const errors: Record<string, string> = {};
@@ -225,10 +213,6 @@ function validateFields(form: GuestLectureEntry): Record<string, string> {
 
   return errors;
 }
-
-// ---------------------------------------------------------------------------
-// Form fields component
-// ---------------------------------------------------------------------------
 
 function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEntry> }) {
   const {
@@ -552,10 +536,6 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
 
 export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
   return (
