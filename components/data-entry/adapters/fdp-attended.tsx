@@ -17,23 +17,10 @@ import {
   type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
-import type { EntryStatus } from "@/lib/types/entry";
+import type { EntryStatus, FileMeta } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import { uploadFile } from "@/lib/upload/uploadService";
 import { type StreakState } from "@/lib/gamification";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type FileMeta = {
-  fileName: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  storedPath: string;
-};
 
 type FdpAttended = {
   id: string;

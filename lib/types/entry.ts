@@ -147,14 +147,19 @@ export interface EntryApiResponse extends CanonicalEntry {
   };
 }
 
-export type UploadedFile = {
-  id?: string;
+/** File metadata for uploads (used by adapters, upload components, and entry sharing). */
+export type FileMeta = {
   fileName: string;
   mimeType: string;
   size: number;
   uploadedAt: string;
   url: string;
   storedPath: string;
+};
+
+/** File metadata with optional id (superset of FileMeta). */
+export type UploadedFile = FileMeta & {
+  id?: string;
 };
 
 export type Entry = Record<string, unknown> & {
