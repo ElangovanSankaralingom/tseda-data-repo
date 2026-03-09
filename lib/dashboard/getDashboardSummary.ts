@@ -11,7 +11,6 @@ import { logError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/entryNavigation";
 import { getEntryTitle } from "@/lib/search/getEntryTitle";
-import { normalizeEntryStreakFields } from "@/lib/entries/postSave";
 import { computeCanonicalStreakSnapshot, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
 import { incrementStatusCount, type Entry } from "@/lib/types/entry";
 
@@ -207,11 +206,6 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
   );
 
   for (const { categoryKey, entries: categoryEntries } of results) {
-    // Normalize streak fields on read — fixes old entries missing pdfGenerated/streakEligible
-    for (const entry of categoryEntries) {
-      normalizeEntryStreakFields(entry as Record<string, unknown>);
-    }
-
     const categorySummary = summary.byCategory[categoryKey];
     categorySummary.totalEntries = categoryEntries.length;
     const categoryConfig = getCategoryConfig(categoryKey);

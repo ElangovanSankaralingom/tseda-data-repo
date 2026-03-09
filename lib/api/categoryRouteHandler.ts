@@ -17,7 +17,6 @@ import {
 } from "@/lib/entries/lifecycle";
 import { isValidCategorySlug, getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
 import { entryToApiResponse, entriesToApiResponse } from "@/lib/entries/toApiResponse";
-import { normalizeEntryStreakFields } from "@/lib/entries/postSave";
 import { normalizeError } from "@/lib/errors";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { assertEntryMutationInput, assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
@@ -91,12 +90,6 @@ function mutationErrorResponse(error: unknown, fallbackMessage: string): NextRes
   return errorResponse(appError.message || fallbackMessage, 500);
 }
 
-function normalizeEntry(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
-  return normalizeEntryStreakFields(record);
-}
-
 // ---------------------------------------------------------------------------
 // GET — list entries for category
 // ---------------------------------------------------------------------------
@@ -118,7 +111,6 @@ export async function handleCategoryGet(
   const entries = await listEntriesForCategory(
     auth.email,
     category as CategoryKey,
-    (val) => normalizeEntry(val),
   );
 
   const response = entriesToApiResponse(
@@ -208,10 +200,7 @@ export async function handleCategoryPost(
       entryData.confirmationStatus = entryData.confirmationStatus ?? "DRAFT";
     }
 
-    // Normalize streak fields before persist
-    normalizeEntryStreakFields(entryData);
-
-    // Persist
+    // Persist (engine handles streak field normalization)
     const persisted = existing
       ? await updateEntry(auth.email, category as CategoryKey, id, entryData)
       : await createEntry(auth.email, category as CategoryKey, entryData);

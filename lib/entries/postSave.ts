@@ -1,17 +1,14 @@
 /**
- * Post-save entry normalization.
+ * @deprecated This module was a workaround for routes bypassing engine.ts.
+ * As of Phase 3, all mutations go through engine.ts which sets fields correctly
+ * at write time via prepareEntryForWrite(). Read-time normalization callers
+ * (dashboard, toApiResponse, categoryRouteHandler) have been removed.
  *
- * Called from engine.ts's prepareEntryForWrite() before every entry write.
- * This is the SINGLE SOURCE OF TRUTH for deriving pdfGenerated and
- * streakEligible from entry data.
+ * Remaining callers:
+ * - engine.ts prepareEntryForWrite() — canonical write-time normalization
+ * - scripts/migrate-normalize-entries.ts — one-time migration for old entries
  *
- * Architecture: All 5 category API routes call createEntry()/updateEntry()
- * from lib/entries/lifecycle.ts → engine.ts. The engine's
- * prepareEntryForWrite() calls normalizeEntryStreakFields() before every
- * upsert, so no route can miss it.
- *
- * Also exported for read-time normalization (e.g. dashboard) to fix old
- * entries that were created before these fields existed.
+ * Do NOT add new callers.
  */
 
 import { nowISTDateISO } from "@/lib/time";
