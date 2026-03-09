@@ -16,33 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type AuditEvent = {
-  ts: string;
-  actorEmail: string;
-  actorRole: "user" | "admin";
-  userEmail: string;
-  category: string;
-  entryId: string;
-  action: string;
-  statusFrom: string | null;
-  statusTo: string | null;
-  summary: string;
-};
-
-type AuditStats = {
-  totalEvents: number;
-  byAction: Record<string, number>;
-  byCategory: Record<string, number>;
-  byActor: Record<string, number>;
-  byUser: Record<string, number>;
-  recentDays: { date: string; count: number }[];
-  topEntries: { entryId: string; category: string; userEmail: string; count: number }[];
-};
+import type { AuditEvent, AuditStats } from "@/lib/types/admin";
 
 type Props = {
   initialEvents: AuditEvent[];

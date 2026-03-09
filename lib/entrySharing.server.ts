@@ -4,15 +4,7 @@ import {
   cloneFileMetaToTarget,
 } from "@/lib/crosspost.server";
 import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachine";
-
-type FileMeta = {
-  fileName: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  storedPath: string;
-};
+import type { FileMeta } from "@/lib/types/entry";
 
 export function shouldShareEntry(entry: EntryStateLike) {
   return isEntryCommitted(entry);

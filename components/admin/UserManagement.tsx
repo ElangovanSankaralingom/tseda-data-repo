@@ -19,42 +19,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type ActivityTrend = "rising" | "stable" | "declining" | "inactive";
-
-type UserProfile = {
-  email: string;
-  name: string;
-  image?: string;
-  department?: string;
-  designation?: string;
-  role: "user" | "admin";
-  adminRoles: string[];
-  isActive: boolean;
-  firstSeenAt: string | null;
-  lastActiveAt: string | null;
-  totalEntries: number;
-  entriesByCategory: Record<string, number>;
-  entriesByStatus: Record<string, number>;
-  completionRate: number;
-  streakActivated: number;
-  streakWins: number;
-  editRequests: number;
-  activityTrend: ActivityTrend;
-};
-
-type UserStats = {
-  totalUsers: number;
-  activeUsers: number;
-  inactiveUsers: number;
-  adminUsers: number;
-  averageEntriesPerUser: number;
-  averageCompletionRate: number;
-};
+import type { ActivityTrend, UserProfile, UserStats } from "@/lib/types/admin";
 
 type Props = {
   initialUsers: UserProfile[];

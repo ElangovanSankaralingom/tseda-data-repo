@@ -3,13 +3,14 @@ import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
 import { isCategoryKey } from "@/lib/categories";
-import type { WalAction, WalActorRole, WalEvent } from "@/lib/data/wal";
+import type { WalAction, WalEvent } from "@/lib/data/wal";
 import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
+import type { AuditEvent, AuditStats } from "@/lib/types/admin";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
 import { getUsersRootDir } from "@/lib/userStore";
 
@@ -26,29 +27,7 @@ const ALL_WAL_ACTIONS: WalAction[] = [
 const WAL_ACTION_SET = new Set<string>(ALL_WAL_ACTIONS);
 
 export type AuditAction = WalAction;
-
-export type AuditEvent = {
-  ts: string;
-  actorEmail: string;
-  actorRole: WalActorRole;
-  userEmail: string;
-  category: CategoryKey;
-  entryId: string;
-  action: AuditAction;
-  statusFrom: EntryStatus | null;
-  statusTo: EntryStatus | null;
-  summary: string;
-};
-
-export type AuditStats = {
-  totalEvents: number;
-  byAction: Record<string, number>;
-  byCategory: Record<string, number>;
-  byActor: Record<string, number>;
-  byUser: Record<string, number>;
-  recentDays: { date: string; count: number }[];
-  topEntries: { entryId: string; category: string; userEmail: string; count: number }[];
-};
+export type { AuditEvent, AuditStats };
 
 type RecentAuditOptions = {
   limit?: number;
@@ -288,7 +267,7 @@ export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Pr
       if (actorFilter && !parsed.event.actorEmail.toLowerCase().includes(actorFilter)) continue;
       if (categoryFilter && parsed.event.category !== categoryFilter) continue;
       if (actionFilter && parsed.event.action !== actionFilter) continue;
-      if (actionsFilter && actionsFilter.length > 0 && !actionsFilter.includes(parsed.event.action)) continue;
+      if (actionsFilter && actionsFilter.length > 0 && !(actionsFilter as string[]).includes(parsed.event.action)) continue;
       if (entryIdFilter && parsed.event.entryId !== entryIdFilter) continue;
       if (!Number.isNaN(fromMs) && parsed.eventTimeMs < fromMs) continue;
       if (!Number.isNaN(toMs) && parsed.eventTimeMs > toMs) continue;
