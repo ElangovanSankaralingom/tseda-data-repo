@@ -30,6 +30,33 @@ function resolveAliasToFile(specifier) {
   return null;
 }
 
+function resolveRelativeToFile(specifier, parentURL) {
+  if (!parentURL) return null;
+  const parentPath = new URL(parentURL).pathname;
+  const parentDir = path.dirname(parentPath);
+  const basePath = path.resolve(parentDir, specifier);
+
+  if (fs.existsSync(basePath) && fs.statSync(basePath).isFile()) {
+    return basePath;
+  }
+
+  for (const extension of EXTENSIONS) {
+    const withExtension = `${basePath}${extension}`;
+    if (fs.existsSync(withExtension)) {
+      return withExtension;
+    }
+  }
+
+  for (const extension of EXTENSIONS) {
+    const asIndex = path.join(basePath, `index${extension}`);
+    if (fs.existsSync(asIndex)) {
+      return asIndex;
+    }
+  }
+
+  return null;
+}
+
 export async function resolve(specifier, context, defaultResolve) {
   if (specifier === "server-only") {
     return {
@@ -45,6 +72,20 @@ export async function resolve(specifier, context, defaultResolve) {
         url: pathToFileURL(filePath).href,
         shortCircuit: true,
       };
+    }
+  }
+
+  // Handle relative imports without extensions (e.g. "./indexStoreInternal")
+  if (specifier.startsWith("./") || specifier.startsWith("../")) {
+    const hasExtension = EXTENSIONS.some((ext) => specifier.endsWith(ext));
+    if (!hasExtension) {
+      const filePath = resolveRelativeToFile(specifier, context.parentURL);
+      if (filePath) {
+        return {
+          url: pathToFileURL(filePath).href,
+          shortCircuit: true,
+        };
+      }
     }
   }
 
