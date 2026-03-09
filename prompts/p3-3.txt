@@ -1,0 +1,128 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+Engine.ts now has all needed functions (from P3.2). The shared route handler (`lib/api/categoryRouteHandler.ts`) must be rewired to call engine functions instead of doing direct file operations.
+
+This is THE moment where the bypass is eliminated.
+
+## Read First
+1. lib/api/categoryRouteHandler.ts (current — find all direct file ops)
+2. lib/entries/lifecycle.ts (the public API to engine)
+3. lib/entries/toApiResponse.ts (response formatting)
+4. prompts/p3-gap-report.txt (mapping of operations to engine functions)
+
+## The Fix
+
+### Replace every direct file operation in categoryRouteHandler.ts
+
+For each operation, replace the direct file code with an engine call:
+
+**GET (list entries):**
+```typescript
+// BEFORE: reads JSON file directly
+const store = await readCategoryStore(email, category);
+const entries = Object.values(store.byId);
+
+// AFTER: use engine or keep direct read (reads are acceptable)
+// If engine has listEntries, use it. Otherwise direct read + toApiResponse is fine.
+const entries = await listEntries(email, category);
+return NextResponse.json(entriesToApiResponse(entries, category));
+```
+
+**POST (create):**
+```typescript
+// BEFORE: manually builds entry, writes to file
+const entry = { id: uuid(), ...body, confirmationStatus: 'DRAFT', ... };
+store.byId[entry.id] = entry;
+await atomicWrite(path, store);
+
+// AFTER:
+const entry = await createEntry(email, category, body);
+return NextResponse.json(entryToApiResponse(entry, category));
+```
+
+**PATCH (update/generate/finalise/request):**
+```typescript
+// BEFORE: reads file, switches on action, writes file
+// This is the most complex handler with multiple branches
+
+// AFTER: each action delegates to its engine function
+if (action === 'save') {
+  const updated = await updateEntry(email, category, entryId, fields);
+  return NextResponse.json(entryToApiResponse(updated, category));
+}
+if (action === 'generate') {
+  const generated = await generateEntry(email, category, entryId);
+  return NextResponse.json(entryToApiResponse(generated, category));
+}
+if (action === 'finalise') {
+  const finalized = await finalizeEntry(email, category, entryId);
+  return NextResponse.json(entryToApiResponse(finalized, category));
+}
+if (action === 'requestEdit') {
+  const requested = await requestEdit(email, category, entryId, body.message);
+  return NextResponse.json(entryToApiResponse(requested, category));
+}
+if (action === 'requestDelete') {
+  const requested = await requestDelete(email, category, entryId);
+  return NextResponse.json(entryToApiResponse(requested, category));
+}
+```
+
+**DELETE:**
+```typescript
+// BEFORE: reads file, removes entry, writes file
+
+// AFTER:
+await deleteEntry(email, category, entryId);
+return NextResponse.json({ success: true });
+```
+
+### Remove all file system imports from the shared handler
+
+After rewiring, the shared handler should NOT import:
+- fs/promises
+- lib/dataStore.ts (except maybe for read-only list)
+- lib/data/fileAtomic.ts
+- lib/data/locks.ts
+
+It should ONLY import from:
+- lib/entries/lifecycle.ts (engine operations)
+- lib/entries/toApiResponse.ts (response formatting)
+- lib/auth.ts (authentication)
+- lib/security/ (rate limiting, payload validation)
+
+### CRITICAL: The entryToApiResponse call happens in the handler, NOT in the engine
+Engine returns raw entries. The handler wraps them with computed fields. This keeps the engine pure (no HTTP concerns) and the handler thin (no business logic).
+
+## Scope
+- MODIFY: lib/api/categoryRouteHandler.ts (replace all direct file ops with engine calls)
+- DO NOT MODIFY: lib/entries/internal/engine.ts (already complete from P3.2)
+- DO NOT MODIFY: any route files (they're thin wrappers, unchanged)
+- DO NOT MODIFY: workflow.ts, streakProgress.ts, pdfSnapshot.ts
+
+## Verification
+1. npm run build — passes
+2. grep -n "readFile\|writeFile\|atomicWrite\|readCategoryStore\|writeCategoryStore" lib/api/categoryRouteHandler.ts — should return ZERO hits (or only for the read-only list operation)
+3. grep -n "import.*from.*lifecycle\|import.*from.*toApiResponse" lib/api/categoryRouteHandler.ts — should show these imports
+4. Full flow test for fdp-attended:
+   a. Create entry
+   b. Edit fields + save
+   c. Generate PDF
+   d. Check .data file — all lifecycle fields present (editWindowExpiresAt, pdfGenerated, streakEligible, committedAtISO)
+   e. Finalise
+   f. View finalized entry
+5. Dashboard streak counts still correct
+6. Check data file directly:
+   ```bash
+   cat .data/users/senarch@tce.edu/fdp-attended.json | python3 -c "
+   import sys,json; d=json.load(sys.stdin)
+   for eid,e in d['byId'].items():
+     for k in ['confirmationStatus','editWindowExpiresAt','pdfGenerated','streakEligible','committedAtISO','updatedAt']:
+       print(f'{k}: {e.get(k, \"MISSING\")}')"
+   ```
+   NO field should say MISSING.
