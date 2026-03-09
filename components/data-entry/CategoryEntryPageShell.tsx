@@ -15,11 +15,9 @@ import EntryShell from "@/components/entry/EntryShell";
 import SectionCard from "@/components/layout/SectionCard";
 import EditorProgressHeader from "@/components/data-entry/EditorProgressHeader";
 import { EditorStatusBanners } from "@/components/data-entry/EditorStatusBanner";
-import EditorStreakCard from "@/components/data-entry/EditorStreakCard";
 import EditorMetadataFooter from "@/components/data-entry/EditorMetadataFooter";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import { getEditTimeRemaining, isEntryEditable } from "@/lib/entries/workflow";
-import { isEntryActivated, isEntryWon } from "@/lib/streakProgress";
 import { getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
 import { dataEntryHome } from "@/lib/entryNavigation";
 import type { ListStats } from "@/components/data-entry/GroupedEntrySections";
@@ -226,25 +224,41 @@ export default function CategoryEntryPageShell({
     const isGenerated = !!entry?.committedAtISO;
     const streakEligible = !!entry?.streakEligible;
     const schema = getCategorySchema(category);
-    const entryWon = entry ? isEntryWon(entry, schema.fields) : false;
     const editable = entry ? isEntryEditable(entry) : true;
     const editTime = entry ? getEditTimeRemaining(entry) : null;
     const status = typeof entry?.confirmationStatus === "string" ? entry.confirmationStatus : null;
-    const allFieldsComplete = progress.total > 0 && progress.completed === progress.total;
-    const canFinalise = isGenerated && editable && allFieldsComplete;
+    const dataFieldsComplete = progress.total > 0 && progress.completed === progress.total;
+    const uploadsComplete = entry ? schema.fields.filter((f) => f.upload).every((f) => {
+      const value = entry[f.key];
+      if (f.kind === "array") return Array.isArray(value) && value.length > 0;
+      if (f.kind === "object" && value && typeof value === "object" && !("url" in (value as Record<string, unknown>)) && !("storedPath" in (value as Record<string, unknown>))) {
+        return Object.values(value as Record<string, unknown>).every((v) =>
+          Array.isArray(v) ? v.length > 0 : !!v
+        );
+      }
+      return !!value;
+    }) : false;
+    const allFieldsComplete = dataFieldsComplete && uploadsComplete;
+    const hasPdf = entry?.pdfGenerated === true || !!entry?.pdfGeneratedAt;
+    const pdfFresh = hasPdf && entry?.pdfStale !== true;
+    const canFinalise = isGenerated && editable && allFieldsComplete && pdfFresh;
+    const showFinalise = hasPdf;
 
     return (
       <EntryShell {...entryShell}>
         <div className="space-y-4">
-          {/* Progress header */}
-          <EditorProgressHeader
-            category={category}
-            progress={progress}
-            isGenerated={isGenerated}
-            streakEligible={streakEligible}
-            editTimeLabel={editTime?.hasEditWindow && !editTime.expired ? editTime.remainingLabel : undefined}
-            canFinalise={canFinalise}
-          />
+          {/* Progress header — hidden in view/finalized mode */}
+          {editable ? (
+            <EditorProgressHeader
+              category={category}
+              progress={progress}
+              isGenerated={isGenerated}
+              streakEligible={streakEligible}
+              editTimeLabel={editTime?.hasEditWindow && !editTime.expired ? editTime.remainingLabel : undefined}
+              showFinalise={showFinalise}
+              canFinalise={canFinalise}
+            />
+          ) : null}
 
           {/* Status banners */}
           <EditorStatusBanners
@@ -254,18 +268,9 @@ export default function CategoryEntryPageShell({
             editTimeMs={editTime?.remainingMs}
             expiresAtISO={editTime?.expiresAtISO}
             hasPdf={!!entry?.pdfMeta}
-            onRequestEdit={onRequestEdit}
+            permanentlyLocked={entry?.permanentlyLocked === true}
             onCancelRequest={onCancelRequestEdit}
           />
-
-          {/* Streak indicator */}
-          {streakEligible && isGenerated ? (
-            <EditorStreakCard
-              streakEligible={streakEligible}
-              isWon={entryWon}
-              progress={progress}
-            />
-          ) : null}
 
           {topContent}
 

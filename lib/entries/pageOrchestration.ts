@@ -104,12 +104,12 @@ export async function runSaveDraftOrchestration<TEntry extends { id?: string | n
     lastPersistedEntry = persisted;
     setList((current) => optimisticUpsert(current, persisted));
 
-    const finalEntry: TEntry =
-      intent === "done"
-        ? await commitDraft(String((persisted as { id?: string | null }).id))
-        : persisted;
+    const shouldCommit = intent === "done" && !closeAfterSave;
+    const finalEntry: TEntry = shouldCommit
+      ? await commitDraft(String((persisted as { id?: string | null }).id))
+      : persisted;
 
-    if (intent === "done") {
+    if (shouldCommit) {
       lastPersistedEntry = finalEntry;
       setList((current) => optimisticUpsert(current, finalEntry));
     }

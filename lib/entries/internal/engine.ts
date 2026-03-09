@@ -1169,6 +1169,13 @@ export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecor
       const existing = existingEntry as EntryLike;
       trackedFromStatus = String(getWorkflowStatus(existing));
 
+      if ((existing as Record<string, unknown>).permanentlyLocked === true) {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "This entry is permanently locked and cannot be modified.",
+        });
+      }
+
       if (!isEntryCommitted(existing as WorkflowEntryLike)) {
         throw new AppError({
           code: "VALIDATION_ERROR",
@@ -1353,6 +1360,8 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
         }) as Entry,
         ENTRY_SCHEMAS[category]
       ) as EntryLike;
+      // Force PDF regeneration — user must re-generate after edits before re-finalising
+      (updated as EntryEngineRecord).pdfStale = true;
       trackedToStatus = String(updated.confirmationStatus ?? "");
       await appendWalEventOrThrow(
         normalizedOwner,
@@ -1751,7 +1760,7 @@ export async function finalizeEntry<T extends EntryEngineRecord = EntryEngineRec
 
       // Must be GENERATED and currently editable
       const currentStatus = normalizeEntryStatus(existing as WorkflowEntryLike);
-      if (currentStatus !== "GENERATED") {
+      if (currentStatus !== "GENERATED" && currentStatus !== "EDIT_GRANTED") {
         throw new AppError({
           code: "VALIDATION_ERROR",
           message: "Only generated entries can be finalised.",
@@ -1764,7 +1773,7 @@ export async function finalizeEntry<T extends EntryEngineRecord = EntryEngineRec
         });
       }
 
-      // All fields must be complete
+      // All data fields must be complete
       const progress = computeFieldProgress(category, existing as Record<string, unknown>);
       if (progress.total > 0 && progress.completed < progress.total) {
         throw new AppError({
@@ -1773,13 +1782,66 @@ export async function finalizeEntry<T extends EntryEngineRecord = EntryEngineRec
         });
       }
 
+      // All upload fields must be present
+      const uploadFields = (ENTRY_SCHEMAS[category]?.fields ?? []).filter((f) => f.upload);
+      for (const field of uploadFields) {
+        const value = (existing as Record<string, unknown>)[field.key];
+        // For array uploads (e.g. geotaggedPhotos), check length > 0
+        // For object uploads (e.g. permissionLetter), check non-null
+        // For nested uploads (e.g. uploads.permissionLetter), check inner fields
+        if (field.kind === "array") {
+          if (!Array.isArray(value) || value.length === 0) {
+            throw new AppError({
+              code: "VALIDATION_ERROR",
+              message: `Upload required: ${field.label}.`,
+            });
+          }
+        } else if (field.kind === "object" && value && typeof value === "object" && !("url" in (value as Record<string, unknown>)) && !("storedPath" in (value as Record<string, unknown>))) {
+          // Nested uploads object (e.g. guest-lectures/workshops "uploads" field)
+          // Check all sub-fields that should have file metadata
+          const nested = value as Record<string, unknown>;
+          for (const [subKey, subVal] of Object.entries(nested)) {
+            if (Array.isArray(subVal)) {
+              if (subVal.length === 0) {
+                throw new AppError({
+                  code: "VALIDATION_ERROR",
+                  message: `Upload required: ${subKey}.`,
+                });
+              }
+            } else if (!subVal) {
+              throw new AppError({
+                code: "VALIDATION_ERROR",
+                message: `Upload required: ${subKey}.`,
+              });
+            }
+          }
+        } else if (!value) {
+          throw new AppError({
+            code: "VALIDATION_ERROR",
+            message: `Upload required: ${field.label}.`,
+          });
+        }
+      }
+
+      // PDF must have been generated
+      if (existing.pdfGenerated !== true && !existing.pdfGeneratedAt) {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "PDF must be generated before finalising.",
+        });
+      }
+
+
       // Finalise by expiring the edit window now
       const nowISO = new Date().toISOString();
+      const isRefinalization = trackedFromStatus === "EDIT_GRANTED";
       const updated = normalizeEntry(
         {
           ...existing,
           editWindowExpiresAt: nowISO,
+          confirmationStatus: "GENERATED" as const,
           updatedAt: nowISO,
+          ...(isRefinalization ? { permanentlyLocked: true } : {}),
         } as Entry,
         ENTRY_SCHEMAS[category]
       ) as EntryLike;
@@ -1893,6 +1955,13 @@ export async function requestDelete<T extends EntryEngineRecord = EntryEngineRec
 
       const existing = existingEntry as EntryLike;
       trackedFromStatus = String(getWorkflowStatus(existing));
+
+      if ((existing as Record<string, unknown>).permanentlyLocked === true) {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "This entry is permanently locked and cannot be modified.",
+        });
+      }
 
       if (!isEntryCommitted(existing as WorkflowEntryLike)) {
         throw new AppError({

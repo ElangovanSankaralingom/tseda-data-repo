@@ -7,7 +7,6 @@ import {
   Download,
   Eye,
   FileText,
-  Zap,
 } from "lucide-react";
 import PdfPreviewModal from "@/components/data-entry/PdfPreviewModal";
 
@@ -89,7 +88,7 @@ export default function EntryDocumentSection({
     );
   }
 
-  // State 3: PDF generated but stale (fields changed)
+  // State 2: PDF generated but stale (fields changed)
   if (pdfStale) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -128,26 +127,13 @@ export default function EntryDocumentSection({
                 Download
               </span>
             </button>
-            {!isViewMode && (
-              <button
-                type="button"
-                onClick={onRegenerate}
-                disabled={generating}
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Zap className="size-4" />
-                  {generating ? "Generating..." : "Regenerate"}
-                </span>
-              </button>
-            )}
           </div>
         </div>
       </div>
     );
   }
 
-  // State 2: PDF generated and up to date
+  // State 3: PDF generated and up to date
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">

@@ -84,6 +84,12 @@ type CaseStudyEntry = {
   pdfMeta?: PdfMeta | null;
   pdfSourceHash?: string | null;
   pdfStale?: boolean;
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string | null;
+  editWindowExpiresAt?: string | null;
+  streakEligible?: boolean;
+  streakPermanentlyRemoved?: boolean;
+  permanentlyLocked?: boolean;
   permissionLetter: FileMeta | null;
   travelPlan: FileMeta | null;
   geotaggedPhotos: FileMeta[];
@@ -288,6 +294,18 @@ function normalizeEntry(value: unknown): CaseStudyEntry | null {
       : null,
     pdfSourceHash: typeof record.pdfSourceHash === "string" ? record.pdfSourceHash : "",
     pdfStale: record.pdfStale === true,
+    pdfGenerated: record.pdfGenerated === true,
+    pdfGeneratedAt:
+      typeof record.pdfGeneratedAt === "string" && record.pdfGeneratedAt.trim()
+        ? record.pdfGeneratedAt.trim()
+        : null,
+    editWindowExpiresAt:
+      typeof record.editWindowExpiresAt === "string" && record.editWindowExpiresAt.trim()
+        ? record.editWindowExpiresAt.trim()
+        : null,
+    streakEligible: record.streakEligible === true,
+    streakPermanentlyRemoved: record.streakPermanentlyRemoved === true,
+    permanentlyLocked: record.permanentlyLocked === true,
     permissionLetter: (record.permissionLetter as FileMeta | null) ?? null,
     travelPlan: (record.travelPlan as FileMeta | null) ?? null,
     geotaggedPhotos: normalizeFileMetaArray(record.geotaggedPhotos, record.geotaggedPhoto),

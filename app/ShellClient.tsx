@@ -13,6 +13,7 @@ import {
   Search,
   Shield,
   Sun,
+  Trash2,
   User,
   X,
 } from "lucide-react";
@@ -31,11 +32,7 @@ import {
 } from "@/lib/entryNavigation";
 import { useConfirmation } from "@/components/confirmations/ConfirmationProvider";
 import Toast from "@/components/ui/Toast";
-import { safeAction } from "@/lib/safeAction";
-import { notifyError, notifySuccess } from "@/lib/ui/notify";
 import { cn } from "@/lib/utils";
-
-const ENABLE_RESET = true;
 
 // --- Animated Hamburger Icon ---
 
@@ -370,7 +367,6 @@ export default function ShellClient({
     isMasterAdmin(session?.user?.email)
   );
   const [open, setOpen] = useState(false);
-  const [resetBusy, setResetBusy] = useState(false);
   const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [menuProfile, setMenuProfile] = useState<ProfileSummary | null>(null);
@@ -460,35 +456,6 @@ export default function ShellClient({
   const profilePhoto = String(menuProfile?.googlePhotoURL ?? "").trim();
   const profileInitials = getInitials(profileName, profileEmail);
   const profileDesignation = menuProfile?.designation ?? null;
-
-  async function handleResetConfirm() {
-    if (resetBusy) return;
-
-    try {
-      setResetBusy(true);
-      const result = await safeAction(async () => {
-        const response = await fetch("/api/me/reset", { method: "POST" });
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        if (!response.ok) {
-          throw new Error(payload.error || "Reset failed.");
-        }
-      }, {
-        context: "shell.resetAccount",
-      });
-
-      if (!result.ok) {
-        notifyError(result.error, setToast);
-        return;
-      }
-
-      setOpen(false);
-      setAvatarRefreshKey((value) => value + 1);
-      notifySuccess("Account reset successfully", setToast);
-      router.replace(dashboard());
-    } finally {
-      setResetBusy(false);
-    }
-  }
 
   function handleSignOut() {
     void confirmAction({
@@ -717,30 +684,16 @@ export default function ShellClient({
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-400">Soon</span>
           </div>
 
-          {/* Reset Account */}
-          {ENABLE_RESET ? (
-            <button
-              type="button"
-              onClick={() => {
-                closeMenu();
-                void confirmAction({
-                  type: "danger",
-                  title: "Reset Account",
-                  message: "This will permanently delete all your entries and uploads. This cannot be undone.",
-                  confirmLabel: "Confirm Reset",
-                  confirmStyle: "danger",
-                  requireTypedConfirmation: "RESET",
-                  countdown: 3,
-                }).then((confirmed) => {
-                  if (confirmed) void handleResetConfirm();
-                });
-              }}
-              disabled={resetBusy}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 disabled:pointer-events-none disabled:opacity-60"
+          {/* Reset Test Data — admin only */}
+          {canAccessAdmin ? (
+            <Link
+              href="/reset"
+              onClick={closeMenu}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
             >
-              <X className="size-5" />
-              <span className="flex-1 text-left">Reset Account</span>
-            </button>
+              <Trash2 className="size-5" />
+              <span className="flex-1 text-left">Reset Test Data</span>
+            </Link>
           ) : null}
 
           {/* Sign Out */}

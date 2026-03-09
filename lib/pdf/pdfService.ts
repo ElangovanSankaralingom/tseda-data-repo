@@ -7,7 +7,7 @@ import { readCategoryEntryById } from "@/lib/dataStore";
 import { AppError, normalizeError } from "@/lib/errors";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { commitDraft, updateEntry } from "@/lib/entries/lifecycle";
-import { normalizeEntryStatus } from "@/lib/entries/workflow";
+import { computeEditWindowExpiry, normalizeEntryStatus } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { checkStreakEligibility } from "@/lib/streakProgress";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
@@ -58,15 +58,36 @@ async function getAuthorizedTceEmail() {
 
 function buildPdfPatch(entry: Entry, category: CategoryKey, pdfMeta: Entry["pdfMeta"]) {
   const streakEligible = checkStreakEligibility(entry);
+  const nowISO = pdfMeta?.generatedAtISO ?? new Date().toISOString();
 
-  return {
+  const currentStatus = normalizeEntryStatus(entry);
+  const newStatus = currentStatus === "DRAFT" ? "GENERATED" : currentStatus;
+
+  const patch: Record<string, unknown> = {
     pdfMeta,
     pdfSourceHash: hashPrePdfFields(entry as Record<string, unknown>, category),
     pdfStale: false,
     pdfGenerated: true,
-    pdfGeneratedAt: pdfMeta?.generatedAtISO ?? new Date().toISOString(),
+    pdfGeneratedAt: nowISO,
     streakEligible,
+    confirmationStatus: newStatus,
   };
+
+  // Set editWindowExpiresAt when transitioning DRAFT → GENERATED for the first time
+  if (currentStatus === "DRAFT" && newStatus === "GENERATED") {
+    patch.committedAtISO = nowISO;
+    patch.editWindowExpiresAt = computeEditWindowExpiry(nowISO, {
+      endDate: (entry as Record<string, unknown>).endDate,
+      streakEligible,
+    });
+  }
+
+  // Preserve existing editWindowExpiresAt if already GENERATED
+  if (!patch.editWindowExpiresAt && (entry as Record<string, unknown>).editWindowExpiresAt) {
+    patch.editWindowExpiresAt = (entry as Record<string, unknown>).editWindowExpiresAt;
+  }
+
+  return patch;
 }
 
 export async function generateAndPersistEntryPdf(args: GeneratePdfArgs) {

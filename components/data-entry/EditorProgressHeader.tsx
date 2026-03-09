@@ -59,6 +59,7 @@ type EditorProgressHeaderProps = {
   isGenerated: boolean;
   streakEligible?: boolean;
   editTimeLabel?: string;
+  showFinalise?: boolean;
   canFinalise?: boolean;
 };
 
@@ -68,6 +69,7 @@ export default function EditorProgressHeader({
   isGenerated,
   streakEligible,
   editTimeLabel,
+  showFinalise,
   canFinalise,
 }: EditorProgressHeaderProps) {
   const accent = ACCENT_COLORS[category] ?? ACCENT_COLORS["fdp-attended"];
@@ -102,7 +104,7 @@ export default function EditorProgressHeader({
       </div>
 
       {/* Finalise hint */}
-      {canFinalise ? (
+      {showFinalise && canFinalise ? (
         <p className="mt-2 text-xs text-emerald-600">
           All fields complete — you can finalise this entry now or wait for the timer.
         </p>

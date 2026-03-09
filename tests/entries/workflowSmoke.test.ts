@@ -79,6 +79,12 @@ test("workflow smoke: draft, generate, edit request, grant, and export", async (
     assert.ok(committed.editWindowExpiresAt);
     assert.equal(isEntryEditable(committed), true);
 
+    // Simulate PDF generation (sets pdfGenerated via normalizeEntryStreakFields)
+    await updateEntry(ownerEmail, "workshops", entryId, {
+      pdfGeneratedAt: new Date().toISOString(),
+      pdfStale: false,
+    } as Record<string, unknown>);
+
     const reopened = await updateEntry(ownerEmail, "workshops", entryId, {
       speakerName: "Reopened Speaker",
     });

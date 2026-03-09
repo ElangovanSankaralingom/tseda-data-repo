@@ -22,8 +22,7 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { computeFieldProgress } from "@/lib/entries/fieldProgress";
-import { isEntryEditable } from "@/lib/entries/workflow";
+import { isEntryFinalized } from "@/lib/entries/workflow";
 import { getEntryApprovalStatus } from "@/lib/confirmation";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
@@ -271,10 +270,13 @@ export function CaseStudiesPage({
     startInNewMode,
   });
 
-  const { isPreviewMode: isViewMode, backHref, backDisabled } = useEntryViewMode(
+  const { isPreviewMode: isViewModeRaw, backHref, backDisabled } = useEntryViewMode(
     categoryPath,
     viewEntryId
   );
+  // Force view mode for finalized entries regardless of how they were opened
+  const entryForFinalizationCheck = activeEntryId ? list.find((e) => e.id === activeEntryId) : null;
+  const isViewMode = isViewModeRaw || (!!entryForFinalizationCheck && isEntryFinalized(entryForFinalizationCheck));
   const viewedEntry = useMemo(
     () => (activeEntryId ? list.find((item) => item.id === activeEntryId) ?? null : null),
     [activeEntryId, list]
@@ -481,6 +483,34 @@ export function CaseStudiesPage({
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || "Cancel request failed.");
       return hydrateEntry(payload);
+    },
+    persistRequestDelete: async (entry) => {
+      const response = await fetch("/api/me/entry/delete-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryKey: "case-studies", entryId: entry.id }),
+      });
+      const payload = (await response.json()) as CaseStudyEntry | { error?: string };
+
+      if (!response.ok) {
+        throw new Error(("error" in payload && payload.error) || "Request failed.");
+      }
+
+      return payload as CaseStudyEntry;
+    },
+    persistCancelRequestDelete: async (entry) => {
+      const response = await fetch("/api/me/entry/delete-request", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryKey: "case-studies", entryId: entry.id }),
+      });
+      const payload = (await response.json()) as CaseStudyEntry | { error?: string };
+
+      if (!response.ok) {
+        throw new Error(("error" in payload && payload.error) || "Cancel request failed.");
+      }
+
+      return payload as CaseStudyEntry;
     },
     commitDraft: commitDraftEntry,
     applyPersistedEntry: (entry) => {
@@ -804,12 +834,6 @@ export function CaseStudiesPage({
       `${entry.placeOfVisit} • ${entry.yearOfStudy || "-"} • Semester ${entry.currentSemester ?? "-"}`,
     onView: (entry) => router.push(entryDetail("case-studies", entry.id)),
     onEdit: (entry) => router.push(entryDetail("case-studies", entry.id)),
-    onFinalise: (entry) => void finaliseEntry(entry),
-    canFinalise: (entry) => {
-      if (!isEntryEditable(entry)) return false;
-      const progress = computeFieldProgress("case-studies", entry as Record<string, unknown>);
-      return progress.total > 0 && progress.completed === progress.total;
-    },
     requestConfirmation,
     buildDeleteRequest: (entry) => ({
       title: "Delete entry?",
@@ -820,9 +844,12 @@ export function CaseStudiesPage({
       onConfirm: () => deleteEntry(entry.id),
     }),
     requestingEditIds,
+    requestingDeleteIds: controller.requestingDeleteIds,
     sendingConfirmationIds,
     requestEdit: (entry) => void requestEdit(entry),
     cancelRequestEdit: (entry) => void cancelRequestEdit(entry),
+    requestDelete: (entry) => void controller.requestDelete(entry),
+    cancelRequestDelete: (entry) => void controller.cancelRequestDelete(entry),
     sendForConfirmation: (entry) => void sendForConfirmation(entry),
     renderBody: (entry) => {
       const days = getInclusiveDays(entry.startDate, entry.endDate);
@@ -893,19 +920,38 @@ export function CaseStudiesPage({
           router.push(entryNew("case-studies"), { scroll: false });
         },
         addLabel: "Add Case Study",
-        workflowAction: showForm && !isViewMode ? {
-          label: "Generate Entry",
-          onClick: () => controller.generateEntry(),
-          disabled: controller.actionState.generateDisabled,
-          busyLabel: "Generating...",
-        } : undefined,
+        formHasData: formDirty,
+        workflowAction: (() => {
+          if (!showForm || isViewMode) return undefined;
+          const pdfExists = !!form.pdfMeta || (form as Record<string, unknown>).pdfGenerated === true || !!(form as Record<string, unknown>).pdfGeneratedAt;
+          const showGenerate = !pdfExists || pdfState.pdfStale;
+          if (!showGenerate) return undefined;
+          return {
+            label: "Generate Entry",
+            onClick: () => controller.generateEntry(),
+            disabled: controller.actionState.generateDisabled,
+            busyLabel: "Generating...",
+          };
+        })(),
+        finalise: (() => {
+          if (!showForm || isViewMode) return undefined;
+          const hasPdf = !!form.pdfMeta || (form as Record<string, unknown>).pdfGenerated === true || !!(form as Record<string, unknown>).pdfGeneratedAt;
+          if (!hasPdf) return undefined;
+          if (pdfState.pdfStale) return undefined;
+          return {
+            canFinalise: true,
+            onFinalise: () => finaliseEntry(form),
+            onAfterFinalise: () => closeForm(categoryPath),
+            disabledReason: undefined,
+          };
+        })(),
         entryStatus: form.confirmationStatus,
         onRequestEdit: () => void controller.requestEdit(form),
         onCancelRequestEdit: () => void controller.cancelRequestEdit(form),
-        onFinalise: isViewMode && isEntryEditable(form) && (() => {
-          const progress = computeFieldProgress("case-studies", form as Record<string, unknown>);
-          return progress.total > 0 && progress.completed === progress.total;
-        })() ? () => void finaliseEntry(form) : undefined,
+        onRequestDelete: () => void controller.requestDelete(form),
+        onCancelRequestDelete: () => void controller.cancelRequestDelete(form),
+        onBack: () => closeForm(categoryPath),
+        permanentlyLocked: (form as Record<string, unknown>).permanentlyLocked === true,
       })}
       loading={loading}
       showForm={showForm}
