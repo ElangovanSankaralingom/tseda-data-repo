@@ -8,6 +8,8 @@ import { checkUserIntegrity, listUsers } from "@/lib/admin/integrity";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { rebuildUserIndex } from "@/lib/data/indexStore";
 import { AppError, normalizeError } from "@/lib/errors";
+import { runAutoArchive, type AutoArchiveResult } from "@/lib/jobs/autoArchive";
+import { runEditGrantExpiry, type EditGrantExpiryResult } from "@/lib/jobs/editGrantExpiry";
 import { logger } from "@/lib/logger";
 import { type Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -43,6 +45,8 @@ export type NightlyMaintenanceSummary = {
   backup: JobStepResult<NightlyBackupResult>;
   integrity: JobStepResult<NightlyIntegrityResult>;
   housekeeping: JobStepResult<NightlyHousekeepingResult>;
+  autoArchive: JobStepResult<AutoArchiveResult>;
+  editGrantExpiry: JobStepResult<EditGrantExpiryResult>;
 };
 
 function maintenanceDirPath() {
@@ -232,11 +236,18 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
     const backupResult = await runNightlyBackup();
     const integrityResult = await runNightlyIntegrityCheck();
     const housekeepingResult = await runNightlyExportHousekeeping();
+    const autoArchiveResult = await runAutoArchive();
+    const editGrantExpiryResult = await runEditGrantExpiry();
 
     const summary: NightlyMaintenanceSummary = {
       startedAt,
       finishedAt: new Date().toISOString(),
-      overallSuccess: backupResult.ok && integrityResult.ok && housekeepingResult.ok,
+      overallSuccess:
+        backupResult.ok &&
+        integrityResult.ok &&
+        housekeepingResult.ok &&
+        autoArchiveResult.ok &&
+        editGrantExpiryResult.ok,
       backup: backupResult.ok ? stepSuccess(backupResult.data) : stepFailure(backupResult.error),
       integrity: integrityResult.ok
         ? stepSuccess(integrityResult.data)
@@ -244,6 +255,12 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
       housekeeping: housekeepingResult.ok
         ? stepSuccess(housekeepingResult.data)
         : stepFailure(housekeepingResult.error),
+      autoArchive: autoArchiveResult.ok
+        ? stepSuccess(autoArchiveResult.data)
+        : stepFailure(autoArchiveResult.error),
+      editGrantExpiry: editGrantExpiryResult.ok
+        ? stepSuccess(editGrantExpiryResult.data)
+        : stepFailure(editGrantExpiryResult.error),
     };
 
     await writeLastRun(summary);
