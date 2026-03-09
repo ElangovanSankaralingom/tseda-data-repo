@@ -17,6 +17,8 @@ https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/DA
 https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/DESIGN_SYSTEMS.md
 https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/PROMPT-ENGINEERING-FRAMEWORK.md
 https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/README.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/STREAK-SPECIFICATION.md
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/tseda-url-index.md
 https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/package.json
 https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/tsconfig.json
 https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/next.config.ts
@@ -318,5 +320,5 @@ https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/co
 # (directory — list individual files as needed): components/ui/
 
 
-# TOTAL FILES: 188
+# TOTAL FILES: 190
 # TIP: Paste a whole section at once to unlock all files in that group

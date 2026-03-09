@@ -1,0 +1,371 @@
+# TSEDA PROJECT — FULL CONTEXT HANDOFF
+## For continuing development in a new Claude chat session
+## Last updated: March 9, 2026 (Session 3)
+
+---
+
+## PROJECT OVERVIEW
+
+**TSEDA** = Gamified faculty data collection app for **TCE (Thiagarajar College of Engineering)**, Madurai.
+
+Faculty members log professional development activities (FDPs attended, FDPs conducted, guest lectures, case studies, workshops). The app gamifies data entry with a streak system to encourage timely submissions.
+
+---
+
+## REPO & SETUP
+
+- **GitHub**: https://github.com/ElangovanSankaralingom/tseda-data-repo
+- **Branch**: `main` (ONLY branch — dev and all worktrees deleted)
+- **Working directory**: `/Users/thya/tseda-data-repo` (work directly on main, NO worktrees)
+- **Tech stack**: Next.js 16.1.6 (App Router), React 19.2.3, Tailwind CSS 4, shadcn/ui, lucide-react, NextAuth.js 4.24.13 (Google OAuth, @tce.edu domain), TypeScript 5
+- **Storage**: File-based JSON (NO database), WAL, pdf-lib 1.17.1
+- **Master admin**: `senarch@tce.edu`
+
+### Git Rules (ENFORCED)
+- Work ONLY on `main` branch
+- NO worktrees — if Claude Code or Codex creates one, remove it immediately
+- Push after every change: `git add -A && git commit -m "description" && git push origin main`
+- Check for phantom worktrees: `git worktree list` (should show only one line)
+- Check for stale branches: `git branch -a` (should show only main)
+
+---
+
+## REPO ACCESS FROM CLAUDE CHAT
+
+### To unlock repo file access in a new chat session:
+Paste these URLs at the start of the conversation:
+```
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/PROMPT-ENGINEERING-FRAMEWORK.md
+https://api.github.com/repos/ElangovanSankaralingom/tseda-data-repo/git/trees/main?recursive=1
+```
+
+### To read any specific file:
+```
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/<filepath>
+```
+
+### URL Index File:
+The file `tseda-url-index.md` in the repo root contains organized raw URLs for every file in the repo, grouped by function. When Claude needs to read files, it will ask you to paste the relevant section from this file.
+
+---
+
+## CUSTOM COMMANDS
+
+### upmd
+When I say **"upmd"**, Claude will:
+1. Fetch the repo tree via: `https://api.github.com/repos/ElangovanSankaralingom/tseda-data-repo/git/trees/main?recursive=1`
+2. Read every root `.md` file via raw GitHub URLs
+3. Cross-reference against current codebase state and this context handoff
+4. Generate a Claude Code prompt that:
+   - CREATES any missing MD files
+   - DELETES any obsolete MD files
+   - UPDATES any stale content in existing MDs
+   - Ensures CLAUDE.md is the master index referencing everything
+   - Ensures tseda-url-index.md lists all file URLs
+5. Include verification grep commands
+6. Include split strategy if prompt exceeds 200 lines
+
+---
+
+## KEY ARCHITECTURE DECISIONS
+
+### Data Storage
+- `.data/users/<email>/` — per-category JSON files (fdp-attended.json, fdp-conducted.json, etc.)
+- `.data/admin/` — admin notifications, admin user list
+- `public/uploads/` — uploaded files (PDFs, permission letters, certificates)
+- No database — everything is JSON files on disk
+
+### 5 Categories (hardcoded in categoryRegistry.ts):
+1. fdp-attended
+2. fdp-conducted
+3. guest-lectures
+4. case-studies
+5. workshops
+
+### 5 Category API Routes (each 690-1075 lines, save DIRECTLY to JSON, bypass engine.ts):
+1. app/api/me/fdp-attended/route.ts
+2. app/api/me/fdp-conducted/route.ts
+3. app/api/me/guest-lectures/route.ts
+4. app/api/me/case-studies/route.ts
+5. app/api/me/workshops/route.ts
+
+### 5 Category Adapters (client components):
+1. components/data-entry/adapters/fdp-attended.tsx
+2. components/data-entry/adapters/fdp-conducted.tsx
+3. components/data-entry/adapters/guest-lectures.tsx
+4. components/data-entry/adapters/case-studies.tsx
+5. components/data-entry/adapters/workshops.tsx
+
+**CRITICAL RULE**: If a change applies to one route or adapter, it MUST apply to ALL FIVE.
+
+### Known Architectural Issue
+The 5 category API routes save entries DIRECTLY to JSON files, BYPASSING `lib/entries/internal/engine.ts`. The engine has correct logic for editWindowExpiresAt, streakEligible, confirmationStatus transitions — but since routes bypass it, a `postSave.ts` normalization function was created as a workaround. Dashboard reads also normalize at read-time.
+
+---
+
+## ENTRY STATUSES (6 total)
+
+```
+DRAFT → GENERATED → EDIT_REQUESTED → EDIT_GRANTED → (re-finalized)
+                  → DELETE_REQUESTED → ARCHIVED
+```
+
+| Status | Meaning |
+|--------|---------|
+| DRAFT | Entry created, fields being filled |
+| GENERATED | All mandatory data fields saved + PDF generated, timer running |
+| EDIT_REQUESTED | User requested edit on finalized entry |
+| DELETE_REQUESTED | User requested delete on finalized entry |
+| EDIT_GRANTED | Admin approved edit request (1/2/3 days) |
+| ARCHIVED | Entry hidden from user (admin-approved delete or auto-archive) |
+
+---
+
+## ENTRY LIFECYCLE
+
+### Two-Stage Field Model
+- **Stage 1 (data fields)**: programName, startDate, endDate, organisingBody, supportAmount, academicYear, etc. — required for Generate Entry. Changes make PDF stale.
+- **Stage 2 (file uploads)**: permissionLetter, completionCertificate — required for Finalise Now only. Changes do NOT make PDF stale.
+
+### Timer
+- Non-streak entries: 3 days from committedAtISO (when entry first transitioned to GENERATED)
+- Streak entries: endDate + 8 days
+- Timer NEVER resets once started
+- Timer expired + valid PDF → entry finalizes (read-only)
+- Timer expired + NO valid PDF → auto-archive by cron
+
+### Save Button Behavior
+- "Save" and "Save & Close": enabled when form is dirty (any field changed). No mandatory field validation. Saves partial data.
+- Cancel: always enabled
+- Generate Entry: requires all Stage 1 mandatory DATA fields filled
+- Finalise Now: requires PDF generated + not stale + all fields including uploads
+
+### Generate Entry Button
+- Creates PDF only (decoupled from status transition)
+- Status transition DRAFT→GENERATED happens in engine.ts when commitDraft is called
+- Visible when: no PDF yet OR PDF stale from Stage 1 edits
+- Hidden when: fresh PDF exists
+- After clicking: shows spinner → "✓ Generated Successfully" (2s) → hides (Finalise appears)
+
+### Finalise Now Button
+- Hidden when: no PDF generated
+- Visible when: PDF exists and not stale from Stage 1 edits
+- Enabled when: all fields complete (Stage 1 + Stage 2 uploads)
+- Shows confirmation dialog before finalizing (with remaining days info)
+- After finalizing: button shows "✓ Finalised" (greyed) → navigates back to entry list
+- Entry becomes read-only after finalization
+
+### Permanently Locked
+- After second finalization (edit granted → finalised again): `permanentlyLocked = true`
+- Request Edit: BLOCKED (permanently disabled)
+- Request Delete: ALWAYS available regardless of lock state
+- View: always available
+
+### Delete Rules
+- DRAFT and editable GENERATED: user can delete directly
+- Finalized: user must request delete (admin approval → archive)
+- EDIT_GRANTED: user can delete directly
+- Archived: admin can permanently delete or restore
+
+### Request System
+- One request per entry at a time (edit OR delete, not both)
+- Delete request auto-cancels pending edit request
+- Max 3 requests per entry per month (combined edit + delete)
+- Request on a Win entry → streak permanently removed
+
+---
+
+## STREAK SYSTEM (FINAL SPEC)
+
+### Two Checkpoints Only:
+1. **Generate PDF → gate to Activated** (check end date, if future = streak eligible)
+2. **Finalise Entry → gate to Wins** (eligible + all mandatory fields + valid PDF + finalized)
+
+### Activated Conditions (ALL must be true):
+- Status is GENERATED (not DRAFT, not ARCHIVED)
+- pdfGenerated === true (or pdfGeneratedAt exists as fallback)
+- streakEligible === true (end date was future at Generate PDF time)
+- NOT finalized
+- streakPermanentlyRemoved !== true
+
+### Win Conditions (ALL must be true):
+- Entry is finalized (timer expired or manual Finalise Now)
+- All mandatory fields complete
+- Valid (non-stale) PDF exists
+- streakEligible === true
+- streakPermanentlyRemoved !== true
+
+### End Date Exception:
+- End date changed to past (on save) → immediately removes from Activated (recoverable: change back + regenerate)
+- End date changed to future (on save) → does NOT auto-restore, must regenerate PDF
+
+### Permanent Removal:
+- Edit/Delete request on a WIN entry → permanent removal (streakPermanentlyRemoved = true)
+- Does NOT apply to Activated entries — only Wins
+- Archive or restore → permanent removal
+
+### What Does NOT Affect Streaks:
+- Editing any field except end date
+- PDF becoming stale
+- GENERATED → DRAFT revert
+- Admin granting/rejecting requests
+- Sending edit/delete request on Activated entries
+
+### Dashboard Display:
+- Journey funnel: [Eligible: X] → [⚡ Activated: Y] → [🏆 Wins: Z]
+
+### Entry Fields for Streak:
+```typescript
+streakEligible?: boolean              // set at Generate PDF
+streakPermanentlyRemoved?: boolean    // set when Win gets request or entry restored
+pdfGenerated?: boolean                // set at Generate PDF
+pdfGeneratedAt?: string               // ISO timestamp
+pdfStale?: boolean                    // computed from pdfSourceHash comparison
+permanentlyLocked?: boolean           // set after second finalization
+```
+
+---
+
+## CANONICAL FILE MAP
+
+### Entry Lifecycle:
+- `lib/entries/workflow.ts` — isEditable, isFinalized, normalizeEntryStatus, computeEditWindowExpiry
+- `lib/entries/internal/engine.ts` — server operations: createEntry, updateEntry, finalizeEntry, grantEditAccess, etc.
+- `lib/entries/lifecycle.ts` — public API re-exports from engine.ts
+- `lib/entries/postSave.ts` — normalizeEntryStreakFields (called at read-time by dashboard)
+
+### Streak:
+- `lib/streakProgress.ts` — isEntryActivated, isEntryWon, computeCanonicalStreakSnapshot, hasPdfGenerated
+
+### PDF:
+- `lib/pdf/pdfService.ts` — generateAndPersistEntryPdf, buildPdfPatch
+- `lib/pdfSnapshot.ts` — hashPrePdfFields, computePdfState, getHashPayload (EXCLUDES file uploads from hash)
+- `lib/entries/generate.ts` — client-side generateEntrySnapshot (calls /api/me/entry/generate)
+
+### Dashboard Data Flow:
+- `lib/dashboard/getDashboardSummary.ts` → calls computeCanonicalStreakSnapshot → returns streakActivatedCount, streakWinsCount
+- `lib/entries/summary.ts` → re-exports getDashboardSummary
+- `app/(protected)/dashboard/page.tsx` → imports from lib/entries/summary
+
+### Entry Grouping:
+- `lib/entryCategorization.ts` — getEntryListGroup: DRAFT→in_the_works, GENERATED+finalized→locked_in, GENERATED+editable+streak→streak_runners, GENERATED+editable→on_the_clock, EDIT_GRANTED→unlocked, EDIT_REQUESTED/DELETE_REQUESTED→under_review
+
+### UI Components:
+- `components/entry/EntryActionsBar.tsx` — action bar (Generate, Finalise, Save, Cancel)
+- `components/data-entry/CategoryEntryRecordCard.tsx` — entry list card buttons
+- `components/data-entry/GroupedEntrySections.tsx` — grouped entry list
+- `components/data-entry/EditorProgressHeader.tsx` — progress bar
+- `components/data-entry/EditorStatusBanner.tsx` — finalized banner
+
+### Hooks:
+- `hooks/useCategoryEntryPageController.ts` — main controller
+- `hooks/useEntryWorkflow.ts` — coreDirty, lifecycle stages
+- `hooks/useEntryEditor.ts` — form state, pdfState from computePdfState
+- `hooks/useEntryViewMode.ts` — view mode detection
+
+---
+
+## MD FILES IN REPO ROOT
+
+| File | Purpose | Status |
+|------|---------|--------|
+| CLAUDE.md | Master index for Claude Code — reads this first | NEEDS UPDATE (wrong statuses) |
+| ARCHITECTURE.md | Canonical ownership rules and anti-drift policy | NEEDS UPDATE (wrong statuses, local paths) |
+| API.md | All API endpoints with auth and rate-limit status | NEEDS REVIEW |
+| AUDIT.md | Security and architecture audit | NEEDS UPDATE (references deleted branch) |
+| CHANGELOG.md | Version history | NEEDS UPDATE (missing v0.2.0) |
+| CONTRIBUTING.md | Contribution guidelines | NEEDS UPDATE (references deleted dev branch) |
+| DATA_MODEL.md | File storage structure and formats | NEEDS UPDATE (wrong statuses, missing fields) |
+| DESIGN_SYSTEMS.md | UI/UX style guide | NEEDS UPDATE (wrong status badges) |
+| PROMPT-ENGINEERING-FRAMEWORK.md | Prompt standards for Claude Code | CURRENT ✅ |
+| README.md | Project overview | NEEDS REWRITE (only 2 lines) |
+| STREAK-SPECIFICATION.md | Streak system rules | TO BE CREATED |
+| tseda-url-index.md | Raw GitHub URLs for all repo files | CURRENT ✅ |
+
+**Use the `upmd` command to generate a Claude Code prompt that fixes all outdated MDs.**
+
+---
+
+## BUGS FIXED (Sessions 2 & 3)
+
+1. **pdfGenerated never set** — API routes set pdfGeneratedAt but not pdfGenerated. Fixed with postSave.ts + hasPdfGenerated fallback in streakProgress.ts
+2. **editWindowExpiresAt set to NOW** — engine.ts correctly computes it but routes bypass engine. Fixed with postSave.ts safety net
+3. **pdfStale incorrectly true** — file uploads were triggering staleness. Fixed: pdfSourceHash (getHashPayload in pdfSnapshot.ts) excludes file upload fields
+4. **Dashboard shows 0 streaks** — getDashboardSummary correctly calls computeCanonicalStreakSnapshot, but entry data was missing fields. Fixed with read-time normalization in getDashboardSummary
+5. **API routes missing fields in response** — fdp-attended/route.ts normalizeEntry was missing editWindowExpiresAt, pdfGenerated, streakEligible. Fixed by adding them
+6. **Generate endpoint missing status fields** — /api/me/entry/generate (pdfService.ts buildPdfPatch) was missing confirmationStatus and editWindowExpiresAt. Fixed.
+7. **Finalized entries showing Edit/Delete instead of View/Request** — API response missing editWindowExpiresAt so client couldn't detect finalization. Fixed.
+8. **Finalise Now always disabled** — canFinalise missing PDF checks, then server rejecting EDIT_GRANTED status. Fixed by allowing EDIT_GRANTED in finalizeEntry.
+9. **View mode not forced for finalized entries** — effectiveViewMode override added in adapters
+10. **Request Edit appearing in status banner** — removed standalone link, kept Request Action dropdown
+
+## GIT ISSUES FIXED (Session 3)
+
+11. **Phantom Codex worktree** — `/Users/thya/.codex/worktrees/31d3/tseda-data-repo` at detached HEAD. Removed.
+12. **Stale branches** — `claude/hopeful-booth` and `dev` branches deleted. Only `main` remains.
+13. **Codebase not on GitHub** — Full codebase was committed locally but never pushed (GitHub only had scaffold). Verified all files now on remote via git ls-tree.
+14. **Working in wrong directory** — Terminal was in deleted worktree directory. Fixed by cd to repo root.
+
+---
+
+## CURRENT STATE OF THE APP (March 9, 2026)
+
+### Working:
+- Entry creation and editing
+- PDF generation
+- Finalise Now (first time and after edit grant)
+- Streak activation on Generate PDF
+- Dashboard streak counts
+- Entry grouping (locked_in, streak_runners, etc.)
+- View mode for finalized entries
+- Request Action dropdown (Request Edit / Request Delete)
+- Permanently locked after second finalization
+- permanentlyLocked blocks Request Edit only, NOT Request Delete
+- Request Delete always available regardless of lock state
+
+### Pending / Not Yet Built:
+- Background cron system (auto-archive, 24h warnings, grant expiry, etc.)
+- Admin edit request approval page with two tabs
+- Notification system (user bell + admin bell)
+- Search system (Command Palette)
+- Audit trail
+- Settings system
+- Export system
+- Backup system
+- Testing Reset Center
+
+---
+
+## PROMPT ENGINEERING FRAMEWORK
+
+The file `PROMPT-ENGINEERING-FRAMEWORK.md` in the repo root contains the full prompt engineering standard. It covers:
+1. Mandatory prompt structure
+2. Seven Laws of Prompt Accuracy
+3. Diagnostic commands library
+4. Association mapping checklists
+5. Five Category Route Rule
+6. Canonical file map
+7. Known architectural patterns
+8. Question protocol
+9. Quality checklist
+10. Anti-patterns to avoid
+11. Reference specs
+
+Claude Code should read this file (via CLAUDE.md reference) before making any changes.
+
+---
+
+## HOW TO CONTINUE
+
+1. Start new Claude chat
+2. Upload this context file
+3. Paste these URLs to unlock repo access:
+   ```
+   https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/PROMPT-ENGINEERING-FRAMEWORK.md
+   https://api.github.com/repos/ElangovanSankaralingom/tseda-data-repo/git/trees/main?recursive=1
+   ```
+4. Say "upmd" to check and fix all MD files
+5. For code investigation, ask Claude to read specific files from the URL index
+6. Always push after Claude Code changes: `git add -A && git commit -m "description" && git push origin main`
+7. Keep prompts under 200 lines for best Claude Code success rate
+8. After each session, update this context handoff file with new decisions/bugs/changes
