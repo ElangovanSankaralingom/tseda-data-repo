@@ -6,7 +6,7 @@ import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { readCategoryEntries } from "@/lib/dataStore";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import {
   migrateUserIndex,
   USER_INDEX_SCHEMA_VERSION,

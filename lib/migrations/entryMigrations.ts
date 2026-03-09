@@ -1,6 +1,6 @@
 import "server-only";
 import { getCategorySchema, isValidCategorySlug } from "@/data/categoryRegistry";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEntry as normalizeEntryRecord } from "@/lib/normalize";
 import { AppError, normalizeError } from "@/lib/errors";
 import { err, ok, type Result } from "@/lib/result";

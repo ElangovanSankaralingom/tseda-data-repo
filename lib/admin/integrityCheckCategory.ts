@@ -6,7 +6,7 @@ import "server-only";
  */
 import fs from "node:fs/promises";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import {

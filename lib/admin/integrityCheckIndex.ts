@@ -7,7 +7,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { migrateUserIndex } from "@/lib/migrations";
 import { ENTRY_STATUSES } from "@/lib/types/entry";

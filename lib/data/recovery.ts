@@ -6,7 +6,7 @@ import type { UserIndex } from "@/lib/data/indexStore";
 import { readEvents, type WalEvent } from "@/lib/data/wal";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { USER_INDEX_SCHEMA_VERSION } from "@/lib/migrations";
 import type { Result } from "@/lib/result";

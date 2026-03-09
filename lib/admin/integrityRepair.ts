@@ -5,7 +5,7 @@ import path from "node:path";
 import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import type { CategoryKey } from "@/lib/entries/types";
-import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   CATEGORY_STORE_SCHEMA_VERSION,

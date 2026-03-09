@@ -1,4 +1,5 @@
-import { remainingDaysFromDueAtISO, status, type StreakState } from "@/lib/gamification";
+import { remainingDaysFromDueAtISO, getStreakDisplayStatus as status } from "@/lib/streakTiming";
+import type { StreakState } from "@/lib/streakState";
 
 function FlameIcon({
   tone,

@@ -54,7 +54,7 @@ Before submitting, verify: did I change all 5 routes/adapters?
 Before submitting, verify:
 
 - [ ] No duplicated status arrays -- `ENTRY_STATUSES` is defined only in `lib/types/entry.ts`
-- [ ] No logic in deprecated wrappers -- `lib/entries/stateMachine.ts`, `lib/entries/engine.ts`, `lib/gamification.ts`, `lib/entries/editorLifecycle.ts` are compatibility-only
+- [ ] No logic in deprecated wrappers -- `lib/entries/editorLifecycle.ts` is compatibility-only
 - [ ] No hardcoded category lists -- use `data/categoryRegistry.ts`
 - [ ] No page-local streak/export logic -- use `lib/streakProgress.ts` and `lib/export/exportService.ts`
 - [ ] No ad-hoc navigation paths -- use `lib/entryNavigation.ts`

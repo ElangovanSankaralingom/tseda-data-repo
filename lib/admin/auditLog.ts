@@ -4,7 +4,7 @@ import type { Dirent } from "node:fs";
 import path from "node:path";
 import { isCategoryKey } from "@/lib/categories";
 import type { WalAction, WalEvent } from "@/lib/data/wal";
-import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus } from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";

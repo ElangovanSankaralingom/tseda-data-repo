@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { computeEntryLifecycle } from "@/lib/entries/stateMachine";
+import { computeEntryLifecycle } from "@/lib/entries/editorLifecycle";
 import { useDirtyTracker } from "@/hooks/useDirtyTracker";
 
 type UseEntryWorkflowOptions = {

@@ -155,9 +155,6 @@ Edit this file when:
 
 These files exist for compatibility and migration only. New business logic should not be added to them.
 
-- `lib/entries/stateMachine.ts` -- deprecated wrapper around `workflow.ts`
-- `lib/entries/engine.ts` -- deprecated wrapper around `internal/engine.ts`
-- `lib/gamification.ts` -- deprecated wrapper around streak utilities; canonical streak business rules do not live here
 - `lib/entries/editorLifecycle.ts` -- legacy editor action-state rules; may not reflect current behavior
 
 Rule:
@@ -318,9 +315,6 @@ Do not duplicate:
 
 Do not add new business logic to:
 
-- `lib/entries/stateMachine.ts`
-- `lib/entries/engine.ts`
-- `lib/gamification.ts`
 - `lib/entries/editorLifecycle.ts`
 
 When changing behavior, edit the canonical owner directly:
@@ -382,7 +376,7 @@ When changing behavior, edit the canonical owner directly:
 Important invariant coverage currently lives in:
 
 - `tests/entries/confirmationStateMachine.test.ts`
-- `tests/entries/stateMachine.test.ts`
+- `tests/entries/engine.test.ts`
 - `tests/entries/streakProgress.test.ts`
 - `tests/entries/exportService.test.ts`
 - `tests/entries/dataStore.test.ts`

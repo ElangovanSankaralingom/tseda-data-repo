@@ -3,7 +3,7 @@ import {
   isEntryFinalized,
   normalizeEntryStatus,
   type EntryStateLike,
-} from "./entries/stateMachine.ts";
+} from "./entries/workflow.ts";
 import type { EntryStatus as EntryApprovalStatus } from "./types/entry.ts";
 import type { RequestEditStatus } from "./types/requestEdit.ts";
 

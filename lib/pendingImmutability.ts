@@ -1,5 +1,5 @@
 import { ENTRY_SCHEMAS } from "@/data/schemas";
-import { isEntryFinalized, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { isEntryFinalized, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type PendingEntryLike = EntryStateLike & Record<string, unknown>;

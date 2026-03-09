@@ -6,7 +6,7 @@ import { CATEGORY_STORE_FILES } from "@/lib/categoryStore";
 import {
   normalizeEntryStatus,
   type EntryStateLike,
-} from "@/lib/entries/stateMachine";
+} from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
