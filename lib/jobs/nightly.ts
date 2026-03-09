@@ -11,6 +11,7 @@ import { AppError, normalizeError } from "@/lib/errors";
 import { runAutoArchive, type AutoArchiveResult } from "@/lib/jobs/autoArchive";
 import { runEditGrantExpiry, type EditGrantExpiryResult } from "@/lib/jobs/editGrantExpiry";
 import { runTimerWarnings, type TimerWarningResult } from "@/lib/jobs/timerWarning";
+import { runNightlyWalCompaction, type NightlyWalCompactionResult } from "@/lib/jobs/walCompaction";
 import { logger } from "@/lib/logger";
 import { type Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -49,6 +50,7 @@ export type NightlyMaintenanceSummary = {
   autoArchive: JobStepResult<AutoArchiveResult>;
   editGrantExpiry: JobStepResult<EditGrantExpiryResult>;
   timerWarnings: JobStepResult<TimerWarningResult>;
+  walCompaction: JobStepResult<NightlyWalCompactionResult>;
 };
 
 function maintenanceDirPath() {
@@ -241,6 +243,7 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
     const autoArchiveResult = await runAutoArchive();
     const editGrantExpiryResult = await runEditGrantExpiry();
     const timerWarningsResult = await runTimerWarnings();
+    const walCompactionResult = await runNightlyWalCompaction();
 
     const summary: NightlyMaintenanceSummary = {
       startedAt,
@@ -251,7 +254,8 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
         housekeepingResult.ok &&
         autoArchiveResult.ok &&
         editGrantExpiryResult.ok &&
-        timerWarningsResult.ok,
+        timerWarningsResult.ok &&
+        walCompactionResult.ok,
       backup: backupResult.ok ? stepSuccess(backupResult.data) : stepFailure(backupResult.error),
       integrity: integrityResult.ok
         ? stepSuccess(integrityResult.data)
@@ -268,6 +272,9 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
       timerWarnings: timerWarningsResult.ok
         ? stepSuccess(timerWarningsResult.data)
         : stepFailure(timerWarningsResult.error),
+      walCompaction: walCompactionResult.ok
+        ? stepSuccess(walCompactionResult.data)
+        : stepFailure(walCompactionResult.error),
     };
 
     await writeLastRun(summary);
