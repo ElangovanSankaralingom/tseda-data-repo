@@ -33,6 +33,7 @@ Faculty members log activities across 5 categories: FDPs attended, FDPs conducte
 - API.md -- API endpoint reference
 - STREAK-SPECIFICATION.md -- streak system rules
 - PROMPT-ENGINEERING-FRAMEWORK.md -- prompt standards for Claude Code
+- DEPLOY.md -- deployment guide & production checklist
 - AUDIT.md -- security & architecture audit
 - CONTRIBUTING.md -- contribution guidelines
 - CHANGELOG.md -- version history
