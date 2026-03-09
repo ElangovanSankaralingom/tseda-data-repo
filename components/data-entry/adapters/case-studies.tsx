@@ -21,7 +21,7 @@ import {
   ACADEMIC_YEAR_DROPDOWN_OPTIONS,
 } from "@/components/data-entry/adapters/shared";
 import { FACULTY } from "@/lib/facultyDirectory";
-import { nowISTTimestampISO } from "@/lib/gamification";
+import { nowISTTimestampISO } from "@/lib/time";
 import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,

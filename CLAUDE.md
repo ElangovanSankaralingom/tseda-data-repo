@@ -106,10 +106,7 @@ After second finalization (entry was EDIT_GRANTED, user re-generates), `permanen
 | Category definitions | `data/categoryRegistry.ts` + `data/schemas/*.ts` |
 | Navigation helpers | `lib/entryNavigation.ts` |
 
-**Compatibility wrappers (do not add new business logic):**
-- `lib/entries/stateMachine.ts` -- deprecated wrapper around `workflow.ts`
-- `lib/entries/engine.ts` -- deprecated wrapper around `internal/engine.ts`
-- `lib/gamification.ts` -- deprecated wrapper around streak utilities
+**Legacy modules (do not add new business logic):**
 - `lib/entries/editorLifecycle.ts` -- legacy editor action-state rules
 
 ### Category Pages

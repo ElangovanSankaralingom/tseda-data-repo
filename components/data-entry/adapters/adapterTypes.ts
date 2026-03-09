@@ -1,7 +1,7 @@
 import type { FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import type { EntryStatus, FileMeta } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
-import type { StreakState } from "@/lib/gamification";
+import type { StreakState } from "@/lib/streakState";
 import type { YearOfStudy } from "@/lib/student-academic";
 
 // ---------------------------------------------------------------------------

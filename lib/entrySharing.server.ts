@@ -3,7 +3,7 @@ import {
   cloneFileMetaArrayToTarget,
   cloneFileMetaToTarget,
 } from "@/lib/crosspost.server";
-import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/workflow";
 import type { FileMeta } from "@/lib/types/entry";
 
 export function shouldShareEntry(entry: EntryStateLike) {

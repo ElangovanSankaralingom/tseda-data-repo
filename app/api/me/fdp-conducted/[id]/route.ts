@@ -5,7 +5,7 @@ import {
   listEntriesForCategory,
   updateEntry,
 } from "@/lib/entries/lifecycle";
-import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/stateMachine";
+import { isEntryCommitted, type EntryStateLike } from "@/lib/entries/workflow";
 import { isWithinRequestEditWindow } from "@/lib/entries/lock";
 import { normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";

@@ -11,7 +11,7 @@ import type {
 import { isCategoryKey } from "@/lib/categories";
 import { DataStore } from "@/lib/dataStore";
 import { AppError, normalizeError } from "@/lib/errors";
-import { normalizeEntryStatus } from "@/lib/entries/stateMachine";
+import { normalizeEntryStatus } from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";

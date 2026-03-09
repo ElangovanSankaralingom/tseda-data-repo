@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { nowISTTimestampISO } from "@/lib/gamification";
+import { nowISTTimestampISO } from "@/lib/time";
 import type { RequestEditableEntry } from "@/lib/entries/types";
 import { toUserMessage } from "@/lib/errors";
 import { safeAction } from "@/lib/safeAction";
