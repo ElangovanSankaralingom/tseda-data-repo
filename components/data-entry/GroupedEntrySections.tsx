@@ -21,33 +21,18 @@ import {
 
 // Keep legacy types for backwards compatibility with adapters that haven't migrated
 import type { EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
+import {
+  type GroupedEntries,
+  type GroupedEntryRender,
+  type GroupedEntrySectionsProps,
+  type GroupedEntryListCardConfig,
+  type ListStats,
+  type SectionConfig,
+  type SmartGroupedEntryRender,
+  type SmartGroupedEntrySectionsProps,
+} from "./dataEntryTypes";
 
-export type GroupedEntries<TEntry> = {
-  draft: TEntry[];
-  activated: TEntry[];
-  completed: TEntry[];
-};
-
-export type GroupedEntryRender<TEntry> = (
-  entry: TEntry,
-  category: EntryDisplayCategory,
-  index: number
-) => React.ReactNode;
-
-// --- New smart grouping types ---
-
-export type SmartGroupedEntryRender<TEntry> = (
-  entry: TEntry,
-  group: EntryListGroup,
-  index: number
-) => React.ReactNode;
-
-type SectionConfig = {
-  title: string;
-  icon: LucideIcon;
-  iconColor: string;
-  urgentColor?: string;
-};
+export type { GroupedEntries, GroupedEntryRender, GroupedEntryListCardConfig, ListStats, SmartGroupedEntryRender };
 
 const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
   streak_runners: { title: "STREAK RUNNERS", icon: Zap, iconColor: "text-amber-500", urgentColor: "text-amber-600" },
@@ -58,7 +43,7 @@ const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
   locked_in: { title: "LOCKED IN", icon: Lock, iconColor: "text-emerald-500" },
 };
 
-type FilterKey = "all" | "active" | "drafts" | "finalized" | "pending";
+import { type FilterKey } from "@/lib/types/ui";
 
 const ACTIVE_GROUPS: Set<EntryListGroup> = new Set(["streak_runners", "on_the_clock", "unlocked"]);
 
@@ -165,15 +150,6 @@ function entryMatchesSearch(entry: unknown, query: string): boolean {
 
 // --- Smart grouped entry sections (new 6-group system) ---
 
-export type ListStats = {
-  total: number;
-  drafts: number;
-  active: number;
-  finalized: number;
-  pending: number;
-  streakActive: number;
-};
-
 export function computeListStats<T>(groups: ListGroupedEntries<T>): ListStats {
   return {
     total: ENTRY_LIST_GROUP_ORDER.reduce((sum, key) => sum + groups[key].length, 0),
@@ -184,14 +160,6 @@ export function computeListStats<T>(groups: ListGroupedEntries<T>): ListStats {
     streakActive: groups.streak_runners.length,
   };
 }
-
-type SmartGroupedEntrySectionsProps<TEntry> = {
-  groupedEntries: ListGroupedEntries<TEntry>;
-  renderEntry: SmartGroupedEntryRender<TEntry>;
-  emptyState?: React.ReactNode;
-  searchable?: boolean;
-  activeClassName?: string;
-};
 
 export function SmartGroupedEntrySections<TEntry>({
   groupedEntries,
@@ -306,24 +274,6 @@ export function SmartGroupedEntrySections<TEntry>({
 }
 
 // --- Legacy grouped entry sections (backwards compat) ---
-
-type GroupedEntrySectionsProps<TEntry> = {
-  groupedEntries: GroupedEntries<TEntry>;
-  renderEntry: GroupedEntryRender<TEntry>;
-  draftTitle?: string;
-  activatedTitle?: string;
-  completedTitle?: string;
-  emptyState?: React.ReactNode;
-};
-
-export type GroupedEntryListCardConfig<TEntry> = {
-  title: string;
-  subtitle?: string;
-  className?: string;
-  groupedEntries: ListGroupedEntries<TEntry>;
-  renderEntry: SmartGroupedEntryRender<TEntry>;
-  emptyState?: React.ReactNode;
-};
 
 export default function GroupedEntrySections<TEntry>({
   groupedEntries,

@@ -15,85 +15,12 @@ import {
   type EntryListGroup,
 } from "@/lib/entryCategorization";
 import { isEntryCommitted } from "@/lib/entries/stateMachine";
-import type { EntryStatus } from "@/lib/types/entry";
-import type { RequestEditStatus } from "@/lib/types/requestEdit";
-
-type RequestEditControls = {
-  locked: boolean;
-  status?: RequestEditStatus;
-  requestedAtISO?: string | null;
-  requesting: boolean;
-  onRequest: () => void;
-  onCancel: () => void;
-};
-
-type RequestDeleteControls = {
-  requesting: boolean;
-  onRequest: () => void;
-  onCancel: () => void;
-};
-
-type SendForConfirmationControls = {
-  disabled: boolean;
-  sending: boolean;
-  onClick: () => void;
-  label?: string;
-  pendingLabel?: string;
-  sendingLabel?: string;
-};
-
-type DeleteConfirmationRequest = {
-  title: string;
-  description?: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  variant?: "default" | "destructive";
-  onConfirm: () => void | Promise<void>;
-};
-
-type CategoryEntryRenderEntry = {
-  id: string;
-  status?: string | null;
-  confirmationStatus?: EntryStatus | string | null;
-  requestEditStatus?: RequestEditStatus;
-  requestEditRequestedAtISO?: string | null;
-  committedAtISO?: string | null;
-  streak?: unknown;
-  streakEligible?: boolean;
-  editWindowExpiresAt?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-  permanentlyLocked?: boolean;
-  pdfMeta?: {
-    url?: string | null;
-  } | null;
-};
-
-type CategoryEntryRecordCardProps = {
-  group: EntryListGroup;
-  index: number;
-  href: string;
-  title: React.ReactNode;
-  subtitle?: React.ReactNode;
-  metadata?: React.ReactNode;
-  confirmationStatus?: EntryStatus | string | null;
-  editTime?: ReturnType<typeof getEntryEditTime>;
-  createdAt?: string;
-  updatedAt?: string;
-  hideActions?: boolean;
-  onView: () => void;
-  onPreview?: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  deleteLabel?: string;
-  sendForConfirmation?: SendForConfirmationControls;
-  requestEdit?: RequestEditControls;
-  requestDelete?: RequestDeleteControls;
-  permanentlyLocked?: boolean;
-  children?: React.ReactNode;
-};
+import {
+  type CategoryEntryRenderEntry,
+  type CategoryEntryRecordCardProps,
+  type CategoryEntryRecordRendererOptions,
+  type DeleteConfirmationRequest,
+} from "./dataEntryTypes";
 
 function getActionLabel(group: EntryListGroup, defaultLabel: string): string {
   if (group === "in_the_works") return "Continue";
@@ -239,30 +166,6 @@ export default function CategoryEntryRecordCard({
     </EntryListCardShell>
   );
 }
-
-type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRenderEntry> = {
-  buildHref: (entry: TEntry) => string;
-  buildTitle: (entry: TEntry) => React.ReactNode;
-  buildSubtitle?: (entry: TEntry) => React.ReactNode;
-  renderBody: (entry: TEntry) => React.ReactNode;
-  onView: (entry: TEntry) => void;
-  onEdit?: (entry: TEntry) => void;
-  onPreview?: (entry: TEntry) => void;
-  previewUrl?: (entry: TEntry) => string | null | undefined;
-  hideActions?: (entry: TEntry, group: EntryListGroup) => boolean;
-  enableWorkflowActions?: (entry: TEntry, group: EntryListGroup) => boolean;
-  deleteLabel?: string | ((entry: TEntry) => string);
-  requestConfirmation?: (request: DeleteConfirmationRequest) => void;
-  buildDeleteRequest?: (entry: TEntry) => DeleteConfirmationRequest;
-  requestingEditIds: Record<string, boolean | undefined>;
-  requestingDeleteIds: Record<string, boolean | undefined>;
-  sendingConfirmationIds: Record<string, boolean | undefined>;
-  requestEdit: (entry: TEntry) => void | Promise<void>;
-  cancelRequestEdit: (entry: TEntry) => void | Promise<void>;
-  requestDelete: (entry: TEntry) => void | Promise<void>;
-  cancelRequestDelete: (entry: TEntry) => void | Promise<void>;
-  sendForConfirmation: (entry: TEntry) => void | Promise<void>;
-};
 
 export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRenderEntry>({
   buildHref,

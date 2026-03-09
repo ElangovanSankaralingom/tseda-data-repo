@@ -30,53 +30,14 @@ import {
   type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
-import type { EntryStatus, FileMeta } from "@/lib/types/entry";
-import type { RequestEditStatus } from "@/lib/types/requestEdit";
+import type { FileMeta } from "@/lib/types/entry";
+import type { GuestLectureEntry, UploadStatus } from "@/components/data-entry/adapters/adapterTypes";
 
 type UploadSlot =
   | "permissionLetter"
   | "brochure"
   | "attendance"
   | "speakerProfile";
-type UploadStatus = { hasPending: boolean; busy: boolean };
-
-type GuestLectureEntry = {
-  id: string;
-  sharedEntryId?: string;
-  sourceEmail?: string;
-  sharedRole?: "coCoordinator";
-  confirmationStatus?: EntryStatus;
-  requestEditStatus?: RequestEditStatus;
-  requestEditRequestedAtISO?: string | null;
-  academicYear: string;
-  startDate: string;
-  endDate: string;
-  eventName: string;
-  speakerName: string;
-  organizationName: string;
-  coordinator: FacultyRowValue;
-  coCoordinators: FacultyRowValue[];
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
-  participants: number | null;
-  pdfMeta?: {
-    storedPath: string;
-    url: string;
-    fileName: string;
-    generatedAtISO: string;
-  } | null;
-  pdfSourceHash?: string;
-  pdfStale?: boolean;
-  uploads: Record<UploadSlot, FileMeta | null> & { geotaggedPhotos: FileMeta[] };
-  streak?: {
-    activatedAtISO?: string | null;
-    dueAtISO?: string | null;
-    completedAtISO?: string | null;
-    windowDays?: number;
-  };
-  createdAt: string;
-  updatedAt: string;
-};
 
 const UPLOAD_CONFIG: Array<{ slot: UploadSlot; label: string }> = [
   { slot: "permissionLetter", label: "Permission Letter" },

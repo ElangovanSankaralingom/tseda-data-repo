@@ -5,12 +5,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-type EntryStatusBadgeProps = {
-  status?: EntryStatus | string | null;
-  className?: string;
-};
-
-export default function EntryStatusBadge({ status, className }: EntryStatusBadgeProps) {
+export default function EntryStatusBadge({ status, className }: { status?: EntryStatus | string | null; className?: string }) {
   if (!status) return null;
 
   const normalized = normalizeEntryApprovalStatus(status);

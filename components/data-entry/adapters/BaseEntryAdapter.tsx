@@ -28,35 +28,9 @@ import {
 } from "@/lib/entries/adapterOrchestration";
 import { getCategoryConfig } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
-import type { EntryStatus } from "@/lib/types/entry";
-import type { RequestEditStatus } from "@/lib/types/requestEdit";
+import type { EntryRecord } from "@/components/data-entry/adapters/adapterTypes";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type EntryRecord = Record<string, unknown> & {
-  id: string;
-  confirmationStatus?: EntryStatus;
-  status?: string | null;
-  requestEditStatus?: RequestEditStatus;
-  requestEditRequestedAtISO?: string | null;
-  pdfMeta?: { storedPath?: string; url?: string; fileName?: string; generatedAtISO?: string } | null;
-  pdfStale?: boolean;
-  pdfSourceHash?: string;
-  pdfGenerated?: boolean;
-  pdfGeneratedAt?: string | null;
-  permanentlyLocked?: boolean;
-  streak?: unknown;
-  createdAt?: string;
-  updatedAt?: string;
-  // CategorizableEntry fields
-  completionState?: string | null;
-  streakState?: string | null;
-  committedAtISO?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
-};
+export type { EntryRecord };
 
 /**
  * Context passed to the renderFormFields callback so the adapter

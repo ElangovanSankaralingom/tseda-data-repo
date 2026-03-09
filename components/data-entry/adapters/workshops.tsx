@@ -30,52 +30,14 @@ import {
   type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
-import type { EntryStatus, FileMeta } from "@/lib/types/entry";
-import type { RequestEditStatus } from "@/lib/types/requestEdit";
-import { type StreakState } from "@/lib/gamification";
+import type { FileMeta } from "@/lib/types/entry";
+import type { WorkshopEntry } from "@/components/data-entry/adapters/adapterTypes";
 
 type UploadSlot =
   | "permissionLetter"
   | "brochure"
   | "attendance"
   | "organiserProfile";
-
-type WorkshopEntry = {
-  id: string;
-  sharedEntryId?: string;
-  sourceEmail?: string;
-  sharedRole?: "coCoordinator";
-  confirmationStatus?: EntryStatus;
-  requestEditStatus?: RequestEditStatus;
-  requestEditRequestedAtISO?: string | null;
-  requestEditMessage?: string;
-  academicYear: string;
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
-  startDate: string;
-  endDate: string;
-  eventName: string;
-  speakerName: string;
-  organisationName: string;
-  coordinator: FacultyRowValue;
-  coCoordinators: FacultyRowValue[];
-  participants: number | null;
-  pdfMeta?: {
-    storedPath: string;
-    url: string;
-    fileName: string;
-    generatedAtISO: string;
-  } | null;
-  pdfStale?: boolean;
-  pdfSourceHash?: string;
-  pdfGenerated?: boolean;
-  pdfGeneratedAt?: string | null;
-  permanentlyLocked?: boolean;
-  uploads: Record<UploadSlot, FileMeta | null> & { geotaggedPhotos: FileMeta[] };
-  streak: StreakState;
-  createdAt: string;
-  updatedAt: string;
-};
 
 // ---------------------------------------------------------------------------
 // Constants

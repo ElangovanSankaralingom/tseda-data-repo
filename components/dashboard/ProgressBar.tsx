@@ -5,21 +5,13 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ProgressBarProps = {
-  label: string;
-  count: number;
-  maxCount: number;
-  href: string;
-  index: number;
-};
-
 export default function ProgressBar({
   label,
   count,
   maxCount,
   href,
   index,
-}: ProgressBarProps) {
+}: { label: string; count: number; maxCount: number; href: string; index: number }) {
   const [barWidth, setBarWidth] = useState(0);
   const isEmpty = count === 0;
   const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;

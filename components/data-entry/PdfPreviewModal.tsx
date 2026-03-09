@@ -3,13 +3,7 @@
 import { useEffect } from "react";
 import { Download, FileText, X } from "lucide-react";
 
-type PdfPreviewModalProps = {
-  pdfUrl: string;
-  pdfFileName: string;
-  onClose: () => void;
-};
-
-export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: PdfPreviewModalProps) {
+export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfUrl: string; pdfFileName: string; onClose: () => void }) {
   // Close on Escape
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

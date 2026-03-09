@@ -11,14 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
-
-type CategoryAccent = {
-  icon: LucideIcon;
-  bg: string;
-  iconColor: string;
-  ring: string;
-  cta: string;
-};
+import { type CategoryAccent, type StatusPill } from "./dashboardTypes";
 
 const CATEGORY_ACCENTS: Record<string, CategoryAccent> = {
   "fdp-attended": {
@@ -64,12 +57,6 @@ const DEFAULT_ACCENT: CategoryAccent = {
   iconColor: "text-slate-600",
   ring: "hover:ring-slate-200",
   cta: "text-slate-500",
-};
-
-type StatusPill = {
-  label: string;
-  count: number;
-  className: string;
 };
 
 export type CategoryCardData = {

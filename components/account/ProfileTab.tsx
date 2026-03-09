@@ -3,14 +3,7 @@
 import { SectionCard, Field } from "./AccountUI";
 import type { Profile } from "./types";
 
-interface ProfileTabProps {
-  draft: Profile;
-  setDraft: React.Dispatch<React.SetStateAction<Profile>>;
-  errors: Record<string, string>;
-  shouldShowError: (key: string) => boolean;
-}
-
-export default function ProfileTab({ draft, setDraft, errors, shouldShowError }: ProfileTabProps) {
+export default function ProfileTab({ draft, setDraft, errors, shouldShowError }: { draft: Profile; setDraft: React.Dispatch<React.SetStateAction<Profile>>; errors: Record<string, string>; shouldShowError: (key: string) => boolean }) {
   return (
     <SectionCard title="Profile">
       <div className="space-y-5">

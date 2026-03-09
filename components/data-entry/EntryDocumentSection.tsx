@@ -9,22 +9,7 @@ import {
   FileText,
 } from "lucide-react";
 import PdfPreviewModal from "@/components/data-entry/PdfPreviewModal";
-
-type PdfMeta = {
-  url?: string | null;
-  fileName?: string;
-  generatedAtISO?: string;
-} | null | undefined;
-
-type EntryDocumentSectionProps = {
-  pdfMeta: PdfMeta;
-  pdfStale: boolean;
-  canPreview: boolean;
-  canDownload: boolean;
-  onRegenerate: () => void;
-  generating: boolean;
-  isViewMode?: boolean;
-};
+import { type EntryDocumentSectionProps } from "./dataEntryTypes";
 
 function formatRelativeTime(iso: string): string {
   const diff = Date.now() - Date.parse(iso);

@@ -1,17 +1,10 @@
+import { type MetricCardTone } from "@/lib/types/ui";
+
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-type MetricCardTone = "neutral" | "warning" | "success" | "danger";
-
-type MetricCardProps = {
-  label: string;
-  value: number;
-  hint?: string;
-  tone?: MetricCardTone;
-};
-
-export default function MetricCard({ label, value, hint, tone = "neutral" }: MetricCardProps) {
+export default function MetricCard({ label, value, hint, tone = "neutral" }: { label: string; value: number; hint?: string; tone?: MetricCardTone }) {
   return (
     <div
       className={cx(

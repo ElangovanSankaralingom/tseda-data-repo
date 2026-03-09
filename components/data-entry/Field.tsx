@@ -1,11 +1,4 @@
-type FieldProps = {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-};
-
-export default function Field({ label, error, hint, children }: FieldProps) {
+export default function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
