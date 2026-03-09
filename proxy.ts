@@ -3,7 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { isMasterAdmin } from "@/lib/admin";
 import { dashboard } from "@/lib/entryNavigation";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const token = await getToken({ req: request });
   const email = typeof token?.email === "string" ? token.email : "";
 
