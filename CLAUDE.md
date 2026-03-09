@@ -32,6 +32,7 @@ Read the relevant doc before making changes in that area.
 | `CONTRIBUTING.md` | For workflow, commit conventions, and PR checklist |
 | `AUDIT.md` | For known issues and prioritized action plan -- check before starting work to avoid duplicating effort |
 | `CHANGELOG.md` | Version history -- update when shipping user-visible changes |
+| `DEPLOY.md` | Deployment guide -- env vars, data directory, cron setup, production checklist |
 | `README.md` | Project overview, setup instructions, and tech stack |
 
 ## Project Overview
