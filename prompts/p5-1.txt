@@ -1,0 +1,74 @@
+## Task Type
+BUG_FIX (security)
+
+## Priority
+HIGH
+
+## Context
+AUDIT.md identified several auth gaps:
+1. `getServerSession()` called WITHOUT `authOptions` in 4 files (may use wrong callbacks)
+2. Entry creation routes may still lack rate limiting
+3. Some routes may be missing auth entirely
+
+## Read First
+1. AUDIT.md (section 2: Authentication Assessment — list of gaps)
+2. lib/auth.ts (authOptions export)
+3. lib/security/rateLimit.ts (rate limit presets)
+
+## The Fix
+
+### Step 1: Find all broken getServerSession calls
+```bash
+grep -rn "getServerSession()" app/ --include="*.ts" --include="*.tsx" | grep -v "authOptions"
+```
+Every hit is a file calling `getServerSession()` without `authOptions`. Fix each one:
+```typescript
+// WRONG:
+const session = await getServerSession();
+// RIGHT:
+const session = await getServerSession(authOptions);
+```
+
+Files identified in audit (verify they still exist):
+- app/api/me/avatar/route.ts
+- app/api/me/certificate/route.ts
+- app/api/file/route.ts
+- app/api/me/experience/certificate/route.ts
+
+### Step 2: Add rate limiting to entry creation
+If entry creation goes through the unified handler (lib/api/categoryRouteHandler.ts), verify the POST handler has rate limiting:
+```bash
+grep -n "rateLimit\|rateLimiter\|RATE" lib/api/categoryRouteHandler.ts
+```
+If missing, add the `entryMutations` rate limit preset to the POST handler.
+
+### Step 3: Audit all API routes for auth
+```bash
+# Find routes WITHOUT getServerSession
+for f in $(find app/api -name "route.ts"); do
+  if ! grep -q "getServerSession\|requireAuth\|authOptions" "$f"; then
+    echo "NO AUTH: $f"
+  fi
+done
+```
+Every route except `/api/auth/[...nextauth]` and `/api/cron/nightly` (uses cron secret) must have auth.
+
+### Step 4: Fix any unauthenticated routes found
+Add the standard auth check pattern:
+```typescript
+const session = await getServerSession(authOptions);
+if (!session?.user?.email) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+```
+
+## Scope
+- MODIFY: all files with broken getServerSession calls
+- MODIFY: lib/api/categoryRouteHandler.ts (add rate limiting if missing)
+- MODIFY: any unauthenticated routes found
+- DO NOT MODIFY: lib/auth.ts, middleware.ts, or business logic
+
+## Verification
+1. npm run build — passes
+2. grep -rn "getServerSession()" app/ --include="*.ts" | grep -v "authOptions" — ZERO hits
+3. All routes have auth (run the audit script from Step 3 — should return nothing)

@@ -1,0 +1,56 @@
+## Task Type
+FEATURE
+
+## Priority
+MEDIUM
+
+## Context
+Users need notifications for: entry about to expire (24h warning), edit request granted/rejected, entry auto-archived, admin announcements. The API routes for notifications already exist (`app/api/me/notifications/`). This prompt ensures the notification creation is wired into the correct triggers.
+
+## Read First
+1. app/api/me/notifications/route.ts (existing notification API)
+2. app/api/me/notifications/unread-count/route.ts
+3. lib/entries/internal/engineAdmin.ts (where grants/rejections happen)
+4. lib/jobs/ (where cron jobs create notifications)
+
+## The Fix
+
+### Step 1: Create notification helper
+Create `lib/notifications/create.ts`:
+```typescript
+export async function createUserNotification(
+  email: string,
+  type: 'timer_warning' | 'edit_granted' | 'edit_rejected' | 'delete_approved' | 'auto_archived' | 'announcement',
+  data: { entryId?: string; category?: string; message?: string }
+) {
+  // Read user's notification file
+  // Append new notification with id, type, data, createdAt, read: false
+  // Write back atomically
+}
+```
+
+### Step 2: Wire notifications into triggers
+
+**In cron job (P6.1):**
+- When auto-archiving: `createUserNotification(email, 'auto_archived', { entryId, category })`
+- 24h before timer expiry: `createUserNotification(email, 'timer_warning', { entryId, category })`
+
+**In engineAdmin (grant/reject):**
+- When granting edit: `createUserNotification(email, 'edit_granted', { entryId, category })`
+- When rejecting edit: `createUserNotification(email, 'edit_rejected', { entryId, category })`
+- When approving delete: `createUserNotification(email, 'delete_approved', { entryId, category })`
+
+### Step 3: Verify bell icon reads from notification API
+The shell should already have a NotificationBell component (from P4.2). Verify it fetches from `/api/me/notifications/unread-count`.
+
+## Scope
+- CREATE: lib/notifications/create.ts
+- MODIFY: lib/entries/internal/engineAdmin.ts (add notification calls after grants/rejections)
+- MODIFY: lib/jobs/autoArchive.ts or cron route (add notification calls)
+- DO NOT MODIFY: notification API routes (they should already work)
+
+## Verification
+1. npm run build — passes
+2. Grant edit request → user gets notification
+3. Auto-archive entry → user gets notification
+4. Notification bell shows unread count

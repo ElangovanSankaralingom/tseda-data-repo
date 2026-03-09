@@ -1,0 +1,40 @@
+## Task Type
+FEATURE (tests)
+
+## Priority
+MEDIUM
+
+## Context
+workflow.ts and streakProgress.ts contain critical business rules that must be tested. Some tests may already exist — augment them.
+
+## Read First
+1. tests/entries/streakProgress.test.ts (if exists — see what's covered)
+2. tests/entries/confirmationStateMachine.test.ts (if exists)
+3. lib/entries/workflow.ts (all exported functions)
+4. lib/streakProgress.ts (isEntryActivated, isEntryWon)
+
+## The Implementation
+
+### Workflow tests (tests/entries/workflow.test.ts):
+- normalizeEntryStatus: legacy values map correctly
+- isEntryEditable: true for DRAFT, true for GENERATED within window, false for expired
+- isEntryFinalized: true only for GENERATED past window
+- canTransition: all valid transitions return true, invalid return false
+- transitionEntry: each action produces correct status and fields
+- computeEditWindowExpiry: 3 days for non-streak, endDate+8 for streak
+
+### Streak tests (augment tests/entries/streakProgress.test.ts):
+- isEntryActivated: all conditions checked
+- isEntryWon: all conditions checked
+- End date exception: past date removes activation
+- Permanent removal: request on Win sets flag
+- Non-effects: field edits, PDF stale, admin actions
+
+## Scope
+- CREATE/MODIFY: tests/entries/workflow.test.ts
+- MODIFY: tests/entries/streakProgress.test.ts (augment)
+- DO NOT MODIFY: source files
+
+## Verification
+1. npm test — all tests pass
+2. Coverage on workflow.ts and streakProgress.ts > 80%
