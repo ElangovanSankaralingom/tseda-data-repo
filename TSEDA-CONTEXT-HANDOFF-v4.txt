@@ -1,0 +1,268 @@
+# TSEDA PROJECT — FULL CONTEXT HANDOFF
+## For continuing development in a new Claude chat session
+## Last updated: March 9, 2026 (Session 3 — Post-Overhaul)
+
+---
+
+## PROJECT OVERVIEW
+
+**TSEDA** = Gamified faculty data collection app for **TCE (Thiagarajar College of Engineering)**, Madurai.
+
+Faculty members log professional development activities (FDPs attended, FDPs conducted, guest lectures, case studies, workshops). The app gamifies data entry with a streak system to encourage timely submissions.
+
+---
+
+## REPO & SETUP
+
+- **GitHub**: https://github.com/ElangovanSankaralingom/tseda-data-repo
+- **Branch**: `main` (ONLY branch — no worktrees, no dev branch)
+- **Working directory**: `/Users/thya/tseda-data-repo` (work directly on main)
+- **Tech stack**: Next.js 16.1.6 (Turbopack), React 19.2.3, Tailwind CSS 4, shadcn/ui, lucide-react, NextAuth.js 4.24.13 (Google OAuth, @tce.edu domain), TypeScript 5
+- **Storage**: File-based JSON (NO database), WAL, pdf-lib 1.17.1
+- **Master admin**: `senarch@tce.edu`
+
+### Git Rules (ENFORCED)
+- Work ONLY on `main` branch
+- NO worktrees — if Claude Code or Codex creates one, remove it immediately
+- Push after every change: `git add -A && git commit -m "description" && git push origin main`
+- Check for phantom worktrees: `git worktree list` (should show only one line)
+
+---
+
+## REPO ACCESS FROM CLAUDE CHAT
+
+### To unlock repo file access in a new chat session:
+Paste these URLs at the start of the conversation:
+
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/PROMPT-ENGINEERING-FRAMEWORK.md
+https://api.github.com/repos/ElangovanSankaralingom/tseda-data-repo/git/trees/main?recursive=1
+
+### To read any specific file:
+https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/<filepath>
+
+### URL Index File:
+tseda-url-index.md in repo root has organized raw URLs for every file, grouped by function.
+
+---
+
+## CUSTOM COMMANDS
+
+### upmd
+When I say "upmd", Claude will:
+1. Fetch the repo tree
+2. Read every root .md file via raw GitHub URLs
+3. Cross-reference against current codebase state
+4. Generate a Claude Code prompt that creates/deletes/updates MDs
+5. Ensures CLAUDE.md is master index, tseda-url-index.md lists all files
+6. Include verification grep commands + split strategy if >200 lines
+
+---
+
+## ARCHITECTURE (POST-OVERHAUL)
+
+### Unified Route Handler
+All 5 category API routes are now thin wrappers delegating to:
+- lib/api/categoryRouteHandler.ts — single shared handler with auth, validation, rate limiting
+- Routes: app/api/me/fdp-attended/route.ts etc. — ~20 lines each
+
+### Engine as Single Entry Point
+ALL mutations flow through lib/entries/internal/engine.ts (barrel file re-exporting from split modules):
+- engineRead.ts — list, get operations
+- engineWrite.ts — create, update, delete
+- engineTransitions.ts — generate, finalise, status transitions
+- engineAdmin.ts + engineAdminConfirmations.ts + engineAdminBulk.ts — admin operations
+- engineRequests.ts + engineRequestValidation.ts + engineRequestNotify.ts — edit/delete requests
+- engineValidation.ts — input validation
+- engineHelpers.ts — shared utilities (withUserLock, file I/O)
+- engineIndex.ts — index and WAL operations
+
+Public API: lib/entries/lifecycle.ts re-exports from engine.
+
+### Canonical Type System
+- lib/types/entry.ts — CanonicalEntry, EntryApiResponse, EntryLifecycleFields, EntryStatus, FieldStage
+- lib/types/admin.ts — UserProfile, UserStats, admin types
+- lib/types/dashboard.ts — dashboard types
+- lib/entries/toApiResponse.ts — single function converting raw entry to API response with computed fields
+
+### Two-Stage Field Model (codified in schemas)
+- Stage 1 (data fields): Affect PDF hash. Annotated stage: 1 (default) in category schemas.
+- Stage 2 (file uploads): Do NOT affect PDF hash. Annotated stage: 2 in schemas.
+- lib/pdfSnapshot.ts reads stage from schemas instead of hardcoded exclusions.
+
+### Data Storage
+- .data/users/<email>/ — per-category JSON files (GITIGNORED — not in repo)
+- .data/admin/ — admin notifications, admin user list
+- public/uploads/ — uploaded files
+- No database — everything is JSON files on disk
+
+### 5 Categories (hardcoded in categoryRegistry.ts):
+1. fdp-attended
+2. fdp-conducted
+3. guest-lectures
+4. case-studies
+5. workshops
+
+CRITICAL RULE: If a change applies to one route or adapter, it MUST apply to ALL FIVE.
+
+---
+
+## ENTRY STATUSES (6 total)
+
+DRAFT -> GENERATED -> EDIT_REQUESTED -> EDIT_GRANTED -> (re-finalized)
+                   -> DELETE_REQUESTED -> ARCHIVED
+
+| Status | Meaning |
+|--------|---------|
+| DRAFT | Entry created, fields being filled |
+| GENERATED | All mandatory data fields saved + PDF generated, timer running |
+| EDIT_REQUESTED | User requested edit on finalized entry |
+| DELETE_REQUESTED | User requested delete on finalized entry |
+| EDIT_GRANTED | Admin approved edit request (1/2/3 days) |
+| ARCHIVED | Entry hidden from user (admin-approved delete or auto-archive) |
+
+---
+
+## ENTRY LIFECYCLE
+
+### Two-Stage Field Model
+- Stage 1 (data fields): programName, startDate, endDate, organisingBody, etc. — required for Generate Entry. Changes make PDF stale.
+- Stage 2 (file uploads): permissionLetter, completionCertificate — required for Finalise Now only. Changes do NOT make PDF stale.
+
+### Timer
+- Non-streak entries: 3 days from committedAtISO
+- Streak entries: endDate + 8 days
+- Timer NEVER resets once started
+- Timer expired + valid PDF -> entry finalizes (read-only)
+- Timer expired + NO valid PDF -> auto-archive by cron
+
+### Permanently Locked
+- After second finalization (edit granted -> finalised again): permanentlyLocked = true
+- Request Edit: BLOCKED
+- Request Delete: ALWAYS available regardless of lock state
+
+---
+
+## STREAK SYSTEM
+
+### Two Checkpoints:
+1. Generate PDF -> Activated (end date must be future)
+2. Finalise Entry -> Win (eligible + mandatory fields + valid PDF + finalized)
+
+### Permanent Removal:
+- Edit/Delete request on a WIN entry -> permanent removal
+- Does NOT apply to Activated entries — only Wins
+
+### Source of Truth:
+- lib/streakProgress.ts — isEntryActivated, isEntryWon, computeCanonicalStreakSnapshot
+- STREAK-SPECIFICATION.md — full spec in repo root
+
+---
+
+## CANONICAL FILE MAP (POST-OVERHAUL)
+
+### Entry Lifecycle:
+- lib/entries/workflow.ts — status transitions, editability, finalization rules
+- lib/entries/internal/engine.ts — barrel re-exporting all engine modules
+- lib/entries/lifecycle.ts — public API re-exports
+- lib/entries/toApiResponse.ts — entry to EntryApiResponse converter
+
+### Unified Route Handler:
+- lib/api/categoryRouteHandler.ts — shared GET/POST/PATCH/DELETE handler
+
+### Types:
+- lib/types/entry.ts — CanonicalEntry, EntryApiResponse, EntryStatus, FieldStage
+- lib/types/admin.ts — UserProfile, UserStats
+- lib/types/dashboard.ts — dashboard types
+
+### Streak:
+- lib/streakProgress.ts — business rules
+
+### PDF:
+- lib/pdf/pdfService.ts — generation
+- lib/pdfSnapshot.ts — hash, staleness (schema-driven Stage 1/2)
+
+### Dashboard:
+- lib/dashboard/getDashboardSummary.ts — index-first reads
+
+### Background Jobs:
+- app/api/cron/nightly/route.ts — auto-archive, edit grant expiry, timer warnings, WAL compaction
+- lib/notifications/create.ts — notification creation helper
+
+### UI Components:
+- components/entry/EntryActionsBar.tsx — action bar
+- components/data-entry/adapters/BaseEntryAdapter.tsx — shared adapter base
+- components/data-entry/FieldRenderer.tsx — schema-driven field rendering
+- components/shell/ — TopNav, Sidebar, NotificationBell, UserMenu
+- components/account/ — split account page sections
+
+### Hooks:
+- hooks/useCategoryEntryPageController.ts — main controller (composes sub-hooks)
+- hooks/useEntrySaveActions.ts — save orchestration
+- hooks/useEntryGenerateAndFinalise.ts — PDF + finalization
+- hooks/useEntryRequests.ts — edit/delete requests
+
+### Tests:
+- tests/entries/engine.test.ts — engine integration tests
+- tests/entries/workflow.test.ts — workflow + streak tests
+- tests/entries/apiResponse.test.ts — API response contract tests
+
+### Infrastructure:
+- app/api/health/route.ts — health check endpoint
+- lib/logger.ts — structured JSON logging
+- lib/env.ts — environment variable validation
+- DEPLOY.md — deployment runbook
+
+---
+
+## OVERHAUL COMPLETED (March 9, 2026)
+
+### 9 Phases + Targeted Fixes (47 prompts total):
+- P0: Emergency fixes (build, gitignore, auth)
+- P1: Canonical type system (CanonicalEntry, EntryApiResponse, FieldStage)
+- P2: Unified route handler (eliminated ~5000 lines of duplication)
+- P3: Engine as single entry point (eliminated route bypass, deprecated postSave)
+- P4: Component splitting (account 74KB->split, shell 23KB->split)
+- T1-T9: Targeted splits (engine 2680->barrel+modules, types 127->39)
+- P5: Security hardening (auth gaps, middleware->proxy, input validation)
+- P6: Background jobs (auto-archive, notifications, timer warnings, WAL compaction)
+- P7: Testing (engine, workflow, streak, API contract)
+- P8: Performance (index-first reads, structured logging, cache audit)
+- P9: Polish (dead code removal, docs sync, deployment prep)
+
+### Remaining:
+- P5.4: Purge .data/ from git history (manual — rewrites history, use BFG)
+- Adapter unification incomplete (case-studies 633, guest-lectures 577 still large — category-specific rendering)
+
+---
+
+## MD FILES IN REPO ROOT
+
+| File | Purpose |
+|------|---------|
+| CLAUDE.md | Master index for Claude Code |
+| ARCHITECTURE.md | Canonical ownership rules |
+| API.md | All API endpoints |
+| AUDIT.md | Security audit |
+| CHANGELOG.md | Version history |
+| CONTRIBUTING.md | Contribution guidelines |
+| DATA_MODEL.md | File storage structure |
+| DEPLOY.md | Deployment runbook |
+| DESIGN_SYSTEMS.md | UI/UX style guide |
+| PROMPT-ENGINEERING-FRAMEWORK.md | Prompt standards |
+| README.md | Project overview |
+| STREAK-SPECIFICATION.md | Streak system rules |
+| TSEDA-CONTEXT-HANDOFF.txt | This file |
+| tseda-url-index.md | Raw GitHub URLs for all files |
+
+---
+
+## HOW TO CONTINUE
+
+1. Start new Claude chat
+2. Upload this context file
+3. Paste these URLs to unlock repo access:
+   https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main/PROMPT-ENGINEERING-FRAMEWORK.md
+   https://api.github.com/repos/ElangovanSankaralingom/tseda-data-repo/git/trees/main?recursive=1
+4. Say "upmd" to check and fix all MD files
+5. Always push after changes: git add -A && git commit -m "description" && git push origin main
+6. Keep prompts under 200 lines for Claude Code
