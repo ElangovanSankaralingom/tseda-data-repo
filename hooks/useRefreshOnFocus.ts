@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Refreshes server components when the user returns to the tab after being away.
@@ -13,7 +13,8 @@ export function useRefreshOnFocus(options?: {
   suppressRef?: React.RefObject<boolean>;
 }) {
   const router = useRouter();
-  const lastRefresh = useRef(Date.now());
+  const [lastRefreshInit] = useState(() => Date.now());
+  const lastRefresh = useRef(lastRefreshInit);
   const minInterval = options?.minInterval ?? 60000;
 
   useEffect(() => {

@@ -10,9 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   Search as SearchIcon,
-  X,
   ChevronRight,
-  Clock,
   Zap,
   FileText,
   Users,

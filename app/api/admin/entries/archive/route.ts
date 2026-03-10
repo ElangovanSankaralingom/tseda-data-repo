@@ -18,6 +18,7 @@ import {
 } from "@/lib/entryNavigation";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     const entryId = String(body.entryId ?? "").trim();
     const reason = body.reason;
 
-    if (!ownerEmail || !ownerEmail.endsWith("@tce.edu")) {
+    if (!ownerEmail || !ownerEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       return NextResponse.json({ error: "ownerEmail required" }, { status: 400 });
     }
     if (!isValidCategorySlug(categoryKey)) {

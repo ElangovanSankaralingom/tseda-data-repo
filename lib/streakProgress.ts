@@ -114,6 +114,13 @@ function isISODate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+/**
+ * Derives a sort-order ISO timestamp for a streak entry.
+ * Prefers `updatedAt`; falls back to `createdAt`.
+ *
+ * @param entry - The entry to extract a sort timestamp from.
+ * @returns The ISO timestamp string used for ordering, or `null` if neither field is a valid date string.
+ */
 export function toStreakSortAtISO(entry: StreakProgressEntryLike): string | null {
   return toOptionalISO(entry.updatedAt) ?? toOptionalISO(entry.createdAt);
 }
@@ -124,6 +131,14 @@ function toSortTime(value: string | null | undefined) {
   return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
 }
 
+/**
+ * Comparator for sorting streak entries by their sort-at ISO timestamps (ascending).
+ * Entries with missing or invalid timestamps are pushed to the end.
+ *
+ * @param left - The first ISO timestamp (or null/undefined).
+ * @param right - The second ISO timestamp (or null/undefined).
+ * @returns A negative number if `left` is earlier, positive if later, or 0 if equal.
+ */
 export function compareStreakSortAtISO(left: string | null | undefined, right: string | null | undefined) {
   return toSortTime(left) - toSortTime(right);
 }
@@ -134,6 +149,7 @@ export function compareStreakSortAtISO(left: string | null | undefined, right: s
  * Returns the end date field name for a given category.
  * All categories currently use "endDate".
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getEndDateField(_category?: CategoryKey): string {
   return END_DATE_FIELD;
 }
@@ -277,6 +293,13 @@ export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): Strea
 
 // --- Deprecated streak metadata (kept for API route compat) ---
 
+/**
+ * Resets the timing-related streak metadata fields to `null`, preserving other streak state.
+ * Used when an entry loses streak eligibility or is permanently removed.
+ *
+ * @param streakValue - The raw streak state value from the entry (normalized internally).
+ * @returns A new `StreakState` with `activatedAtISO`, `dueAtISO`, and `completedAtISO` cleared.
+ */
 export function clearStreakMetadata(streakValue: unknown): StreakState {
   const streak = normalizeStreakState(streakValue);
   return {
@@ -291,6 +314,7 @@ export function clearStreakMetadata(streakValue: unknown): StreakState {
  * @deprecated Streak metadata is no longer used for counting.
  * Kept for backward compatibility with API routes that store streak on entries.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function buildCanonicalStreakMetadata(_args: BuildCanonicalStreakMetadataArgs): StreakState {
   return {
     activatedAtISO: null,
@@ -302,6 +326,13 @@ export function buildCanonicalStreakMetadata(_args: BuildCanonicalStreakMetadata
 
 // --- Aggregation ---
 
+/**
+ * Returns a new array of active streak entries sorted in ascending order by their sort-at timestamps.
+ * Does not mutate the input array.
+ *
+ * @param entries - The active streak entries to sort.
+ * @returns A sorted copy of the entries array.
+ */
 export function sortActiveStreakEntries(entries: StreakActiveEntry[]): StreakActiveEntry[] {
   return entries
     .slice()
@@ -315,6 +346,12 @@ function emptyAggregateByCategory(): StreakProgressAggregateByCategory {
   }, {} as StreakProgressAggregateByCategory);
 }
 
+/**
+ * Creates a zeroed-out streak progress aggregate with empty counters for every category.
+ * Used as the initial accumulator before iterating over entries.
+ *
+ * @returns A `StreakProgressAggregate` with all counts at zero and an empty active entries list.
+ */
 export function createEmptyStreakProgressAggregate(): StreakProgressAggregate {
   return {
     activatedCount: 0,
@@ -393,6 +430,14 @@ export function computeStreakProgressAggregate(
   return summary;
 }
 
+/**
+ * Computes the canonical streak snapshot from a flat list of entries.
+ * Wraps {@link computeStreakProgressAggregate} and stamps the result with the current rule version.
+ * This is the top-level function consumed by cache writers and API responses.
+ *
+ * @param entries - All entries (across categories) to evaluate.
+ * @returns A versioned `CanonicalStreakSnapshot` with activated, wins, and eligible counts plus per-category breakdowns.
+ */
 export function computeCanonicalStreakSnapshot(
   entries: ReadonlyArray<StreakProgressAggregateEntry>
 ): CanonicalStreakSnapshot {

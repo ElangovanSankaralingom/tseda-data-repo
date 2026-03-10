@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -57,7 +58,7 @@ function CategoryHero({
 }) {
   const config = getCategoryConfig(category);
   const gradient = config.color.gradient;
-  const Icon = getCategoryIcon(config.icon);
+  const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
 
   return (
     <div className={`rounded-2xl bg-gradient-to-br ${gradient} p-6 sm:p-8 mb-6 animate-fade-in-up`}>
@@ -74,6 +75,7 @@ function CategoryHero({
         {/* Left: icon + title */}
         <div className="flex items-start gap-4">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/10">
+            {/* eslint-disable-next-line react-hooks/static-components */}
             <Icon className="size-7 text-white" />
           </div>
           <div className="min-w-0">
@@ -138,13 +140,14 @@ function CategoryEmptyState({
   addLabel?: string;
 }) {
   const config = getCategoryConfig(category);
-  const Icon = getCategoryIcon(config.icon);
+  const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
   const accent = config.color.text;
   const bgAccent = config.color.bg;
 
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center max-w-md mx-auto animate-fade-in-up stagger-2">
       <div className={`mx-auto flex size-24 items-center justify-center rounded-full ${bgAccent}`}>
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <Icon className={`size-10 ${accent}`} />
       </div>
       <h2 className="mt-5 text-lg font-semibold text-slate-700">
@@ -178,7 +181,6 @@ export default function CategoryEntryPageShell({
   confirmationDialog,
   onAddEntry,
   addEntryLabel,
-  onRequestEdit,
   onCancelRequestEdit,
 }: CategoryEntryPageShellProps) {
   // Form mode — enhanced editor layout

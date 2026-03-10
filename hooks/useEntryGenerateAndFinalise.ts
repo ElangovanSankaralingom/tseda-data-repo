@@ -70,23 +70,7 @@ export function useEntryGenerateAndFinalise<TEntry extends CategoryPageEntry>(
     return success;
   }, [
     nextRouter,
-    options.afterGenerate,
-    options.applyGeneratedEntry,
-    options.beforeGenerate,
-    options.buildDraftEntry,
-    options.canGenerate,
-    options.generateBusyMessage,
-    options.generateEntrySnapshot,
-    options.generateErrorMessage,
-    options.generateSuccessMessage,
-    options.generateValidationMessage,
-    options.hasBusyUploads,
-    options.hasValidationErrors,
-    options.markGenerateAttempted,
-    options.persistEntry,
-    options.saveLockRef,
-    options.setSaving,
-    options.setToast,
+    options,
   ]);
 
   const finaliseEntry = useCallback(
@@ -116,7 +100,7 @@ export function useEntryGenerateAndFinalise<TEntry extends CategoryPageEntry>(
         setFinalisingIds((prev) => ({ ...prev, [entryId]: false }));
       }
     },
-    [options.category, finalisingIds, nextRouter, options.setList, options.showToast],
+    [options, finalisingIds, nextRouter],
   );
 
   return {

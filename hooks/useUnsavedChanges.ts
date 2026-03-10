@@ -11,7 +11,10 @@ import { useCallback, useEffect, useRef } from "react";
 export function useUnsavedChanges(hasChanges: boolean, message?: string) {
   const msg = message ?? "You have unsaved changes. Discard them?";
   const hasChangesRef = useRef(hasChanges);
-  hasChangesRef.current = hasChanges;
+
+  useEffect(() => {
+    hasChangesRef.current = hasChanges;
+  }, [hasChanges]);
 
   // Browser close/refresh guard
   useEffect(() => {

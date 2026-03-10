@@ -43,6 +43,17 @@ function applyRequestFields(
   return transitioned as EntryLike;
 }
 
+/**
+ * Submits an edit request for a finalized entry. Validates that the entry is
+ * committed and eligible for requests, transitions it to EDIT_REQUESTED, and
+ * notifies the admin of the request.
+ *
+ * @param userEmail - Email of the user requesting the edit.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry to request edit access for.
+ * @param message - Optional message from the user explaining the edit request.
+ * @returns The updated entry record in EDIT_REQUESTED state.
+ */
 export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
@@ -78,6 +89,15 @@ export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecor
   });
 }
 
+/**
+ * Cancels a pending edit request, reverting the entry from EDIT_REQUESTED back
+ * to its previous state.
+ *
+ * @param userEmail - Email of the user cancelling the request.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry whose edit request is being cancelled.
+ * @returns The updated entry record after cancellation.
+ */
 export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
@@ -100,6 +120,17 @@ export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngin
   });
 }
 
+/**
+ * Submits a delete request for a finalized entry. Validates that the entry is
+ * committed, not permanently locked, and eligible for requests, then transitions
+ * it to DELETE_REQUESTED.
+ *
+ * @param userEmail - Email of the user requesting deletion.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry to request deletion for.
+ * @param message - Optional message from the user explaining the delete request.
+ * @returns The updated entry record in DELETE_REQUESTED state.
+ */
 export async function requestDelete<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
@@ -128,6 +159,15 @@ export async function requestDelete<T extends EntryEngineRecord = EntryEngineRec
   });
 }
 
+/**
+ * Cancels a pending delete request, reverting the entry from DELETE_REQUESTED
+ * back to its previous state.
+ *
+ * @param userEmail - Email of the user cancelling the request.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry whose delete request is being cancelled.
+ * @returns The updated entry record after cancellation.
+ */
 export async function cancelDeleteRequest<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,

@@ -12,6 +12,13 @@ Read these documents before making any changes:
 - Work directly on `main` (single branch workflow)
 - Push to `main` after verifying build and tests pass
 
+## Branch Protection Rules (set in GitHub Settings)
+
+- Require pull request reviews before merging
+- Require status checks to pass (CI quality job)
+- Require branches to be up to date before merging
+- Do not allow force pushes to main
+
 ## Commit Messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
@@ -96,6 +103,26 @@ Follow [DESIGN_SYSTEMS.md](DESIGN_SYSTEMS.md):
 - Use existing component patterns (`Card`, `Badge`, `Button` variants)
 - Follow the responsive breakpoints (`sm:640px`, `md:768px`, `lg:1024px`)
 - Match page layout templates (max-w-5xl centered, consistent spacing)
+
+## File Naming Convention
+
+| Directory | Convention | Example |
+|-----------|-----------|---------|
+| `lib/` | camelCase | `entryNavigation.ts`, `streakProgress.ts` |
+| `components/` | PascalCase | `EntryActionsBar.tsx`, `ErrorBoundary.tsx` |
+| `hooks/` | camelCase with `use` prefix | `useEntryEditor.ts`, `useCountUp.ts` |
+| `data/schemas/` | kebab-case (matching category slugs) | `fdp-attended.ts`, `guest-lectures.ts` |
+| `app/` routes | Next.js conventions | `page.tsx`, `route.ts`, `layout.tsx` |
+
+## Import Order Convention
+
+Imports should be ordered with blank lines between groups:
+
+1. Node built-ins (`node:fs`, `node:path`, `node:crypto`)
+2. Framework (`react`, `next`, `next-auth`)
+3. Third-party (`lucide-react`, `pdf-lib`, etc.)
+4. Internal absolute (`@/lib/`, `@/components/`, `@/hooks/`, `@/data/`)
+5. Relative (`./`, `../`)
 
 ## Test Requirements
 

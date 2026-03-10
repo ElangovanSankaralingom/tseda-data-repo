@@ -8,9 +8,10 @@ import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { getUserStoreDir } from "@/lib/userStore";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 
 const WAL_FILE_NAME = "events.log";
-const DEFAULT_RETENTION_DAYS = 30;
+const DEFAULT_RETENTION_DAYS = APP_CONFIG.cron.walRetentionDays;
 
 export type WalCompactResult = {
   usersProcessed: number;

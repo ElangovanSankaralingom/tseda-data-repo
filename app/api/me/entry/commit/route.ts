@@ -9,12 +9,13 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dashboard, dataEntryHome, entryDetail, entryList } from "@/lib/entryNavigation";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   const sessionEmail = normalizeEmail(session?.user?.email ?? "");
 
-  if (!sessionEmail.endsWith("@tce.edu")) {
+  if (!sessionEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

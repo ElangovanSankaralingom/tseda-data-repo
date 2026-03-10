@@ -7,11 +7,10 @@ import { canRunMaintenance } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   getLastMaintenanceRun,
-  type NightlyMaintenanceSummary,
 } from "@/lib/jobs/nightly";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
-import { computeSystemStats, type SystemStats } from "@/lib/maintenance/stats";
-import { readMaintenanceLog, type MaintenanceAction } from "@/lib/maintenance/log";
+import { computeSystemStats } from "@/lib/maintenance/stats";
+import { readMaintenanceLog } from "@/lib/maintenance/log";
 import MaintenanceDashboard from "@/components/admin/MaintenanceDashboard";
 
 export const dynamic = "force-dynamic";

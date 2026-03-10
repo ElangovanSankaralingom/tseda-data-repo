@@ -29,6 +29,22 @@ export async function resolve(specifier, context, nextResolve) {
     };
   }
 
+  // Stub out `next/server` — not available outside Next.js runtime
+  if (specifier === "next/server") {
+    return {
+      shortCircuit: true,
+      url: pathToFileURL(pathResolve(PROJECT_ROOT, "tests/helpers/nextServerStub.mjs")).href,
+    };
+  }
+
+  // Stub out `next-auth` and `next-auth/jwt` — not available in test runner
+  if (specifier === "next-auth" || specifier === "next-auth/jwt") {
+    return {
+      shortCircuit: true,
+      url: "data:text/javascript,export const getServerSession = async () => null; export const getToken = async () => null; export default {};",
+    };
+  }
+
   // Resolve @/ alias
   if (specifier.startsWith("@/")) {
     const bare = pathResolve(PROJECT_ROOT, specifier.slice(2));

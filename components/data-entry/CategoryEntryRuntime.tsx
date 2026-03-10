@@ -2,6 +2,7 @@
 
 import CategoryEntryPageShell from "@/components/data-entry/CategoryEntryPageShell";
 import Toast from "@/components/ui/Toast";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { EntryHeaderActionsBar } from "@/components/entry/EntryHeaderActions";
 import type { UiToast } from "@/lib/ui/notify";
 
@@ -33,6 +34,7 @@ export default function CategoryEntryRuntime({
   onCancelRequestEdit,
 }: CategoryEntryRuntimeProps) {
   return (
+    <ErrorBoundary section="Entry editor">
     <CategoryEntryPageShell
       entryShell={{
         ...entryShell,
@@ -50,5 +52,6 @@ export default function CategoryEntryRuntime({
       onRequestEdit={onRequestEdit}
       onCancelRequestEdit={onCancelRequestEdit}
     />
+    </ErrorBoundary>
   );
 }

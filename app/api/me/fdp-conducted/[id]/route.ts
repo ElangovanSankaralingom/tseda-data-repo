@@ -13,6 +13,7 @@ import { nowISTTimestampISO } from "@/lib/time";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 type FdpConductedRecord = {
   id: string;
@@ -41,7 +42,7 @@ async function getAuthorizedEmail() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email?.toLowerCase() ?? "");
 
-  if (!email.endsWith("@tce.edu")) {
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return null;
   }
 

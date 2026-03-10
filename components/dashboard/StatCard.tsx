@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -18,7 +19,7 @@ type StatCardProps = {
   staggerClass?: string;
 };
 
-export default function StatCard({
+function StatCard({
   icon: Icon,
   label,
   value,
@@ -94,3 +95,5 @@ export default function StatCard({
     </div>
   );
 }
+
+export default React.memo(StatCard);

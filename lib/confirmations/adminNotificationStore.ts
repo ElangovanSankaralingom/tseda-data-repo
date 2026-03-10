@@ -5,10 +5,11 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import type { AdminNotification, AdminNotificationStore } from "./types";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 
 const STORE_PATH = path.join(process.cwd(), ".data", "admin", "notifications.json");
 const MAX_NOTIFICATIONS = 100;
-const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const MAX_AGE_MS = APP_CONFIG.cron.notificationMaxAgeDays * 24 * 60 * 60 * 1000;
 
 async function readStore(): Promise<AdminNotificationStore> {
   try {

@@ -15,7 +15,9 @@ function NavigationProgressInner() {
     const url = `${pathname}?${searchParams?.toString() ?? ""}`;
     if (prevUrl.current && url !== prevUrl.current) {
       // Navigation detected — show bar
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(true);
+       
       setProgress(30);
 
       if (timerRef.current) clearTimeout(timerRef.current);

@@ -1,0 +1,87 @@
+## Task Type
+REFACTOR + FEATURE
+
+## Priority
+MEDIUM
+
+## The Implementation
+
+### 1. Bundle Analysis
+```bash
+npm install -D @next/bundle-analyzer
+```
+Add to next.config.ts:
+```typescript
+const withBundleAnalyzer = require('@next/bundle-analyzer')({ enabled: process.env.ANALYZE === 'true' });
+export default withBundleAnalyzer(nextConfig);
+```
+Add script: `"analyze": "ANALYZE=true npm run build"`
+
+### 2. Accessibility Audit
+Install axe for dev: `npm install -D @axe-core/react`
+Create `lib/utils/a11y.ts`:
+```typescript
+if (process.env.NODE_ENV === 'development') {
+  import('@axe-core/react').then(axe => {
+    const React = require('react');
+    const ReactDOM = require('react-dom');
+    axe.default(React, ReactDOM, 1000);
+  });
+}
+```
+Fix ALL findings:
+- alt text on all images
+- aria-labels on icon-only buttons
+- form labels linked to inputs via htmlFor
+- focus outlines on all interactive elements (never `outline-none` without replacement)
+- Keyboard navigation: all dropdowns, modals, dialogs keyboard-accessible
+
+### 3. Memo Audit
+Search for components re-rendering unnecessarily:
+- Wrap expensive computations in useMemo
+- Wrap callbacks passed to children in useCallback
+- Use React.memo on pure display components that receive complex objects as props
+Focus on: BaseEntryAdapter, CategoryCard, EntryActionsBar, Dashboard stat cards.
+
+### 4. Error Boundaries per Section
+Create `components/ui/ErrorBoundary.tsx`:
+```typescript
+'use client';
+export class ErrorBoundary extends React.Component {
+  // Catches render errors in child components
+  // Shows friendly error UI instead of blank screen
+  // Reports error via errorReporter
+}
+```
+Wrap each major page section: dashboard stats, entry editor, admin panels.
+
+### 5. Loading States
+Ensure EVERY data-fetching component has:
+- Loading skeleton (already exists for some pages)
+- Error state
+- Empty state
+Audit all pages: dashboard, data-entry list, entry editor, admin pages.
+
+### 6. Form Accessibility
+In every adapter and BaseEntryAdapter:
+- Every input has a `<label>` with `htmlFor`
+- Required fields have `aria-required="true"`
+- Error messages linked with `aria-describedby`
+- Disabled inputs have `aria-disabled="true"`
+- Focus management: after save, focus returns to form
+
+## Scope
+- MODIFY: next.config.ts (bundle analyzer)
+- MODIFY: package.json (add @next/bundle-analyzer, @axe-core/react)
+- CREATE: components/ui/ErrorBoundary.tsx
+- MODIFY: components/data-entry/Field.tsx (add aria attributes)
+- MODIFY: components/data-entry/adapters/BaseEntryAdapter.tsx (add a11y)
+- MODIFY: all pages with data fetching (ensure loading/error/empty states)
+- DO NOT MODIFY: business logic, engine, routes
+
+## Verification
+1. npm run build — passes
+2. ANALYZE=true npm run build — bundle report generated
+3. Run with @axe-core/react — zero critical a11y violations
+4. Tab through entire entry form — all fields reachable via keyboard
+5. Screen reader test: all form labels readable

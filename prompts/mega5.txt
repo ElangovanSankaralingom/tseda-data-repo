@@ -1,0 +1,156 @@
+## Task Type
+FEATURE (tests)
+
+## Priority
+HIGH
+
+## The Implementation — ALL MANDATORY
+
+### 1. Coverage Tool Setup
+```bash
+npm install -D c8
+```
+Package.json scripts:
+```json
+"test": "node --test --experimental-strip-types tests/**/*.test.ts",
+"test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov node --test --experimental-strip-types tests/**/*.test.ts",
+"test:ci": "c8 --check-coverage --lines 80 --functions 75 --branches 70 --reporter=text --reporter=lcov node --test --experimental-strip-types tests/**/*.test.ts"
+```
+
+### 2. Engine Tests (COMPREHENSIVE)
+`tests/entries/engine.test.ts` — minimum 30 test cases:
+
+**Create:**
+- Creates with correct initial fields
+- Generates unique ID
+- Sets DRAFT status
+- Rejects missing required fields
+
+**Update:**
+- Updates allowed fields
+- Sets updatedAt
+- Rejects update on finalized entry
+- Rejects update on archived entry
+- Sanitizes string fields
+- Rejects protected field overwrite (confirmationStatus, etc.)
+
+**Generate (DRAFT→GENERATED):**
+- Sets correct status, editWindowExpiresAt, committedAtISO
+- Sets streakEligible=true when endDate is future
+- Sets streakEligible=false when endDate is past
+- Sets pdfGenerated, pdfGeneratedAt
+- Rejects generate on non-DRAFT entry
+
+**Finalise:**
+- Succeeds for GENERATED with valid PDF
+- Sets permanentlyLocked on second finalization
+- Rejects without PDF
+- Rejects if PDF stale
+- Rejects on DRAFT entry
+
+**Request Edit:**
+- Transitions to EDIT_REQUESTED
+- Increments requestCount
+- Sets streakPermanentlyRemoved on Win entry
+- Rejects at limit (3/month)
+- Rejects on non-finalized entry
+
+**Request Delete:**
+- Transitions to DELETE_REQUESTED
+- Cancels pending edit request
+- Rejects on non-finalized entry
+
+**Delete:**
+- Deletes DRAFT
+- Deletes editable GENERATED
+- Rejects finalized
+- Removes from store completely
+
+**Admin: Grant, Reject, Archive, Restore**
+- Each with positive and negative cases
+
+### 3. Workflow Tests (COMPREHENSIVE)
+`tests/entries/workflow.test.ts` — minimum 25 test cases:
+- normalizeEntryStatus with every legacy value
+- isEntryEditable for every status
+- isEntryFinalized for every status
+- canTransition for every valid pair
+- canTransition rejects every invalid pair
+- computeEditWindowExpiry non-streak (3 days)
+- computeEditWindowExpiry streak (endDate + 8 days)
+- transitionEntry for every action
+- getEditTimeRemaining with various expirations
+- canRequestAction at limit
+
+### 4. Streak Tests (COMPREHENSIVE)
+`tests/entries/streakProgress.test.ts` — minimum 15 test cases:
+- isEntryActivated all conditions true → true
+- isEntryActivated each condition false → false
+- isEntryWon all conditions true → true
+- isEntryWon each condition false → false
+- End date changed to past → not activated
+- End date changed to future → must regenerate
+- Request on Win → permanent removal
+- Request on Activated → no removal
+- Archive → permanent removal
+- Restore → permanent removal
+
+### 5. API Contract Tests
+`tests/api/contracts.test.ts`:
+- entryToApiResponse always includes isEditable, isFinalized, editTimeRemaining
+- entryToApiResponse for every status produces correct flags
+- Response matches Zod schema (from MEGA-3)
+- Empty/null entry fields handled without crash
+
+### 6. Route Handler Tests
+`tests/routes/categoryHandler.test.ts`:
+- GET returns paginated response envelope
+- POST creates entry, returns envelope
+- POST rejects without auth (mock)
+- POST rejects oversized payload
+- PATCH updates, returns envelope
+- PATCH rejects on finalized
+- DELETE removes draft
+- DELETE rejects finalized
+
+### 7. Security Tests
+`tests/security/security.test.ts`:
+- CSRF: rejects cross-origin mutation
+- Rate limit: allows under limit, rejects over
+- Sanitization: strips HTML tags from input
+- Sanitization: truncates long strings
+- File validation: rejects wrong MIME type
+- Auth: rejects missing session
+
+### 8. Schema Validator Tests
+`tests/validation/schemaValidator.test.ts`:
+- Required field missing → error
+- All fields present → no errors
+- Stage 1 validation (for Generate)
+- Stage 2 excluded from Stage 1 check
+- Cross-field validation (endDate >= startDate)
+- Invalid date format → error
+- Invalid select value → error
+
+### 9. Coverage Thresholds
+After all tests, verify:
+```bash
+npm run test:ci
+```
+Must pass with: lines 80%, functions 75%, branches 70%.
+
+## Scope
+- CREATE: tests/entries/engine.test.ts (30+ cases)
+- CREATE: tests/entries/workflow.test.ts (25+ cases)
+- MODIFY: tests/entries/streakProgress.test.ts (15+ cases)
+- CREATE: tests/api/contracts.test.ts
+- CREATE: tests/routes/categoryHandler.test.ts
+- CREATE: tests/security/security.test.ts
+- CREATE: tests/validation/schemaValidator.test.ts
+- MODIFY: package.json (add c8, coverage scripts)
+- MODIFY: .gitignore (add coverage/)
+
+## Verification
+1. npm test — ALL tests pass
+2. npm run test:coverage — shows 80%+ on lib/entries/, lib/streakProgress.ts
+3. npm run test:ci — passes coverage thresholds

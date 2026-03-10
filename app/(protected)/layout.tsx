@@ -4,6 +4,7 @@ import ShellClient from "@/app/ShellClient";
 import { authOptions } from "@/lib/auth";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
 import { signin } from "@/lib/entryNavigation";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export default async function ProtectedLayout({
   children,
@@ -15,7 +16,7 @@ export default async function ProtectedLayout({
   if (!session?.user?.email) redirect(signin());
 
   const email = session.user.email.toLowerCase();
-  if (!email.endsWith("@tce.edu") || !findFacultyByEmail(email)) {
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX) || !findFacultyByEmail(email)) {
     redirect(`${signin()}?error=AccessDenied`);
   }
 

@@ -7,7 +7,6 @@ import {
   canTransition,
   transitionEntry,
   computeEditWindowExpiry,
-  isEditWindowExpired,
   canRequestAction,
   type EntryStateLike,
 } from "../../lib/entries/workflow.ts";

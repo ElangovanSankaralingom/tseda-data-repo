@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import path from "path";
 import fs from "fs/promises";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 function safeName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -12,7 +13,7 @@ export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() || "";
 
-  if (!email.endsWith("@tce.edu")) {
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

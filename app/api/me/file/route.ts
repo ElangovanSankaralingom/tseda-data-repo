@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizeError } from "@/lib/errors";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -98,7 +99,7 @@ async function getAuthorizedEmail() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() ?? "";
 
-  if (!email.endsWith("@tce.edu")) {
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return null;
   }
 

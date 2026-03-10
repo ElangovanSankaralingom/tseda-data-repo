@@ -33,6 +33,7 @@ export default function SearchProvider({
 
   useEffect(() => {
     const email = session?.user?.email ?? "";
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAdmin(isMasterAdmin(email));
 
     if (!email) return;

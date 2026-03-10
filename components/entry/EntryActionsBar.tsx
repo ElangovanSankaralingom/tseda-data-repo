@@ -52,7 +52,6 @@ export function HeaderEntryActionsBar({
   onRequestDelete,
   onCancelRequestDelete,
   editTimeLabel,
-  onBack,
   permanentlyLocked = false,
 }: HeaderEntryActionsBarProps) {
   // View mode: mirror edit-mode layout with disabled save buttons
@@ -179,6 +178,7 @@ function EditModeActionBar({
 
     if (canNow && !wasBefore && !celebrationShownRef.current) {
       celebrationShownRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCelebrationPhase("entering");
       // Trigger enter animation on next frame
       requestAnimationFrame(() => setCelebrationPhase("visible"));
@@ -188,6 +188,7 @@ function EditModeActionBar({
       }, 3000);
       return () => clearTimeout(hideTimer);
     }
+    return undefined;
   }, [finalise?.canFinalise]);
 
   useEffect(() => {

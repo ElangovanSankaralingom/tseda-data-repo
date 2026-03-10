@@ -62,7 +62,8 @@ export function getImmutableFieldKeysWhenPending(category: CategoryKey): string[
     .filter((fieldKey) => !DEFAULT_MUTABLE_WHEN_PENDING.has(fieldKey));
 }
 
-export function canEditField(entry: EntryStateLike, category: CategoryKey, fieldKey: string): boolean {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function canEditField(entry: EntryStateLike, _category: CategoryKey, _fieldKey: string): boolean {
   if (isEntryFinalized(entry)) return false;
   const status = normalizeEntryStatus(entry);
   // EDIT_REQUESTED entries are not editable (waiting for admin grant)

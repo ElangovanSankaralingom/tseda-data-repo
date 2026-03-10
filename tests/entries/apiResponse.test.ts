@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { entryToApiResponse, entriesToApiResponse } from "@/lib/entries/toApiResponse";
-import { ENTRY_STATUSES, type EntryStatus } from "@/lib/types/entry";
+import { ENTRY_STATUSES } from "@/lib/types/entry";
 
 function daysFromNow(days: number): string {
   const d = new Date();

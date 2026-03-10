@@ -1,0 +1,121 @@
+## Task Type
+FEATURE
+
+## Priority
+HIGH
+
+## The Implementation — EVERY ITEM MANDATORY
+
+### 1. Request ID on EVERY request
+Create `lib/api/asyncContext.ts` using AsyncLocalStorage:
+- Generate UUID per request in middleware/proxy
+- Set in response header: `x-request-id`
+- Available everywhere via `getCurrentRequestId()`
+- Auto-included in every log entry
+
+### 2. Structured Logger with Levels
+Enhance `lib/logger.ts`:
+```typescript
+const LOG_LEVEL = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+const LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+
+function shouldLog(level: string): boolean {
+  return (LEVELS[level] ?? 0) >= (LEVELS[LOG_LEVEL] ?? 0);
+}
+
+export const logger = {
+  debug: (data: LogEntry) => shouldLog('debug') && emit('debug', data),
+  info: (data: LogEntry) => shouldLog('info') && emit('info', data),
+  warn: (data: LogEntry) => shouldLog('warn') && emit('warn', data),
+  error: (data: LogEntry) => shouldLog('error') && emit('error', data),
+};
+
+function emit(level: string, data: LogEntry) {
+  const entry = {
+    level,
+    ts: new Date().toISOString(),
+    requestId: getCurrentRequestId(),
+    ...data,
+  };
+  // In production: structured JSON
+  // In dev: human-readable
+  if (process.env.NODE_ENV === 'production') {
+    console.log(JSON.stringify(entry));
+  } else {
+    console.log(`[${level.toUpperCase()}] ${data.event || data.message || ''}`);
+  }
+}
+```
+
+### 3. Response Timing on EVERY API call
+In withErrorHandler, measure and log:
+- Request start time
+- Response status code
+- Duration in ms
+- User email (from session)
+- Path and method
+All in one log line per request.
+
+### 4. Slow Query Detection
+Log warnings for operations exceeding thresholds:
+- File read > 100ms → warn
+- Index rebuild > 500ms → warn
+- Dashboard computation > 200ms → warn
+- Any API response > 1000ms → warn
+
+### 5. Error Reporting Abstraction (Sentry-ready)
+Create `lib/observability/errorReporter.ts`:
+- Currently logs to structured logger
+- Interface ready for Sentry drop-in
+- Every error goes through this single function
+- Includes: error, stack, requestId, userEmail, path, additional context
+
+### 6. Health Check with Detailed Diagnostics
+Enhance `/api/health/route.ts`:
+```typescript
+return {
+  status: 'healthy',
+  timestamp: new Date().toISOString(),
+  uptime: process.uptime(),
+  memory: process.memoryUsage(),
+  storage: { accessible: true, userCount: X },
+  version: packageVersion,
+  node: process.version,
+  environment: process.env.NODE_ENV,
+  checks: {
+    dataDir: 'ok' | 'error',
+    uploadsDir: 'ok' | 'error',
+    envVars: 'ok' | 'missing: X,Y',
+  },
+};
+```
+
+### 7. PII Scrubbing in Logs
+Create `lib/observability/scrubber.ts`:
+- Before logging any entry data, scrub: email addresses (mask: s***@tce.edu), file paths, session tokens
+- WAL events: scrub before/after entry data in logs (keep in WAL file but not in console/external logs)
+- Apply to logger.info and logger.warn for any data containing user entries
+
+### 8. Replace ALL remaining console.log
+```bash
+grep -rn "console\.log\|console\.error\|console\.warn" lib/ app/ hooks/ --include="*.ts" --include="*.tsx"
+```
+Every hit must use the structured logger instead. Exception: instrumentation.ts process handlers can use console.error as fallback.
+
+## Scope
+- CREATE: lib/api/asyncContext.ts
+- CREATE: lib/observability/errorReporter.ts
+- CREATE: lib/observability/scrubber.ts
+- MODIFY: lib/logger.ts (levels, requestId, PII scrubbing)
+- MODIFY: lib/api/withErrorHandler.ts (timing, requestId context)
+- MODIFY: app/api/health/route.ts (detailed diagnostics)
+- MODIFY: middleware/proxy (generate + propagate requestId)
+- MODIFY: ALL files with console.log → use logger
+
+## Verification
+1. npm run build — passes
+2. grep -rn "console\.log" lib/ app/ --include="*.ts" | wc -l — ZERO (except instrumentation fallback)
+3. Every API response header has x-request-id
+4. Every log entry has: level, ts, requestId, event
+5. Slow operations (>100ms) logged with warning
+6. /api/health returns detailed diagnostics with memory, uptime, check statuses

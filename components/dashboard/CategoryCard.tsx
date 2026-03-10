@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -18,7 +19,7 @@ export type CategoryCardData = {
   editGrantedCount: number;
 };
 
-export default function CategoryCard({
+function CategoryCard({
   slug,
   label,
   href,
@@ -30,7 +31,8 @@ export default function CategoryCard({
 }: CategoryCardData) {
   const config = getCategoryConfig(slug);
   const color = config.color;
-  const Icon = getCategoryIcon(config.icon);
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+  const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
   const accent = { bg: color.bg, iconColor: color.text, ring: color.ring, cta: color.cta };
   const displayCount = useCountUp(total);
   const isEmpty = total === 0;
@@ -60,6 +62,7 @@ export default function CategoryCard({
           accent.bg
         )}
       >
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <Icon className={cn("size-5", accent.iconColor)} />
       </div>
 
@@ -98,3 +101,5 @@ export default function CategoryCard({
     </Link>
   );
 }
+
+export default React.memo(CategoryCard);

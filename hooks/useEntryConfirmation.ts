@@ -1,15 +1,9 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { AppError, toUserMessage } from "@/lib/errors";
+import { useCallback, useState } from "react";
 import type { CategoryKey } from "@/lib/entries/types";
-import { safeAction } from "@/lib/safeAction";
 import type { EntryStatus } from "@/lib/types/entry";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
-import {
-  createOptimisticSnapshot,
-  optimisticUpsert,
-} from "@/lib/ui/optimistic";
 
 type ConfirmableEntry = {
   id: string;
@@ -23,6 +17,7 @@ type ConfirmableEntry = {
  * This hook is retained for backward compatibility but the send action is a no-op.
  * Entries auto-finalize based on their edit window expiry.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
   category: CategoryKey;
   setItems: React.Dispatch<React.SetStateAction<TEntry[]>>;
@@ -32,6 +27,7 @@ export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
   const [sendingIds] = useState<Record<string, boolean>>({});
 
   const sendForConfirmation = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_entry: TEntry) => {
       // No-op: entries auto-finalize in the new workflow
     },

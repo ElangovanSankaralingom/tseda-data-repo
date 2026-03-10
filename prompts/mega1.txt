@@ -1,0 +1,141 @@
+## Task Type
+FEATURE + BUG_FIX (security)
+
+## Priority
+CRITICAL
+
+## Context
+Comprehensive security hardening. Every item must be addressed — no partial implementations.
+
+## Read First
+1. next.config.ts
+2. lib/security/rateLimit.ts
+3. lib/security/limits.ts
+4. lib/api/categoryRouteHandler.ts
+5. middleware.ts or proxy configuration
+6. lib/auth.ts
+7. package.json (dependencies)
+
+## The Implementation — EVERY ITEM MANDATORY
+
+### 1. Security Headers (next.config.ts)
+Add to next.config.ts `headers` function:
+```
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+X-XSS-Protection: 1; mode=block
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Strict-Transport-Security: max-age=31536000; includeSubDomains (production only)
+X-DNS-Prefetch-Control: off
+```
+
+### 2. CSRF Protection
+Create `lib/security/csrf.ts`:
+- Validate Origin header on all POST/PATCH/PUT/DELETE requests
+- Allow same-origin (no Origin header = same-origin request)
+- Allow configured origins from NEXTAUTH_URL env var
+- Reject everything else with 403
+- Wire into categoryRouteHandler and withErrorHandler for ALL mutation routes
+
+### 3. CORS Configuration
+Add to next.config.ts:
+```typescript
+headers: async () => [
+  {
+    source: '/api/:path*',
+    headers: [
+      { key: 'Access-Control-Allow-Origin', value: process.env.NEXTAUTH_URL || 'http://localhost:3000' },
+      { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PATCH, DELETE, OPTIONS' },
+      { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, x-request-id' },
+      { key: 'Access-Control-Max-Age', value: '86400' },
+    ],
+  },
+]
+```
+
+### 4. Rate Limiting on ALL endpoints
+Currently only mutations have rate limits. Add:
+- GET endpoints: 120 requests/60s per user (prevents scraping)
+- Auth endpoints: 10 requests/60s per IP (prevents brute force)
+- File download: 30 requests/60s per user
+- Health endpoint: 60 requests/60s (no auth, needs protection)
+Add these presets to rateLimit.ts and wire into all routes.
+
+### 5. File Upload Hardening
+In every file upload route:
+- Validate MIME type server-side (not just extension): only allow application/pdf, image/jpeg, image/png
+- Validate file size server-side: max 10MB per file
+- Validate file content: read first bytes to verify magic number matches claimed MIME
+- Sanitize filename: strip path traversal characters (../, ~, etc.)
+- Store with UUID filename, not original name
+Create `lib/security/fileValidation.ts` with these checks.
+
+### 6. npm audit fix
+Run `npm audit fix`. If `--force` is needed, test carefully.
+Document any vulnerabilities that cannot be auto-fixed.
+
+### 7. Dependabot
+Create `.github/dependabot.yml`:
+- Weekly npm updates
+- Auto-label PRs
+- Limit to 5 open PRs
+
+### 8. Content Security Policy
+Add CSP header:
+```
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https://lh3.googleusercontent.com data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';
+```
+Note: 'unsafe-inline' and 'unsafe-eval' needed for Next.js. Can tighten with nonce-based CSP later.
+
+### 9. Session Security
+In lib/auth.ts, verify these NextAuth options:
+```typescript
+session: {
+  strategy: 'jwt',
+  maxAge: 8 * 60 * 60, // 8 hours, not 30 days
+},
+cookies: {
+  sessionToken: {
+    name: '__Secure-next-auth.session-token',
+    options: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+    },
+  },
+},
+```
+
+### 10. Input Sanitization in Engine
+In `lib/entries/internal/engineWrite.ts` or engineHelpers:
+- Before any entry save, sanitize ALL string fields:
+  - Trim whitespace
+  - Strip HTML tags: `value.replace(/<[^>]*>/g, '')`
+  - Truncate to max length (5000 chars)
+  - Reject null bytes: `value.replace(/\0/g, '')`
+- Create `lib/security/sanitize.ts` with a `sanitizeEntryFields(entry)` function
+- Call it in EVERY write path
+
+## Scope
+- CREATE: lib/security/csrf.ts
+- CREATE: lib/security/fileValidation.ts
+- CREATE: lib/security/sanitize.ts
+- CREATE: .github/dependabot.yml
+- MODIFY: next.config.ts (headers, CORS, CSP)
+- MODIFY: lib/security/rateLimit.ts (add GET/auth/download presets)
+- MODIFY: lib/auth.ts (session maxAge, cookie security)
+- MODIFY: lib/api/categoryRouteHandler.ts (wire CSRF, rate limit on GET)
+- MODIFY: lib/entries/internal/engineWrite.ts (wire sanitization)
+- MODIFY: all file upload routes (wire fileValidation)
+- MODIFY: package.json/package-lock.json (npm audit fix)
+
+## Verification
+1. npm run build — passes
+2. npm audit — 0 vulnerabilities
+3. curl -I localhost:3000 — shows ALL security headers including CSP
+4. Cross-origin POST from different domain — rejected with 403
+5. Upload non-PDF file claiming to be PDF — rejected
+6. GET /api/me/fdp-attended at 121 requests/minute — rate limited
+7. Session cookie has httpOnly, sameSite, secure flags

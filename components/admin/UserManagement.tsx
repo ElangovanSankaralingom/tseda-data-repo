@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   BarChart3,
@@ -113,6 +113,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
   if (user.image) {
     return (
       <div className="relative">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={user.image}
           alt={user.name}
@@ -150,9 +151,13 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
 
 function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
   const isTopPerformer = rank <= 3 && user.totalEntries > 0;
-  const isNew =
-    user.firstSeenAt &&
-    Date.now() - Date.parse(user.firstSeenAt) < 30 * 24 * 60 * 60 * 1000;
+  const isNew = useMemo(
+    () =>
+      user.firstSeenAt &&
+      // eslint-disable-next-line react-hooks/purity
+      Date.now() - Date.parse(user.firstSeenAt) < 30 * 24 * 60 * 60 * 1000,
+    [user.firstSeenAt],
+  );
 
   return (
     <Link

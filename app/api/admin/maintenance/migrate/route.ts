@@ -5,7 +5,7 @@ import { listUsers, migrateUserData } from "@/lib/admin/integrity";
 import { canRunMaintenance } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { appendMaintenanceLog } from "@/lib/maintenance/log";
-import { enforceRateLimitForRequest } from "@/lib/security/rateLimit";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   enforceRateLimitForRequest({
     request,
     action: "admin.maintenance.migrate",
-    options: { windowMs: 300_000, max: 2 },
+    options: RATE_LIMIT_PRESETS.adminMaintenanceSlow,
     userEmail: email,
   });
 

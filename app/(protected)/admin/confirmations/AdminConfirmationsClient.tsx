@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SectionCard from "@/components/layout/SectionCard";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
@@ -21,13 +21,6 @@ type PendingConfirmationRow = {
   status: string;
   entryHref: string;
 };
-
-function formatTimestamp(value: string | null) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString();
-}
 
 function formatRelativeTime(value: string | null) {
   if (!value) return null;
@@ -92,8 +85,6 @@ export default function AdminConfirmationsClient() {
   useEffect(() => {
     void loadQueue();
   }, [loadQueue]);
-
-  const pendingCount = useMemo(() => rows.length, [rows]);
 
   async function resolve(row: PendingConfirmationRow, decision: "approve" | "reject", reason?: string) {
     const key = getRowKey(row);

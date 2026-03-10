@@ -5,7 +5,7 @@ import { canRunMaintenance } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { runNightlyIntegrityCheck } from "@/lib/jobs/nightly";
 import { appendMaintenanceLog } from "@/lib/maintenance/log";
-import { enforceRateLimitForRequest } from "@/lib/security/rateLimit";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   enforceRateLimitForRequest({
     request,
     action: "admin.maintenance.integrity-check",
-    options: { windowMs: 60_000, max: 3 },
+    options: RATE_LIMIT_PRESETS.adminMaintenance,
     userEmail: email,
   });
 

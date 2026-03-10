@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -17,7 +16,6 @@ import {
   isSemesterAllowed,
   normalizeYearOfStudy,
   YEAR_OF_STUDY_OPTIONS,
-  type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { FileMeta } from "@/lib/types/entry";
@@ -82,7 +80,7 @@ function validateFields(form: FdpAttended): Record<string, string> {
 // ---------------------------------------------------------------------------
 
 function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> }) {
-  const { form, setForm, submitted, errors, coreFieldDisabled, isViewMode, pdfState, uploadsVisible, persistCurrentMutation, showToast, submitAttemptedFinal, uploadPersisting, setUploadPersistingCount } = ctx;
+  const { form, setForm, submitted, errors, coreFieldDisabled, isViewMode, uploadsVisible, persistCurrentMutation, showToast, submitAttemptedFinal, uploadPersisting, setUploadPersistingCount } = ctx;
 
   const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);

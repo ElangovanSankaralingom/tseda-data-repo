@@ -4,12 +4,12 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type {
   EntrySaveIntent,
-  EntrySaveSource,
 } from "@/lib/entries/pageOrchestration";
 import type { CategoryKey, RequestEditableEntry } from "@/lib/entries/types";
 import type { CategorizableEntry } from "@/lib/entryCategorization";
 import type { EntryStatus } from "@/lib/types/entry";
 export type { ToastState } from "@/lib/types/ui";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ToastState } from "@/lib/types/ui";
 
 // ── Core types ──────────────────────────────────────────────────────────────

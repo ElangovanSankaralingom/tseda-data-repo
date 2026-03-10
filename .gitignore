@@ -31,3 +31,6 @@ Users/
 # Backup files
 *.bak
 *.bak.*
+
+# Coverage
+coverage/

@@ -90,7 +90,7 @@ export default function ShellClient({
     isMasterAdmin(session?.user?.email)
   );
   const [open, setOpen] = useState(false);
-  const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [toast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [menuProfile, setMenuProfile] = useState<ProfileSummary | null>(null);
   const scrolled = useScrolled(0);
 
@@ -114,6 +114,7 @@ export default function ShellClient({
   useEffect(() => {
     const email = session?.user?.email ?? "";
     const masterFallback = isMasterAdmin(email);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCanAccessAdmin(masterFallback);
 
     if (!email) return;

@@ -45,7 +45,6 @@ export default function ExperienceTab({
   experienceDirty,
   saveAttemptedTabs,
   saveCurrentTab,
-  showToast,
   getErrorsForTab,
 }: ExperienceTabProps) {
   const exp = useMemo(

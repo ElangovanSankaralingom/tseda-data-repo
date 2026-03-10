@@ -44,6 +44,15 @@ export type AdminMutationConfig = {
   successMeta?: Record<string, string | number | boolean | null | undefined>;
 };
 
+/**
+ * Executes a guarded admin mutation on a single entry. Validates admin permissions,
+ * enforces rate limits, acquires a user data lock, applies the configured state
+ * transition, persists the result, and logs WAL + telemetry events.
+ *
+ * @param config - Configuration object describing the admin mutation to perform,
+ *   including the transition function, WAL action, and optional callbacks.
+ * @returns The updated entry record after the mutation.
+ */
 export async function runAdminMutation<T extends EntryEngineRecord = EntryEngineRecord>(
   config: AdminMutationConfig
 ): Promise<T> {
@@ -172,6 +181,15 @@ export type UserRequestMutationConfig = {
   afterSuccess?: (entry: EntryEngineRecord) => void;
 };
 
+/**
+ * Executes a guarded user-initiated mutation on a single entry. Enforces rate
+ * limits, acquires a user data lock, applies the configured state transition,
+ * persists the result, and logs WAL + telemetry events.
+ *
+ * @param config - Configuration object describing the user mutation to perform,
+ *   including the transition function, WAL action, and optional callbacks.
+ * @returns The updated entry record after the mutation.
+ */
 export async function runUserRequestMutation<T extends EntryEngineRecord = EntryEngineRecord>(
   config: UserRequestMutationConfig
 ): Promise<T> {

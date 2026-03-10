@@ -6,6 +6,7 @@ import crypto from "node:crypto";
 import { authOptions } from "@/lib/auth";
 import { getProfileByEmail, upsertProfile, StoredFile } from "@/lib/profileStore";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 const ACCEPT = new Set(["image/jpeg", "image/png"]);
 const MAX_MB = 20;
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!email.toLowerCase().endsWith("@tce.edu")) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
+  if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
 
   const form = await req.formData();
   const file = form.get("file") as File | null;
@@ -65,7 +66,7 @@ export async function DELETE() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!email.toLowerCase().endsWith("@tce.edu")) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
+  if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
 
   const profile = await getProfileByEmail(email);
   if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });

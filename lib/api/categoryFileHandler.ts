@@ -31,12 +31,17 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 import { safeEmailDir } from "@/lib/userStore";
 import { validateCsrf } from "@/lib/security/csrf";
 import { validateUploadedFile, sanitizeFilename } from "@/lib/security/fileValidation";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MAX_BYTES = 20 * 1024 * 1024;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
 
 // ── Per-category upload slot configuration ───────────────────────────────────
@@ -93,7 +98,7 @@ function safeSegment(value: string) {
 async function getAuthorizedEmail() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() ?? "";
-  if (!email.endsWith("@tce.edu")) return null;
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) return null;
   return email;
 }
 

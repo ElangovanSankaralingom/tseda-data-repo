@@ -7,6 +7,7 @@ import { CATEGORY_KEYS } from "@/lib/categories";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { safeEmailDir } from "@/lib/userStore";
 import { PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 const LEGACY_DATA_DIR = path.join(process.cwd(), "data");
 const MODERN_USERS_DIR = path.join(process.cwd(), ".data", "users");
@@ -47,7 +48,7 @@ export async function POST() {
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
 
-  if (!email || !email.endsWith("@tce.edu")) {
+  if (!email || !email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

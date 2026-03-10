@@ -12,7 +12,6 @@ import type { ExportTemplate } from "@/lib/export/templates";
 import type { ExportHistoryEntry } from "@/lib/export/history";
 import {
   AnimatedCount,
-  FormatBadge,
   FormatSelector,
   HistoryRow,
   TemplateCard,

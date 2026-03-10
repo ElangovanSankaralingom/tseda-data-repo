@@ -28,8 +28,7 @@ export default function EntryDocumentSection({
   pdfStale,
   canPreview,
   canDownload,
-  onRegenerate,
-  generating,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isViewMode = false,
 }: EntryDocumentSectionProps) {
   const [previewOpen, setPreviewOpen] = useState(false);

@@ -35,11 +35,20 @@ async function parseResponse<T>(
   let payload: T | null = null;
 
   try {
-    payload = text ? (JSON.parse(text) as T) : null;
-    if (payload && typeof payload === "object" && "error" in payload) {
-      const errorField = (payload as Record<string, unknown>).error;
+    const parsed = text ? JSON.parse(text) : null;
+    if (parsed && typeof parsed === "object") {
+      // Support envelope format: { success, data, error }
+      if ("data" in parsed && parsed.data !== null && parsed.data !== undefined) {
+        payload = parsed.data as T;
+      } else {
+        payload = parsed as T;
+      }
+      // Extract error message from envelope or legacy format
+      const errorField = parsed.error;
       if (typeof errorField === "string" && errorField) {
         message = errorField;
+      } else if (errorField && typeof errorField === "object" && typeof errorField.message === "string") {
+        message = errorField.message;
       }
     }
   } catch {
@@ -69,18 +78,20 @@ export function createRefreshList<T>(
     const url = query ? `${config.endpoint}?${query}` : config.endpoint;
 
     const response = await fetch(url, { cache: "no-store" });
-    const items = await response.json();
+    const body = await response.json();
 
     if (!response.ok) {
+      const errMsg =
+        (body as { error?: { message?: string } | string })?.error;
       throw new Error(
-        (items as { error?: string })?.error ||
+        (typeof errMsg === "object" ? errMsg?.message : errMsg) ||
           "Failed to refresh saved entries.",
       );
     }
 
-    const normalized = Array.isArray(items)
-      ? config.normalizeItems(items)
-      : [];
+    // Support both envelope { data: [...] } and legacy plain array responses
+    const items = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+    const normalized = config.normalizeItems(items);
     config.setList(normalized);
     return normalized;
   };
@@ -204,7 +215,7 @@ export function createDeleteEntry<T extends { id?: unknown }>(
         body: JSON.stringify(config.buildBody(id)),
       });
       const responsePayload = (await response.json()) as {
-        error?: string;
+        error?: string | { message?: string };
       } | null;
 
       if (!response.ok) {
@@ -223,7 +234,9 @@ export function createDeleteEntry<T extends { id?: unknown }>(
           },
         });
         failureTracked = true;
-        throw new Error(responsePayload?.error || "Delete failed.");
+        const errField = responsePayload?.error;
+        const errMsg = typeof errField === "string" ? errField : errField?.message;
+        throw new Error(errMsg || "Delete failed.");
       }
 
       void trackClientTelemetryEvent({

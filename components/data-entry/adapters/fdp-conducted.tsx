@@ -19,7 +19,6 @@ import {
   isSemesterAllowed,
   normalizeYearOfStudy,
   YEAR_OF_STUDY_OPTIONS,
-  type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import { uploadFile } from "@/lib/upload/uploadService";
@@ -123,7 +122,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
   const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-  const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
+  const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
   const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0;
 

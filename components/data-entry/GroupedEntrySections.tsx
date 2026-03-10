@@ -11,7 +11,6 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import FilterTabs, { type FilterTab } from "@/components/ui/FilterTabs";
 import {
   ENTRY_LIST_GROUP_ORDER,

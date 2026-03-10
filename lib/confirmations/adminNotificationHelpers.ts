@@ -39,8 +39,10 @@ export async function notifyAdminEditRequest(
   ownerEmail: string,
   ownerName: string | undefined,
   entryTitle: string,
-  categoryKey: string,
-  entryId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _categoryKey: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _entryId: string,
 ): Promise<void> {
   const displayName = ownerName || ownerEmail.split("@")[0];
   await notifyAdmins(

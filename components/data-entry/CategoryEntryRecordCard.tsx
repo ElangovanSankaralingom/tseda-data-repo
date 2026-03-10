@@ -11,7 +11,6 @@ import {
 } from "@/lib/confirmation";
 import {
   getEntryEditTime,
-  getEntryListGroup,
   type EntryListGroup,
 } from "@/lib/entryCategorization";
 import { isEntryCommitted } from "@/lib/entries/workflow";
@@ -19,13 +18,7 @@ import {
   type CategoryEntryRenderEntry,
   type CategoryEntryRecordCardProps,
   type CategoryEntryRecordRendererOptions,
-  type DeleteConfirmationRequest,
 } from "./dataEntryTypes";
-
-function getActionLabel(group: EntryListGroup, defaultLabel: string): string {
-  if (group === "in_the_works") return "Continue";
-  return defaultLabel;
-}
 
 export default function CategoryEntryRecordCard({
   group,
@@ -34,17 +27,14 @@ export default function CategoryEntryRecordCard({
   title,
   subtitle,
   metadata,
-  confirmationStatus,
   editTime,
   createdAt,
   updatedAt,
   hideActions = false,
   onView,
-  onPreview,
   onEdit,
   onDelete,
   deleteLabel = "Delete",
-  sendForConfirmation,
   requestEdit,
   requestDelete,
   permanentlyLocked = false,

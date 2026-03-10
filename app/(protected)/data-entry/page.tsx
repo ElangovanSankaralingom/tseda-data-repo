@@ -5,13 +5,14 @@ import { getDashboardSummary } from "@/lib/dashboard/getDashboardSummary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryList, entryNew } from "@/lib/entryNavigation";
 import DataEntryClient from "@/components/data-entry/DataEntryClient";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export const dynamic = "force-dynamic";
 
 export default async function DataEntryHomePage() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
-  const summary = email.endsWith("@tce.edu")
+  const summary = email.endsWith(ALLOWED_EMAIL_SUFFIX)
     ? await getDashboardSummary(email)
     : null;
 
