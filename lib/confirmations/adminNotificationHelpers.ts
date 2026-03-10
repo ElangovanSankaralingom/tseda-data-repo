@@ -58,6 +58,30 @@ export async function notifyAdminEditRequest(
   );
 }
 
+/** Notify admins that a user requested deletion. */
+export async function notifyAdminDeleteRequest(
+  ownerEmail: string,
+  ownerName: string | undefined,
+  entryTitle: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _categoryKey: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _entryId: string,
+): Promise<void> {
+  const displayName = ownerName || ownerEmail.split("@")[0];
+  await notifyAdmins(
+    "delete_request",
+    "Delete request",
+    `${displayName} requested deletion for '${entryTitle}'`,
+    {
+      actionUrl: "/admin/confirmations",
+      actionLabel: "Review",
+      triggeredBy: ownerEmail,
+      triggeredByName: displayName,
+    },
+  );
+}
+
 /** Notify admins that a new user registered. */
 export async function notifyAdminNewUser(
   email: string,

@@ -198,6 +198,23 @@ export async function requestDelete<T extends EntryEngineRecord = EntryEngineRec
       }
     },
     applyTransition: (existing, nowISO) => applyRequestFields(existing as EntryLike, category, "requestDelete", nowISO, message),
+    afterSuccess: (entry) => {
+      const normalized = normalizeEmail(userEmail);
+      fireAndForget(
+        import("@/lib/confirmations/adminNotificationHelpers").then(({ notifyAdminDeleteRequest }) =>
+          import("@/lib/confirmations/notificationHelpers").then(({ extractEntryTitle }) =>
+            notifyAdminDeleteRequest(
+              normalized,
+              undefined,
+              extractEntryTitle(entry as unknown as Record<string, unknown>),
+              category,
+              String(entry.id ?? entryId),
+            ),
+          ),
+        ),
+        "notifyAdminDeleteRequest",
+      );
+    },
   });
 }
 

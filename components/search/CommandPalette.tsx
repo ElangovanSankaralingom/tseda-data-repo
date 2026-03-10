@@ -402,7 +402,7 @@ export default function CommandPalette({
                     className={cn(
                       "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                       active
-                        ? "bg-slate-900 text-white"
+                        ? "bg-[#1E3A5F] text-white"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200",
                     )}
                   >

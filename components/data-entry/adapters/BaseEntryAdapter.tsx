@@ -594,7 +594,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         })(),
         entryStatus: form.confirmationStatus,
         editRequestPending: String((form as Record<string, unknown>).requestEditStatus ?? "none") === "pending",
-        deleteRequestPending: String((form as Record<string, unknown>).deleteRequestStatus ?? "none") === "pending",
+        deleteRequestPending: String(form.confirmationStatus ?? "") === "DELETE_REQUESTED",
         onRequestEdit: () => void controller.requestEdit(form),
         onCancelRequestEdit: () => void controller.cancelRequestEdit(form),
         onRequestDelete: () => void controller.requestDelete(form),

@@ -329,7 +329,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
           <form action="/admin/maintenance/run" method="post">
             <button
               type="submit"
-              className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-slate-800 active:scale-[0.97]"
+              className="rounded-xl border border-[#1E3A5F] bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-[#162d4a] active:scale-[0.97]"
             >
               Run Full Nightly Maintenance
             </button>

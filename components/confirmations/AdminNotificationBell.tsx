@@ -10,6 +10,7 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Trash2,
   UserPlus,
   Wrench,
 } from "lucide-react";
@@ -20,6 +21,7 @@ const TYPE_CONFIG: Record<
   { Icon: typeof Shield; iconBg: string; iconColor: string }
 > = {
   edit_request: { Icon: FileEdit, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
+  delete_request: { Icon: Trash2, iconBg: "bg-red-100", iconColor: "text-red-600" },
   pending_requests_reminder: { Icon: FileEdit, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
   backup_overdue: { Icon: ShieldAlert, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
   integrity_issues: { Icon: ShieldCheck, iconBg: "bg-red-100", iconColor: "text-red-600" },

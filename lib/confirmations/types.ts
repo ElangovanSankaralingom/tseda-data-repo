@@ -97,6 +97,7 @@ export type NotificationStore = {
 
 export type AdminNotificationType =
   | "edit_request"
+  | "delete_request"
   | "pending_requests_reminder"
   | "backup_overdue"
   | "integrity_issues"

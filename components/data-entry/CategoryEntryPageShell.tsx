@@ -161,7 +161,7 @@ function CategoryEmptyState({
         <button
           type="button"
           onClick={onAdd}
-          className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 hover:-translate-y-0.5 transition-all duration-200"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#1E3A5F] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#162d4a] hover:-translate-y-0.5 transition-all duration-200"
         >
           <Plus className="size-4" />
           {addLabel || "Create First Entry"}

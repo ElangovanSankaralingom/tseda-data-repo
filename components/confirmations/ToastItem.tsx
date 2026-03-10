@@ -130,7 +130,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
         exiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
       } ${
         isUndo
-          ? "bg-slate-900 text-white"
+          ? "bg-[#1E3A5F] text-white"
           : "border border-slate-200 border-l-4 bg-white " + config.border
       }`}
       style={{ minWidth: 320, maxWidth: 440 }}

@@ -323,7 +323,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                   onClick={() => { setActiveCategory(cat); setSearch(""); }}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "bg-slate-900 text-white shadow-sm"
+                      ? "bg-[#1E3A5F] text-white shadow-sm"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
@@ -357,7 +357,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                 onClick={() => { setActiveCategory(cat); setSearch(""); }}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                   isActive
-                    ? "bg-slate-900 text-white"
+                    ? "bg-[#1E3A5F] text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
