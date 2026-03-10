@@ -23,6 +23,10 @@ export const APP_CONFIG = {
     entryMutations: { windowMs: 60_000, max: 30 },
     uploadOps: { windowMs: 60_000, max: 20 },
     adminOps: { windowMs: 60_000, max: 60 },
+    entryReads: { windowMs: 60_000, max: 120 },
+    authAttempts: { windowMs: 60_000, max: 10 },
+    fileDownloads: { windowMs: 60_000, max: 30 },
+    health: { windowMs: 60_000, max: 60 },
   },
   security: {
     entryPayloadMaxBytes: 200 * 1024,
