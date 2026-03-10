@@ -9,15 +9,9 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import EntryUploader from "@/components/upload/EntryUploader";
-import {
-  cx,
-  uuid,
-  getAcademicYearRange,
-  getInclusiveDays,
-  formatDisplayDate,
-  formatFacultyDisplay,
-  ACADEMIC_YEAR_DROPDOWN_OPTIONS,
-} from "@/components/data-entry/adapters/shared";
+import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
+import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
+import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {

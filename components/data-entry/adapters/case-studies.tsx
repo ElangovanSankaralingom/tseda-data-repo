@@ -10,16 +10,9 @@ import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
-import {
-  cx,
-  uuid,
-  isISODate,
-  getAcademicYearRange,
-  getInclusiveDays,
-  formatDisplayDate,
-  ACADEMIC_YEAR_OPTIONS,
-  ACADEMIC_YEAR_DROPDOWN_OPTIONS,
-} from "@/components/data-entry/adapters/shared";
+import { ACADEMIC_YEAR_OPTIONS, ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
+import { isISODate, getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
+import { cx, uuid } from "@/lib/utils/idHelpers";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { nowISTTimestampISO } from "@/lib/time";
 import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
