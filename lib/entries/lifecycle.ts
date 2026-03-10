@@ -28,6 +28,7 @@ export {
   finalizeEntry,
   grantEditAccess,
   listEntriesForCategory,
+  rejectDeleteRequest,
   rejectEditRequest,
   replaceEntriesForCategory,
   requestDelete,

@@ -17,6 +17,7 @@ export type PendingConfirmationRow = {
   entryId: string;
   title: string;
   editRequestedAtISO: string | null;
+  deleteRequestedAtISO: string | null;
   editRequestMessage: string | null;
   createdAtISO: string | null;
   updatedAtISO: string | null;
@@ -29,8 +30,11 @@ function toEntryTitle(categoryKey: CategoryKey, entry: Entry) {
 }
 
 function toSortTimestamp(row: PendingConfirmationRow) {
-  const requestedAt = row.editRequestedAtISO ? Date.parse(row.editRequestedAtISO) : Number.NaN;
-  if (!Number.isNaN(requestedAt)) return requestedAt;
+  const editAt = row.editRequestedAtISO ? Date.parse(row.editRequestedAtISO) : Number.NaN;
+  if (!Number.isNaN(editAt)) return editAt;
+
+  const deleteAt = row.deleteRequestedAtISO ? Date.parse(row.deleteRequestedAtISO) : Number.NaN;
+  if (!Number.isNaN(deleteAt)) return deleteAt;
 
   const updatedAt = row.updatedAtISO ? Date.parse(row.updatedAtISO) : Number.NaN;
   if (!Number.isNaN(updatedAt)) return updatedAt;
@@ -47,7 +51,7 @@ function asOptionalISO(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
-export async function getPendingEditRequests(): Promise<PendingConfirmationRow[]> {
+export async function getPendingRequests(): Promise<PendingConfirmationRow[]> {
   const usersRoot = getUsersRootDir();
   const rows: PendingConfirmationRow[] = [];
 
@@ -62,7 +66,7 @@ export async function getPendingEditRequests(): Promise<PendingConfirmationRow[]
         const list = await listEntriesForCategory(ownerEmail, categoryKey);
         for (const entry of list) {
           const workflowStatus = getEntryWorkflowStatus(entry);
-          if (workflowStatus !== "EDIT_REQUESTED") continue;
+          if (workflowStatus !== "EDIT_REQUESTED" && workflowStatus !== "DELETE_REQUESTED") continue;
 
           const entryId = String(entry.id ?? "").trim();
           if (!entryId) continue;
@@ -76,6 +80,7 @@ export async function getPendingEditRequests(): Promise<PendingConfirmationRow[]
               asOptionalISO(entry.editRequestedAt) ??
               asOptionalISO(entry.updatedAt) ??
               asOptionalISO(entry.createdAt),
+            deleteRequestedAtISO: asOptionalISO(entry.deleteRequestedAt),
             editRequestMessage: asOptionalISO(entry.editRequestMessage),
             createdAtISO: asOptionalISO(entry.createdAt),
             updatedAtISO: asOptionalISO(entry.updatedAt),
@@ -92,10 +97,12 @@ export async function getPendingEditRequests(): Promise<PendingConfirmationRow[]
   return rows.sort((left, right) => toSortTimestamp(right) - toSortTimestamp(left));
 }
 
-/** @deprecated Use getPendingEditRequests instead */
-export const getPendingConfirmations = getPendingEditRequests;
+/** @deprecated Use getPendingRequests instead */
+export const getPendingEditRequests = getPendingRequests;
+/** @deprecated Use getPendingRequests instead */
+export const getPendingConfirmations = getPendingRequests;
 
-export async function getPendingEditRequestsCount() {
+export async function getPendingRequestsCount() {
   const usersRoot = getUsersRootDir();
   let total = 0;
 
@@ -108,14 +115,15 @@ export async function getPendingEditRequestsCount() {
 
       const ensured = await ensureUserIndex(ownerEmail);
       if (ensured.ok) {
-        total += ensured.data.countsByStatus.EDIT_REQUESTED ?? 0;
+        total += (ensured.data.countsByStatus.EDIT_REQUESTED ?? 0) + (ensured.data.countsByStatus.DELETE_REQUESTED ?? 0);
         continue;
       }
 
       for (const categoryKey of CATEGORY_KEYS) {
         const list = await listEntriesForCategory(ownerEmail, categoryKey);
         for (const entry of list) {
-          if (getEntryWorkflowStatus(entry) === "EDIT_REQUESTED") {
+          const status = getEntryWorkflowStatus(entry);
+          if (status === "EDIT_REQUESTED" || status === "DELETE_REQUESTED") {
             total += 1;
           }
         }
@@ -128,5 +136,7 @@ export async function getPendingEditRequestsCount() {
   return total;
 }
 
-/** @deprecated Use getPendingEditRequestsCount instead */
-export const getPendingConfirmationsCount = getPendingEditRequestsCount;
+/** @deprecated Use getPendingRequestsCount instead */
+export const getPendingEditRequestsCount = getPendingRequestsCount;
+/** @deprecated Use getPendingRequestsCount instead */
+export const getPendingConfirmationsCount = getPendingRequestsCount;

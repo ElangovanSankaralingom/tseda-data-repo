@@ -139,6 +139,35 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
 }
 
 /**
+ * Rejects a pending delete request, returning the entry from DELETE_REQUESTED
+ * back to GENERATED (finalized). Clears the delete request fields.
+ *
+ * @param adminEmail - Email of the admin rejecting the deletion.
+ * @param category - The category key the entry belongs to.
+ * @param ownerEmail - Email of the entry owner.
+ * @param entryId - ID of the entry whose delete request is being rejected.
+ * @returns The updated entry record in GENERATED state.
+ */
+export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEngineRecord>(
+  adminEmail: string,
+  category: CategoryKey,
+  ownerEmail: string,
+  entryId: string,
+): Promise<T> {
+  return runAdminMutation<T>({
+    action: "cancelDeleteRequest",
+    walAction: "CANCEL_DELETE_REQUEST",
+    guardKey: "entry.delete.reject",
+    adminEmail,
+    category,
+    ownerEmail,
+    entryId,
+    applyTransition: (existing, { nowISO }) =>
+      transitionEntry(existing, "cancelDeleteRequest", { nowISO }) as EntryLike,
+  });
+}
+
+/**
  * Archives an entry, transitioning it to the ARCHIVED state with the given reason.
  *
  * @param adminEmail - Email of the admin performing the archive.
