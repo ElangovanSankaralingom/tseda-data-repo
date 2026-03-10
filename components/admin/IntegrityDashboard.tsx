@@ -413,7 +413,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
                     <ShieldCheck className="size-3.5" /> All Clear
                   </span>
                 ) : report.status === "warnings" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900">
                     <ShieldAlert className="size-3.5" /> {totalIssues} Warning{totalIssues !== 1 ? "s" : ""}
                   </span>
                 ) : (

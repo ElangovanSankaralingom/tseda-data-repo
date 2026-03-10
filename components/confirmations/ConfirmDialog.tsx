@@ -203,7 +203,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
                 {showDetails ? "Hide details" : "Show details"}
               </button>
               {showDetails && (
-                <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-500 animate-fade-in">
+                <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-700 animate-fade-in">
                   {details}
                 </div>
               )}

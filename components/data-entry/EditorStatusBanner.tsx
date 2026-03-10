@@ -36,8 +36,8 @@ const STRIP_STYLES: Record<string, StripConfig> = {
     icon: Clock,
     bg: "bg-amber-50",
     border: "border-amber-200",
-    text: "text-amber-700",
-    iconColor: "text-amber-500",
+    text: "text-amber-900",
+    iconColor: "text-amber-600",
   },
   edit_granted: {
     icon: Unlock,
@@ -57,8 +57,8 @@ const STRIP_STYLES: Record<string, StripConfig> = {
     icon: Archive,
     bg: "bg-slate-50",
     border: "border-slate-200",
-    text: "text-slate-500",
-    iconColor: "text-slate-500",
+    text: "text-slate-700",
+    iconColor: "text-slate-600",
   },
   expiring_soon: {
     icon: AlertTriangle,

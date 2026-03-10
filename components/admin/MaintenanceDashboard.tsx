@@ -131,7 +131,7 @@ function AnimatedStatTile({ icon, label, value, sub }: { icon: React.ReactNode; 
 function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }) {
   if (!lastRun) {
     return (
-      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
+      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
         No runs yet
       </span>
     );
@@ -143,7 +143,7 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
       className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
         isOk
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-amber-200 bg-amber-50 text-amber-700"
+          : "border-amber-200 bg-amber-50 text-amber-900"
       }`}
     >
       {isOk ? "All systems healthy" : "Partial failure"} &middot; {formatTimeAgo(lastRun.finishedAt)}
