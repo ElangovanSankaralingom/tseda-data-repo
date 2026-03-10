@@ -11,13 +11,15 @@ export default function CurrencyField({
   disabled,
   error,
   placeholder,
-}: { value?: string; onChange?: (value: string) => void; disabled?: boolean; error?: boolean; placeholder?: string }) {
+  id,
+}: { value?: string; onChange?: (value: string) => void; disabled?: boolean; error?: boolean; placeholder?: string; id?: string }) {
   return (
     <div className="relative">
       <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">
         ₹
       </span>
       <input
+        id={id}
         inputMode="numeric"
         value={value}
         disabled={disabled}

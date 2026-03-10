@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { cloneElement, isValidElement, useId } from "react";
 
 type FieldProps = {
   label: string;
@@ -31,7 +31,11 @@ export default function Field({ label, error, hint, required, children }: FieldP
         </label>
         {hint ? <span id={hintId} className="text-xs text-slate-500">{hint}</span> : null}
       </div>
-      {typeof children === "function" ? children(childProps) : children}
+      {typeof children === "function"
+        ? children(childProps)
+        : isValidElement(children)
+          ? cloneElement(children, { id: fieldId } as Record<string, unknown>)
+          : children}
       {error ? <div id={errorId} className="text-xs text-red-600" role="alert">{error}</div> : null}
     </div>
   );
