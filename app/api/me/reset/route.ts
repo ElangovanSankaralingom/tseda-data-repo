@@ -23,6 +23,58 @@ async function removePath(targetPath: string) {
   await fs.rm(targetPath, { recursive: true, force: true }).catch(() => null);
 }
 
+const ADMIN_DIR = path.join(process.cwd(), ".data", "admin");
+
+async function clearAdminNotificationsForUser(email: string) {
+  const filePath = path.join(ADMIN_DIR, "notifications.json");
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const parsed = JSON.parse(raw) as { notifications?: unknown[] } | unknown[];
+    const notifications = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray((parsed as { notifications?: unknown[] }).notifications)
+        ? (parsed as { notifications: unknown[] }).notifications
+        : null;
+    if (!notifications) return;
+
+    const lowerEmail = email.toLowerCase();
+    const filtered = notifications.filter((n) => {
+      if (!n || typeof n !== "object") return true;
+      const rec = n as Record<string, unknown>;
+      const triggeredBy = String(rec.triggeredBy ?? "").toLowerCase();
+      return triggeredBy !== lowerEmail;
+    });
+
+    const output = Array.isArray(parsed)
+      ? filtered
+      : { ...(parsed as Record<string, unknown>), notifications: filtered };
+    await fs.writeFile(filePath, JSON.stringify(output, null, 2), "utf8");
+  } catch {
+    // File doesn't exist or parse error — ignore
+  }
+}
+
+async function clearAdminUsersEntry(email: string) {
+  const filePath = path.join(ADMIN_DIR, "admin-users.json");
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.users)) {
+      const filtered = (parsed.users as Array<Record<string, unknown>>).filter(
+        (u) => String(u.email ?? "").toLowerCase() !== email.toLowerCase(),
+      );
+      await fs.writeFile(
+        filePath,
+        JSON.stringify({ ...parsed, users: filtered }, null, 2),
+        "utf8",
+      );
+    }
+  } catch {
+    // File doesn't exist or parse error — ignore
+  }
+}
+
 async function clearLegacyProfilesIndex(email: string) {
   const filePath = path.join(LEGACY_DATA_DIR, "profiles.json");
 
@@ -73,6 +125,8 @@ export async function POST() {
 
   await Promise.all(pathsToRemove.map((targetPath) => removePath(targetPath)));
   await clearLegacyProfilesIndex(email);
+  await clearAdminNotificationsForUser(email);
+  await clearAdminUsersEntry(email);
 
   return NextResponse.json({ success: true });
 }
