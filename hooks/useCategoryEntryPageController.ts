@@ -239,6 +239,8 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       workflowDisabledHint?: string;
       finalise?: HeaderActionBindings["finalise"];
       entryStatus?: string | null;
+      editRequestPending?: boolean;
+      deleteRequestPending?: boolean;
       onRequestEdit?: () => void;
       onCancelRequestEdit?: () => void;
       onRequestDelete?: () => void;
@@ -265,6 +267,8 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       workflowDisabledHint: options?.workflowDisabledHint,
       finalise: options?.finalise,
       entryStatus: options?.entryStatus,
+      editRequestPending: options?.editRequestPending,
+      deleteRequestPending: options?.deleteRequestPending,
       onRequestEdit: options?.onRequestEdit,
       onCancelRequestEdit: options?.onCancelRequestEdit,
       onRequestDelete: options?.onRequestDelete,
