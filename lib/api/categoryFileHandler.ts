@@ -29,6 +29,8 @@ import { isEntryEditable } from "@/lib/entries/lock";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { safeEmailDir } from "@/lib/userStore";
+import { validateCsrf } from "@/lib/security/csrf";
+import { validateUploadedFile, sanitizeFilename } from "@/lib/security/fileValidation";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -150,6 +152,9 @@ function handleErrorResponse(error: unknown) {
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function handleCategoryFilePost(request: Request, category: CategorySlug) {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
+
   const email = await getAuthorizedEmail();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -204,20 +209,22 @@ export async function handleCategoryFilePost(request: Request, category: Categor
       return NextResponse.json({ error: "invalid slot" }, { status: 400 });
     }
 
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: "Max file size is 20MB." }, { status: 400 });
+    // Full file validation: size, MIME type, and magic bytes
+    const fileBuffer = await file.arrayBuffer();
+    const fileCheck = validateUploadedFile(
+      { size: file.size, type: file.type, name: file.name },
+      fileBuffer,
+    );
+    if (!fileCheck.valid) {
+      return NextResponse.json({ error: fileCheck.error }, { status: 400 });
     }
 
-    const extension = path.extname(file.name).toLowerCase();
-    if (!ALLOWED_MIME_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.has(extension)) {
-      return NextResponse.json({ error: "Only PDF/JPG/PNG allowed." }, { status: 400 });
-    }
-
-    const storedPath = buildStoredPath(email, category, recordId, slot, file.name);
+    const sanitizedName = sanitizeFilename(file.name);
+    const storedPath = buildStoredPath(email, category, recordId, slot, sanitizedName);
     const absPath = path.join(process.cwd(), "public", storedPath);
 
     await fs.mkdir(path.dirname(absPath), { recursive: true });
-    await fs.writeFile(absPath, Buffer.from(await file.arrayBuffer()));
+    await fs.writeFile(absPath, Buffer.from(fileBuffer));
 
     return NextResponse.json({
       fileName: file.name,
@@ -235,6 +242,9 @@ export async function handleCategoryFilePost(request: Request, category: Categor
 // ── DELETE handler ───────────────────────────────────────────────────────────
 
 export async function handleCategoryFileDelete(request: Request, category: CategorySlug) {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
+
   const email = await getAuthorizedEmail();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

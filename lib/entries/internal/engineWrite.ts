@@ -14,6 +14,7 @@ import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability"
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { validateAndSanitizeOrThrow } from "@/lib/validation/validateEntryPayload";
+import { sanitizeEntryFields } from "@/lib/security/sanitize";
 import { checkStreakEligibility } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 import { logger } from "@/lib/logger";
@@ -143,7 +144,8 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
   });
   try {
     enforceEntryMutationGuards(normalizedOwner, `entry.create.${category}`, rawPayload);
-    const nextPayload = validateAndSanitizeOrThrow(category, rawPayload, "create");
+    const sanitizedPayload = sanitizeEntryFields(rawPayload);
+    const nextPayload = validateAndSanitizeOrThrow(category, sanitizedPayload, "create");
     const created = await withUserDataLock(normalizedOwner, async () => {
       const nowISO = new Date().toISOString();
       const id = normalizeId(nextPayload.id) || randomUUID();
@@ -259,7 +261,8 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
   const id = normalizeId(entryId);
   try {
     enforceEntryMutationGuards(normalizedOwner, `entry.update.${category}`, rawPayload);
-    const nextPayload = validateAndSanitizeOrThrow(category, rawPayload, "update");
+    const sanitizedPayload = sanitizeEntryFields(rawPayload);
+    const nextPayload = validateAndSanitizeOrThrow(category, sanitizedPayload, "update");
 
     if (!id) {
       throw new AppError({
