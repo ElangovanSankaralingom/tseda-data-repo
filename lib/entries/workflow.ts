@@ -37,6 +37,7 @@ export type EntryTransitionAction =
   | "grantEdit"
   | "rejectEdit"
   | "cancelEditRequest"
+  | "cancelEditGrant"
   | "cancelDeleteRequest"
   | "approveDelete"
   | "archiveEntry"
@@ -283,6 +284,7 @@ function statusForAction(action: EntryTransitionAction): EntryStatus {
   if (action === "requestDelete") return "DELETE_REQUESTED";
   if (action === "grantEdit") return "EDIT_GRANTED";
   if (action === "rejectEdit" || action === "cancelEditRequest") return "GENERATED";
+  if (action === "cancelEditGrant") return "GENERATED";
   if (action === "cancelDeleteRequest") return "GENERATED";
   if (action === "approveDelete" || action === "archiveEntry") return "ARCHIVED";
   if (action === "restoreEntry") return "GENERATED";

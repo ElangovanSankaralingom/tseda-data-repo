@@ -131,6 +131,38 @@ export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngin
 }
 
 /**
+ * Cancels an edit grant, reverting the entry from EDIT_GRANTED back to
+ * GENERATED (finalized). The transition clears grant fields and sets a fresh
+ * edit window expiry (which will already be expired, making the entry finalized).
+ *
+ * @param userEmail - Email of the user cancelling the edit grant.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry whose edit grant is being cancelled.
+ * @returns The updated entry record after cancellation.
+ */
+export async function cancelEditGrant<T extends EntryEngineRecord = EntryEngineRecord>(
+  userEmail: string,
+  category: CategoryKey,
+  entryId: string
+): Promise<T> {
+  return runUserRequestMutation<T>({
+    action: "cancelEditGrant",
+    walAction: "CANCEL_EDIT_GRANT",
+    guardKey: `entry.edit.cancel_grant.${category}`,
+    userEmail,
+    category,
+    entryId,
+    extraValidation: (existing) => {
+      if (normalizeEntryStatus(existing as WorkflowEntryLike) !== "EDIT_GRANTED") {
+        throw new AppError({ code: "VALIDATION_ERROR", message: "Entry is not in EDIT_GRANTED state." });
+      }
+    },
+    applyTransition: (existing, nowISO) =>
+      transitionEntry(existing, "cancelEditGrant", { nowISO }) as EntryLike,
+  });
+}
+
+/**
  * Submits a delete request for a finalized entry. Validates that the entry is
  * committed, not permanently locked, and eligible for requests, then transitions
  * it to DELETE_REQUESTED.

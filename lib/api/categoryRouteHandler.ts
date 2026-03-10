@@ -5,6 +5,7 @@ import { type NextRequest } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
   cancelDeleteRequest,
+  cancelEditGrant,
   cancelEditRequest,
   commitDraft,
   createEntry,
@@ -325,6 +326,11 @@ export async function handleCategoryPatch(
 
       if (action === "cancel_request_edit") {
         const persisted = await cancelEditRequest(auth.email, category as CategoryKey, entryId);
+        return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+      }
+
+      if (action === "cancel_edit_grant") {
+        const persisted = await cancelEditGrant(auth.email, category as CategoryKey, entryId);
         return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
       }
 

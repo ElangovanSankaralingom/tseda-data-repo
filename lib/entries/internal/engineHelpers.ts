@@ -93,6 +93,7 @@ const ENTRY_MUTATION_EVENT_BY_ACTION = {
   requestEdit: "entry.request_edit",
   grantEdit: "entry.grant_edit",
   cancelEditRequest: "entry.cancel_edit_request",
+  cancelEditGrant: "entry.cancel_edit_grant",
   rejectEdit: "entry.reject_edit",
   finalize: "entry.finalize",
   requestDelete: "entry.request_delete",
