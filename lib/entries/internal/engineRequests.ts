@@ -38,8 +38,18 @@ function applyRequestFields(
   if (wasWin) {
     (transitioned as Record<string, unknown>).streakPermanentlyRemoved = true;
   }
+  const now = new Date();
+  const resetAt = typeof existing.requestCountResetAt === "string" && existing.requestCountResetAt.trim()
+    ? new Date(existing.requestCountResetAt)
+    : null;
+  const sameMonth = resetAt !== null &&
+    now.getUTCFullYear() === resetAt.getUTCFullYear() &&
+    now.getUTCMonth() === resetAt.getUTCMonth();
   const currentCount = typeof existing.requestCount === "number" ? existing.requestCount : 0;
-  (transitioned as Record<string, unknown>).requestCount = currentCount + 1;
+  const newCount = sameMonth ? currentCount + 1 : 1;
+  const newResetAt = sameMonth ? existing.requestCountResetAt : now.toISOString();
+  (transitioned as Record<string, unknown>).requestCount = newCount;
+  (transitioned as Record<string, unknown>).requestCountResetAt = newResetAt;
   return transitioned as EntryLike;
 }
 
