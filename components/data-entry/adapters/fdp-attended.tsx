@@ -12,11 +12,8 @@ import { useUploadController } from "@/hooks/useUploadController";
 import {
   cx,
   uuid,
-  isISODate,
-  getAcademicYearRange,
   getInclusiveDays,
   formatDisplayDate,
-  ACADEMIC_YEAR_OPTIONS,
   ACADEMIC_YEAR_DROPDOWN_OPTIONS,
 } from "@/components/data-entry/adapters/shared";
 import {
@@ -30,6 +27,7 @@ import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgre
 import type { FileMeta } from "@/lib/types/entry";
 import { uploadFile } from "@/lib/upload/uploadService";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
+import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -80,43 +78,7 @@ function uploadFdpFileXHR(opts: {
 // ---------------------------------------------------------------------------
 
 function validateFields(form: FdpAttended): Record<string, string> {
-  const errors: Record<string, string> = {};
-
-  if (!ACADEMIC_YEAR_OPTIONS.includes(form.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
-    errors.academicYear = "Academic year is required.";
-  }
-  const normalizedYear = normalizeYearOfStudy(form.yearOfStudy);
-  if (!normalizedYear) {
-    errors.yearOfStudy = "Year of study is required.";
-  }
-  if (normalizedYear && !isSemesterAllowed(normalizedYear, form.currentSemester ?? undefined)) {
-    errors.currentSemester = "Current semester is required.";
-  }
-  if (!isISODate(form.startDate)) {
-    errors.startDate = "Starting date is required.";
-  } else {
-    const range = getAcademicYearRange(form.academicYear);
-    if (range && (form.startDate < range.start || form.startDate > range.end)) {
-      errors.startDate = `Starting date must fall within ${form.academicYear} (${range.label}).`;
-    }
-  }
-  if (!isISODate(form.endDate)) {
-    errors.endDate = "Ending date is required.";
-  } else if (isISODate(form.startDate) && form.endDate < form.startDate) {
-    errors.endDate = "Ending date must be on or after starting date.";
-  }
-  if ((form.programName || "").trim().length === 0) {
-    errors.programName = "Program name is required.";
-  }
-  if ((form.organisingBody || "").trim().length === 0) {
-    errors.organisingBody = "Organising body is required.";
-  }
-  if (form.supportAmount !== null) {
-    if (!Number.isFinite(form.supportAmount) || form.supportAmount < 0) {
-      errors.supportAmount = "Invalid amount.";
-    }
-  }
-  return errors;
+  return validateEntryFields("fdp-attended", form as unknown as Record<string, unknown>);
 }
 
 // ---------------------------------------------------------------------------
