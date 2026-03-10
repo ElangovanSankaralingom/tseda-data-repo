@@ -19,10 +19,10 @@ function getBadgeClass(deadlineState: StreakDeadlineState) {
   }
 
   if (deadlineState.color === "yellow") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-amber-200 bg-amber-50 text-amber-900";
   }
 
-  return "border-slate-200 bg-slate-50 text-slate-500";
+  return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
 export default function FinalisationBadge({

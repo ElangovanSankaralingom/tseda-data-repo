@@ -250,7 +250,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
         </Field>
 
         <Field label="Number of Days" hint="Inclusive day count">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">{inclusiveDays ?? "-"}</div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{inclusiveDays ?? "-"}</div>
         </Field>
 
         <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>

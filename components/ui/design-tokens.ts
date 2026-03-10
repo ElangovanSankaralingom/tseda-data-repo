@@ -5,9 +5,9 @@ export const STATUS_COLORS: Record<
   { badge: string; border: string; icon: string }
 > = {
   DRAFT: {
-    badge: "border-slate-200 bg-slate-50 text-slate-500",
+    badge: "border-slate-200 bg-slate-50 text-slate-700",
     border: "border-l-slate-300",
-    icon: "text-slate-500",
+    icon: "text-slate-600",
   },
   GENERATED: {
     badge: "border-blue-200 bg-blue-50 text-blue-700",
@@ -30,9 +30,9 @@ export const STATUS_COLORS: Record<
     icon: "text-emerald-500",
   },
   ARCHIVED: {
-    badge: "border-slate-300 bg-slate-100 text-slate-500",
+    badge: "border-slate-300 bg-slate-100 text-slate-700",
     border: "border-l-slate-400",
-    icon: "text-slate-500",
+    icon: "text-slate-600",
   },
 };
 

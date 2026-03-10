@@ -69,7 +69,7 @@ function SectionHeader({ group, count, isUrgent }: { group: EntryListGroup; coun
         <span className={`text-xs font-bold uppercase tracking-wider ${isUrgent ? color : "text-slate-500"}`}>
           {config.title}
         </span>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
           {count}
         </span>
       </div>
@@ -103,10 +103,10 @@ function DefaultEmptyState() {
   return (
     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
       <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-slate-100">
-        <ClipboardList className="size-8 text-slate-500" />
+        <ClipboardList className="size-8 text-slate-700" />
       </div>
-      <p className="mt-4 text-base font-medium text-slate-600">No entries yet</p>
-      <p className="mt-1 text-sm text-slate-500">Create your first entry to get started</p>
+      <p className="mt-4 text-base font-medium text-slate-700">No entries yet</p>
+      <p className="mt-1 text-sm text-slate-600">Create your first entry to get started</p>
     </div>
   );
 }
@@ -114,9 +114,9 @@ function DefaultEmptyState() {
 function FilteredEmptyState({ onClear }: { onClear: () => void }) {
   return (
     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-      <Search className="mx-auto size-8 text-slate-500" />
-      <p className="mt-3 text-sm text-slate-500">No entries match your filters</p>
-      <p className="mt-1 text-xs text-slate-500">Try different keywords or clear your filters</p>
+      <Search className="mx-auto size-8 text-slate-700" />
+      <p className="mt-3 text-sm text-slate-600">No entries match your filters</p>
+      <p className="mt-1 text-xs text-slate-600">Try different keywords or clear your filters</p>
       <button
         type="button"
         onClick={onClear}

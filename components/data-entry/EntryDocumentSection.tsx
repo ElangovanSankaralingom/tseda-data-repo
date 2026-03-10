@@ -44,7 +44,7 @@ export default function EntryDocumentSection({
     return (
       <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5">
         <AlertTriangle className="size-4 shrink-0 text-amber-500" />
-        <span className="flex-1 text-sm text-amber-700">
+        <span className="flex-1 text-sm text-amber-900">
           Document outdated — fields changed since last generation
         </span>
       </div>

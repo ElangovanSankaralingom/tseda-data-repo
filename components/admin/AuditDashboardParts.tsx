@@ -18,7 +18,7 @@ export const ACTION_LABELS: Record<string, { label: string; color: string; bg: s
   CREATE: { label: "Created", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
   UPDATE: { label: "Updated", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
   DELETE: { label: "Deleted", color: "text-red-700", bg: "bg-red-50 border-red-200" },
-  REQUEST_EDIT: { label: "Edit Requested", color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
+  REQUEST_EDIT: { label: "Edit Requested", color: "text-amber-900", bg: "bg-amber-50 border-amber-200" },
   GRANT_EDIT: { label: "Edit Granted", color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
   UPLOAD_ADD: { label: "Upload Added", color: "text-cyan-700", bg: "bg-cyan-50 border-cyan-200" },
   UPLOAD_REMOVE: { label: "Upload Removed", color: "text-orange-700", bg: "bg-orange-50 border-orange-200" },
@@ -391,7 +391,7 @@ export function TableView({ events }: { events: AuditEvent[] }) {
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
       <table className="w-full min-w-[900px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50/80 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr className="border-b border-slate-200 bg-slate-50/80 text-left text-xs uppercase tracking-wide text-slate-700">
             <th className="px-3 py-2.5 font-medium">Time</th>
             <th className="px-3 py-2.5 font-medium">Action</th>
             <th className="px-3 py-2.5 font-medium">Actor</th>
