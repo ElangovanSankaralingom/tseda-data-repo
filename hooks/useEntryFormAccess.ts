@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from "react";
 import { isEntryLockedFromStatus } from "@/lib/confirmation";
 import { canEditField } from "@/lib/pendingImmutability";
-import { isEntryEditable } from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type EntryLike = {
@@ -14,6 +13,8 @@ type EntryLike = {
   editWindowExpiresAt?: string | null;
   editRequestedAt?: string | null;
   editGrantedAt?: string | null;
+  /** Server-computed editability (from entryToApiResponse). */
+  isEditable?: boolean;
 };
 
 type UseEntryFormAccessOptions<TEntry extends EntryLike> = {
@@ -29,7 +30,10 @@ export function useEntryFormAccess<TEntry extends EntryLike>({
 }: UseEntryFormAccessOptions<TEntry>) {
   const entryLocked = useMemo(() => isEntryLockedFromStatus(entry), [entry]);
   const controlsDisabled = isViewMode || entryLocked;
-  const entryEditable = isEntryEditable(entry);
+  // IMPORTANT: isEditable comes from the SERVER response (via entryToApiResponse).
+  // Do NOT recompute on the client. For new entries (no server response yet),
+  // isEditable is undefined → treated as true (new drafts are always editable).
+  const entryEditable = entry.isEditable !== false;
 
   const coreFieldDisabled = useCallback(
     (fieldKey: string) => controlsDisabled || !canEditField(entry, category, fieldKey),

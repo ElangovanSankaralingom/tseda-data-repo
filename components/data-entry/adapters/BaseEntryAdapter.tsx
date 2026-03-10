@@ -19,7 +19,7 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { isEntryFinalized } from "@/lib/entries/workflow";
+
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
   createDeleteEntry,
@@ -180,7 +180,9 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     viewEntryId,
   );
   const entryForFinalizationCheck = activeEntryId ? list.find((e) => e.id === activeEntryId) : null;
-  const isViewMode = isViewModeRaw || (!!entryForFinalizationCheck && isEntryFinalized(entryForFinalizationCheck));
+  // IMPORTANT: isFinalized comes from the SERVER response (via entryToApiResponse).
+  // Do NOT recompute on the client — the server is the single source of truth.
+  const isViewMode = isViewModeRaw || (entryForFinalizationCheck as Record<string, unknown> | null)?.isFinalized === true;
 
   const {
     draft: form,
