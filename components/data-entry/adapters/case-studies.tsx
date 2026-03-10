@@ -9,6 +9,7 @@ import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/Facul
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
+import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { ACADEMIC_YEAR_OPTIONS, ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
 import { isISODate, getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
@@ -441,7 +442,9 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
       <div className="mt-5 space-y-4">
         {uploadsVisible ? (
-          <div className="grid gap-4 sm:grid-cols-3">
+          <>
+            <StageTwoDivider />
+            <div className="animate-highlight-new grid gap-4 sm:grid-cols-3">
             {SINGLE_UPLOAD_SLOTS.map(({ slot, label }) => (
               <EntryUploader
                 key={slot}
@@ -501,7 +504,8 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
               showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
               onStatusChange={setPhotoUploadStatus}
             />
-          </div>
+            </div>
+          </>
         ) : null}
       </div>
     </>

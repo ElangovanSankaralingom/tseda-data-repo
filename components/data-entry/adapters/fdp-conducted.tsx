@@ -8,6 +8,7 @@ import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldM
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
+import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { useUploadController } from "@/hooks/useUploadController";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
@@ -306,7 +307,9 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
         <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
 
         {uploadsVisible ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <>
+            <StageTwoDivider />
+            <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
             <UploadField
               title="Upload Permission Letter"
               mode={isViewMode ? "view" : "edit"}
@@ -358,7 +361,8 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
               disabled={controlsDisabled}
               viewOnly={isViewMode}
             />
-          </div>
+            </div>
+          </>
         ) : null}
       </div>
     </>

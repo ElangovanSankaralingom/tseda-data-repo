@@ -63,20 +63,8 @@ export function HeaderEntryActionsBar({
 
     return (
       <div className="flex w-full flex-wrap items-center justify-between gap-3">
-        {/* Left: workflow action area */}
+        {/* Left: Request Action dropdown (only when no pending request) */}
         <div className="flex items-center gap-3">
-          {/* Pending request: show dropdown in cancel mode */}
-          {hasPendingRequest && onRequestEdit && onRequestDelete ? (
-            <RequestActionDropdown
-              editRequestPending={isEditRequested}
-              deleteRequestPending={isDeleteRequested}
-              onRequestEdit={onRequestEdit}
-              onRequestDelete={onRequestDelete}
-              onCancelRequest={isEditRequested ? onCancelRequestEdit : onCancelRequestDelete}
-            />
-          ) : null}
-
-          {/* Finalized: Request Action dropdown */}
           {!permanentlyLocked && !hasPendingRequest && entryStatus !== "EDIT_GRANTED" && onRequestEdit && onRequestDelete ? (
             <RequestActionDropdown
               onRequestEdit={onRequestEdit}
@@ -252,12 +240,12 @@ function EditModeActionBar({
               disabled={!finalise.canFinalise || finaliseState !== "idle"}
               className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
                 finaliseState === "done"
-                  ? "bg-slate-200 text-slate-500 opacity-75 cursor-not-allowed"
+                  ? "bg-emerald-200 text-emerald-700"
                   : finaliseState === "finalising"
-                    ? "bg-[#1E3A5F] text-white opacity-50 cursor-not-allowed"
+                    ? "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
                     : finalise.canFinalise
-                      ? "bg-[#1E3A5F] text-white hover:bg-[#162d4a]"
-                      : "bg-[#1E3A5F] text-white opacity-50 cursor-not-allowed"
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
               }`}
               title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
             >
@@ -317,7 +305,7 @@ function EditModeActionBar({
         }
         confirmLabel="Finalise Entry"
         cancelLabel="Keep Editing"
-        confirmClassName="bg-[#1E3A5F] text-white shadow-sm hover:bg-[#162d4a] border-[#1E3A5F]"
+        confirmClassName="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 border-emerald-600"
         onConfirm={() => {
           setShowFinaliseConfirm(false);
           void handleFinalise();

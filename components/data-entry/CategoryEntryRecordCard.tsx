@@ -147,13 +147,13 @@ export default function CategoryEntryRecordCard({
                   View
                 </button>
                 {confirmationStatus === "EDIT_REQUESTED" && requestEdit?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestEdit.onCancel} disabled={requestInFlight} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50">
-                    Cancel Edit Request
+                  <ActionButton role="ghost" onClick={requestEdit.onCancel} disabled={requestInFlight} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 disabled:opacity-50">
+                    {requestInFlight ? "Cancelling..." : "Cancel Edit Request"}
                   </ActionButton>
                 ) : null}
                 {confirmationStatus === "DELETE_REQUESTED" && requestDelete?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                    Cancel Delete Request
+                  <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-50">
+                    {requestInFlight ? "Cancelling..." : "Cancel Delete Request"}
                   </ActionButton>
                 ) : null}
               </>
