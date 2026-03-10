@@ -27,6 +27,7 @@ import {
   createRefreshList,
 } from "@/lib/entries/adapterOrchestration";
 import { getCategoryConfig } from "@/data/categoryRegistry";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { EntryRecord } from "@/components/data-entry/adapters/adapterTypes";
 
@@ -338,7 +339,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     applyGeneratedEntry: async (generatedEntry) => {
       const nextEntry = {
         ...generatedEntry,
-        pdfSourceHash: prePdfFieldsHash,
+        pdfSourceHash: hashPrePdfFields(generatedEntry, category),
         pdfStale: false,
       };
       setEditorSeed(nextEntry);
