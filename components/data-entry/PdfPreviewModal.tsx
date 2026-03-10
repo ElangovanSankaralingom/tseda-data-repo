@@ -38,7 +38,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
           <button
             type="button"
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            className="flex size-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
             aria-label="Close"
           >
             <X className="size-5" />

@@ -7,7 +7,7 @@ export const STATUS_COLORS: Record<
   DRAFT: {
     badge: "border-slate-200 bg-slate-50 text-slate-500",
     border: "border-l-slate-300",
-    icon: "text-slate-400",
+    icon: "text-slate-500",
   },
   GENERATED: {
     badge: "border-blue-200 bg-blue-50 text-blue-700",
@@ -32,7 +32,7 @@ export const STATUS_COLORS: Record<
   ARCHIVED: {
     badge: "border-slate-300 bg-slate-100 text-slate-500",
     border: "border-l-slate-400",
-    icon: "text-slate-400",
+    icon: "text-slate-500",
   },
 };
 

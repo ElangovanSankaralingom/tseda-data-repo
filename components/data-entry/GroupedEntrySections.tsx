@@ -37,7 +37,7 @@ const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
   streak_runners: { title: "STREAK RUNNERS", icon: Zap, iconColor: "text-amber-500", urgentColor: "text-amber-600" },
   on_the_clock: { title: "ON THE CLOCK", icon: Clock, iconColor: "text-blue-500", urgentColor: "text-blue-600" },
   unlocked: { title: "UNLOCKED", icon: Unlock, iconColor: "text-purple-500" },
-  in_the_works: { title: "IN THE WORKS", icon: Pencil, iconColor: "text-slate-400" },
+  in_the_works: { title: "IN THE WORKS", icon: Pencil, iconColor: "text-slate-500" },
   under_review: { title: "UNDER REVIEW", icon: Clock, iconColor: "text-amber-400" },
   locked_in: { title: "LOCKED IN", icon: Lock, iconColor: "text-emerald-500" },
 };
@@ -103,10 +103,10 @@ function DefaultEmptyState() {
   return (
     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
       <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-slate-100">
-        <ClipboardList className="size-8 text-slate-400" />
+        <ClipboardList className="size-8 text-slate-500" />
       </div>
       <p className="mt-4 text-base font-medium text-slate-600">No entries yet</p>
-      <p className="mt-1 text-sm text-slate-400">Create your first entry to get started</p>
+      <p className="mt-1 text-sm text-slate-500">Create your first entry to get started</p>
     </div>
   );
 }
@@ -114,9 +114,9 @@ function DefaultEmptyState() {
 function FilteredEmptyState({ onClear }: { onClear: () => void }) {
   return (
     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-      <Search className="mx-auto size-8 text-slate-300" />
+      <Search className="mx-auto size-8 text-slate-500" />
       <p className="mt-3 text-sm text-slate-500">No entries match your filters</p>
-      <p className="mt-1 text-xs text-slate-400">Try different keywords or clear your filters</p>
+      <p className="mt-1 text-xs text-slate-500">Try different keywords or clear your filters</p>
       <button
         type="button"
         onClick={onClear}
@@ -208,19 +208,20 @@ export function SmartGroupedEntrySections<TEntry>({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {searchable && (
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search entries..."
-              className="h-9 w-full rounded-xl bg-slate-100 pl-9 pr-8 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-300 transition-all"
+              aria-label="Search entries"
+              className="h-9 w-full rounded-xl bg-slate-100 pl-9 pr-8 text-sm text-slate-700 outline-none placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-300 transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600"
               >
                 <X className="size-3.5" />
               </button>
@@ -237,7 +238,7 @@ export function SmartGroupedEntrySections<TEntry>({
 
       {/* Showing count */}
       {isFiltered && (
-        <div className="flex items-center gap-2 text-xs text-slate-400">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
           <span>Showing {totalFiltered} of {totalAll} entries</span>
           {searchQuery && (
             <button

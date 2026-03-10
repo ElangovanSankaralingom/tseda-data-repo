@@ -99,14 +99,14 @@ function HeroSection({ greeting, userName, totals }: { greeting: string; userNam
               <span className="text-sm font-semibold text-white">
                 <AnimatedNumber value={totals.streakActivatedCount} />
               </span>
-              <span className="text-xs text-slate-400">active</span>
+              <span className="text-xs text-slate-500">active</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2">
               <Trophy className="size-4 text-yellow-400" />
               <span className="text-sm font-semibold text-white">
                 <AnimatedNumber value={totals.streakWinsCount} />
               </span>
-              <span className="text-xs text-slate-400">wins</span>
+              <span className="text-xs text-slate-500">wins</span>
             </div>
           </div>
         )}
@@ -135,7 +135,7 @@ function HeroSection({ greeting, userName, totals }: { greeting: string; userNam
                   style={{ width: `${completionPct}%` }}
                 />
               </div>
-              <span className="text-xs text-slate-400">{completionPct}%</span>
+              <span className="text-xs text-slate-500">{completionPct}%</span>
             </div>
           )}
         </div>
@@ -227,11 +227,11 @@ function CategoryCard({
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-slate-900 truncate">{cat.label}</h3>
+            <h2 className="text-base font-semibold text-slate-900 truncate">{cat.label}</h2>
             <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">{cat.subtitle}</p>
           </div>
 
-          <ChevronRight className="mt-1 size-5 shrink-0 text-slate-300 transition-all duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
+          <ChevronRight className="mt-1 size-5 shrink-0 text-slate-500 transition-all duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
         </div>
 
         {hasActivity ? (
@@ -252,11 +252,11 @@ function CategoryCard({
             </div>
           </>
         ) : (
-          <p className="mt-3 text-xs text-slate-400 italic">No entries yet — get started!</p>
+          <p className="mt-3 text-xs text-slate-500 italic">No entries yet — get started!</p>
         )}
 
         {cat.lastActivity && (
-          <div className="mt-1.5 text-[11px] text-slate-400">
+          <div className="mt-1.5 text-[11px] text-slate-500">
             Last activity: {relativeTime(cat.lastActivity)}
           </div>
         )}

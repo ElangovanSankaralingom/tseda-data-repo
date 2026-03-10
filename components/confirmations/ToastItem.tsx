@@ -182,7 +182,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
             type="button"
             onClick={dismiss}
             className={`shrink-0 rounded p-0.5 transition-colors ${
-              isUndo ? "text-slate-400 hover:text-white" : "text-slate-400 hover:text-slate-600"
+              isUndo ? "text-slate-500 hover:text-white" : "text-slate-500 hover:text-slate-600"
             }`}
             aria-label="Dismiss"
           >

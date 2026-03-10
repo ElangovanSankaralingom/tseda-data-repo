@@ -152,7 +152,7 @@ export default function ExportDashboard({
       <div>
         <div className="mb-3">
           <div className="text-sm font-semibold text-slate-800">Quick Exports</div>
-          <div className="text-xs text-slate-400">One-click exports for common needs</div>
+          <div className="text-xs text-slate-500">One-click exports for common needs</div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {templates.map((t, i) => (
@@ -170,17 +170,17 @@ export default function ExportDashboard({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-fade-in-up">
         <div className="mb-5">
           <div className="text-sm font-semibold text-slate-800">Custom Export</div>
-          <div className="text-xs text-slate-400">Build exactly the export you need</div>
+          <div className="text-xs text-slate-500">Build exactly the export you need</div>
         </div>
 
         <div className="space-y-5">
           <div>
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Format</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Format</div>
             <FormatSelector value={format} onChange={setFormat} />
           </div>
 
           <div>
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Scope</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Scope</div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -205,6 +205,7 @@ export default function ExportDashboard({
               <select
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
+                aria-label="Select user"
                 className="mt-2 h-10 w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 text-sm"
               >
                 {users.map((u) => (
@@ -216,6 +217,7 @@ export default function ExportDashboard({
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
+                aria-label="Select category"
                 className="h-10 w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 text-sm"
               >
                 {categories.map((c) => (
@@ -325,7 +327,7 @@ export default function ExportDashboard({
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             {loadingPreview ? (
-              <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
                 <RefreshCw className="size-3 animate-spin" /> Loading preview...
               </div>
             ) : preview ? (
@@ -345,7 +347,7 @@ export default function ExportDashboard({
                 ) : null}
               </div>
             ) : (
-              <div className="text-xs text-slate-400">Select options above to see a preview</div>
+              <div className="text-xs text-slate-500">Select options above to see a preview</div>
             )}
           </div>
 
@@ -380,7 +382,7 @@ export default function ExportDashboard({
       {history.length > 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Clock className="size-4 text-slate-400" />
+            <Clock className="size-4 text-slate-500" />
             Recent Exports
           </div>
           {history.map((entry, i) => (
@@ -389,7 +391,7 @@ export default function ExportDashboard({
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center animate-fade-in-up">
-          <div className="text-sm text-slate-400">No exports yet — create your first one above!</div>
+          <div className="text-sm text-slate-500">No exports yet — create your first one above!</div>
         </div>
       )}
     </div>

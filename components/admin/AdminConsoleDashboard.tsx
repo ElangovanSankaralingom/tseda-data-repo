@@ -252,18 +252,18 @@ export default function AdminConsoleDashboard({
           <div className="flex items-center gap-5">
             <Link href="/admin/backups" className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.backup.status} size="md" />
-              <span className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors">Backup</span>
+              <span className="text-xs text-slate-500 group-hover:text-slate-200 transition-colors">Backup</span>
             </Link>
             <Link href="/admin/integrity" className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.integrity.status} size="md" />
-              <span className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors">Integrity</span>
+              <span className="text-xs text-slate-500 group-hover:text-slate-200 transition-colors">Integrity</span>
             </Link>
             <Link href="/admin/settings" className="flex flex-col items-center gap-1.5 group">
               <HealthDot
                 status={data.health.system.maintenanceMode ? "amber" : "green"}
                 size="md"
               />
-              <span className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors">System</span>
+              <span className="text-xs text-slate-500 group-hover:text-slate-200 transition-colors">System</span>
             </Link>
           </div>
         </div>

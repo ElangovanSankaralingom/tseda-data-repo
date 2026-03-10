@@ -13,7 +13,7 @@ export default async function MaintenancePage() {
         </div>
         <h1 className="text-xl font-bold text-slate-900">{appName}</h1>
         <p className="mt-3 text-sm text-slate-600 leading-relaxed">{message}</p>
-        <p className="mt-6 text-xs text-slate-400">We&apos;ll be back soon</p>
+        <p className="mt-6 text-xs text-slate-500">We&apos;ll be back soon</p>
       </div>
     </div>
   );

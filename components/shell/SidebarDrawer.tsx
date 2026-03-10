@@ -117,7 +117,7 @@ export default function SidebarDrawer({
       />
 
       {/* Panel */}
-      <aside
+      <div
         className={cn(
           "fixed left-0 top-0 z-50 flex h-full w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-out sm:w-80",
           open ? "translate-x-0" : "-translate-x-full"
@@ -155,9 +155,9 @@ export default function SidebarDrawer({
         {/* 2. Navigation section */}
         <div className="flex-1 overflow-y-auto p-3">
           <div className="px-3 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Navigation</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Navigation</span>
           </div>
-          <nav className="space-y-0.5">
+          <nav aria-label="Sidebar navigation" className="space-y-0.5">
             <NavItem
               href={dashboard()}
               icon={LayoutDashboard}
@@ -201,9 +201,9 @@ export default function SidebarDrawer({
             <>
               <div className="my-2 h-px bg-slate-100" />
               <div className="px-3 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Admin</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Admin</span>
               </div>
-              <nav className="space-y-0.5">
+              <nav aria-label="Admin navigation" className="space-y-0.5">
                 <NavItem
                   href={adminHome()}
                   icon={Shield}
@@ -223,7 +223,7 @@ export default function SidebarDrawer({
           <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 cursor-not-allowed" title="Coming soon">
             <Sun className="size-5" />
             <span className="flex-1">Appearance</span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-400">Soon</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">Soon</span>
           </div>
 
           {canAccessAdmin ? (
@@ -249,7 +249,7 @@ export default function SidebarDrawer({
             <span className="flex-1 text-left">Sign out</span>
           </button>
         </div>
-      </aside>
+      </div>
     </>
   );
 }

@@ -262,18 +262,19 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       {/* Top actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search settings..."
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+            aria-label="Search settings"
+            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-500 hover:text-slate-600"
             >
               <X className="size-3.5" />
             </button>
@@ -308,7 +309,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
         {/* Sidebar */}
-        <nav className="hidden lg:block">
+        <nav aria-label="Settings categories" className="hidden lg:block">
           <div className="sticky top-24 space-y-1 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
             {CATEGORY_ORDER.map((cat) => {
               const Icon = CATEGORY_ICONS[cat];
@@ -409,7 +410,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
               <Search className="size-8 text-slate-300 mb-3" />
               <div className="text-sm font-medium text-slate-500">No settings found</div>
-              <div className="mt-1 text-xs text-slate-400">Try a different search term</div>
+              <div className="mt-1 text-xs text-slate-500">Try a different search term</div>
             </div>
           )}
 
@@ -426,26 +427,26 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             {showChangelog && (
               <div className="mt-4 space-y-2 animate-fade-in">
                 {changelog.length === 0 ? (
-                  <p className="text-sm text-slate-400">No changes yet</p>
+                  <p className="text-sm text-slate-500">No changes yet</p>
                 ) : (
                   changelog.slice(0, 15).map((entry, i) => (
                     <div
                       key={`${entry.key}-${entry.changedAt}-${i}`}
                       className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-xs"
                     >
-                      <Clock className="mt-0.5 size-3.5 shrink-0 text-slate-400" />
+                      <Clock className="mt-0.5 size-3.5 shrink-0 text-slate-500" />
                       <div className="min-w-0 flex-1">
                         <div className="text-slate-700">
                           <span className="font-medium">{entry.key}</span>
                           {" changed by "}
                           <span className="font-medium">{emailName(entry.changedBy)}</span>
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-slate-400">
+                        <div className="mt-0.5 flex items-center gap-2 text-slate-500">
                           <span className="line-through">{JSON.stringify(entry.oldValue)}</span>
                           <span className="text-slate-300">&rarr;</span>
                           <span className="text-slate-600 font-medium">{JSON.stringify(entry.newValue)}</span>
                         </div>
-                        <div className="mt-0.5 text-slate-400">{formatRelative(entry.changedAt)}</div>
+                        <div className="mt-0.5 text-slate-500">{formatRelative(entry.changedAt)}</div>
                       </div>
                     </div>
                   ))

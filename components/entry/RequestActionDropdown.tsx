@@ -80,7 +80,7 @@ export default function RequestActionDropdown({
             }}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
           >
-            <Pencil className="size-3.5 text-slate-400" />
+            <Pencil className="size-3.5 text-slate-500" />
             Request Edit
           </button>
           <button

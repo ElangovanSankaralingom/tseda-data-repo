@@ -222,7 +222,7 @@ export default function AdminNotificationBell({
               <div className="flex flex-col items-center justify-center py-12">
                 <ShieldAlert className="size-8 text-indigo-200 mb-3" />
                 <div className="text-sm font-medium text-slate-500">No admin alerts</div>
-                <p className="mt-1 text-xs text-slate-400">Everything&apos;s running smooth</p>
+                <p className="mt-1 text-xs text-slate-500">Everything&apos;s running smooth</p>
               </div>
             )}
             {notifications.map((n) => {
@@ -246,7 +246,7 @@ export default function AdminNotificationBell({
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">{n.message}</p>
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="text-xs text-slate-400">{formatRelative(n.createdAt)}</span>
+                        <span className="text-xs text-slate-500">{formatRelative(n.createdAt)}</span>
                         {n.actionUrl && n.actionLabel && (
                           <Link
                             href={n.actionUrl}

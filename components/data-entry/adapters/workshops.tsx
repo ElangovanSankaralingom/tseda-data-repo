@@ -228,7 +228,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
             onChange={(e) => setForm((c) => ({ ...c, eventName: e.target.value }))}
             disabled={coreFieldDisabled("eventName")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.eventName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
               coreFieldDisabled("eventName") && "cursor-not-allowed opacity-60",
             )}
@@ -241,7 +241,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
             onChange={(e) => setForm((c) => ({ ...c, speakerName: e.target.value }))}
             disabled={coreFieldDisabled("speakerName")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.speakerName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
               coreFieldDisabled("speakerName") && "cursor-not-allowed opacity-60",
             )}
@@ -254,7 +254,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
             onChange={(e) => setForm((c) => ({ ...c, organisationName: e.target.value }))}
             disabled={coreFieldDisabled("organisationName")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.organisationName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
               coreFieldDisabled("organisationName") && "cursor-not-allowed opacity-60",
             )}
@@ -308,7 +308,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
             }}
             disabled={coreFieldDisabled("participants")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.participants ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
               coreFieldDisabled("participants") && "cursor-not-allowed opacity-60",
             )}

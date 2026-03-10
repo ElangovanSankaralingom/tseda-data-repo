@@ -38,18 +38,19 @@ export default function InlineSearch({
 
   return (
     <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
       <input
         type="text"
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
-        className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+        aria-label="Search"
+        className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
       />
       {value && (
         <button
           onClick={handleClear}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-500 transition-colors hover:text-slate-600"
           aria-label="Clear search"
         >
           <X className="size-4" />

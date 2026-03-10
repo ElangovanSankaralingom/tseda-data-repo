@@ -146,10 +146,10 @@ export default function AdminConfirmationsClient() {
         ) : rows.length === 0 ? (
           <div className="py-8 text-center">
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50">
-              <CheckCircle2 className="size-8 text-emerald-400" />
+              <CheckCircle2 className="size-8 text-emerald-600" />
             </div>
             <p className="mt-4 text-base font-medium text-slate-600">No pending requests</p>
-            <p className="mt-1 text-sm text-slate-400">All caught up! Check back later.</p>
+            <p className="mt-1 text-sm text-slate-500">All caught up! Check back later.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -177,7 +177,7 @@ export default function AdminConfirmationsClient() {
                           <span className="truncate">{row.ownerEmail}</span>
                         </div>
                         {relative && (
-                          <div className="mt-0.5 text-xs text-slate-400">Requested {relative}</div>
+                          <div className="mt-0.5 text-xs text-slate-500">Requested {relative}</div>
                         )}
                       </div>
                     </div>

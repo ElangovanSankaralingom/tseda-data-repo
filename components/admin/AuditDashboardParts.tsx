@@ -187,13 +187,14 @@ export function FilterBar({
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder="Search by email, entry ID, or summary..."
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+            aria-label="Search audit logs"
+            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
 
@@ -201,6 +202,7 @@ export function FilterBar({
           <select
             value={filters.action}
             onChange={(e) => onChange({ ...filters, action: e.target.value })}
+            aria-label="Filter by action"
             className="select-styled h-9 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
           >
             <option value="">All Actions</option>
@@ -214,6 +216,7 @@ export function FilterBar({
           <select
             value={filters.category}
             onChange={(e) => onChange({ ...filters, category: e.target.value })}
+            aria-label="Filter by category"
             className="select-styled h-9 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
           >
             <option value="">All Categories</option>
@@ -227,6 +230,7 @@ export function FilterBar({
           <select
             value={filters.dateRange}
             onChange={(e) => onChange({ ...filters, dateRange: e.target.value })}
+            aria-label="Filter by date range"
             className="select-styled h-9 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
           >
             <option value="">All Time</option>
@@ -248,7 +252,7 @@ export function FilterBar({
         )}
       </div>
 
-      <div className="mt-2 text-xs text-slate-400">
+      <div className="mt-2 text-xs text-slate-500">
         {resultCount} {resultCount === 1 ? "event" : "events"}
         {hasFilters ? " matching filters" : ""}
       </div>
@@ -277,7 +281,7 @@ function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <ActionBadge action={event.action} />
-                <span className="text-xs text-slate-400">{formatRelative(event.ts)}</span>
+                <span className="text-xs text-slate-500">{formatRelative(event.ts)}</span>
               </div>
               <div className="mt-1.5 text-sm text-slate-700">
                 <span className="font-medium text-slate-900">{emailName(event.actorEmail)}</span>
@@ -292,36 +296,36 @@ function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }
                 <span className="text-slate-600">{CATEGORY_LABELS[event.category] ?? event.category}</span>
               </div>
             </div>
-            <ChevronDown className={`size-4 text-slate-400 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+            <ChevronDown className={`size-4 text-slate-500 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
           </div>
 
           {expanded && (
             <div className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-xs animate-fade-in">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-slate-400">Entry ID</span>
+                  <span className="text-slate-500">Entry ID</span>
                   <div className="font-mono text-slate-600">{event.entryId.slice(0, 8)}...</div>
                 </div>
                 <div>
-                  <span className="text-slate-400">Time</span>
+                  <span className="text-slate-500">Time</span>
                   <div className="text-slate-600">{formatDateTime(event.ts)}</div>
                 </div>
                 {event.statusFrom && (
                   <div>
-                    <span className="text-slate-400">Status From</span>
+                    <span className="text-slate-500">Status From</span>
                     <div className="text-slate-600">{event.statusFrom}</div>
                   </div>
                 )}
                 {event.statusTo && (
                   <div>
-                    <span className="text-slate-400">Status To</span>
+                    <span className="text-slate-500">Status To</span>
                     <div className="text-slate-600">{event.statusTo}</div>
                   </div>
                 )}
               </div>
               {event.summary !== "No tracked field changes." && (
                 <div>
-                  <span className="text-slate-400">Changes</span>
+                  <span className="text-slate-500">Changes</span>
                   <div className="mt-0.5 text-slate-600">{event.summary}</div>
                 </div>
               )}
@@ -341,7 +345,7 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
         <Activity className="size-8 text-slate-300 mb-3" />
         <div className="text-sm font-medium text-slate-500">No audit events found</div>
-        <div className="mt-1 text-xs text-slate-400">Try adjusting your filters</div>
+        <div className="mt-1 text-xs text-slate-500">Try adjusting your filters</div>
       </div>
     );
   }
@@ -351,7 +355,7 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
       {Array.from(grouped.entries()).map(([date, dayEvents]) => (
         <div key={date}>
           <div className="mb-3 flex items-center gap-2">
-            <Calendar className="size-4 text-slate-400" />
+            <Calendar className="size-4 text-slate-500" />
             <h3 className="text-sm font-semibold text-slate-700">{formatDateHeading(date)}</h3>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
               {dayEvents.length}
@@ -378,7 +382,7 @@ export function TableView({ events }: { events: AuditEvent[] }) {
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
         <Activity className="size-8 text-slate-300 mb-3" />
         <div className="text-sm font-medium text-slate-500">No audit events found</div>
-        <div className="mt-1 text-xs text-slate-400">Try adjusting your filters</div>
+        <div className="mt-1 text-xs text-slate-500">Try adjusting your filters</div>
       </div>
     );
   }
@@ -407,14 +411,14 @@ export function TableView({ events }: { events: AuditEvent[] }) {
             >
               <td className="px-3 py-2.5 whitespace-nowrap">
                 <div className="text-slate-700">{formatRelative(event.ts)}</div>
-                <div className="text-xs text-slate-400">{formatDateTime(event.ts)}</div>
+                <div className="text-xs text-slate-500">{formatDateTime(event.ts)}</div>
               </td>
               <td className="px-3 py-2.5">
                 <ActionBadge action={event.action} />
               </td>
               <td className="px-3 py-2.5">
                 <div className="font-medium text-slate-700">{emailName(event.actorEmail)}</div>
-                <div className="text-xs text-slate-400">{event.actorRole}</div>
+                <div className="text-xs text-slate-500">{event.actorRole}</div>
               </td>
               <td className="px-3 py-2.5 text-slate-600">{emailName(event.userEmail)}</td>
               <td className="px-3 py-2.5 text-slate-600">{CATEGORY_LABELS[event.category] ?? event.category}</td>
@@ -450,7 +454,7 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <h4 className="text-sm font-semibold text-slate-700">Recent Activity</h4>
-          <span className="text-xs text-slate-400">Last 14 days</span>
+          <span className="text-xs text-slate-500">Last 14 days</span>
         </div>
         <ActivitySparkline data={stats.recentDays} />
       </div>
@@ -486,7 +490,7 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
                 <div className="min-w-0 flex-1">
                   <span className="font-mono text-slate-600">{entry.entryId.slice(0, 8)}</span>
                   <span className="mx-1 text-slate-300">|</span>
-                  <span className="text-slate-400">{emailName(entry.userEmail)}</span>
+                  <span className="text-slate-500">{emailName(entry.userEmail)}</span>
                 </div>
                 <span className="text-slate-500 font-medium">{entry.count}</span>
               </div>

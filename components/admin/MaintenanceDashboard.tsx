@@ -115,9 +115,9 @@ function StatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: s
         {icon}
       </div>
       <div className="min-w-0">
-        <div className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</div>
+        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
         <div className="text-lg font-bold text-slate-900">{value}</div>
-        {sub ? <div className="text-xs text-slate-400">{sub}</div> : null}
+        {sub ? <div className="text-xs text-slate-500">{sub}</div> : null}
       </div>
     </div>
   );
@@ -176,7 +176,7 @@ function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-slate-700">{entry.action}</div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-slate-500">
           {entry.actorEmail.split("@")[0]} &middot; {formatTimeAgo(entry.ts)} &middot; {entry.durationMs}ms
         </div>
       </div>
@@ -217,7 +217,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       <div className="flex flex-wrap items-center gap-3">
         <LastRunBadge lastRun={lastRun} />
         {lastRun ? (
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             Last run: {new Date(lastRun.finishedAt).toLocaleString()}
           </span>
         ) : null}
@@ -256,7 +256,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       {lastRun ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Activity className="size-4 text-slate-400" />
+            <Activity className="size-4 text-slate-500" />
             Last Nightly Run
           </div>
           <div className="space-y-2">
@@ -274,7 +274,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       {/* Job Controls */}
       <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-          <Server className="size-4 text-slate-400" />
+          <Server className="size-4 text-slate-500" />
           Maintenance Jobs
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -289,7 +289,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-slate-800">{job.label}</div>
-                  <div className="mt-0.5 text-xs text-slate-400">{job.description}</div>
+                  <div className="mt-0.5 text-xs text-slate-500">{job.description}</div>
                 </div>
               </div>
 
@@ -334,7 +334,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
               Run Full Nightly Maintenance
             </button>
           </form>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             Runs backup + integrity check + housekeeping + auto-archive + edit grant expiry in sequence. Rate limited to 2/hour.
           </span>
         </div>
@@ -344,7 +344,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       {actionLog.length > 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Clock className="size-4 text-slate-400" />
+            <Clock className="size-4 text-slate-500" />
             Recent Actions
           </div>
           <div className="divide-y-0">

@@ -311,7 +311,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
             onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
             disabled={coreFieldDisabled("placeOfVisit")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.placeOfVisit
                 ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
                 : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
@@ -326,7 +326,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
             rows={4}
             disabled={coreFieldDisabled("purposeOfVisit")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.purposeOfVisit
                 ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
                 : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
@@ -434,7 +434,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
               setForm((c) => ({ ...c, participants: digits === "" ? null : Number(digits) }));
             }}
             disabled={coreFieldDisabled("participants")}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-2 focus-visible:ring-[#1E3A5F]/20 placeholder:text-slate-400"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-2 focus-visible:ring-[#1E3A5F]/20 placeholder:text-slate-500"
           />
         </Field>
       </div>

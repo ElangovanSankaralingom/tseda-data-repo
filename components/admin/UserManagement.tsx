@@ -65,7 +65,7 @@ function trendIcon(trend: ActivityTrend) {
     case "declining":
       return <TrendingDown className="size-3.5 text-amber-500" />;
     case "stable":
-      return <Minus className="size-3.5 text-slate-400" />;
+      return <Minus className="size-3.5 text-slate-500" />;
     case "inactive":
       return <X className="size-3.5 text-red-400" />;
   }
@@ -201,7 +201,7 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
           </div>
           <div className="mt-0.5 text-xs text-slate-500 font-mono truncate">{user.email}</div>
           {(user.department || user.designation) && (
-            <div className="mt-0.5 text-xs text-slate-400">
+            <div className="mt-0.5 text-xs text-slate-500">
               {[user.department, user.designation].filter(Boolean).join(" · ")}
             </div>
           )}
@@ -263,12 +263,12 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
         </>
       ) : (
         <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-center">
-          <p className="text-xs text-slate-400">No entries yet</p>
+          <p className="text-xs text-slate-500">No entries yet</p>
         </div>
       )}
 
       {/* Last active */}
-      <div className="mt-2 text-[10px] text-slate-400">
+      <div className="mt-2 text-[10px] text-slate-500">
         Last active: {formatRelative(user.lastActiveAt)}
       </div>
     </Link>
@@ -304,13 +304,14 @@ function FilterBar({
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder="Search by name or email..."
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+            aria-label="Search users"
+            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
 
@@ -352,6 +353,7 @@ function FilterBar({
         <select
           value={filters.sort}
           onChange={(e) => onChange({ ...filters, sort: e.target.value })}
+          aria-label="Sort users"
           className="select-styled h-9 rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs font-medium text-slate-600 outline-none hover:border-slate-300"
         >
           <option value="totalEntries">Most Entries</option>
@@ -362,7 +364,7 @@ function FilterBar({
         </select>
       </div>
 
-      <div className="mt-2 text-xs text-slate-400">
+      <div className="mt-2 text-xs text-slate-500">
         Showing {matchCount} of {totalCount} users
       </div>
     </div>
@@ -477,7 +479,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
           <Users className="size-8 text-slate-300 mb-3" />
           <div className="text-sm font-medium text-slate-500">No users match your filters</div>
-          <div className="mt-1 text-xs text-slate-400">Try adjusting the search or filters</div>
+          <div className="mt-1 text-xs text-slate-500">Try adjusting the search or filters</div>
         </div>
       )}
     </div>

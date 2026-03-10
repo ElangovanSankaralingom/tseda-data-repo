@@ -30,7 +30,7 @@ function PhasePill({
 
   if (locked) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-400">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
         <Lock className="size-3" />
         {label}
       </span>
@@ -40,7 +40,7 @@ function PhasePill({
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
       {label}
-      <span className="text-slate-400">
+      <span className="text-slate-500">
         {completed} of {total}
       </span>
     </span>
@@ -104,7 +104,7 @@ export default function EditorProgressHeader({
             total={progress.preGenerate.total}
             done={progress.preGenerate.completed === progress.preGenerate.total}
           />
-          <span className="text-slate-300 text-xs hidden sm:inline">&rarr;</span>
+          <span className="text-slate-500 text-xs hidden sm:inline">&rarr;</span>
           <PhasePill
             label="Complete Entry"
             completed={progress.postGenerate.completed}

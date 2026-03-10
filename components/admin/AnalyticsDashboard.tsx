@@ -247,7 +247,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               Updated {formatAge(cacheAge)}
             </span>
             <button
@@ -436,13 +436,13 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               <div className="space-y-1.5">
                 {snapshot.streaks.byUser.slice(0, 5).map((u, i) => (
                   <div key={u.email} className="flex items-center gap-2 text-sm">
-                    <span className="w-4 text-xs font-bold text-slate-400">#{i + 1}</span>
+                    <span className="w-4 text-xs font-bold text-slate-500">#{i + 1}</span>
                     <span className="flex-1 truncate text-slate-600">{u.name}</span>
                     <span className="font-semibold text-amber-600">{u.wins}</span>
                   </div>
                 ))}
                 {snapshot.streaks.byUser.length === 0 && (
-                  <div className="text-xs text-slate-400">No streak wins yet</div>
+                  <div className="text-xs text-slate-500">No streak wins yet</div>
                 )}
               </div>
             </div>
@@ -455,17 +455,17 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           <div className="grid gap-4 grid-cols-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900">{editRequestMetrics.total}</div>
-              <div className="text-[10px] uppercase text-slate-400">Total</div>
+              <div className="text-[10px] uppercase text-slate-500">Total</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900">
                 {editRequestMetrics.avgResponseHrs}h
               </div>
-              <div className="text-[10px] uppercase text-slate-400">Avg Response</div>
+              <div className="text-[10px] uppercase text-slate-500">Avg Response</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900">{editRequestMetrics.grantRate}%</div>
-              <div className="text-[10px] uppercase text-slate-400">Grant Rate</div>
+              <div className="text-[10px] uppercase text-slate-500">Grant Rate</div>
             </div>
           </div>
           {snapshot.editRequests.length > 0 && (
@@ -501,7 +501,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             </div>
             <div className="min-w-0">
               <div className="text-xs font-medium text-slate-700">Integrity</div>
-              <div className="text-[10px] text-slate-400">View scan results</div>
+              <div className="text-[10px] text-slate-500">View scan results</div>
             </div>
           </Link>
           <a
@@ -513,7 +513,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             </div>
             <div className="min-w-0">
               <div className="text-xs font-medium text-slate-700">Backups</div>
-              <div className="text-[10px] text-slate-400">Manage backups</div>
+              <div className="text-[10px] text-slate-500">Manage backups</div>
             </div>
           </a>
           <a
@@ -525,7 +525,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             </div>
             <div className="min-w-0">
               <div className="text-xs font-medium text-slate-700">Maintenance</div>
-              <div className="text-[10px] text-slate-400">View job status</div>
+              <div className="text-[10px] text-slate-500">View job status</div>
             </div>
           </a>
         </div>

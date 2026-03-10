@@ -374,16 +374,17 @@ export default function CommandPalette({
         >
           {/* Search input */}
           <div className="flex items-center gap-3 border-b border-slate-100 px-5 h-14">
-            <SearchIcon className="size-5 shrink-0 text-slate-400" />
+            <SearchIcon className="size-5 shrink-0 text-slate-500" />
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={isAdmin ? "Search entries, categories, users..." : "Search your entries..."}
-              className="h-full flex-1 bg-transparent text-lg outline-none placeholder:text-slate-400"
+              aria-label="Search commands"
+              className="h-full flex-1 bg-transparent text-lg outline-none placeholder:text-slate-500"
             />
-            <kbd className="hidden rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-400 sm:inline-block">
+            <kbd className="hidden rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 sm:inline-block">
               ESC
             </kbd>
           </div>
@@ -419,7 +420,7 @@ export default function CommandPalette({
                 <div className="py-2">
                   {grouped.map((group) => (
                     <div key={group.type}>
-                      <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                         {TYPE_LABELS[group.type]} ({group.items.length})
                       </div>
                       {group.items.map((result) => {
@@ -450,7 +451,7 @@ export default function CommandPalette({
                                   query={query}
                                 />
                               </div>
-                              <div className="truncate text-xs text-slate-400">
+                              <div className="truncate text-xs text-slate-500">
                                 {getResultSubtitle(result.item)}
                               </div>
                             </div>
@@ -468,7 +469,7 @@ export default function CommandPalette({
                   <div className="text-sm text-slate-500">
                     No results for &ldquo;{query}&rdquo;
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-slate-500">
                     Try different keywords or check your filters
                   </div>
                 </div>
@@ -476,7 +477,7 @@ export default function CommandPalette({
             ) : (
               /* Empty query: quick actions */
               <div className="py-2">
-                <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                   Quick Actions
                 </div>
                 {quickActions.map((action, i) => {
@@ -501,7 +502,7 @@ export default function CommandPalette({
                         <div className="truncate text-sm font-medium text-slate-800">
                           {action.title}
                         </div>
-                        <div className="truncate text-xs text-slate-400">
+                        <div className="truncate text-xs text-slate-500">
                           {action.subtitle}
                         </div>
                       </div>
@@ -515,13 +516,13 @@ export default function CommandPalette({
 
           {/* Footer */}
           <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-2">
-            <div className="flex items-center gap-3 text-[10px] text-slate-400">
+            <div className="flex items-center gap-3 text-[10px] text-slate-500">
               <span>↑↓ Navigate</span>
               <span>↵ Open</span>
               <span>ESC Close</span>
             </div>
             {hasQuery && (
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-500">
                 {results.length} {results.length === 1 ? "result" : "results"}
               </span>
             )}
