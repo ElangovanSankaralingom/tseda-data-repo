@@ -264,7 +264,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
           <SelectDropdown
-            value={form.academicYear}
+            value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
             options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
             placeholder="Select academic year"
@@ -307,7 +307,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label="Place of Visit" error={submitted ? errors.placeOfVisit : undefined}>
           <input
-            value={form.placeOfVisit}
+            value={form.placeOfVisit || ""}
             onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
             disabled={coreFieldDisabled("placeOfVisit")}
             className={cx(
@@ -321,7 +321,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
         <Field label="Purpose of Visit" error={submitted ? errors.purposeOfVisit : undefined}>
           <textarea
-            value={form.purposeOfVisit}
+            value={form.purposeOfVisit || ""}
             onChange={(e) => setForm((c) => ({ ...c, purposeOfVisit: e.target.value }))}
             rows={4}
             disabled={coreFieldDisabled("purposeOfVisit")}
@@ -336,7 +336,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
         <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
           <SelectDropdown
-            value={form.yearOfStudy}
+            value={form.yearOfStudy || ""}
             onChange={(value) =>
               setForm((c) => {
                 const nextYear = normalizeYearOfStudy(value) ?? "";

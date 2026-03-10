@@ -174,7 +174,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
           <SelectDropdown
-            value={form.academicYear}
+            value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
             options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
             placeholder="Select academic year"
@@ -215,7 +215,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
 
         <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>
           <input
-            value={form.eventName}
+            value={form.eventName || ""}
             onChange={(e) => setForm((c) => ({ ...c, eventName: e.target.value }))}
             disabled={coreFieldDisabled("eventName")}
             className={cx(
@@ -230,7 +230,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
 
         <Field label="Name of the Speaker" error={submitted ? errors.speakerName : undefined}>
           <input
-            value={form.speakerName}
+            value={form.speakerName || ""}
             onChange={(e) => setForm((c) => ({ ...c, speakerName: e.target.value }))}
             disabled={coreFieldDisabled("speakerName")}
             className={cx(
@@ -245,7 +245,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
 
         <Field label="Name of the Organization" error={submitted ? errors.organizationName : undefined}>
           <input
-            value={form.organizationName}
+            value={form.organizationName || ""}
             onChange={(e) => setForm((c) => ({ ...c, organizationName: e.target.value }))}
             disabled={coreFieldDisabled("organizationName")}
             className={cx(
@@ -295,7 +295,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
           <SelectDropdown
-            value={form.yearOfStudy}
+            value={form.yearOfStudy || ""}
             onChange={(value) =>
               setForm((c) => {
                 const nextYear = normalizeYearOfStudy(value) ?? "";
