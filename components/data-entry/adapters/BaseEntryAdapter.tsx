@@ -171,7 +171,9 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   const entryForFinalizationCheck = activeEntryId ? list.find((e) => e.id === activeEntryId) : null;
   // IMPORTANT: isFinalized comes from the SERVER response (via entryToApiResponse).
   // Do NOT recompute on the client — the server is the single source of truth.
-  const isViewMode = isViewModeRaw || (entryForFinalizationCheck as Record<string, unknown> | null)?.isFinalized === true;
+  const pendingStatus = String((entryForFinalizationCheck as Record<string, unknown> | null)?.confirmationStatus ?? "");
+  const isAwaitingAdmin = pendingStatus === "EDIT_REQUESTED" || pendingStatus === "DELETE_REQUESTED";
+  const isViewMode = isViewModeRaw || (entryForFinalizationCheck as Record<string, unknown> | null)?.isFinalized === true || isAwaitingAdmin;
 
   const {
     draft: form,
