@@ -13,7 +13,7 @@ import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/util
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import { FACULTY } from "@/lib/facultyDirectory";
-import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
+import { hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -389,18 +389,24 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
                 }
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      uploads: { ...current.uploads, [slot]: meta },
-                    }),
+                    buildNextEntry: (current) => {
+                      const next = { ...current, uploads: { ...current.uploads, [slot]: meta } };
+                      if (current.pdfSourceHash) {
+                        (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "guest-lectures");
+                      }
+                      return next;
+                    },
                   });
                 }}
                 onDeleted={async () => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      uploads: { ...current.uploads, [slot]: null },
-                    }),
+                    buildNextEntry: (current) => {
+                      const next = { ...current, uploads: { ...current.uploads, [slot]: null } };
+                      if (current.pdfSourceHash) {
+                        (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "guest-lectures");
+                      }
+                      return next;
+                    },
                   });
                 }}
               />
@@ -411,26 +417,35 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
               value={form.uploads.geotaggedPhotos}
               onUploaded={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => ({
-                    ...current,
-                    uploads: {
-                      ...current.uploads,
-                      geotaggedPhotos: [...current.uploads.geotaggedPhotos, meta],
-                    },
-                  }),
+                  buildNextEntry: (current) => {
+                    const next = {
+                      ...current,
+                      uploads: { ...current.uploads, geotaggedPhotos: [...current.uploads.geotaggedPhotos, meta] },
+                    };
+                    if (current.pdfSourceHash) {
+                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "guest-lectures");
+                    }
+                    return next;
+                  },
                 });
               }}
               onDeleted={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => ({
-                    ...current,
-                    uploads: {
-                      ...current.uploads,
-                      geotaggedPhotos: current.uploads.geotaggedPhotos.filter(
-                        (item) => item.storedPath !== meta.storedPath,
-                      ),
-                    },
-                  }),
+                  buildNextEntry: (current) => {
+                    const next = {
+                      ...current,
+                      uploads: {
+                        ...current.uploads,
+                        geotaggedPhotos: current.uploads.geotaggedPhotos.filter(
+                          (item) => item.storedPath !== meta.storedPath,
+                        ),
+                      },
+                    };
+                    if (current.pdfSourceHash) {
+                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "guest-lectures");
+                    }
+                    return next;
+                  },
                 });
               }}
               uploadEndpoint="/api/me/guest-lectures/file"

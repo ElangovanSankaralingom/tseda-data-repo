@@ -21,6 +21,7 @@ import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgre
 import type { FileMeta } from "@/lib/types/entry";
 import { uploadFile } from "@/lib/upload/uploadService";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 // ---------------------------------------------------------------------------
@@ -134,7 +135,13 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
       setUploadPersistingCount((c) => c + 1);
       try {
         await persistCurrentMutation({
-          buildNextEntry: (current) => ({ ...current, [slot]: meta }) as FdpAttended,
+          buildNextEntry: (current) => {
+            const next = { ...current, [slot]: meta } as FdpAttended;
+            if (current.pdfSourceHash) {
+              (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "fdp-attended");
+            }
+            return next;
+          },
         });
       } finally {
         setUploadPersistingCount((c) => Math.max(0, c - 1));
@@ -154,7 +161,13 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
       setUploadPersistingCount((c) => c + 1);
       try {
         await persistCurrentMutation({
-          buildNextEntry: (current) => ({ ...current, [slot]: null }) as FdpAttended,
+          buildNextEntry: (current) => {
+            const next = { ...current, [slot]: null } as FdpAttended;
+            if (current.pdfSourceHash) {
+              (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "fdp-attended");
+            }
+            return next;
+          },
         });
       } finally {
         setUploadPersistingCount((c) => Math.max(0, c - 1));
