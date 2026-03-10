@@ -19,6 +19,7 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
+import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
@@ -26,7 +27,7 @@ import {
   createPersistProgress,
   createRefreshList,
 } from "@/lib/entries/adapterOrchestration";
-import { getCategoryConfig } from "@/data/categoryRegistry";
+import { getCategoryConfig, getCategorySchema } from "@/data/categoryRegistry";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { EntryRecord } from "@/components/data-entry/adapters/adapterTypes";
@@ -563,11 +564,20 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           const entryStatus = String(form.confirmationStatus ?? "DRAFT");
           const editRequestStatus = String((form as Record<string, unknown>).requestEditStatus ?? "none");
           const isPendingRequest = entryStatus === "EDIT_REQUESTED" || entryStatus === "DELETE_REQUESTED" || editRequestStatus === "pending";
+
+          // Check if ALL fields (stage 1 + stage 2) are complete
+          const allProgress = computeFieldProgress(category, form as Record<string, unknown>, true);
+          const allFieldsComplete = allProgress.total > 0 && allProgress.completed === allProgress.total;
+
           return {
-            canFinalise: !isPendingRequest,
+            canFinalise: !isPendingRequest && allFieldsComplete,
             onFinalise: () => finaliseEntry(form),
             onAfterFinalise: () => closeForm(categoryPath),
-            disabledReason: undefined,
+            disabledReason: isPendingRequest
+              ? "Waiting for admin approval"
+              : !allFieldsComplete
+                ? "Complete all fields including uploads to finalise"
+                : undefined,
           };
         })(),
         entryStatus: form.confirmationStatus,

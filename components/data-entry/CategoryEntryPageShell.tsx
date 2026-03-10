@@ -189,8 +189,8 @@ export default function CategoryEntryPageShell({
   if (showForm) {
     const entry = entryShell.entry as Record<string, unknown> | null;
     const category = entryShell.category;
-    const progress = computeFieldProgress(category, entry);
     const isGenerated = !!entry?.committedAtISO;
+    const progress = computeFieldProgress(category, entry, isGenerated);
     const streakEligible = !!entry?.streakEligible;
     // IMPORTANT: isEditable and editTimeRemaining come from the SERVER response
     // (via entryToApiResponse). Do NOT recompute on the client — the server is

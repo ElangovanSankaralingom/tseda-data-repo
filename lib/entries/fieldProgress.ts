@@ -31,7 +31,8 @@ function isFieldFilled(entry: Record<string, unknown>, key: string): boolean {
 
 export function computeFieldProgress(
   category: CategorySlug,
-  entry: Record<string, unknown> | null | undefined
+  entry: Record<string, unknown> | null | undefined,
+  isGenerated = false,
 ): FieldProgress {
   if (!entry) {
     return { total: 0, completed: 0, percent: 0, preGenerate: { total: 0, completed: 0 }, postGenerate: { total: 0, completed: 0 }, hasPhases: false };
@@ -50,6 +51,19 @@ export function computeFieldProgress(
       preGenerate.total++;
       if (filled) preGenerate.completed++;
     } else {
+      postGenerate.total++;
+      if (filled) postGenerate.completed++;
+    }
+  }
+
+  // After generate, include stage 2 upload fields in the progress count
+  if (isGenerated) {
+    for (const field of schema.fields) {
+      if (field.stage !== 2) continue;
+      if (field.exportable === false) continue;
+      // Skip if already counted via requiredForCommit
+      if (requiredFields.includes(field.key)) continue;
+      const filled = isFieldFilled(entry, field.key);
       postGenerate.total++;
       if (filled) postGenerate.completed++;
     }
