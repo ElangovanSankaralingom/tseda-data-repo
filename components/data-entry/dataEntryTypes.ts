@@ -180,8 +180,8 @@ export type EditorStatusBannersProps = {
   expiresAtISO?: string | null;
   hasPdf?: boolean;
   permanentlyLocked?: boolean;
-  onCancelRequest?: () => void;
-  onCancelRequestDelete?: () => void;
+  onCancelRequest?: () => void | Promise<void>;
+  onCancelRequestDelete?: () => void | Promise<void>;
 };
 
 // --- Props from CategoryEntryRecordCard.tsx ---

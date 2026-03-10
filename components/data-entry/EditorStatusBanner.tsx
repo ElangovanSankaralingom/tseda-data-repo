@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { AlertTriangle, Archive, Clock, Lock, Shield, Unlock } from "lucide-react";
 import { type EditorStatusBannersProps } from "./dataEntryTypes";
 
@@ -81,11 +82,13 @@ function StatusStrip({
   message,
   actionLabel,
   onAction,
+  actionDisabled,
 }: {
   variant: string;
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  actionDisabled?: boolean;
 }) {
   const style = STRIP_STYLES[variant] ?? STRIP_STYLES.finalized;
   const Icon = style.icon;
@@ -96,11 +99,12 @@ function StatusStrip({
     >
       <Icon className={`size-4 shrink-0 ${style.iconColor}`} />
       <span className={`flex-1 text-sm ${style.text}`}>{message}</span>
-      {actionLabel && onAction ? (
+      {actionLabel ? (
         <button
           type="button"
           onClick={onAction}
-          className={`shrink-0 text-sm font-medium ${style.text} opacity-80 hover:opacity-100 transition-opacity`}
+          disabled={!onAction || actionDisabled}
+          className={`shrink-0 text-sm font-medium ${style.text} opacity-80 hover:opacity-100 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {actionLabel}
         </button>
@@ -141,6 +145,30 @@ export function EditorStatusBanners({
   onCancelRequest,
   onCancelRequestDelete,
 }: EditorStatusBannersProps) {
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancelEdit = useCallback(async () => {
+    if (cancelling || !onCancelRequest) return;
+    setCancelling(true);
+    try {
+      await onCancelRequest();
+    } finally {
+      setCancelling(false);
+    }
+  }, [cancelling, onCancelRequest]);
+
+  const handleCancelDelete = useCallback(async () => {
+    if (cancelling) return;
+    const fn = onCancelRequestDelete ?? onCancelRequest;
+    if (!fn) return;
+    setCancelling(true);
+    try {
+      await fn();
+    } finally {
+      setCancelling(false);
+    }
+  }, [cancelling, onCancelRequest, onCancelRequestDelete]);
+
   // Expiring soon — urgent
   const isExpiringSoon = editTimeMs !== undefined && editTimeMs > 0 && editTimeMs < 24 * 60 * 60 * 1000;
   if (isExpiringSoon && editTimeLabel) {
@@ -166,8 +194,9 @@ export function EditorStatusBanners({
       <StatusStrip
         variant="edit_requested"
         message="Edit request pending · Waiting for admin approval"
-        actionLabel="Cancel Request"
-        onAction={onCancelRequest}
+        actionLabel={cancelling ? "Cancelling..." : "Cancel Request"}
+        onAction={handleCancelEdit}
+        actionDisabled={cancelling}
       />
     );
   }
@@ -177,8 +206,9 @@ export function EditorStatusBanners({
       <StatusStrip
         variant="delete_requested"
         message="Delete request pending · Waiting for admin approval"
-        actionLabel="Cancel Request"
-        onAction={onCancelRequestDelete ?? onCancelRequest}
+        actionLabel={cancelling ? "Cancelling..." : "Cancel Request"}
+        onAction={handleCancelDelete}
+        actionDisabled={cancelling}
       />
     );
   }

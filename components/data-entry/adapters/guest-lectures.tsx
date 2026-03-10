@@ -5,6 +5,7 @@ import DateField from "@/components/controls/DateField";
 import Field from "@/components/data-entry/Field";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
+import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
@@ -370,7 +371,9 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
 
       <div className="mt-5 space-y-4">
         {uploadsVisible ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <>
+            <StageTwoDivider />
+            <div className="animate-highlight-new grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {UPLOAD_CONFIG.map(({ slot, label }) => (
               <EntryUploader
                 key={slot}
@@ -443,7 +446,8 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
               requiredErrorText="At least one geotagged photo is required."
               onStatusChange={setPhotoUploadStatus}
             />
-          </div>
+            </div>
+          </>
         ) : null}
       </div>
     </>

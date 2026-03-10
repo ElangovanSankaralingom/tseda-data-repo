@@ -6,6 +6,7 @@ import DateField from "@/components/controls/DateField";
 import UploadField from "@/components/entry/UploadField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
+import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { useUploadController } from "@/hooks/useUploadController";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
@@ -259,7 +260,9 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
       <div className="mt-5 space-y-4">
         <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
         {uploadsVisible ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <>
+            <StageTwoDivider />
+            <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
             <UploadField
               title="Upload Permission Letter"
               mode={isViewMode ? "view" : "edit"}
@@ -296,7 +299,8 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
               showValidationError={submitAttemptedFinal}
               validationMessage={errors.completionCertificate}
             />
-          </div>
+            </div>
+          </>
         ) : null}
       </div>
     </>
