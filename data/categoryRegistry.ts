@@ -22,6 +22,21 @@ export type CategorySummaryKey =
   | "guestLectures"
   | "workshops";
 
+export type CategoryColor = {
+  /** Progress bar gradient: "from-blue-400 to-blue-600" */
+  bar: string;
+  /** Light background: "bg-blue-100" */
+  bg: string;
+  /** Primary text: "text-blue-600" */
+  text: string;
+  /** Hover ring: "hover:ring-blue-200" */
+  ring: string;
+  /** CTA/link text: "text-blue-500" */
+  cta: string;
+  /** Hero gradient: "from-blue-600 via-blue-700 to-blue-900" */
+  gradient: string;
+};
+
 export type CategoryConfig = {
   slug: CategorySlug;
   label: string;
@@ -30,7 +45,8 @@ export type CategoryConfig = {
   summaryKey: CategorySummaryKey;
   supportsUploads: boolean;
   supportsConfirmation: boolean;
-  icon?: string;
+  icon: string;
+  color: CategoryColor;
   subtitle?: string;
   entryTitleField?: string;
   entryTitleFallback?: string;
@@ -46,6 +62,14 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     supportsUploads: true,
     supportsConfirmation: true,
     icon: "book-open",
+    color: {
+      bar: "from-blue-400 to-blue-600",
+      bg: "bg-blue-100",
+      text: "text-blue-600",
+      ring: "hover:ring-blue-200",
+      cta: "text-blue-500",
+      gradient: "from-blue-600 via-blue-700 to-blue-900",
+    },
     subtitle: "Record FDPs you attended with support amount and required supporting documents.",
     entryTitleField: "programName",
     entryTitleFallback: "FDP Entry",
@@ -59,6 +83,14 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     supportsUploads: true,
     supportsConfirmation: true,
     icon: "presentation",
+    color: {
+      bar: "from-emerald-400 to-emerald-600",
+      bg: "bg-emerald-100",
+      text: "text-emerald-600",
+      ring: "hover:ring-emerald-200",
+      cta: "text-emerald-500",
+      gradient: "from-emerald-600 via-emerald-700 to-emerald-900",
+    },
     subtitle: "Capture FDPs conducted with coordinator details, dates, and required supporting documents.",
     entryTitleField: "eventName",
     entryTitleFallback: "FDP Entry",
@@ -72,6 +104,14 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     supportsUploads: true,
     supportsConfirmation: true,
     icon: "clipboard-list",
+    color: {
+      bar: "from-amber-400 to-amber-600",
+      bg: "bg-amber-100",
+      text: "text-amber-600",
+      ring: "hover:ring-amber-200",
+      cta: "text-amber-500",
+      gradient: "from-amber-600 via-amber-700 to-amber-900",
+    },
     subtitle: "Maintain case study records with academic context, outcomes, and supporting material.",
     entryTitleField: "placeOfVisit",
     entryTitleFallback: "Case Study",
@@ -85,6 +125,14 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     supportsUploads: true,
     supportsConfirmation: true,
     icon: "mic",
+    color: {
+      bar: "from-purple-400 to-purple-600",
+      bg: "bg-purple-100",
+      text: "text-purple-600",
+      ring: "hover:ring-purple-200",
+      cta: "text-purple-500",
+      gradient: "from-purple-600 via-purple-700 to-purple-900",
+    },
     subtitle: "Record event details and supporting documents.",
     entryTitleField: "eventName",
     entryTitleFallback: "Guest Lecture",
@@ -98,6 +146,14 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     supportsUploads: true,
     supportsConfirmation: true,
     icon: "hammer",
+    color: {
+      bar: "from-rose-400 to-rose-600",
+      bg: "bg-rose-100",
+      text: "text-rose-600",
+      ring: "hover:ring-rose-200",
+      cta: "text-rose-500",
+      gradient: "from-rose-600 via-rose-700 to-rose-900",
+    },
     subtitle: "Record workshop details and supporting documents.",
     entryTitleField: "eventName",
     entryTitleFallback: "Workshop",

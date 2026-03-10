@@ -31,14 +31,23 @@ import { cn } from "@/lib/utils";
 // Quick actions
 // ---------------------------------------------------------------------------
 
+import { CATEGORY_SLUGS, getCategoryConfig } from "@/data/categoryRegistry";
 import { type QuickAction } from "./searchTypes";
 
+const CATEGORY_QUICK_ACTIONS: QuickAction[] = CATEGORY_SLUGS.map((slug) => {
+  const config = getCategoryConfig(slug);
+  return {
+    id: `qa-${slug}`,
+    title: `New ${config.label} Entry`,
+    subtitle: "Start a new entry",
+    path: `/data-entry/${slug}/new`,
+    icon: "file",
+    adminOnly: false,
+  };
+});
+
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: "qa-fdp-a", title: "New FDP Attended Entry", subtitle: "Start a new entry", path: "/data-entry/fdp-attended/new", icon: "file", adminOnly: false },
-  { id: "qa-fdp-c", title: "New FDP Conducted Entry", subtitle: "Start a new entry", path: "/data-entry/fdp-conducted/new", icon: "file", adminOnly: false },
-  { id: "qa-cs", title: "New Case Study", subtitle: "Start a new entry", path: "/data-entry/case-studies/new", icon: "file", adminOnly: false },
-  { id: "qa-gl", title: "New Guest Lecture Entry", subtitle: "Start a new entry", path: "/data-entry/guest-lectures/new", icon: "file", adminOnly: false },
-  { id: "qa-ws", title: "New Workshop Entry", subtitle: "Start a new entry", path: "/data-entry/workshops/new", icon: "file", adminOnly: false },
+  ...CATEGORY_QUICK_ACTIONS,
   { id: "qa-dash", title: "Go to Dashboard", subtitle: "View your progress", path: "/dashboard", icon: "layout", adminOnly: false },
   { id: "qa-admin", title: "Admin Console", subtitle: "Administration", path: "/admin", icon: "zap", adminOnly: true },
   { id: "qa-analytics", title: "View Analytics", subtitle: "Charts and insights", path: "/admin/analytics", icon: "zap", adminOnly: true },

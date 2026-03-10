@@ -3,14 +3,8 @@
 import Link from "next/link";
 import {
   ArrowLeft,
-  BookOpen,
-  FileText,
-  Mic,
   Plus,
-  Presentation,
-  Wrench,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import EntryShell from "@/components/entry/EntryShell";
 import SectionCard from "@/components/layout/SectionCard";
 import EditorProgressHeader from "@/components/data-entry/EditorProgressHeader";
@@ -18,33 +12,10 @@ import { EditorStatusBanners } from "@/components/data-entry/EditorStatusBanner"
 import EditorMetadataFooter from "@/components/data-entry/EditorMetadataFooter";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import type { EditTimeRemaining } from "@/lib/entries/workflow";
-import { getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
+import { getCategoryConfig, getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
+import { getCategoryIcon } from "@/lib/ui/categoryIcons";
 import { dataEntryHome } from "@/lib/entryNavigation";
 import { type CardContent, type ListStats } from "./dataEntryTypes";
-
-const CATEGORY_GRADIENTS: Record<string, string> = {
-  "fdp-attended": "from-blue-600 via-blue-700 to-blue-900",
-  "fdp-conducted": "from-emerald-600 via-emerald-700 to-emerald-900",
-  "case-studies": "from-amber-600 via-amber-700 to-amber-900",
-  "guest-lectures": "from-purple-600 via-purple-700 to-purple-900",
-  workshops: "from-rose-600 via-rose-700 to-rose-900",
-};
-
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  "fdp-attended": BookOpen,
-  "fdp-conducted": Presentation,
-  "case-studies": FileText,
-  "guest-lectures": Mic,
-  workshops: Wrench,
-};
-
-const ACCENT_TEXT: Record<string, string> = {
-  "fdp-attended": "text-blue-700",
-  "fdp-conducted": "text-emerald-700",
-  "case-studies": "text-amber-700",
-  "guest-lectures": "text-purple-700",
-  workshops: "text-rose-700",
-};
 
 type CategoryEntryPageShellProps = {
   entryShell: Omit<React.ComponentProps<typeof EntryShell>, "children">;
@@ -84,8 +55,9 @@ function CategoryHero({
   onAdd?: () => void;
   addLabel?: string;
 }) {
-  const gradient = CATEGORY_GRADIENTS[category] ?? "from-slate-600 via-slate-700 to-slate-900";
-  const Icon = CATEGORY_ICONS[category] ?? FileText;
+  const config = getCategoryConfig(category);
+  const gradient = config.color.gradient;
+  const Icon = getCategoryIcon(config.icon);
 
   return (
     <div className={`rounded-2xl bg-gradient-to-br ${gradient} p-6 sm:p-8 mb-6 animate-fade-in-up`}>
@@ -143,7 +115,7 @@ function CategoryHero({
           type="button"
           onClick={onAdd}
           className={`mt-5 inline-flex items-center gap-1.5 rounded-xl bg-white ${
-            ACCENT_TEXT[category] ?? "text-slate-700"
+            config.color.text
           } px-5 py-2.5 text-sm font-semibold shadow-lg hover:bg-white/90 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200`}
         >
           <Plus className="size-4" />
@@ -165,9 +137,10 @@ function CategoryEmptyState({
   onAdd?: () => void;
   addLabel?: string;
 }) {
-  const Icon = CATEGORY_ICONS[category] ?? FileText;
-  const accent = ACCENT_TEXT[category] ?? "text-slate-700";
-  const bgAccent = accent.replace("text-", "bg-").replace("-700", "-100");
+  const config = getCategoryConfig(category);
+  const Icon = getCategoryIcon(config.icon);
+  const accent = config.color.text;
+  const bgAccent = config.color.bg;
 
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center max-w-md mx-auto animate-fade-in-up stagger-2">
