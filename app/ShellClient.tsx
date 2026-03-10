@@ -185,7 +185,7 @@ export default function ShellClient({
   }
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-[#FAFBFC] text-slate-900">
+    <div className="min-h-dvh overflow-x-hidden bg-white text-slate-900">
       {/* ─── Fixed Header ─── */}
       <header
         className={cn(

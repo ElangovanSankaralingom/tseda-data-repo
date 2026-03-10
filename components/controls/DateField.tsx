@@ -6,7 +6,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function DateField({ value, onChange, disabled, error }: { value: string; onChange: (next: string) => void; disabled?: boolean; error?: boolean }) {
+export default function DateField({ value, onChange, disabled, error }: { value: string | null | undefined; onChange: (next: string) => void; disabled?: boolean; error?: boolean }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   function openPicker() {
@@ -25,7 +25,7 @@ export default function DateField({ value, onChange, disabled, error }: { value:
       <input
         ref={inputRef}
         type="date"
-        value={value}
+        value={value || ""}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         className={cx(

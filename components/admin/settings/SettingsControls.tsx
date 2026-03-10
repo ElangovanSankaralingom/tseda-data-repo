@@ -122,6 +122,7 @@ export function NumberInput({
         <input
           type="text"
           inputMode="numeric"
+          aria-label="Numeric value"
           value={local}
           disabled={disabled}
           onChange={(e) => setLocal(e.target.value)}
@@ -348,6 +349,7 @@ export function SettingRow({
               <div className="flex items-center gap-2">
                 <input
                   type="color"
+                  aria-label="Color picker"
                   value={value as string}
                   onChange={(e) => handleSave(e.target.value)}
                   className="size-8 cursor-pointer rounded border border-slate-200"
