@@ -189,9 +189,12 @@ export function hydratePdfSnapshot<T extends { pdfMeta?: PdfMetaLike; pdfSourceH
     };
   }
 
+  // Always reconcile pdfSourceHash to the current field hash on load.
+  // This prevents false "Document outdated" caused by server normalization
+  // drift (trimming, null conversion) since the hash was originally stored.
   return {
     ...entry,
-    pdfSourceHash: entry.pdfSourceHash || currentHash,
+    pdfSourceHash: currentHash,
     pdfStale: false,
   };
 }
