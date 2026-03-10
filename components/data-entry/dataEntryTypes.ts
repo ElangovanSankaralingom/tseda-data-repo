@@ -206,6 +206,7 @@ export type CategoryEntryRecordCardProps = {
   sendForConfirmation?: SendForConfirmationControls;
   requestEdit?: RequestEditControls;
   requestDelete?: RequestDeleteControls;
+  requestInFlight?: boolean;
   permanentlyLocked?: boolean;
   children?: React.ReactNode;
 };
@@ -226,6 +227,7 @@ export type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRende
   buildDeleteRequest?: (entry: TEntry) => DeleteConfirmationRequest;
   requestingEditIds: Record<string, boolean | undefined>;
   requestingDeleteIds: Record<string, boolean | undefined>;
+  requestInFlightIds: Record<string, boolean | undefined>;
   sendingConfirmationIds: Record<string, boolean | undefined>;
   requestEdit: (entry: TEntry) => void | Promise<void>;
   cancelRequestEdit: (entry: TEntry) => void | Promise<void>;
