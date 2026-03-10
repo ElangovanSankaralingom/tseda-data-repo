@@ -22,6 +22,7 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 import { assertEntryMutationInput, assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { isEntryEditable } from "@/lib/entries/lock";
 import type { CategoryKey } from "@/lib/entries/types";
+import { validateCsrf } from "@/lib/security/csrf";
 
 /**
  * Shared route handler for all 5 category API routes.
@@ -108,6 +109,17 @@ export async function handleCategoryGet(
     return errorResponse("Invalid category", 400);
   }
 
+  try {
+    enforceRateLimitForRequest({
+      request: _req,
+      userEmail: auth.email,
+      action: `entry.read.${category}`,
+      options: RATE_LIMIT_PRESETS.entryReads,
+    });
+  } catch (error) {
+    return mutationErrorResponse(error, "Too many requests");
+  }
+
   const entries = await listEntriesForCategory(
     auth.email,
     category as CategoryKey,
@@ -129,6 +141,9 @@ export async function handleCategoryPost(
   request: NextRequest | Request,
   categoryKey: string,
 ): Promise<NextResponse> {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return errorResponse(csrfError, 403);
+
   const auth = await requireAuth();
   if (!auth) return errorResponse("Unauthorized", 401);
 
@@ -234,6 +249,9 @@ export async function handleCategoryPatch(
   request: NextRequest | Request,
   categoryKey: string,
 ): Promise<NextResponse> {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return errorResponse(csrfError, 403);
+
   const auth = await requireAuth();
   if (!auth) return errorResponse("Unauthorized", 401);
 
@@ -403,6 +421,9 @@ export async function handleCategoryDelete(
   request: NextRequest | Request,
   categoryKey: string,
 ): Promise<NextResponse> {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return errorResponse(csrfError, 403);
+
   const auth = await requireAuth();
   if (!auth) return errorResponse("Unauthorized", 401);
 
