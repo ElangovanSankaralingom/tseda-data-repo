@@ -476,6 +476,27 @@ export function getEditTimeRemaining(entry: EntryStateLike, nowISO?: string): Ed
 
 const MAX_REQUESTS_PER_MONTH = APP_CONFIG.entryLifecycle.maxRequestsPerMonth;
 
+/** Check if the request count should be reset (new calendar month in UTC). */
+function getEffectiveRequestCount(entry: EntryStateLike): number {
+  const count = typeof entry.requestCount === "number" ? entry.requestCount : 0;
+  if (count === 0) return 0;
+
+  const resetAt = toOptionalISO(entry.requestCountResetAt);
+  if (!resetAt) return count;
+
+  // Reset if we're in a different calendar month (UTC)
+  const resetDate = new Date(resetAt);
+  const now = new Date();
+  if (
+    now.getUTCFullYear() !== resetDate.getUTCFullYear() ||
+    now.getUTCMonth() !== resetDate.getUTCMonth()
+  ) {
+    return 0; // Month rolled over — effective count is 0
+  }
+
+  return count;
+}
+
 /**
  * Determines whether the user can submit an edit or delete request for this entry.
  * Requests are only allowed on finalized `GENERATED` entries that have not exceeded
@@ -490,9 +511,8 @@ export function canRequestAction(entry: EntryStateLike): boolean {
   if (status !== "GENERATED") return false;
   if (!isEntryFinalized(entry)) return false;
 
-  // Check monthly limit
-  const count = typeof entry.requestCount === "number" ? entry.requestCount : 0;
-  return count < MAX_REQUESTS_PER_MONTH;
+  // Check monthly limit (resets each calendar month)
+  return getEffectiveRequestCount(entry) < MAX_REQUESTS_PER_MONTH;
 }
 
 /**
@@ -503,6 +523,5 @@ export function canRequestAction(entry: EntryStateLike): boolean {
  * @returns The number of requests still available (0 or more).
  */
 export function getRequestCountRemaining(entry: EntryStateLike): number {
-  const count = typeof entry.requestCount === "number" ? entry.requestCount : 0;
-  return Math.max(0, MAX_REQUESTS_PER_MONTH - count);
+  return Math.max(0, MAX_REQUESTS_PER_MONTH - getEffectiveRequestCount(entry));
 }
