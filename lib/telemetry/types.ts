@@ -10,6 +10,7 @@ export const TELEMETRY_EVENT_NAMES = [
   "entry.request_edit",
   "entry.grant_edit",
   "entry.cancel_edit_request",
+  "entry.cancel_edit_grant",
   "entry.reject_edit",
   "entry.finalize",
   "entry.request_delete",

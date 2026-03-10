@@ -25,6 +25,7 @@ export type WalAction =
   | "REQUEST_EDIT"
   | "GRANT_EDIT"
   | "CANCEL_EDIT_REQUEST"
+  | "CANCEL_EDIT_GRANT"
   | "REJECT_EDIT"
   | "FINALIZE"
   | "REQUEST_DELETE"

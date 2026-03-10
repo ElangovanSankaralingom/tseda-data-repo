@@ -290,6 +290,19 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       return payload as T;
     },
     persistCancelRequestEdit: async (entry) => {
+      const status = getEntryApprovalStatus(entry);
+      if (status === "EDIT_GRANTED") {
+        const response = await fetch(`/api/me/${category}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "cancel_edit_grant", id: entry.id }),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(String(payload?.error || "Cancel edit grant failed."));
+        }
+        return payload as T;
+      }
       const response = await fetch("/api/me/entry/confirmation", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },

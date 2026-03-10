@@ -19,6 +19,7 @@ export {
   approveDelete,
   archiveEntry,
   cancelDeleteRequest,
+  cancelEditGrant,
   cancelEditRequest,
   commitDraft,
   computeStreak,

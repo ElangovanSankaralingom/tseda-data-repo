@@ -70,10 +70,17 @@ export function useRequestEdit<TEntry extends RequestEditableEntry>({
         return;
       }
 
+      const isEditGranted = (entry as Record<string, unknown>).confirmationStatus === "EDIT_GRANTED";
       const optimisticEntry = {
         ...entry,
         requestEditStatus: "none" as const,
         requestEditRequestedAtISO: null,
+        ...(isEditGranted ? {
+          confirmationStatus: "GENERATED",
+          editGrantedAt: null,
+          editGrantedBy: null,
+          editGrantedDays: null,
+        } : {}),
       };
 
       setRequestingIds((current) => ({ ...current, [entry.id]: true }));

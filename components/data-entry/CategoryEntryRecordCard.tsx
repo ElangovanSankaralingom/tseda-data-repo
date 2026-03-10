@@ -90,13 +90,22 @@ export default function CategoryEntryRecordCard({
               </>
             ) : null}
 
-            {/* EDIT_GRANTED (unlocked): Continue · Cancel Edit */}
+            {/* EDIT_GRANTED (unlocked): Continue · View · Cancel Edit */}
             {isUnlocked ? (
               <>
                 {onEdit ? (
                   <ActionButton role="primary" onClick={onEdit} className="!bg-purple-600 hover:!bg-purple-700">
                     Continue
                   </ActionButton>
+                ) : null}
+                {onView ? (
+                  <button
+                    type="button"
+                    onClick={onView}
+                    className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 px-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-200 active:scale-[0.97]"
+                  >
+                    View
+                  </button>
                 ) : null}
                 {requestEdit?.onCancel ? (
                   <ActionButton role="ghost" onClick={requestEdit.onCancel} className="text-slate-500 hover:text-slate-700">
