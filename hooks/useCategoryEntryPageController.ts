@@ -326,6 +326,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
     persistCurrentMutation: saveOrch.persistCurrentMutation,
     requestDelete: requests.requestDelete,
     requestEdit: requests.requestEdit,
+    requestInFlightIds: requests.requestInFlightIds,
     requestingDeleteIds: requests.requestingDeleteIds,
     requestingEditIds: requests.requestingEditIds,
     runWithSaveGuard: saveOrch.runWithSaveGuard,

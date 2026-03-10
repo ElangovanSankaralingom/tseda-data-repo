@@ -37,6 +37,7 @@ export default function CategoryEntryRecordCard({
   deleteLabel = "Delete",
   requestEdit,
   requestDelete,
+  requestInFlight = false,
   permanentlyLocked = false,
   children,
 }: CategoryEntryRecordCardProps) {
@@ -108,7 +109,7 @@ export default function CategoryEntryRecordCard({
                   </button>
                 ) : null}
                 {requestEdit?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestEdit.onCancel} className="text-slate-500 hover:text-slate-700">
+                  <ActionButton role="ghost" onClick={requestEdit.onCancel} disabled={requestInFlight} className="text-slate-500 hover:text-slate-700">
                     Cancel Edit
                   </ActionButton>
                 ) : null}
@@ -129,7 +130,7 @@ export default function CategoryEntryRecordCard({
                   <RequestActionDropdown
                     onRequestEdit={requestEdit.onRequest}
                     onRequestDelete={requestDelete.onRequest}
-                    requesting={requestEdit.requesting || requestDelete.requesting}
+                    requesting={requestInFlight || requestEdit.requesting || requestDelete.requesting}
                   />
                 ) : null}
               </>
@@ -146,12 +147,12 @@ export default function CategoryEntryRecordCard({
                   View
                 </button>
                 {confirmationStatus === "EDIT_REQUESTED" && requestEdit?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestEdit.onCancel} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                  <ActionButton role="ghost" onClick={requestEdit.onCancel} disabled={requestInFlight} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50">
                     Cancel Edit Request
                   </ActionButton>
                 ) : null}
                 {confirmationStatus === "DELETE_REQUESTED" && requestDelete?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestDelete.onCancel} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                  <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-red-500 hover:text-red-700 hover:bg-red-50">
                     Cancel Delete Request
                   </ActionButton>
                 ) : null}
@@ -182,6 +183,7 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
   buildDeleteRequest,
   requestingEditIds,
   requestingDeleteIds,
+  requestInFlightIds,
   sendingConfirmationIds,
   requestEdit,
   cancelRequestEdit,
@@ -250,6 +252,7 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
           onRequest: () => void requestDelete(entry),
           onCancel: () => void cancelRequestDelete(entry),
         }}
+        requestInFlight={!!requestInFlightIds[entry.id]}
         permanentlyLocked={entry.permanentlyLocked === true}
       >
         {renderBody(entry)}

@@ -501,6 +501,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     }),
     requestingEditIds,
     requestingDeleteIds: controller.requestingDeleteIds,
+    requestInFlightIds: controller.requestInFlightIds,
     sendingConfirmationIds,
     requestEdit: (entry) => void requestEdit(entry),
     cancelRequestEdit: (entry) => void cancelRequestEdit(entry),
