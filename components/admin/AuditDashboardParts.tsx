@@ -343,7 +343,7 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-        <Activity className="size-8 text-slate-300 mb-3" />
+        <Activity className="size-8 text-slate-400 mb-3" />
         <div className="text-sm font-medium text-slate-500">No audit events found</div>
         <div className="mt-1 text-xs text-slate-500">Try adjusting your filters</div>
       </div>
@@ -380,7 +380,7 @@ export function TableView({ events }: { events: AuditEvent[] }) {
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-        <Activity className="size-8 text-slate-300 mb-3" />
+        <Activity className="size-8 text-slate-400 mb-3" />
         <div className="text-sm font-medium text-slate-500">No audit events found</div>
         <div className="mt-1 text-xs text-slate-500">Try adjusting your filters</div>
       </div>
@@ -489,7 +489,7 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <span className="font-mono text-slate-600">{entry.entryId.slice(0, 8)}</span>
-                  <span className="mx-1 text-slate-300">|</span>
+                  <span className="mx-1 text-slate-400">|</span>
                   <span className="text-slate-500">{emailName(entry.userEmail)}</span>
                 </div>
                 <span className="text-slate-500 font-medium">{entry.count}</span>

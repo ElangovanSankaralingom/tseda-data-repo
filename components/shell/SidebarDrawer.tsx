@@ -220,7 +220,7 @@ export default function SidebarDrawer({
 
         {/* 3. Bottom section */}
         <div className="border-t border-slate-100 p-4 space-y-1">
-          <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 cursor-not-allowed" title="Coming soon">
+          <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 cursor-not-allowed" title="Coming soon">
             <Sun className="size-5" />
             <span className="flex-1">Appearance</span>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">Soon</span>

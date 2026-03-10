@@ -216,7 +216,7 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
             }`}
             title={user.isActive ? "Active" : "Inactive"}
           />
-          <ChevronRight className="size-4 text-slate-300 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
+          <ChevronRight className="size-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
         </div>
       </div>
 
@@ -477,7 +477,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
 
       {filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-          <Users className="size-8 text-slate-300 mb-3" />
+          <Users className="size-8 text-slate-400 mb-3" />
           <div className="text-sm font-medium text-slate-500">No users match your filters</div>
           <div className="mt-1 text-xs text-slate-500">Try adjusting the search or filters</div>
         </div>

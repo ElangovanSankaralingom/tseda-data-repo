@@ -222,7 +222,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
                 value={typedText}
                 onChange={(e) => setTypedText(e.target.value)}
                 placeholder={requireTypedConfirmation}
-                className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-slate-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                 autoComplete="off"
                 spellCheck={false}
               />

@@ -68,7 +68,7 @@ function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) 
         </div>
         <p className="mt-0.5 text-sm text-slate-500 line-clamp-1">{card.description}</p>
       </div>
-      <ChevronRight className="mt-1 size-5 shrink-0 text-slate-300 transition-all duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
+      <ChevronRight className="mt-1 size-5 shrink-0 text-slate-400 transition-all duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
     </Link>
   );
 }

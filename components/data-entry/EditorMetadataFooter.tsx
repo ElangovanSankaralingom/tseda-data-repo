@@ -59,7 +59,7 @@ export default function EditorMetadataFooter({
           <p className="text-xs text-slate-600 flex flex-wrap gap-x-1.5">
             {items.map((item, i) => (
               <span key={item}>
-                {i > 0 ? <span className="text-slate-300 mr-1.5">&middot;</span> : null}
+                {i > 0 ? <span className="text-slate-400 mr-1.5">&middot;</span> : null}
                 {item}
               </span>
             ))}

@@ -408,7 +408,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
 
           {filteredSettings.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-              <Search className="size-8 text-slate-300 mb-3" />
+              <Search className="size-8 text-slate-400 mb-3" />
               <div className="text-sm font-medium text-slate-500">No settings found</div>
               <div className="mt-1 text-xs text-slate-500">Try a different search term</div>
             </div>
@@ -443,7 +443,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                         </div>
                         <div className="mt-0.5 flex items-center gap-2 text-slate-500">
                           <span className="line-through">{JSON.stringify(entry.oldValue)}</span>
-                          <span className="text-slate-300">&rarr;</span>
+                          <span className="text-slate-400">&rarr;</span>
                           <span className="text-slate-600 font-medium">{JSON.stringify(entry.newValue)}</span>
                         </div>
                         <div className="mt-0.5 text-slate-500">{formatRelative(entry.changedAt)}</div>
