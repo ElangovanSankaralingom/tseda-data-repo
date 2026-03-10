@@ -78,7 +78,7 @@ export default async function DashboardPage() {
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             {welcomeSubtext}
           </p>
         </div>
@@ -96,12 +96,12 @@ export default async function DashboardPage() {
       {!hasAnyEntries ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center animate-fade-in-up stagger-1">
           <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-slate-100">
-            <ClipboardList className="size-10 text-slate-500" />
+            <ClipboardList className="size-10 text-slate-600" />
           </div>
-          <p className="mt-3 text-base font-medium text-slate-500">
+          <p className="mt-3 text-base font-medium text-slate-600">
             No entries yet
           </p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Start collecting data to build your streak!
           </p>
           <Link

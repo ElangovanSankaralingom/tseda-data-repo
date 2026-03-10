@@ -43,12 +43,12 @@ export default function ProgressBar({
       <div
         className={cn(
           "w-20 text-right text-xs font-medium tabular-nums",
-          isEmpty ? "text-slate-300" : "text-slate-600"
+          isEmpty ? "text-slate-500" : "text-slate-600"
         )}
       >
         {isEmpty ? "Start entering data" : `${count} ${count === 1 ? "entry" : "entries"}`}
       </div>
-      <ChevronRight className="size-4 text-slate-300 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+      <ChevronRight className="size-4 text-slate-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
     </Link>
   );
 }

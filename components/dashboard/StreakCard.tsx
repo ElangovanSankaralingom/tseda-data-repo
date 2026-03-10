@@ -44,7 +44,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
         <div
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110",
-            hasValue ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"
+            hasValue ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
           )}
         >
           {type === "active" ? (
@@ -59,7 +59,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-xs font-medium uppercase tracking-wide",
-              hasValue ? "text-white/80" : "text-slate-500"
+              hasValue ? "text-white/80" : "text-slate-600"
             )}
           >
             {label}
@@ -67,7 +67,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-3xl font-bold tabular-nums",
-              hasValue ? "text-white" : "text-slate-500"
+              hasValue ? "text-white" : "text-slate-600"
             )}
           >
             {displayValue.toLocaleString("en-IN")}
@@ -75,7 +75,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-xs",
-              hasValue ? "text-white/90" : "text-slate-500"
+              hasValue ? "text-white/90" : "text-slate-600"
             )}
           >
             {hasValue ? subtext : zeroCta}
@@ -87,7 +87,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           className={cn(
             "mt-0 max-h-0 overflow-hidden text-xs italic opacity-0 transition-all duration-200",
             "group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100",
-            hasValue ? "text-white/80" : "text-slate-500"
+            hasValue ? "text-white/80" : "text-slate-600"
           )}
         >
           {hoverDescription}

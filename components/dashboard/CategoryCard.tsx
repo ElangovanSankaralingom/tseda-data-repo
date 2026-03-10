@@ -71,12 +71,12 @@ function CategoryCard({
         <div
           className={cn(
             "text-3xl font-bold tabular-nums",
-            isEmpty ? "text-slate-500" : "text-slate-900"
+            isEmpty ? "text-slate-600" : "text-slate-900"
           )}
         >
           {displayCount}
         </div>
-        <div className="text-sm text-slate-500">
+        <div className="text-sm text-slate-600">
           {isEmpty ? label : `${total === 1 ? "entry" : "entries"}`}
         </div>
       </div>

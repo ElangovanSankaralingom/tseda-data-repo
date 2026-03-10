@@ -55,7 +55,7 @@ function StatCard({
         )}
       >
         <Icon
-          className={cn("size-5", hasGradient ? "text-white/80" : iconColor ?? "text-slate-500")}
+          className={cn("size-5", hasGradient ? "text-white/80" : iconColor ?? "text-slate-600")}
         />
       </div>
       <div className="mt-3">
@@ -65,7 +65,7 @@ function StatCard({
         <div
           className={cn(
             "mt-0.5 text-xs font-medium uppercase tracking-wide",
-            hasGradient ? "text-white/80" : "text-slate-500"
+            hasGradient ? "text-white/80" : "text-slate-600"
           )}
         >
           {label}
@@ -75,7 +75,7 @@ function StatCard({
         <p
           className={cn(
             "mt-2 text-xs",
-            hasGradient ? "text-white/70" : "text-slate-500"
+            hasGradient ? "text-white/70" : "text-slate-600"
           )}
         >
           {description}
@@ -86,7 +86,7 @@ function StatCard({
           className={cn(
             "mt-1 max-h-0 overflow-hidden text-xs italic opacity-0 transition-all duration-200",
             "group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100",
-            hasGradient ? "text-white/60" : "text-slate-500"
+            hasGradient ? "text-white/60" : "text-slate-600"
           )}
         >
           {hoverDescription}
