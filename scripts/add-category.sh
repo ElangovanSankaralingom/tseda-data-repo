@@ -6,15 +6,15 @@
 #   - data/schemas/<slug>.ts           (schema)
 #   - app/api/me/<slug>/route.ts       (API route)
 #   - components/data-entry/adapters/<slug>.tsx  (adapter)
-#   - app/(protected)/data-entry/<slug>/page.tsx
-#   - app/(protected)/data-entry/<slug>/[id]/page.tsx
-#   - app/(protected)/data-entry/<slug>/new/page.tsx
+#
+# Pages are handled by the dynamic [category] route — no per-category pages needed.
 #
 # After running, you still need to:
 #   1. Edit the schema — add your fields
 #   2. Register in data/categoryRegistry.ts
-#   3. Flesh out the adapter (form fields, list rendering)
-#   4. npm run build
+#   3. Add adapter import + mapping in components/data-entry/CategoryPageRouter.tsx
+#   4. Flesh out the adapter (form fields, list rendering)
+#   5. npm run build
 
 set -euo pipefail
 
@@ -209,59 +209,6 @@ ADAPTER
 
 echo "  ✓ components/data-entry/adapters/${SLUG}.tsx"
 
-# ── 4. Pages ───────────────────────────────────────────────────────────────
-
-PAGE_DIR="app/(protected)/data-entry/${SLUG}"
-mkdir -p "${PAGE_DIR}/[id]"
-mkdir -p "${PAGE_DIR}/new"
-
-# List page
-cat > "${PAGE_DIR}/page.tsx" << PAGE
-import { ${PASCAL}Page } from "@/components/data-entry/adapters/${SLUG}";
-
-export const dynamic = "force-dynamic";
-
-export { ${PASCAL}Page };
-
-export default function ${PASCAL}PageRoute() {
-  return <${PASCAL}Page />;
-}
-PAGE
-
-# View/edit page (Next.js 16 async params)
-cat > "${PAGE_DIR}/[id]/page.tsx" << PAGE
-import { ${PASCAL}Page } from "../page";
-
-export const dynamic = "force-dynamic";
-
-type ${PASCAL}ViewPageProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-export default async function ${PASCAL}ViewPage({ params }: ${PASCAL}ViewPageProps) {
-  const { id } = await params;
-
-  return <${PASCAL}Page editEntryId={id} />;
-}
-PAGE
-
-# New entry page
-cat > "${PAGE_DIR}/new/page.tsx" << PAGE
-import { ${PASCAL}Page } from "../page";
-
-export const dynamic = "force-dynamic";
-
-export default function ${PASCAL}NewPage() {
-  return <${PASCAL}Page startInNewMode />;
-}
-PAGE
-
-echo "  ✓ ${PAGE_DIR}/page.tsx"
-echo "  ✓ ${PAGE_DIR}/[id]/page.tsx"
-echo "  ✓ ${PAGE_DIR}/new/page.tsx"
-
 # ── Done ───────────────────────────────────────────────────────────────────
 
 echo ""
@@ -273,8 +220,11 @@ echo "  2. Register in data/categoryRegistry.ts:"
 echo "     - Add '${SLUG}' to CATEGORY_SLUGS array"
 echo "     - Add ${CAMEL}Schema import + registry entry"
 echo "     - Add '${CAMEL}' to CategorySummaryKey type"
-echo "  3. Flesh out components/data-entry/adapters/${SLUG}.tsx"
+echo "  3. Add adapter to components/data-entry/CategoryPageRouter.tsx:"
+echo "     - Import { ${PASCAL}Page } from adapters/${SLUG}"
+echo "     - Add '${SLUG}': ${PASCAL}Page to ADAPTER_MAP"
+echo "  4. Flesh out components/data-entry/adapters/${SLUG}.tsx"
 echo "     - Add form fields to renderFormFields"
 echo "     - Add list rendering (buildListEntryTitle, buildListEntrySubtitle, renderListEntryBody)"
-echo "  4. npm run build — verify"
-echo "  5. Test: create entry, fill fields, generate, finalise"
+echo "  5. npm run build — verify"
+echo "  6. Test: create entry, fill fields, generate, finalise"
