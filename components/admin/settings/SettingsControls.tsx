@@ -141,7 +141,7 @@ export function NumberInput({
         </button>
       </div>
       {(error || (min !== undefined && max !== undefined)) && (
-        <div className={`text-xs ${error ? "text-red-500" : "text-slate-400"}`}>
+        <div className={`text-xs ${error ? "text-red-500" : "text-slate-500"}`}>
           {error || `Range: ${min} – ${max}`}
         </div>
       )}
@@ -183,7 +183,7 @@ export function StringInput({
       onChange={(e) => setLocal(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => e.key === "Enter" && commit()}
-      className="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-50"
+      className="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-50"
     />
   );
 }
@@ -208,6 +208,7 @@ export function SelectInput({
       value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
+      aria-label="Select value"
       className="select-styled h-9 rounded-lg border border-slate-200 bg-white px-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-50"
     >
       {options.map((opt) => (
@@ -306,7 +307,7 @@ export function SettingRow({
             {!isDefault && (
               <button
                 onClick={handleReset}
-                className="mt-1 text-xs text-slate-400 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
+                className="mt-1 text-xs text-slate-500 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
               >
                 Reset to default ({JSON.stringify(def.default)})
               </button>
@@ -359,7 +360,7 @@ export function SettingRow({
 
         {/* Meta */}
         {setting.lastChangedBy && (
-          <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-400">
+          <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-500">
             <Clock className="size-3" />
             Changed by {emailName(setting.lastChangedBy)}
             {setting.lastChangedAt && ` — ${formatRelative(setting.lastChangedAt)}`}

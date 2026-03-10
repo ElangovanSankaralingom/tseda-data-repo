@@ -75,7 +75,7 @@ function StatCard({
         <p
           className={cn(
             "mt-2 text-xs",
-            hasGradient ? "text-white/70" : "text-slate-400"
+            hasGradient ? "text-white/70" : "text-slate-500"
           )}
         >
           {description}

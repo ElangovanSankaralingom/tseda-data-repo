@@ -221,7 +221,7 @@ export default function ShellClient({
           </div>
 
           {/* Center: Navigation Pills */}
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
             <HeaderNavPill href={dashboard()} icon={LayoutDashboard} label="Dashboard" active={isActive(dashboard())} />
             <HeaderNavPill href={dataEntryHome()} icon={ClipboardList} label="Data Entry" active={isActive(dataEntryHome())} />
             {canAccessAdmin && (

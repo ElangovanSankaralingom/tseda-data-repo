@@ -8,7 +8,7 @@ import { pct, catColor } from "./AnalyticsChartsCore";
 export function Leaderboard({ users }: { users: { email: string; name: string; entryCount: number; streakWins: number }[] }) {
   const top = users.slice(0, 10);
   if (top.length === 0) {
-    return <div className="text-sm text-slate-400">No users with entries yet</div>;
+    return <div className="text-sm text-slate-500">No users with entries yet</div>;
   }
 
   const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
@@ -43,7 +43,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
                 {user.name}
               </div>
               <div className="text-lg font-bold text-slate-900">{user.entryCount}</div>
-              <div className="text-[10px] text-slate-400">entries</div>
+              <div className="text-[10px] text-slate-500">entries</div>
               {user.streakWins > 0 && (
                 <div className="mt-1 flex items-center gap-0.5 text-[10px] text-amber-600">
                   <Trophy className="size-3" /> {user.streakWins}
@@ -62,7 +62,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
                 i % 2 === 0 ? "bg-white" : "bg-slate-50"
               } ${i < rest.length - 1 ? "border-b border-slate-100" : ""}`}
             >
-              <span className="w-5 text-xs font-bold text-slate-400">#{i + 4}</span>
+              <span className="w-5 text-xs font-bold text-slate-500">#{i + 4}</span>
               <div className="flex size-7 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
                 {user.name.slice(0, 2).toUpperCase()}
               </div>
@@ -118,7 +118,7 @@ export function StreakFunnel({
         </div>
       ))}
       {total > 0 && (
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-slate-500">
           Completion rate: {pct(wins, activated + wins)}%
         </div>
       )}

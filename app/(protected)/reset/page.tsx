@@ -219,13 +219,13 @@ export default function ResetPage() {
       {/* Target Groups */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="size-6 animate-spin text-slate-400" />
+          <Loader2 className="size-6 animate-spin text-slate-500" />
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(groups).map(([groupName, options]) => (
             <div key={groupName} className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
                 {groupName}
               </h2>
               <div className="space-y-3">
@@ -250,7 +250,7 @@ export default function ResetPage() {
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-sm font-medium text-slate-800">{opt.label}</span>
                           {stat && stat.count > 0 && (
-                            <span className="shrink-0 text-xs text-slate-400">
+                            <span className="shrink-0 text-xs text-slate-500">
                               {stat.count} file{stat.count === 1 ? "" : "s"}, {formatSize(stat.size)}
                             </span>
                           )}

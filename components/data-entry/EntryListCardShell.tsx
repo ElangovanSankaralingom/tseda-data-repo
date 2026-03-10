@@ -41,7 +41,7 @@ const GROUP_ICON_COLORS: Record<EntryListGroup, string> = {
   streak_runners: "text-amber-500",
   on_the_clock: "text-blue-500",
   unlocked: "text-purple-500",
-  in_the_works: "text-slate-400",
+  in_the_works: "text-slate-500",
   under_review: "text-amber-400",
   locked_in: "text-emerald-500",
 };
@@ -137,7 +137,7 @@ function TimeInfo({ group, editTime, createdAt, updatedAt }: {
   // Drafts
   if (group === "in_the_works") {
     const time = formatRelativeTime(createdAt);
-    return time ? <span className="text-xs text-slate-400">Created {time}</span> : null;
+    return time ? <span className="text-xs text-slate-500">Created {time}</span> : null;
   }
 
   // Under review
@@ -149,12 +149,12 @@ function TimeInfo({ group, editTime, createdAt, updatedAt }: {
   // Finalized
   if (group === "locked_in") {
     const time = formatRelativeTime(updatedAt || createdAt);
-    return time ? <span className="text-xs text-slate-400">Finalized {time}</span> : null;
+    return time ? <span className="text-xs text-slate-500">Finalized {time}</span> : null;
   }
 
   // Fallback
   const time = formatRelativeTime(updatedAt || createdAt);
-  return time ? <span className="text-xs text-slate-400">Updated {time}</span> : null;
+  return time ? <span className="text-xs text-slate-500">Updated {time}</span> : null;
 }
 
 function EditWindowProgressBar({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
@@ -238,7 +238,7 @@ export default function EntryListCardShell({
         <div className="mt-2 pl-5.5">
           {children}
           {metadata && !children ? (
-            <div className="text-xs text-slate-400">{metadata}</div>
+            <div className="text-xs text-slate-500">{metadata}</div>
           ) : null}
         </div>
       )}

@@ -71,7 +71,7 @@ function CategoryCard({
         <div
           className={cn(
             "text-3xl font-bold tabular-nums",
-            isEmpty ? "text-slate-400" : "text-slate-900"
+            isEmpty ? "text-slate-500" : "text-slate-900"
           )}
         >
           {displayCount}

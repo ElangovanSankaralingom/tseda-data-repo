@@ -63,10 +63,10 @@ export default function EditorMetadataFooter({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 mt-6">
-      <p className="text-xs text-slate-400 flex flex-wrap gap-x-1.5">
+      <p className="text-xs text-slate-500 flex flex-wrap gap-x-1.5">
         {items.map((item, i) => (
           <span key={item}>
-            {i > 0 ? <span className="text-slate-300 mr-1.5">&middot;</span> : null}
+            {i > 0 ? <span className="text-slate-500 mr-1.5">&middot;</span> : null}
             {item}
           </span>
         ))}

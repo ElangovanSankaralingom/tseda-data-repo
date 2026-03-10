@@ -164,7 +164,7 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
         <div className="lg:hidden">
           <details className="group">
             <summary className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
-              <ChevronRight className="size-4 text-slate-400 transition-transform duration-200 group-open:rotate-90" />
+              <ChevronRight className="size-4 text-slate-500 transition-transform duration-200 group-open:rotate-90" />
               View Statistics
             </summary>
             <div className="mt-3">

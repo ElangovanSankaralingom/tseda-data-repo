@@ -40,7 +40,7 @@ export function ComparisonBadge({ current, previous }: { current: number; previo
   const c = compare(current, previous);
   if (c.direction === "flat") {
     return (
-      <span className="flex items-center gap-0.5 text-xs text-slate-400">
+      <span className="flex items-center gap-0.5 text-xs text-slate-500">
         <Minus className="size-3" /> No change
       </span>
     );
@@ -113,7 +113,7 @@ export function SH({ title, description }: { title: string; description: string 
   return (
     <div className="mb-4">
       <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
-      <p className="text-sm text-slate-400">{description}</p>
+      <p className="text-sm text-slate-500">{description}</p>
     </div>
   );
 }

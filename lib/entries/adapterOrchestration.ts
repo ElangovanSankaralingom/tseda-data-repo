@@ -120,8 +120,9 @@ export function createPersistProgress<T extends Record<string, unknown>>(
       : "entry.create";
     const entryId = String(nextForm.id ?? "").trim() || null;
 
+    const isNew = !String(nextForm.createdAt ?? "").trim();
     const response = await fetch(config.endpoint, {
-      method: "PATCH",
+      method: isNew ? "POST" : "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(config.buildBody(nextForm)),
     });

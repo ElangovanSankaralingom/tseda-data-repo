@@ -197,7 +197,7 @@ export default function NotificationBell({
               <div className="flex flex-col items-center justify-center py-12">
                 <Bell className="size-8 text-slate-300 mb-3" />
                 <div className="text-sm font-medium text-slate-500">No notifications yet</div>
-                <p className="mt-1 text-xs text-slate-400 text-center px-8">
+                <p className="mt-1 text-xs text-slate-500 text-center px-8">
                   You&apos;ll see updates about your entries and edit requests here
                 </p>
               </div>
@@ -267,7 +267,7 @@ function NotificationContent({ notification: n }: { notification: PersistentNoti
         {!n.read && <span className="mt-1 size-2 shrink-0 rounded-full bg-blue-500" />}
       </div>
       <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">{n.message}</p>
-      <span className="mt-1 text-xs text-slate-400">{formatRelative(n.createdAt)}</span>
+      <span className="mt-1 text-xs text-slate-500">{formatRelative(n.createdAt)}</span>
     </div>
   );
 }

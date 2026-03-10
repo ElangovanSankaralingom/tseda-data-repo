@@ -87,7 +87,7 @@ export function TemplateCard({
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-slate-800">{template.name}</div>
           <div className="mt-0.5 text-xs text-slate-500">{template.description}</div>
-          <div className="mt-0.5 text-xs italic text-slate-400">{template.funSubtitle}</div>
+          <div className="mt-0.5 text-xs italic text-slate-500">{template.funSubtitle}</div>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between">
@@ -136,7 +136,7 @@ export function FormatSelector({ value, onChange }: { value: string; onChange: (
           <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
             {fmt.icon} {fmt.label}
           </div>
-          <div className="mt-1 text-xs text-slate-400">{fmt.sub}</div>
+          <div className="mt-1 text-xs text-slate-500">{fmt.sub}</div>
         </button>
       ))}
     </div>
@@ -151,11 +151,11 @@ export function HistoryRow({ entry }: { entry: ExportHistoryEntry }) {
         <div className="text-sm font-medium text-slate-700">
           {entry.templateId ?? entry.scope} &middot; {entry.category}
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-slate-500">
           {entry.recordCount} entries &middot; {formatBytes(entry.fileSize)} &middot; {entry.durationMs}ms
         </div>
       </div>
-      <div className="text-xs text-slate-400">{formatTimeAgo(entry.createdAt)}</div>
+      <div className="text-xs text-slate-500">{formatTimeAgo(entry.createdAt)}</div>
     </div>
   );
 }

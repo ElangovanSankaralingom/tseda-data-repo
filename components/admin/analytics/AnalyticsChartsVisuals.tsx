@@ -16,7 +16,7 @@ export function AreaChart({
 }) {
   if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+      <div className="flex h-48 items-center justify-center text-sm text-slate-500">
         Not enough data for chart
       </div>
     );
@@ -228,7 +228,7 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         <div className="flex shrink-0 flex-col gap-1 pr-1 pt-0">
           {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-            <div key={i} className="flex h-3 w-4 items-center text-[9px] text-slate-400">
+            <div key={i} className="flex h-3 w-4 items-center text-[9px] text-slate-500">
               {i % 2 === 0 ? d : ""}
             </div>
           ))}
@@ -248,7 +248,7 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-1 text-[10px] text-slate-400">
+      <div className="flex items-center gap-1 text-[10px] text-slate-500">
         <span>Less</span>
         <span className="size-3 rounded-sm bg-slate-100" />
         <span className="size-3 rounded-sm bg-emerald-200" />

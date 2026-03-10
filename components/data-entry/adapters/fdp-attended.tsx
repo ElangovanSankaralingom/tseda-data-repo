@@ -225,7 +225,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
             onChange={(e) => setForm((c) => ({ ...c, programName: e.target.value }))}
             disabled={coreFieldDisabled("programName")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.programName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
               coreFieldDisabled("programName") && "cursor-not-allowed opacity-60",
             )}
@@ -238,7 +238,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
             onChange={(e) => setForm((c) => ({ ...c, organisingBody: e.target.value }))}
             disabled={coreFieldDisabled("organisingBody")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-400",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
               submitted && errors.organisingBody ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
               coreFieldDisabled("organisingBody") && "cursor-not-allowed opacity-60",
             )}

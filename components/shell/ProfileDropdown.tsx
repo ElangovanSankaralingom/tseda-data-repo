@@ -69,7 +69,7 @@ export default function ProfileDropdown({
         <span className="hidden items-center gap-1 sm:flex">
           <span className="max-w-[120px] truncate text-sm font-medium text-slate-700">{name}</span>
           <ChevronDown className={cn(
-            "size-3 text-slate-400 transition-transform duration-200",
+            "size-3 text-slate-500 transition-transform duration-200",
             open && "rotate-180"
           )} />
         </span>

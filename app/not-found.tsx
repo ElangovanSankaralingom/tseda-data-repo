@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[#FAFBFC] px-4">
       <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <FileQuestion className="mx-auto size-12 text-slate-400" />
+        <FileQuestion className="mx-auto size-12 text-slate-500" />
         <h1 className="mt-4 text-base font-medium text-slate-700">Page not found</h1>
         <p className="mt-2 text-sm text-slate-500">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.

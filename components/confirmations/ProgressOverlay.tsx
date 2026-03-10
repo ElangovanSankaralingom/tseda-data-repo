@@ -42,7 +42,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
                 style={{ width: `${Math.min(p.progress, 100)}%` }}
               />
             </div>
-            <div className="mt-1 text-center text-xs text-slate-400 tabular-nums">
+            <div className="mt-1 text-center text-xs text-slate-500 tabular-nums">
               {Math.round(p.progress)}%
             </div>
           </div>
@@ -70,7 +70,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
 
         {/* Elapsed time */}
         {p.status === "running" && (
-          <div className="mt-3 text-center text-xs text-slate-400">
+          <div className="mt-3 text-center text-xs text-slate-500">
             Running...
           </div>
         )}
