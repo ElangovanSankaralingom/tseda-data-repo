@@ -1,5 +1,6 @@
 "use client";
 
+import { cloneElement, isValidElement, useId } from "react";
 import { RoleButton } from "@/components/ui/RoleButton";
 
 export function SectionCard({
@@ -33,13 +34,18 @@ export function Field({
   hint?: string;
   children: React.ReactNode;
 }) {
+  const autoId = useId();
+  const fieldId = `account-field-${autoId}`;
+
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <label className="text-sm font-medium">{label}</label>
+        <label htmlFor={fieldId} className="text-sm font-medium">{label}</label>
         {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
       </div>
-      {children}
+      {isValidElement(children)
+        ? cloneElement(children, { id: fieldId } as Record<string, unknown>)
+        : children}
       {error ? <div className="text-xs text-red-600">{error}</div> : null}
     </div>
   );
