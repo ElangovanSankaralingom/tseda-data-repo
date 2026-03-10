@@ -10,6 +10,7 @@ import "server-only";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { logger } from "@/lib/logger";
 import type {
@@ -32,7 +33,7 @@ export { readJsonFileDetailed } from "./integrityCheckCategory";
 
 export async function checkUserIntegrityInternal(userEmail: string): Promise<IntegrityReport> {
   const normalizedUserEmail = normalizeEmail(userEmail);
-  if (!normalizedUserEmail.endsWith("@tce.edu")) {
+  if (!normalizedUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     throw new AppError({
       code: "VALIDATION_ERROR",
       message: "Invalid user email for integrity checks.",
