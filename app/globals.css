@@ -157,6 +157,15 @@
     animation: subtlePulse 2s ease-in-out infinite;
   }
 
+  /* Bounce subtle for notification badges */
+  @keyframes bounceSubtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  .animate-bounce-subtle {
+    animation: bounceSubtle 2s ease-in-out infinite;
+  }
+
   /* Wave animation for emoji */
   @keyframes wave {
     0%, 100% { transform: rotate(0deg); }
@@ -229,6 +238,7 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-fade-in-up,
     .animate-subtle-pulse,
+    .animate-bounce-subtle,
     .animate-wave,
     .animate-float,
     .animate-flame,
