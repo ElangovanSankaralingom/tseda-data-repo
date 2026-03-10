@@ -250,10 +250,10 @@ function EditModeActionBar({
                 finaliseState === "done"
                   ? "bg-slate-200 text-slate-500 opacity-75 cursor-not-allowed"
                   : finaliseState === "finalising"
-                    ? "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+                    ? "bg-slate-900 text-white opacity-50 cursor-not-allowed"
                     : finalise.canFinalise
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                      : "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+                      ? "bg-slate-900 text-white hover:bg-slate-800"
+                      : "bg-slate-900 text-white opacity-50 cursor-not-allowed"
               }`}
               title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
             >
@@ -295,20 +295,25 @@ function EditModeActionBar({
       {/* Finalise confirmation dialog */}
       <ConfirmDialog
         open={showFinaliseConfirm}
-        title="Finalise this entry?"
+        title="Finalise Entry"
         description={
-          <>
-            <p>Once finalised, all fields become read-only. You&apos;ll need admin approval to make any further changes.</p>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              Once finalised, all fields become read-only. You&apos;ll need admin approval to make any further changes.
+            </p>
             {(() => {
               const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt);
               return timeInfo ? (
-                <p className="mt-2 text-xs text-amber-700">{timeInfo}</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p className="text-xs text-slate-600">{timeInfo}</p>
+                </div>
               ) : null;
             })()}
-          </>
+          </div>
         }
-        confirmLabel="Yes, Finalise Now"
-        confirmClassName="border-emerald-600 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+        confirmLabel="Finalise Entry"
+        cancelLabel="Keep Editing"
+        confirmClassName="bg-slate-900 text-white shadow-sm hover:bg-slate-800 border-slate-900"
         onConfirm={() => {
           setShowFinaliseConfirm(false);
           void handleFinalise();

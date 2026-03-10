@@ -8,6 +8,7 @@ const DEFAULT_ACCENT = { bar: "from-slate-400 to-slate-600", bg: "bg-slate-100",
 export default function EditorProgressHeader({
   category,
   progress,
+  isGenerated,
   streakEligible,
 }: EditorProgressHeaderProps) {
   const config = getCategoryConfig(category);
@@ -17,7 +18,8 @@ export default function EditorProgressHeader({
     <div className="mb-4">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-medium text-slate-600">
-          {progress.completed} of {progress.total} required fields
+          {progress.completed} of {progress.total} {isGenerated ? "fields" : "required fields"}
+          {isGenerated && progress.completed < progress.total ? " — upload supporting documents" : ""}
         </span>
         {streakEligible ? (
           <span className="text-xs font-medium text-amber-600">&#9889; Streak Entry</span>
