@@ -13,7 +13,7 @@ import { EditorStatusBanners } from "@/components/data-entry/EditorStatusBanner"
 import EditorMetadataFooter from "@/components/data-entry/EditorMetadataFooter";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import type { EditTimeRemaining } from "@/lib/entries/workflow";
-import { getCategoryConfig, getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
+import { getCategoryConfig, type CategorySlug } from "@/data/categoryRegistry";
 import { getCategoryIcon } from "@/lib/ui/categoryIcons";
 import { dataEntryHome } from "@/lib/entryNavigation";
 import { type CardContent, type ListStats } from "./dataEntryTypes";
@@ -31,6 +31,7 @@ type CategoryEntryPageShellProps = {
   addEntryLabel?: string;
   onRequestEdit?: () => void;
   onCancelRequestEdit?: () => void;
+  onCancelRequestDelete?: () => void;
 };
 
 function LoadingState({ message }: { message: React.ReactNode }) {
@@ -94,7 +95,7 @@ function CategoryHero({
             </span>
             {stats.streakActive > 0 && (
               <span className="rounded-full bg-white/10 px-3 py-1 text-sm text-amber-200">
-                ⚡ {stats.streakActive} in progress
+                &#9889; {stats.streakActive} in progress
               </span>
             )}
             {stats.drafts > 0 && (
@@ -182,6 +183,7 @@ export default function CategoryEntryPageShell({
   onAddEntry,
   addEntryLabel,
   onCancelRequestEdit,
+  onCancelRequestDelete,
 }: CategoryEntryPageShellProps) {
   // Form mode — enhanced editor layout
   if (showForm) {
@@ -190,7 +192,6 @@ export default function CategoryEntryPageShell({
     const progress = computeFieldProgress(category, entry);
     const isGenerated = !!entry?.committedAtISO;
     const streakEligible = !!entry?.streakEligible;
-    const schema = getCategorySchema(category);
     // IMPORTANT: isEditable and editTimeRemaining come from the SERVER response
     // (via entryToApiResponse). Do NOT recompute on the client — the server is
     // the single source of truth. For new entries (no server response yet),
@@ -198,71 +199,55 @@ export default function CategoryEntryPageShell({
     const editable = entry?.isEditable !== false;
     const editTime = (entry?.editTimeRemaining as EditTimeRemaining | undefined) ?? null;
     const status = typeof entry?.confirmationStatus === "string" ? entry.confirmationStatus : null;
-    const dataFieldsComplete = progress.total > 0 && progress.completed === progress.total;
-    const uploadsComplete = entry ? schema.fields.filter((f) => f.upload).every((f) => {
-      const value = entry[f.key];
-      if (f.kind === "array") return Array.isArray(value) && value.length > 0;
-      if (f.kind === "object" && value && typeof value === "object" && !("url" in (value as Record<string, unknown>)) && !("storedPath" in (value as Record<string, unknown>))) {
-        return Object.values(value as Record<string, unknown>).every((v) =>
-          Array.isArray(v) ? v.length > 0 : !!v
-        );
-      }
-      return !!value;
-    }) : false;
-    const allFieldsComplete = dataFieldsComplete && uploadsComplete;
-    const hasPdf = entry?.pdfGenerated === true || !!entry?.pdfGeneratedAt;
-    const pdfFresh = hasPdf && entry?.pdfStale !== true;
-    const canFinalise = isGenerated && editable && allFieldsComplete && pdfFresh;
-    const showFinalise = hasPdf;
+
+    // Check if this is a new entry (no id yet) — skip status strip for new drafts
+    const isNewDraft = !entry?.id || (!isGenerated && status !== "EDIT_REQUESTED" && status !== "DELETE_REQUESTED" && status !== "EDIT_GRANTED" && status !== "ARCHIVED");
 
     return (
       <EntryShell {...entryShell}>
         <div className="space-y-4">
-          {/* Progress header — hidden in view/finalized mode */}
-          {editable ? (
-            <EditorProgressHeader
-              category={category}
-              progress={progress}
-              isGenerated={isGenerated}
-              streakEligible={streakEligible}
+          {/* Layer 1: Status strip — compact, always visible (except new drafts) */}
+          {!isNewDraft || (status && status !== "DRAFT") ? (
+            <EditorStatusBanners
+              status={status}
+              isEditable={editable}
               editTimeLabel={editTime?.hasEditWindow && !editTime.expired ? editTime.remainingLabel : undefined}
-              showFinalise={showFinalise}
-              canFinalise={canFinalise}
+              editTimeMs={editTime?.remainingMs}
+              expiresAtISO={editTime?.expiresAtISO}
+              hasPdf={!!entry?.pdfMeta}
+              permanentlyLocked={entry?.permanentlyLocked === true}
+              onCancelRequest={onCancelRequestEdit}
+              onCancelRequestDelete={onCancelRequestDelete}
             />
           ) : null}
-
-          {/* Status banners */}
-          <EditorStatusBanners
-            status={status}
-            isEditable={editable}
-            editTimeLabel={editTime?.hasEditWindow && !editTime.expired ? editTime.remainingLabel : undefined}
-            editTimeMs={editTime?.remainingMs}
-            expiresAtISO={editTime?.expiresAtISO}
-            hasPdf={!!entry?.pdfMeta}
-            permanentlyLocked={entry?.permanentlyLocked === true}
-            onCancelRequest={onCancelRequestEdit}
-          />
 
           {topContent}
 
           {loading ? <LoadingState message={loadingMessage} /> : null}
 
+          {/* Layer 2: Form card with progress bar inside */}
           {!loading && formCard ? (
             <SectionCard className={formCard.className} title={formCard.title} subtitle={formCard.subtitle}>
+              {/* Progress bar inside form card (only in edit mode) */}
+              {editable ? (
+                <EditorProgressHeader
+                  category={category}
+                  progress={progress}
+                  isGenerated={isGenerated}
+                  streakEligible={streakEligible}
+                />
+              ) : null}
               {formCard.content}
             </SectionCard>
           ) : null}
 
-          {/* Metadata footer */}
+          {/* Layer 7: Metadata footer — collapsed by default */}
           {!loading && entry ? (
             <EditorMetadataFooter
               entryId={typeof entry.id === "string" ? entry.id : undefined}
               category={category}
               createdAt={typeof entry.createdAt === "string" ? entry.createdAt : undefined}
               updatedAt={typeof entry.updatedAt === "string" ? entry.updatedAt : undefined}
-              committedAt={typeof entry.committedAtISO === "string" ? entry.committedAtISO : undefined}
-              streakEligible={streakEligible}
-              editWindowExpires={typeof entry.editWindowExpiresAt === "string" ? entry.editWindowExpiresAt : undefined}
             />
           ) : null}
         </div>

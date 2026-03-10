@@ -51,27 +51,18 @@ export function HeaderEntryActionsBar({
   onCancelRequestEdit,
   onRequestDelete,
   onCancelRequestDelete,
-  editTimeLabel,
   permanentlyLocked = false,
 }: HeaderEntryActionsBarProps) {
-  // View mode: mirror edit-mode layout with disabled save buttons
+  // View mode: simplified layout
   if (isEditing && isViewMode) {
     const isEditRequested = entryStatus === "EDIT_REQUESTED";
     const isDeleteRequested = entryStatus === "DELETE_REQUESTED";
-    const isEditGranted = entryStatus === "EDIT_GRANTED";
     const hasPendingRequest = isEditRequested || isDeleteRequested;
 
     return (
       <div className="flex w-full flex-wrap items-center justify-between gap-3">
         {/* Left: workflow action area */}
         <div className="flex items-center gap-3">
-          {/* Edit granted with time badge */}
-          {isEditGranted && editTimeLabel ? (
-            <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
-              ⏱️ {editTimeLabel}
-            </span>
-          ) : null}
-
           {/* Pending request: Cancel Request */}
           {hasPendingRequest && (onCancelRequestEdit || onCancelRequestDelete) ? (
             <ActionButton
@@ -82,8 +73,8 @@ export function HeaderEntryActionsBar({
             </ActionButton>
           ) : null}
 
-          {/* Finalized: Request Action dropdown (hidden when permanently locked) */}
-          {!permanentlyLocked && !hasPendingRequest && !isEditGranted && onRequestEdit && onRequestDelete ? (
+          {/* Finalized: Request Action dropdown */}
+          {!permanentlyLocked && !hasPendingRequest && entryStatus !== "EDIT_GRANTED" && onRequestEdit && onRequestDelete ? (
             <RequestActionDropdown
               onRequestEdit={onRequestEdit}
               onRequestDelete={onRequestDelete}
@@ -91,14 +82,10 @@ export function HeaderEntryActionsBar({
           ) : null}
         </div>
 
-        {/* Right: Cancel (enabled) + Save buttons (disabled) */}
+        {/* Right: Back button */}
         <div className="flex flex-wrap items-center gap-2">
           <ActionButton role="ghost" onClick={onCancel}>
-            Cancel
-          </ActionButton>
-          <SaveButton disabled>Save Draft</SaveButton>
-          <ActionButton role="primary" disabled>
-            Save &amp; Close
+            Back
           </ActionButton>
         </div>
       </div>
@@ -167,29 +154,6 @@ function EditModeActionBar({
   const [showFinaliseConfirm, setShowFinaliseConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finaliseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [celebrationPhase, setCelebrationPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
-  const celebrationShownRef = useRef(false);
-  const prevCanFinaliseRef = useRef(finalise?.canFinalise ?? false);
-
-  useEffect(() => {
-    const canNow = finalise?.canFinalise ?? false;
-    const wasBefore = prevCanFinaliseRef.current;
-    prevCanFinaliseRef.current = canNow;
-
-    if (canNow && !wasBefore && !celebrationShownRef.current) {
-      celebrationShownRef.current = true;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCelebrationPhase("entering");
-      // Trigger enter animation on next frame
-      requestAnimationFrame(() => setCelebrationPhase("visible"));
-      const hideTimer = setTimeout(() => {
-        setCelebrationPhase("exiting");
-        setTimeout(() => setCelebrationPhase("hidden"), 300);
-      }, 3000);
-      return () => clearTimeout(hideTimer);
-    }
-    return undefined;
-  }, [finalise?.canFinalise]);
 
   useEffect(() => {
     return () => {
@@ -245,27 +209,18 @@ function EditModeActionBar({
       ? "cursor-not-allowed bg-slate-900 text-white opacity-50"
       : "bg-slate-900 text-white hover:bg-slate-800";
 
+  // Show only ONE primary workflow button at a time:
+  // - If workflowAction exists (Generate/Regenerate): show that
+  // - Else if finalise exists and canFinalise: show Finalise
+  // - Else if finalise exists but can't finalise: show disabled Finalise
+  const showGenerate = !!workflowAction;
+  const showFinalise = !showGenerate && !!finalise;
+
   return (
-    <div className="flex w-full flex-col gap-2">
-      {celebrationPhase !== "hidden" ? (
-        <div
-          className={`rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 transition-all duration-300 ${
-            celebrationPhase === "entering"
-              ? "translate-y-2 opacity-0"
-              : celebrationPhase === "exiting"
-                ? "opacity-0"
-                : "translate-y-0 opacity-100"
-          }`}
-        >
-          <span className="text-sm font-medium text-emerald-700">
-            🎉 All fields complete — ready to finalise!
-          </span>
-        </div>
-      ) : null}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex w-full flex-wrap items-center justify-between gap-3">
       <div className="flex flex-col items-start gap-1">
         <div className="flex items-center gap-3">
-          {workflowAction ? (
+          {showGenerate && workflowAction ? (
             <button
               type="button"
               onClick={handleGenerate}
@@ -286,7 +241,7 @@ function EditModeActionBar({
                   : workflowAction.label}
             </button>
           ) : null}
-          {finalise ? (
+          {showFinalise && finalise ? (
             <button
               type="button"
               onClick={finaliseState === "idle" && finalise.canFinalise ? () => setShowFinaliseConfirm(true) : undefined}
@@ -317,10 +272,10 @@ function EditModeActionBar({
             </button>
           ) : null}
         </div>
-        {finalise && !finalise.canFinalise && finalise.disabledReason ? (
+        {showFinalise && finalise && !finalise.canFinalise && finalise.disabledReason ? (
           <p className="text-xs text-amber-600 mt-1">{finalise.disabledReason}</p>
         ) : null}
-        {workflowAction && workflowDisabled && !isGenerating && !isSuccess ? (
+        {showGenerate && workflowAction && workflowDisabled && !isGenerating && !isSuccess ? (
           <p className="text-xs text-slate-500">{workflowDisabledHint}</p>
         ) : null}
       </div>
@@ -335,7 +290,6 @@ function EditModeActionBar({
         <ActionButton role="primary" onClick={onDone} disabled={doneDisabled || !formHasData}>
           {saving && saveIntent === "done" ? "Saving..." : "Save & Close"}
         </ActionButton>
-      </div>
       </div>
 
       {/* Finalise confirmation dialog */}
