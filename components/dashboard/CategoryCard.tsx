@@ -1,63 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import {
-  BookOpen,
-  FileSearch,
-  Mic,
-  Presentation,
-  Wrench,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
-import { type CategoryAccent, type StatusPill } from "./dashboardTypes";
-
-const CATEGORY_ACCENTS: Record<string, CategoryAccent> = {
-  "fdp-attended": {
-    icon: BookOpen,
-    bg: "bg-blue-100",
-    iconColor: "text-blue-600",
-    ring: "hover:ring-blue-200",
-    cta: "text-blue-500",
-  },
-  "fdp-conducted": {
-    icon: Presentation,
-    bg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
-    ring: "hover:ring-emerald-200",
-    cta: "text-emerald-500",
-  },
-  "case-studies": {
-    icon: FileSearch,
-    bg: "bg-purple-100",
-    iconColor: "text-purple-600",
-    ring: "hover:ring-purple-200",
-    cta: "text-purple-500",
-  },
-  "guest-lectures": {
-    icon: Mic,
-    bg: "bg-amber-100",
-    iconColor: "text-amber-600",
-    ring: "hover:ring-amber-200",
-    cta: "text-amber-500",
-  },
-  workshops: {
-    icon: Wrench,
-    bg: "bg-rose-100",
-    iconColor: "text-rose-600",
-    ring: "hover:ring-rose-200",
-    cta: "text-rose-500",
-  },
-};
-
-const DEFAULT_ACCENT: CategoryAccent = {
-  icon: BookOpen,
-  bg: "bg-slate-100",
-  iconColor: "text-slate-600",
-  ring: "hover:ring-slate-200",
-  cta: "text-slate-500",
-};
+import { getCategoryConfig } from "@/data/categoryRegistry";
+import { getCategoryIcon } from "@/lib/ui/categoryIcons";
+import { type StatusPill } from "./dashboardTypes";
 
 export type CategoryCardData = {
   slug: string;
@@ -80,8 +28,10 @@ export default function CategoryCard({
   editRequestedCount,
   editGrantedCount,
 }: CategoryCardData) {
-  const accent = CATEGORY_ACCENTS[slug] ?? DEFAULT_ACCENT;
-  const Icon = accent.icon;
+  const config = getCategoryConfig(slug);
+  const color = config.color;
+  const Icon = getCategoryIcon(config.icon);
+  const accent = { bg: color.bg, iconColor: color.text, ring: color.ring, cta: color.cta };
   const displayCount = useCountUp(total);
   const isEmpty = total === 0;
 

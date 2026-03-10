@@ -1,15 +1,10 @@
 "use client";
 
 import { CheckCircle2, Lock } from "lucide-react";
+import { getCategoryConfig } from "@/data/categoryRegistry";
 import { type EditorProgressHeaderProps } from "./dataEntryTypes";
 
-const ACCENT_COLORS: Record<string, { bar: string; bg: string; text: string }> = {
-  "fdp-attended": { bar: "from-blue-400 to-blue-600", bg: "bg-blue-100", text: "text-blue-600" },
-  "fdp-conducted": { bar: "from-emerald-400 to-emerald-600", bg: "bg-emerald-100", text: "text-emerald-600" },
-  "case-studies": { bar: "from-amber-400 to-amber-600", bg: "bg-amber-100", text: "text-amber-600" },
-  "guest-lectures": { bar: "from-purple-400 to-purple-600", bg: "bg-purple-100", text: "text-purple-600" },
-  workshops: { bar: "from-rose-400 to-rose-600", bg: "bg-rose-100", text: "text-rose-600" },
-};
+const DEFAULT_ACCENT = { bar: "from-slate-400 to-slate-600", bg: "bg-slate-100", text: "text-slate-600" };
 
 function PhasePill({
   label,
@@ -61,7 +56,8 @@ export default function EditorProgressHeader({
   showFinalise,
   canFinalise,
 }: EditorProgressHeaderProps) {
-  const accent = ACCENT_COLORS[category] ?? ACCENT_COLORS["fdp-attended"];
+  const config = getCategoryConfig(category);
+  const accent = config?.color ?? DEFAULT_ACCENT;
 
   return (
     <div className="rounded-xl border border-slate-100 bg-white px-4 py-4 sm:px-5 animate-fade-in">
