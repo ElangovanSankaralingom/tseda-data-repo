@@ -1,0 +1,67 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+The server now returns `isEditable`, `isFinalized`, and `editTimeRemaining` in every API response (via entryToApiResponse). The client should use THESE values as the primary source for button enablement, not recompute them independently.
+
+Currently, the controller/adapters may compute editability from raw entry fields on the client. If the server logic and client logic ever diverge, buttons will be wrong.
+
+## Read First
+1. lib/entries/toApiResponse.ts (server computes isEditable, isFinalized)
+2. hooks/useCategoryEntryPageController.ts (how button states are determined)
+3. hooks/useEntryWorkflow.ts (if this computes editability client-side)
+4. components/data-entry/adapters/BaseEntryAdapter.tsx (how it passes props to EntryActionsBar)
+
+## The Fix
+
+### Step 1: Audit client-side editability computation
+
+```bash
+grep -rn "isEditable\|isFinalized\|isEntryEditable\|isEntryFinalized\|isEditWindowExpired" hooks/ components/ --include="*.ts" --include="*.tsx" | head -20
+```
+
+### Step 2: Ensure controller reads from server response
+
+After any save/generate/finalise, the server response includes `isEditable` and `isFinalized`. The controller should store these and use them for button state:
+
+```typescript
+// In the controller, after a mutation:
+const response = await saveMutation(data);
+// response.isEditable, response.isFinalized, response.editTimeRemaining
+// are now available — USE THESE, don't recompute
+```
+
+### Step 3: Remove client-side recomputation IF it exists
+
+If `useEntryWorkflow` or the controller imports `isEntryEditable` from workflow.ts and calls it on the client:
+- Replace with reading `isEditable` from the server response
+- Keep the workflow import only for initial state before first server response
+
+### Step 4: Document the contract
+
+Add a comment in the controller:
+```typescript
+// IMPORTANT: Button state (isEditable, isFinalized) comes from the SERVER
+// response (via entryToApiResponse). Do NOT recompute on the client.
+// The server is the single source of truth for these values.
+// Client-side pdfState computation is the exception — it provides
+// real-time feedback as the user edits without waiting for a server round-trip.
+```
+
+### EXCEPTION: pdfState stays client-side
+The client MUST compute pdfState locally because it needs to update in real-time as the user types. This is correct. Both client and server use the same `computePdfState` from `pdfSnapshot.ts`, so they stay in sync.
+
+## Scope
+- MODIFY: hooks/useCategoryEntryPageController.ts (use server-returned isEditable/isFinalized)
+- MODIFY: hooks/useEntryWorkflow.ts (if it duplicates server logic)
+- MODIFY: components/data-entry/adapters/BaseEntryAdapter.tsx (if it computes editability)
+- DO NOT MODIFY: lib/entries/toApiResponse.ts, workflow.ts, engine
+
+## Verification
+1. npm run build — passes
+2. grep -rn "isEntryEditable\|isEntryFinalized" hooks/ components/ --include="*.ts" --include="*.tsx" — should show ZERO hits (only server-side code should call these)
+3. Test: finalized entry shows view mode (server says isEditable=false, client respects it)
+4. Test: edit granted entry shows edit mode (server says isEditable=true, client respects it)

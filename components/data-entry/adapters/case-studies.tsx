@@ -32,6 +32,7 @@ import {
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
+import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 const SINGLE_UPLOAD_SLOTS: Array<{ slot: "permissionLetter" | "travelPlan"; label: string }> = [
   { slot: "permissionLetter", label: "Permission Letter" },
@@ -85,39 +86,9 @@ function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
 }
 
 function validateFields(form: CaseStudyEntry): Record<string, string> {
-  const errors: Record<string, string> = {};
+  const errors = validateEntryFields("case-studies", form as unknown as Record<string, unknown>);
 
-  if (!ACADEMIC_YEAR_OPTIONS.includes(form.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
-    errors.academicYear = "Academic year is required.";
-  }
-
-  if (!isISODate(form.startDate)) {
-    errors.startDate = "Starting date is required.";
-  } else {
-    const range = getAcademicYearRange(form.academicYear);
-    if (range && (form.startDate < range.start || form.startDate > range.end)) {
-      errors.startDate = `Starting date must fall within ${form.academicYear} (${range.label}).`;
-    }
-  }
-
-  if (!isISODate(form.endDate)) {
-    errors.endDate = "Ending date is required.";
-  } else if (isISODate(form.startDate) && form.endDate < form.startDate) {
-    errors.endDate = "Ending date must be on or after starting date.";
-  }
-
-  if (!form.placeOfVisit.trim()) {
-    errors.placeOfVisit = "Place of visit is required.";
-  }
-
-  if (!form.purposeOfVisit.trim()) {
-    errors.purposeOfVisit = "Purpose of visit is required.";
-  }
-
-  if (form.staffAccompanying.length === 0) {
-    errors.staffAccompanying = "Add at least one staff member.";
-  }
-
+  // Category-specific: staffAccompanying duplicate detection
   const duplicateKeys = new Map<string, number>();
   form.staffAccompanying.forEach((staff) => {
     const key = buildStaffKey(staff);
@@ -125,7 +96,6 @@ function validateFields(form: CaseStudyEntry): Record<string, string> {
       duplicateKeys.set(key, (duplicateKeys.get(key) ?? 0) + 1);
     }
   });
-
   form.staffAccompanying.forEach((staff, index) => {
     if (!staff.name.trim()) {
       errors[`staffAccompanying.${index}`] = "Staff member is required.";
@@ -136,21 +106,6 @@ function validateFields(form: CaseStudyEntry): Record<string, string> {
       errors[`staffAccompanying.${index}`] = "This faculty is already selected in another row.";
     }
   });
-
-  const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
-  if (!normalizedStudentYear) {
-    errors.yearOfStudy = "Year of study is required.";
-  }
-
-  if (normalizedStudentYear && !isSemesterAllowed(normalizedStudentYear, form.currentSemester ?? undefined)) {
-    errors.currentSemester = "Current semester is required.";
-  }
-
-  if (form.amountSupport !== null) {
-    if (!Number.isFinite(form.amountSupport) || form.amountSupport < 0) {
-      errors.amountSupport = "Invalid amount.";
-    }
-  }
 
   return errors;
 }

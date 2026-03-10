@@ -1,0 +1,210 @@
+## Task Type
+REFACTOR
+
+## Priority
+CRITICAL (backbone of expansion)
+
+## Context
+Every adapter has its own hardcoded `validateFields` function that manually checks each field. fdp-attended.tsx has ~30 lines of manual validation, case-studies and guest-lectures have their own copies. When you add a required field to a category schema, you must ALSO update the adapter's validation — or the field won't be enforced.
+
+The category schemas already define field requirements (required, requiredForCommit). Validation should be auto-generated from the schema.
+
+## Read First
+1. components/data-entry/adapters/fdp-attended.tsx (find the validateFields function)
+2. data/schemas/fdp-attended.ts (field definitions — see required, requiredForCommit flags)
+3. data/schemas/types.ts (schema contract — field definition shape)
+4. hooks/useEntryEditor.ts (validatePrePdfFields callback — this is what gates the Generate button)
+5. data/schemas/fdp-conducted.ts, guest-lectures.ts, case-studies.ts, workshops.ts (compare validation)
+
+## The Implementation
+
+### Step 1: Create schema-driven validator
+
+Create `lib/validation/schemaValidator.ts`:
+
+```typescript
+import { getCategorySchema } from '@/data/categoryRegistry';
+
+type ValidationErrors = Record<string, string>;
+
+/**
+ * Validate entry fields against the category schema.
+ * This is the SINGLE source of truth for field validation.
+ * 
+ * @param category - category key
+ * @param data - the form data to validate
+ * @param stage - which stage to validate:
+ *   'all' = all required fields (for Finalise)
+ *   'stage1' = only Stage 1 data fields (for Generate Entry)
+ *   'save' = no required validation (save always allowed)
+ */
+export function validateEntryFields(
+  category: string,
+  data: Record<string, unknown>,
+  stage: 'all' | 'stage1' | 'save' = 'all'
+): ValidationErrors {
+  if (stage === 'save') return {}; // Save has no mandatory validation
+
+  const schema = getCategorySchema(category);
+  if (!schema?.fields) return {};
+
+  const errors: ValidationErrors = {};
+
+  for (const field of schema.fields) {
+    // Skip Stage 2 fields when validating for Generate (Stage 1 only)
+    if (stage === 'stage1' && field.stage === 2) continue;
+
+    // Check if field is required
+    const isRequired = stage === 'stage1'
+      ? field.requiredForCommit ?? field.required ?? false
+      : field.required ?? false;
+
+    if (!isRequired) continue;
+
+    const value = data[field.name ?? field.key];
+
+    // Validate based on field kind
+    if (value === undefined || value === null || value === '') {
+      errors[field.name ?? field.key] = `${field.label || field.name || field.key} is required.`;
+      continue;
+    }
+
+    // Type-specific validation
+    if (field.kind === 'date' && typeof value === 'string') {
+      if (!/^\d{4}-\d{2}-\d{2}/.test(value)) {
+        errors[field.name ?? field.key] = `${field.label || field.name} must be a valid date.`;
+      }
+    }
+
+    if (field.kind === 'number' && typeof value === 'number') {
+      if (field.min !== undefined && value < field.min) {
+        errors[field.name ?? field.key] = `${field.label || field.name} must be at least ${field.min}.`;
+      }
+    }
+
+    if (field.kind === 'select' && field.options) {
+      const validValues = field.options.map((o: any) => o.value ?? o);
+      if (!validValues.includes(value)) {
+        errors[field.name ?? field.key] = `${field.label || field.name} has an invalid value.`;
+      }
+    }
+  }
+
+  // Cross-field validation: endDate >= startDate
+  if (data.startDate && data.endDate) {
+    if (String(data.endDate) < String(data.startDate)) {
+      errors.endDate = 'End date must be on or after start date.';
+    }
+  }
+
+  // Date range within academic year (if schema defines it)
+  // This can be added as a schema-level validation rule
+
+  return errors;
+}
+
+/**
+ * Check if all Stage 1 required fields are filled (for Generate button).
+ * Returns true if no validation errors for stage1.
+ */
+export function areStage1FieldsComplete(
+  category: string,
+  data: Record<string, unknown>
+): boolean {
+  const errors = validateEntryFields(category, data, 'stage1');
+  return Object.keys(errors).length === 0;
+}
+
+/**
+ * Check if ALL required fields are filled (for Finalise button).
+ */
+export function areAllFieldsComplete(
+  category: string,
+  data: Record<string, unknown>
+): boolean {
+  const errors = validateEntryFields(category, data, 'all');
+  return Object.keys(errors).length === 0;
+}
+```
+
+### Step 2: Update each adapter to use schema-driven validation
+
+In each adapter (fdp-attended.tsx, fdp-conducted.tsx, guest-lectures.tsx, case-studies.tsx, workshops.tsx):
+
+Replace the hardcoded `validateFields` function:
+```typescript
+// BEFORE (in each adapter):
+function validateFields(form: FdpAttended): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (!form.academicYear) errors.academicYear = "Required.";
+  // ... 20 more lines of manual checks
+  return errors;
+}
+
+// AFTER (in each adapter):
+import { validateEntryFields } from '@/lib/validation/schemaValidator';
+
+function validateFields(form: Record<string, unknown>): Record<string, string> {
+  return validateEntryFields('fdp-attended', form, 'all');
+}
+```
+
+If an adapter has TRULY unique cross-field validation (like academic year + semester dependencies in fdp-attended), keep that specific check but layer it ON TOP of the schema validation:
+```typescript
+function validateFields(form: FdpAttended): Record<string, string> {
+  // Schema-driven base validation
+  const errors = validateEntryFields('fdp-attended', form, 'all');
+  
+  // Category-specific cross-field rules (can't be expressed in schema)
+  if (form.yearOfStudy && !isSemesterAllowed(form.yearOfStudy, form.currentSemester)) {
+    errors.currentSemester = "Invalid semester for this year.";
+  }
+  
+  return errors;
+}
+```
+
+### Step 3: Update validatePrePdfFields in each adapter
+
+Replace the hardcoded `validatePrePdfFields` callback passed to `useEntryEditor`:
+```typescript
+// BEFORE:
+validatePrePdfFields: (draft) => {
+  return !!draft.programName && !!draft.startDate && !!draft.endDate && ...;
+}
+
+// AFTER:
+import { areStage1FieldsComplete } from '@/lib/validation/schemaValidator';
+
+validatePrePdfFields: (draft) => areStage1FieldsComplete('fdp-attended', draft as Record<string, unknown>),
+```
+
+### Step 4: Ensure schemas have proper field annotations
+
+Verify each schema in `data/schemas/` has:
+- `required: true` on all mandatory fields
+- `requiredForCommit: true` on Stage 1 fields needed for Generate
+- `stage: 2` on upload fields
+- `kind` set correctly ('text', 'date', 'select', 'number', 'textarea', 'file')
+- `options` array for select fields
+- `label` for error messages
+
+If any are missing, add them.
+
+## Scope
+- CREATE: lib/validation/schemaValidator.ts
+- MODIFY: components/data-entry/adapters/fdp-attended.tsx (use schema validator)
+- MODIFY: components/data-entry/adapters/fdp-conducted.tsx
+- MODIFY: components/data-entry/adapters/guest-lectures.tsx
+- MODIFY: components/data-entry/adapters/case-studies.tsx
+- MODIFY: components/data-entry/adapters/workshops.tsx
+- MODIFY: data/schemas/*.ts (ensure field annotations are complete)
+- DO NOT MODIFY: lib/entries/workflow.ts, engine, routes
+
+## Verification
+1. npm run build — passes
+2. npm run typecheck — passes
+3. Test fdp-attended: leave required field empty → error shown → fill it → error clears
+4. Test Generate button: disabled until all Stage 1 fields filled → enabled after
+5. Test Finalise: disabled until all fields (including uploads) complete
+6. grep -rn "validateFields\|validatePrePdfFields" components/data-entry/adapters/ — should show schema-driven calls, NOT manual field checks
