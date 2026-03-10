@@ -39,6 +39,8 @@ export type HeaderEntryActionsBarProps = {
   workflowDisabledHint?: string;
   finalise?: FinaliseState;
   entryStatus?: string | null;
+  editRequestPending?: boolean;
+  deleteRequestPending?: boolean;
   onRequestEdit?: () => void;
   onCancelRequestEdit?: () => void;
   onRequestDelete?: () => void;

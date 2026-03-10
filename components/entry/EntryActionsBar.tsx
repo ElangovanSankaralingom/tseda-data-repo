@@ -47,6 +47,8 @@ export function HeaderEntryActionsBar({
   workflowDisabledHint = "Fill all required fields to generate",
   finalise,
   entryStatus,
+  editRequestPending = false,
+  deleteRequestPending = false,
   onRequestEdit,
   onCancelRequestEdit,
   onRequestDelete,
@@ -55,22 +57,23 @@ export function HeaderEntryActionsBar({
 }: HeaderEntryActionsBarProps) {
   // View mode: simplified layout
   if (isEditing && isViewMode) {
-    const isEditRequested = entryStatus === "EDIT_REQUESTED";
-    const isDeleteRequested = entryStatus === "DELETE_REQUESTED";
+    const isEditRequested = entryStatus === "EDIT_REQUESTED" || editRequestPending;
+    const isDeleteRequested = entryStatus === "DELETE_REQUESTED" || deleteRequestPending;
     const hasPendingRequest = isEditRequested || isDeleteRequested;
 
     return (
       <div className="flex w-full flex-wrap items-center justify-between gap-3">
         {/* Left: workflow action area */}
         <div className="flex items-center gap-3">
-          {/* Pending request: Cancel Request */}
-          {hasPendingRequest && (onCancelRequestEdit || onCancelRequestDelete) ? (
-            <ActionButton
-              role="context"
-              onClick={isEditRequested ? onCancelRequestEdit : onCancelRequestDelete}
-            >
-              Cancel Request
-            </ActionButton>
+          {/* Pending request: show dropdown in cancel mode */}
+          {hasPendingRequest && onRequestEdit && onRequestDelete ? (
+            <RequestActionDropdown
+              editRequestPending={isEditRequested}
+              deleteRequestPending={isDeleteRequested}
+              onRequestEdit={onRequestEdit}
+              onRequestDelete={onRequestDelete}
+              onCancelRequest={isEditRequested ? onCancelRequestEdit : onCancelRequestDelete}
+            />
           ) : null}
 
           {/* Finalized: Request Action dropdown */}

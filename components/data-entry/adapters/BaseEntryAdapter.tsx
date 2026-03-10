@@ -27,7 +27,7 @@ import {
   createPersistProgress,
   createRefreshList,
 } from "@/lib/entries/adapterOrchestration";
-import { getCategoryConfig, getCategorySchema } from "@/data/categoryRegistry";
+import { getCategoryConfig } from "@/data/categoryRegistry";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { EntryRecord } from "@/components/data-entry/adapters/adapterTypes";
@@ -181,7 +181,6 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     setDraft: setForm,
     dirty: formDirty,
     pdfState,
-    currentHash: prePdfFieldsHash,
     fieldsGateOk: generateReady,
     actions: editorActions,
   } = useEntryEditor<T>({
@@ -581,6 +580,8 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           };
         })(),
         entryStatus: form.confirmationStatus,
+        editRequestPending: String((form as Record<string, unknown>).requestEditStatus ?? "none") === "pending",
+        deleteRequestPending: String((form as Record<string, unknown>).deleteRequestStatus ?? "none") === "pending",
         onRequestEdit: () => void controller.requestEdit(form),
         onCancelRequestEdit: () => void controller.cancelRequestEdit(form),
         onRequestDelete: () => void controller.requestDelete(form),

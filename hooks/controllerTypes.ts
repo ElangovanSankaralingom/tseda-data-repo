@@ -59,6 +59,8 @@ export type HeaderActionBindings = {
     editWindowExpiresAt?: string | null;
   };
   entryStatus?: string | null;
+  editRequestPending?: boolean;
+  deleteRequestPending?: boolean;
   onRequestEdit?: () => void;
   onCancelRequestEdit?: () => void;
   onRequestDelete?: () => void;
