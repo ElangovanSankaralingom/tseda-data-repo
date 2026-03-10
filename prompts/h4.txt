@@ -1,0 +1,101 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+Each category has its own page file that imports a specific adapter:
+```
+app/(protected)/data-entry/fdp-attended/page.tsx → imports FdpAttendedPage
+app/(protected)/data-entry/workshops/page.tsx → imports WorkshopsPage
+```
+
+When adding a new category, you must create these page files manually. This should be ONE dynamic route.
+
+## Read First
+1. app/(protected)/data-entry/fdp-attended/page.tsx
+2. app/(protected)/data-entry/fdp-attended/[id]/page.tsx
+3. app/(protected)/data-entry/fdp-attended/new/page.tsx
+4. data/categoryRegistry.ts (to validate category slugs)
+
+## The Fix
+
+### Step 1: Create dynamic category route
+
+Create `app/(protected)/data-entry/[category]/page.tsx`:
+```typescript
+import { notFound } from 'next/navigation';
+import { isValidCategory } from '@/data/categoryRegistry';
+import { CategoryListPage } from '@/components/data-entry/CategoryListPage';
+
+export default function Page({ params }: { params: { category: string } }) {
+  if (!isValidCategory(params.category)) notFound();
+  return <CategoryListPage category={params.category} />;
+}
+```
+
+Create `app/(protected)/data-entry/[category]/[id]/page.tsx`:
+```typescript
+import { notFound } from 'next/navigation';
+import { isValidCategory } from '@/data/categoryRegistry';
+import { CategoryEntryPage } from '@/components/data-entry/CategoryEntryPage';
+
+export default function Page({ params }: { params: { category: string; id: string } }) {
+  if (!isValidCategory(params.category)) notFound();
+  return <CategoryEntryPage category={params.category} entryId={params.id} />;
+}
+```
+
+Create `app/(protected)/data-entry/[category]/new/page.tsx`:
+```typescript
+import { notFound } from 'next/navigation';
+import { isValidCategory } from '@/data/categoryRegistry';
+import { CategoryEntryPage } from '@/components/data-entry/CategoryEntryPage';
+
+export default function Page({ params }: { params: { category: string } }) {
+  if (!isValidCategory(params.category)) notFound();
+  return <CategoryEntryPage category={params.category} isNew />;
+}
+```
+
+### Step 2: Verify CategoryListPage and CategoryEntryPage exist
+
+These shared page components should already exist from Phase 2. If not, create them as thin wrappers that load the right adapter based on category.
+
+### Step 3: Delete static category page folders
+
+After the dynamic route works:
+```bash
+rm -rf app/(protected)/data-entry/fdp-attended
+rm -rf app/(protected)/data-entry/fdp-conducted
+rm -rf app/(protected)/data-entry/guest-lectures
+rm -rf app/(protected)/data-entry/case-studies
+rm -rf app/(protected)/data-entry/workshops
+```
+
+### Step 4: Add isValidCategory to registry
+```typescript
+export function isValidCategory(slug: string): boolean {
+  return CATEGORY_LIST.some(c => c.key === slug);
+}
+```
+
+### IMPORTANT: Next.js dynamic routes
+The `[category]` folder replaces all 5 static folders. Next.js will match `/data-entry/fdp-attended`, `/data-entry/workshops`, etc. through the dynamic segment. Invalid slugs get `notFound()`.
+
+## Scope
+- CREATE: app/(protected)/data-entry/[category]/page.tsx
+- CREATE: app/(protected)/data-entry/[category]/[id]/page.tsx
+- CREATE: app/(protected)/data-entry/[category]/new/page.tsx
+- DELETE: app/(protected)/data-entry/fdp-attended/ (and all 4 others)
+- MODIFY: data/categoryRegistry.ts (add isValidCategory)
+- DO NOT MODIFY: adapters, engine, routes
+
+## Verification
+1. npm run build — passes
+2. Navigate to /data-entry/fdp-attended — works
+3. Navigate to /data-entry/workshops — works
+4. Navigate to /data-entry/nonexistent — shows 404
+5. Create entry in each category — works
+6. find 'app/(protected)/data-entry' -maxdepth 1 -type d — shows only [category], search, no static folders
