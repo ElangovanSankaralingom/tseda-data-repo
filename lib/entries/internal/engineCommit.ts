@@ -33,6 +33,16 @@ import {
   trackEntryMutationFailure,
 } from "./engineHelpers.ts";
 
+/**
+ * Commits a draft entry, transitioning it to the GENERATED state.
+ * Computes the edit window expiry, checks streak eligibility, and logs a WAL event.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the draft entry to commit.
+ * @param extraFields - Optional additional fields to merge into the entry on commit.
+ * @returns The committed entry record.
+ */
 export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
@@ -168,6 +178,17 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
   }
 }
 
+/**
+ * Finalizes a GENERATED or EDIT_GRANTED entry, making it read-only by expiring
+ * the edit window immediately. Validates that all data fields, uploads, and PDF
+ * generation are complete before finalizing. If re-finalizing after an edit grant,
+ * the entry is permanently locked.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry to finalize.
+ * @returns The finalized entry record.
+ */
 export async function finalizeEntry<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,

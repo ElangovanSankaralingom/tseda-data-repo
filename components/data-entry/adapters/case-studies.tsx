@@ -21,7 +21,6 @@ import {
   isSemesterAllowed,
   normalizeYearOfStudy,
   YEAR_OF_STUDY_OPTIONS,
-  type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";

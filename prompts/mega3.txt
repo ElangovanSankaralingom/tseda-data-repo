@@ -1,0 +1,106 @@
+## Task Type
+REFACTOR + FEATURE
+
+## Priority
+HIGH
+
+## The Implementation — EVERY ITEM MANDATORY
+
+### 1. Standard Response Envelope (EVERY route)
+Create `lib/api/response.ts`:
+```typescript
+// Success
+{ success: true, data: T, error: null, meta?: { requestId, timestamp } }
+
+// Success with pagination
+{ success: true, data: T[], pagination: { total, page, pageSize, totalPages }, error: null, meta: {...} }
+
+// Error
+{ success: false, data: null, error: { message, code, details? }, meta: {...} }
+```
+EVERY API route must use this. Search for raw `NextResponse.json(` and replace with envelope helpers.
+
+### 2. Pagination on ALL list endpoints
+Default: page=1, pageSize=50, max pageSize=100.
+Apply to:
+- GET /api/me/[category] (entry list)
+- GET /api/admin/confirmations (pending list)
+- GET /api/admin/dashboard (if it returns lists)
+- GET /api/faculty (faculty list)
+- GET /api/me/notifications (notification list)
+- ANY endpoint returning an array
+
+### 3. API Versioning
+In next.config.ts, add rewrite:
+```typescript
+rewrites: async () => [{ source: '/api/v1/:path*', destination: '/api/:path*' }]
+```
+Update API.md: /api/v1/ is the recommended prefix. Unversioned still works.
+
+### 4. Eliminate ALL `any` types
+```bash
+grep -rn ": any\|as any\|<any>" lib/ hooks/ components/ --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v "\.d\.ts"
+```
+Every hit must be replaced with a proper type. Use `unknown` + type narrowing if the type is truly dynamic.
+
+### 5. Runtime type validation on ALL API inputs
+Every POST/PATCH body must be validated with Zod before processing:
+```typescript
+const bodySchema = z.object({ ... });
+const result = bodySchema.safeParse(body);
+if (!result.success) throw new ValidationError('Invalid input', { issues: result.error.issues });
+```
+Create Zod schemas for:
+- Entry create payload
+- Entry update payload
+- Generate action payload
+- Finalise action payload
+- Request edit/delete payload
+- Admin grant/reject payload
+- File upload metadata
+
+### 6. Strict TypeScript Config
+In tsconfig.json, ensure:
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": true
+  }
+}
+```
+Fix ALL resulting type errors.
+
+### 7. API Response Types match Runtime
+Create `lib/api/contracts.ts`:
+For each endpoint, define the Zod schema for BOTH request and response:
+```typescript
+export const categoryListResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.array(entryApiResponseSchema),
+  pagination: paginationSchema,
+  error: z.null(),
+});
+```
+In tests, validate actual responses against these schemas.
+
+## Scope
+- CREATE: lib/api/response.ts (envelope helpers)
+- CREATE: lib/api/contracts.ts (request/response Zod schemas)
+- MODIFY: lib/api/categoryRouteHandler.ts (envelope + pagination + Zod validation)
+- MODIFY: ALL admin API routes (envelope)
+- MODIFY: tsconfig.json (strict options)
+- MODIFY: ALL files with `any` types (eliminate)
+- FIX: ALL type errors from strict config
+
+## Verification
+1. npm run build — passes with strict tsconfig
+2. npm run typecheck — zero errors
+3. grep -rn ": any\|as any" lib/ hooks/ components/ --include="*.ts" --include="*.tsx" | wc -l — under 5 (only truly unavoidable cases)
+4. EVERY API response matches { success, data, error, meta? } envelope
+5. EVERY list endpoint returns pagination metadata
+6. Invalid POST body → 400 with validation details

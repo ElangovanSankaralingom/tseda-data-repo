@@ -19,7 +19,6 @@ import {
   isSemesterAllowed,
   normalizeYearOfStudy,
   YEAR_OF_STUDY_OPTIONS,
-  type YearOfStudy,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { FileMeta } from "@/lib/types/entry";
@@ -147,13 +146,13 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
 
-  const [singleUploadStatus, setSingleUploadStatus] = useState<Record<UploadSlot, { hasPending: boolean; busy: boolean }>>({
+  const [, setSingleUploadStatus] = useState<Record<UploadSlot, { hasPending: boolean; busy: boolean }>>({
     permissionLetter: { hasPending: false, busy: false },
     brochure: { hasPending: false, busy: false },
     attendance: { hasPending: false, busy: false },
     organiserProfile: { hasPending: false, busy: false },
   });
-  const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
+  const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
   const requiredUploadsComplete =
     !!form.uploads.permissionLetter &&

@@ -8,8 +8,9 @@ import { logger } from "@/lib/logger";
 import { err, ok, type Result } from "@/lib/result";
 import { getBackupRetention } from "@/lib/settings/consumer";
 import { getDataRoot } from "@/lib/userStore";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 
-export const BACKUP_KEEP_LAST_DEFAULT = 30;
+export const BACKUP_KEEP_LAST_DEFAULT = APP_CONFIG.cron.backupKeepLast;
 
 type BackupFileInfo = {
   filename: string;
@@ -288,7 +289,7 @@ export async function createBackupZip(): Promise<Result<BackupCreateResult>> {
     const buffer = await buildDataBackupBuffer();
     await fs.writeFile(filePath, buffer);
 
-    let retention = BACKUP_KEEP_LAST_DEFAULT;
+    let retention: number = BACKUP_KEEP_LAST_DEFAULT;
     try { retention = await getBackupRetention(); } catch { /* use default */ }
     const cleanupResult = await cleanupOldBackups({
       keepLastN: retention,

@@ -20,6 +20,7 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminIntegrity, adminIntegrityUser } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +88,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     decodeURIComponent(String(routeParams.userEmail ?? "").trim())
   );
 
-  if (!normalizedUserEmail.endsWith("@tce.edu")) {
+  if (!normalizedUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="mb-4 flex items-center gap-3">
@@ -109,7 +110,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
 
     const targetUserEmail = normalizeEmail(String(formData.get("userEmail") ?? ""));
     const category = String(formData.get("category") ?? "").trim();
-    if (!targetUserEmail.endsWith("@tce.edu") || !isCategoryKey(category)) {
+    if (!targetUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX) || !isCategoryKey(category)) {
       redirect(encodeNoticeUrl(normalizedUserEmail, "error", "Invalid repair request."));
     }
 
@@ -127,7 +128,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     await ensureMasterAdmin();
 
     const targetUserEmail = normalizeEmail(String(formData.get("userEmail") ?? ""));
-    if (!targetUserEmail.endsWith("@tce.edu")) {
+    if (!targetUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       redirect(encodeNoticeUrl(normalizedUserEmail, "error", "Invalid repair request."));
     }
 
@@ -158,7 +159,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     await ensureMasterAdmin();
 
     const targetUserEmail = normalizeEmail(String(formData.get("userEmail") ?? ""));
-    if (!targetUserEmail.endsWith("@tce.edu")) {
+    if (!targetUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       redirect(encodeNoticeUrl(normalizedUserEmail, "error", "Invalid rebuild request."));
     }
 
@@ -181,7 +182,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     await ensureMasterAdmin();
 
     const targetUserEmail = normalizeEmail(String(formData.get("userEmail") ?? ""));
-    if (!targetUserEmail.endsWith("@tce.edu")) {
+    if (!targetUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       redirect(encodeNoticeUrl(normalizedUserEmail, "error", "Invalid migration request."));
     }
 
@@ -199,7 +200,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     await ensureMasterAdmin();
 
     const targetUserEmail = normalizeEmail(String(formData.get("userEmail") ?? ""));
-    if (!targetUserEmail.endsWith("@tce.edu")) {
+    if (!targetUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       redirect(encodeNoticeUrl(normalizedUserEmail, "error", "Invalid full repair request."));
     }
 

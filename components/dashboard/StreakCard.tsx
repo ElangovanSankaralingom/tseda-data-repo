@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Flame, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -25,7 +26,7 @@ const CONFIG = {
   },
 } as const;
 
-export default function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { type: "active" | "wins"; value: number; subtext?: string; hoverDescription?: string; staggerClass?: string }) {
+function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { type: "active" | "wins"; value: number; subtext?: string; hoverDescription?: string; staggerClass?: string }) {
   const { icon: Icon, label, gradient, zeroGradient, zeroCta, hoverRing } = CONFIG[type];
   const hasValue = value > 0;
   const displayValue = useCountUp(value);
@@ -95,3 +96,5 @@ export default function StreakCard({ type, value, subtext, hoverDescription, sta
     </div>
   );
 }
+
+export default React.memo(StreakCard);

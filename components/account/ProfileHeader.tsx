@@ -9,6 +9,7 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvatarLoadFailed(false);
   }, [photo]);
 
@@ -18,6 +19,7 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
         <div className="ring-4 ring-white/20 rounded-full shadow-lg transition-shadow duration-500">
           <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-900">
             {photo && !avatarLoadFailed ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={photo}
                 alt="Profile"

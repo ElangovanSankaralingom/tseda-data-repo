@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertOctagon,
-  AlertTriangle,
   FileEdit,
   HardDrive,
   Settings,
@@ -57,11 +56,12 @@ export default function AdminNotificationBell({
   const [notifications, setNotifications] = useState<AdminNotificationWithRead[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const [viewerEmail, setViewerEmail] = useState("");
+  const [, setViewerEmail] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Force close from parent (when user bell opens)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (forceClose && open) setOpen(false);
   }, [forceClose, open]);
 
@@ -79,6 +79,7 @@ export default function AdminNotificationBell({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchUnreadCount();
     const interval = setInterval(() => void fetchUnreadCount(), 60_000);
     return () => clearInterval(interval);
@@ -106,6 +107,7 @@ export default function AdminNotificationBell({
 
   useEffect(() => {
     if (open && !loaded) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void fetchNotifications();
     }
   }, [open, loaded, fetchNotifications]);
@@ -156,6 +158,7 @@ export default function AdminNotificationBell({
     }
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const dismiss = useCallback(async (id: string) => {
     try {
       await fetch(`/api/admin/notifications/${id}`, { method: "DELETE" });

@@ -6,7 +6,7 @@
  * Sub-components (FilterBar, TimelineView, TableView, StatsSidebar)
  * live in ./AuditDashboardParts.tsx
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ChevronRight,
   RefreshCw,
@@ -35,8 +35,6 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [view, setView] = useState<ViewMode>("timeline");
   const [loading, setLoading] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
   // Client-side filtering
   const filtered = useMemo(() => {
     let result = events;

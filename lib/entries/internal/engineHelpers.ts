@@ -6,15 +6,8 @@ import "server-only";
  * infrastructure (storage wrappers, WAL helpers, telemetry, normalization).
  */
 import { ENTRY_SCHEMAS } from "@/data/schemas";
-import { CATEGORY_KEYS } from "@/lib/categories";
 import { rebuildUserIndex, updateIndexForEntryMutation } from "@/lib/data/indexStore";
-import {
-  deleteCategoryEntry as deleteCategoryEntryInStore,
-  readCategoryEntries,
-  readCategoryEntryById,
-  upsertCategoryEntry as upsertCategoryEntryInStore,
-  writeCategoryEntries,
-} from "@/lib/dataStore";
+import { createDataLayer } from "@/lib/data/createDataLayer";
 import {
   appendEvent,
   appendEvents,
@@ -31,7 +24,6 @@ import {
 } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeEntry } from "@/lib/normalize";
-import { getChangedImmutableFieldsWhenPending } from "@/lib/pendingImmutability";
 import { assertActionPayload, assertEntryMutationInput, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { trackEvent } from "@/lib/telemetry/telemetry";
@@ -129,10 +121,24 @@ export type EntryMutationTelemetryContext = {
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
+/**
+ * Returns the canonical workflow status for an entry by delegating to the
+ * workflow module's status normalization.
+ *
+ * @param entry - The entry record to inspect.
+ * @returns The normalized workflow status (e.g. DRAFT, GENERATED, ARCHIVED).
+ */
 export function getWorkflowStatus(entry: EntryLike): EntryWorkflowStatus {
   return normalizeEntryStatus(entry);
 }
 
+/**
+ * Coerces an unknown value into an {@link EntryEngineRecord}. Returns an empty
+ * object if the value is falsy, not an object, or an array.
+ *
+ * @param value - The value to coerce.
+ * @returns A plain object suitable for use as an entry record.
+ */
 export function ensureRecord(value: unknown): EntryEngineRecord {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return {};
@@ -140,10 +146,24 @@ export function ensureRecord(value: unknown): EntryEngineRecord {
   return value as EntryEngineRecord;
 }
 
+/**
+ * Normalizes an entry ID by converting to string and trimming whitespace.
+ *
+ * @param value - The raw ID value (may be undefined, null, or any type).
+ * @returns A trimmed string representation of the ID.
+ */
 export function normalizeId(value: unknown) {
   return String(value ?? "").trim();
 }
 
+/**
+ * Resolves the actor email for WAL events. Returns the normalized form of
+ * `value`, falling back to `fallbackEmail` if normalization yields an empty string.
+ *
+ * @param value - The candidate actor email.
+ * @param fallbackEmail - Fallback email to use if `value` normalizes to empty.
+ * @returns The resolved actor email.
+ */
 export function getWalActorEmail(value: string, fallbackEmail: string) {
   const normalized = normalizeEmail(value);
   return normalized || fallbackEmail;
@@ -151,6 +171,13 @@ export function getWalActorEmail(value: string, fallbackEmail: string) {
 
 // ── Guard helpers ────────────────────────────────────────────────────────────
 
+/**
+ * Enforces rate-limit and payload size guards for user-initiated entry mutations.
+ *
+ * @param userEmail - Email of the user performing the mutation.
+ * @param action - The action identifier used for rate-limit keying.
+ * @param payload - Optional payload to validate against entry mutation size limits.
+ */
 export function enforceEntryMutationGuards(
   userEmail: string,
   action: string,
@@ -166,6 +193,13 @@ export function enforceEntryMutationGuards(
   }
 }
 
+/**
+ * Enforces rate-limit and payload size guards for admin-initiated mutations.
+ *
+ * @param adminEmail - Email of the admin performing the mutation.
+ * @param action - The action identifier used for rate-limit keying.
+ * @param payload - Optional payload to validate against admin action size limits.
+ */
 export function enforceAdminMutationGuards(
   adminEmail: string,
   action: string,
@@ -182,49 +216,102 @@ export function enforceAdminMutationGuards(
 }
 
 // ── Storage wrappers ─────────────────────────────────────────────────────────
+// All storage access goes through the DataLayer abstraction.
+// Default backend is JSON files; can be swapped to SQLite via DATA_LAYER env.
 
+const dataLayer = createDataLayer();
+
+/**
+ * Reads the raw list of entry records for a user and category from storage.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key to read entries for.
+ * @returns Array of raw entry records.
+ */
 export async function readListRaw(
   userEmail: string,
   category: CategoryKey
 ): Promise<EntryEngineRecord[]> {
-  return readCategoryEntries(userEmail, category);
+  return dataLayer.listEntries(userEmail, category);
 }
 
+/**
+ * Writes a complete list of entry records for a user and category to storage,
+ * replacing the existing list.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key to write entries for.
+ * @param list - The complete list of entry records to persist.
+ */
 export async function writeListRaw(
   userEmail: string,
   category: CategoryKey,
   list: EntryEngineRecord[]
 ) {
-  await writeCategoryEntries(userEmail, category, list);
+  await dataLayer.replaceEntries(userEmail, category, list);
 }
 
+/**
+ * Reads a single entry by ID from the user's category store.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key to search in.
+ * @param entryId - ID of the entry to read.
+ * @returns The entry record if found, or `null`.
+ */
 export async function readEntryRaw(
   userEmail: string,
   category: CategoryKey,
   entryId: string
 ): Promise<EntryEngineRecord | null> {
-  return readCategoryEntryById(userEmail, category, entryId);
+  return dataLayer.getEntry(userEmail, category, entryId);
 }
 
+/**
+ * Inserts or updates a single entry in the user's category store.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key to upsert into.
+ * @param entry - The entry record to insert or update.
+ * @param options - Optional insertion position ("start" or "end") for new entries.
+ * @returns The persisted entry record.
+ */
 export async function upsertEntryRaw(
   userEmail: string,
   category: CategoryKey,
   entry: EntryEngineRecord,
   options?: { insertPosition?: "start" | "end" }
 ): Promise<EntryEngineRecord> {
-  return upsertCategoryEntryInStore(userEmail, category, entry, options);
+  return dataLayer.saveEntry(userEmail, category, entry, options);
 }
 
+/**
+ * Deletes a single entry by ID from the user's category store.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key to delete from.
+ * @param entryId - ID of the entry to delete.
+ * @returns The deleted entry record, or `null` if not found.
+ */
 export async function deleteEntryRaw(
   userEmail: string,
   category: CategoryKey,
   entryId: string
 ): Promise<EntryEngineRecord | null> {
-  return deleteCategoryEntryInStore(userEmail, category, entryId);
+  return dataLayer.deleteEntry(userEmail, category, entryId);
 }
 
 // ── Index helpers ────────────────────────────────────────────────────────────
 
+/**
+ * Refreshes the user index after an entry mutation. Attempts an incremental
+ * index update first; if that fails, falls back to a full index rebuild.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key of the mutated entry.
+ * @param beforeEntry - The entry state before the mutation, or `null` for creates.
+ * @param afterEntry - The entry state after the mutation, or `null` for deletes.
+ */
 export async function refreshIndexForMutation(
   userEmail: string,
   category: CategoryKey,
@@ -264,6 +351,12 @@ export async function refreshIndexForMutation(
   });
 }
 
+/**
+ * Triggers a Next.js cache revalidation for the user's dashboard summary tag.
+ * No-ops silently in test environments or if the email is empty.
+ *
+ * @param userEmail - Email of the user whose dashboard cache should be invalidated.
+ */
 export function revalidateDashboardSummary(userEmail: string) {
   const ne = normalizeEmail(userEmail);
   if (!ne) return;
@@ -282,6 +375,12 @@ export function revalidateDashboardSummary(userEmail: string) {
 
 // ── WAL helpers ──────────────────────────────────────────────────────────────
 
+/**
+ * Appends a single WAL event for the user, throwing if the append fails.
+ *
+ * @param userEmail - Email of the user whose WAL receives the event.
+ * @param event - The WAL event to append.
+ */
 export async function appendWalEventOrThrow(userEmail: string, event: ReturnType<typeof buildEvent>) {
   const walResult = await appendEvent(userEmail, event);
   if (!walResult.ok) {
@@ -296,6 +395,13 @@ export async function appendWalEventOrThrow(userEmail: string, event: ReturnType
   });
 }
 
+/**
+ * Appends multiple WAL events in a single batch for the user, throwing if the
+ * append fails. No-ops if the events array is empty.
+ *
+ * @param userEmail - Email of the user whose WAL receives the events.
+ * @param events - Array of WAL events to append.
+ */
 export async function appendWalEventsOrThrow(userEmail: string, events: Array<ReturnType<typeof buildEvent>>) {
   if (!events.length) return;
   const walResult = await appendEvents(userEmail, events);
@@ -309,6 +415,19 @@ export async function appendWalEventsOrThrow(userEmail: string, events: Array<Re
   });
 }
 
+/**
+ * Diffs two entry lists and produces the WAL events needed to represent a
+ * full category replacement (CREATE for new entries, UPDATE for changed entries,
+ * DELETE for removed entries).
+ *
+ * @param actorEmail - Email of the actor performing the replacement.
+ * @param actorRole - Role of the actor ("user" or "admin").
+ * @param ownerEmail - Email of the entry owner.
+ * @param category - The category key being replaced.
+ * @param beforeList - The previous list of entries.
+ * @param afterList - The new list of entries.
+ * @returns Array of WAL events representing all changes.
+ */
 export function buildWalEventsForReplace(
   actorEmail: string,
   actorRole: WalActorRole,
@@ -389,6 +508,15 @@ export function buildWalEventsForReplace(
 
 // ── Entry preparation ────────────────────────────────────────────────────────
 
+/**
+ * Prepares an entry for persistence by setting timestamps, preserving the
+ * current workflow status, and normalizing against the category schema.
+ *
+ * @param entry - The entry data to prepare.
+ * @param nowISO - Current ISO timestamp used for `createdAt`/`updatedAt` defaults.
+ * @param category - The category key used to look up the schema for normalization.
+ * @returns The normalized entry ready for storage.
+ */
 export function prepareEntryForWrite(entry: EntryLike, nowISO: string, category: CategoryKey) {
   const existingStatus = getWorkflowStatus(entry);
   const base: EntryLike = {
@@ -404,6 +532,12 @@ export function prepareEntryForWrite(entry: EntryLike, nowISO: string, category:
   return normalized;
 }
 
+/**
+ * Throws a FORBIDDEN {@link AppError} listing the immutable fields that were
+ * illegally modified while the entry is in a pending confirmation state.
+ *
+ * @param changedFields - Names of the fields that were changed.
+ */
 export function throwPendingImmutableError(changedFields: string[]) {
   throw new AppError({
     code: "FORBIDDEN",
@@ -449,6 +583,11 @@ async function trackTelemetrySafe(
   }
 }
 
+/**
+ * Records a telemetry event for a successful entry mutation.
+ *
+ * @param context - Telemetry context describing the mutation action, actor, and timing.
+ */
 export async function trackEntryMutationSuccess(context: EntryMutationTelemetryContext) {
   await trackTelemetrySafe({
     event: ENTRY_MUTATION_EVENT_BY_ACTION[context.action],
@@ -470,6 +609,14 @@ export async function trackEntryMutationSuccess(context: EntryMutationTelemetryC
   });
 }
 
+/**
+ * Records telemetry events for a failed entry mutation. Emits the base
+ * "action.failure" event and, depending on the error type, additional events
+ * for validation failures, rate-limit hits, or payload-too-large errors.
+ *
+ * @param context - Telemetry context describing the mutation action, actor, and timing.
+ * @param error - The error that caused the mutation to fail.
+ */
 export async function trackEntryMutationFailure(
   context: EntryMutationTelemetryContext,
   error: unknown

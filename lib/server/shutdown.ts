@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 let isShuttingDown = false;
 
 export function isServerShuttingDown() {
@@ -9,14 +11,10 @@ export function setupGracefulShutdown() {
     if (isShuttingDown) return;
     isShuttingDown = true;
 
-    console.info(
-      JSON.stringify({
-        level: "info",
-        ts: new Date().toISOString(),
-        event: "server.shutdown",
-        signal,
-      }),
-    );
+    logger.info({
+      event: "server.shutdown",
+      signal,
+    });
 
     // Force exit after 5s if graceful shutdown hangs
     setTimeout(() => process.exit(0), 5000).unref();

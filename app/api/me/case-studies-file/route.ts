@@ -13,6 +13,7 @@ import { isEntryEditable } from "@/lib/entries/lock";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { getUserCategoryStoreFile, safeEmailDir } from "@/lib/userStore";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 type Slot = "permissionLetter" | "travelPlan" | "geotaggedPhotos";
 
@@ -91,7 +92,7 @@ async function getAuthorizedEmail() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() ?? "";
 
-  if (!email.endsWith("@tce.edu")) {
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return null;
   }
 

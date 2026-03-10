@@ -274,12 +274,8 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       permanentlyLocked: options?.permanentlyLocked,
     }),
     [
-      actionState.cancelDisabled,
-      actionState.doneDisabled,
-      actionState.saveDisabled,
-      saveOrch.handleCancel,
-      saveOrch.handleSaveAndClose,
-      saveOrch.handleSaveDraft,
+      actionState,
+      saveOrch,
       isViewMode,
       loading,
       saveIntent,
@@ -300,7 +296,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       canDownload: lifecycle.canDownload,
       pdfDisabled: !lifecycle.canPreview,
     }),
-    [actionState.generateDisabled, genFin.generateEntry, isViewMode, lifecycle.canDownload, lifecycle.canPreview, saving, workflow.coreDirty, workflow.hasPdfSnapshot],
+    [actionState, genFin, isViewMode, lifecycle, saving, workflow],
   );
 
   // ── Return ──────────────────────────────────────────────────────────────

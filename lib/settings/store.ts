@@ -17,7 +17,6 @@ import type {
   SettingsChangeLog,
   SettingsConfig,
   SettingWithMeta,
-  StoredSetting,
 } from "@/lib/settings/schema";
 import { SETTINGS_VERSION, MAX_CHANGELOG_ENTRIES } from "@/lib/settings/schema";
 import { validateSetting } from "@/lib/settings/validation";
@@ -45,11 +44,6 @@ function changelogPath() {
 let cachedConfig: SettingsConfig | null = null;
 let cacheLoadedAt = 0;
 const CACHE_TTL_MS = 60_000; // 1 minute
-
-function invalidateCache() {
-  cachedConfig = null;
-  cacheLoadedAt = 0;
-}
 
 // ---------------------------------------------------------------------------
 // Read / Write config

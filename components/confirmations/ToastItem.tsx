@@ -72,8 +72,10 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
   const [exiting, setExiting] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [progress, setProgress] = useState(100);
-  const startTime = useRef(Date.now());
-  const remainingTime = useRef(duration);
+  const [startTimeInit] = useState(() => Date.now());
+  const startTime = useRef(startTimeInit);
+  const [remainingTimeInit] = useState(() => duration);
+  const remainingTime = useRef(remainingTimeInit);
   const animFrame = useRef<number>(0);
 
   const dismiss = useCallback(() => {

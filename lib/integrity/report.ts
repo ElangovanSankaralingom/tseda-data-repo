@@ -48,7 +48,8 @@ export type IntegrityReport = {
   userSummaries: IntegritySummary[];
 };
 
-// Map issue codes to our check categories
+// Map issue codes to our check categories (retained for future per-issue categorization)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CODE_TO_CATEGORY: Record<string, keyof IntegrityReport["checks"]> = {
   // Filesystem
   CATEGORY_FILE_MISSING: "filesystem",
@@ -87,10 +88,6 @@ const CODE_TO_CATEGORY: Record<string, keyof IntegrityReport["checks"]> = {
   ATTACHMENT_PATH_INVALID: "dataQuality",
 };
 
-function categorizeIssueCode(code: string): keyof IntegrityReport["checks"] {
-  return CODE_TO_CATEGORY[code] ?? "dataQuality";
-}
-
 function categoryStatus(issueCount: number, hasError: boolean): CheckCategoryStatus {
   if (hasError) return "fail";
   if (issueCount > 0) return "warn";
@@ -127,7 +124,7 @@ export async function runFullScan(): Promise<Result<IntegrityReport>> {
     let totalWarnings = 0;
     let totalInfo = 0;
     let totalFixable = 0;
-    let totalEntries = 0;
+    const totalEntries = 0;
 
     const categoryCounts: Record<keyof IntegrityReport["checks"], { issues: number; errors: boolean; checks: number }> = {
       filesystem: { issues: 0, errors: false, checks: 0 },

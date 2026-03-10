@@ -119,16 +119,15 @@ export function DonutChart({
   const r = 70;
   const circumference = 2 * Math.PI * r;
 
-  let offset = 0;
   const arcs = segments
     .filter((s) => s.value > 0)
-    .map((s) => {
+    .reduce<{ label: string; value: number; color: string; dash: number; gap: number; offset: number }[]>((acc, s) => {
       const pctVal = total > 0 ? s.value / total : 0;
       const dash = pctVal * circumference;
-      const arc = { ...s, dash, gap: circumference - dash, offset };
-      offset += dash;
-      return arc;
-    });
+      const currentOffset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].dash : 0;
+      acc.push({ ...s, dash, gap: circumference - dash, offset: currentOffset });
+      return acc;
+    }, []);
 
   return (
     <div className="flex flex-col items-center gap-4">

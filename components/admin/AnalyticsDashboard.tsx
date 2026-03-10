@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Flame,
 } from "lucide-react";
+import Link from "next/link";
 import type { AnalyticsSnapshot } from "@/lib/analytics/compute";
 import {
   filterByDateRange,
@@ -491,7 +492,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-8">
         <SH title="System Health" description="Quick pulse check" />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-          <a
+          <Link
             href="/admin/integrity"
             className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50"
           >
@@ -502,7 +503,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               <div className="text-xs font-medium text-slate-700">Integrity</div>
               <div className="text-[10px] text-slate-400">View scan results</div>
             </div>
-          </a>
+          </Link>
           <a
             href="/admin/backups"
             className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50"

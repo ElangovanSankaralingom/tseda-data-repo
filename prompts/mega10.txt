@@ -1,0 +1,44 @@
+## Task Type
+CLEANUP
+
+## Priority
+HIGH
+
+## Context
+After all previous work, run the deep hardcode audit one final time and fix EVERYTHING remaining.
+
+## The Fix
+
+### Step 1: Run complete audit
+```bash
+# Category slugs outside registry
+grep -rn "'fdp-attended'\|'fdp-conducted'\|'guest-lectures'\|'case-studies'\|'workshops'" lib/ hooks/ components/ app/ --include="*.ts" --include="*.tsx" | grep -v "categoryRegistry\|schemas/\|route\.ts\|adapters/\|appConfig\|test\|prompts/\|add-category\|\.md" | wc -l
+
+# Hardcoded domain
+grep -rn "tce\.edu" lib/ app/ --include="*.ts" | grep -v "appConfig\|auth\.ts\|\.env\|test" | wc -l
+
+# Magic numbers  
+grep -rn "= 3;\|= 8;\|= 30;\|= 20;\|= 60;\|200000\|32768\|5000\|8192" lib/ --include="*.ts" | grep -v "appConfig\|config/" | wc -l
+
+# console.log
+grep -rn "console\." lib/ app/ hooks/ --include="*.ts" --include="*.tsx" | grep -v "node_modules\|instrumentation" | wc -l
+```
+
+### Step 2: Fix every remaining hit
+
+For each hit, either:
+a) Replace with registry/config/appConfig reference
+b) Move to a constants file
+c) Document why it must be hardcoded (with a comment explaining)
+
+### Step 3: Final verification
+ALL counts should be ZERO (or under 3 with documented exceptions).
+
+## Scope
+- MODIFY: any files with remaining hardcodes
+- DO NOT MODIFY: categoryRegistry.ts, appConfig.ts (these ARE the sources of truth)
+
+## Verification
+1. npm run build — passes
+2. All audit counts at zero or documented exceptions only
+3. Adding a new category requires ZERO code changes outside registry and schema

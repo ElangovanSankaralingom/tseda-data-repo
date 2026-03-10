@@ -1,7 +1,6 @@
 import "server-only";
 
 import { CATEGORY_KEYS } from "@/lib/categories";
-import type { CategoryKey } from "@/lib/entries/types";
 import { listUsers } from "@/lib/admin/integrity";
 import { readCategoryEntries, upsertCategoryEntry } from "@/lib/dataStore";
 import {

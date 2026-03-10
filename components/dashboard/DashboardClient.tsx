@@ -8,6 +8,7 @@ import {
 import SectionHeader from "@/components/dashboard/SectionHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import StreakCard from "@/components/dashboard/StreakCard";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 export default function DashboardClient({
   streakActivated,
@@ -19,6 +20,7 @@ export default function DashboardClient({
   return (
     <>
       {/* Section A — Your Streak */}
+      <ErrorBoundary section="Streak stats">
       <div>
         <SectionHeader
           title="Your Streak"
@@ -50,9 +52,12 @@ export default function DashboardClient({
         </div>
       </div>
 
+      </ErrorBoundary>
+
       <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent animate-grow-width" />
 
       {/* Section B — Your Progress */}
+      <ErrorBoundary section="Progress stats">
       <div>
         <SectionHeader
           title="Your Progress"
@@ -95,6 +100,7 @@ export default function DashboardClient({
           />
         </div>
       </div>
+      </ErrorBoundary>
 
     </>
   );

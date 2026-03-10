@@ -44,6 +44,17 @@ import {
   trackEntryMutationFailure,
 } from "./engineHelpers.ts";
 
+/**
+ * Replaces the entire entry list for a user and category in a single atomic
+ * operation. Normalizes all entries, enforces pending-immutability constraints,
+ * generates WAL events for each diff (create/update/delete), and rebuilds the
+ * user index.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key whose entries are being replaced.
+ * @param entries - The new complete list of entries for this category.
+ * @param options - Optional actor overrides for WAL attribution.
+ */
 export async function replaceEntriesForCategory(
   userEmail: string,
   category: CategoryKey,
@@ -126,6 +137,16 @@ export async function replaceEntriesForCategory(
   });
 }
 
+/**
+ * Creates a new entry for the given user and category. Validates and sanitizes
+ * the payload, generates a UUID if none is provided, applies the initial workflow
+ * transition, and persists the entry at the start of the list.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key for the new entry.
+ * @param payload - The entry data to create.
+ * @returns The newly created entry record.
+ */
 export async function createEntry<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
@@ -235,6 +256,17 @@ export async function createEntry<T extends EntryEngineRecord = EntryEngineRecor
   }
 }
 
+/**
+ * Updates an existing entry with new field values. Protected workflow fields are
+ * excluded from the merge. Validates pending-immutability constraints, recalculates
+ * streak eligibility when the end date changes, and logs a WAL event.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry to update.
+ * @param payload - The partial entry data to merge.
+ * @returns The updated entry record.
+ */
 export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
@@ -386,6 +418,16 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
   }
 }
 
+/**
+ * Deletes an entry from the user's category store. Logs a WAL DELETE event,
+ * removes the entry from storage, and refreshes the user index. Returns the
+ * deleted entry record, or `null` if the entry did not exist.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key the entry belongs to.
+ * @param entryId - ID of the entry to delete.
+ * @returns The deleted entry record, or `null` if not found.
+ */
 export async function deleteEntry(
   userEmail: string,
   category: CategoryKey,

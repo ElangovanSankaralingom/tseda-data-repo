@@ -21,7 +21,6 @@ import {
   buildStreakSnapshotFromStore,
   clampCount,
   cloneIndex,
-  collectStreakInputs,
   hydrateIndex,
   isInvalidCountMap,
   readIndexRaw,

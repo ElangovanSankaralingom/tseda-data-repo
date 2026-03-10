@@ -1,8 +1,5 @@
 import {
-  computeExperienceTotals,
-  durationInclusive,
   ensureNoOverlap,
-  formatYMD,
   isISODate,
   rangeValid,
   rangesOverlap,

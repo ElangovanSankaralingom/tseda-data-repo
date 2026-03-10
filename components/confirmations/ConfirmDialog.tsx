@@ -82,6 +82,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
   // Countdown timer
   useEffect(() => {
     if (!countdown || countdown <= 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCountdownLeft(countdown);
     const interval = setInterval(() => {
       setCountdownLeft((prev) => {

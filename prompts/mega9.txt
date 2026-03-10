@@ -1,0 +1,105 @@
+## Task Type
+FEATURE + DOCS
+
+## Priority
+MEDIUM (not blocking current deployment, critical for scale)
+
+## The Implementation
+
+### 1. Create Database Abstraction Layer
+Create `lib/data/dataLayer.ts`:
+```typescript
+/**
+ * Data access abstraction.
+ * Currently implemented with JSON files.
+ * Designed for drop-in replacement with SQLite/Postgres.
+ */
+export interface DataLayer {
+  // Entries
+  listEntries(email: string, category: string): Promise<Entry[]>;
+  getEntry(email: string, category: string, id: string): Promise<Entry | null>;
+  saveEntry(email: string, category: string, entry: Entry): Promise<Entry>;
+  deleteEntry(email: string, category: string, id: string): Promise<boolean>;
+
+  // User Index
+  getUserIndex(email: string): Promise<UserIndex | null>;
+  saveUserIndex(email: string, index: UserIndex): Promise<void>;
+
+  // Locking
+  withLock<T>(key: string, fn: () => Promise<T>): Promise<T>;
+}
+```
+
+### 2. Implement JSON file backend
+Create `lib/data/jsonDataLayer.ts`:
+Wrap the existing file operations (dataStore.ts, locks.ts, fileAtomic.ts) behind the DataLayer interface.
+
+### 3. Create SQLite backend (stub)
+Create `lib/data/sqliteDataLayer.ts`:
+```typescript
+/**
+ * SQLite implementation of DataLayer.
+ * Uses better-sqlite3 for synchronous, ACID-compliant storage.
+ * 
+ * TO ACTIVATE:
+ * 1. npm install better-sqlite3
+ * 2. Change DATA_LAYER env var to 'sqlite'
+ * 3. Run migration: npx ts-node scripts/migrate-to-sqlite.ts
+ */
+export class SqliteDataLayer implements DataLayer {
+  // Stub — implementations marked as TODO
+}
+```
+
+### 4. Data Layer Factory
+Create `lib/data/createDataLayer.ts`:
+```typescript
+export function createDataLayer(): DataLayer {
+  const backend = process.env.DATA_LAYER || 'json';
+  if (backend === 'sqlite') {
+    return new SqliteDataLayer();
+  }
+  return new JsonDataLayer();
+}
+```
+
+### 5. Wire engine to use DataLayer
+Modify `lib/entries/internal/engineHelpers.ts`:
+Instead of importing directly from dataStore.ts, import from the DataLayer:
+```typescript
+const dataLayer = createDataLayer();
+// Use dataLayer.listEntries() instead of readCategoryEntries()
+```
+
+### 6. Create Migration Script
+Create `scripts/migrate-to-sqlite.ts`:
+- Reads all JSON files from .data/users/
+- Creates SQLite schema
+- Inserts all entries
+- Verifies row counts match
+- Reports migration status
+
+### 7. Document the Migration Path
+Create `DATABASE-MIGRATION.md`:
+- Current architecture (JSON files)
+- Why migrate (concurrency, scalability, data integrity)
+- Migration steps
+- Rollback plan
+- Performance comparison estimates
+
+## Scope
+- CREATE: lib/data/dataLayer.ts (interface)
+- CREATE: lib/data/jsonDataLayer.ts (current implementation)
+- CREATE: lib/data/sqliteDataLayer.ts (stub)
+- CREATE: lib/data/createDataLayer.ts (factory)
+- CREATE: scripts/migrate-to-sqlite.ts (migration script)
+- CREATE: DATABASE-MIGRATION.md
+- MODIFY: lib/entries/internal/engineHelpers.ts (use DataLayer)
+- DO NOT MODIFY: business logic, workflow, streaks
+
+## Verification
+1. npm run build — passes
+2. App still works identically with DATA_LAYER=json (default)
+3. DataLayer interface is complete and type-safe
+4. Migration script runs without errors on test data
+5. DATABASE-MIGRATION.md is complete and actionable

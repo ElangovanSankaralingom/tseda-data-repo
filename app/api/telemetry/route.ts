@@ -5,11 +5,11 @@ import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { normalizeError, toUserMessage } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
-import { enforceRateLimitForRequest } from "@/lib/security/rateLimit";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import type { TelemetryEventInput } from "@/lib/telemetry/types";
 
-const TELEMETRY_RATE_LIMIT = { windowMs: 60_000, max: 240 } as const;
+const TELEMETRY_RATE_LIMIT = RATE_LIMIT_PRESETS.telemetry;
 
 type TelemetryBody = {
   event?: unknown;

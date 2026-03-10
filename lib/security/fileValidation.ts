@@ -1,5 +1,7 @@
 import "server-only";
 
+import { APP_CONFIG } from "@/lib/config/appConfig";
+
 /**
  * Server-side file upload validation.
  *
@@ -7,7 +9,7 @@ import "server-only";
  * before storage.
  */
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = APP_CONFIG.upload.maxFileSizeBytes;
 
 // MIME type → expected magic bytes (file signatures)
 const MAGIC_BYTES: Record<string, { bytes: number[]; offset?: number }[]> = {

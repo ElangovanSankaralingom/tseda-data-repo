@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 /**
  * Safely handle fire-and-forget promises by catching and logging errors.
  *
@@ -6,14 +8,9 @@
  */
 export function fireAndForget(promise: Promise<unknown>, label: string) {
   promise.catch((error) => {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        ts: new Date().toISOString(),
-        event: "fire_and_forget.error",
-        label,
-        message: error instanceof Error ? error.message : String(error),
-      }),
-    );
+    logger.error({
+      event: "fire_and_forget.error",
+      label,
+    }, error instanceof Error ? error.message : String(error));
   });
 }
