@@ -51,7 +51,7 @@ export default function BackTo({
   };
 
   const disabledClass =
-    "pointer-events-none cursor-not-allowed inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-500 opacity-50";
+    "pointer-events-none cursor-not-allowed inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600 opacity-50";
   const enabledClass =
     "group inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-slate-200 hover:text-slate-900 active:scale-95 cursor-pointer";
 

@@ -118,12 +118,12 @@ function HeroSection({ greeting, userName, totals }: { greeting: string; userNam
             <AnimatedNumber value={totals.totalEntries} /> entries
           </span>
           {totals.draftCount > 0 && (
-            <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-200">
+            <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-300">
               {totals.draftCount} {totals.draftCount === 1 ? "draft" : "drafts"}
             </span>
           )}
           {totals.editRequestedCount > 0 && (
-            <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-200">
+            <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-300">
               {totals.editRequestedCount} edit {totals.editRequestedCount === 1 ? "request" : "requests"}
             </span>
           )}

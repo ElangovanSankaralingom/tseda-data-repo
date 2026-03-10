@@ -47,7 +47,7 @@ export default function EditorMetadataFooter({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-500 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-500 transition-colors"
       >
         <ChevronDown
           className={`size-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
@@ -56,7 +56,7 @@ export default function EditorMetadataFooter({
       </button>
       {expanded ? (
         <div className="mt-2 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
-          <p className="text-xs text-slate-400 flex flex-wrap gap-x-1.5">
+          <p className="text-xs text-slate-500 flex flex-wrap gap-x-1.5">
             {items.map((item, i) => (
               <span key={item}>
                 {i > 0 ? <span className="text-slate-300 mr-1.5">&middot;</span> : null}

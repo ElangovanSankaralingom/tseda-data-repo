@@ -357,7 +357,7 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
           <div className="mb-3 flex items-center gap-2">
             <Calendar className="size-4 text-slate-500" />
             <h3 className="text-sm font-semibold text-slate-700">{formatDateHeading(date)}</h3>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
               {dayEvents.length}
             </span>
           </div>
@@ -484,7 +484,7 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
           <div className="space-y-2">
             {stats.topEntries.slice(0, 5).map((entry, i) => (
               <div key={`${entry.category}:${entry.entryId}`} className="flex items-center gap-2 text-xs">
-                <span className="flex size-5 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                <span className="flex size-5 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">

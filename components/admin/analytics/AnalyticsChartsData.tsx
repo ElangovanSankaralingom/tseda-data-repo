@@ -182,7 +182,7 @@ export function CategoryRow({
           {Object.entries(statusBreakdown).map(([status, cnt]) => (
             <span
               key={status}
-              className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+              className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600"
             >
               {status}: {cnt}
             </span>

@@ -144,7 +144,7 @@ export default function SidebarDrawer({
               <div className="truncate text-base font-semibold text-slate-900">{profileName}</div>
               <div className="truncate text-xs text-slate-500">{profileEmail}</div>
               {profileDesignation ? (
-                <span className="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+                <span className="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                   {profileDesignation}
                 </span>
               ) : null}
@@ -223,7 +223,7 @@ export default function SidebarDrawer({
           <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 cursor-not-allowed" title="Coming soon">
             <Sun className="size-5" />
             <span className="flex-1">Appearance</span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">Soon</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">Soon</span>
           </div>
 
           {canAccessAdmin ? (
