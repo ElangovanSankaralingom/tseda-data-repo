@@ -204,7 +204,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
           <SelectDropdown
-            value={form.academicYear}
+            value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
             options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
             placeholder="Select academic year"
@@ -215,7 +215,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
 
         <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
           <SelectDropdown
-            value={form.yearOfStudy}
+            value={form.yearOfStudy || ""}
             onChange={(value) =>
               setForm((c) => {
                 const nextYear = normalizeYearOfStudy(value) ?? "";
@@ -255,7 +255,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
 
         <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>
           <input
-            value={form.eventName}
+            value={form.eventName || ""}
             onChange={(e) => setForm((c) => ({ ...c, eventName: e.target.value }))}
             disabled={coreFieldDisabled("eventName")}
             className={cx(

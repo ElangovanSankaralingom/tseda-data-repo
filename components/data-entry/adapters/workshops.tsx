@@ -177,7 +177,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
           <SelectDropdown
-            value={form.academicYear}
+            value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
             options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
             placeholder="Select academic year"
@@ -188,7 +188,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
 
         <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
           <SelectDropdown
-            value={form.yearOfStudy}
+            value={form.yearOfStudy || ""}
             onChange={(value) =>
               setForm((c) => {
                 const nextYear = normalizeYearOfStudy(value) ?? "";
@@ -224,7 +224,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
 
         <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>
           <input
-            value={form.eventName}
+            value={form.eventName || ""}
             onChange={(e) => setForm((c) => ({ ...c, eventName: e.target.value }))}
             disabled={coreFieldDisabled("eventName")}
             className={cx(
@@ -237,7 +237,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
 
         <Field label="Name of the Speaker" error={submitted ? errors.speakerName : undefined}>
           <input
-            value={form.speakerName}
+            value={form.speakerName || ""}
             onChange={(e) => setForm((c) => ({ ...c, speakerName: e.target.value }))}
             disabled={coreFieldDisabled("speakerName")}
             className={cx(
@@ -250,7 +250,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
 
         <Field label="Name of the Organisation" error={submitted ? errors.organisationName : undefined}>
           <input
-            value={form.organisationName}
+            value={form.organisationName || ""}
             onChange={(e) => setForm((c) => ({ ...c, organisationName: e.target.value }))}
             disabled={coreFieldDisabled("organisationName")}
             className={cx(
