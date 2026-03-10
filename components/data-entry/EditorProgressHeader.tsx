@@ -16,7 +16,7 @@ export default function EditorProgressHeader({
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-medium text-slate-500">
+        <span className="text-xs font-medium text-slate-600">
           {progress.completed} of {progress.total} required fields
         </span>
         {streakEligible ? (
