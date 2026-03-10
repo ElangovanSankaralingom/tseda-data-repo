@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ProfileHeader from "@/components/account/ProfileHeader";
 import ProfileTab from "@/components/account/ProfileTab";
 import PersonalTab from "@/components/account/PersonalTab";
@@ -8,6 +9,8 @@ import AcademicTab from "@/components/account/AcademicTab";
 import ExperienceTab from "@/components/account/ExperienceTab";
 import UploadsTab from "@/components/account/UploadsTab";
 import { MiniButton } from "@/components/account/AccountUI";
+import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
+import { dashboard } from "@/lib/entryNavigation";
 import {
   cx,
   buildErrors,
@@ -28,10 +31,14 @@ import {
 } from "@/components/account/types";
 
 export default function AccountPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState("");
 
   const saveLockRef = useRef(false);
 
@@ -151,6 +158,22 @@ export default function AccountPage() {
     return getErrorsForTab(tab, errors);
   }
 
+  const handleClearData = useCallback(async () => {
+    setClearing(true);
+    try {
+      const res = await fetch("/api/me/reset", { method: "POST" });
+      if (!res.ok) throw new Error("Reset failed");
+      router.push(dashboard());
+      router.refresh();
+    } catch {
+      setToast({ type: "err", msg: "Failed to clear data. Try again." });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setClearing(false);
+      setShowClearConfirm(false);
+    }
+  }, [router]);
+
   const employeeLabel = useMemo(() => {
     const official = (draft.officialName || "").trim();
     if (official) return official;
@@ -268,6 +291,85 @@ export default function AccountPage() {
           </div>
         ) : null}
       </div>
+
+      {/* Danger Zone */}
+      <div className="mt-10 rounded-2xl border border-red-200 bg-white p-5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-red-800">Clear All My Data</h3>
+            <p className="mt-1 text-xs text-slate-600">
+              Permanently delete all your entries, uploads, notifications, and profile data. This cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowClearConfirm(true)}
+            disabled={clearing || loading}
+            className="shrink-0 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+          >
+            {clearing ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                Clearing...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Trash2 className="size-4" />
+                Clear Data
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {showClearConfirm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle className="size-5 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">Clear All Your Data</h3>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              This will permanently delete all your entries, uploads, notifications, and profile data. This action cannot be undone.
+            </p>
+            <div className="mt-4">
+              <label className="text-sm text-slate-600">
+                Type your email <span className="font-mono font-semibold text-red-600">{draft.email}</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={clearConfirmText}
+                onChange={(e) => setClearConfirmText(e.target.value)}
+                placeholder={draft.email}
+                aria-label="Type your email to confirm"
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                autoFocus
+              />
+            </div>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => { setShowClearConfirm(false); setClearConfirmText(""); }}
+                disabled={clearing}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                Keep My Data
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleClearData()}
+                disabled={clearConfirmText.toLowerCase() !== (draft.email || "").toLowerCase() || clearing}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {clearing ? "Deleting..." : "Delete All My Data"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
