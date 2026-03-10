@@ -44,7 +44,7 @@ const TYPE_CONFIG: Record<
 };
 
 const CONFIRM_STYLE: Record<string, string> = {
-  primary: "bg-slate-900 text-white hover:bg-slate-800",
+  primary: "bg-[#1E3A5F] text-white hover:bg-[#162d4a]",
   danger: "bg-red-500 text-white hover:bg-red-600",
   warning: "bg-amber-500 text-white hover:bg-amber-600",
 };

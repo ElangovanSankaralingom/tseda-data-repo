@@ -52,7 +52,7 @@ function NavItem({
       className={cn(
         "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
         active
-          ? "bg-slate-900 text-white shadow-sm"
+          ? "bg-[#1E3A5F] text-white shadow-sm"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
         visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
       )}

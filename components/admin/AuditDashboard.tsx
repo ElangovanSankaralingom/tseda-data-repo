@@ -104,7 +104,7 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
             onClick={() => setView("timeline")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
               view === "timeline"
-                ? "bg-slate-900 text-white shadow-sm"
+                ? "bg-[#1E3A5F] text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -114,7 +114,7 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
             onClick={() => setView("table")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
               view === "table"
-                ? "bg-slate-900 text-white shadow-sm"
+                ? "bg-[#1E3A5F] text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >

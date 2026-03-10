@@ -447,7 +447,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
                 type="button"
                 disabled={scanning}
                 onClick={() => void runScan()}
-                className="rounded-xl border border-slate-900 bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-slate-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-[#1E3A5F] bg-[#1E3A5F] px-5 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-[#162d4a] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {scanning ? (
                   <span className="flex items-center gap-1.5">

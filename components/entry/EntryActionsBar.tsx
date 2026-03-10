@@ -210,8 +210,8 @@ function EditModeActionBar({
   const buttonClass = isSuccess
     ? "bg-emerald-500 text-white"
     : workflowDisabled || isGenerating
-      ? "cursor-not-allowed bg-slate-900 text-white opacity-50"
-      : "bg-slate-900 text-white hover:bg-slate-800";
+      ? "cursor-not-allowed bg-emerald-600 text-white opacity-50"
+      : "bg-emerald-600 text-white hover:bg-emerald-700";
 
   // Show only ONE primary workflow button at a time:
   // - If workflowAction exists (Generate/Regenerate): show that
@@ -254,10 +254,10 @@ function EditModeActionBar({
                 finaliseState === "done"
                   ? "bg-slate-200 text-slate-500 opacity-75 cursor-not-allowed"
                   : finaliseState === "finalising"
-                    ? "bg-slate-900 text-white opacity-50 cursor-not-allowed"
+                    ? "bg-[#1E3A5F] text-white opacity-50 cursor-not-allowed"
                     : finalise.canFinalise
-                      ? "bg-slate-900 text-white hover:bg-slate-800"
-                      : "bg-slate-900 text-white opacity-50 cursor-not-allowed"
+                      ? "bg-[#1E3A5F] text-white hover:bg-[#162d4a]"
+                      : "bg-[#1E3A5F] text-white opacity-50 cursor-not-allowed"
               }`}
               title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
             >
@@ -317,7 +317,7 @@ function EditModeActionBar({
         }
         confirmLabel="Finalise Entry"
         cancelLabel="Keep Editing"
-        confirmClassName="bg-slate-900 text-white shadow-sm hover:bg-slate-800 border-slate-900"
+        confirmClassName="bg-[#1E3A5F] text-white shadow-sm hover:bg-[#162d4a] border-[#1E3A5F]"
         onConfirm={() => {
           setShowFinaliseConfirm(false);
           void handleFinalise();

@@ -50,7 +50,7 @@ export function Toggle({
         checked
           ? dangerous
             ? "bg-red-500"
-            : "bg-slate-900"
+            : "bg-[#1E3A5F]"
           : "bg-slate-200"
       }`}
     >

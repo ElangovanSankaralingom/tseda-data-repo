@@ -59,7 +59,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
           <a
             href={pdfUrl}
             download={pdfFileName}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#1E3A5F] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#162d4a]"
           >
             <Download className="size-4" />
             Download PDF

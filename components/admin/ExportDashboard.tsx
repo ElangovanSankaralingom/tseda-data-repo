@@ -186,7 +186,7 @@ export default function ExportDashboard({
                 type="button"
                 onClick={() => setAllUsers(true)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                  allUsers ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  allUsers ? "bg-[#1E3A5F] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
                 All Users
@@ -195,7 +195,7 @@ export default function ExportDashboard({
                 type="button"
                 onClick={() => setAllUsers(false)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                  !allUsers ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  !allUsers ? "bg-[#1E3A5F] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
                 Specific User
@@ -248,7 +248,7 @@ export default function ExportDashboard({
                         onClick={() => toggleStatus(s.key)}
                         className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
                           selectedStatuses.includes(s.key)
-                            ? "bg-slate-900 text-white"
+                            ? "bg-[#1E3A5F] text-white"
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
@@ -358,7 +358,7 @@ export default function ExportDashboard({
             className={`w-full rounded-xl px-6 py-3 text-sm font-medium shadow-lg transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${
               exportSuccess
                 ? "bg-emerald-600 text-white"
-                : "bg-slate-900 text-white hover:bg-slate-800"
+                : "bg-[#1E3A5F] text-white hover:bg-[#162d4a]"
             }`}
           >
             {exporting ? (

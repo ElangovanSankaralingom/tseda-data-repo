@@ -20,7 +20,7 @@ export default function FilterTabs({ tabs, activeKey, onChange, activeClassName 
           className={cn(
             "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
             tab.key === activeKey
-              ? (activeClassName ?? "bg-slate-900 text-white shadow-sm") + " scale-100"
+              ? (activeClassName ?? "bg-[#1E3A5F] text-white shadow-sm") + " scale-100"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200 scale-[0.97] hover:scale-100"
           )}
         >

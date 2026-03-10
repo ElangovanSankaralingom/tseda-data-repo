@@ -38,7 +38,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
           <div className="mt-4">
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-slate-900 transition-all duration-300"
+                className="h-full rounded-full bg-[#1E3A5F] transition-all duration-300"
                 style={{ width: `${Math.min(p.progress, 100)}%` }}
               />
             </div>
@@ -61,7 +61,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
             <button
               type="button"
               onClick={onDismiss}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+              className="rounded-lg bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#162d4a]"
             >
               {p.status === "success" ? "Done" : "Close"}
             </button>
