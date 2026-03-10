@@ -70,7 +70,7 @@ function uploadConductedFileXHR(opts: {
   onProgress: (pct: number) => void;
 }): Promise<FileMeta> {
   return uploadFile({
-    endpoint: "/api/me/fdp-conducted-file",
+    endpoint: "/api/me/fdp-conducted/file",
     recordId: opts.recordId,
     slot: opts.slot,
     file: opts.file,
@@ -138,7 +138,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
     upload: (file, onProgress) =>
       uploadConductedFileXHR({ recordId: form.id, slot: "permissionLetter", file, onProgress }),
     remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-conducted-file", {
+      const response = await fetch("/api/me/fdp-conducted/file", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storedPath: meta.storedPath }),
@@ -154,7 +154,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
       const meta = await permissionController.uploadAndSave();
       if (!meta) return;
       if (previousMeta?.storedPath && previousMeta.storedPath !== meta.storedPath) {
-        void fetch("/api/me/fdp-conducted-file", {
+        void fetch("/api/me/fdp-conducted/file", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ storedPath: previousMeta.storedPath }),
@@ -354,7 +354,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
                   }),
                 });
               }}
-              uploadEndpoint="/api/me/fdp-conducted-file"
+              uploadEndpoint="/api/me/fdp-conducted/file"
               email={email}
               recordId={form.id}
               slotName="geotaggedPhotos"

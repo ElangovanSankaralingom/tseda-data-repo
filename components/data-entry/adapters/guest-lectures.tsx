@@ -384,7 +384,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
                 title={label}
                 mode={isViewMode ? "view" : "edit"}
                 meta={form.uploads[slot]}
-                uploadEndpoint="/api/me/guest-lectures-file"
+                uploadEndpoint="/api/me/guest-lectures/file"
                 email={email}
                 recordId={form.id}
                 slot={slot}
@@ -440,7 +440,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
                   }),
                 });
               }}
-              uploadEndpoint="/api/me/guest-lectures-file"
+              uploadEndpoint="/api/me/guest-lectures/file"
               email={email}
               recordId={form.id}
               slotName="geotaggedPhotos"

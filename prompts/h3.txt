@@ -1,0 +1,110 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+Multiple values are hardcoded as magic numbers scattered across files:
+- Timer: 3 days, 8 days (workflow.ts, postSave.ts)
+- Rate limits: 30/60s, 20/60s, 60/60s (rateLimit.ts)
+- Domain: "@tce.edu" hardcoded in 8+ places
+- Master admin: "senarch@tce.edu" in lib/admin.ts
+- Max requests per month: 3
+- Max attachments: 10
+- Payload limits: 200KB, 32KB
+
+These should be in ONE config file or read from settings.
+
+## Read First
+1. lib/settings/ directory (check if a settings system exists)
+2. lib/security/rateLimit.ts
+3. lib/security/limits.ts
+4. lib/entries/workflow.ts (timer constants)
+5. lib/admin.ts (MASTER_ADMIN_EMAIL)
+
+## The Fix
+
+### Step 1: Create or enhance app config
+
+Create `lib/config/appConfig.ts`:
+```typescript
+/**
+ * Centralized app configuration.
+ * All magic numbers and institution-specific values live here.
+ * Change ONE file to reconfigure the entire app.
+ */
+export const APP_CONFIG = {
+  institution: {
+    name: "Thiagarajar College of Engineering",
+    shortName: "TCE",
+    domain: "tce.edu",
+    masterAdminEmail: "senarch@tce.edu",
+  },
+  entryLifecycle: {
+    defaultEditWindowDays: 3,
+    streakEditWindowBufferDays: 8,
+    maxRequestsPerMonth: 3,
+  },
+  rateLimits: {
+    entryMutations: { windowMs: 60_000, max: 30 },
+    uploadOps: { windowMs: 60_000, max: 20 },
+    adminOps: { windowMs: 60_000, max: 60 },
+  },
+  security: {
+    maxPayloadBytes: 200_000,
+    maxActionPayloadBytes: 32_768,
+    maxStringLength: 5_000,
+    maxAttachmentsPerEntry: 10,
+  },
+} as const;
+```
+
+### Step 2: Replace all hardcoded references
+
+**lib/admin.ts:**
+```typescript
+import { APP_CONFIG } from '@/lib/config/appConfig';
+export const MASTER_ADMIN_EMAIL = APP_CONFIG.institution.masterAdminEmail;
+```
+
+**lib/entries/workflow.ts:**
+```typescript
+import { APP_CONFIG } from '@/lib/config/appConfig';
+export const DEFAULT_EDIT_WINDOW_DAYS = APP_CONFIG.entryLifecycle.defaultEditWindowDays;
+export const STREAK_EDIT_WINDOW_BUFFER_DAYS = APP_CONFIG.entryLifecycle.streakEditWindowBufferDays;
+```
+
+**lib/security/rateLimit.ts:**
+```typescript
+import { APP_CONFIG } from '@/lib/config/appConfig';
+export const RATE_LIMIT_PRESETS = APP_CONFIG.rateLimits;
+```
+
+**lib/security/limits.ts:**
+```typescript
+import { APP_CONFIG } from '@/lib/config/appConfig';
+export const SECURITY_LIMITS = APP_CONFIG.security;
+```
+
+**All files with `@tce.edu` checks:**
+```typescript
+import { APP_CONFIG } from '@/lib/config/appConfig';
+const DOMAIN = `@${APP_CONFIG.institution.domain}`;
+// Then use: email.endsWith(DOMAIN)
+```
+
+### Step 3: Replace in integrity checks, PDF service, pending confirmations
+Every file from audit item 9 that has hardcoded `@tce.edu`.
+
+## Scope
+- CREATE: lib/config/appConfig.ts
+- MODIFY: lib/admin.ts, lib/entries/workflow.ts, lib/security/rateLimit.ts, lib/security/limits.ts
+- MODIFY: lib/admin/integrity.ts, lib/admin/integrityCheck.ts, lib/admin/pendingConfirmations.ts, lib/pdf/pdfService.ts
+- DO NOT MODIFY: engine, routes, adapters, components
+
+## Verification
+1. npm run build — passes
+2. grep -rn "tce\.edu" lib/ app/ --include="*.ts" | grep -v "config/appConfig\|auth\.ts\|\.env\|test" — ZERO hits
+3. grep -rn "= 3;\|= 8;\|200000\|32768" lib/ --include="*.ts" | grep -v "appConfig" — ZERO hits (all from config now)
+4. Changing APP_CONFIG.institution.domain would reconfigure all domain checks

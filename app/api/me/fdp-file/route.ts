@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use /api/me/fdp-attended/file instead.
+ * This route is kept for backward compatibility with existing stored paths.
+ * New uploads go through the unified handler in lib/api/categoryFileHandler.ts.
+ */
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";

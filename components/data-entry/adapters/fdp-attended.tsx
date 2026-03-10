@@ -65,7 +65,7 @@ function uploadFdpFileXHR(opts: {
   onProgress: (pct: number) => void;
 }): Promise<FileMeta> {
   return uploadFile({
-    endpoint: "/api/me/fdp-file",
+    endpoint: "/api/me/fdp-attended/file",
     recordId: opts.recordId,
     slot: opts.slot,
     file: opts.file,
@@ -98,7 +98,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
     upload: (file, onProgress) =>
       uploadFdpFileXHR({ recordId: form.id, slot: "permissionLetter", file, onProgress }),
     remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-file", {
+      const response = await fetch("/api/me/fdp-attended/file", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storedPath: meta.storedPath }),
@@ -114,7 +114,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
     upload: (file, onProgress) =>
       uploadFdpFileXHR({ recordId: form.id, slot: "completionCertificate", file, onProgress }),
     remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-file", {
+      const response = await fetch("/api/me/fdp-attended/file", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storedPath: meta.storedPath }),
@@ -131,7 +131,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
       const meta = await controller.uploadAndSave();
       if (!meta) return;
       if (previousMeta?.storedPath && previousMeta.storedPath !== meta.storedPath) {
-        void fetch("/api/me/fdp-file", {
+        void fetch("/api/me/fdp-attended/file", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ storedPath: previousMeta.storedPath }),

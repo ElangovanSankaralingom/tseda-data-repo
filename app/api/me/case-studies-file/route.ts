@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use /api/me/case-studies/file instead.
+ * This route is kept for backward compatibility with existing stored paths.
+ * New uploads go through the unified handler in lib/api/categoryFileHandler.ts.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";

@@ -1,0 +1,101 @@
+## Task Type
+REFACTOR
+
+## Priority
+CRITICAL
+
+## Context
+There are 7 standalone file upload routes, one per category:
+- app/api/me/fdp-file/route.ts
+- app/api/me/fdp-conducted-file/route.ts
+- app/api/me/guest-lectures-file/route.ts
+- app/api/me/case-studies-file/route.ts
+- app/api/me/workshops-file/route.ts
+- app/api/me/file/route.ts
+- app/api/me/file/download/route.ts
+
+And 14 hardcoded upload endpoint strings in adapters like:
+```
+uploadEndpoint="/api/me/fdp-file"
+endpoint: "/api/me/fdp-conducted-file"
+```
+
+When adding a new category, you'd need to create a new upload route AND update the adapter. This should be ONE generic route.
+
+## Read First
+1. app/api/me/fdp-file/route.ts (understand the upload handler)
+2. app/api/me/case-studies-file/route.ts (compare — are they identical except category?)
+3. components/data-entry/adapters/fdp-attended.tsx (see how upload endpoint is used)
+4. data/categoryRegistry.ts (where to add upload config)
+
+## The Fix
+
+### Step 1: Create unified upload route
+
+Create `app/api/me/[category]/file/route.ts`:
+```typescript
+import { type NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { validateCategory } from "@/lib/api/categoryRouteHandler";
+// ... upload handling logic extracted from any existing route
+
+export async function POST(req: NextRequest, { params }: { params: { category: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const category = validateCategory(params.category);
+  // Handle file upload for this category
+  // Use the same logic as the existing routes
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { category: string } }) {
+  // Same pattern
+}
+```
+
+### Step 2: Add upload endpoint to category registry
+
+In `data/categoryRegistry.ts`, each category config should include:
+```typescript
+{
+  key: 'fdp-attended',
+  label: 'FDP Attended',
+  uploadEndpoint: '/api/me/fdp-attended/file', // derived from key
+  // ... other config
+}
+```
+
+Or even simpler — derive it: `uploadEndpoint = /api/me/${category.key}/file`
+
+### Step 3: Update adapters to use dynamic endpoint
+
+Replace all hardcoded upload endpoints:
+```typescript
+// BEFORE:
+uploadEndpoint="/api/me/fdp-file"
+
+// AFTER:
+uploadEndpoint={`/api/me/${category}/file`}
+```
+
+Or better, pass it from the category config:
+```typescript
+const categoryConfig = getCategoryConfig(category);
+uploadEndpoint={categoryConfig.uploadEndpoint}
+```
+
+### Step 4: Keep old routes as redirects temporarily
+Don't delete the old routes immediately. Make them redirect to the new unified route for backward compatibility. Delete them after confirming everything works.
+
+## Scope
+- CREATE: app/api/me/[category]/file/route.ts
+- MODIFY: all 5 adapters (replace hardcoded upload endpoints)
+- MODIFY: data/categoryRegistry.ts (add upload config if needed)
+- DO NOT DELETE: old upload routes yet (add deprecation comment)
+
+## Verification
+1. npm run build — passes
+2. Upload a file in fdp-attended → works via new route
+3. Upload a file in case-studies → works via new route
+4. grep -rn "fdp-file\|fdp-conducted-file\|case-studies-file\|guest-lectures-file\|workshops-file" components/ — ZERO hits in adapters
