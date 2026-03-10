@@ -1,5 +1,4 @@
 import {
-  isEntryCommitted,
   isEntryFinalized,
   normalizeEntryStatus,
   type EntryStateLike,
@@ -57,6 +56,7 @@ export function isEntryLockedFromStatus(entry: ConfirmationEntryLike) {
   return isEntryFinalized(entry);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function canSendForConfirmation(_entry: ConfirmationEntryLike) {
   // In the new workflow there is no "send for confirmation" action.
   // Entries auto-finalize based on time. This always returns false.

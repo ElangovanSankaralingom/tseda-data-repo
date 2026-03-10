@@ -15,6 +15,7 @@ import {
   signin,
 } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
 
-  if (!email.endsWith("@tce.edu")) {
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     redirect(signin());
   }
 

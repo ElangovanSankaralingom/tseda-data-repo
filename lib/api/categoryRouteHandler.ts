@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getServerSession } from "next-auth";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
   cancelDeleteRequest,
@@ -17,12 +17,15 @@ import {
 } from "@/lib/entries/lifecycle";
 import { isValidCategorySlug, getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
 import { entryToApiResponse, entriesToApiResponse } from "@/lib/entries/toApiResponse";
-import { normalizeError } from "@/lib/errors";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { assertEntryMutationInput, assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { isEntryEditable } from "@/lib/entries/lock";
 import type { CategoryKey } from "@/lib/entries/types";
 import { validateCsrf } from "@/lib/security/csrf";
+import { apiSuccess, apiPaginated, apiError, apiErrorFromCatch, parsePagination } from "@/lib/api/response";
+import { runWithRequestContext, getCurrentRequestId } from "@/lib/api/asyncContext";
+import { logger } from "@/lib/logger";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 /**
  * Shared route handler for all 5 category API routes.
@@ -31,17 +34,7 @@ import { validateCsrf } from "@/lib/security/csrf";
  *   export const GET = (req) => handleCategoryGet(req, 'fdp-attended');
  *   export const POST = (req) => handleCategoryPost(req, 'fdp-attended');
  *
- * This module owns:
- * - Auth checks
- * - Category validation
- * - Schema-based field validation
- * - Delegation to engine.ts for persistence
- * - Response formatting via entryToApiResponse
- *
- * This module does NOT own:
- * - Business rules (those live in workflow.ts)
- * - Persistence internals (those live in engine.ts)
- * - PDF generation (that lives in pdfService.ts)
+ * All responses use the standard envelope: { success, data, error, meta }.
  */
 
 // ---------------------------------------------------------------------------
@@ -53,7 +46,7 @@ type AuthResult = { email: string } | null;
 async function requireAuth(): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() ?? "";
-  if (!email.endsWith("@tce.edu")) return null;
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) return null;
   return { email };
 }
 
@@ -64,73 +57,87 @@ function validateCategory(key: string): CategorySlug {
   return key;
 }
 
-function errorResponse(message: string, status: number, code?: string): NextResponse {
-  return NextResponse.json(
-    code ? { error: message, code } : { error: message },
-    { status },
-  );
+function entryResponse(persisted: unknown, category: CategorySlug) {
+  return apiSuccess(entryToApiResponse(persisted as Record<string, unknown>, category));
 }
 
-function mutationErrorResponse(error: unknown, fallbackMessage: string): NextResponse {
-  const appError = normalizeError(error);
-  if (appError.code === "RATE_LIMITED") {
-    return errorResponse(appError.message, 429, appError.code);
-  }
-  if (appError.code === "PAYLOAD_TOO_LARGE") {
-    return errorResponse(appError.message, 413, appError.code);
-  }
-  if (appError.code === "VALIDATION_ERROR") {
-    return errorResponse(appError.message, 400, appError.code);
-  }
-  if (appError.code === "FORBIDDEN") {
-    return errorResponse(appError.message || "Forbidden", 403);
-  }
-  if (appError.code === "NOT_FOUND") {
-    return errorResponse(appError.message || "Entry not found", 404);
-  }
-  return errorResponse(appError.message || fallbackMessage, 500);
+/** Attach x-request-id header and log the completed request. */
+function finishResponse(
+  response: ReturnType<typeof apiSuccess>,
+  method: string,
+  path: string,
+  startedAt: number,
+) {
+  const requestId = getCurrentRequestId();
+  const durationMs = Date.now() - startedAt;
+  response.headers.set("x-request-id", requestId);
+  logger.info({
+    event: "api.request",
+    method,
+    path,
+    status: String(response.status),
+    durationMs,
+    requestId,
+  });
+  return response;
 }
 
 // ---------------------------------------------------------------------------
-// GET — list entries for category
+// GET — list entries for category (with pagination)
 // ---------------------------------------------------------------------------
 
 export async function handleCategoryGet(
   _req: NextRequest | Request,
   categoryKey: string,
-): Promise<NextResponse> {
-  const auth = await requireAuth();
-  if (!auth) return errorResponse("Unauthorized", 401);
+) {
+  const incomingId = _req.headers.get("x-request-id") ?? undefined;
+  return runWithRequestContext(async () => {
+    const startedAt = Date.now();
+    const path = `/api/me/${categoryKey}`;
 
-  let category: CategorySlug;
-  try {
-    category = validateCategory(categoryKey);
-  } catch {
-    return errorResponse("Invalid category", 400);
-  }
+    const auth = await requireAuth();
+    if (!auth) return finishResponse(apiError("Unauthorized", "UNAUTHORIZED"), "GET", path, startedAt);
 
-  try {
-    enforceRateLimitForRequest({
-      request: _req,
-      userEmail: auth.email,
-      action: `entry.read.${category}`,
-      options: RATE_LIMIT_PRESETS.entryReads,
-    });
-  } catch (error) {
-    return mutationErrorResponse(error, "Too many requests");
-  }
+    let category: CategorySlug;
+    try {
+      category = validateCategory(categoryKey);
+    } catch {
+      return finishResponse(apiError("Invalid category", "VALIDATION_ERROR"), "GET", path, startedAt);
+    }
 
-  const entries = await listEntriesForCategory(
-    auth.email,
-    category as CategoryKey,
-  );
+    try {
+      enforceRateLimitForRequest({
+        request: _req,
+        userEmail: auth.email,
+        action: `entry.read.${category}`,
+        options: RATE_LIMIT_PRESETS.entryReads,
+      });
+    } catch (error) {
+      return finishResponse(apiErrorFromCatch(error, "Too many requests"), "GET", path, startedAt);
+    }
 
-  const response = entriesToApiResponse(
-    entries as Record<string, unknown>[],
-    category,
-  );
+    const entries = await listEntriesForCategory(
+      auth.email,
+      category as CategoryKey,
+    );
 
-  return NextResponse.json(response, { status: 200 });
+    const allFormatted = entriesToApiResponse(
+      entries as Record<string, unknown>[],
+      category,
+    );
+
+    // Pagination
+    const url = _req instanceof Request ? new URL(_req.url) : null;
+    const searchParams = url?.searchParams ?? null;
+    const { page, pageSize } = parsePagination(searchParams);
+    const total = allFormatted.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const clampedPage = Math.min(page, totalPages);
+    const start = (clampedPage - 1) * pageSize;
+    const data = allFormatted.slice(start, start + pageSize);
+
+    return finishResponse(apiPaginated(data, { total, page: clampedPage, pageSize, totalPages }), "GET", path, startedAt);
+  }, incomingId);
 }
 
 // ---------------------------------------------------------------------------
@@ -140,95 +147,96 @@ export async function handleCategoryGet(
 export async function handleCategoryPost(
   request: NextRequest | Request,
   categoryKey: string,
-): Promise<NextResponse> {
-  const csrfError = validateCsrf(request);
-  if (csrfError) return errorResponse(csrfError, 403);
+) {
+  const incomingId = request.headers.get("x-request-id") ?? undefined;
+  return runWithRequestContext(async () => {
+    const startedAt = Date.now();
+    const path = `/api/me/${categoryKey}`;
 
-  const auth = await requireAuth();
-  if (!auth) return errorResponse("Unauthorized", 401);
+    const csrfError = validateCsrf(request);
+    if (csrfError) return finishResponse(apiError(csrfError, "FORBIDDEN"), "POST", path, startedAt);
 
-  try {
-    let category: CategorySlug;
+    const auth = await requireAuth();
+    if (!auth) return finishResponse(apiError("Unauthorized", "UNAUTHORIZED"), "POST", path, startedAt);
+
     try {
-      category = validateCategory(categoryKey);
-    } catch {
-      return errorResponse("Invalid category", 400);
+      let category: CategorySlug;
+      try {
+        category = validateCategory(categoryKey);
+      } catch {
+        return finishResponse(apiError("Invalid category", "VALIDATION_ERROR"), "POST", path, startedAt);
+      }
+
+      // Rate limit
+      enforceRateLimitForRequest({
+        request,
+        userEmail: auth.email,
+        action: `entry.create.${category}`,
+        options: RATE_LIMIT_PRESETS.entryMutations,
+      });
+
+      // Parse body
+      const body = (await request.json()) as { entry?: unknown };
+      const entryPayload = body?.entry;
+      if (!entryPayload || typeof entryPayload !== "object") {
+        return finishResponse(apiError("entry required", "VALIDATION_ERROR"), "POST", path, startedAt);
+      }
+
+      // Payload size check
+      assertEntryMutationInput(entryPayload, `create ${category}`);
+
+      const record = entryPayload as Record<string, unknown>;
+      const id = String(record.id ?? "").trim();
+      if (!id) {
+        return finishResponse(apiError("entry.id required", "VALIDATION_ERROR"), "POST", path, startedAt);
+      }
+
+      // Schema validation
+      const schema = getCategorySchema(category);
+      const validationErrors = schema.validate(record, "create");
+      if (validationErrors.length > 0) {
+        return finishResponse(apiError(validationErrors[0].message, "VALIDATION_ERROR"), "POST", path, startedAt);
+      }
+
+      // Check if entry already exists and is locked
+      const existingEntries = await listEntriesForCategory(
+        auth.email,
+        category as CategoryKey,
+      );
+      const existing = existingEntries.find(
+        (e) => (e as Record<string, unknown>).id === id,
+      ) ?? null;
+
+      if (existing && !isEntryEditable(existing)) {
+        return finishResponse(apiError("This entry is locked.", "FORBIDDEN"), "POST", path, startedAt);
+      }
+
+      // Build entry with lifecycle fields
+      const now = new Date().toISOString();
+      const entryData: Record<string, unknown> = {
+        ...record,
+        id,
+        category,
+        ownerEmail: auth.email,
+        createdAt: (existing as Record<string, unknown>)?.createdAt ?? now,
+        updatedAt: now,
+      };
+
+      // If new entry, set initial status
+      if (!existing) {
+        entryData.confirmationStatus = entryData.confirmationStatus ?? "DRAFT";
+      }
+
+      // Persist (engine handles streak field normalization)
+      const persisted = existing
+        ? await updateEntry(auth.email, category as CategoryKey, id, entryData)
+        : await createEntry(auth.email, category as CategoryKey, entryData);
+
+      return finishResponse(entryResponse(persisted, category), "POST", path, startedAt);
+    } catch (error) {
+      return finishResponse(apiErrorFromCatch(error, "Save failed"), "POST", path, startedAt);
     }
-
-    // Rate limit
-    enforceRateLimitForRequest({
-      request,
-      userEmail: auth.email,
-      action: `entry.create.${category}`,
-      options: RATE_LIMIT_PRESETS.entryMutations,
-    });
-
-    // Parse body
-    const body = (await request.json()) as { entry?: unknown };
-    const entryPayload = body?.entry;
-    if (!entryPayload || typeof entryPayload !== "object") {
-      return errorResponse("entry required", 400);
-    }
-
-    // Payload size check
-    assertEntryMutationInput(entryPayload, `create ${category}`);
-
-    const record = entryPayload as Record<string, unknown>;
-    const id = String(record.id ?? "").trim();
-    if (!id) {
-      return errorResponse("entry.id required", 400);
-    }
-
-    // Schema validation
-    const schema = getCategorySchema(category);
-    const validationErrors = schema.validate(record, "create");
-    if (validationErrors.length > 0) {
-      return errorResponse(validationErrors[0].message, 400, "VALIDATION_ERROR");
-    }
-
-    // Check if entry already exists and is locked
-    const existingEntries = await listEntriesForCategory(
-      auth.email,
-      category as CategoryKey,
-    );
-    const existing = existingEntries.find(
-      (e) => (e as Record<string, unknown>).id === id,
-    ) ?? null;
-
-    if (existing && !isEntryEditable(existing)) {
-      return errorResponse("This entry is locked.", 403);
-    }
-
-    // Build entry with lifecycle fields
-    const now = new Date().toISOString();
-    const entryData: Record<string, unknown> = {
-      ...record,
-      id,
-      category,
-      ownerEmail: auth.email,
-      createdAt: (existing as Record<string, unknown>)?.createdAt ?? now,
-      updatedAt: now,
-    };
-
-    // If new entry, set initial status
-    if (!existing) {
-      entryData.confirmationStatus = entryData.confirmationStatus ?? "DRAFT";
-    }
-
-    // Persist (engine handles streak field normalization)
-    const persisted = existing
-      ? await updateEntry(auth.email, category as CategoryKey, id, entryData)
-      : await createEntry(auth.email, category as CategoryKey, entryData);
-
-    const response = entryToApiResponse(
-      persisted as Record<string, unknown>,
-      category,
-    );
-
-    return NextResponse.json(response, { status: 200 });
-  } catch (error) {
-    return mutationErrorResponse(error, "Save failed");
-  }
+  }, incomingId);
 }
 
 // ---------------------------------------------------------------------------
@@ -248,169 +256,125 @@ export async function handleCategoryPost(
 export async function handleCategoryPatch(
   request: NextRequest | Request,
   categoryKey: string,
-): Promise<NextResponse> {
-  const csrfError = validateCsrf(request);
-  if (csrfError) return errorResponse(csrfError, 403);
+) {
+  const incomingId = request.headers.get("x-request-id") ?? undefined;
+  return runWithRequestContext(async () => {
+    const startedAt = Date.now();
+    const path = `/api/me/${categoryKey}`;
 
-  const auth = await requireAuth();
-  if (!auth) return errorResponse("Unauthorized", 401);
+    const csrfError = validateCsrf(request);
+    if (csrfError) return finishResponse(apiError(csrfError, "FORBIDDEN"), "PATCH", path, startedAt);
 
-  try {
-    let category: CategorySlug;
+    const auth = await requireAuth();
+    if (!auth) return finishResponse(apiError("Unauthorized", "UNAUTHORIZED"), "PATCH", path, startedAt);
+
     try {
-      category = validateCategory(categoryKey);
-    } catch {
-      return errorResponse("Invalid category", 400);
-    }
+      let category: CategorySlug;
+      try {
+        category = validateCategory(categoryKey);
+      } catch {
+        return finishResponse(apiError("Invalid category", "VALIDATION_ERROR"), "PATCH", path, startedAt);
+      }
 
-    // Rate limit
-    enforceRateLimitForRequest({
-      request,
-      userEmail: auth.email,
-      action: `entry.update.${category}`,
-      options: RATE_LIMIT_PRESETS.entryMutations,
-    });
+      // Rate limit
+      enforceRateLimitForRequest({
+        request,
+        userEmail: auth.email,
+        action: `entry.update.${category}`,
+        options: RATE_LIMIT_PRESETS.entryMutations,
+      });
 
-    // Parse body
-    const body = (await request.json()) as {
-      entry?: unknown;
-      action?: string;
-      id?: string;
-    };
+      // Parse body
+      const body = (await request.json()) as {
+        entry?: unknown;
+        action?: string;
+        id?: string;
+      };
 
-    const action = typeof body.action === "string" ? body.action.trim() : "save";
-    const entryPayload = body.entry;
-    const entryRecord =
-      entryPayload && typeof entryPayload === "object"
-        ? (entryPayload as Record<string, unknown>)
-        : null;
+      const action = typeof body.action === "string" ? body.action.trim() : "save";
+      const entryPayload = body.entry;
+      const entryRecord =
+        entryPayload && typeof entryPayload === "object"
+          ? (entryPayload as Record<string, unknown>)
+          : null;
 
-    // For action-only requests (request_edit, etc.), id can come from body directly
-    const entryId = String(entryRecord?.id ?? body.id ?? "").trim();
-    if (!entryId) {
-      return errorResponse("entry.id required", 400);
-    }
+      // For action-only requests (request_edit, etc.), id can come from body directly
+      const entryId = String(entryRecord?.id ?? body.id ?? "").trim();
+      if (!entryId) {
+        return finishResponse(apiError("entry.id required", "VALIDATION_ERROR"), "PATCH", path, startedAt);
+      }
 
-    // Payload size check
-    if (entryRecord) {
-      assertEntryMutationInput(entryRecord, `update ${category}`);
-    } else if (body.action) {
-      assertActionPayload(body, `${action} payload`, SECURITY_LIMITS.actionPayloadMaxBytes);
-    }
+      // Payload size check
+      if (entryRecord) {
+        assertEntryMutationInput(entryRecord, `update ${category}`);
+      } else if (body.action) {
+        assertActionPayload(body, `${action} payload`, SECURITY_LIMITS.actionPayloadMaxBytes);
+      }
 
-    // --- Action-based dispatch ---
-    // Each action delegates to the corresponding engine function which handles
-    // validation, WAL logging, index updates, streak logic, and telemetry.
+      // --- Action-based dispatch ---
 
-    if (action === "request_edit") {
-      const persisted = await requestEdit(
+      if (action === "request_edit") {
+        const persisted = await requestEdit(auth.email, category as CategoryKey, entryId);
+        return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+      }
+
+      if (action === "request_delete") {
+        const persisted = await requestDelete(auth.email, category as CategoryKey, entryId);
+        return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+      }
+
+      if (action === "cancel_request_edit") {
+        const persisted = await cancelEditRequest(auth.email, category as CategoryKey, entryId);
+        return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+      }
+
+      if (action === "cancel_request_delete") {
+        const persisted = await cancelDeleteRequest(auth.email, category as CategoryKey, entryId);
+        return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+      }
+
+      if (action === "generate") {
+        const extraFields = entryRecord
+          ? Object.fromEntries(
+              Object.entries(entryRecord).filter(
+                ([k]) => k !== "id" && k !== "ownerEmail" && k !== "category" && k !== "confirmationStatus",
+              ),
+            )
+          : undefined;
+        const persisted = await commitDraft(auth.email, category as CategoryKey, entryId, extraFields);
+        return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+      }
+
+      if (action === "finalise") {
+        const persisted = await finalizeEntry(auth.email, category as CategoryKey, entryId);
+        return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+      }
+
+      // --- Regular field update (action === "save" or default) ---
+
+      if (!entryRecord) {
+        return finishResponse(apiError("entry required", "VALIDATION_ERROR"), "PATCH", path, startedAt);
+      }
+
+      // Schema validation (update mode)
+      const schema = getCategorySchema(category);
+      const validationErrors = schema.validate(entryRecord, "update");
+      if (validationErrors.length > 0) {
+        return finishResponse(apiError(validationErrors[0].message, "VALIDATION_ERROR"), "PATCH", path, startedAt);
+      }
+
+      const persisted = await updateEntry(
         auth.email,
         category as CategoryKey,
         entryId,
+        entryRecord as Record<string, unknown>,
       );
-      return NextResponse.json(
-        entryToApiResponse(persisted as Record<string, unknown>, category),
-        { status: 200 },
-      );
+
+      return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
+    } catch (error) {
+      return finishResponse(apiErrorFromCatch(error, "Save failed"), "PATCH", path, startedAt);
     }
-
-    if (action === "request_delete") {
-      const persisted = await requestDelete(
-        auth.email,
-        category as CategoryKey,
-        entryId,
-      );
-      return NextResponse.json(
-        entryToApiResponse(persisted as Record<string, unknown>, category),
-        { status: 200 },
-      );
-    }
-
-    if (action === "cancel_request_edit") {
-      const persisted = await cancelEditRequest(
-        auth.email,
-        category as CategoryKey,
-        entryId,
-      );
-      return NextResponse.json(
-        entryToApiResponse(persisted as Record<string, unknown>, category),
-        { status: 200 },
-      );
-    }
-
-    if (action === "cancel_request_delete") {
-      const persisted = await cancelDeleteRequest(
-        auth.email,
-        category as CategoryKey,
-        entryId,
-      );
-      return NextResponse.json(
-        entryToApiResponse(persisted as Record<string, unknown>, category),
-        { status: 200 },
-      );
-    }
-
-    if (action === "generate") {
-      const extraFields = entryRecord
-        ? Object.fromEntries(
-            Object.entries(entryRecord).filter(
-              ([k]) => k !== "id" && k !== "ownerEmail" && k !== "category" && k !== "confirmationStatus",
-            ),
-          )
-        : undefined;
-      const persisted = await commitDraft(
-        auth.email,
-        category as CategoryKey,
-        entryId,
-        extraFields,
-      );
-      return NextResponse.json(
-        entryToApiResponse(persisted as Record<string, unknown>, category),
-        { status: 200 },
-      );
-    }
-
-    if (action === "finalise") {
-      const persisted = await finalizeEntry(
-        auth.email,
-        category as CategoryKey,
-        entryId,
-      );
-      return NextResponse.json(
-        entryToApiResponse(persisted as Record<string, unknown>, category),
-        { status: 200 },
-      );
-    }
-
-    // --- Regular field update (action === "save" or default) ---
-
-    if (!entryRecord) {
-      return errorResponse("entry required", 400);
-    }
-
-    // Schema validation (update mode)
-    const schema = getCategorySchema(category);
-    const validationErrors = schema.validate(entryRecord, "update");
-    if (validationErrors.length > 0) {
-      return errorResponse(validationErrors[0].message, 400, "VALIDATION_ERROR");
-    }
-
-    // Pass incoming fields to engine — it handles merge, editability check,
-    // PDF staleness, streak normalization, WAL logging, and index refresh.
-    const persisted = await updateEntry(
-      auth.email,
-      category as CategoryKey,
-      entryId,
-      entryRecord as Record<string, unknown>,
-    );
-
-    return NextResponse.json(
-      entryToApiResponse(persisted as Record<string, unknown>, category),
-      { status: 200 },
-    );
-  } catch (error) {
-    return mutationErrorResponse(error, "Save failed");
-  }
+  }, incomingId);
 }
 
 // ---------------------------------------------------------------------------
@@ -420,46 +384,52 @@ export async function handleCategoryPatch(
 export async function handleCategoryDelete(
   request: NextRequest | Request,
   categoryKey: string,
-): Promise<NextResponse> {
-  const csrfError = validateCsrf(request);
-  if (csrfError) return errorResponse(csrfError, 403);
+) {
+  const incomingId = request.headers.get("x-request-id") ?? undefined;
+  return runWithRequestContext(async () => {
+    const startedAt = Date.now();
+    const path = `/api/me/${categoryKey}`;
 
-  const auth = await requireAuth();
-  if (!auth) return errorResponse("Unauthorized", 401);
+    const csrfError = validateCsrf(request);
+    if (csrfError) return finishResponse(apiError(csrfError, "FORBIDDEN"), "DELETE", path, startedAt);
 
-  try {
-    let category: CategorySlug;
+    const auth = await requireAuth();
+    if (!auth) return finishResponse(apiError("Unauthorized", "UNAUTHORIZED"), "DELETE", path, startedAt);
+
     try {
-      category = validateCategory(categoryKey);
-    } catch {
-      return errorResponse("Invalid category", 400);
+      let category: CategorySlug;
+      try {
+        category = validateCategory(categoryKey);
+      } catch {
+        return finishResponse(apiError("Invalid category", "VALIDATION_ERROR"), "DELETE", path, startedAt);
+      }
+
+      // Parse body
+      const body = (await request.json()) as { id?: string };
+      const id = String(body?.id ?? "").trim();
+      if (!id) {
+        return finishResponse(apiError("id required", "VALIDATION_ERROR"), "DELETE", path, startedAt);
+      }
+
+      // Load existing entry to check editability
+      const existingEntries = await listEntriesForCategory(
+        auth.email,
+        category as CategoryKey,
+      );
+      const existing = existingEntries.find(
+        (e) => String((e as Record<string, unknown>).id ?? "") === id,
+      ) ?? null;
+
+      if (existing && !isEntryEditable(existing)) {
+        return finishResponse(apiError("This entry is locked.", "FORBIDDEN"), "DELETE", path, startedAt);
+      }
+
+      // Delete via engine
+      await deleteEngineEntry(auth.email, category as CategoryKey, id);
+
+      return finishResponse(apiSuccess({ ok: true }), "DELETE", path, startedAt);
+    } catch (error) {
+      return finishResponse(apiErrorFromCatch(error, "Delete failed"), "DELETE", path, startedAt);
     }
-
-    // Parse body
-    const body = (await request.json()) as { id?: string };
-    const id = String(body?.id ?? "").trim();
-    if (!id) {
-      return errorResponse("id required", 400);
-    }
-
-    // Load existing entry to check editability
-    const existingEntries = await listEntriesForCategory(
-      auth.email,
-      category as CategoryKey,
-    );
-    const existing = existingEntries.find(
-      (e) => String((e as Record<string, unknown>).id ?? "") === id,
-    ) ?? null;
-
-    if (existing && !isEntryEditable(existing)) {
-      return errorResponse("This entry is locked.", 403);
-    }
-
-    // Delete via engine
-    await deleteEngineEntry(auth.email, category as CategoryKey, id);
-
-    return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (error) {
-    return mutationErrorResponse(error, "Delete failed");
-  }
+  }, incomingId);
 }

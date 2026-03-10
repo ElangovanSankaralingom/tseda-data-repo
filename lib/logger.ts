@@ -1,11 +1,14 @@
 import "server-only";
 
 import { normalizeError } from "@/lib/errors";
+import { getCurrentRequestId } from "@/lib/api/asyncContext";
+import { scrubString } from "@/lib/observability/scrubber";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 export type LogMeta = {
   event: string;
+  requestId?: string;
   actorEmail?: string;
   userEmail?: string;
   category?: string;
@@ -15,6 +18,9 @@ export type LogMeta = {
   count?: number;
   sizeBytes?: number;
   errorCode?: string;
+  source?: string;
+  path?: string;
+  method?: string;
   [key: string]: unknown;
 };
 
@@ -29,6 +35,18 @@ const LOG_LEVEL_ORDER: Record<LogLevel, number> = {
   info: 20,
   warn: 30,
   error: 40,
+};
+
+// ---------------------------------------------------------------------------
+// Slow operation thresholds (ms)
+// ---------------------------------------------------------------------------
+
+const SLOW_THRESHOLDS: Record<string, number> = {
+  "file.read": 100,
+  "file.write": 100,
+  "index.rebuild": 500,
+  "dashboard.compute": 200,
+  "api.request": 1000,
 };
 
 function resolveLogLevel(): LogLevel {
@@ -62,8 +80,8 @@ function logOutput(level: LogLevel, payload: Record<string, unknown>) {
 
 function normalizeMessage(msg: unknown) {
   if (msg === undefined || msg === null) return undefined;
-  if (typeof msg === "string") return msg.slice(0, MAX_STRING_LENGTH);
-  return String(msg).slice(0, MAX_STRING_LENGTH);
+  if (typeof msg === "string") return scrubString(msg.slice(0, MAX_STRING_LENGTH));
+  return scrubString(String(msg).slice(0, MAX_STRING_LENGTH));
 }
 
 function redactValue(value: unknown, key?: string, depth = 0): unknown {
@@ -72,9 +90,10 @@ function redactValue(value: unknown, key?: string, depth = 0): unknown {
   }
   if (value === null || value === undefined) return null;
   if (typeof value === "string") {
-    return value.length > MAX_STRING_LENGTH
+    const truncated = value.length > MAX_STRING_LENGTH
       ? `${value.slice(0, MAX_STRING_LENGTH)}...[truncated]`
       : value;
+    return scrubString(truncated);
   }
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : 0;
@@ -88,7 +107,7 @@ function redactValue(value: unknown, key?: string, depth = 0): unknown {
     return {
       name: normalized.name,
       code: normalized.code,
-      message: normalized.message,
+      message: scrubString(normalized.message),
     };
   }
 
@@ -133,6 +152,7 @@ function emit(level: LogLevel, meta: LogMeta, msg?: unknown) {
   const payload: Record<string, unknown> = {
     level,
     ts: new Date().toISOString(),
+    requestId: meta.requestId ?? getCurrentRequestId(),
     ...redact(meta),
   };
   const normalizedMsg = normalizeMessage(msg);
@@ -155,6 +175,40 @@ export const logger = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Slow operation detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if an operation duration exceeds the slow threshold and log a warning.
+ * Called automatically by `withTimer` on completion.
+ */
+function checkSlowOperation(event: string, durationMs: number, meta: Record<string, unknown>) {
+  // Match against known threshold patterns
+  for (const [pattern, threshold] of Object.entries(SLOW_THRESHOLDS)) {
+    if (event.startsWith(pattern) && durationMs > threshold) {
+      logger.warn({
+        event: "slow_operation",
+        slowEvent: event,
+        durationMs,
+        thresholdMs: threshold,
+        ...meta,
+      }, `Slow operation: ${event} took ${durationMs}ms (threshold: ${threshold}ms)`);
+      return;
+    }
+  }
+  // Generic slow detection for any API response > 1000ms
+  if (durationMs > 1000) {
+    logger.warn({
+      event: "slow_operation",
+      slowEvent: event,
+      durationMs,
+      thresholdMs: 1000,
+      ...meta,
+    }, `Slow operation: ${event} took ${durationMs}ms`);
+  }
+}
+
 export async function withTimer<T>(
   event: string,
   fn: () => Promise<T> | T,
@@ -164,23 +218,27 @@ export async function withTimer<T>(
   logger.debug({ event: `${event}.start`, ...meta });
   try {
     const result = await fn();
+    const durationMs = Date.now() - startedAt;
     logger.info({
       event: `${event}.end`,
       ...meta,
-      durationMs: Date.now() - startedAt,
+      durationMs,
     });
+    checkSlowOperation(event, durationMs, meta as Record<string, unknown>);
     return result;
   } catch (error) {
+    const durationMs = Date.now() - startedAt;
     const normalized = normalizeError(error);
     logger.error(
       {
         event: `${event}.error`,
         ...meta,
-        durationMs: Date.now() - startedAt,
+        durationMs,
         errorCode: normalized.code,
       },
       normalized.message
     );
+    checkSlowOperation(event, durationMs, meta as Record<string, unknown>);
     throw error;
   }
 }

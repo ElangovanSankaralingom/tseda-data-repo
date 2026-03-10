@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
+import bundleAnalyzer from "@next/bundle-analyzer";
 
 const isProd = process.env.NODE_ENV === "production";
 const appOrigin = process.env.NEXTAUTH_URL || "http://localhost:3000";
@@ -29,6 +30,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   outputFileTracingRoot: path.resolve("."),
   images: {
     remotePatterns: [
@@ -43,6 +45,11 @@ const nextConfig: NextConfig = {
       dynamic: 0,
       static: 180,
     },
+  },
+  async rewrites() {
+    return [
+      { source: "/api/v1/:path*", destination: "/api/:path*" },
+    ];
   },
   async headers() {
     return [
@@ -63,4 +70,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
+
+export default withBundleAnalyzer(nextConfig);

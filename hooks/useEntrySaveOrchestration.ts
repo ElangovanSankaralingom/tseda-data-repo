@@ -7,9 +7,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
-  useRef,
-  useState,
   type Dispatch,
   type MutableRefObject,
   type SetStateAction,
@@ -80,17 +77,17 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
 
   const normalizePersisted = useCallback(
     (entry: TEntry) => (options.normalizePersistedEntry ? options.normalizePersistedEntry(entry) : entry),
-    [options.normalizePersistedEntry],
+    [options],
   );
 
   const persistEntry = useCallback(
     async (entry: TEntry) => normalizePersisted(await options.persistProgress(entry)),
-    [normalizePersisted, options.persistProgress],
+    [normalizePersisted, options],
   );
 
   const commitDraftEntry = useCallback(
     async (entryId: string) => normalizePersisted(await options.commitDraft(entryId)),
-    [options.commitDraft, normalizePersisted],
+    [options, normalizePersisted],
   );
 
   const afterPersistSuccessWithRefresh = useCallback(
@@ -98,7 +95,7 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
       await options.afterPersistSuccess?.(entry, intent);
       nextRouter.refresh();
     },
-    [options.afterPersistSuccess, nextRouter],
+    [options, nextRouter],
   );
 
   const showToast = useCallback(
@@ -106,7 +103,7 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
       options.setToast({ type, msg });
       setTimeout(() => options.setToast(null), durationMs);
     },
-    [options.setToast],
+    [options],
   );
 
   const saveDraftChanges = useCallback(
@@ -145,21 +142,7 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
     [
       afterPersistSuccessWithRefresh,
       commitDraftEntry,
-      options.applyPersistedEntry,
-      options.buildEntryToSave,
-      options.buildOptimisticEntry,
-      options.canSave,
-      options.closeForm,
-      options.doneSuccessMessage,
-      options.hasBusyUploads,
-      options.saveBusyMessage,
-      options.saveErrorMessage,
-      options.saveLockRef,
-      options.saveSuccessMessage,
-      options.setList,
-      options.setSaveIntent,
-      options.setSaving,
-      options.setToast,
+      options,
       persistEntry,
     ],
   );
@@ -176,7 +159,7 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
         options.saveLockRef.current = false;
       }
     },
-    [options.saveLockRef],
+    [options],
   );
 
   const persistCurrentMutation = useCallback(
@@ -198,7 +181,7 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
         intent: mutationOptions.intent,
       });
     },
-    [afterPersistSuccessWithRefresh, options.applyPersistedEntry, options.formRef, options.saveLockRef, persistEntry],
+    [afterPersistSuccessWithRefresh, options, persistEntry],
   );
 
   // --- Auto-save ---

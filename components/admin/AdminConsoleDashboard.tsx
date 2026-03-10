@@ -78,7 +78,6 @@ function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) 
 // ---------------------------------------------------------------------------
 
 export default function AdminConsoleDashboard({
-  adminEmail,
   permissions,
 }: {
   adminEmail: string;

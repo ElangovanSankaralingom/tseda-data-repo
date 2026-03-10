@@ -38,6 +38,7 @@ export default function FieldRenderer({
   hint,
 }: FieldRendererProps) {
   const showError = submitted && !!error;
+  const isRequired = field.required !== false;
 
   // Skip non-renderable fields
   if (field.key === "id" || field.key === "pdfMeta" || field.key === "streak") {
@@ -51,21 +52,19 @@ export default function FieldRenderer({
 
   // Select dropdown for enum fields
   if (field.enumValues && field.enumValues.length > 0) {
-    const options = field.enumValues.map((v) => ({
-      label: String(v),
-      value: String(v),
-    }));
-
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint}>
-        <SelectDropdown
-          value={String(value ?? "")}
-          onChange={(v) => onChange(v)}
-          options={options}
-          placeholder={`Select ${field.label.toLowerCase()}`}
-          disabled={disabled}
-          error={showError}
-        />
+      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
+        {(a11yProps: { id: string; "aria-describedby"?: string; "aria-required"?: boolean; "aria-invalid"?: boolean }) => (
+          <SelectDropdown
+            id={a11yProps.id}
+            value={String(value ?? "")}
+            onChange={(v) => onChange(v)}
+            options={field.enumValues!.map((v) => ({ label: String(v), value: String(v) }))}
+            placeholder={`Select ${field.label.toLowerCase()}`}
+            disabled={disabled}
+            error={showError}
+          />
+        )}
       </Field>
     );
   }
@@ -73,7 +72,7 @@ export default function FieldRenderer({
   // Date field
   if (field.kind === "date") {
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint}>
+      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
         <DateField
           value={String(value ?? "")}
           onChange={(v) => onChange(v)}
@@ -87,25 +86,32 @@ export default function FieldRenderer({
   // Number field
   if (field.kind === "number") {
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint}>
-        <input
-          type="number"
-          value={value === null || value === undefined ? "" : String(value)}
-          onChange={(e) => {
-            const raw = e.target.value;
-            onChange(raw === "" ? null : Number(raw));
-          }}
-          min={field.min}
-          max={field.max}
-          disabled={disabled}
-          className={cx(
-            "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-400",
-            showError
-              ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-              : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-            disabled && "cursor-not-allowed opacity-60",
-          )}
-        />
+      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
+        {(a11yProps: { id: string; "aria-describedby"?: string; "aria-required"?: boolean; "aria-invalid"?: boolean }) => (
+          <input
+            id={a11yProps.id}
+            type="number"
+            value={value === null || value === undefined ? "" : String(value)}
+            onChange={(e) => {
+              const raw = e.target.value;
+              onChange(raw === "" ? null : Number(raw));
+            }}
+            min={field.min}
+            max={field.max}
+            disabled={disabled}
+            aria-describedby={a11yProps["aria-describedby"]}
+            aria-required={a11yProps["aria-required"]}
+            aria-invalid={a11yProps["aria-invalid"]}
+            aria-disabled={disabled || undefined}
+            className={cx(
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-400",
+              showError
+                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              disabled && "cursor-not-allowed opacity-60",
+            )}
+          />
+        )}
       </Field>
     );
   }
@@ -113,20 +119,27 @@ export default function FieldRenderer({
   // Default: text input for string and unknown kinds
   if (field.kind === "string" || field.kind === "unknown") {
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint}>
-        <input
-          value={String(value ?? "")}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          maxLength={field.maxLength}
-          className={cx(
-            "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-400",
-            showError
-              ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-              : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-            disabled && "cursor-not-allowed opacity-60",
-          )}
-        />
+      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
+        {(a11yProps: { id: string; "aria-describedby"?: string; "aria-required"?: boolean; "aria-invalid"?: boolean }) => (
+          <input
+            id={a11yProps.id}
+            value={String(value ?? "")}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            maxLength={field.maxLength}
+            aria-describedby={a11yProps["aria-describedby"]}
+            aria-required={a11yProps["aria-required"]}
+            aria-invalid={a11yProps["aria-invalid"]}
+            aria-disabled={disabled || undefined}
+            className={cx(
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-400",
+              showError
+                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              disabled && "cursor-not-allowed opacity-60",
+            )}
+          />
+        )}
       </Field>
     );
   }

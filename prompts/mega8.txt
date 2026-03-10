@@ -1,0 +1,209 @@
+## Task Type
+CLEANUP + REFACTOR
+
+## Priority
+MEDIUM
+
+## The Implementation
+
+### 1. Delete ALL orphan files
+Find and delete:
+```bash
+# Files with zero importers
+for f in lib/entries/postSave.ts lib/entries/stateMachine.ts lib/entries/engine.ts lib/gamification.ts; do
+  if [ -f "$f" ]; then
+    importers=$(grep -rn "from.*$(basename ${f%.ts})" lib/ app/ components/ hooks/ --include="*.ts" --include="*.tsx" | grep -v "$(basename $f)" | wc -l)
+    if [ "$importers" -eq "0" ]; then
+      echo "DELETE: $f (zero importers)"
+    fi
+  fi
+done
+```
+Delete confirmed orphans. Keep migration script references.
+
+### 2. Centralized App Config (complete)
+Create `lib/config/appConfig.ts` with EVERY configurable value:
+```typescript
+export const APP_CONFIG = {
+  institution: { name, shortName, domain, masterAdminEmail },
+  entryLifecycle: { defaultEditWindowDays, streakBufferDays, maxRequestsPerMonth },
+  rateLimits: { entryMutations, uploadOps, adminOps, readOps, authOps },
+  security: { maxPayloadBytes, maxActionPayloadBytes, maxStringLength, maxAttachmentsPerEntry, maxFileSizeMB, allowedMimeTypes, sessionMaxAgeSeconds },
+  pagination: { defaultPageSize, maxPageSize },
+  cron: { walRetentionDays, timerWarningHours },
+  upload: { maxFileSizeMB, allowedMimeTypes },
+} as const;
+```
+Replace EVERY hardcoded value across the codebase with appConfig references.
+
+### 3. JSDoc on ALL public functions
+Every exported function in lib/ must have JSDoc:
+```typescript
+/**
+ * Check if an entry can be edited by its owner.
+ * 
+ * @param entry - The entry to check
+ * @param nowISO - Current time (for testing, defaults to now)
+ * @returns true if the entry is in an editable state and within its edit window
+ */
+export function isEntryEditable(entry: EntryStateLike, nowISO?: string): boolean {
+```
+Priority files: workflow.ts, streakProgress.ts, toApiResponse.ts, categoryRouteHandler.ts, all engine modules.
+
+### 4. TODO/FIXME Audit
+```bash
+grep -rn "TODO\|FIXME\|HACK\|XXX\|TEMPORARY" lib/ app/ components/ hooks/ --include="*.ts" --include="*.tsx"
+```
+For each:
+- If it's done: remove the comment
+- If it's still needed: create a GitHub issue and reference the issue number
+- If it's a hack: refactor properly
+
+### 5. Consistent File Naming Convention
+Document in CONTRIBUTING.md:
+- lib/ files: camelCase (entryNavigation.ts)
+- components/: PascalCase (EntryActionsBar.tsx)
+- hooks/: camelCase with use prefix (useEntryEditor.ts)
+- config/schemas: kebab-case (fdp-attended.ts) matching category slugs
+Rename any files that violate this.
+
+### 6. Import Order Convention
+Add to ESLint config:
+```
+1. Node built-ins (fs, path)
+2. Framework (react, next)
+3. Third-party (lucide-react, etc.)
+4. Internal absolute (@/lib/, @/components/, etc.)
+5. Relative (./)
+```
+Blank line between each group.
+
+## Scope
+- DELETE: orphan files (verified zero importers)
+- CREATE: lib/config/appConfig.ts
+- MODIFY: ALL files importing hardcoded values → use appConfig
+- MODIFY: ALL exported functions in lib/ → add JSDoc
+- MODIFY: files with TODOs → resolve or create issues
+- MODIFY: eslint.config.mjs (import order)
+- MODIFY: CONTRIBUTING.md (naming convention)
+
+## Verification
+1. npm run build — passes
+2. npm run lint — passes
+3. grep -rn "TODO\|FIXME" lib/ app/ --include="*.ts" | wc -l — under 5 (only with issue references)
+4. grep -rn "tce\.edu" lib/ --include="*.ts" | grep -v "appConfig\|auth\.ts" — ZERO
+5. Every exported function in workflow.ts, streakProgress.ts has JSDoc
+
+
+# ============================================================
+# MEGA-9: DATABASE MIGRATION PLAN
+# Targets: Storage 6→9, Scalability 3.5→7
+# NOTE: This creates the PLAN and migration tooling.
+# Actual migration to SQLite is a separate project.
+# ============================================================
+
+## Task Type
+FEATURE + DOCS
+
+## Priority
+MEDIUM (not blocking current deployment, critical for scale)
+
+## The Implementation
+
+### 1. Create Database Abstraction Layer
+Create `lib/data/dataLayer.ts`:
+```typescript
+/**
+ * Data access abstraction.
+ * Currently implemented with JSON files.
+ * Designed for drop-in replacement with SQLite/Postgres.
+ */
+export interface DataLayer {
+  // Entries
+  listEntries(email: string, category: string): Promise<Entry[]>;
+  getEntry(email: string, category: string, id: string): Promise<Entry | null>;
+  saveEntry(email: string, category: string, entry: Entry): Promise<Entry>;
+  deleteEntry(email: string, category: string, id: string): Promise<boolean>;
+
+  // User Index
+  getUserIndex(email: string): Promise<UserIndex | null>;
+  saveUserIndex(email: string, index: UserIndex): Promise<void>;
+
+  // Locking
+  withLock<T>(key: string, fn: () => Promise<T>): Promise<T>;
+}
+```
+
+### 2. Implement JSON file backend
+Create `lib/data/jsonDataLayer.ts`:
+Wrap the existing file operations (dataStore.ts, locks.ts, fileAtomic.ts) behind the DataLayer interface.
+
+### 3. Create SQLite backend (stub)
+Create `lib/data/sqliteDataLayer.ts`:
+```typescript
+/**
+ * SQLite implementation of DataLayer.
+ * Uses better-sqlite3 for synchronous, ACID-compliant storage.
+ * 
+ * TO ACTIVATE:
+ * 1. npm install better-sqlite3
+ * 2. Change DATA_LAYER env var to 'sqlite'
+ * 3. Run migration: npx ts-node scripts/migrate-to-sqlite.ts
+ */
+export class SqliteDataLayer implements DataLayer {
+  // Stub — implementations marked as TODO
+}
+```
+
+### 4. Data Layer Factory
+Create `lib/data/createDataLayer.ts`:
+```typescript
+export function createDataLayer(): DataLayer {
+  const backend = process.env.DATA_LAYER || 'json';
+  if (backend === 'sqlite') {
+    return new SqliteDataLayer();
+  }
+  return new JsonDataLayer();
+}
+```
+
+### 5. Wire engine to use DataLayer
+Modify `lib/entries/internal/engineHelpers.ts`:
+Instead of importing directly from dataStore.ts, import from the DataLayer:
+```typescript
+const dataLayer = createDataLayer();
+// Use dataLayer.listEntries() instead of readCategoryEntries()
+```
+
+### 6. Create Migration Script
+Create `scripts/migrate-to-sqlite.ts`:
+- Reads all JSON files from .data/users/
+- Creates SQLite schema
+- Inserts all entries
+- Verifies row counts match
+- Reports migration status
+
+### 7. Document the Migration Path
+Create `DATABASE-MIGRATION.md`:
+- Current architecture (JSON files)
+- Why migrate (concurrency, scalability, data integrity)
+- Migration steps
+- Rollback plan
+- Performance comparison estimates
+
+## Scope
+- CREATE: lib/data/dataLayer.ts (interface)
+- CREATE: lib/data/jsonDataLayer.ts (current implementation)
+- CREATE: lib/data/sqliteDataLayer.ts (stub)
+- CREATE: lib/data/createDataLayer.ts (factory)
+- CREATE: scripts/migrate-to-sqlite.ts (migration script)
+- CREATE: DATABASE-MIGRATION.md
+- MODIFY: lib/entries/internal/engineHelpers.ts (use DataLayer)
+- DO NOT MODIFY: business logic, workflow, streaks
+
+## Verification
+1. npm run build — passes
+2. App still works identically with DATA_LAYER=json (default)
+3. DataLayer interface is complete and type-safe
+4. Migration script runs without errors on test data
+5. DATABASE-MIGRATION.md is complete and actionable

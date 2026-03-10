@@ -8,13 +8,14 @@ import { compactAllWals, type WalCompactResult } from "@/lib/maintenance/walComp
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { getDataRoot } from "@/lib/userStore";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 
 export type NightlyWalCompactionResult = {
   userWal: WalCompactResult;
   telemetry: { linesBefore: number; linesAfter: number; bytesFreed: number };
 };
 
-const DEFAULT_RETENTION_DAYS = 30;
+const DEFAULT_RETENTION_DAYS = APP_CONFIG.cron.walRetentionDays;
 
 function getTelemetryEventsPath() {
   return path.join(process.cwd(), getDataRoot(), "telemetry", "events.log");

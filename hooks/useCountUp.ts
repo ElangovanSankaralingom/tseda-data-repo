@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 export function useCountUp(target: number, duration = 500) {
   const [count, setCount] = useState(0);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (target <= 0) { setCount(0); return; }
     const start = performance.now();
     let raf: number;

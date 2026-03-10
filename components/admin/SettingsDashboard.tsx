@@ -208,6 +208,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
 
   useEffect(() => {
     if (showChangelog && changelog.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadChangelog();
     }
   }, [showChangelog, changelog.length, loadChangelog]);

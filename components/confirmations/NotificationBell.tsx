@@ -56,6 +56,7 @@ export default function NotificationBell({
 
   // Force close from parent (when admin bell opens)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (forceClose && open) setOpen(false);
   }, [forceClose, open]);
 
@@ -78,6 +79,7 @@ export default function NotificationBell({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchUnreadCount();
     const interval = setInterval(() => void fetchUnreadCount(), 60_000);
     return () => clearInterval(interval);
@@ -99,6 +101,7 @@ export default function NotificationBell({
 
   useEffect(() => {
     if (open && !loaded) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void fetchNotifications();
     }
   }, [open, loaded, fetchNotifications]);

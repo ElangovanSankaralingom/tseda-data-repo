@@ -8,7 +8,6 @@ import { normalizeEntry } from "@/lib/normalize";
 import { computeCanonicalStreakSnapshot, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
 import { logger, withTimer } from "@/lib/logger";
-import { ENTRY_SCHEMAS } from "@/data/schemas";
 import {
   type EntryEngineRecord,
   type EntryStreakSummary,
@@ -25,6 +24,16 @@ export function isLockedFromApproval(entry: EntryEngineRecord) {
   return isEntryLocked(entry as EntryLike);
 }
 
+/**
+ * Lists all entries for a given user and category, optionally applying a
+ * normalization transform to each record.
+ *
+ * @param userEmail - Email of the entry owner.
+ * @param category - The category key to list entries for.
+ * @param normalize - Optional transform function applied to each raw entry. Records
+ *   that return `null` are filtered out.
+ * @returns Array of entry records for the category.
+ */
 export async function listEntriesForCategory<T extends EntryEngineRecord = EntryEngineRecord>(
   userEmail: string,
   category: CategoryKey,
@@ -39,6 +48,14 @@ export async function listEntriesForCategory<T extends EntryEngineRecord = Entry
     .filter((entry): entry is T => !!entry);
 }
 
+/**
+ * Computes the aggregate streak summary for a user across all categories.
+ * Reads every entry for the user, then delegates to the canonical streak
+ * snapshot computation.
+ *
+ * @param userEmail - Email of the user to compute streaks for.
+ * @returns A summary containing total activated/win counts and per-category breakdowns.
+ */
 export async function computeStreak(
   userEmail: string
 ): Promise<EntryStreakSummary> {

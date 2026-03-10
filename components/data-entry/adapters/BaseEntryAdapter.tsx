@@ -110,18 +110,6 @@ export type BaseEntryAdapterProps<T extends EntryRecord> = CategoryAdapterPagePr
 // Helpers
 // ---------------------------------------------------------------------------
 
-function uuid() {
-  const cryptoApi = globalThis.crypto;
-  if (cryptoApi && typeof cryptoApi.randomUUID === "function") {
-    return cryptoApi.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
-    const r = (Math.random() * 16) | 0;
-    const v = ch === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -398,11 +386,13 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           String(me?.officialName ?? me?.userPreferredName ?? nextEmail.split("@")[0]).trim(),
         );
         const listResponse = await fetch(endpoint, { cache: "no-store" });
-        const items = await listResponse.json();
+        const body = await listResponse.json();
         if (!listResponse.ok) {
-          throw new Error(items?.error || `Failed to load ${title} records.`);
+          throw new Error(body?.error?.message || body?.error || `Failed to load ${title} records.`);
         }
-        setList(Array.isArray(items) ? items.map((item) => hydrateEntry(item as T)) : []);
+        // Support both envelope { data: [...] } and legacy plain array responses
+        const items = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        setList(items.map((item: unknown) => hydrateEntry(item as T)));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to load.";
         setToast({ type: "err", msg: message });

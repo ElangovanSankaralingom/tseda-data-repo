@@ -164,16 +164,18 @@ export function logError(error: unknown, context = "app"): AppError {
           ? { type: "object", keys: Object.keys(appError.details as Record<string, unknown>).slice(0, 20) }
           : appError.details;
 
-  const payload = {
+  // Uses console.error directly because errors.ts is shared between client
+  // and server — it cannot import the structured logger (server-only).
+  // The output is still structured JSON for log aggregation.
+  const payload: Record<string, unknown> = {
     level: "error",
     ts: new Date().toISOString(),
     event: "app.error",
     context,
     errorCode: appError.code,
     msg: appError.message,
-    details,
   };
-
+  if (details !== undefined) payload.details = details;
   console.error(JSON.stringify(payload));
 
   return appError;

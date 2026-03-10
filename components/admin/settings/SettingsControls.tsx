@@ -84,7 +84,9 @@ export function NumberInput({
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocal(String(value));
+     
     setError("");
   }, [value]);
 

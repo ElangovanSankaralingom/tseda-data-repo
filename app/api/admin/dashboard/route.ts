@@ -8,7 +8,7 @@ import { getRecentAuditEvents, getAuditStats } from "@/lib/admin/auditLog";
 import { getPendingEditRequestsCount } from "@/lib/admin/pendingConfirmations";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { getCachedAnalytics } from "@/lib/analytics/cache";
-import { daysAgo, groupAndCount } from "@/lib/analytics/compare";
+import { daysAgo } from "@/lib/analytics/compare";
 import type { AnalyticsSnapshot, EntryDataPoint } from "@/lib/analytics/compute";
 import { getLatestBackupFile, listBackups } from "@/lib/backup/backupService";
 import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";

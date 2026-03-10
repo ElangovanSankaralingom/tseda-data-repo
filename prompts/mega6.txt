@@ -1,0 +1,139 @@
+## Task Type
+FEATURE
+
+## Priority
+HIGH
+
+## The Implementation — EVERY ITEM MANDATORY
+
+### 1. GitHub Actions CI
+Create `.github/workflows/ci.yml`:
+```yaml
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: 'npm' }
+      - run: npm ci
+      - run: npm run lint
+      - name: Type check
+        run: npx tsc --noEmit
+      - run: npm run build
+      - name: Tests with coverage
+        run: npm run test:ci
+        env: { NODE_ENV: test }
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tseda:ci .
+```
+
+### 2. Release Workflow
+Create `.github/workflows/release.yml`:
+```yaml
+name: Release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: 'npm' }
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+```
+
+### 3. Branch Protection (document)
+Add to CONTRIBUTING.md:
+```
+## Branch Protection Rules (set in GitHub Settings)
+- Require pull request reviews before merging
+- Require status checks to pass (CI quality job)
+- Require branches to be up to date before merging
+- Do not allow force pushes to main
+```
+
+### 4. Git Tags for Existing Versions
+```bash
+git tag -a v0.1.0 -m "Initial architecture and features"
+git tag -a v0.2.0 -m "Entry lifecycle overhaul and streak system"
+git tag -a v0.3.0 -m "Complete codebase overhaul — unified engine, routes, types"
+git push origin --tags
+```
+
+### 5. Docker
+Create `Dockerfile`:
+Multi-stage build: deps → builder → runner.
+Use standalone output. Create .data dir. Run as non-root user.
+Expose port 3000. Health check configured.
+
+Create `docker-compose.yml`:
+App service with volumes for .data and uploads. Health check. Restart policy.
+
+Create `.dockerignore`:
+Exclude node_modules, .next, .git, .data, tests, prompts, *.md.
+
+Add `output: 'standalone'` to next.config.ts.
+
+### 6. Deployment Scripts
+Create `scripts/deploy.sh`:
+- Pre-flight: build, test, audit
+- Tag release
+- Build Docker image
+- Deploy instructions (customizable for platform)
+
+Create `scripts/rollback.sh`:
+- Find previous tag
+- Checkout and rebuild
+
+### 7. Environment Configs
+Create `.env.production.template` and `.env.staging.template` with ALL required vars documented.
+
+### 8. Pre-commit Hook
+Create `.husky/pre-commit` (or use simple git hook):
+```bash
+npm run lint
+npx tsc --noEmit
+```
+Install: `npx husky init` and configure.
+
+## Scope
+- CREATE: .github/workflows/ci.yml
+- CREATE: .github/workflows/release.yml
+- CREATE: Dockerfile
+- CREATE: docker-compose.yml
+- CREATE: .dockerignore
+- CREATE: scripts/deploy.sh
+- CREATE: scripts/rollback.sh
+- CREATE: .env.production.template
+- CREATE: .env.staging.template
+- MODIFY: next.config.ts (add output: 'standalone')
+- MODIFY: package.json (add husky, lint-staged)
+- MODIFY: CONTRIBUTING.md (branch protection docs)
+
+## Verification
+1. docker build -t tseda . — succeeds
+2. docker-compose up → /api/health returns healthy
+3. Push to GitHub → Actions runs (lint, typecheck, build, test, audit, docker)
+4. git tag v0.3.0 → release workflow creates GitHub release

@@ -134,6 +134,14 @@ export function normalizeEntryStatus(
   return fallback;
 }
 
+/**
+ * Determines whether an entry has been committed (i.e., moved beyond DRAFT).
+ * Checks for the presence of `generatedAt` or `committedAtISO` timestamps,
+ * and falls back to the normalized workflow status.
+ *
+ * @param entry - The entry state to check.
+ * @returns `true` if the entry has been committed (is no longer a draft).
+ */
 export function isEntryCommitted(entry: EntryStateLike): boolean {
   if (toOptionalISO(entry.generatedAt) || toOptionalISO(entry.committedAtISO)) {
     return true;
@@ -184,6 +192,14 @@ export function computeEditGrantExpiry(
 
 // --- Editability ---
 
+/**
+ * Checks whether the entry's edit window has expired.
+ * Returns `false` if no `editWindowExpiresAt` is set on the entry.
+ *
+ * @param entry - The entry state to check.
+ * @param nowISO - Optional ISO timestamp to use as the current time (defaults to `new Date().toISOString()`).
+ * @returns `true` if the current time is at or past the edit window expiry.
+ */
 export function isEditWindowExpired(entry: EntryStateLike, nowISO?: string): boolean {
   const expiry = toOptionalISO(entry.editWindowExpiresAt);
   if (!expiry) return false;
@@ -191,6 +207,16 @@ export function isEditWindowExpired(entry: EntryStateLike, nowISO?: string): boo
   return now >= expiry;
 }
 
+/**
+ * Determines whether an entry is finalized (effectively read-only).
+ * An entry is finalized when it is in `GENERATED` status and its edit window
+ * has expired. Entries in `DRAFT`, `ARCHIVED`, `EDIT_REQUESTED`,
+ * `DELETE_REQUESTED`, or `EDIT_GRANTED` status are never considered finalized.
+ *
+ * @param entry - The entry state to check.
+ * @param nowISO - Optional ISO timestamp to use as the current time.
+ * @returns `true` if the entry is finalized and should be treated as read-only.
+ */
 export function isEntryFinalized(entry: EntryStateLike, nowISO?: string): boolean {
   const status = normalizeEntryStatus(entry);
   if (status === "DRAFT") return false;
@@ -201,6 +227,16 @@ export function isEntryFinalized(entry: EntryStateLike, nowISO?: string): boolea
   return isEditWindowExpired(entry, nowISO);
 }
 
+/**
+ * Determines whether an entry can currently be edited by the user.
+ * Entries are editable if they are in `DRAFT` or `EDIT_GRANTED` status, or
+ * in `GENERATED` status with an active (non-expired) edit window. Entries in
+ * `EDIT_REQUESTED`, `DELETE_REQUESTED`, or `ARCHIVED` status are not editable.
+ *
+ * @param entry - The entry state to check.
+ * @param nowISO - Optional ISO timestamp to use as the current time.
+ * @returns `true` if the entry can be edited.
+ */
 export function isEntryEditable(entry: EntryStateLike, nowISO?: string): boolean {
   const status = normalizeEntryStatus(entry);
   if (status === "DRAFT") return true;
@@ -220,6 +256,14 @@ export function isEntryLocked(entry: EntryStateLike): boolean {
 
 // --- Transitions ---
 
+/**
+ * Checks whether a status transition is valid according to the entry state machine.
+ * See the module-level comment for the full state diagram.
+ *
+ * @param from - The current entry status.
+ * @param to - The target entry status.
+ * @returns `true` if the transition from `from` to `to` is allowed.
+ */
 export function canTransition(from: EntryStatus, to: EntryStatus): boolean {
   if (from === "DRAFT") return to === "GENERATED";
   if (from === "GENERATED") {
@@ -245,6 +289,24 @@ function statusForAction(action: EntryTransitionAction): EntryStatus {
   return "DRAFT";
 }
 
+/**
+ * Applies a workflow action to an entry, transitioning it to the appropriate
+ * status and updating related timestamp/metadata fields. Throws if the
+ * transition is invalid (except for `createEntry`, which bootstraps a new entry).
+ *
+ * Side-effects by action:
+ * - `generateEntry` / `restoreEntry`: sets `generatedAt`, `editWindowExpiresAt`, resets PDF state (restore only).
+ * - `requestEdit` / `requestDelete`: records request timestamps and type.
+ * - `grantEdit`: sets grant metadata and replaces the edit window timer.
+ * - `rejectEdit` / `cancelEditRequest` / `cancelDeleteRequest`: clears request fields.
+ * - `approveDelete` / `archiveEntry`: sets `archivedAt` and clears pending requests.
+ *
+ * @param entry - The current entry state.
+ * @param action - The workflow action to apply.
+ * @param options - Optional overrides for timestamp, admin email, edit grant days, or archive reason.
+ * @returns A shallow copy of the entry with the new status and updated fields.
+ * @throws {Error} If the status transition is invalid for the given action.
+ */
 export function transitionEntry<T extends EntryStateLike>(
   entry: T,
   action: EntryTransitionAction,
@@ -375,6 +437,14 @@ export type EditTimeRemaining = {
   remainingLabel: string;
 };
 
+/**
+ * Computes the remaining edit time for an entry, including a human-readable label.
+ * If the entry has no `editWindowExpiresAt`, returns a result indicating no edit window.
+ *
+ * @param entry - The entry state to check.
+ * @param nowISO - Optional ISO timestamp to use as the current time.
+ * @returns An {@link EditTimeRemaining} object with expiry info, remaining milliseconds, and a display label (e.g., "2 days left").
+ */
 export function getEditTimeRemaining(entry: EntryStateLike, nowISO?: string): EditTimeRemaining {
   const expiry = toOptionalISO(entry.editWindowExpiresAt);
   if (!expiry) {
@@ -406,6 +476,14 @@ export function getEditTimeRemaining(entry: EntryStateLike, nowISO?: string): Ed
 
 const MAX_REQUESTS_PER_MONTH = APP_CONFIG.entryLifecycle.maxRequestsPerMonth;
 
+/**
+ * Determines whether the user can submit an edit or delete request for this entry.
+ * Requests are only allowed on finalized `GENERATED` entries that have not exceeded
+ * the monthly request limit (`MAX_REQUESTS_PER_MONTH`).
+ *
+ * @param entry - The entry state to check.
+ * @returns `true` if the entry is eligible for a new action request.
+ */
 export function canRequestAction(entry: EntryStateLike): boolean {
   const status = normalizeEntryStatus(entry);
   // Only finalized GENERATED entries can have actions requested
@@ -417,6 +495,13 @@ export function canRequestAction(entry: EntryStateLike): boolean {
   return count < MAX_REQUESTS_PER_MONTH;
 }
 
+/**
+ * Returns the number of action requests remaining for this entry within the
+ * current monthly limit.
+ *
+ * @param entry - The entry state to check.
+ * @returns The number of requests still available (0 or more).
+ */
 export function getRequestCountRemaining(entry: EntryStateLike): number {
   const count = typeof entry.requestCount === "number" ? entry.requestCount : 0;
   return Math.max(0, MAX_REQUESTS_PER_MONTH - count);

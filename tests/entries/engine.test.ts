@@ -13,8 +13,6 @@ import {
   getEditTimeRemaining,
   canRequestAction,
   getRequestCountRemaining,
-  DEFAULT_EDIT_WINDOW_DAYS,
-  STREAK_EDIT_WINDOW_BUFFER_DAYS,
   type EntryStateLike,
 } from "@/lib/entries/workflow";
 

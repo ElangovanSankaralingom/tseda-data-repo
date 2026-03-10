@@ -23,10 +23,12 @@ const NO_DEADLINE: StreakDeadlineState = {
   color: "normal",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getStreakDeadlineISO(_entry: unknown) {
   return null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getDaysLeft(deadlineISO: string | null | undefined, _nowISO?: string) {
   if (!deadlineISO) return 0;
 
@@ -44,14 +46,17 @@ export function getDaysLeftColor(daysLeft: number): StreakDeadlineColor {
   return "normal";
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function isStreakWindowActive(_entry: unknown, _nowISO?: string) {
   return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function isStreakExpired(_entry: unknown, _nowISO?: string) {
   return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getStreakDeadlineState(_entry: unknown, _nowISO?: string): StreakDeadlineState {
   return { ...NO_DEADLINE };
 }

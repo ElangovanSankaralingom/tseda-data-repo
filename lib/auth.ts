@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
 import { signin } from "@/lib/entryNavigation";
+import { APP_CONFIG, ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,7 +13,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 8 * 60 * 60, // 8 hours
+    maxAge: APP_CONFIG.security.sessionMaxAgeSeconds,
   },
   cookies: {
     sessionToken: {
@@ -33,7 +34,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ profile }) {
       const email = (profile?.email ?? "").toLowerCase();
-      return email.endsWith("@tce.edu") && !!findFacultyByEmail(email);
+      return email.endsWith(ALLOWED_EMAIL_SUFFIX) && !!findFacultyByEmail(email);
     },
   },
 };

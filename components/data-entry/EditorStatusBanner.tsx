@@ -56,18 +56,6 @@ export default function EditorStatusBanner({
   );
 }
 
-function formatFinalizedAgo(expiresAtISO: string): string {
-  const expiry = new Date(expiresAtISO);
-  if (Number.isNaN(expiry.getTime())) return "";
-  const diff = Date.now() - expiry.getTime();
-  if (diff < 0) return "";
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const days = Math.floor(hours / 24);
-  if (days > 0) return `${days} ${days === 1 ? "day" : "days"} ago`;
-  if (hours > 0) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
-  return "just now";
-}
-
 function getEditTimeUrgencyClass(remainingMs: number): string {
   if (remainingMs < 24 * 60 * 60 * 1000) return "text-red-600 font-semibold";
   if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-600";
@@ -79,7 +67,6 @@ export function EditorStatusBanners({
   isEditable,
   editTimeLabel,
   editTimeMs,
-  expiresAtISO,
   hasPdf,
   permanentlyLocked = false,
   onCancelRequest,

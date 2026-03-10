@@ -1,0 +1,152 @@
+## Task Type
+FEATURE
+
+## Priority
+HIGH
+
+## Context
+Build a comprehensive error handling and resilience layer. Every error must be caught, categorized, logged, and returned safely. No silent failures. No unhandled rejections.
+
+## The Implementation — EVERY ITEM MANDATORY
+
+### 1. Error Class Hierarchy
+Enhance `lib/errors.ts`:
+```typescript
+export class AppError extends Error {
+  constructor(
+    public code: ErrorCode,
+    message: string,
+    public statusCode: number = 500,
+    public details?: Record<string, unknown>,
+    public isOperational: boolean = true, // vs programmer error
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super('VALIDATION_ERROR', message, 400, details);
+  }
+}
+export class NotFoundError extends AppError {
+  constructor(message: string) { super('NOT_FOUND', message, 404); }
+}
+export class ForbiddenError extends AppError {
+  constructor(message: string) { super('FORBIDDEN', message, 403); }
+}
+export class RateLimitError extends AppError {
+  constructor() { super('RATE_LIMITED', 'Too many requests', 429); }
+}
+export class ConflictError extends AppError {
+  constructor(message: string) { super('CONFLICT', message, 409); }
+}
+
+export type ErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND' | 'FORBIDDEN' | 'UNAUTHORIZED' | 'RATE_LIMITED' | 'CONFLICT' | 'PAYLOAD_TOO_LARGE' | 'INTERNAL_ERROR' | 'SERVICE_UNAVAILABLE';
+```
+
+### 2. Global API Error Wrapper
+Create `lib/api/withErrorHandler.ts`:
+- Wraps ALL route handlers in try/catch
+- Maps AppError subclasses to correct HTTP status codes
+- Logs EVERY error with full context (requestId, path, method, duration, user)
+- Returns consistent error envelope: { success: false, data: null, error: { message, code, details } }
+- NEVER leaks stack traces to client
+- Logs stack traces internally
+- Handles async errors properly
+
+### 3. Global Process Error Handlers
+Create `instrumentation.ts` (Next.js instrumentation hook):
+```typescript
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    process.on('unhandledRejection', (reason) => {
+      // Log with full context, don't crash
+      reportError(reason, { type: 'unhandledRejection' });
+    });
+    process.on('uncaughtException', (error) => {
+      // Log, then exit (uncaught exceptions are unrecoverable)
+      reportError(error, { type: 'uncaughtException' });
+      process.exit(1);
+    });
+  }
+}
+```
+
+### 4. Audit ALL catch blocks
+Search for empty or weak catch blocks:
+```bash
+grep -rn "catch.*{" lib/ app/ hooks/ components/ --include="*.ts" --include="*.tsx"
+```
+Every catch block must either:
+a) Re-throw the error (if it can't handle it)
+b) Log the error with context
+c) Return a meaningful error to the caller
+NO empty catch blocks. NO `catch (e) {}`. NO `catch () { return null; }` without logging.
+
+### 5. Timeout on all async operations
+Create `lib/utils/timeout.ts`:
+```typescript
+export async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new AppError('SERVICE_UNAVAILABLE', `${label} timed out after ${ms}ms`, 503)), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+```
+Apply to:
+- File system operations: 5s timeout
+- External API calls: 10s timeout
+- PDF generation: 30s timeout
+
+### 6. Fire-and-forget with error handling
+Create `lib/utils/fireAndForget.ts`:
+```typescript
+export function fireAndForget(promise: Promise<unknown>, label: string) {
+  promise.catch((error) => {
+    logger.error({ event: 'fire_and_forget.error', label, error: error instanceof Error ? error.message : String(error) });
+  });
+}
+```
+Replace ALL bare `void somePromise()` with `fireAndForget(somePromise(), 'label')`.
+Search: `grep -rn "void " lib/ app/ --include="*.ts"` — every hit must use fireAndForget.
+
+### 7. Graceful Shutdown
+Create `lib/server/shutdown.ts`:
+```typescript
+let isShuttingDown = false;
+export function isServerShuttingDown() { return isShuttingDown; }
+
+export function setupGracefulShutdown() {
+  const shutdown = async (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    logger.info({ event: 'server.shutdown', signal });
+    // Flush logs, close file handles
+    setTimeout(() => process.exit(0), 5000); // Force exit after 5s
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
+```
+
+## Scope
+- MODIFY: lib/errors.ts (add error hierarchy)
+- CREATE: lib/api/withErrorHandler.ts
+- CREATE: instrumentation.ts
+- CREATE: lib/utils/timeout.ts
+- CREATE: lib/utils/fireAndForget.ts
+- CREATE: lib/server/shutdown.ts
+- MODIFY: lib/api/categoryRouteHandler.ts (wrap with error handler)
+- MODIFY: ALL files with empty catch blocks
+- MODIFY: ALL files with bare `void` promises
+- DO NOT MODIFY: business logic in workflow.ts, streakProgress.ts
+
+## Verification
+1. npm run build — passes
+2. grep -rn "catch.*{.*}" lib/ app/ --include="*.ts" | grep -c "{}" — ZERO empty catches
+3. grep -rn "void " lib/ app/ --include="*.ts" | grep -v "fireAndForget\|void 0\|: void" — ZERO bare void promises
+4. Trigger unhandled rejection → logged, server survives
+5. Trigger timeout → returns 503 with meaningful error message
+6. Every API error returns { success: false, data: null, error: { message, code } }

@@ -77,7 +77,7 @@ test("entry generation updates index counts", async () => {
     const created = await createEntry(ownerEmail, "workshops", buildCompleteWorkshopPayload());
 
     await commitDraft(ownerEmail, "workshops", String(created.id));
-    let ensured = await ensureUserIndex(ownerEmail);
+    const ensured = await ensureUserIndex(ownerEmail);
     assert.equal(ensured.ok, true);
     if (!ensured.ok) return;
     assert.equal(ensured.data.countsByStatus.GENERATED, 1);
