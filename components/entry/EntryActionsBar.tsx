@@ -81,6 +81,7 @@ export function HeaderEntryActionsBar({
             <RequestActionDropdown
               onRequestEdit={onRequestEdit}
               onRequestDelete={onRequestDelete}
+              requesting={editRequestPending || deleteRequestPending}
             />
           ) : null}
         </div>
