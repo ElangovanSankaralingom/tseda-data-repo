@@ -269,7 +269,7 @@ export function revalidateDashboardSummary(userEmail: string) {
   if (!ne) return;
   if (process.env.NODE_ENV === "test") return;
   const dashboardTag = getDashboardTag(ne);
-  void import("next/cache.js")
+  import("next/cache.js")
     .then((module) => {
       if (typeof module.revalidateTag === "function") {
         module.revalidateTag(dashboardTag, "max");

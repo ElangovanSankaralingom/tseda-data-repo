@@ -47,7 +47,9 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
           archived++;
 
           const title = extractEntryTitle(entry as unknown as Record<string, unknown>);
-          void notifyAutoArchived(userEmail, title, category).catch(() => {});
+          notifyAutoArchived(userEmail, title, category).catch((err) => {
+            logger.warn({ event: "jobs.autoArchive.notifyFailed", userEmail, category }, err instanceof Error ? err.message : String(err));
+          });
 
           logger.info({
             event: "jobs.autoArchive.entry",

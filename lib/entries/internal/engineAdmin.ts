@@ -4,6 +4,7 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, transitionEntry } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { AppError } from "@/lib/errors";
+import { fireAndForget } from "@/lib/utils/fireAndForget";
 import type { EntryEngineRecord, EntryLike, WorkflowEntryLike } from "./engineHelpers.ts";
 import { runAdminMutation } from "./engineMutationRunner.ts";
 
@@ -28,9 +29,12 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
     },
     afterSuccess: (entry) => {
       const normalized = normalizeEmail(ownerEmail);
-      void import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle }) => {
-        void notifyEditGranted(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>));
-      }).catch(() => {});
+      fireAndForget(
+        import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle }) =>
+          notifyEditGranted(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>)),
+        ),
+        "notifyEditGranted",
+      );
     },
   });
 }
@@ -59,9 +63,12 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
     },
     afterSuccess: (entry) => {
       const normalized = normalizeEmail(ownerEmail);
-      void import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle }) => {
-        void notifyEditRejected(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>), reason?.trim());
-      }).catch(() => {});
+      fireAndForget(
+        import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle }) =>
+          notifyEditRejected(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>), reason?.trim()),
+        ),
+        "notifyEditRejected",
+      );
     },
   });
 }
@@ -88,9 +95,12 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
       }) as EntryLike,
     afterSuccess: (entry) => {
       const normalized = normalizeEmail(ownerEmail);
-      void import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteApproved, extractEntryTitle }) => {
-        void notifyDeleteApproved(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>));
-      }).catch(() => {});
+      fireAndForget(
+        import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteApproved, extractEntryTitle }) =>
+          notifyDeleteApproved(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>)),
+        ),
+        "notifyDeleteApproved",
+      );
     },
   });
 }

@@ -50,7 +50,9 @@ export async function runTimerWarnings(): Promise<Result<TimerWarningResult>> {
           if (hasPdf) continue;
 
           const title = extractEntryTitle(entry as unknown as Record<string, unknown>);
-          void notifyTimerWarning(userEmail, title, category).catch(() => {});
+          notifyTimerWarning(userEmail, title, category).catch((err) => {
+            logger.warn({ event: "jobs.timerWarning.notifyFailed", userEmail, category }, err instanceof Error ? err.message : String(err));
+          });
 
           // Mark as warned so we don't notify again
           const updated = { ...entry, timerWarningShown: true };

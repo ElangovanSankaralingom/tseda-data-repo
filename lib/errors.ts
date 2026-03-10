@@ -6,6 +6,8 @@ export type AppErrorCode =
   | "UPLOAD_FAILED"
   | "RATE_LIMITED"
   | "PAYLOAD_TOO_LARGE"
+  | "CONFLICT"
+  | "SERVICE_UNAVAILABLE"
   | "IO_ERROR"
   | "NETWORK_ERROR"
   | "UNKNOWN";
@@ -98,6 +100,57 @@ export function toUserMessage(error: unknown): string {
   if (appError.code === "IO_ERROR") return "Unable to save right now. Please try again.";
 
   return appError.message || "Something went wrong. Please try again.";
+}
+
+// ---------------------------------------------------------------------------
+// Error subclasses — typed constructors for common cases
+// ---------------------------------------------------------------------------
+
+export class ValidationError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super({ code: "VALIDATION_ERROR", message, details });
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message = "Not found") {
+    super({ code: "NOT_FOUND", message });
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "Forbidden") {
+    super({ code: "FORBIDDEN", message });
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super({ code: "CONFLICT", message });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Error code → HTTP status mapping
+// ---------------------------------------------------------------------------
+
+const STATUS_MAP: Record<AppErrorCode, number> = {
+  VALIDATION_ERROR: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  RATE_LIMITED: 429,
+  PAYLOAD_TOO_LARGE: 413,
+  SERVICE_UNAVAILABLE: 503,
+  UPLOAD_FAILED: 500,
+  IO_ERROR: 500,
+  NETWORK_ERROR: 502,
+  UNKNOWN: 500,
+};
+
+export function httpStatusForCode(code: AppErrorCode): number {
+  return STATUS_MAP[code] ?? 500;
 }
 
 export function logError(error: unknown, context = "app"): AppError {

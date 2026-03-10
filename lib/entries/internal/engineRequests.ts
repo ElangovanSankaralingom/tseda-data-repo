@@ -3,6 +3,7 @@ import "server-only";
 import { ENTRY_SCHEMAS } from "@/data/schemas";
 import type { CategoryKey } from "@/lib/entries/types";
 import { AppError } from "@/lib/errors";
+import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { canRequestAction, isEntryCommitted, normalizeEntryStatus, transitionEntry } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isEntryWon } from "@/lib/streakProgress";
@@ -59,17 +60,20 @@ export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecor
     applyTransition: (existing, nowISO) => applyRequestFields(existing as EntryLike, category, "requestEdit", nowISO, message),
     afterSuccess: (entry) => {
       const normalized = normalizeEmail(userEmail);
-      void import("@/lib/confirmations/adminNotificationHelpers").then(({ notifyAdminEditRequest }) => {
-        void import("@/lib/confirmations/notificationHelpers").then(({ extractEntryTitle }) => {
-          void notifyAdminEditRequest(
-            normalized,
-            undefined,
-            extractEntryTitle(entry as unknown as Record<string, unknown>),
-            category,
-            String(entry.id ?? entryId),
-          );
-        });
-      }).catch(() => {});
+      fireAndForget(
+        import("@/lib/confirmations/adminNotificationHelpers").then(({ notifyAdminEditRequest }) =>
+          import("@/lib/confirmations/notificationHelpers").then(({ extractEntryTitle }) =>
+            notifyAdminEditRequest(
+              normalized,
+              undefined,
+              extractEntryTitle(entry as unknown as Record<string, unknown>),
+              category,
+              String(entry.id ?? entryId),
+            ),
+          ),
+        ),
+        "notifyAdminEditRequest",
+      );
     },
   });
 }
