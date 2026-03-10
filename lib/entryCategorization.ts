@@ -169,6 +169,7 @@ export function getEntryListGroup(entry: CategorizableEntry): EntryListGroup {
 
   if (status === "DRAFT") return "in_the_works";
   if (status === "EDIT_REQUESTED") return "under_review";
+  if (status === "DELETE_REQUESTED") return "under_review";
   if (status === "EDIT_GRANTED") return "unlocked";
 
   // GENERATED — finalized or editable?
@@ -195,11 +196,17 @@ function sortByUrgency<T extends CategorizableEntry>(entries: T[]): T[] {
     }
     if (aTime.hasEditWindow) return -1;
     if (bTime.hasEditWindow) return 1;
-    // Fall back to newest first
+    // Fall back to newest first by updatedAt
     const aUpdated = parseTimestamp(a.updatedAt);
     const bUpdated = parseTimestamp(b.updatedAt);
-    if (!Number.isNaN(aUpdated) && !Number.isNaN(bUpdated)) {
+    if (!Number.isNaN(aUpdated) && !Number.isNaN(bUpdated) && aUpdated !== bUpdated) {
       return bUpdated - aUpdated;
+    }
+    // Then by createdAt (newest first)
+    const aCreated = parseTimestamp(a.createdAt);
+    const bCreated = parseTimestamp(b.createdAt);
+    if (!Number.isNaN(aCreated) && !Number.isNaN(bCreated) && aCreated !== bCreated) {
+      return bCreated - aCreated;
     }
     return 0;
   });
