@@ -4,10 +4,11 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { canManageEditRequests } from "@/lib/admin/roles";
-import { getPendingEditRequests } from "@/lib/admin/pendingConfirmations";
+import { getPendingRequests } from "@/lib/admin/pendingConfirmations";
 import {
   approveDelete,
   grantEditAccess,
+  rejectDeleteRequest,
   rejectEditRequest,
 } from "@/lib/entries/lifecycle";
 import { logError, normalizeError } from "@/lib/errors";
@@ -35,7 +36,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const rows = await getPendingEditRequests();
+  const rows = await getPendingRequests();
   return NextResponse.json(rows, { status: 200 });
 }
 
@@ -58,7 +59,7 @@ export async function PATCH(request: Request) {
       ownerEmail?: string;
       categoryKey?: string;
       entryId?: string;
-      decision?: "grant" | "reject" | "approve_delete";
+      decision?: "grant" | "reject" | "reject_delete" | "approve_delete";
       reason?: string;
     };
     assertActionPayload(body, "admin request decision", SECURITY_LIMITS.actionPayloadMaxBytes);
@@ -77,13 +78,15 @@ export async function PATCH(request: Request) {
     if (!entryId) {
       return NextResponse.json({ error: "entryId required" }, { status: 400 });
     }
-    if (decision !== "grant" && decision !== "reject" && decision !== "approve_delete") {
-      return NextResponse.json({ error: "decision must be 'grant', 'reject', or 'approve_delete'" }, { status: 400 });
+    if (decision !== "grant" && decision !== "reject" && decision !== "reject_delete" && decision !== "approve_delete") {
+      return NextResponse.json({ error: "decision must be 'grant', 'reject', 'reject_delete', or 'approve_delete'" }, { status: 400 });
     }
 
     let updatedEntry;
     if (decision === "reject") {
       updatedEntry = await rejectEditRequest(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId, reason || undefined);
+    } else if (decision === "reject_delete") {
+      updatedEntry = await rejectDeleteRequest(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId);
     } else if (decision === "approve_delete") {
       updatedEntry = await approveDelete(adminEmail, categoryKey as CategoryKey, ownerEmail, entryId);
     } else {

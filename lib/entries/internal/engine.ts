@@ -51,6 +51,7 @@ export {
 export {
   grantEditAccess,
   rejectEditRequest,
+  rejectDeleteRequest,
   approveDelete,
   archiveEntry,
   restoreEntry,

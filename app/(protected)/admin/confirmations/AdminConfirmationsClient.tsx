@@ -15,7 +15,9 @@ type PendingConfirmationRow = {
   categoryKey: string;
   entryId: string;
   title: string;
-  sentForConfirmationAtISO: string | null;
+  editRequestedAtISO: string | null;
+  deleteRequestedAtISO: string | null;
+  editRequestMessage: string | null;
   createdAtISO?: string | null;
   updatedAtISO?: string | null;
   status: string;
@@ -41,6 +43,11 @@ function getRowKey(row: Pick<PendingConfirmationRow, "ownerEmail" | "categoryKey
 function getInitials(email: string) {
   const name = email.split("@")[0] ?? "";
   return name.slice(0, 2).toUpperCase();
+}
+
+function getRequestTimestamp(row: PendingConfirmationRow): string | null {
+  if (row.status === "DELETE_REQUESTED") return row.deleteRequestedAtISO ?? row.updatedAtISO ?? null;
+  return row.editRequestedAtISO ?? row.updatedAtISO ?? null;
 }
 
 export default function AdminConfirmationsClient() {
@@ -86,13 +93,10 @@ export default function AdminConfirmationsClient() {
     void loadQueue();
   }, [loadQueue]);
 
-  async function resolve(row: PendingConfirmationRow, decision: "approve" | "reject", reason?: string) {
+  async function resolve(row: PendingConfirmationRow, decision: "grant" | "reject" | "reject_delete" | "approve_delete", reason?: string) {
     const key = getRowKey(row);
     setBusyKey(key);
     setError(null);
-
-    // Map UI decision labels to API values
-    const apiDecision = decision === "approve" ? "grant" : "reject";
 
     const result = await safeAction(
       async () => {
@@ -103,13 +107,13 @@ export default function AdminConfirmationsClient() {
             ownerEmail: row.ownerEmail,
             categoryKey: row.categoryKey,
             entryId: row.entryId,
-            decision: apiDecision,
+            decision,
             ...(reason ? { reason } : {}),
           }),
         });
         const payload = (await response.json()) as { error?: string };
         if (!response.ok) {
-          throw new Error(payload?.error || `Failed to ${decision}.`);
+          throw new Error(payload?.error || `Failed to process request.`);
         }
       },
       {
@@ -156,7 +160,8 @@ export default function AdminConfirmationsClient() {
             {rows.map((row) => {
               const rowKey = getRowKey(row);
               const busy = busyKey === rowKey;
-              const relative = formatRelativeTime(row.sentForConfirmationAtISO);
+              const isDeleteRequest = row.status === "DELETE_REQUESTED";
+              const relative = formatRelativeTime(getRequestTimestamp(row));
 
               return (
                 <div
@@ -170,15 +175,27 @@ export default function AdminConfirmationsClient() {
                         {getInitials(row.ownerEmail)}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-slate-900 truncate">{row.title}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-slate-900 truncate">{row.title}</span>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            isDeleteRequest
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {isDeleteRequest ? "Delete Request" : "Edit Request"}
+                          </span>
+                        </div>
                         <div className="mt-0.5 text-xs text-slate-500">
                           <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium">{row.categoryKey}</span>
-                          <span className="mx-1.5">·</span>
+                          <span className="mx-1.5">&middot;</span>
                           <span className="truncate">{row.ownerEmail}</span>
                         </div>
                         {relative && (
                           <div className="mt-0.5 text-xs text-slate-500">Requested {relative}</div>
                         )}
+                        {!isDeleteRequest && row.editRequestMessage ? (
+                          <div className="mt-1 text-xs text-slate-600 italic">&ldquo;{row.editRequestMessage}&rdquo;</div>
+                        ) : null}
                       </div>
                     </div>
 
@@ -192,39 +209,79 @@ export default function AdminConfirmationsClient() {
                       >
                         View
                       </Link>
-                      <ActionButton
-                        role="context"
-                        onClick={() =>
-                          requestConfirmation({
-                            title: "Grant edit access?",
-                            description:
-                              "This will allow the user to edit and re-generate this entry.",
-                            confirmLabel: "Grant",
-                            cancelLabel: "Cancel",
-                            onConfirm: () => resolve(row, "approve"),
-                          })
-                        }
-                        disabled={busy}
-                      >
-                        {busy ? "Saving..." : "Grant"}
-                      </ActionButton>
-                      <ActionButton
-                        role="destructive"
-                        onClick={() =>
-                          requestConfirmation({
-                            title: "Reject edit request?",
-                            description:
-                              "This will deny the edit request and return the entry to its finalized state. The user will be notified.",
-                            confirmLabel: "Reject",
-                            cancelLabel: "Cancel",
-                            variant: "destructive",
-                            onConfirm: () => resolve(row, "reject"),
-                          })
-                        }
-                        disabled={busy}
-                      >
-                        Reject
-                      </ActionButton>
+                      {isDeleteRequest ? (
+                        <>
+                          <ActionButton
+                            role="destructive"
+                            onClick={() =>
+                              requestConfirmation({
+                                title: "Approve deletion?",
+                                description:
+                                  "This will permanently archive the entry. The user will no longer see it in their list.",
+                                confirmLabel: "Approve Delete",
+                                cancelLabel: "Cancel",
+                                variant: "destructive",
+                                onConfirm: () => resolve(row, "approve_delete"),
+                              })
+                            }
+                            disabled={busy}
+                          >
+                            {busy ? "Processing..." : "Approve Delete"}
+                          </ActionButton>
+                          <ActionButton
+                            role="context"
+                            onClick={() =>
+                              requestConfirmation({
+                                title: "Reject delete request?",
+                                description:
+                                  "This will deny the delete request and return the entry to its finalized state.",
+                                confirmLabel: "Reject",
+                                cancelLabel: "Cancel",
+                                onConfirm: () => resolve(row, "reject_delete"),
+                              })
+                            }
+                            disabled={busy}
+                          >
+                            Reject
+                          </ActionButton>
+                        </>
+                      ) : (
+                        <>
+                          <ActionButton
+                            role="context"
+                            onClick={() =>
+                              requestConfirmation({
+                                title: "Grant edit access?",
+                                description:
+                                  "This will allow the user to edit and re-generate this entry.",
+                                confirmLabel: "Grant",
+                                cancelLabel: "Cancel",
+                                onConfirm: () => resolve(row, "grant"),
+                              })
+                            }
+                            disabled={busy}
+                          >
+                            {busy ? "Saving..." : "Grant"}
+                          </ActionButton>
+                          <ActionButton
+                            role="destructive"
+                            onClick={() =>
+                              requestConfirmation({
+                                title: "Reject edit request?",
+                                description:
+                                  "This will deny the edit request and return the entry to its finalized state. The user will be notified.",
+                                confirmLabel: "Reject",
+                                cancelLabel: "Cancel",
+                                variant: "destructive",
+                                onConfirm: () => resolve(row, "reject"),
+                              })
+                            }
+                            disabled={busy}
+                          >
+                            Reject
+                          </ActionButton>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
