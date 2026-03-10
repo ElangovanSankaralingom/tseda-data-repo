@@ -9,13 +9,9 @@ import SelectDropdown from "@/components/controls/SelectDropdown";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { useUploadController } from "@/hooks/useUploadController";
-import {
-  cx,
-  uuid,
-  getInclusiveDays,
-  formatDisplayDate,
-  ACADEMIC_YEAR_DROPDOWN_OPTIONS,
-} from "@/components/data-entry/adapters/shared";
+import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
+import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
+import { uuid, cx } from "@/lib/utils/idHelpers";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,

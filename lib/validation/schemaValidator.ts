@@ -2,7 +2,8 @@ import { getCategorySchema } from "@/data/categoryRegistry";
 import type { SchemaFieldDefinition } from "@/data/schemas/types";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeYearOfStudy, isSemesterAllowed } from "@/lib/student-academic";
-import { ACADEMIC_YEAR_OPTIONS, getAcademicYearRange, isISODate } from "@/components/data-entry/adapters/shared";
+import { ACADEMIC_YEAR_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
+import { isISODate } from "@/lib/utils/dateHelpers";
 
 type ValidationErrors = Record<string, string>;
 

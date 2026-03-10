@@ -136,7 +136,8 @@ echo "  ✓ app/api/me/${SLUG}/route.ts"
 cat > "components/data-entry/adapters/${SLUG}.tsx" << ADAPTER
 "use client";
 
-import { uuid, ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/components/data-entry/adapters/shared";
+import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
+import { uuid } from "@/lib/utils/idHelpers";
 import BaseEntryAdapter from "@/components/data-entry/adapters/BaseEntryAdapter";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
