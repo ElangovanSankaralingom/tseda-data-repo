@@ -215,7 +215,7 @@ export function SmartGroupedEntrySections<TEntry>({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search entries..."
               aria-label="Search entries"
-              className="h-9 w-full rounded-xl bg-slate-100 pl-9 pr-8 text-sm text-slate-700 outline-none placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-300 transition-all"
+              className="h-9 w-full rounded-xl bg-slate-100 pl-9 pr-8 text-sm text-slate-700 outline-none placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-400 transition-all"
             />
             {searchQuery && (
               <button
