@@ -17,15 +17,17 @@ export type { EntryStatus } from "@/lib/types/entry";
  * or transition logic. Persistence lives in `lifecycle.ts` / `engine.ts`.
  */
 
+import { APP_CONFIG } from "@/lib/config/appConfig";
+
 // --- Edit window constants ---
 // These defaults can be overridden via app settings (lib/settings/consumer.ts).
 // Functions accept optional override parameters for async settings consumers.
 
 /** Default edit window: 3 days after generation. */
-export const DEFAULT_EDIT_WINDOW_DAYS = 3;
+export const DEFAULT_EDIT_WINDOW_DAYS = APP_CONFIG.entryLifecycle.defaultEditWindowDays;
 
 /** Streak-eligible entries get until endDate + 8 days. */
-export const STREAK_EDIT_WINDOW_BUFFER_DAYS = 8;
+export const STREAK_EDIT_WINDOW_BUFFER_DAYS = APP_CONFIG.entryLifecycle.streakEditWindowBufferDays;
 
 export type EntryTransitionAction =
   | "createEntry"
@@ -402,7 +404,7 @@ export function getEditTimeRemaining(entry: EntryStateLike, nowISO?: string): Ed
 
 // --- Request limit helpers ---
 
-const MAX_REQUESTS_PER_MONTH = 3;
+const MAX_REQUESTS_PER_MONTH = APP_CONFIG.entryLifecycle.maxRequestsPerMonth;
 
 export function canRequestAction(entry: EntryStateLike): boolean {
   const status = normalizeEntryStatus(entry);

@@ -17,11 +17,9 @@ const buckets = new Map<string, RateLimitBucket>();
 
 const BUCKET_TTL_MULTIPLIER = 5;
 
-export const RATE_LIMIT_PRESETS = {
-  entryMutations: { windowMs: 60_000, max: 30 },
-  uploadOps: { windowMs: 60_000, max: 20 },
-  adminOps: { windowMs: 60_000, max: 60 },
-} as const;
+import { APP_CONFIG } from "@/lib/config/appConfig";
+
+export const RATE_LIMIT_PRESETS = APP_CONFIG.rateLimits;
 
 function pruneBuckets(now: number, windowMs: number) {
   const ttlMs = windowMs * BUCKET_TTL_MULTIPLIER;

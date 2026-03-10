@@ -2,14 +2,9 @@ import "server-only";
 
 import { AppError } from "@/lib/errors";
 
-export const SECURITY_LIMITS = {
-  entryPayloadMaxBytes: 200 * 1024,
-  actionPayloadMaxBytes: 32 * 1024,
-  uploadMetadataMaxBytes: 32 * 1024,
-  entryMaxStringLength: 5_000,
-  uploadFieldMaxLength: 512,
-  maxAttachmentsPerEntry: 10,
-} as const;
+import { APP_CONFIG } from "@/lib/config/appConfig";
+
+export const SECURITY_LIMITS = APP_CONFIG.security;
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);

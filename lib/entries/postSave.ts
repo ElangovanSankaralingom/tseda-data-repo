@@ -11,6 +11,7 @@
  * Do NOT add new callers.
  */
 
+import { APP_CONFIG } from "@/lib/config/appConfig";
 import { nowISTDateISO } from "@/lib/time";
 
 /**
@@ -99,8 +100,8 @@ export function normalizeEntryStreakFields(
             : null) as string | null;
 
     if (baseISO) {
-      const DEFAULT_EDIT_WINDOW_DAYS = 3;
-      const STREAK_BUFFER_DAYS = 8;
+      const DEFAULT_EDIT_WINDOW_DAYS = APP_CONFIG.entryLifecycle.defaultEditWindowDays;
+      const STREAK_BUFFER_DAYS = APP_CONFIG.entryLifecycle.streakEditWindowBufferDays;
       const defaultExpiry = new Date(
         new Date(baseISO).getTime() + DEFAULT_EDIT_WINDOW_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();

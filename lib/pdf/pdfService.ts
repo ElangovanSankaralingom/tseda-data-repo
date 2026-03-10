@@ -8,6 +8,7 @@ import { AppError, normalizeError } from "@/lib/errors";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { commitDraft, updateEntry } from "@/lib/entries/lifecycle";
 import { computeEditWindowExpiry, normalizeEntryStatus } from "@/lib/entries/workflow";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { checkStreakEligibility } from "@/lib/streakProgress";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
@@ -50,7 +51,7 @@ function statusCodeFromError(error: AppError) {
 async function getAuthorizedTceEmail() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
-  if (!email.endsWith("@tce.edu")) {
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return null;
   }
   return email;

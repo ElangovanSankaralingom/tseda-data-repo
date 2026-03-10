@@ -5,6 +5,7 @@ import { CATEGORY_KEYS } from "@/lib/categories";
 import { ensureUserIndex } from "@/lib/data/indexStore";
 import { getEntryWorkflowStatus, listEntriesForCategory } from "@/lib/entries/lifecycle";
 import type { CategoryKey } from "@/lib/entries/types";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryDetail } from "@/lib/entryNavigation";
 import type { Entry, EntryStatus } from "@/lib/types/entry";
@@ -55,7 +56,7 @@ export async function getPendingEditRequests(): Promise<PendingConfirmationRow[]
     for (const userDir of userDirs) {
       if (!userDir.isDirectory()) continue;
       const ownerEmail = normalizeEmail(userDir.name);
-      if (!ownerEmail.endsWith("@tce.edu")) continue;
+      if (!ownerEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) continue;
 
       for (const categoryKey of CATEGORY_KEYS) {
         const list = await listEntriesForCategory(ownerEmail, categoryKey);
@@ -103,7 +104,7 @@ export async function getPendingEditRequestsCount() {
     for (const userDir of userDirs) {
       if (!userDir.isDirectory()) continue;
       const ownerEmail = normalizeEmail(userDir.name);
-      if (!ownerEmail.endsWith("@tce.edu")) continue;
+      if (!ownerEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) continue;
 
       const ensured = await ensureUserIndex(ownerEmail);
       if (ensured.ok) {

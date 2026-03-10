@@ -13,6 +13,7 @@ import {
 import { rebuildUserIndexFromWal } from "@/lib/data/recovery";
 import { AppError } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { migrateUserIndex } from "@/lib/migrations";
 import type { Result } from "@/lib/result";
@@ -56,7 +57,7 @@ export async function listUsers(): Promise<Result<string[]>> {
     const users = entries
       .filter((entry) => entry.isDirectory())
       .map((entry) => normalizeEmail(entry.name))
-      .filter((email) => email.endsWith("@tce.edu"))
+      .filter((email) => email.endsWith(ALLOWED_EMAIL_SUFFIX))
       .sort((left, right) => left.localeCompare(right));
     logger.info({
       event: "admin.integrity.users.list",
@@ -123,7 +124,7 @@ export async function repairUserCategoryStore(
 ): Promise<Result<RepairResult>> {
   return safeAction(async () => {
     const normalizedUserEmail = normalizeEmail(userEmail);
-    if (!normalizedUserEmail.endsWith("@tce.edu")) {
+    if (!normalizedUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid user email." });
     }
     if (!isCategoryKey(category)) {
@@ -138,7 +139,7 @@ export async function repairUserCategoryStore(
 export async function rebuildUserIndex(userEmail: string): Promise<Result<UserIndex>> {
   return safeAction(async () => {
     const normalizedUserEmail = normalizeEmail(userEmail);
-    if (!normalizedUserEmail.endsWith("@tce.edu")) {
+    if (!normalizedUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid user email." });
     }
     return withUserDataLock(normalizedUserEmail, async () => {
@@ -169,7 +170,7 @@ export async function migrateUserData(userEmail: string): Promise<Result<Migrati
   return safeAction(async () => {
     const startedAt = Date.now();
     const normalizedUserEmail = normalizeEmail(userEmail);
-    if (!normalizedUserEmail.endsWith("@tce.edu")) {
+    if (!normalizedUserEmail.endsWith(ALLOWED_EMAIL_SUFFIX)) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid user email." });
     }
     return withUserDataLock(normalizedUserEmail, async () => {

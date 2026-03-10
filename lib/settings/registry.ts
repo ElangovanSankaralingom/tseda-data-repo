@@ -1,3 +1,4 @@
+import { APP_CONFIG } from "@/lib/config/appConfig";
 import type { SettingDefinition, SettingCategory } from "@/lib/settings/schema";
 
 const SETTINGS: SettingDefinition[] = [
@@ -17,7 +18,7 @@ const SETTINGS: SettingDefinition[] = [
     description: "Shown on sign-in page and PDF exports",
     category: "general",
     type: "string",
-    default: "Thiagarajar College of Engineering",
+    default: APP_CONFIG.institution.name,
     group: "Branding",
   },
   {
@@ -26,7 +27,7 @@ const SETTINGS: SettingDefinition[] = [
     description: "Used in compact displays",
     category: "general",
     type: "string",
-    default: "TCE",
+    default: APP_CONFIG.institution.shortName,
     group: "Branding",
   },
   {
@@ -61,7 +62,7 @@ const SETTINGS: SettingDefinition[] = [
     description: "Only emails from this domain can sign in. Leave empty to allow all domains.",
     category: "auth",
     type: "string",
-    default: "tce.edu",
+    default: APP_CONFIG.institution.domain,
     group: "Access Control",
   },
   {
@@ -82,7 +83,7 @@ const SETTINGS: SettingDefinition[] = [
     description: "Days after Generate that non-streak entries remain editable",
     category: "entries",
     type: "number",
-    default: 3,
+    default: APP_CONFIG.entryLifecycle.defaultEditWindowDays,
     validation: { min: 1, max: 30 },
     group: "Edit Windows",
   },
@@ -92,7 +93,7 @@ const SETTINGS: SettingDefinition[] = [
     description: "Days after end date that streak entries remain editable",
     category: "entries",
     type: "number",
-    default: 8,
+    default: APP_CONFIG.entryLifecycle.streakEditWindowBufferDays,
     validation: { min: 1, max: 30 },
     group: "Edit Windows",
   },
