@@ -2,7 +2,6 @@
 
 import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
 import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
-import RequestEditAction from "@/components/entry/RequestEditAction";
 import { ActionButton } from "@/components/ui/ActionButton";
 import {
   canSendForConfirmation,
@@ -27,6 +26,7 @@ export default function CategoryEntryRecordCard({
   title,
   subtitle,
   metadata,
+  confirmationStatus,
   editTime,
   createdAt,
   updatedAt,
@@ -90,17 +90,17 @@ export default function CategoryEntryRecordCard({
               </>
             ) : null}
 
-            {/* EDIT_GRANTED (unlocked): Edit · Delete */}
+            {/* EDIT_GRANTED (unlocked): Continue · Cancel Edit */}
             {isUnlocked ? (
               <>
                 {onEdit ? (
                   <ActionButton role="primary" onClick={onEdit} className="!bg-purple-600 hover:!bg-purple-700">
-                    Edit
+                    Continue
                   </ActionButton>
                 ) : null}
-                {onDelete ? (
-                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                    {deleteLabel}
+                {requestEdit?.onCancel ? (
+                  <ActionButton role="ghost" onClick={requestEdit.onCancel} className="text-slate-500 hover:text-slate-700">
+                    Cancel Edit
                   </ActionButton>
                 ) : null}
               </>
@@ -132,19 +132,19 @@ export default function CategoryEntryRecordCard({
                 <button
                   type="button"
                   onClick={onView}
-                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-slate-100 px-3 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-slate-200 active:scale-[0.97]"
+                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 px-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-200 active:scale-[0.97]"
                 >
                   View
                 </button>
-                {requestEdit ? (
-                  <RequestEditAction
-                    locked={requestEdit.locked}
-                    status={requestEdit.status}
-                    requestedAtISO={requestEdit.requestedAtISO}
-                    requesting={requestEdit.requesting}
-                    onRequest={requestEdit.onRequest}
-                    onCancel={requestEdit.onCancel}
-                  />
+                {confirmationStatus === "EDIT_REQUESTED" && requestEdit?.onCancel ? (
+                  <ActionButton role="ghost" onClick={requestEdit.onCancel} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                    Cancel Edit Request
+                  </ActionButton>
+                ) : null}
+                {confirmationStatus === "DELETE_REQUESTED" && requestDelete?.onCancel ? (
+                  <ActionButton role="ghost" onClick={requestDelete.onCancel} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    Cancel Delete Request
+                  </ActionButton>
                 ) : null}
               </>
             ) : null}
