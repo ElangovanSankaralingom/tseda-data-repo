@@ -264,7 +264,17 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       updatedAt: new Date().toISOString(),
     }),
     persistProgress,
-    normalizePersistedEntry: (entry) => hydrateEntry(entry),
+    normalizePersistedEntry: (entry) => {
+      const hydrated = hydrateEntry(entry);
+      // After server normalization, recompute pdfSourceHash so it matches
+      // the hash of the server's normalized stage 1 fields.
+      // This prevents false "Document outdated" from server-side normalization.
+      if (hydrated.pdfMeta?.url && hydrated.pdfMeta?.storedPath) {
+        const serverHash = hashPrePdfFields(hydrated, category);
+        return { ...hydrated, pdfSourceHash: serverHash } as typeof hydrated;
+      }
+      return hydrated;
+    },
     persistRequestEdit: async (entry) => {
       const response = await fetch("/api/me/entry/confirmation", {
         method: "POST",

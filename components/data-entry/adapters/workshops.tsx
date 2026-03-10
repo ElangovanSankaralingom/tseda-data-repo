@@ -13,7 +13,7 @@ import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/util
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import { FACULTY } from "@/lib/facultyDirectory";
-import { hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
+import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -340,24 +340,18 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
                 }
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => {
-                      const next = { ...current, uploads: { ...current.uploads, [slot]: meta } };
-                      if (current.pdfSourceHash) {
-                        (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "workshops");
-                      }
-                      return next;
-                    },
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      uploads: { ...current.uploads, [slot]: meta },
+                    }),
                   });
                 }}
                 onDeleted={async () => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => {
-                      const next = { ...current, uploads: { ...current.uploads, [slot]: null } };
-                      if (current.pdfSourceHash) {
-                        (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "workshops");
-                      }
-                      return next;
-                    },
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      uploads: { ...current.uploads, [slot]: null },
+                    }),
                   });
                 }}
               />
@@ -368,35 +362,26 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
               value={form.uploads.geotaggedPhotos}
               onUploaded={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => {
-                    const next = {
-                      ...current,
-                      uploads: { ...current.uploads, geotaggedPhotos: [...current.uploads.geotaggedPhotos, meta] },
-                    };
-                    if (current.pdfSourceHash) {
-                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "workshops");
-                    }
-                    return next;
-                  },
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    uploads: {
+                      ...current.uploads,
+                      geotaggedPhotos: [...current.uploads.geotaggedPhotos, meta],
+                    },
+                  }),
                 });
               }}
               onDeleted={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => {
-                    const next = {
-                      ...current,
-                      uploads: {
-                        ...current.uploads,
-                        geotaggedPhotos: current.uploads.geotaggedPhotos.filter(
-                          (item) => item.storedPath !== meta.storedPath,
-                        ),
-                      },
-                    };
-                    if (current.pdfSourceHash) {
-                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "workshops");
-                    }
-                    return next;
-                  },
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    uploads: {
+                      ...current.uploads,
+                      geotaggedPhotos: current.uploads.geotaggedPhotos.filter(
+                        (item) => item.storedPath !== meta.storedPath,
+                      ),
+                    },
+                  }),
                 });
               }}
               uploadEndpoint="/api/me/workshops/file"
