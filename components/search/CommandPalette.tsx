@@ -384,7 +384,7 @@ export default function CommandPalette({
               aria-label="Search commands"
               className="h-full flex-1 bg-transparent text-lg outline-none placeholder:text-slate-500"
             />
-            <kbd className="hidden rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 sm:inline-block">
+            <kbd className="hidden rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 sm:inline-block">
               ESC
             </kbd>
           </div>

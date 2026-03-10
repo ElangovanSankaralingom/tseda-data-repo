@@ -58,7 +58,7 @@ const STRIP_STYLES: Record<string, StripConfig> = {
     bg: "bg-slate-50",
     border: "border-slate-200",
     text: "text-slate-500",
-    iconColor: "text-slate-400",
+    iconColor: "text-slate-500",
   },
   expiring_soon: {
     icon: AlertTriangle,
@@ -72,7 +72,7 @@ const STRIP_STYLES: Record<string, StripConfig> = {
     bg: "bg-slate-50",
     border: "border-slate-200",
     text: "text-slate-600",
-    iconColor: "text-slate-400",
+    iconColor: "text-slate-500",
   },
 };
 

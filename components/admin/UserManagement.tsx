@@ -449,7 +449,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
           {stats.activeUsers} active
         </span>
         {stats.inactiveUsers > 0 && (
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-500">
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
             {stats.inactiveUsers} inactive
           </span>
         )}

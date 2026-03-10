@@ -94,17 +94,17 @@ function CategoryHero({
               {stats.total} {stats.total === 1 ? "entry" : "entries"}
             </span>
             {stats.streakActive > 0 && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-sm text-amber-200">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-sm text-amber-300">
                 &#9889; {stats.streakActive} in progress
               </span>
             )}
             {stats.drafts > 0 && (
-              <span className="rounded-full bg-amber-500/20 px-3 py-1 text-sm text-amber-200">
+              <span className="rounded-full bg-amber-500/20 px-3 py-1 text-sm text-amber-300">
                 {stats.drafts} {stats.drafts === 1 ? "draft" : "drafts"}
               </span>
             )}
             {stats.pending > 0 && (
-              <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm text-blue-200">
+              <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm text-blue-300">
                 {stats.pending} pending
               </span>
             )}
