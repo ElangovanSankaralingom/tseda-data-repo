@@ -1,0 +1,186 @@
+## Task Type
+FEATURE
+
+## Priority
+HIGH (needed for expansion)
+
+## Context
+When expanding the app with new categories, the process should be:
+1. Add schema in data/schemas/newcategory.ts
+2. Register in data/categoryRegistry.ts
+3. Add thin route wrapper
+4. Add thin adapter wrapper
+5. Everything else auto-derives
+
+Currently steps 3 and 4 require understanding the architecture. This prompt creates a documented template + verification script so adding a category is mechanical.
+
+## Read First
+1. data/categoryRegistry.ts (how categories are registered)
+2. data/schemas/types.ts (schema contract)
+3. data/schemas/fdp-attended.ts (example schema)
+4. app/api/me/fdp-attended/route.ts (thin route wrapper)
+5. components/data-entry/adapters/fdp-attended.tsx (adapter)
+6. ARCHITECTURE.md (how to add a category section)
+
+## The Implementation
+
+### Step 1: Create category scaffold script
+
+Create `scripts/add-category.sh`:
+
+```bash
+#!/bin/bash
+# Usage: ./scripts/add-category.sh <category-slug> <display-label>
+# Example: ./scripts/add-category.sh journal-papers "Journal Papers"
+
+SLUG=$1
+LABEL=$2
+
+if [ -z "$SLUG" ] || [ -z "$LABEL" ]; then
+  echo "Usage: ./scripts/add-category.sh <slug> <label>"
+  echo "Example: ./scripts/add-category.sh journal-papers 'Journal Papers'"
+  exit 1
+fi
+
+SLUG_UNDER=$(echo "$SLUG" | tr '-' '_')
+
+echo "Creating category: $SLUG ($LABEL)"
+
+# 1. Create schema
+cat > "data/schemas/${SLUG}.ts" << SCHEMA
+import type { EntrySchema } from './types';
+
+export const ${SLUG_UNDER}Schema: EntrySchema = {
+  key: '${SLUG}',
+  label: '${LABEL}',
+  fields: [
+    // Stage 1 (data fields — affect PDF hash)
+    { name: 'academicYear', label: 'Academic Year', kind: 'select', required: true, requiredForCommit: true, stage: 1, options: [] },
+    { name: 'title', label: 'Title', kind: 'text', required: true, requiredForCommit: true, stage: 1 },
+    { name: 'startDate', label: 'Start Date', kind: 'date', required: true, requiredForCommit: true, stage: 1 },
+    { name: 'endDate', label: 'End Date', kind: 'date', required: true, requiredForCommit: true, stage: 1 },
+    // ADD YOUR FIELDS HERE
+
+    // Stage 2 (uploads — do NOT affect PDF hash)
+    { name: 'supportingDocument', label: 'Supporting Document', kind: 'file', required: false, stage: 2 },
+  ],
+};
+SCHEMA
+
+# 2. Create API route
+mkdir -p "app/api/me/${SLUG}"
+cat > "app/api/me/${SLUG}/route.ts" << ROUTE
+import { type NextRequest } from "next/server";
+import { handleCategoryGet, handleCategoryPost, handleCategoryPatch, handleCategoryDelete } from "@/lib/api/categoryRouteHandler";
+const CATEGORY = "${SLUG}" as const;
+export async function GET(req: NextRequest) { return handleCategoryGet(req, CATEGORY); }
+export async function POST(req: NextRequest) { return handleCategoryPost(req, CATEGORY); }
+export async function PATCH(req: NextRequest) { return handleCategoryPatch(req, CATEGORY); }
+export async function DELETE(req: NextRequest) { return handleCategoryDelete(req, CATEGORY); }
+ROUTE
+
+# 3. Create adapter
+cat > "components/data-entry/adapters/${SLUG}.tsx" << ADAPTER
+import BaseEntryAdapter from "./BaseEntryAdapter";
+import type { CategoryAdapterPageProps } from "./types";
+
+export default function ${SLUG_UNDER}Adapter(props: CategoryAdapterPageProps) {
+  return <BaseEntryAdapter category="${SLUG}" {...props} />;
+}
+ADAPTER
+
+# 4. Create pages
+mkdir -p "app/(protected)/data-entry/${SLUG}/[id]"
+mkdir -p "app/(protected)/data-entry/${SLUG}/new"
+
+cat > "app/(protected)/data-entry/${SLUG}/page.tsx" << PAGE
+import { CategoryListPage } from "@/components/data-entry/CategoryListPage";
+export default function Page() { return <CategoryListPage category="${SLUG}" />; }
+PAGE
+
+cat > "app/(protected)/data-entry/${SLUG}/[id]/page.tsx" << PAGE
+import { CategoryEntryPage } from "@/components/data-entry/CategoryEntryPage";
+export default function Page({ params }: { params: { id: string } }) {
+  return <CategoryEntryPage category="${SLUG}" entryId={params.id} />;
+}
+PAGE
+
+cat > "app/(protected)/data-entry/${SLUG}/new/page.tsx" << PAGE
+import { CategoryEntryPage } from "@/components/data-entry/CategoryEntryPage";
+export default function Page() { return <CategoryEntryPage category="${SLUG}" isNew />; }
+PAGE
+
+echo ""
+echo "✅ Scaffolded: $SLUG"
+echo ""
+echo "MANUAL STEPS REMAINING:"
+echo "1. Edit data/schemas/${SLUG}.ts — add your fields"
+echo "2. Register in data/categoryRegistry.ts — add to CATEGORY_LIST"
+echo "3. Add '${SLUG}' to CategoryKey type in lib/types/category.ts (or lib/entries/types.ts)"
+echo "4. npm run build — verify"
+echo "5. Test: create entry, fill fields, generate, finalise"
+```
+
+### Step 2: Create verification script
+
+Create `scripts/verify-categories.sh`:
+```bash
+#!/bin/bash
+# Verify all categories are properly wired
+
+echo "=== Registered categories ==="
+grep -n "key:" data/schemas/*.ts | grep -v types.ts
+
+echo ""
+echo "=== Routes exist ==="
+for cat in fdp-attended fdp-conducted guest-lectures case-studies workshops; do
+  if [ -f "app/api/me/$cat/route.ts" ]; then
+    echo "✅ $cat"
+  else
+    echo "❌ MISSING: $cat"
+  fi
+done
+
+echo ""
+echo "=== Adapters exist ==="
+for cat in fdp-attended fdp-conducted guest-lectures case-studies workshops; do
+  if [ -f "components/data-entry/adapters/$cat.tsx" ]; then
+    echo "✅ $cat"
+  else
+    echo "❌ MISSING: $cat"
+  fi
+done
+
+echo ""
+echo "=== Schemas use stage annotations ==="
+grep -c "stage:" data/schemas/*.ts | grep -v ":0"
+
+echo ""
+echo "=== Validation is schema-driven ==="
+grep -l "schemaValidator\|validateEntryFields" components/data-entry/adapters/*.tsx
+```
+
+### Step 3: Update ARCHITECTURE.md
+
+Add a "How to Add a New Category" section that references the script:
+```markdown
+## Adding a New Category
+1. Run: `./scripts/add-category.sh <slug> "<Label>"`
+2. Edit the generated schema to add your fields
+3. Register in categoryRegistry.ts
+4. Add to CategoryKey type
+5. npm run build
+6. Verify: ./scripts/verify-categories.sh
+```
+
+## Scope
+- CREATE: scripts/add-category.sh
+- CREATE: scripts/verify-categories.sh
+- MODIFY: ARCHITECTURE.md (update "add category" section)
+- DO NOT MODIFY: any source files
+
+## Verification
+1. chmod +x scripts/add-category.sh scripts/verify-categories.sh
+2. ./scripts/verify-categories.sh — all existing categories show ✅
+3. Test: ./scripts/add-category.sh test-category "Test Category" — creates all files
+4. Clean up: rm -rf data/schemas/test-category.ts app/api/me/test-category components/data-entry/adapters/test-category.tsx app/(protected)/data-entry/test-category

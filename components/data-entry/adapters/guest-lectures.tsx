@@ -12,12 +12,10 @@ import EntryUploader from "@/components/upload/EntryUploader";
 import {
   cx,
   uuid,
-  isISODate,
   getAcademicYearRange,
   getInclusiveDays,
   formatDisplayDate,
   formatFacultyDisplay,
-  ACADEMIC_YEAR_OPTIONS,
   ACADEMIC_YEAR_DROPDOWN_OPTIONS,
 } from "@/components/data-entry/adapters/shared";
 import { FACULTY } from "@/lib/facultyDirectory";
@@ -32,6 +30,7 @@ import {
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { FileMeta } from "@/lib/types/entry";
 import type { GuestLectureEntry, UploadStatus } from "@/components/data-entry/adapters/adapterTypes";
+import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 type UploadSlot =
   | "permissionLetter"
@@ -102,43 +101,14 @@ function hydrateEntry(entry: GuestLectureEntry): GuestLectureEntry {
 }
 
 function validateFields(form: GuestLectureEntry): Record<string, string> {
-  const errors: Record<string, string> = {};
+  const errors = validateEntryFields("guest-lectures", form as unknown as Record<string, unknown>);
 
-  if (!ACADEMIC_YEAR_OPTIONS.includes(form.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
-    errors.academicYear = "Academic year is required.";
-  }
-
-  if (!isISODate(form.startDate)) {
-    errors.startDate = "Starting date is required.";
-  } else {
-    const academicYearRange = getAcademicYearRange(form.academicYear);
-    if (academicYearRange && (form.startDate < academicYearRange.start || form.startDate > academicYearRange.end)) {
-      errors.startDate = `Starting date must fall within ${form.academicYear} (${academicYearRange.label}).`;
-    }
-  }
-
-  if (!isISODate(form.endDate)) {
-    errors.endDate = "Ending date is required.";
-  } else if (isISODate(form.startDate) && form.endDate < form.startDate) {
-    errors.endDate = "Ending date must be on or after starting date.";
-  }
-
-  if (!form.eventName.trim()) {
-    errors.eventName = "Event name is required.";
-  }
-
-  if (!form.speakerName.trim()) {
-    errors.speakerName = "Speaker name is required.";
-  }
-
-  if (!form.organizationName.trim()) {
-    errors.organizationName = "Organization name is required.";
-  }
-
+  // Category-specific: empty co-coordinator rows
   if (form.coCoordinators.some((value) => value.name.trim().length === 0)) {
     errors.coCoordinators = "Remove empty co-coordinator rows or fill them in.";
   }
 
+  // Category-specific: duplicate co-coordinator emails
   const emailCounts = new Map<string, number>();
   [form.coordinator.email, ...form.coCoordinators.map((value) => value.email)]
     .map((value) => value.trim().toLowerCase())
@@ -146,7 +116,6 @@ function validateFields(form: GuestLectureEntry): Record<string, string> {
     .forEach((value) => {
       emailCounts.set(value, (emailCounts.get(value) ?? 0) + 1);
     });
-
   form.coCoordinators.forEach((value, index) => {
     if (!value.email) {
       errors[`coCoordinators.${index}`] = "Select a faculty member from the list.";
@@ -157,18 +126,8 @@ function validateFields(form: GuestLectureEntry): Record<string, string> {
     }
   });
 
-  const normalizedYear = normalizeYearOfStudy(form.yearOfStudy);
-  if (!normalizedYear) {
-    errors.yearOfStudy = "Year of study is required.";
-  }
-
-  if (normalizedYear && !isSemesterAllowed(normalizedYear, form.currentSemester ?? undefined)) {
-    errors.currentSemester = "Current semester is required.";
-  }
-
-  if (form.participants === null) {
-    errors.participants = "Number of participants is required.";
-  } else if (!Number.isFinite(form.participants) || form.participants <= 0) {
+  // Category-specific: participants must be > 0
+  if (form.participants !== null && (!Number.isFinite(form.participants) || form.participants <= 0)) {
     errors.participants = "Participants must be greater than 0.";
   }
 

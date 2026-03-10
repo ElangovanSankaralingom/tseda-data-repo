@@ -1,0 +1,84 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+`engineHelpers.ts` still imports `normalizeEntryStreakFields` from `postSave.ts` and calls it in `prepareEntryForWrite`. This means there are TWO places that set streak/lifecycle fields: the engine's transition logic (workflow.ts via transitionEntry) AND the postSave normalization. If streak logic changes, both must be updated.
+
+The fix: absorb what postSave does into the engine's transition functions so there's exactly ONE place that sets these fields.
+
+## Read First
+1. lib/entries/postSave.ts (normalizeEntryStreakFields — see exactly what it does)
+2. lib/entries/internal/engineHelpers.ts (line that calls normalizeEntryStreakFields)
+3. lib/entries/workflow.ts (transitionEntry — what it already sets)
+4. lib/entries/internal/engineTransitions.ts (where transitions happen)
+
+## The Fix
+
+### Step 1: Read what postSave normalizes
+
+```bash
+cat lib/entries/postSave.ts
+```
+
+It likely does things like:
+- Set pdfGenerated = true if pdfGeneratedAt exists (backfill)
+- Set editWindowExpiresAt if missing but entry is GENERATED
+- Normalize streakEligible based on endDate
+- Other field backfills
+
+### Step 2: Move each normalization into the appropriate engine function
+
+For each thing postSave does:
+
+**"Set pdfGenerated if pdfGeneratedAt exists"**
+→ This should happen in engineTransitions.ts `generateEntry` — when we set pdfGeneratedAt, also set pdfGenerated = true. Already done? Verify.
+
+**"Set editWindowExpiresAt if missing"**
+→ This should happen in workflow.ts `transitionEntry` when transitioning to GENERATED. Already done? Verify.
+
+**"Normalize streakEligible"**
+→ This should happen in engineTransitions.ts `generateEntry` — check endDate at generation time, set streakEligible. Already done? Verify.
+
+### Step 3: Remove postSave call from engineHelpers
+
+In `lib/entries/internal/engineHelpers.ts`:
+- Remove the import of `normalizeEntryStreakFields`
+- Remove the call to `normalizeEntryStreakFields(normalized)` in `prepareEntryForWrite`
+- The engine transition functions now handle all field normalization
+
+### Step 4: Verify no other callers of postSave remain
+
+```bash
+grep -rn "normalizeEntryStreakFields\|from.*postSave" lib/ app/ hooks/ components/ --include="*.ts" --include="*.tsx"
+```
+
+Should show ZERO hits (or only the deprecated postSave.ts itself and the migration script).
+
+### Step 5: Add deprecation notice to postSave.ts (if not already there)
+
+```typescript
+/**
+ * @deprecated As of Phase 3+F2, all normalization happens in engine transitions.
+ * This module is kept only for the one-time migration script in scripts/.
+ * Do NOT add new callers. Will be deleted after migration is confirmed stable.
+ */
+```
+
+## Scope
+- MODIFY: lib/entries/internal/engineHelpers.ts (remove postSave import and call)
+- MODIFY: lib/entries/internal/engineTransitions.ts (verify all normalizations exist)
+- MODIFY: lib/entries/postSave.ts (add deprecation notice if not present)
+- DO NOT MODIFY: workflow.ts, routes, adapters
+
+## Verification
+1. npm run build — passes
+2. grep -rn "from.*postSave" lib/entries/internal/ — ZERO hits
+3. Create entry → generate → check .data file:
+   - pdfGenerated: true (not MISSING)
+   - editWindowExpiresAt: future date (not MISSING)
+   - streakEligible: true (if endDate is future)
+   - committedAtISO: timestamp (not MISSING)
+4. Dashboard streak counts still correct
