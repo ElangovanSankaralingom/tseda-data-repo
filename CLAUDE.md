@@ -127,10 +127,13 @@ User-facing routes under `app/api/me/<category>/` using canonical lifecycle oper
 
 ### Adding a New Category
 
-Run `./scripts/add-category.sh <slug> "<Label>"` to scaffold all files, then:
+Run `./scripts/add-category.sh <slug> "<Label>"` to scaffold schema, API route, and adapter, then:
 
 1. Edit schema in `data/schemas/<category>.ts` — add fields
 2. Register in `data/categoryRegistry.ts` — add to `CATEGORY_SLUGS` + registry
-3. Flesh out adapter in `components/data-entry/adapters/<category>.tsx`
-4. `npm run build` and `./scripts/verify-categories.sh`
-5. Add tests
+3. Add adapter to `components/data-entry/CategoryPageRouter.tsx` — import + add to `ADAPTER_MAP`
+4. Flesh out adapter in `components/data-entry/adapters/<category>.tsx`
+5. `npm run build` and `./scripts/verify-categories.sh`
+6. Add tests
+
+Pages are handled by the dynamic `[category]` route — no per-category page files needed.
