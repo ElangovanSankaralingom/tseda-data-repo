@@ -15,7 +15,7 @@ import { isISODate, getInclusiveDays, formatDisplayDate } from "@/lib/utils/date
 import { cx, uuid } from "@/lib/utils/idHelpers";
 import { FACULTY } from "@/lib/facultyDirectory";
 import { nowISTTimestampISO } from "@/lib/time";
-import { hashPrePdfFields, hydratePdfSnapshot } from "@/lib/pdfSnapshot";
+import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -460,24 +460,12 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
                 }
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => {
-                      const next = { ...current, [slot]: meta };
-                      if (current.pdfSourceHash) {
-                        (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "case-studies");
-                      }
-                      return next;
-                    },
+                    buildNextEntry: (current) => ({ ...current, [slot]: meta }),
                   });
                 }}
                 onDeleted={async () => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => {
-                      const next = { ...current, [slot]: null };
-                      if (current.pdfSourceHash) {
-                        (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "case-studies");
-                      }
-                      return next;
-                    },
+                    buildNextEntry: (current) => ({ ...current, [slot]: null }),
                   });
                 }}
               />
@@ -488,29 +476,20 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
               value={form.geotaggedPhotos}
               onUploaded={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => {
-                    const next = { ...current, geotaggedPhotos: [...current.geotaggedPhotos, meta] };
-                    if (current.pdfSourceHash) {
-                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "case-studies");
-                    }
-                    return next;
-                  },
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    geotaggedPhotos: [...current.geotaggedPhotos, meta],
+                  }),
                 });
               }}
               onDeleted={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => {
-                    const next = {
-                      ...current,
-                      geotaggedPhotos: current.geotaggedPhotos.filter(
-                        (item) => item.storedPath !== meta.storedPath,
-                      ),
-                    };
-                    if (current.pdfSourceHash) {
-                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "case-studies");
-                    }
-                    return next;
-                  },
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    geotaggedPhotos: current.geotaggedPhotos.filter(
+                      (item) => item.storedPath !== meta.storedPath,
+                    ),
+                  }),
                 });
               }}
               uploadEndpoint="/api/me/case-studies/file"

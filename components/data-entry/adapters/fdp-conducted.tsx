@@ -23,7 +23,6 @@ import {
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import { uploadFile } from "@/lib/upload/uploadService";
 import type { FdpConducted } from "@/components/data-entry/adapters/adapterTypes";
-import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 // ---------------------------------------------------------------------------
@@ -158,13 +157,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
       setUploadPersistingCount((c) => c + 1);
       try {
         await persistCurrentMutation({
-          buildNextEntry: (current) => {
-            const next = { ...current, permissionLetter: meta };
-            if (current.pdfSourceHash) {
-              (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "fdp-conducted");
-            }
-            return next;
-          },
+          buildNextEntry: (current) => ({ ...current, permissionLetter: meta }),
         });
       } finally {
         setUploadPersistingCount((c) => Math.max(0, c - 1));
@@ -183,13 +176,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
       setUploadPersistingCount((c) => c + 1);
       try {
         await persistCurrentMutation({
-          buildNextEntry: (current) => {
-            const next = { ...current, permissionLetter: null };
-            if (current.pdfSourceHash) {
-              (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "fdp-conducted");
-            }
-            return next;
-          },
+          buildNextEntry: (current) => ({ ...current, permissionLetter: null }),
         });
       } finally {
         setUploadPersistingCount((c) => Math.max(0, c - 1));
@@ -345,29 +332,20 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
               value={form.geotaggedPhotos}
               onUploaded={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => {
-                    const next = { ...current, geotaggedPhotos: [...current.geotaggedPhotos, meta] };
-                    if (current.pdfSourceHash) {
-                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "fdp-conducted");
-                    }
-                    return next;
-                  },
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    geotaggedPhotos: [...current.geotaggedPhotos, meta],
+                  }),
                 });
               }}
               onDeleted={async (meta) => {
                 await persistCurrentMutation({
-                  buildNextEntry: (current) => {
-                    const next = {
-                      ...current,
-                      geotaggedPhotos: current.geotaggedPhotos.filter(
-                        (item) => item.storedPath !== meta.storedPath
-                      ),
-                    };
-                    if (current.pdfSourceHash) {
-                      (next as Record<string, unknown>).pdfSourceHash = hashPrePdfFields(next, "fdp-conducted");
-                    }
-                    return next;
-                  },
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    geotaggedPhotos: current.geotaggedPhotos.filter(
+                      (item) => item.storedPath !== meta.storedPath
+                    ),
+                  }),
                 });
               }}
               uploadEndpoint="/api/me/fdp-conducted/file"
