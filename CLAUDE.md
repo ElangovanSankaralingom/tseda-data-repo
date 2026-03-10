@@ -127,9 +127,10 @@ User-facing routes under `app/api/me/<category>/` using canonical lifecycle oper
 
 ### Adding a New Category
 
-1. Create schema in `data/schemas/<category>.ts` implementing `EntrySchema`
-2. Register in `data/categoryRegistry.ts`
-3. Add page at `app/(protected)/data-entry/<category>/page.tsx` (use shared shells)
-4. Add API route(s) under `app/api/me/<category>/`
-5. Add adapter in `components/data-entry/adapters/<category>.tsx`
-6. Add tests
+Run `./scripts/add-category.sh <slug> "<Label>"` to scaffold all files, then:
+
+1. Edit schema in `data/schemas/<category>.ts` — add fields
+2. Register in `data/categoryRegistry.ts` — add to `CATEGORY_SLUGS` + registry
+3. Flesh out adapter in `components/data-entry/adapters/<category>.tsx`
+4. `npm run build` and `./scripts/verify-categories.sh`
+5. Add tests
