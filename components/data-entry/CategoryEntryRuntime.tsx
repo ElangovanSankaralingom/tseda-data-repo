@@ -18,6 +18,7 @@ type CategoryEntryRuntimeProps = {
   confirmationDialog?: React.ReactNode;
   onRequestEdit?: () => void;
   onCancelRequestEdit?: () => void;
+  onCancelRequestDelete?: () => void;
 };
 
 export default function CategoryEntryRuntime({
@@ -32,6 +33,7 @@ export default function CategoryEntryRuntime({
   confirmationDialog,
   onRequestEdit,
   onCancelRequestEdit,
+  onCancelRequestDelete,
 }: CategoryEntryRuntimeProps) {
   return (
     <ErrorBoundary section="Entry editor">
@@ -51,6 +53,7 @@ export default function CategoryEntryRuntime({
       addEntryLabel={headerActions.addLabel}
       onRequestEdit={onRequestEdit}
       onCancelRequestEdit={onCancelRequestEdit}
+      onCancelRequestDelete={onCancelRequestDelete}
     />
     </ErrorBoundary>
   );

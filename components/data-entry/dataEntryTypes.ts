@@ -181,6 +181,7 @@ export type EditorStatusBannersProps = {
   hasPdf?: boolean;
   permanentlyLocked?: boolean;
   onCancelRequest?: () => void;
+  onCancelRequestDelete?: () => void;
 };
 
 // --- Props from CategoryEntryRecordCard.tsx ---

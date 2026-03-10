@@ -1,53 +1,106 @@
 "use client";
 
-import { AlertTriangle, Clock, Lock, Unlock } from "lucide-react";
-import { type BannerVariant } from "@/lib/types/ui";
+import { AlertTriangle, Archive, Clock, Lock, Shield, Unlock } from "lucide-react";
 import { type EditorStatusBannersProps } from "./dataEntryTypes";
 
-const BANNER_STYLES: Record<BannerVariant, { bg: string; border: string; iconColor: string }> = {
-  finalized: { bg: "bg-slate-50", border: "border-slate-200", iconColor: "text-slate-500" },
-  edit_requested: { bg: "bg-amber-50", border: "border-amber-200", iconColor: "text-amber-500" },
-  edit_granted: { bg: "bg-purple-50", border: "border-purple-200", iconColor: "text-purple-500" },
-  expiring_soon: { bg: "bg-red-50", border: "border-red-200", iconColor: "text-red-500" },
+/**
+ * EntryStatusStrip — compact single-line status indicator.
+ * Replaces the previous multi-line EditorStatusBanners.
+ * Height: ~40px, full width, rounded-lg.
+ */
+
+type StripConfig = {
+  icon: React.ElementType;
+  bg: string;
+  border: string;
+  text: string;
+  iconColor: string;
 };
 
-const BANNER_ICONS: Record<BannerVariant, React.ElementType> = {
-  finalized: Lock,
-  edit_requested: Clock,
-  edit_granted: Unlock,
-  expiring_soon: AlertTriangle,
+const STRIP_STYLES: Record<string, StripConfig> = {
+  finalized: {
+    icon: Lock,
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    text: "text-emerald-700",
+    iconColor: "text-emerald-500",
+  },
+  editable: {
+    icon: Clock,
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    text: "text-blue-700",
+    iconColor: "text-blue-500",
+  },
+  edit_requested: {
+    icon: Clock,
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    text: "text-amber-700",
+    iconColor: "text-amber-500",
+  },
+  edit_granted: {
+    icon: Unlock,
+    bg: "bg-purple-50",
+    border: "border-purple-200",
+    text: "text-purple-700",
+    iconColor: "text-purple-500",
+  },
+  delete_requested: {
+    icon: AlertTriangle,
+    bg: "bg-red-50",
+    border: "border-red-200",
+    text: "text-red-700",
+    iconColor: "text-red-500",
+  },
+  archived: {
+    icon: Archive,
+    bg: "bg-slate-50",
+    border: "border-slate-200",
+    text: "text-slate-500",
+    iconColor: "text-slate-400",
+  },
+  expiring_soon: {
+    icon: AlertTriangle,
+    bg: "bg-red-50",
+    border: "border-red-200",
+    text: "text-red-700",
+    iconColor: "text-red-500",
+  },
+  permanently_locked: {
+    icon: Shield,
+    bg: "bg-slate-50",
+    border: "border-slate-200",
+    text: "text-slate-600",
+    iconColor: "text-slate-400",
+  },
 };
 
-export default function EditorStatusBanner({
+function StatusStrip({
   variant,
   message,
   actionLabel,
   onAction,
 }: {
-  variant: BannerVariant;
+  variant: string;
   message: string;
   actionLabel?: string;
   onAction?: () => void;
 }) {
-  const style = BANNER_STYLES[variant];
-  const Icon = BANNER_ICONS[variant];
-  const isUrgent = variant === "expiring_soon";
+  const style = STRIP_STYLES[variant] ?? STRIP_STYLES.finalized;
+  const Icon = style.icon;
 
   return (
     <div
-      className={`${style.bg} border ${style.border} rounded-xl p-4 flex items-center gap-3 animate-fade-in-up`}
+      className={`${style.bg} border ${style.border} rounded-lg px-4 py-2 flex items-center gap-2.5 animate-fade-in`}
     >
-      <Icon
-        className={`size-5 shrink-0 ${style.iconColor} ${
-          isUrgent ? "animate-subtle-pulse" : variant === "edit_requested" ? "animate-subtle-pulse" : ""
-        }`}
-      />
-      <span className="flex-1 text-sm text-slate-700">{message}</span>
+      <Icon className={`size-4 shrink-0 ${style.iconColor}`} />
+      <span className={`flex-1 text-sm ${style.text}`}>{message}</span>
       {actionLabel && onAction ? (
         <button
           type="button"
           onClick={onAction}
-          className="shrink-0 text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors"
+          className={`shrink-0 text-sm font-medium ${style.text} opacity-80 hover:opacity-100 transition-opacity`}
         >
           {actionLabel}
         </button>
@@ -56,10 +109,26 @@ export default function EditorStatusBanner({
   );
 }
 
-function getEditTimeUrgencyClass(remainingMs: number): string {
-  if (remainingMs < 24 * 60 * 60 * 1000) return "text-red-600 font-semibold";
-  if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-600";
-  return "text-slate-500";
+// Keep the old default export name for backwards compat with imports
+export default function EditorStatusBanner({
+  variant,
+  message,
+  actionLabel,
+  onAction,
+}: {
+  variant: string;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <StatusStrip
+      variant={variant}
+      message={message}
+      actionLabel={actionLabel}
+      onAction={onAction}
+    />
+  );
 }
 
 export function EditorStatusBanners({
@@ -70,70 +139,83 @@ export function EditorStatusBanners({
   hasPdf,
   permanentlyLocked = false,
   onCancelRequest,
+  onCancelRequestDelete,
 }: EditorStatusBannersProps) {
+  // Expiring soon — urgent
   const isExpiringSoon = editTimeMs !== undefined && editTimeMs > 0 && editTimeMs < 24 * 60 * 60 * 1000;
-
-  // Expiring soon takes priority
   if (isExpiringSoon && editTimeLabel) {
     return (
-      <EditorStatusBanner
+      <StatusStrip
         variant="expiring_soon"
-        message={`Edit window closes in ${editTimeLabel} — save your changes!`}
+        message={`Edit window closes in ${editTimeLabel} — save your changes`}
       />
     );
   }
 
   if (status === "EDIT_GRANTED") {
     return (
-      <EditorStatusBanner
+      <StatusStrip
         variant="edit_granted"
-        message={editTimeLabel ? `🔓 Edit access expires in ${editTimeLabel}` : "🔓 Edit access granted"}
+        message={editTimeLabel ? `Edit access granted · Expires in ${editTimeLabel}` : "Edit access granted"}
       />
     );
   }
 
   if (status === "EDIT_REQUESTED") {
     return (
-      <EditorStatusBanner
+      <StatusStrip
         variant="edit_requested"
-        message="Edit request pending — waiting for admin approval"
+        message="Edit request pending · Waiting for admin approval"
         actionLabel="Cancel Request"
         onAction={onCancelRequest}
       />
     );
   }
 
-  if (!isEditable && status === "GENERATED") {
+  if (status === "DELETE_REQUESTED") {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-5 animate-fade-in-up">
-        <div className="flex items-start gap-4">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
-            <Lock className="size-5 text-emerald-600" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-emerald-900">Entry Finalised</h3>
-            <p className="text-sm text-emerald-700">
-              This entry is now locked and read-only.{hasPdf ? " You can still preview and download the generated document below." : ""}
-            </p>
-            <p className="mt-2 text-xs text-emerald-600/70">
-              {permanentlyLocked
-                ? "This entry is permanently locked and cannot be modified."
-                : "Need to make changes? Use Request Action above to request edit or delete access from your admin."}
-            </p>
-          </div>
-        </div>
-      </div>
+      <StatusStrip
+        variant="delete_requested"
+        message="Delete request pending · Waiting for admin approval"
+        actionLabel="Cancel Request"
+        onAction={onCancelRequestDelete ?? onCancelRequest}
+      />
+    );
+  }
+
+  if (status === "ARCHIVED") {
+    return (
+      <StatusStrip
+        variant="archived"
+        message="This entry has been archived"
+      />
+    );
+  }
+
+  if (!isEditable && status === "GENERATED") {
+    if (permanentlyLocked) {
+      return (
+        <StatusStrip
+          variant="permanently_locked"
+          message="Entry finalised · Permanently locked"
+        />
+      );
+    }
+    return (
+      <StatusStrip
+        variant="finalized"
+        message={`Entry finalised · Read-only${hasPdf ? " · Document available below" : ""}`}
+      />
     );
   }
 
   // Editable GENERATED entry with edit window — show countdown
-  if (isEditable && status === "GENERATED" && editTimeLabel && editTimeMs !== undefined) {
-    const urgencyClass = getEditTimeUrgencyClass(editTimeMs);
+  if (isEditable && status === "GENERATED" && editTimeLabel) {
     return (
-      <div className={`flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm ${urgencyClass} animate-fade-in`}>
-        <span>⏱️</span>
-        <span>Entry finalizes in {editTimeLabel.replace(/ left$/, "")}</span>
-      </div>
+      <StatusStrip
+        variant="editable"
+        message={`Entry generated · Edit window closes in ${editTimeLabel.replace(/ left$/, "")}`}
+      />
     );
   }
 

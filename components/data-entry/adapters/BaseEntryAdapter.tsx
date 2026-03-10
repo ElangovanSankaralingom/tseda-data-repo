@@ -558,8 +558,11 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           const hasPdf = !!form.pdfMeta || form.pdfGenerated === true || !!form.pdfGeneratedAt;
           if (!hasPdf) return undefined;
           if (pdfState.pdfStale) return undefined;
+          const entryStatus = String(form.confirmationStatus ?? "DRAFT");
+          const editRequestStatus = String((form as Record<string, unknown>).requestEditStatus ?? "none");
+          const isPendingRequest = entryStatus === "EDIT_REQUESTED" || entryStatus === "DELETE_REQUESTED" || editRequestStatus === "pending";
           return {
-            canFinalise: true,
+            canFinalise: !isPendingRequest,
             onFinalise: () => finaliseEntry(form),
             onAfterFinalise: () => closeForm(categoryPath),
             disabledReason: undefined,
@@ -584,15 +587,10 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
               subtitle: formSubtitle,
               content: (
                 <>
-                  {pendingCoreLocked ? (
-                    <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                      Pending confirmation — core fields cannot be edited.
-                    </p>
-                  ) : null}
-
                   {renderFormFields(formFieldsCtx)}
 
-                  <div className="mt-5 space-y-4">
+                  {/* Compact document bar */}
+                  <div className="mt-5">
                     <EntryDocumentSection
                       pdfMeta={form.pdfMeta ?? null}
                       pdfStale={pdfState.pdfStale}
@@ -621,6 +619,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       confirmationDialog={confirmationDialog}
       onRequestEdit={() => void controller.requestEdit(form)}
       onCancelRequestEdit={() => void controller.cancelRequestEdit(form)}
+      onCancelRequestDelete={() => void controller.cancelRequestDelete(form)}
     />
   );
 }
