@@ -424,3 +424,22 @@ Important invariant coverage currently lives in:
 - `tests/entries/normalize.test.ts`
 
 When changing canonical architecture, update the relevant invariant tests in the same change.
+
+## Adding a New Category
+
+Use the scaffold script to create all required files:
+
+```bash
+./scripts/add-category.sh <slug> "<Label>"
+# Example: ./scripts/add-category.sh journal-papers "Journal Papers"
+```
+
+This creates: schema, API route, adapter, and 3 page files.
+
+After running, complete these manual steps:
+
+1. **Edit the schema** (`data/schemas/<slug>.ts`) — add category-specific fields
+2. **Register** in `data/categoryRegistry.ts` — add to `CATEGORY_SLUGS`, import schema, add registry entry
+3. **Flesh out the adapter** (`components/data-entry/adapters/<slug>.tsx`) — form fields, list rendering
+4. **Build:** `npm run build`
+5. **Verify:** `./scripts/verify-categories.sh` — all categories should show green
