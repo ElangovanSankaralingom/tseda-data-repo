@@ -215,10 +215,10 @@ export default function AdminConfirmationsClient() {
                             role="destructive"
                             onClick={() =>
                               requestConfirmation({
-                                title: "Approve deletion?",
+                                title: "Permanently delete this entry?",
                                 description:
-                                  "This will permanently archive the entry. The user will no longer see it in their list.",
-                                confirmLabel: "Approve Delete",
+                                  "This will permanently delete the entry and all uploaded files. This action cannot be undone.",
+                                confirmLabel: "Delete Permanently",
                                 cancelLabel: "Cancel",
                                 variant: "destructive",
                                 onConfirm: () => resolve(row, "approve_delete"),
@@ -226,7 +226,7 @@ export default function AdminConfirmationsClient() {
                             }
                             disabled={busy}
                           >
-                            {busy ? "Processing..." : "Approve Delete"}
+                            {busy ? "Processing..." : "Delete Permanently"}
                           </ActionButton>
                           <ActionButton
                             role="context"
