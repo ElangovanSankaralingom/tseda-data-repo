@@ -49,6 +49,10 @@ function asNonEmptyString(value: unknown) {
 
 function inferCategoryFromEndpoint(endpoint: string) {
   const normalized = endpoint.trim().toLowerCase();
+  // Match new unified pattern: /api/me/<category>/file
+  const match = normalized.match(/\/api\/me\/([\w-]+)\/file/);
+  if (match) return match[1];
+  // Legacy patterns: /api/me/<category>-file
   if (normalized.includes("fdp-conducted")) return "fdp-conducted";
   if (normalized.includes("fdp-attended")) return "fdp-attended";
   if (normalized.includes("case-studies")) return "case-studies";

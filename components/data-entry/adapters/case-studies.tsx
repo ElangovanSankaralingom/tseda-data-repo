@@ -456,7 +456,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
                 title={label}
                 mode={isViewMode ? "view" : "edit"}
                 meta={form[slot]}
-                uploadEndpoint="/api/me/case-studies-file"
+                uploadEndpoint="/api/me/case-studies/file"
                 email={email}
                 recordId={form.id}
                 slot={slot}
@@ -500,7 +500,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
                   }),
                 });
               }}
-              uploadEndpoint="/api/me/case-studies-file"
+              uploadEndpoint="/api/me/case-studies/file"
               email={email}
               recordId={form.id}
               slotName="geotaggedPhotos"

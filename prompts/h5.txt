@@ -1,0 +1,83 @@
+## Task Type
+REFACTOR
+
+## Priority
+MEDIUM
+
+## Context
+`lib/validation/schemaValidator.ts` imports from `components/data-entry/adapters/shared.ts`:
+```
+import { ACADEMIC_YEAR_OPTIONS, getAcademicYearRange, isISODate } from "@/components/data-entry/adapters/shared";
+```
+
+This is backwards — lib/ should never import from components/. These utilities need to move to lib/.
+
+Also, `getAcademicYearRange` is used in 4 adapter files and the validator. It should be a shared utility in lib/.
+
+## Read First
+1. components/data-entry/adapters/shared.ts (see all exports)
+2. lib/validation/schemaValidator.ts (see what it imports from shared)
+
+## The Fix
+
+### Step 1: Create lib/utils/academicYear.ts
+
+Move from `components/data-entry/adapters/shared.ts` to `lib/utils/academicYear.ts`:
+- `ACADEMIC_YEAR_OPTIONS`
+- `ACADEMIC_YEAR_DROPDOWN_OPTIONS`
+- `getAcademicYearRange`
+- Any other academic year helpers
+
+### Step 2: Create lib/utils/dateHelpers.ts (if not exists)
+
+Move from shared.ts:
+- `isISODate`
+- `getInclusiveDays`
+- `formatDisplayDate`
+
+### Step 3: Create lib/utils/idHelpers.ts (if not exists)
+
+Move from shared.ts:
+- `uuid` (or use crypto.randomUUID directly)
+- `cx` (className utility — or import from lib/utils)
+
+### Step 4: Update all importers
+
+```typescript
+// BEFORE:
+import { getAcademicYearRange, isISODate } from "@/components/data-entry/adapters/shared";
+
+// AFTER:
+import { getAcademicYearRange } from "@/lib/utils/academicYear";
+import { isISODate } from "@/lib/utils/dateHelpers";
+```
+
+Update:
+- lib/validation/schemaValidator.ts
+- All 5 adapters
+- Any other importers of shared.ts
+
+### Step 5: Keep shared.ts as re-export (temporary)
+
+To avoid breaking things, make shared.ts re-export from the new locations:
+```typescript
+// components/data-entry/adapters/shared.ts
+// @deprecated — import from lib/utils/ directly
+export { ACADEMIC_YEAR_OPTIONS, getAcademicYearRange } from '@/lib/utils/academicYear';
+export { isISODate, getInclusiveDays, formatDisplayDate } from '@/lib/utils/dateHelpers';
+export { uuid, cx } from '@/lib/utils/idHelpers';
+```
+
+## Scope
+- CREATE: lib/utils/academicYear.ts
+- CREATE: lib/utils/dateHelpers.ts
+- CREATE: lib/utils/idHelpers.ts (if needed)
+- MODIFY: lib/validation/schemaValidator.ts (fix import path)
+- MODIFY: components/data-entry/adapters/shared.ts (convert to re-exports)
+- MODIFY: all 5 adapters (update imports)
+- DO NOT MODIFY: engine, routes, workflow
+
+## Verification
+1. npm run build — passes
+2. grep -rn "from.*adapters/shared" lib/ — ZERO hits (lib never imports from components)
+3. All adapter functionality still works

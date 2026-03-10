@@ -332,7 +332,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
                 title={label}
                 mode={isViewMode ? "view" : "edit"}
                 meta={form.uploads[slot]}
-                uploadEndpoint="/api/me/workshops-file"
+                uploadEndpoint="/api/me/workshops/file"
                 email={ctx.email}
                 recordId={form.id}
                 slot={slot}
@@ -391,7 +391,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
                   }),
                 });
               }}
-              uploadEndpoint="/api/me/workshops-file"
+              uploadEndpoint="/api/me/workshops/file"
               email={ctx.email}
               recordId={form.id}
               slotName="geotaggedPhotos"

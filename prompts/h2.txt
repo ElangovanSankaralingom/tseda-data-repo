@@ -1,0 +1,104 @@
+## Task Type
+REFACTOR
+
+## Priority
+HIGH
+
+## Context
+Three components have hardcoded per-category metadata:
+
+1. **CommandPalette.tsx** (lines 37-41) — hardcoded quick actions per category
+2. **CategoryCard.tsx** (lines 17-45) — hardcoded icon, color, description per category
+3. **EditorProgressHeader.tsx** (lines 7-9) — hardcoded color themes per category
+
+When you add a new category, all three break silently (no error, just missing UI).
+
+## Read First
+1. components/search/CommandPalette.tsx (hardcoded quick actions)
+2. components/dashboard/CategoryCard.tsx (hardcoded metadata)
+3. components/data-entry/EditorProgressHeader.tsx (hardcoded colors)
+4. data/categoryRegistry.ts (where UI metadata should live)
+
+## The Fix
+
+### Step 1: Add UI metadata to category registry
+
+In `data/categoryRegistry.ts`, extend each category config:
+```typescript
+{
+  key: 'fdp-attended',
+  label: 'FDP Attended',
+  shortLabel: 'FDP (A)',
+  description: 'Faculty development programs you attended',
+  icon: 'GraduationCap', // lucide-react icon name
+  color: {
+    bar: 'from-blue-400 to-blue-600',
+    bg: 'bg-blue-100',
+    text: 'text-blue-600',
+    accent: 'blue',
+  },
+}
+```
+
+### Step 2: CommandPalette reads from registry
+```typescript
+// BEFORE: hardcoded array
+const QUICK_ACTIONS = [
+  { id: "qa-fdp-a", title: "New FDP Attended Entry", path: "/data-entry/fdp-attended/new" },
+  // ... manually listed
+];
+
+// AFTER: derived from registry
+import { CATEGORY_LIST } from '@/data/categoryRegistry';
+
+const QUICK_ACTIONS = CATEGORY_LIST.map(cat => ({
+  id: `qa-${cat.key}`,
+  title: `New ${cat.label} Entry`,
+  subtitle: "Start a new entry",
+  path: `/data-entry/${cat.key}/new`,
+  icon: "file",
+  adminOnly: false,
+}));
+```
+
+### Step 3: CategoryCard reads from registry
+```typescript
+// BEFORE: hardcoded metadata map
+const CATEGORY_META = { "fdp-attended": { icon: ..., color: ... }, ... };
+
+// AFTER:
+import { getCategoryConfig } from '@/data/categoryRegistry';
+
+function CategoryCard({ category }) {
+  const config = getCategoryConfig(category);
+  // Use config.icon, config.color, config.description
+}
+```
+
+### Step 4: EditorProgressHeader reads from registry
+```typescript
+// BEFORE: hardcoded color map
+const CATEGORY_THEME = { "fdp-attended": { bar: "from-blue-400...", ... } };
+
+// AFTER:
+import { getCategoryConfig } from '@/data/categoryRegistry';
+
+function EditorProgressHeader({ category }) {
+  const config = getCategoryConfig(category);
+  const theme = config.color; // { bar, bg, text }
+}
+```
+
+## Scope
+- MODIFY: data/categoryRegistry.ts (add icon, color, description to each category)
+- MODIFY: components/search/CommandPalette.tsx (derive from registry)
+- MODIFY: components/dashboard/CategoryCard.tsx (derive from registry)
+- MODIFY: components/data-entry/EditorProgressHeader.tsx (derive from registry)
+- DO NOT MODIFY: engine, routes, workflow
+
+## Verification
+1. npm run build — passes
+2. Dashboard shows all category cards correctly
+3. Command palette shows all categories
+4. Editor progress bar has correct colors for each category
+5. grep -rn "fdp-attended.*fdp-conducted\|fdp-conducted.*guest-lectures" components/search/ components/dashboard/ components/data-entry/EditorProgressHeader — ZERO hits
