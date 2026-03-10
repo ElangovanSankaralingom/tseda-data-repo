@@ -17,7 +17,7 @@ import EditorProgressHeader from "@/components/data-entry/EditorProgressHeader";
 import { EditorStatusBanners } from "@/components/data-entry/EditorStatusBanner";
 import EditorMetadataFooter from "@/components/data-entry/EditorMetadataFooter";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
-import { getEditTimeRemaining, isEntryEditable } from "@/lib/entries/workflow";
+import type { EditTimeRemaining } from "@/lib/entries/workflow";
 import { getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
 import { dataEntryHome } from "@/lib/entryNavigation";
 import { type CardContent, type ListStats } from "./dataEntryTypes";
@@ -216,8 +216,12 @@ export default function CategoryEntryPageShell({
     const isGenerated = !!entry?.committedAtISO;
     const streakEligible = !!entry?.streakEligible;
     const schema = getCategorySchema(category);
-    const editable = entry ? isEntryEditable(entry) : true;
-    const editTime = entry ? getEditTimeRemaining(entry) : null;
+    // IMPORTANT: isEditable and editTimeRemaining come from the SERVER response
+    // (via entryToApiResponse). Do NOT recompute on the client — the server is
+    // the single source of truth. For new entries (no server response yet),
+    // isEditable defaults to true.
+    const editable = entry?.isEditable !== false;
+    const editTime = (entry?.editTimeRemaining as EditTimeRemaining | undefined) ?? null;
     const status = typeof entry?.confirmationStatus === "string" ? entry.confirmationStatus : null;
     const dataFieldsComplete = progress.total > 0 && progress.completed === progress.total;
     const uploadsComplete = entry ? schema.fields.filter((f) => f.upload).every((f) => {

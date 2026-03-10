@@ -8,6 +8,12 @@
  *   useEntrySaveOrchestration.ts    — save, persist, auto-save, unsaved-changes
  *   useEntryGenerateAndFinalise.ts  — generate PDF and finalise
  *   useEntryRequestActions.ts       — request edit/delete and confirmation
+ *
+ * IMPORTANT: Button state (isEditable, isFinalized) comes from the SERVER
+ * response (via entryToApiResponse). Do NOT recompute on the client.
+ * The server is the single source of truth for these values.
+ * Client-side pdfState computation is the exception — it provides
+ * real-time feedback as the user edits without waiting for a server round-trip.
  */
 import {
   useCallback,
