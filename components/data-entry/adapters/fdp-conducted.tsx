@@ -11,14 +11,9 @@ import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entr
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { useUploadController } from "@/hooks/useUploadController";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
-import {
-  cx,
-  uuid,
-  getInclusiveDays,
-  formatDisplayDate,
-  formatFacultyDisplay,
-  ACADEMIC_YEAR_DROPDOWN_OPTIONS,
-} from "@/components/data-entry/adapters/shared";
+import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
+import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
+import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
