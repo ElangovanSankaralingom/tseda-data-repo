@@ -71,7 +71,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 
   if (group === "under_review") {
     return (
-      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-600">
+      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
         Edit Requested
       </span>
     );

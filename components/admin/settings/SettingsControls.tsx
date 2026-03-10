@@ -159,11 +159,13 @@ export function StringInput({
   onChange,
   disabled,
   placeholder,
+  "aria-label": ariaLabel,
 }: {
   value: string;
   onChange: (val: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  "aria-label"?: string;
 }) {
   const [local, setLocal] = useState(value);
 
@@ -181,6 +183,7 @@ export function StringInput({
       value={local}
       disabled={disabled}
       placeholder={placeholder}
+      aria-label={ariaLabel}
       onChange={(e) => setLocal(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => e.key === "Enter" && commit()}
@@ -343,6 +346,7 @@ export function SettingRow({
               <StringInput
                 value={value as string}
                 onChange={(v) => handleSave(v)}
+                aria-label={def.label}
               />
             )}
             {def.type === "color" && (
