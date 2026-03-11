@@ -158,7 +158,7 @@ async function drawHeader(
     x: MARGIN_LEFT,
     y: accentY,
     width: CONTENT_WIDTH,
-    height: 2,
+    height: 0.75,
     color: COLOR_ACCENT,
   });
 
