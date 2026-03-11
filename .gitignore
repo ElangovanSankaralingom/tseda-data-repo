@@ -34,3 +34,6 @@ Users/
 
 # Coverage
 coverage/
+
+# User uploads (NEVER commit)
+public/uploads/
