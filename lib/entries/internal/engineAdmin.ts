@@ -83,6 +83,7 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
       if (reason?.trim()) {
         (transitioned as Record<string, unknown>).editRejectedReason = reason.trim();
       }
+      (transitioned as Record<string, unknown>).permanentlyLocked = true;
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {
@@ -291,8 +292,20 @@ export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEng
     category,
     ownerEmail,
     entryId,
-    applyTransition: (existing, { nowISO }) =>
-      transitionEntry(existing, "cancelDeleteRequest", { nowISO }) as EntryLike,
+    applyTransition: (existing, { nowISO }) => {
+      const transitioned = transitionEntry(existing, "cancelDeleteRequest", { nowISO });
+      (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      return transitioned as EntryLike;
+    },
+    afterSuccess: (entry) => {
+      const normalized = normalizeEmail(ownerEmail);
+      fireAndForget(
+        import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteRejected, extractEntryTitle }) =>
+          notifyDeleteRejected(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>)),
+        ),
+        "notifyDeleteRejected",
+      );
+    },
   });
 }
 

@@ -22,6 +22,7 @@ const TYPE_CONFIG: Record<
   edit_request_granted: { Icon: CheckCircle, iconBg: "bg-emerald-100", iconColor: "text-emerald-600" },
   edit_request_rejected: { Icon: XCircle, iconBg: "bg-red-100", iconColor: "text-red-600" },
   delete_approved: { Icon: Trash2, iconBg: "bg-red-100", iconColor: "text-red-600" },
+  delete_rejected: { Icon: XCircle, iconBg: "bg-red-100", iconColor: "text-red-600" },
   auto_archived: { Icon: Archive, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
   timer_warning: { Icon: Clock, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
   entry_finalized: { Icon: Lock, iconBg: "bg-slate-100", iconColor: "text-slate-600" },

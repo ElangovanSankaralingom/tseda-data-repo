@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle, Loader2, Lock, Zap } from "lucide-react";
+import ConfettiBurst from "@/components/ui/ConfettiBurst";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
 import { ActionButton } from "@/components/ui/ActionButton";
-import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { SaveButton } from "@/components/ui/SaveButton";
 import { type GenerateButtonState } from "@/lib/types/ui";
 import {
@@ -50,10 +51,9 @@ export function HeaderEntryActionsBar({
   editRequestPending = false,
   deleteRequestPending = false,
   onRequestEdit,
-  onCancelRequestEdit,
   onRequestDelete,
-  onCancelRequestDelete,
   permanentlyLocked = false,
+  requestActionUsed = false,
 }: HeaderEntryActionsBarProps) {
   // View mode: simplified layout
   if (isEditing && isViewMode) {
@@ -65,7 +65,7 @@ export function HeaderEntryActionsBar({
       <div className="flex w-full flex-wrap items-center justify-between gap-3">
         {/* Left: Request Action dropdown (only when no pending request) */}
         <div className="flex items-center gap-3">
-          {!permanentlyLocked && !hasPendingRequest && entryStatus !== "EDIT_GRANTED" && onRequestEdit && onRequestDelete ? (
+          {!permanentlyLocked && !requestActionUsed && !hasPendingRequest && entryStatus !== "EDIT_GRANTED" && onRequestEdit && onRequestDelete ? (
             <RequestActionDropdown
               onRequestEdit={onRequestEdit}
               onRequestDelete={onRequestDelete}
@@ -234,39 +234,39 @@ function EditModeActionBar({
             </button>
           ) : null}
           {showFinalise && finalise ? (
-            <button
-              type="button"
-              onClick={finaliseState === "idle" && finalise.canFinalise ? () => setShowFinaliseConfirm(true) : undefined}
-              disabled={!finalise.canFinalise || finaliseState !== "idle"}
-              className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
-                finaliseState === "done"
-                  ? "bg-emerald-200 text-emerald-700"
-                  : finaliseState === "finalising"
-                    ? "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
-                    : finalise.canFinalise
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                      : "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
-              }`}
-              title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
-            >
-              {finaliseState === "finalising" ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : finaliseState === "done" ? (
-                <CheckCircle className="size-4" />
-              ) : (
-                <Lock className="size-4" />
-              )}
-              {finaliseState === "finalising"
-                ? "Finalising..."
-                : finaliseState === "done"
-                  ? "Finalised"
-                  : "Finalise Now"}
-            </button>
+            <div className="relative">
+              <ConfettiBurst active={finaliseState === "done"} />
+              <button
+                type="button"
+                onClick={finaliseState === "idle" && finalise.canFinalise ? () => setShowFinaliseConfirm(true) : undefined}
+                disabled={!finalise.canFinalise || finaliseState !== "idle"}
+                className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
+                  finaliseState === "done"
+                    ? "bg-emerald-500 text-white animate-finalise-pop"
+                    : finaliseState === "finalising"
+                      ? "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+                      : finalise.canFinalise
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                        : "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+                }`}
+                title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
+              >
+                {finaliseState === "finalising" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : finaliseState === "done" ? (
+                  <CheckCircle className="size-4" />
+                ) : (
+                  <Lock className="size-4" />
+                )}
+                {finaliseState === "finalising"
+                  ? "Finalising..."
+                  : finaliseState === "done"
+                    ? "Finalised!"
+                    : "Finalise Now"}
+              </button>
+            </div>
           ) : null}
         </div>
-        {showFinalise && finalise && !finalise.canFinalise && finalise.disabledReason ? (
-          <p className="text-xs text-amber-600 mt-1">{finalise.disabledReason}</p>
-        ) : null}
         {showGenerate && workflowAction && workflowDisabled && !isGenerating && !isSuccess ? (
           <p className="text-xs text-slate-500">{workflowDisabledHint}</p>
         ) : null}
@@ -284,34 +284,59 @@ function EditModeActionBar({
         </ActionButton>
       </div>
 
-      {/* Finalise confirmation dialog */}
-      <ConfirmDialog
-        open={showFinaliseConfirm}
-        title="Finalise Entry"
-        description={
-          <div className="space-y-3">
-            <p className="text-sm text-slate-600">
-              Once finalised, all fields become read-only. You&apos;ll need admin approval to make any further changes.
-            </p>
-            {(() => {
-              const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt);
-              return timeInfo ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                  <p className="text-xs text-slate-600">{timeInfo}</p>
+      {/* Finalise confirmation modal — portaled to body to escape stacking contexts */}
+      {showFinaliseConfirm ? createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setShowFinaliseConfirm(false)}
+          />
+          <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-xl border border-slate-200 animate-scale-in">
+            <div className="px-6 pt-6 pb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50">
+                  <Lock className="size-5 text-emerald-600" />
                 </div>
-              ) : null;
-            })()}
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">Finalise this entry?</h3>
+                  <p className="text-xs text-slate-500">This action locks the entry</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Once finalised, all fields become read-only. You&apos;ll need admin approval to make any future changes.
+              </p>
+              {(() => {
+                const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt);
+                return timeInfo ? (
+                  <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                    <p className="text-xs text-slate-500">{timeInfo}</p>
+                  </div>
+                ) : null;
+              })()}
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowFinaliseConfirm(false)}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 active:scale-[0.98]"
+                >
+                  Keep Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFinaliseConfirm(false);
+                    void handleFinalise();
+                  }}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-emerald-700 active:scale-[0.98]"
+                >
+                  Finalise Entry
+                </button>
+              </div>
+            </div>
           </div>
-        }
-        confirmLabel="Finalise Entry"
-        cancelLabel="Keep Editing"
-        confirmClassName="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 border-emerald-600"
-        onConfirm={() => {
-          setShowFinaliseConfirm(false);
-          void handleFinalise();
-        }}
-        onCancel={() => setShowFinaliseConfirm(false)}
-      />
+        </div>,
+        document.body
+      ) : null}
     </div>
   );
 }

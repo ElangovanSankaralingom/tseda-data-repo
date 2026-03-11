@@ -19,6 +19,7 @@ export default function RequestActionDropdown({
   onCancelRequest?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [requestSent, setRequestSent] = useState<"edit" | "delete" | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   // Close on click outside
@@ -59,6 +60,29 @@ export default function RequestActionDropdown({
     );
   }
 
+  // After clicking a request action, show greyed out confirmation text
+  if (requestSent) {
+    return (
+      <span className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-sm font-medium text-slate-400 cursor-not-allowed">
+        {requestSent === "edit" ? "Edit Request Sent" : "Delete Request Sent"}
+      </span>
+    );
+  }
+
+  const handleRequestEdit = () => {
+    if (requesting) return;
+    setRequestSent("edit");
+    setOpen(false);
+    onRequestEdit();
+  };
+
+  const handleRequestDelete = () => {
+    if (requesting) return;
+    setRequestSent("delete");
+    setOpen(false);
+    onRequestDelete();
+  };
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -74,10 +98,7 @@ export default function RequestActionDropdown({
         <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
           <button
             type="button"
-            onClick={() => {
-              setOpen(false);
-              onRequestEdit();
-            }}
+            onClick={handleRequestEdit}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
           >
             <Pencil className="size-3.5 text-slate-500" />
@@ -85,10 +106,7 @@ export default function RequestActionDropdown({
           </button>
           <button
             type="button"
-            onClick={() => {
-              setOpen(false);
-              onRequestDelete();
-            }}
+            onClick={handleRequestDelete}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
           >
             <Trash2 className="size-3.5 text-red-400" />

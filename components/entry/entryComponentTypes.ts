@@ -48,6 +48,7 @@ export type HeaderEntryActionsBarProps = {
   editTimeLabel?: string;
   onBack?: () => void;
   permanentlyLocked?: boolean;
+  requestActionUsed?: boolean;
 };
 
 export type PdfEntryActionsBarProps = {

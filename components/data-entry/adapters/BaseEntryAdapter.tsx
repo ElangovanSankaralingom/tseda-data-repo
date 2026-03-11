@@ -577,31 +577,38 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           const entryStatus = String(form.confirmationStatus ?? "DRAFT");
           const editRequestStatus = String((form as Record<string, unknown>).requestEditStatus ?? "none");
           const isPendingRequest = entryStatus === "EDIT_REQUESTED" || entryStatus === "DELETE_REQUESTED" || editRequestStatus === "pending";
+          const isPermanentlyLocked = (form as Record<string, unknown>).permanentlyLocked === true;
+          const isAlreadyFinalized = (form as Record<string, unknown>).isFinalized === true;
 
           // Check if ALL fields (stage 1 + stage 2) are complete
           const allProgress = computeFieldProgress(category, form as Record<string, unknown>, true);
           const allFieldsComplete = allProgress.total > 0 && allProgress.completed === allProgress.total;
 
           return {
-            canFinalise: !isPendingRequest && allFieldsComplete,
+            canFinalise: !isPendingRequest && !isPermanentlyLocked && !isAlreadyFinalized && allFieldsComplete,
             onFinalise: () => finaliseEntry(form),
             onAfterFinalise: () => closeForm(categoryPath),
-            disabledReason: isPendingRequest
-              ? "Waiting for admin approval"
-              : !allFieldsComplete
-                ? "Complete all fields including uploads to finalise"
-                : undefined,
+            disabledReason: undefined,
           };
         })(),
         entryStatus: form.confirmationStatus,
         editRequestPending: String((form as Record<string, unknown>).requestEditStatus ?? "none") === "pending",
         deleteRequestPending: String(form.confirmationStatus ?? "") === "DELETE_REQUESTED",
-        onRequestEdit: () => void controller.requestEdit(form),
-        onCancelRequestEdit: () => void controller.cancelRequestEdit(form),
-        onRequestDelete: () => void controller.requestDelete(form),
-        onCancelRequestDelete: () => void controller.cancelRequestDelete(form),
+        onRequestEdit: () => void controller.requestEdit(form).then(() => {
+          setForm((prev) => ({ ...prev, confirmationStatus: "EDIT_REQUESTED", requestEditStatus: "pending", requestActionUsed: true } as T));
+        }),
+        onCancelRequestEdit: () => void controller.cancelRequestEdit(form).then(() => {
+          setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", requestEditStatus: "none", permanentlyLocked: true } as T));
+        }),
+        onRequestDelete: () => void controller.requestDelete(form).then(() => {
+          setForm((prev) => ({ ...prev, confirmationStatus: "DELETE_REQUESTED", requestActionUsed: true } as T));
+        }),
+        onCancelRequestDelete: () => void controller.cancelRequestDelete(form).then(() => {
+          setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", permanentlyLocked: true } as T));
+        }),
         onBack: () => closeForm(categoryPath),
         permanentlyLocked: form.permanentlyLocked === true,
+        requestActionUsed: (form as Record<string, unknown>).requestActionUsed === true,
       })}
       loading={loading}
       showForm={showForm}
@@ -626,6 +633,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
                       onRegenerate={() => void controller.generateEntry()}
                       generating={controller.saving}
                       isViewMode={isViewMode}
+                      permanentlyLocked={form.permanentlyLocked === true}
                     />
                   </div>
                 </>
@@ -644,9 +652,15 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           : null
       }
       confirmationDialog={confirmationDialog}
-      onRequestEdit={() => void controller.requestEdit(form)}
-      onCancelRequestEdit={() => void controller.cancelRequestEdit(form)}
-      onCancelRequestDelete={() => void controller.cancelRequestDelete(form)}
+      onRequestEdit={() => void controller.requestEdit(form).then(() => {
+        setForm((prev) => ({ ...prev, confirmationStatus: "EDIT_REQUESTED", requestEditStatus: "pending", requestActionUsed: true } as T));
+      })}
+      onCancelRequestEdit={() => void controller.cancelRequestEdit(form).then(() => {
+        setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", requestEditStatus: "none", permanentlyLocked: true } as T));
+      })}
+      onCancelRequestDelete={() => void controller.cancelRequestDelete(form).then(() => {
+        setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", permanentlyLocked: true } as T));
+      })}
     />
   );
 }

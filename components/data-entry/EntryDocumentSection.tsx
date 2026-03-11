@@ -27,8 +27,8 @@ export default function EntryDocumentSection({
   pdfStale,
   canPreview,
   canDownload,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isViewMode = false,
+  permanentlyLocked = false,
 }: EntryDocumentSectionProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const hasPdf = !!pdfMeta?.url;
@@ -40,7 +40,7 @@ export default function EntryDocumentSection({
   if (!hasPdf) return null;
 
   // PDF stale: compact amber bar
-  if (pdfStale) {
+  if (pdfStale && !isViewMode && !permanentlyLocked) {
     return (
       <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5">
         <AlertTriangle className="size-4 shrink-0 text-amber-500" />

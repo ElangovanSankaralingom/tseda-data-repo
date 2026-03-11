@@ -16,6 +16,7 @@ import { safeAction } from "@/lib/safeAction";
 export type AutoArchiveResult = {
   usersScanned: number;
   archived: number;
+  locked: number;
 };
 
 export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
@@ -25,6 +26,7 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
     if (!usersResult.ok) throw usersResult.error;
 
     let archived = 0;
+    let locked = 0;
 
     for (const userEmail of usersResult.data) {
       for (const category of CATEGORY_KEYS) {
@@ -35,27 +37,40 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
           if (status !== "GENERATED") continue;
           if (!isEditWindowExpired(entry)) continue;
 
-          // Timer expired — archive if no valid PDF
           const hasPdf = entry.pdfGenerated === true && !entry.pdfStale;
-          if (hasPdf) continue;
 
-          const transitioned = transitionEntry(entry, "archiveEntry", {
-            archiveReason: "auto_no_pdf",
-          });
-          await upsertCategoryEntry(userEmail, category, transitioned);
-          archived++;
+          if (!hasPdf) {
+            // Timer expired without valid PDF — archive
+            const transitioned = transitionEntry(entry, "archiveEntry", {
+              archiveReason: "auto_no_pdf",
+            });
+            await upsertCategoryEntry(userEmail, category, transitioned);
+            archived++;
 
-          const title = extractEntryTitle(entry as unknown as Record<string, unknown>);
-          notifyAutoArchived(userEmail, title, category).catch((err) => {
-            logger.warn({ event: "jobs.autoArchive.notifyFailed", userEmail, category }, err instanceof Error ? err.message : String(err));
-          });
+            const title = extractEntryTitle(entry as unknown as Record<string, unknown>);
+            notifyAutoArchived(userEmail, title, category).catch((err) => {
+              logger.warn({ event: "jobs.autoArchive.notifyFailed", userEmail, category }, err instanceof Error ? err.message : String(err));
+            });
 
-          logger.info({
-            event: "jobs.autoArchive.entry",
-            userEmail,
-            category,
-            entryId: String(entry.id ?? ""),
-          });
+            logger.info({
+              event: "jobs.autoArchive.entry",
+              userEmail,
+              category,
+              entryId: String(entry.id ?? ""),
+            });
+          } else if ((entry as Record<string, unknown>).permanentlyLocked !== true) {
+            // Timer expired with valid PDF — permanently lock
+            const updated = { ...entry, permanentlyLocked: true };
+            await upsertCategoryEntry(userEmail, category, updated);
+            locked++;
+
+            logger.info({
+              event: "jobs.autoLock.entry",
+              userEmail,
+              category,
+              entryId: String(entry.id ?? ""),
+            });
+          }
         }
       }
     }
@@ -64,10 +79,11 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
       event: "jobs.autoArchive.summary",
       usersScanned: usersResult.data.length,
       archived,
+      locked,
       durationMs: Date.now() - startedAt,
     });
 
-    return { usersScanned: usersResult.data.length, archived };
+    return { usersScanned: usersResult.data.length, archived, locked };
   }, {
     context: "jobs.autoArchive",
   });

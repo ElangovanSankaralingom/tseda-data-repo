@@ -72,6 +72,7 @@ export type PersistentNotificationType =
   | "edit_request_granted"
   | "edit_request_rejected"
   | "delete_approved"
+  | "delete_rejected"
   | "auto_archived"
   | "timer_warning"
   | "entry_finalized"

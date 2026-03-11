@@ -234,7 +234,7 @@ export default function AdminConfirmationsClient() {
                               requestConfirmation({
                                 title: "Reject delete request?",
                                 description:
-                                  "This will deny the delete request and return the entry to its finalized state.",
+                                  "This will deny the delete request and permanently lock the entry. The user will not be able to request changes again.",
                                 confirmLabel: "Reject",
                                 cancelLabel: "Cancel",
                                 onConfirm: () => resolve(row, "reject_delete"),
@@ -269,7 +269,7 @@ export default function AdminConfirmationsClient() {
                               requestConfirmation({
                                 title: "Reject edit request?",
                                 description:
-                                  "This will deny the edit request and return the entry to its finalized state. The user will be notified.",
+                                  "This will deny the edit request and permanently lock the entry. The user will not be able to request changes again.",
                                 confirmLabel: "Reject",
                                 cancelLabel: "Cancel",
                                 variant: "destructive",
