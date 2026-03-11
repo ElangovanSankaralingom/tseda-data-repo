@@ -217,7 +217,7 @@ export default function EntryListCardShell({
   const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
 
   return (
-    <div className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass}`}>
+    <div data-entry-card className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass}`}>
       {/* Row 1 — Identity */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">

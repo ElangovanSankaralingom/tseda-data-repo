@@ -44,6 +44,15 @@ export default function RequestActionDropdown({
     return () => window.removeEventListener("keydown", handleKey);
   }, [open]);
 
+  // Raise parent card z-index when open so dropdown isn't clipped by sibling cards
+  useEffect(() => {
+    if (!ref.current) return;
+    const card = ref.current.closest("[data-entry-card]");
+    if (card) {
+      (card as HTMLElement).style.zIndex = open ? "50" : "";
+    }
+  }, [open]);
+
   const hasPending = editRequestPending || deleteRequestPending;
 
   // If a request is pending, show cancel button instead of dropdown
