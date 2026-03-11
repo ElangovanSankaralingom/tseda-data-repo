@@ -84,6 +84,7 @@ export type FdpAttended = {
   requestEditMessage?: string;
   academicYear: string;
   semesterType: string;
+  level: string;
   startDate: string;
   endDate: string;
   programName: string;

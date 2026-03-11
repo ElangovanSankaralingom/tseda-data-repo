@@ -71,8 +71,8 @@ test("computeStreak counts activated and wins entries consistently", async () =>
 
     const fdpWin = await createEntry(ownerEmail, "fdp-attended", {
       academicYear: "2025-2026",
-      yearOfStudy: "2nd year",
-      currentSemester: 3,
+      semesterType: "ODD",
+      level: "National",
       startDate: "2026-03-05",
       endDate: "2026-03-06",
       programName: "FDP Won",

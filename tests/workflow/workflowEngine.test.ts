@@ -23,6 +23,7 @@ function makeGeneratedEntry(overrides: Record<string, unknown> = {}): Record<str
     pdfStale: false,
     academicYear: "2025-26",
     semesterType: "ODD",
+    level: "National",
     startDate: "2025-01-01",
     endDate: "2025-01-05",
     programName: "Test FDP",
@@ -47,6 +48,7 @@ describe("computeWorkflowState", () => {
     const entry = makeEntry({
       academicYear: "2025-26",
       semesterType: "ODD",
+    level: "National",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",

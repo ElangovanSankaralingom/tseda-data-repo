@@ -129,21 +129,23 @@ async function drawHeader(
     const tceLogo = await pdfDoc.embedPng(tceLogoBytes);
     const tsedaLogo = await pdfDoc.embedPng(tsedaLogoBytes);
 
-    const logoHeight = 48;
+    const logoHeight = 64;
     const tceAspect = tceLogo.width / tceLogo.height;
     const tsedaAspect = tsedaLogo.width / tsedaLogo.height;
 
-    page.drawImage(tceLogo, {
+    // TSEDA logo on the left
+    page.drawImage(tsedaLogo, {
       x: MARGIN_LEFT,
       y: PAGE_HEIGHT - MARGIN_TOP - logoHeight,
-      width: logoHeight * tceAspect,
+      width: logoHeight * tsedaAspect,
       height: logoHeight,
     });
 
-    page.drawImage(tsedaLogo, {
-      x: PAGE_WIDTH - MARGIN_RIGHT - logoHeight * tsedaAspect,
+    // TCE logo on the right
+    page.drawImage(tceLogo, {
+      x: PAGE_WIDTH - MARGIN_RIGHT - logoHeight * tceAspect,
       y: PAGE_HEIGHT - MARGIN_TOP - logoHeight,
-      width: logoHeight * tsedaAspect,
+      width: logoHeight * tceAspect,
       height: logoHeight,
     });
   } catch {
@@ -151,7 +153,7 @@ async function drawHeader(
   }
 
   // Accent line (directly below logos)
-  const accentY = PAGE_HEIGHT - MARGIN_TOP - 56;
+  const accentY = PAGE_HEIGHT - MARGIN_TOP - 72;
   page.drawRectangle({
     x: MARGIN_LEFT,
     y: accentY,
@@ -201,25 +203,34 @@ function drawFooter(page: PDFPage, font: PDFFont, boldFont: PDFFont) {
 
   // Signature line
   page.drawLine({
-    start: { x: PAGE_WIDTH - MARGIN_RIGHT - 200, y: footerTop + 10 },
-    end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: footerTop + 10 },
+    start: { x: PAGE_WIDTH - MARGIN_RIGHT - 200, y: footerTop + 26 },
+    end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: footerTop + 26 },
     thickness: 0.75,
     color: COLOR_BORDER,
   });
 
-  const sigLines = [
-    { text: "Dr. Jinu Louishidha Kitchley", bold: true },
-    { text: "Professor and Head, T\u2019SEDA", bold: false },
-    { text: "Thiagarajar College of Engineering", bold: false },
-    { text: "Madurai \u2014 625 015", bold: false },
+  // Name (larger, bold)
+  page.drawText("Dr. Jinu Louishidha Kitchley", {
+    x: PAGE_WIDTH - MARGIN_RIGHT - 200,
+    y: footerTop,
+    font: boldFont,
+    size: 12,
+    color: COLOR_FOOTER,
+  });
+
+  // Designation lines (below name with extra gap)
+  const designationLines = [
+    "Professor and Head, T\u2019SEDA",
+    "Thiagarajar College of Engineering",
+    "Madurai \u2014 625 015",
   ];
 
-  let sigY = footerTop;
-  for (const line of sigLines) {
-    page.drawText(line.text, {
+  let sigY = footerTop - 18;
+  for (const line of designationLines) {
+    page.drawText(line, {
       x: PAGE_WIDTH - MARGIN_RIGHT - 200,
       y: sigY,
-      font: line.bold ? boldFont : font,
+      font,
       size: 8.5,
       color: COLOR_FOOTER,
     });
