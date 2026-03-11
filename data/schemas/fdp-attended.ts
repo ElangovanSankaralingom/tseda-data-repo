@@ -1,13 +1,11 @@
 import { validateByFieldDefinitions } from "@/data/schemas/common";
 import type { EntrySchema } from "@/data/schemas/types";
-import { YEAR_OF_STUDY_VALUES } from "@/lib/types/academicProgression";
 import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/workflowConfig";
 
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
   { key: "academicYear", label: "Academic Year", kind: "string" },
-  { key: "yearOfStudy", label: "Year of Study", kind: "string", enumValues: YEAR_OF_STUDY_VALUES },
-  { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10 },
+  { key: "semesterType", label: "Semester Type", kind: "string", stage: 1 },
   { key: "startDate", label: "Start Date", kind: "date" },
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "programName", label: "Program Name", kind: "string" },
@@ -24,8 +22,7 @@ export const fdpAttendedSchema: EntrySchema = {
   fields,
   immutableWhenPending: [
     "academicYear",
-    "yearOfStudy",
-    "currentSemester",
+    "semesterType",
     "startDate",
     "endDate",
     "programName",
@@ -34,8 +31,7 @@ export const fdpAttendedSchema: EntrySchema = {
   ],
   requiredForCommit: [
     "academicYear",
-    "yearOfStudy",
-    "currentSemester",
+    "semesterType",
     "startDate",
     "endDate",
     "programName",

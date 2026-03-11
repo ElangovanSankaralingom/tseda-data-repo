@@ -5,7 +5,8 @@ import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
 
 const config = DEFAULT_WORKFLOW_CONFIG;
 
-// fdp-attended has stage 1 fields: academicYear, yearOfStudy, currentSemester, startDate, endDate, programName, organisingBody, supportAmount
+// fdp-attended has stage 1 fields: academicYear, semesterType, startDate, endDate, programName, organisingBody
+// (supportAmount has required:false so it's excluded from completion)
 // and stage 2 fields: permissionLetter, completionCertificate
 // (id is required but exportable:false, pdfMeta and streak are exportable:false)
 
@@ -20,13 +21,11 @@ describe("computeCompletionState", () => {
   it("all stage 1 filled returns stage1Complete=true", () => {
     const entry = {
       academicYear: "2025-26",
-      yearOfStudy: "First Year",
-      currentSemester: 1,
+      semesterType: "ODD",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",
       organisingBody: "AICTE",
-      supportAmount: 5000,
     };
     const state = computeCompletionState(entry, "fdp-attended", config, false);
     assert.equal(state.stage1Complete, true);
@@ -36,13 +35,11 @@ describe("computeCompletionState", () => {
   it("generated with all stage 2 filled returns stage2Complete=true", () => {
     const entry = {
       academicYear: "2025-26",
-      yearOfStudy: "First Year",
-      currentSemester: 1,
+      semesterType: "ODD",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",
       organisingBody: "AICTE",
-      supportAmount: 5000,
       permissionLetter: { url: "https://example.com/pl.pdf", storedPath: "/some/path" },
       completionCertificate: { url: "https://example.com/cc.pdf", storedPath: "/some/path" },
     };

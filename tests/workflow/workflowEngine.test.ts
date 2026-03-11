@@ -22,13 +22,11 @@ function makeGeneratedEntry(overrides: Record<string, unknown> = {}): Record<str
     pdfGenerated: true,
     pdfStale: false,
     academicYear: "2025-26",
-    yearOfStudy: "First Year",
-    currentSemester: 1,
+    semesterType: "ODD",
     startDate: "2025-01-01",
     endDate: "2025-01-05",
     programName: "Test FDP",
     organisingBody: "AICTE",
-    supportAmount: 5000,
     permissionLetter: { url: "https://example.com/pl.pdf", storedPath: "/path" },
     completionCertificate: { url: "https://example.com/cc.pdf", storedPath: "/path" },
     ...overrides,
@@ -48,13 +46,11 @@ describe("computeWorkflowState", () => {
   it("DRAFT with all stage 1 filled: generate enabled", () => {
     const entry = makeEntry({
       academicYear: "2025-26",
-      yearOfStudy: "First Year",
-      currentSemester: 1,
+      semesterType: "ODD",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",
       organisingBody: "AICTE",
-      supportAmount: 5000,
     });
     const state = computeWorkflowState(entry, "fdp-attended", config);
     assert.equal(state.buttons.generate.enabled, true);

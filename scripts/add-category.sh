@@ -142,6 +142,7 @@ cat > "components/data-entry/adapters/${SLUG}.tsx" << ADAPTER
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { uuid } from "@/lib/utils/idHelpers";
 import BaseEntryAdapter from "@/components/data-entry/adapters/BaseEntryAdapter";
+import SelectField from "@/components/controls/SelectField";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
@@ -164,8 +165,7 @@ function emptyForm(): ${PASCAL}Entry {
     requestEditRequestedAtISO: null,
     requestEditMessage: "",
     academicYear: "",
-    yearOfStudy: "",
-    currentSemester: null,
+    semesterType: "",
     startDate: "",
     endDate: "",
     // TODO: add default values for category-specific fields

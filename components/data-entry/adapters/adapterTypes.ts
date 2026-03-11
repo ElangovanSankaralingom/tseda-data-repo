@@ -83,8 +83,7 @@ export type FdpAttended = {
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
+  semesterType: string;
   startDate: string;
   endDate: string;
   programName: string;
