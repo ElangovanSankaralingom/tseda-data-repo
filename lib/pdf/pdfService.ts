@@ -9,7 +9,7 @@ import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { commitDraft, updateEntry } from "@/lib/entries/lifecycle";
 import { computeEditWindowExpiry, normalizeEntryStatus } from "@/lib/entries/workflow";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
-import { normalizeEmail } from "@/lib/facultyDirectory";
+import { getCanonicalName, normalizeEmail } from "@/lib/facultyDirectory";
 import { checkStreakEligibility } from "@/lib/streakProgress";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
 import { buildEntryPdfData } from "@/lib/pdf/buildPdfData";
@@ -118,6 +118,7 @@ export async function generateAndPersistEntryPdf(args: GeneratePdfArgs) {
   const bytes = await generateEntryPdfBytes({
     categoryName: pdfData.categoryName,
     fields: pdfData.fields,
+    facultyName: getCanonicalName(args.email) || args.email,
   });
 
   const pdfMeta = await storeEntryPdf({
