@@ -22,6 +22,7 @@ describe("computeCompletionState", () => {
     const entry = {
       academicYear: "2025-26",
       semesterType: "ODD",
+      level: "National",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",
@@ -36,6 +37,7 @@ describe("computeCompletionState", () => {
     const entry = {
       academicYear: "2025-26",
       semesterType: "ODD",
+      level: "National",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",

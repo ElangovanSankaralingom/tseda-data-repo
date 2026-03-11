@@ -26,6 +26,11 @@ const SEMESTER_TYPE_OPTIONS = [
   { label: "EVEN Semester", value: "EVEN" },
 ] as const;
 
+const LEVEL_OPTIONS = [
+  { label: "National", value: "National" },
+  { label: "International", value: "International" },
+] as const;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -38,6 +43,7 @@ function emptyForm(): FdpAttended {
     requestEditMessage: "",
     academicYear: "",
     semesterType: "",
+    level: "",
     startDate: "",
     endDate: "",
     programName: "",
@@ -190,6 +196,17 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
           />
         </Field>
 
+        <Field label="Level" error={submitted ? errors.level : undefined}>
+          <SelectDropdown
+            value={form.level || ""}
+            onChange={(value) => setForm((c) => ({ ...c, level: value }))}
+            options={LEVEL_OPTIONS}
+            placeholder="Select level"
+            disabled={coreFieldDisabled("level")}
+            error={submitted && !!errors.level}
+          />
+        </Field>
+
         <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
           <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
         </Field>
@@ -311,6 +328,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         const parts: string[] = [];
         if (entry.academicYear) parts.push(entry.academicYear);
         if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
+        if (entry.level) parts.push(entry.level);
         if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);

@@ -6,6 +6,7 @@ const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
   { key: "academicYear", label: "Academic Year", kind: "string" },
   { key: "semesterType", label: "Semester Type", kind: "string", stage: 1 },
+  { key: "level", label: "Level", kind: "string", stage: 1, enumValues: ["National", "International"] },
   { key: "startDate", label: "Start Date", kind: "date" },
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "programName", label: "Program Name", kind: "string" },
@@ -23,6 +24,7 @@ export const fdpAttendedSchema: EntrySchema = {
   immutableWhenPending: [
     "academicYear",
     "semesterType",
+    "level",
     "startDate",
     "endDate",
     "programName",
@@ -32,6 +34,7 @@ export const fdpAttendedSchema: EntrySchema = {
   requiredForCommit: [
     "academicYear",
     "semesterType",
+    "level",
     "startDate",
     "endDate",
     "programName",
