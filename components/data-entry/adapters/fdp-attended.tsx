@@ -5,6 +5,7 @@ import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
 import UploadField from "@/components/entry/UploadField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import SelectField from "@/components/controls/SelectField";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
@@ -12,13 +13,6 @@ import { useUploadController } from "@/hooks/useUploadController";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { uuid, cx } from "@/lib/utils/idHelpers";
-import {
-  allowedSemestersForYear,
-  isSemesterAllowed,
-  normalizeYearOfStudy,
-  YEAR_OF_STUDY_OPTIONS,
-} from "@/lib/student-academic";
-import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { FileMeta } from "@/lib/types/entry";
 import { uploadFile } from "@/lib/upload/uploadService";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
@@ -29,14 +23,13 @@ import { validateEntryFields } from "@/lib/validation/schemaValidator";
 // ---------------------------------------------------------------------------
 
 function emptyForm(): FdpAttended {
-  return withAcademicProgressionCompatibility({
+  return {
     id: uuid(),
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
     requestEditMessage: "",
     academicYear: "",
-    yearOfStudy: "",
-    currentSemester: null,
+    semesterType: "",
     startDate: "",
     endDate: "",
     programName: "",
@@ -50,7 +43,7 @@ function emptyForm(): FdpAttended {
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
-  }) as FdpAttended;
+  } as FdpAttended;
 }
 
 function uploadFdpFileXHR(opts: {
@@ -83,8 +76,6 @@ function validateFields(form: FdpAttended): Record<string, string> {
 function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> }) {
   const { form, setForm, submitted, errors, coreFieldDisabled, isViewMode, uploadsVisible, persistCurrentMutation, showToast, submitAttemptedFinal, uploadPersisting, setUploadPersistingCount } = ctx;
 
-  const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
-  const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
 
   const permissionController = useUploadController<FileMeta>({
@@ -180,32 +171,18 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
           />
         </Field>
 
-        <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
-          <SelectDropdown
-            value={form.yearOfStudy || ""}
-            onChange={(value) =>
-              setForm((c) => {
-                const nextYear = normalizeYearOfStudy(value) ?? "";
-                const nextSemester = isSemesterAllowed(nextYear || undefined, c.currentSemester ?? undefined) ? c.currentSemester : null;
-                return withAcademicProgressionCompatibility({ ...c, yearOfStudy: nextYear, currentSemester: nextSemester }) as FdpAttended;
-              })
-            }
-            options={YEAR_OF_STUDY_OPTIONS}
-            placeholder="Select year of study"
-            disabled={coreFieldDisabled("yearOfStudy")}
-            error={submitted && !!errors.yearOfStudy}
-          />
-        </Field>
-
-        <Field label="Current Semester" error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}>
-          <SelectDropdown
-            value={form.currentSemester === null ? "" : String(form.currentSemester)}
-            onChange={(value) => setForm((c) => withAcademicProgressionCompatibility({ ...c, currentSemester: value ? Number(value) : null }) as FdpAttended)}
-            options={semesterOptions.map((o) => ({ label: String(o), value: String(o) }))}
-            placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
-            disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
-            error={submitted && !!errors.currentSemester}
-          />
+        <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+          <SelectField
+            value={form.semesterType}
+            onChange={(v) => setForm((c) => ({ ...c, semesterType: v }))}
+            disabled={coreFieldDisabled("semesterType")}
+            error={submitted && !!errors.semesterType}
+            aria-label="Semester Type"
+          >
+            <option value="">Select semester type</option>
+            <option value="ODD">ODD Semester</option>
+            <option value="EVEN">EVEN Semester</option>
+          </SelectField>
         </Field>
 
         <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
@@ -317,7 +294,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
       {...props}
       category="fdp-attended"
       emptyForm={emptyForm}
-      hydrateEntry={(entry) => withAcademicProgressionCompatibility(entry) as FdpAttended}
+      hydrateEntry={(entry) => entry}
       validateFields={validateFields}
       renderFormFields={(ctx) => <FdpAttendedFormFields ctx={ctx} />}
       buildListEntryTitle={(entry) => entry.programName}
@@ -328,7 +305,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         const endStr = formatDisplayDate(entry.endDate);
         const parts: string[] = [];
         if (entry.academicYear) parts.push(entry.academicYear);
-        if (entry.currentSemester) parts.push(`Semester ${entry.currentSemester}`);
+        if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
         if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);

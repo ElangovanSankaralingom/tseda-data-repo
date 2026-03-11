@@ -107,10 +107,11 @@ export function validateEntryFields(
     }
 
     if (field.kind === "date" && typeof value === "string" && isISODate(value)) {
-      if (field.key === "startDate" && data.academicYear) {
+      if ((field.key === "startDate" || field.key === "endDate") && data.academicYear) {
         const range = getAcademicYearRange(data.academicYear as string);
         if (range && (value < range.start || value > range.end)) {
-          errors[field.key] = `Starting date must fall within ${data.academicYear} (${range.label}).`;
+          const dateLabel = field.key === "startDate" ? "Starting date" : "Ending date";
+          errors[field.key] = `${dateLabel} must fall within ${data.academicYear} (${range.label}).`;
         }
       }
     }
@@ -189,6 +190,15 @@ export function areRequiredForCommitComplete(
   if (data.startDate && data.endDate) {
     if (!isISODate(data.startDate as string) || !isISODate(data.endDate as string)) return false;
     if (String(data.endDate) < String(data.startDate)) return false;
+  }
+
+  // Cross-field: dates within academic year
+  if (data.academicYear) {
+    const range = getAcademicYearRange(data.academicYear as string);
+    if (range) {
+      if (isISODate(data.startDate as string) && (String(data.startDate) < range.start || String(data.startDate) > range.end)) return false;
+      if (isISODate(data.endDate as string) && (String(data.endDate) < range.start || String(data.endDate) > range.end)) return false;
+    }
   }
 
   return true;
