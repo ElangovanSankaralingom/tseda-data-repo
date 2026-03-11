@@ -48,6 +48,11 @@ export function entryToApiResponse(
     isEditable,
     isFinalized,
     editTimeRemaining,
+    timerPausedAt: normalized.timerPausedAt ?? null,
+    timerRemainingMs: normalized.timerRemainingMs ?? null,
+    hashAtEditGrant: normalized.hashAtEditGrant ?? null,
+    requestActionUsed: normalized.requestActionUsed ?? false,
+    permanentlyLocked: normalized.permanentlyLocked ?? false,
   } as EntryApiResponse;
 }
 

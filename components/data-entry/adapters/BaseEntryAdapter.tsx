@@ -19,8 +19,6 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { computeFieldProgress } from "@/lib/entries/fieldProgress";
-
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
 import {
   createDeleteEntry,
@@ -29,6 +27,8 @@ import {
 } from "@/lib/entries/adapterOrchestration";
 import { getCategoryConfig } from "@/data/categoryRegistry";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
+import { computeWorkflowState } from "@/lib/workflow";
+import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { EntryRecord } from "@/components/data-entry/adapters/adapterTypes";
 
@@ -170,11 +170,14 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     viewEntryId,
   );
   const entryForFinalizationCheck = activeEntryId ? list.find((e) => e.id === activeEntryId) : null;
-  // IMPORTANT: isFinalized comes from the SERVER response (via entryToApiResponse).
-  // Do NOT recompute on the client — the server is the single source of truth.
-  const pendingStatus = String((entryForFinalizationCheck as Record<string, unknown> | null)?.confirmationStatus ?? "");
-  const isAwaitingAdmin = pendingStatus === "EDIT_REQUESTED" || pendingStatus === "DELETE_REQUESTED";
-  const isViewMode = isViewModeRaw || (entryForFinalizationCheck as Record<string, unknown> | null)?.isFinalized === true || isAwaitingAdmin;
+
+  // Compute workflow state for the viewed entry (server response)
+  const viewedWorkflow = useMemo(
+    () => entryForFinalizationCheck ? computeWorkflowState(entryForFinalizationCheck as Record<string, unknown>, category, DEFAULT_WORKFLOW_CONFIG) : null,
+    [entryForFinalizationCheck, category]
+  );
+
+  const isViewMode = isViewModeRaw || (viewedWorkflow?.isViewMode ?? false);
 
   const {
     draft: form,
@@ -396,6 +399,18 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     toast,
   } = controller;
 
+  // Compute workflow state from the current form (for button states)
+  const workflowState = useMemo(
+    () => computeWorkflowState(
+      form as Record<string, unknown>,
+      category,
+      DEFAULT_WORKFLOW_CONFIG,
+      { saving: controller.saving, loading, hasBusyUploads: uploadBusySources.length > 0, fieldsDirty: formDirty },
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form, category, controller.saving, loading, uploadBusySources.length, formDirty]
+  );
+
   // --- Initial data load ---
   useEffect(() => {
     (async () => {
@@ -558,42 +573,31 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         addLabel: `Add ${config.label} Entry`,
         formHasData: formDirty,
         workflowAction: (() => {
-          if (!showForm || isViewMode) return undefined;
-          const pdfExists = !!form.pdfMeta || form.pdfGenerated === true || !!form.pdfGeneratedAt;
-          const showGenerate = !pdfExists || pdfState.pdfStale;
-          if (!showGenerate) return undefined;
-          return {
-            label: "Generate Entry",
-            onClick: () => controller.generateEntry(),
-            disabled: controller.actionState.generateDisabled,
-            busyLabel: "Generating...",
-          };
+          if (!showForm || workflowState.isViewMode) return undefined;
+          if (!workflowState.buttons.generate.visible) return undefined;
+          if (workflowState.buttons.generate.enabled || !workflowState.completion.pdfExists || !workflowState.completion.pdfFresh) {
+            return {
+              label: workflowState.buttons.generate.label,
+              onClick: () => controller.generateEntry(),
+              disabled: !workflowState.buttons.generate.enabled,
+              busyLabel: "Generating...",
+            };
+          }
+          return undefined;
         })(),
         finalise: (() => {
-          if (!showForm || isViewMode) return undefined;
-          const hasPdf = !!form.pdfMeta || form.pdfGenerated === true || !!form.pdfGeneratedAt;
-          if (!hasPdf) return undefined;
-          if (pdfState.pdfStale) return undefined;
-          const entryStatus = String(form.confirmationStatus ?? "DRAFT");
-          const editRequestStatus = String((form as Record<string, unknown>).requestEditStatus ?? "none");
-          const isPendingRequest = entryStatus === "EDIT_REQUESTED" || entryStatus === "DELETE_REQUESTED" || editRequestStatus === "pending";
-          const isPermanentlyLocked = (form as Record<string, unknown>).permanentlyLocked === true;
-          const isAlreadyFinalized = (form as Record<string, unknown>).isFinalized === true;
-
-          // Check if ALL fields (stage 1 + stage 2) are complete
-          const allProgress = computeFieldProgress(category, form as Record<string, unknown>, true);
-          const allFieldsComplete = allProgress.total > 0 && allProgress.completed === allProgress.total;
-
+          if (!showForm || workflowState.isViewMode) return undefined;
+          if (!workflowState.buttons.finalise.visible) return undefined;
           return {
-            canFinalise: !isPendingRequest && !isPermanentlyLocked && !isAlreadyFinalized && allFieldsComplete,
+            canFinalise: workflowState.buttons.finalise.enabled,
             onFinalise: () => finaliseEntry(form),
             onAfterFinalise: () => closeForm(categoryPath),
-            disabledReason: undefined,
+            disabledReason: workflowState.buttons.finalise.disabledReason,
           };
         })(),
         entryStatus: form.confirmationStatus,
-        editRequestPending: String((form as Record<string, unknown>).requestEditStatus ?? "none") === "pending",
-        deleteRequestPending: String(form.confirmationStatus ?? "") === "DELETE_REQUESTED",
+        editRequestPending: workflowState.requestState.hasActiveRequest && workflowState.requestState.requestType === "edit",
+        deleteRequestPending: workflowState.requestState.hasActiveRequest && workflowState.requestState.requestType === "delete",
         onRequestEdit: () => void controller.requestEdit(form).then(() => {
           setForm((prev) => ({ ...prev, confirmationStatus: "EDIT_REQUESTED", requestEditStatus: "pending", requestActionUsed: true } as T));
         }),
@@ -607,8 +611,8 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", permanentlyLocked: true } as T));
         }),
         onBack: () => closeForm(categoryPath),
-        permanentlyLocked: form.permanentlyLocked === true,
-        requestActionUsed: (form as Record<string, unknown>).requestActionUsed === true,
+        permanentlyLocked: workflowState.isPermanentlyLocked,
+        requestActionUsed: workflowState.requestState.requestActionUsed,
       })}
       loading={loading}
       showForm={showForm}
