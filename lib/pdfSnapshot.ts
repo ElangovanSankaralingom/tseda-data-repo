@@ -82,6 +82,7 @@ const LIFECYCLE_FIELDS = new Set([
   'committedAtISO', 'generatedAt', 'editWindowExpiresAt',
   'pdfGenerated', 'pdfGeneratedAt', 'pdfUrl', 'pdfSourceHash', 'pdfStale',
   'streakEligible', 'streakPermanentlyRemoved', 'permanentlyLocked',
+  'timerPausedAt', 'timerRemainingMs', 'hashAtEditGrant', 'requestActionUsed',
   'editRequestedAt', 'editRequestMessage', 'editGrantedAt', 'editGrantedBy',
   'editGrantedDays', 'editRejectedReason', 'deleteRequestedAt',
   'requestType', 'requestCount', 'requestCountResetAt',

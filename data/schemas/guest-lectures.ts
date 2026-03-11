@@ -1,6 +1,7 @@
 import { validateByFieldDefinitions } from "@/data/schemas/common";
 import type { EntrySchema } from "@/data/schemas/types";
 import { YEAR_OF_STUDY_VALUES } from "@/lib/types/academicProgression";
+import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/workflowConfig";
 
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
@@ -19,6 +20,8 @@ const fields = [
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
+
+export const workflow: WorkflowConfig = { ...DEFAULT_WORKFLOW_CONFIG };
 
 export const guestLecturesSchema: EntrySchema = {
   category: "guest-lectures",

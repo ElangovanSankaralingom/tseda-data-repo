@@ -4,6 +4,7 @@ import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
 import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
+import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/workflowConfig";
 
 export const CATEGORY_SLUGS = [
   "fdp-attended",
@@ -188,4 +189,13 @@ export function getCategoryTitle(entry: Record<string, unknown>, slug: string): 
     ? String(entry[config.entryTitleField] ?? "").trim()
     : "";
   return titleFieldValue || config.entryTitleFallback || config.label;
+}
+
+export function getCategoryWorkflowConfig(category: string): WorkflowConfig {
+  try {
+    const schema = getCategorySchema(category);
+    return (schema as Record<string, unknown>).workflow as WorkflowConfig ?? DEFAULT_WORKFLOW_CONFIG;
+  } catch {
+    return DEFAULT_WORKFLOW_CONFIG;
+  }
 }

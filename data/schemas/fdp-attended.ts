@@ -1,6 +1,7 @@
 import { validateByFieldDefinitions } from "@/data/schemas/common";
 import type { EntrySchema } from "@/data/schemas/types";
 import { YEAR_OF_STUDY_VALUES } from "@/lib/types/academicProgression";
+import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/workflowConfig";
 
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
@@ -44,3 +45,5 @@ export const fdpAttendedSchema: EntrySchema = {
     return validateByFieldDefinitions(payload, mode, fields);
   },
 };
+
+export const workflow: WorkflowConfig = { ...DEFAULT_WORKFLOW_CONFIG };

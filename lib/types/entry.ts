@@ -97,6 +97,12 @@ export interface EntryLifecycleFields {
   // Lock state
   permanentlyLocked?: boolean;
 
+  // Timer pause state
+  timerPausedAt?: string | null;
+  timerRemainingMs?: number | null;
+  hashAtEditGrant?: string | null;
+  requestActionUsed?: boolean;
+
   // Edit request state
   editRequestedAt?: string;
   editRequestMessage?: string;
