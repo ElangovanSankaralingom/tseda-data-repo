@@ -12,7 +12,7 @@ const fields = [
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "programName", label: "Program Name", kind: "string" },
   { key: "organisingBody", label: "Organising Body", kind: "string" },
-  { key: "supportAmount", label: "Support Amount", kind: "number" },
+  { key: "supportAmount", label: "Support Amount", kind: "number", required: false },
   { key: "permissionLetter", label: "Permission Letter", kind: "object", upload: true, stage: 2 },
   { key: "completionCertificate", label: "Completion Certificate", kind: "object", upload: true, stage: 2 },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },

@@ -163,15 +163,25 @@ function addDays(dateISO: string, days: number): string {
 export function computeEditWindowExpiry(
   generatedAtISO: string,
   entry: { endDate?: unknown; streakEligible?: unknown },
-  overrides?: { editWindowDays?: number; streakBufferDays?: number }
+  overrides?: { editWindowDays?: number; streakBufferDays?: number; pastEntryWindowDays?: number }
 ): string {
   const windowDays = overrides?.editWindowDays ?? DEFAULT_EDIT_WINDOW_DAYS;
+  const pastWindowDays = overrides?.pastEntryWindowDays ?? 1;
   const bufferDays = overrides?.streakBufferDays ?? STREAK_EDIT_WINDOW_BUFFER_DAYS;
+
+  // Check if this is a past entry (endDate before generation time)
+  const endDateStr = typeof entry.endDate === "string" ? entry.endDate.trim() : "";
+  const isPastEntry = endDateStr && new Date(endDateStr + "T23:59:59.999Z") < new Date(generatedAtISO);
+
+  if (isPastEntry) {
+    return addDays(generatedAtISO, pastWindowDays);
+  }
+
   const defaultExpiry = addDays(generatedAtISO, windowDays);
 
-  if (entry.streakEligible === true && typeof entry.endDate === "string" && entry.endDate.trim()) {
+  if (entry.streakEligible === true && endDateStr) {
     // Streak entries: endDate + buffer days
-    const endDateExpiry = addDays(entry.endDate.trim() + "T23:59:59.999Z", bufferDays);
+    const endDateExpiry = addDays(endDateStr + "T23:59:59.999Z", bufferDays);
     // Use whichever is later
     return endDateExpiry > defaultExpiry ? endDateExpiry : defaultExpiry;
   }

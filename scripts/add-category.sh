@@ -49,15 +49,16 @@ fi
 cat > "data/schemas/${SLUG}.ts" << SCHEMA
 import { validateByFieldDefinitions } from "@/data/schemas/common";
 import type { EntrySchema } from "@/data/schemas/types";
+import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/workflowConfig";
 
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
-  { key: "academicYear", label: "Academic Year", kind: "string" },
-  { key: "yearOfStudy", label: "Year of Study", kind: "string" },
-  { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10 },
-  { key: "startDate", label: "Start Date", kind: "date" },
-  { key: "endDate", label: "End Date", kind: "date" },
-  // TODO: add category-specific Stage 1 fields here
+  { key: "academicYear", label: "Academic Year", kind: "string", stage: 1 },
+  { key: "yearOfStudy", label: "Year of Study", kind: "string", stage: 1 },
+  { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10, stage: 1 },
+  { key: "startDate", label: "Start Date", kind: "date", stage: 1 },
+  { key: "endDate", label: "End Date", kind: "date", stage: 1 },
+  // TODO: add category-specific Stage 1 fields here (stage: 1)
 
   // Stage 2 (uploads — do NOT affect PDF hash)
   // TODO: add upload fields here, e.g.:
@@ -90,6 +91,8 @@ export const ${CAMEL}Schema: EntrySchema = {
     return validateByFieldDefinitions(payload, mode, fields);
   },
 };
+
+export const workflow: WorkflowConfig = { ...DEFAULT_WORKFLOW_CONFIG };
 SCHEMA
 
 echo "  ✓ data/schemas/${SLUG}.ts"

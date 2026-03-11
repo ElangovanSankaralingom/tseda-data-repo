@@ -1,6 +1,7 @@
 export type TimerConfig = {
   defaultWindowDays: number;
   streakBufferDays: number;
+  pastEntryWindowDays: number;
   pauseOnRequest: boolean;
   autoFinaliseOnExpiry: boolean;
   autoDeleteOnExpiry: boolean;
@@ -36,6 +37,7 @@ export const DEFAULT_WORKFLOW_CONFIG: WorkflowConfig = {
   timer: {
     defaultWindowDays: 3,
     streakBufferDays: 8,
+    pastEntryWindowDays: 1,
     pauseOnRequest: true,
     autoFinaliseOnExpiry: true,
     autoDeleteOnExpiry: true,

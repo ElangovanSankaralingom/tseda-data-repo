@@ -44,8 +44,8 @@ export function computeCompletionState(
 ): CompletionState {
   const schema = getCategorySchema(category);
 
-  const stage1Fields = schema.fields.filter(f => f.stage !== 2 && f.exportable !== false);
-  const stage2Fields = schema.fields.filter(f => f.stage === 2 && f.exportable !== false);
+  const stage1Fields = schema.fields.filter(f => f.stage !== 2 && f.exportable !== false && f.required !== false);
+  const stage2Fields = schema.fields.filter(f => f.stage === 2 && f.exportable !== false && f.required !== false);
 
   const stage1Filled = stage1Fields.filter(f => isFieldFilled(entry, f.key, f.kind, f.upload)).length;
   const stage1Complete = stage1Filled === stage1Fields.length;

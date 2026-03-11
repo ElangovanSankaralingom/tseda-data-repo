@@ -112,12 +112,12 @@ describe("computeEditWindowExpiry", () => {
     assert.ok(expiry > "2024-06-20");
   });
 
-  it("falls back to default window if endDate + buffer is earlier", () => {
-    const generated = "2024-06-15T12:00:00.000Z"; // default = June 18
-    const endDate = "2024-06-01"; // endDate + 8 = June 9 < June 18
+  it("falls back to past-entry window if endDate is before generatedAt", () => {
+    const generated = "2024-06-15T12:00:00.000Z";
+    const endDate = "2024-06-01"; // endDate is before generated → past entry → 1-day window
     const expiry = computeEditWindowExpiry(generated, { streakEligible: true, endDate });
-    const defaultExpiry = new Date("2024-06-18T12:00:00.000Z").toISOString();
-    assert.equal(expiry, defaultExpiry);
+    const expected = new Date("2024-06-16T12:00:00.000Z").toISOString();
+    assert.equal(expiry, expected);
   });
 
   it("accepts custom override days", () => {
