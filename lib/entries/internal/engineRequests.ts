@@ -14,6 +14,9 @@ function validateRequestEligibility(existing: EntryLike) {
   if ((existing as Record<string, unknown>).permanentlyLocked === true) {
     throw new AppError({ code: "VALIDATION_ERROR", message: "This entry is permanently locked and cannot be modified." });
   }
+  if ((existing as Record<string, unknown>).requestActionUsed === true) {
+    throw new AppError({ code: "VALIDATION_ERROR", message: "A request action has already been used on this entry." });
+  }
   if (!isEntryCommitted(existing as WorkflowEntryLike)) {
     throw new AppError({ code: "VALIDATION_ERROR", message: "Entry must be generated before requesting edit access." });
   }
@@ -38,6 +41,8 @@ function applyRequestFields(
   if (wasWin) {
     (transitioned as Record<string, unknown>).streakPermanentlyRemoved = true;
   }
+  // Mark that the user has used their one-time request action
+  (transitioned as Record<string, unknown>).requestActionUsed = true;
   const now = new Date();
   const resetAt = typeof existing.requestCountResetAt === "string" && existing.requestCountResetAt.trim()
     ? new Date(existing.requestCountResetAt)
@@ -125,8 +130,11 @@ export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngin
         throw new AppError({ code: "VALIDATION_ERROR", message: "Entry is not in EDIT_REQUESTED state." });
       }
     },
-    applyTransition: (existing, nowISO) =>
-      transitionEntry(existing, "cancelEditRequest", { nowISO }) as EntryLike,
+    applyTransition: (existing, nowISO) => {
+      const transitioned = transitionEntry(existing, "cancelEditRequest", { nowISO });
+      (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      return transitioned as EntryLike;
+    },
   });
 }
 
@@ -190,6 +198,9 @@ export async function requestDelete<T extends EntryEngineRecord = EntryEngineRec
       if ((existing as Record<string, unknown>).permanentlyLocked === true) {
         throw new AppError({ code: "VALIDATION_ERROR", message: "This entry is permanently locked and cannot be modified." });
       }
+      if ((existing as Record<string, unknown>).requestActionUsed === true) {
+        throw new AppError({ code: "VALIDATION_ERROR", message: "A request action has already been used on this entry." });
+      }
       if (!isEntryCommitted(existing as WorkflowEntryLike)) {
         throw new AppError({ code: "VALIDATION_ERROR", message: "Entry must be generated before requesting deletion." });
       }
@@ -244,7 +255,10 @@ export async function cancelDeleteRequest<T extends EntryEngineRecord = EntryEng
         throw new AppError({ code: "VALIDATION_ERROR", message: "Entry is not in DELETE_REQUESTED state." });
       }
     },
-    applyTransition: (existing, nowISO) =>
-      transitionEntry(existing, "cancelDeleteRequest", { nowISO }) as EntryLike,
+    applyTransition: (existing, nowISO) => {
+      const transitioned = transitionEntry(existing, "cancelDeleteRequest", { nowISO });
+      (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      return transitioned as EntryLike;
+    },
   });
 }

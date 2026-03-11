@@ -247,7 +247,8 @@
     .animate-scale-in,
     .animate-dialog-shake,
     .animate-slide-in-right,
-    .animate-highlight-new {
+    .animate-highlight-new,
+    .animate-finalise-pop {
       animation: none !important;
       opacity: 1 !important;
       transform: none !important;
@@ -257,6 +258,36 @@
     .stagger-5, .stagger-6, .stagger-7, .stagger-8 {
       animation-delay: 0ms !important;
     }
+  }
+
+  /* Confetti burst for finalise celebration */
+  @keyframes confetti-fly {
+    0% {
+      transform: translate(-50%, -50%) scale(0) rotate(0deg);
+      opacity: 1;
+    }
+    15% {
+      transform: translate(-50%, -50%) scale(1.2) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(
+        calc(-50% + var(--tx, 0px)),
+        calc(-50% + var(--ty, 0px))
+      ) scale(0.4) rotate(var(--spin, 0deg));
+      opacity: 0;
+    }
+  }
+
+  /* Finalise button pop */
+  @keyframes finalise-pop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.15); }
+    60% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  .animate-finalise-pop {
+    animation: finalise-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   /* Highlight glow for newly revealed fields */

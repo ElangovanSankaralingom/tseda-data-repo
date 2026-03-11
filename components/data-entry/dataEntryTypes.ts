@@ -208,6 +208,7 @@ export type CategoryEntryRecordCardProps = {
   requestDelete?: RequestDeleteControls;
   requestInFlight?: boolean;
   permanentlyLocked?: boolean;
+  requestActionUsed?: boolean;
   children?: React.ReactNode;
 };
 
@@ -246,6 +247,7 @@ export type EntryDocumentSectionProps = {
   onRegenerate: () => void;
   generating: boolean;
   isViewMode?: boolean;
+  permanentlyLocked?: boolean;
 };
 
 // --- Props from EditorProgressHeader.tsx ---

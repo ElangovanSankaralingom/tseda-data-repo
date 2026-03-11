@@ -67,7 +67,7 @@ export async function notifyEditRejected(
     ownerEmail,
     "edit_request_rejected",
     "Edit request denied",
-    `Edit request denied for '${entryTitle}'${reasonMsg}`,
+    `Edit request denied for '${entryTitle}'${reasonMsg}. This entry is now permanently locked.`,
   );
 }
 
@@ -113,6 +113,21 @@ export async function notifyDeleteApproved(
     "delete_approved",
     "Entry deleted",
     `Your delete request for '${entryTitle}' was approved`,
+  );
+}
+
+/**
+ * Notify user that delete request was rejected and entry is permanently locked.
+ */
+export async function notifyDeleteRejected(
+  ownerEmail: string,
+  entryTitle: string,
+): Promise<void> {
+  await notifyUser(
+    ownerEmail,
+    "delete_rejected",
+    "Delete request denied",
+    `Your delete request for '${entryTitle}' was rejected. This entry is now permanently locked.`,
   );
 }
 

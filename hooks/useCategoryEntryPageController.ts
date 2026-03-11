@@ -248,6 +248,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       editTimeLabel?: string;
       onBack?: () => void;
       permanentlyLocked?: boolean;
+      requestActionUsed?: boolean;
     }): HeaderActionBindings => ({
       isEditing: showForm,
       isViewMode,
@@ -276,6 +277,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
       editTimeLabel: options?.editTimeLabel,
       onBack: options?.onBack,
       permanentlyLocked: options?.permanentlyLocked,
+      requestActionUsed: options?.requestActionUsed,
     }),
     [
       actionState,

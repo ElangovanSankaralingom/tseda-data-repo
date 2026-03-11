@@ -68,6 +68,7 @@ export type HeaderActionBindings = {
   editTimeLabel?: string;
   onBack?: () => void;
   permanentlyLocked?: boolean;
+  requestActionUsed?: boolean;
 };
 
 export type PdfActionBindings = {
