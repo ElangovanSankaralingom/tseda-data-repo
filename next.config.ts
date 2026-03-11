@@ -6,7 +6,7 @@ const isProd = process.env.NODE_ENV === "production";
 const appOrigin = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 const securityHeaders = [
-  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-XSS-Protection", value: "1; mode=block" },
@@ -21,7 +21,8 @@ const securityHeaders = [
       "img-src 'self' https://lh3.googleusercontent.com data:",
       "font-src 'self'",
       "connect-src 'self'",
-      "frame-ancestors 'none'",
+      "frame-src 'self'",
+      "frame-ancestors 'self'",
     ].join("; "),
   },
   ...(isProd

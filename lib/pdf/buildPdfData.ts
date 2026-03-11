@@ -49,9 +49,14 @@ function trimText(value: unknown) {
 function formatDateText(value: unknown) {
   const text = trimText(value);
   if (!text) return "";
-  const parsed = Date.parse(text);
+  const parsed = Date.parse(`${text}T00:00:00Z`);
   if (Number.isNaN(parsed)) return text;
-  return new Date(parsed).toISOString().slice(0, 10);
+  return new Date(parsed).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 function formatNumberText(value: unknown) {
@@ -120,7 +125,8 @@ function formatFieldValue(field: SchemaFieldDefinition, entry: Record<string, un
     const numericText = formatNumberText(value);
     if (!numericText) return "";
     if (field.key === "supportAmount" || field.key === "amountSupport") {
-      return `INR ${numericText}`;
+      const num = Number(numericText);
+      return Number.isFinite(num) ? `Rs. ${num.toLocaleString("en-IN")}` : numericText;
     }
     return numericText;
   }
