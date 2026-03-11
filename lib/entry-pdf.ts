@@ -150,29 +150,7 @@ async function drawHeader(
     // Logos not found — continue without them
   }
 
-  // Institution name
-  const instName = "Thiagarajar College of Engineering, Madurai";
-  const instWidth = font.widthOfTextAtSize(instName, 9);
-  page.drawText(instName, {
-    x: (PAGE_WIDTH - instWidth) / 2,
-    y: PAGE_HEIGHT - MARGIN_TOP - 14,
-    font,
-    size: 9,
-    color: COLOR_SUBTITLE,
-  });
-
-  // Department name
-  const deptName = "T\u2019SEDA \u2014 School of Environmental Design and Architecture";
-  const deptWidth = font.widthOfTextAtSize(deptName, 9);
-  page.drawText(deptName, {
-    x: (PAGE_WIDTH - deptWidth) / 2,
-    y: PAGE_HEIGHT - MARGIN_TOP - 28,
-    font,
-    size: 9,
-    color: COLOR_SUBTITLE,
-  });
-
-  // Accent line
+  // Accent line (directly below logos)
   const accentY = PAGE_HEIGHT - MARGIN_TOP - 56;
   page.drawRectangle({
     x: MARGIN_LEFT,
