@@ -2,6 +2,8 @@ import "server-only";
 
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEntryStatus, transitionEntry } from "@/lib/entries/workflow";
+import { resumeTimer, clearTimer } from "@/lib/workflow/timerManager";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { AppError } from "@/lib/errors";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
@@ -37,6 +39,12 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
     applyTransition: (existing, { normalizedAdmin, nowISO }) => {
       const transitioned = transitionEntry(existing, "grantEdit", { nowISO, adminEmail: normalizedAdmin });
       (transitioned as EntryEngineRecord).pdfStale = true;
+      // Resume paused timer and record hash at grant
+      const resumed = resumeTimer(existing as Record<string, unknown>);
+      (transitioned as Record<string, unknown>).editWindowExpiresAt = resumed.editWindowExpiresAt;
+      (transitioned as Record<string, unknown>).timerPausedAt = resumed.timerPausedAt;
+      (transitioned as Record<string, unknown>).timerRemainingMs = resumed.timerRemainingMs;
+      (transitioned as Record<string, unknown>).hashAtEditGrant = hashPrePdfFields(existing as Record<string, unknown>, category);
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {
@@ -83,7 +91,11 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
       if (reason?.trim()) {
         (transitioned as Record<string, unknown>).editRejectedReason = reason.trim();
       }
+      const cleared = clearTimer();
+      (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
+      (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
       (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      (transitioned as Record<string, unknown>).requestActionUsed = true;
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {
@@ -294,7 +306,11 @@ export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEng
     entryId,
     applyTransition: (existing, { nowISO }) => {
       const transitioned = transitionEntry(existing, "cancelDeleteRequest", { nowISO });
+      const cleared = clearTimer();
+      (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
+      (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
       (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      (transitioned as Record<string, unknown>).requestActionUsed = true;
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {

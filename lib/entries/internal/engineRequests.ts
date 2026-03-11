@@ -7,6 +7,7 @@ import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { canRequestAction, isEntryCommitted, normalizeEntryStatus, transitionEntry } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isEntryWon } from "@/lib/streakProgress";
+import { pauseTimer, clearTimer } from "@/lib/workflow/timerManager";
 import type { EntryEngineRecord, EntryLike, WorkflowEntryLike } from "./engineHelpers.ts";
 import { runUserRequestMutation } from "./engineMutationRunner.ts";
 
@@ -41,6 +42,10 @@ function applyRequestFields(
   if (wasWin) {
     (transitioned as Record<string, unknown>).streakPermanentlyRemoved = true;
   }
+  // Pause the timer while the request is pending
+  const timerPause = pauseTimer(existing as Record<string, unknown>);
+  (transitioned as Record<string, unknown>).timerPausedAt = timerPause.timerPausedAt;
+  (transitioned as Record<string, unknown>).timerRemainingMs = timerPause.timerRemainingMs;
   // Mark that the user has used their one-time request action
   (transitioned as Record<string, unknown>).requestActionUsed = true;
   const now = new Date();
@@ -132,6 +137,9 @@ export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngin
     },
     applyTransition: (existing, nowISO) => {
       const transitioned = transitionEntry(existing, "cancelEditRequest", { nowISO });
+      const cleared = clearTimer();
+      (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
+      (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
       (transitioned as Record<string, unknown>).permanentlyLocked = true;
       return transitioned as EntryLike;
     },
@@ -257,6 +265,9 @@ export async function cancelDeleteRequest<T extends EntryEngineRecord = EntryEng
     },
     applyTransition: (existing, nowISO) => {
       const transitioned = transitionEntry(existing, "cancelDeleteRequest", { nowISO });
+      const cleared = clearTimer();
+      (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
+      (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
       (transitioned as Record<string, unknown>).permanentlyLocked = true;
       return transitioned as EntryLike;
     },

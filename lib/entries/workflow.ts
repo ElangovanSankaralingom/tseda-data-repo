@@ -202,6 +202,9 @@ export function computeEditGrantExpiry(
  * @returns `true` if the current time is at or past the edit window expiry.
  */
 export function isEditWindowExpired(entry: EntryStateLike, nowISO?: string): boolean {
+  // Timer paused during pending requests — not expired
+  if ((entry as Record<string, unknown>).timerPausedAt) return false;
+
   const expiry = toOptionalISO(entry.editWindowExpiresAt);
   if (!expiry) return false;
   const now = nowISO ?? new Date().toISOString();
