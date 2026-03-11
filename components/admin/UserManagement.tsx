@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import SelectDropdown from "@/components/controls/SelectDropdown";
 import {
   BarChart3,
   ChevronRight,
@@ -350,18 +351,20 @@ function FilterBar({
         </div>
 
         {/* Sort */}
-        <select
-          value={filters.sort}
-          onChange={(e) => onChange({ ...filters, sort: e.target.value })}
-          aria-label="Sort users"
-          className="select-styled h-9 rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs font-medium text-slate-600 outline-none hover:border-slate-300"
-        >
-          <option value="totalEntries">Most Entries</option>
-          <option value="lastActiveAt">Most Recent</option>
-          <option value="name">Name A-Z</option>
-          <option value="streakWins">Streak Wins</option>
-          <option value="completionRate">Completion Rate</option>
-        </select>
+        <div className="w-44">
+          <SelectDropdown
+            value={filters.sort}
+            onChange={(value) => onChange({ ...filters, sort: value })}
+            options={[
+              { label: "Most Entries", value: "totalEntries" },
+              { label: "Most Recent", value: "lastActiveAt" },
+              { label: "Name A-Z", value: "name" },
+              { label: "Streak Wins", value: "streakWins" },
+              { label: "Completion Rate", value: "completionRate" },
+            ]}
+            placeholder="Sort by"
+          />
+        </div>
       </div>
 
       <div className="mt-2 text-xs text-slate-500">

@@ -11,6 +11,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useCountUp } from "@/hooks/useCountUp";
 import type { AuditEvent, AuditStats } from "@/lib/types/admin";
 
@@ -198,47 +199,43 @@ export function FilterBar({
           />
         </div>
 
-        <div className="relative">
-          <select
+        <div className="w-36">
+          <SelectDropdown
             value={filters.action}
-            onChange={(e) => onChange({ ...filters, action: e.target.value })}
-            aria-label="Filter by action"
-            className="select-styled h-9 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
-          >
-            <option value="">All Actions</option>
-            {ALL_ACTIONS.map((a) => (
-              <option key={a} value={a}>{ACTION_LABELS[a]?.label ?? a}</option>
-            ))}
-          </select>
+            onChange={(value) => onChange({ ...filters, action: value })}
+            options={[
+              { label: "All Actions", value: "" },
+              ...ALL_ACTIONS.map((a) => ({ label: ACTION_LABELS[a]?.label ?? a, value: a })),
+            ]}
+            placeholder="All Actions"
+          />
         </div>
 
-        <div className="relative">
-          <select
+        <div className="w-40">
+          <SelectDropdown
             value={filters.category}
-            onChange={(e) => onChange({ ...filters, category: e.target.value })}
-            aria-label="Filter by category"
-            className="select-styled h-9 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
-          >
-            <option value="">All Categories</option>
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
+            onChange={(value) => onChange({ ...filters, category: value })}
+            options={[
+              { label: "All Categories", value: "" },
+              ...Object.entries(CATEGORY_LABELS).map(([key, label]) => ({ label, value: key })),
+            ]}
+            placeholder="All Categories"
+          />
         </div>
 
-        <div className="relative">
-          <select
+        <div className="w-36">
+          <SelectDropdown
             value={filters.dateRange}
-            onChange={(e) => onChange({ ...filters, dateRange: e.target.value })}
-            aria-label="Filter by date range"
-            className="select-styled h-9 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
-          >
-            <option value="">All Time</option>
-            <option value="1d">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="90d">Last 90 Days</option>
-          </select>
+            onChange={(value) => onChange({ ...filters, dateRange: value })}
+            options={[
+              { label: "All Time", value: "" },
+              { label: "Last 24 Hours", value: "1d" },
+              { label: "Last 7 Days", value: "7d" },
+              { label: "Last 30 Days", value: "30d" },
+              { label: "Last 90 Days", value: "90d" },
+            ]}
+            placeholder="All Time"
+          />
         </div>
 
         {hasFilters && (

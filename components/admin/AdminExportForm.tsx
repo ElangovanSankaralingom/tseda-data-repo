@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import SelectDropdown from "@/components/controls/SelectDropdown";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { type Option } from "./adminLocalTypes";
 
@@ -90,44 +91,35 @@ export default function AdminExportForm({
       <div className="grid gap-4 md:grid-cols-4">
         <label className="space-y-1 text-sm">
           <span className="text-muted-foreground">Faculty</span>
-          <select
+          <SelectDropdown
             value={userEmail}
-            onChange={(event) => setUserEmail(event.target.value)}
-            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
-          >
-            {users.map((email) => (
-              <option key={email} value={email}>
-                {email}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setUserEmail(value)}
+            options={users.map((email) => ({ label: email, value: email }))}
+            placeholder="Select faculty"
+          />
         </label>
 
         <label className="space-y-1 text-sm">
           <span className="text-muted-foreground">Category</span>
-          <select
+          <SelectDropdown
             value={category}
-            onChange={(event) => handleCategoryChange(event.target.value)}
-            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
-          >
-            {categories.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => handleCategoryChange(value)}
+            options={categories.map((item) => ({ label: item.label, value: item.key }))}
+            placeholder="Select category"
+          />
         </label>
 
         <label className="space-y-1 text-sm">
           <span className="text-muted-foreground">Format</span>
-          <select
+          <SelectDropdown
             value={format}
-            onChange={(event) => setFormat(event.target.value === "csv" ? "csv" : "xlsx")}
-            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
-          >
-            <option value="xlsx">Excel (.xlsx)</option>
-            <option value="csv">CSV (.csv)</option>
-          </select>
+            onChange={(value) => setFormat(value === "csv" ? "csv" : "xlsx")}
+            options={[
+              { label: "Excel (.xlsx)", value: "xlsx" },
+              { label: "CSV (.csv)", value: "csv" },
+            ]}
+            placeholder="Select format"
+          />
         </label>
 
         <div className="space-y-1 text-sm">

@@ -12,6 +12,7 @@ type SelectDropdownProps = {
   disabled?: boolean;
   error?: boolean;
   id?: string;
+  name?: string;
 };
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -26,6 +27,7 @@ export default function SelectDropdown({
   disabled,
   error,
   id,
+  name,
 }: SelectDropdownProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -99,6 +101,7 @@ export default function SelectDropdown({
 
   return (
     <div ref={containerRef} className="relative">
+      {name && <input type="hidden" name={name} value={value} />}
       <input
         id={id}
         ref={inputRef}

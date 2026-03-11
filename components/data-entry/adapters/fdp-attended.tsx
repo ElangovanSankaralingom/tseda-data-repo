@@ -5,7 +5,6 @@ import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
 import UploadField from "@/components/entry/UploadField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
-import SelectField from "@/components/controls/SelectField";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
@@ -17,6 +16,15 @@ import type { FileMeta } from "@/lib/types/entry";
 import { uploadFile } from "@/lib/upload/uploadService";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const SEMESTER_TYPE_OPTIONS = [
+  { label: "ODD Semester", value: "ODD" },
+  { label: "EVEN Semester", value: "EVEN" },
+] as const;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -172,17 +180,14 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
         </Field>
 
         <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
-          <SelectField
-            value={form.semesterType}
-            onChange={(v) => setForm((c) => ({ ...c, semesterType: v }))}
+          <SelectDropdown
+            value={form.semesterType || ""}
+            onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
+            options={SEMESTER_TYPE_OPTIONS}
+            placeholder="Select semester type"
             disabled={coreFieldDisabled("semesterType")}
             error={submitted && !!errors.semesterType}
-            aria-label="Semester Type"
-          >
-            <option value="">Select semester type</option>
-            <option value="ODD">ODD Semester</option>
-            <option value="EVEN">EVEN Semester</option>
-          </SelectField>
+          />
         </Field>
 
         <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
