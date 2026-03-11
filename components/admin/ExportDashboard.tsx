@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Clock,
 } from "lucide-react";
+import SelectDropdown from "@/components/controls/SelectDropdown";
 import type { ExportTemplate } from "@/lib/export/templates";
 import type { ExportHistoryEntry } from "@/lib/export/history";
 import {
@@ -202,28 +203,22 @@ export default function ExportDashboard({
               </button>
             </div>
             {!allUsers ? (
-              <select
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
-                aria-label="Select user"
-                className="mt-2 h-10 w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 text-sm"
-              >
-                {users.map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
-              </select>
+              <div className="mt-2 max-w-sm">
+                <SelectDropdown
+                  value={selectedUser}
+                  onChange={(value) => setSelectedUser(value)}
+                  options={users.map((u) => ({ label: u, value: u }))}
+                  placeholder="Select user"
+                />
+              </div>
             ) : null}
-            <div className="mt-3">
-              <select
+            <div className="mt-3 max-w-sm">
+              <SelectDropdown
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                aria-label="Select category"
-                className="h-10 w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 text-sm"
-              >
-                {categories.map((c) => (
-                  <option key={c.key} value={c.key}>{c.label}</option>
-                ))}
-              </select>
+                onChange={(value) => setSelectedCategory(value)}
+                options={categories.map((c) => ({ label: c.label, value: c.key }))}
+                placeholder="Select category"
+              />
             </div>
           </div>
 

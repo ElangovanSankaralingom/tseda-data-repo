@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import SearchCategorySelect from "@/components/controls/SearchCategorySelect";
 import PageHeader from "@/components/layout/PageHeader";
 import SectionCard from "@/components/layout/SectionCard";
 import { CATEGORY_LIST, getCategoryConfig, isValidCategorySlug } from "@/data/categoryRegistry";
@@ -79,18 +80,18 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-medium text-muted-foreground">Category</span>
-                <select
+                <SearchCategorySelect
                   name="category"
                   defaultValue={categoryValue}
-                  className="select-styled w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
-                >
-                  <option value="all">All categories</option>
-                  {CATEGORY_LIST.map((category) => (
-                    <option key={category} value={category}>
-                      {getCategoryConfig(category).label}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { label: "All categories", value: "all" },
+                    ...CATEGORY_LIST.map((category) => ({
+                      label: getCategoryConfig(category).label,
+                      value: category,
+                    })),
+                  ]}
+                  placeholder="All categories"
+                />
               </label>
               <div className="flex items-end">
                 <button

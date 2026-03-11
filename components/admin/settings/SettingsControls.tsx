@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, Clock } from "lucide-react";
+import SelectDropdown from "@/components/controls/SelectDropdown";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import type { SelectOption, SettingWithMeta, SaveStatus } from "./SettingsTypes";
 
@@ -208,17 +209,13 @@ export function SelectInput({
   disabled?: boolean;
 }) {
   return (
-    <select
+    <SelectDropdown
       value={value}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label="Select value"
-      className="select-styled h-9 rounded-lg border border-slate-200 bg-white px-3 pr-8 text-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-50"
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+      onChange={onChange}
+      options={options}
+      placeholder="Select value"
+    />
   );
 }
 
