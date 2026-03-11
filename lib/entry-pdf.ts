@@ -246,7 +246,7 @@ function drawFooter(page: PDFPage, font: PDFFont, boldFont: PDFFont) {
   });
 
   // Confidential marker
-  const idText = "T\u2019SEDA Data Repository \u2014 Confidential";
+  const idText = "T\u2019SEDA Data Repository";
   const idWidth = font.widthOfTextAtSize(idText, 7);
   page.drawText(idText, {
     x: (PAGE_WIDTH - idWidth) / 2,
