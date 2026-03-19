@@ -5,9 +5,10 @@ import { WifiOff } from "lucide-react";
 import { SYSTEM } from "@/lib/constants/messages";
 
 export default function NetworkStatus() {
-  const [online, setOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
+  const [online, setOnline] = useState(true);
 
   useEffect(() => {
+    setTimeout(() => setOnline(navigator.onLine), 0);
     function goOnline() { setOnline(true); }
     function goOffline() { setOnline(false); }
 
