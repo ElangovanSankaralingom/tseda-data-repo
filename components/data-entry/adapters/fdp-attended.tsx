@@ -31,6 +31,11 @@ const LEVEL_OPTIONS = [
   { label: "International", value: "International" },
 ] as const;
 
+const MODE_OPTIONS = [
+  { label: "Online", value: "Online" },
+  { label: "Offline", value: "Offline" },
+] as const;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -44,6 +49,7 @@ function emptyForm(): FdpAttended {
     academicYear: "",
     semesterType: "",
     level: "",
+    mode: "",
     startDate: "",
     endDate: "",
     programName: "",
@@ -207,6 +213,17 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
           />
         </Field>
 
+        <Field label="Mode of FDP" error={submitted ? errors.mode : undefined}>
+          <SelectDropdown
+            value={form.mode || ""}
+            onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
+            options={MODE_OPTIONS}
+            placeholder="Select mode"
+            disabled={coreFieldDisabled("mode")}
+            error={submitted && !!errors.mode}
+          />
+        </Field>
+
         <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
           <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
         </Field>
@@ -329,6 +346,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.academicYear) parts.push(entry.academicYear);
         if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
         if (entry.level) parts.push(entry.level);
+        if (entry.mode) parts.push(entry.mode);
         if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
