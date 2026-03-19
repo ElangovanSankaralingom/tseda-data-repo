@@ -12,7 +12,6 @@ import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
-import { FACULTY } from "@/lib/facultyDirectory";
 import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,
@@ -41,8 +40,6 @@ const UPLOAD_CONFIG: Array<{ slot: UploadSlot; label: string }> = [
   { slot: "attendance", label: "Attendance" },
   { slot: "organiserProfile", label: "Organiser Profile" },
 ];
-
-const FACULTY_OPTIONS = FACULTY;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -278,7 +275,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
           rows={form.coCoordinators}
           onRowsChange={(rows) => setForm((c) => ({ ...c, coCoordinators: rows }))}
           onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
-          facultyOptions={FACULTY_OPTIONS}
+          facultyEndpoint="/api/faculty"
           disableEmails={[form.coordinator.email]}
           parentLocked={coreFieldDisabled("coCoordinators")}
           viewOnly={isViewMode}

@@ -12,7 +12,6 @@ import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
-import { FACULTY } from "@/lib/facultyDirectory";
 import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,
@@ -43,7 +42,6 @@ const EMPTY_UPLOAD_STATUS: Record<UploadSlot, UploadStatus> = {
   attendance: { hasPending: false, busy: false },
   speakerProfile: { hasPending: false, busy: false },
 };
-const FACULTY_OPTIONS = FACULTY;
 
 function emptyUploads(): Record<UploadSlot, FileMeta[]> {
   return {
@@ -273,7 +271,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
           rows={form.coCoordinators}
           onRowsChange={(rows) => setForm((c) => ({ ...c, coCoordinators: rows }))}
           onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
-          facultyOptions={FACULTY_OPTIONS}
+          facultyEndpoint="/api/faculty"
           disableEmails={[coordinatorEmail]}
           parentLocked={coreFieldDisabled("coCoordinators")}
           viewOnly={isViewMode}

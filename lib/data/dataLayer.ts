@@ -1,8 +1,23 @@
 /**
- * Data access abstraction layer.
+ * DataLayer — Abstract data access interface.
  *
- * Currently implemented with JSON files (JsonDataLayer).
- * Designed for drop-in replacement with SQLite or Postgres.
+ * Current implementation: JsonDataLayer (file-based JSON storage)
+ * Future implementation: SqliteDataLayer (stub exists at lib/data/sqliteDataLayer.ts)
+ *
+ * To migrate to SQLite:
+ * 1. Install: npm install better-sqlite3 @types/better-sqlite3
+ * 2. Implement all methods in lib/data/sqliteDataLayer.ts
+ * 3. Set DATA_LAYER=sqlite in .env.local
+ * 4. Run migration script to import JSON data into SQLite
+ * 5. No other code changes needed — all access goes through this interface.
+ *
+ * Factory: lib/data/createDataLayer.ts (singleton, env-var driven)
+ *
+ * Benefits of SQLite:
+ * - Process-safe locking (no in-memory lock chains)
+ * - Built-in pagination (LIMIT/OFFSET)
+ * - Concurrent read access
+ * - Atomic transactions
  *
  * All implementations must guarantee:
  * - Atomic writes (no partial state on crash)
@@ -46,6 +61,11 @@ export interface DataLayer {
 
   /** Delete an entry by ID. Returns the deleted entry or null if not found. */
   deleteEntry(email: string, category: CategoryKey, id: string): Promise<DataLayerEntry | null>;
+
+  // ── Users ──────────────────────────────────────────────────────────────
+
+  /** List all registered user emails. */
+  listUsers(): Promise<string[]>;
 
   // ── User Index ───────────────────────────────────────────────────────────
 

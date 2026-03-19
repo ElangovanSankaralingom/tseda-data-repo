@@ -9,24 +9,45 @@ export type RateLimitOptions = {
 };
 
 type RateLimitBucket = {
-  timestamps: number[];
-  lastSeenAt: number;
+  count: number;
+  windowStart: number;
 };
 
 const buckets = new Map<string, RateLimitBucket>();
 
-const BUCKET_TTL_MULTIPLIER = 5;
+const MAX_BUCKETS = 10000;
 
 import { APP_CONFIG } from "@/lib/config/appConfig";
 
 export const RATE_LIMIT_PRESETS = APP_CONFIG.rateLimits;
 
-function pruneBuckets(now: number, windowMs: number) {
-  const ttlMs = windowMs * BUCKET_TTL_MULTIPLIER;
+export const SENSITIVE_PRESETS = {
+  fileUpload: { windowMs: 60_000, max: 20 },
+  generate: { windowMs: 60_000, max: 10 },
+  delete: { windowMs: 60_000, max: 10 },
+  auth: { windowMs: 300_000, max: 20 },
+} as const;
+
+let lastPruneAt = 0;
+const PRUNE_INTERVAL_MS = 60_000;
+
+function maybePrune(now: number, windowMs: number) {
+  if (now - lastPruneAt < PRUNE_INTERVAL_MS) return;
+  lastPruneAt = now;
+  const ttlMs = windowMs * 5;
   for (const [key, bucket] of buckets) {
-    if (now - bucket.lastSeenAt > ttlMs) {
+    if (now - bucket.windowStart > ttlMs) {
       buckets.delete(key);
     }
+  }
+}
+
+function ensureBucketLimit() {
+  if (buckets.size <= MAX_BUCKETS) return;
+  const entries = [...buckets.entries()].sort((a, b) => a[1].windowStart - b[1].windowStart);
+  const toRemove = entries.slice(0, buckets.size - MAX_BUCKETS + 100);
+  for (const [key] of toRemove) {
+    buckets.delete(key);
   }
 }
 
@@ -78,17 +99,18 @@ export function rateLimit(key: string, options: RateLimitOptions): Result<void> 
     );
   }
 
-  const cutoff = now - options.windowMs;
-  const bucket = buckets.get(normalizedKey) ?? { timestamps: [], lastSeenAt: now };
-  bucket.timestamps = bucket.timestamps.filter((timestamp) => timestamp > cutoff);
-  bucket.lastSeenAt = now;
+  maybePrune(now, options.windowMs);
 
-  if (bucket.timestamps.length >= options.max) {
-    buckets.set(normalizedKey, bucket);
-    pruneBuckets(now, options.windowMs);
+  const bucket = buckets.get(normalizedKey);
 
-    const oldest = bucket.timestamps[0] ?? now;
-    const retryAfterSeconds = Math.max(1, Math.ceil((oldest + options.windowMs - now) / 1000));
+  if (!bucket || now - bucket.windowStart >= options.windowMs) {
+    ensureBucketLimit();
+    buckets.set(normalizedKey, { count: 1, windowStart: now });
+    return ok(undefined);
+  }
+
+  if (bucket.count >= options.max) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((bucket.windowStart + options.windowMs - now) / 1000));
     return err(
       new AppError({
         code: "RATE_LIMITED",
@@ -98,10 +120,7 @@ export function rateLimit(key: string, options: RateLimitOptions): Result<void> 
     );
   }
 
-  bucket.timestamps.push(now);
-  buckets.set(normalizedKey, bucket);
-  pruneBuckets(now, options.windowMs);
-
+  bucket.count++;
   return ok(undefined);
 }
 

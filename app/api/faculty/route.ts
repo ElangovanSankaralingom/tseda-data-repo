@@ -31,13 +31,24 @@ function requireAdmin(email: string) {
   return canAccessAdminConsole(email);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const email = await requireSession();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const items = await readJson<FacultyProfile[]>(FILE, []);
+
+  const url = new URL(req.url);
+  const query = url.searchParams.get("q")?.toLowerCase().trim();
+
+  if (query && query.length >= 2) {
+    const filtered = items.filter(
+      (f) => f.fullName.toLowerCase().includes(query) || f.email.toLowerCase().includes(query)
+    );
+    return NextResponse.json(filtered.slice(0, 20));
+  }
+
   return NextResponse.json(items);
 }
 

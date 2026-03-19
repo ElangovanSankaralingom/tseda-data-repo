@@ -13,7 +13,6 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_OPTIONS, ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
 import { isISODate, getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid } from "@/lib/utils/idHelpers";
-import { FACULTY } from "@/lib/facultyDirectory";
 import { nowISTTimestampISO } from "@/lib/time";
 import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
@@ -25,8 +24,6 @@ import {
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
-
-const FACULTY_OPTIONS = FACULTY;
 
 function buildStaffKey(selection: StaffSelection) {
   const email = selection.email.trim().toLowerCase();
@@ -101,11 +98,6 @@ function validateRowForFacultySave(entryDraft: CaseStudyEntry, row: StaffSelecti
   const selectedEmail = row.email.trim().toLowerCase();
   if (!selectedEmail) {
     return { ok: false, error: "Select a faculty member first." };
-  }
-
-  const matchingFaculty = FACULTY_OPTIONS.find((f) => f.email.trim().toLowerCase() === selectedEmail);
-  if (!matchingFaculty) {
-    return { ok: false, error: "Select a listed faculty member." };
   }
 
   const duplicateCount = entryDraft.staffAccompanying.filter(
@@ -395,7 +387,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           rows={form.staffAccompanying}
           onRowsChange={(rows) => setForm((c) => ({ ...c, staffAccompanying: rows }))}
           onPersistRow={persistStaffRows}
-          facultyOptions={FACULTY_OPTIONS}
+          facultyEndpoint="/api/faculty"
           parentLocked={coreFieldDisabled("staffAccompanying")}
           viewOnly={isViewMode}
           sectionError={errors.staffAccompanying}
