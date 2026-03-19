@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { ClipboardList, LayoutDashboard, Shield } from "lucide-react";
 import AdminNotificationBell from "@/components/confirmations/AdminNotificationBell";
 import NotificationBell from "@/components/confirmations/NotificationBell";
@@ -83,8 +82,6 @@ export default function ShellClient({
   const pathname = usePathname();
   const { data: session } = useSession();
   const { confirm: confirmAction } = useConfirmation();
-
-  useRefreshOnFocus({ minInterval: 60000 });
 
   const [canAccessAdmin, setCanAccessAdmin] = useState(() =>
     isMasterAdmin(session?.user?.email)

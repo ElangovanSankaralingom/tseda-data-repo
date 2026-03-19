@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import NavigationRefresh from "@/components/NavigationRefresh";
 import ShellClient from "@/app/ShellClient";
 import { authOptions } from "@/lib/auth";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
@@ -20,5 +21,10 @@ export default async function ProtectedLayout({
     redirect(`${signin()}?error=AccessDenied`);
   }
 
-  return <ShellClient>{children}</ShellClient>;
+  return (
+    <ShellClient>
+      <NavigationRefresh />
+      {children}
+    </ShellClient>
+  );
 }
