@@ -133,7 +133,7 @@ export function safeBack(router: RouterLike, fallbackUrl: string) {
       const referrerMatchesFallback = referrerUrl.pathname === fallbackPath;
 
       if (sameOrigin && referrerMatchesFallback) {
-        router.back();
+        router.push(fallbackUrl);
         return;
       }
     } catch {
