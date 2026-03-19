@@ -21,7 +21,7 @@ import {
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureStreak } from "@/lib/entries/hydrateEntry";
-import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
+import type { CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 // ---------------------------------------------------------------------------
