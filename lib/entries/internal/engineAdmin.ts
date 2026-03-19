@@ -48,6 +48,7 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {
+      logger.info({ event: "entry.admin_action", action: "grant_edit", category, entryId: String(entry.id ?? entryId), adminEmail });
       const normalized = normalizeEmail(ownerEmail);
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle }) =>
@@ -99,6 +100,7 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {
+      logger.info({ event: "entry.admin_action", action: "reject_edit", category, entryId: String(entry.id ?? entryId), adminEmail });
       const normalized = normalizeEmail(ownerEmail);
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle }) =>
@@ -211,6 +213,7 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
         status: "PERMANENTLY_DELETED",
         durationMs: Date.now() - startedAt,
       });
+      logger.info({ event: "entry.admin_action", action: "approve_delete", category, entryId: id, adminEmail });
 
       return existing as T;
     });

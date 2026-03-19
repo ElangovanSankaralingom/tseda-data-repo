@@ -14,6 +14,7 @@ import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import type { FdpConducted } from "@/components/data-entry/adapters/adapterTypes";
+import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 // ---------------------------------------------------------------------------
@@ -458,7 +459,32 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
       {...props}
       category="fdp-conducted"
       emptyForm={emptyForm}
-      hydrateEntry={(entry) => entry}
+      hydrateEntry={(entry) => {
+        const e = entry as Record<string, unknown>;
+        return {
+          ...emptyForm(),
+          ...e,
+          academicYear: safeString(e.academicYear),
+          semesterType: safeString(e.semesterType),
+          level: safeString(e.level),
+          mode: safeString(e.mode),
+          startDate: safeString(e.startDate),
+          endDate: safeString(e.endDate),
+          programName: safeString(e.programName) || safeString(e.eventName),
+          coordinatorName: safeString(e.coordinatorName),
+          coordinatorEmail: safeString(e.coordinatorEmail),
+          coCoordinators: ensureFacultyArray(e.coCoordinators),
+          sponsored: safeBoolString(e.sponsored),
+          fundingAgency: safeString(e.fundingAgency),
+          fundingAmount: safeNumber(e.fundingAmount),
+          numberOfParticipants: safeNumber(e.numberOfParticipants),
+          permissionLetter: ensureFileMetaArray(e.permissionLetter),
+          geotaggedPhotos: ensureFileMetaArray(e.geotaggedPhotos),
+          attendanceSheet: ensureFileMetaArray(e.attendanceSheet),
+          officialPoster: ensureFileMetaArray(e.officialPoster),
+          streak: ensureStreak(e.streak),
+        } as FdpConducted;
+      }}
       validateFields={validateFields}
       renderFormFields={(ctx) => <FdpConductedFormFields ctx={ctx} />}
       buildListEntryTitle={(entry) => (entry.programName || "").trim() || "Untitled FDP"}

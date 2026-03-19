@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { TelemetryEventName } from "@/lib/telemetry/types";
+import { SYSTEM } from "@/lib/constants/messages";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
 import {
   createOptimisticSnapshot,
@@ -87,7 +88,7 @@ export function createRefreshList<T>(
         (body as { error?: { message?: string } | string })?.error;
       throw new Error(
         (typeof errMsg === "object" ? errMsg?.message : errMsg) ||
-          "Failed to refresh saved entries.",
+          SYSTEM.refreshFailed,
       );
     }
 

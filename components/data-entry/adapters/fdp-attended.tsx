@@ -12,6 +12,7 @@ import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { uuid, cx } from "@/lib/utils/idHelpers";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
+import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 // ---------------------------------------------------------------------------
@@ -303,7 +304,27 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
       {...props}
       category="fdp-attended"
       emptyForm={emptyForm}
-      hydrateEntry={(entry) => entry}
+      hydrateEntry={(entry) => {
+        const e = entry as Record<string, unknown>;
+        return {
+          ...emptyForm(),
+          ...e,
+          academicYear: safeString(e.academicYear),
+          semesterType: safeString(e.semesterType),
+          level: safeString(e.level),
+          mode: safeString(e.mode),
+          startDate: safeString(e.startDate),
+          endDate: safeString(e.endDate),
+          programName: safeString(e.programName),
+          organisingBody: safeString(e.organisingBody),
+          sponsored: safeBoolString(e.sponsored),
+          fundingAgency: safeString(e.fundingAgency),
+          fundingAmount: safeNumber(e.fundingAmount) ?? safeNumber(e.supportAmount),
+          permissionLetter: ensureFileMetaArray(e.permissionLetter),
+          completionCertificate: ensureFileMetaArray(e.completionCertificate),
+          streak: ensureStreak(e.streak),
+        } as FdpAttended;
+      }}
       validateFields={validateFields}
       renderFormFields={(ctx) => <FdpAttendedFormFields ctx={ctx} />}
       buildListEntryTitle={(entry) => entry.programName}

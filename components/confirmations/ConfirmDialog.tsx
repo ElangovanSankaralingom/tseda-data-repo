@@ -168,7 +168,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200 ${
+        className={`relative z-10 w-full max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200 ${
           config.accent ?? ""
         } ${animateIn ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
       >

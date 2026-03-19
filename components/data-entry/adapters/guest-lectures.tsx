@@ -22,6 +22,7 @@ import {
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { FileMeta } from "@/lib/types/entry";
 import type { GuestLectureEntry, UploadStatus } from "@/components/data-entry/adapters/adapterTypes";
+import { safeString, safeNumber, ensureFaculty, ensureFacultyArray, extractNestedUpload, ensureStreak } from "@/lib/entries/hydrateEntry";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 type UploadSlot =
@@ -86,9 +87,32 @@ function emptyForm(): GuestLectureEntry {
 }
 
 function hydrateEntry(entry: GuestLectureEntry): GuestLectureEntry {
-  return withAcademicProgressionCompatibility(
+  const withPdf = withAcademicProgressionCompatibility(
     hydratePdfSnapshot(entry, "guest-lectures") as GuestLectureEntry,
   ) as GuestLectureEntry;
+  const e = withPdf as unknown as Record<string, unknown>;
+  return {
+    ...withPdf,
+    academicYear: safeString(e.academicYear),
+    startDate: safeString(e.startDate),
+    endDate: safeString(e.endDate),
+    eventName: safeString(e.eventName),
+    speakerName: safeString(e.speakerName),
+    organizationName: safeString(e.organizationName),
+    coordinator: ensureFaculty(e.coordinator),
+    coCoordinators: ensureFacultyArray(e.coCoordinators),
+    yearOfStudy: safeString(e.yearOfStudy),
+    currentSemester: safeNumber(e.currentSemester),
+    participants: safeNumber(e.participants),
+    uploads: {
+      permissionLetter: extractNestedUpload(e, "permissionLetter"),
+      brochure: extractNestedUpload(e, "brochure"),
+      attendance: extractNestedUpload(e, "attendance"),
+      speakerProfile: extractNestedUpload(e, "speakerProfile"),
+      geotaggedPhotos: extractNestedUpload(e, "geotaggedPhotos"),
+    },
+    streak: ensureStreak(e.streak),
+  } as GuestLectureEntry;
 }
 
 function validateFields(form: GuestLectureEntry): Record<string, string> {
