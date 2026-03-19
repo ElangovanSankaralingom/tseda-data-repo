@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { AlertTriangle } from "lucide-react";
 import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
 import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
@@ -19,7 +20,7 @@ import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
-import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
+import { entryDetail, entryList, entryNew } from "@/lib/entryNavigation";
 import {
   createDeleteEntry,
   createPersistProgress,
@@ -381,6 +382,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   });
 
   const {
+    autoSaveFailed,
     autoSaveStatus,
     cancelRequestEdit,
     finaliseEntry,
@@ -399,6 +401,17 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     showToast,
     toast,
   } = controller;
+
+  // Warn user before closing tab/navigating away with unsaved changes
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Compute workflow state from the current form (for button states)
   const workflowState = useMemo(
@@ -467,7 +480,11 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     resetUploadState();
   }
 
-  function closeForm(targetHref = categoryPath) {
+  function closeForm(targetHref = categoryPath, skipConfirm = false) {
+    if (!skipConfirm && hasUnsavedChanges) {
+      const confirmed = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+      if (!confirmed) return;
+    }
     resetForm();
     setFormOpen(false);
     window.location.href = targetHref;
@@ -501,7 +518,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     setList,
     refreshList,
     onDeletedActiveEntry: (id) => {
-      if (activeEntryId === id) closeForm();
+      if (activeEntryId === id) closeForm(categoryPath, true);
     },
     showToast,
   });
@@ -564,6 +581,13 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
 
   // --- Render ---
   return (
+    <>
+    {autoSaveFailed && (
+      <div className="sticky top-0 z-40 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-sm">
+        <AlertTriangle className="size-4 shrink-0" />
+        <span>Changes not saved — check your connection and try again.</span>
+      </div>
+    )}
     <CategoryEntryRuntime
       entryShell={{
         category,
@@ -604,7 +628,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           return {
             canFinalise: workflowState.buttons.finalise.enabled,
             onFinalise: () => finaliseEntry(form),
-            onAfterFinalise: () => closeForm(categoryPath),
+            onAfterFinalise: () => closeForm(categoryPath, true),
             disabledReason: workflowState.buttons.finalise.disabledReason,
           };
         })(),
@@ -679,5 +703,6 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", permanentlyLocked: true } as T));
       })}
     />
+    </>
   );
 }

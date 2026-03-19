@@ -4,7 +4,7 @@ import { useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
-import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldMulti";
+import UploadFieldMulti from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";

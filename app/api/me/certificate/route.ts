@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { getProfileByEmail, upsertProfile, StoredFile, type OutsideAcademic, type IndustryExp } from "@/lib/profileStore";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { apiUnauthorized, apiForbidden } from "@/lib/api/apiResponse";
 
 const ACCEPT = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const MAX_MB = 20;
@@ -27,8 +28,8 @@ function cloneProfile<T>(value: T): T {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
-  if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
+  if (!email) return apiUnauthorized();
+  if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return apiForbidden();
 
   const form = await req.formData();
   const categoryRaw = String(form.get("category") ?? "");
@@ -102,8 +103,8 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
-  if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
+  if (!email) return apiUnauthorized();
+  if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return apiForbidden();
 
   const body = await req.json().catch(() => null);
   const categoryRaw = String(body?.category ?? "");

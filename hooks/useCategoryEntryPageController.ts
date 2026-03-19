@@ -308,6 +308,7 @@ export function useCategoryEntryPageController<TEntry extends CategoryPageEntry>
   // ── Return ──────────────────────────────────────────────────────────────
   return {
     actionState,
+    autoSaveFailed: saveOrch.autoSaveFailed,
     autoSaveStatus: saveOrch.autoSaveStatus,
     cancelRequestDelete: requests.cancelRequestDelete,
     cancelRequestEdit: requests.cancelRequestEdit,

@@ -7,12 +7,13 @@ import { authOptions } from "@/lib/auth";
 import { getDashboardSummary } from "@/lib/dashboard/getDashboardSummary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryList, entryNew } from "@/lib/entryNavigation";
+import { apiUnauthorized } from "@/lib/api/apiResponse";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiUnauthorized();
   }
 
   const summary = await getDashboardSummary(email);

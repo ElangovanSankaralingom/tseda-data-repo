@@ -25,6 +25,8 @@ type MultiPhotoUploadProps = {
   onStatusChange?: (status: { hasPending: boolean; busy: boolean }) => void;
   disabled?: boolean;
   viewOnly?: boolean;
+  maxFileSizeMB?: number;
+  acceptedFileTypes?: string[];
 };
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -54,6 +56,8 @@ export default function MultiPhotoUpload({
   onStatusChange,
   disabled = false,
   viewOnly = false,
+  maxFileSizeMB = 20,
+  acceptedFileTypes = [".pdf", ".jpg", ".jpeg", ".png"],
 }: MultiPhotoUploadProps) {
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -255,11 +259,25 @@ export default function MultiPhotoUpload({
               type="file"
               multiple
               className="hidden"
-              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+              accept={acceptedFileTypes.join(",")}
               onChange={(event) => {
                 const selected = Array.from(event.target.files ?? []);
                 event.currentTarget.value = "";
-                setPendingFiles((current) => [...current, ...selected]);
+                const maxBytes = maxFileSizeMB * 1024 * 1024;
+                const valid: File[] = [];
+                for (const file of selected) {
+                  const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
+                  if (!acceptedFileTypes.includes(ext)) {
+                    setError(`Only ${acceptedFileTypes.join(", ")} files are accepted.`);
+                    return;
+                  }
+                  if (file.size > maxBytes) {
+                    setError(`File exceeds ${maxFileSizeMB}MB limit.`);
+                    return;
+                  }
+                  valid.push(file);
+                }
+                setPendingFiles((current) => [...current, ...valid]);
                 setError(null);
                 setCompletedCount(0);
                 setCurrentProgress(0);
