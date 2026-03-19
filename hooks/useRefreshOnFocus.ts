@@ -1,33 +1,45 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 /**
- * Refreshes server components when the user returns to the tab after being away.
- * Only triggers if at least `minInterval` ms have passed since the last refresh.
- * Skips refresh if `suppressRef` is true (e.g. when a form has unsaved changes).
+ * Calls router.refresh() when the tab gains focus or becomes visible,
+ * ensuring server components re-render with fresh data.
+ *
+ * Accepts an optional `minInterval` (ms) to throttle refreshes — defaults to 0
+ * (refresh on every focus). Callers that want less aggressive behaviour can
+ * pass e.g. `{ minInterval: 60000 }`.
  */
-export function useRefreshOnFocus(options?: {
-  minInterval?: number;
-  suppressRef?: React.RefObject<boolean>;
-}) {
+export function useRefreshOnFocus(options?: { minInterval?: number }) {
   const router = useRouter();
-  const [lastRefreshInit] = useState(() => Date.now());
-  const lastRefresh = useRef(lastRefreshInit);
-  const minInterval = options?.minInterval ?? 60000;
+  const lastRefreshRef = useRef(0);
+  const minInterval = options?.minInterval ?? 0;
 
   useEffect(() => {
-    const onFocus = () => {
-      if (options?.suppressRef?.current) return;
+    function maybeRefresh() {
       const now = Date.now();
-      if (now - lastRefresh.current > minInterval) {
+      if (now - lastRefreshRef.current >= minInterval) {
         router.refresh();
-        lastRefresh.current = now;
+        lastRefreshRef.current = now;
       }
-    };
+    }
 
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [router, minInterval, options?.suppressRef]);
+    function handleFocus() {
+      maybeRefresh();
+    }
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        maybeRefresh();
+      }
+    }
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [router, minInterval]);
 }
