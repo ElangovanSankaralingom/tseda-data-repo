@@ -75,7 +75,9 @@ export function createRefreshList<T>(
   return async () => {
     const params = config.queryParams?.() ?? {};
     const query = new URLSearchParams(params).toString();
-    const url = query ? `${config.endpoint}?${query}` : config.endpoint;
+    const baseUrl = query ? `${config.endpoint}?${query}` : config.endpoint;
+    const separator = baseUrl.includes("?") ? "&" : "?";
+    const url = `${baseUrl}${separator}_t=${Date.now()}`;
 
     const response = await fetch(url, { cache: "no-store" });
     const body = await response.json();

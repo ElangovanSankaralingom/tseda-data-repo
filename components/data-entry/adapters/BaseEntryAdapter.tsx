@@ -426,7 +426,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         setUserDisplayName(
           String(me?.officialName ?? me?.userPreferredName ?? nextEmail.split("@")[0]).trim(),
         );
-        const listResponse = await fetch(endpoint, { cache: "no-store" });
+        const listResponse = await fetch(`${endpoint}?_t=${Date.now()}`, { cache: "no-store" });
         const body = await listResponse.json();
         if (!listResponse.ok) {
           throw new Error(body?.error?.message || body?.error || `Failed to load ${title} records.`);
@@ -457,6 +457,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   function closeForm(targetHref = categoryPath) {
     resetForm();
     setFormOpen(false);
+    router.refresh();
     safeBack(router, targetHref);
   }
 
