@@ -1,153 +1,118 @@
 "use client";
 
 import { useState } from "react";
-import DateField from "@/components/controls/DateField";
+import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
+import DateField from "@/components/controls/DateField";
+import UploadFieldMulti from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
-import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
-import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
-import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
+import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
-import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
-import {
-  allowedSemestersForYear,
-  isSemesterAllowed,
-  normalizeYearOfStudy,
-  YEAR_OF_STUDY_OPTIONS,
-} from "@/lib/student-academic";
-import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
-import type { FileMeta } from "@/lib/types/entry";
-import type { GuestLectureEntry, UploadStatus } from "@/components/data-entry/adapters/adapterTypes";
-import { safeString, safeNumber, ensureFaculty, ensureFacultyArray, extractNestedUpload, ensureStreak } from "@/lib/entries/hydrateEntry";
+import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureStreak } from "@/lib/entries/hydrateEntry";
+import type { GuestLectureEntry } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
-type UploadSlot =
-  | "permissionLetter"
-  | "brochure"
-  | "attendance"
-  | "speakerProfile";
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
-const UPLOAD_CONFIG: Array<{ slot: UploadSlot; label: string }> = [
-  { slot: "permissionLetter", label: "Permission Letter" },
-  { slot: "brochure", label: "Brochure" },
-  { slot: "attendance", label: "Attendance" },
-  { slot: "speakerProfile", label: "Speaker Profile" },
-];
-const EMPTY_UPLOAD_STATUS: Record<UploadSlot, UploadStatus> = {
-  permissionLetter: { hasPending: false, busy: false },
-  brochure: { hasPending: false, busy: false },
-  attendance: { hasPending: false, busy: false },
-  speakerProfile: { hasPending: false, busy: false },
-};
+const SEMESTER_TYPE_OPTIONS = [
+  { label: "ODD Semester", value: "ODD" },
+  { label: "EVEN Semester", value: "EVEN" },
+] as const;
 
-function emptyUploads(): Record<UploadSlot, FileMeta[]> {
-  return {
-    permissionLetter: [],
-    brochure: [],
-    attendance: [],
-    speakerProfile: [],
-  };
-}
+const LEVEL_OPTIONS = [
+  { label: "National", value: "National" },
+  { label: "International", value: "International" },
+] as const;
 
-function emptyFacultySelection(): FacultyRowValue {
-  return { id: uuid(), name: "", email: "", isLocked: false, savedAtISO: null };
-}
+const MODE_OPTIONS = [
+  { label: "Online", value: "Online" },
+  { label: "Offline", value: "Offline" },
+] as const;
+
+const SPONSORED_OPTIONS = [
+  { label: "Yes", value: "Yes" },
+  { label: "No", value: "No" },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function emptyForm(): GuestLectureEntry {
-  return withAcademicProgressionCompatibility({
+  return {
     id: uuid(),
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
+    requestEditMessage: "",
     academicYear: "",
+    semesterType: "",
+    level: "",
+    mode: "",
     startDate: "",
     endDate: "",
-    eventName: "",
-    speakerName: "",
-    organizationName: "",
-    coordinator: emptyFacultySelection(),
+    topicOfLecture: "",
+    guestSpeakerName: "",
+    guestSpeakerDesignation: "",
+    guestSpeakerOrganisation: "",
+    coordinatorName: "",
+    coordinatorEmail: "",
     coCoordinators: [],
-    yearOfStudy: "",
-    currentSemester: null,
-    participants: null,
+    sponsored: "",
+    fundingAgency: "",
+    fundingAmount: null,
     pdfMeta: null,
-    pdfSourceHash: "",
     pdfStale: false,
-    uploads: {
-      ...emptyUploads(),
-      geotaggedPhotos: [],
-    },
+    pdfSourceHash: "",
+    permissionLetter: [],
+    geotaggedPhotos: [],
+    attendanceSheet: [],
+    officialPoster: [],
+    numberOfParticipants: null,
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
-  }) as GuestLectureEntry;
-}
-
-function hydrateEntry(entry: GuestLectureEntry): GuestLectureEntry {
-  const withPdf = withAcademicProgressionCompatibility(
-    hydratePdfSnapshot(entry, "guest-lectures") as GuestLectureEntry,
-  ) as GuestLectureEntry;
-  const e = withPdf as unknown as Record<string, unknown>;
-  return {
-    ...withPdf,
-    academicYear: safeString(e.academicYear),
-    startDate: safeString(e.startDate),
-    endDate: safeString(e.endDate),
-    eventName: safeString(e.eventName),
-    speakerName: safeString(e.speakerName),
-    organizationName: safeString(e.organizationName),
-    coordinator: ensureFaculty(e.coordinator),
-    coCoordinators: ensureFacultyArray(e.coCoordinators),
-    yearOfStudy: safeString(e.yearOfStudy),
-    currentSemester: safeNumber(e.currentSemester),
-    participants: safeNumber(e.participants),
-    uploads: {
-      permissionLetter: extractNestedUpload(e, "permissionLetter"),
-      brochure: extractNestedUpload(e, "brochure"),
-      attendance: extractNestedUpload(e, "attendance"),
-      speakerProfile: extractNestedUpload(e, "speakerProfile"),
-      geotaggedPhotos: extractNestedUpload(e, "geotaggedPhotos"),
-    },
-    streak: ensureStreak(e.streak),
   } as GuestLectureEntry;
 }
+
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
 
 function validateFields(form: GuestLectureEntry): Record<string, string> {
   const errors = validateEntryFields("guest-lectures", form as unknown as Record<string, unknown>);
 
-  // Category-specific: empty co-coordinator rows
-  if (form.coCoordinators.some((value) => value.name.trim().length === 0)) {
-    errors.coCoordinators = "Remove empty co-coordinator rows or fill them in.";
-  }
-
   // Category-specific: duplicate co-coordinator emails
   const emailCounts = new Map<string, number>();
-  [form.coordinator.email, ...form.coCoordinators.map((value) => value.email)]
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean)
-    .forEach((value) => {
-      emailCounts.set(value, (emailCounts.get(value) ?? 0) + 1);
-    });
+  const selectedEmails = [form.coordinatorEmail, ...form.coCoordinators.map((v) => v.email)]
+    .map((v) => (v || "").trim().toLowerCase())
+    .filter(Boolean);
+  for (const selectedEmail of selectedEmails) {
+    emailCounts.set(selectedEmail, (emailCounts.get(selectedEmail) ?? 0) + 1);
+  }
   form.coCoordinators.forEach((value, index) => {
-    if (!value.email) {
-      errors[`coCoordinators.${index}`] = "Select a faculty member from the list.";
-      return;
-    }
-    if ((emailCounts.get(value.email.toLowerCase()) ?? 0) > 1) {
+    if (value.email && (emailCounts.get(value.email.toLowerCase()) ?? 0) > 1) {
       errors[`coCoordinators.${index}`] = "This faculty is already selected in another role.";
     }
   });
 
-  // Category-specific: participants must be > 0
-  if (form.participants !== null && (!Number.isFinite(form.participants) || form.participants <= 0)) {
-    errors.participants = "Participants must be greater than 0.";
+  if (form.sponsored === "Yes") {
+    if (!form.fundingAgency?.trim()) errors.fundingAgency = "Funding agency is required when sponsored.";
+    if (form.fundingAmount === null || form.fundingAmount === undefined) errors.fundingAmount = "Funding amount is required when sponsored.";
   }
 
   return errors;
 }
+
+// ---------------------------------------------------------------------------
+// Form fields component
+// ---------------------------------------------------------------------------
 
 function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEntry> }) {
   const {
@@ -159,34 +124,25 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
     controlsDisabled,
     isViewMode,
     uploadsVisible,
-    submitAttemptedFinal,
     persistCurrentMutation,
+    submitAttemptedFinal,
     email,
     userDisplayName,
   } = ctx;
 
-  const [singleUploadStatus, setSingleUploadStatus] =
-    useState<Record<UploadSlot, UploadStatus>>(EMPTY_UPLOAD_STATUS);
-  const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
-
-  // Suppress lint warnings for UI-only state
-  void singleUploadStatus;
-  void photoUploadStatus;
-
-  const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
-  const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
+  const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
-  const coordinatorEmail = email || form.coordinator.email;
-  const coordinatorDisplay = userDisplayName || form.coordinator.name || "-";
+  const requiredUploadsComplete = form.permissionLetter.length > 0 && form.geotaggedPhotos.length > 0 && form.attendanceSheet.length > 0;
 
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
     return persistCurrentMutation({
-      buildNextEntry: (current) =>
-        withAcademicProgressionCompatibility({
-          ...current,
-          coCoordinators: nextRows,
-        }) as GuestLectureEntry,
+      buildNextEntry: (current) => ({
+        ...current,
+        coordinatorName: userDisplayName || current.coordinatorName,
+        coordinatorEmail: email || current.coordinatorEmail,
+        coCoordinators: nextRows,
+      }),
       selectResult: (persisted) => persisted.coCoordinators,
     });
   }
@@ -205,89 +161,110 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
           />
         </Field>
 
-        <Field
-          label="Start Date"
-          error={submitted ? errors.startDate : undefined}
-          hint={form.academicYear ? getAcademicYearRange(form.academicYear)?.label : undefined}
-        >
-          <DateField
-            value={form.startDate}
-            onChange={(next) => setForm((c) => ({ ...c, startDate: next }))}
-            disabled={coreFieldDisabled("startDate")}
-            error={submitted && !!errors.startDate}
+        <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+          <SelectDropdown
+            value={form.semesterType || ""}
+            onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
+            options={SEMESTER_TYPE_OPTIONS}
+            placeholder="Select semester type"
+            disabled={coreFieldDisabled("semesterType")}
+            error={submitted && !!errors.semesterType}
           />
         </Field>
 
-        <Field
-          label="End Date"
-          error={submitted ? errors.endDate : undefined}
-          hint={
-            inclusiveDays
-              ? `Number of Days: ${inclusiveDays}`
-              : "Number of Days will be calculated automatically."
-          }
-        >
-          <DateField
-            value={form.endDate}
-            onChange={(next) => setForm((c) => ({ ...c, endDate: next }))}
-            disabled={coreFieldDisabled("endDate")}
-            error={submitted && !!errors.endDate}
+        <Field label="Level" error={submitted ? errors.level : undefined}>
+          <SelectDropdown
+            value={form.level || ""}
+            onChange={(value) => setForm((c) => ({ ...c, level: value }))}
+            options={LEVEL_OPTIONS}
+            placeholder="Select level"
+            disabled={coreFieldDisabled("level")}
+            error={submitted && !!errors.level}
           />
         </Field>
 
-        <Field label="Name of the Event" error={submitted ? errors.eventName : undefined}>
+        <Field label="Mode" error={submitted ? errors.mode : undefined}>
+          <SelectDropdown
+            value={form.mode || ""}
+            onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
+            options={MODE_OPTIONS}
+            placeholder="Select mode"
+            disabled={coreFieldDisabled("mode")}
+            error={submitted && !!errors.mode}
+          />
+        </Field>
+
+        <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
+          <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
+        </Field>
+
+        <Field label="Ending Date" error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
+          <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
+        </Field>
+
+        <Field label="Number of Days" hint="Inclusive day count">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{inclusiveDays ?? "-"}</div>
+        </Field>
+
+        <Field label="Topic of the Lecture" error={submitted ? errors.topicOfLecture : undefined}>
           <input
-            value={form.eventName || ""}
-            onChange={(e) => setForm((c) => ({ ...c, eventName: e.target.value }))}
-            disabled={coreFieldDisabled("eventName")}
+            value={form.topicOfLecture || ""}
+            onChange={(e) => setForm((c) => ({ ...c, topicOfLecture: e.target.value }))}
+            disabled={coreFieldDisabled("topicOfLecture")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
-              submitted && errors.eventName
-                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-              coreFieldDisabled("eventName") && "cursor-not-allowed opacity-60",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              submitted && errors.topicOfLecture ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              coreFieldDisabled("topicOfLecture") && "cursor-not-allowed opacity-60",
             )}
           />
         </Field>
 
-        <Field label="Name of the Speaker" error={submitted ? errors.speakerName : undefined}>
+        <Field label="Guest Speaker Name" error={submitted ? errors.guestSpeakerName : undefined}>
           <input
-            value={form.speakerName || ""}
-            onChange={(e) => setForm((c) => ({ ...c, speakerName: e.target.value }))}
-            disabled={coreFieldDisabled("speakerName")}
+            value={form.guestSpeakerName || ""}
+            onChange={(e) => setForm((c) => ({ ...c, guestSpeakerName: e.target.value }))}
+            disabled={coreFieldDisabled("guestSpeakerName")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
-              submitted && errors.speakerName
-                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-              coreFieldDisabled("speakerName") && "cursor-not-allowed opacity-60",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              submitted && errors.guestSpeakerName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              coreFieldDisabled("guestSpeakerName") && "cursor-not-allowed opacity-60",
             )}
           />
         </Field>
 
-        <Field label="Name of the Organization" error={submitted ? errors.organizationName : undefined}>
+        <Field label="Guest Speaker Designation" error={submitted ? errors.guestSpeakerDesignation : undefined}>
           <input
-            value={form.organizationName || ""}
-            onChange={(e) => setForm((c) => ({ ...c, organizationName: e.target.value }))}
-            disabled={coreFieldDisabled("organizationName")}
+            value={form.guestSpeakerDesignation || ""}
+            onChange={(e) => setForm((c) => ({ ...c, guestSpeakerDesignation: e.target.value }))}
+            disabled={coreFieldDisabled("guestSpeakerDesignation")}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
-              submitted && errors.organizationName
-                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-              coreFieldDisabled("organizationName") && "cursor-not-allowed opacity-60",
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              submitted && errors.guestSpeakerDesignation ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              coreFieldDisabled("guestSpeakerDesignation") && "cursor-not-allowed opacity-60",
+            )}
+          />
+        </Field>
+
+        <Field label="Guest Speaker Organisation" error={submitted ? errors.guestSpeakerOrganisation : undefined}>
+          <input
+            value={form.guestSpeakerOrganisation || ""}
+            onChange={(e) => setForm((c) => ({ ...c, guestSpeakerOrganisation: e.target.value }))}
+            disabled={coreFieldDisabled("guestSpeakerOrganisation")}
+            className={cx(
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              submitted && errors.guestSpeakerOrganisation ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              coreFieldDisabled("guestSpeakerOrganisation") && "cursor-not-allowed opacity-60",
             )}
           />
         </Field>
       </div>
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-muted-foreground">
-        Coordinator:{" "}
-        <span className="font-medium text-foreground">{coordinatorDisplay}</span>
+        Coordinator: <span className="font-medium text-foreground">{userDisplayName || "-"}</span>
       </div>
 
       <div className="mt-5">
-        <FacultyRowPicker
+        <FacultyPickerRows
           title="Co-coordinator(s)"
           helperText="Add co-coordinators only when applicable."
           addLabel="Add Co-coordinator"
@@ -296,18 +273,21 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
           onRowsChange={(rows) => setForm((c) => ({ ...c, coCoordinators: rows }))}
           onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
           facultyEndpoint="/api/faculty"
-          disableEmails={[coordinatorEmail]}
           parentLocked={coreFieldDisabled("coCoordinators")}
           viewOnly={isViewMode}
+          disableEmails={[form.coordinatorEmail || email]}
           sectionError={errors.coCoordinators}
           showSectionError={submitted}
           emptyStateText="No co-coordinators added."
           validateRow={(rows, row, index) => {
             if (!row.email) return "Select a faculty member from the list.";
+            const coordEmail = form.coordinatorEmail || email;
+            if (row.email.trim().toLowerCase() === coordEmail.trim().toLowerCase()) {
+              return "This faculty is already selected in another role.";
+            }
             const duplicates = rows.filter(
               (item, itemIndex) =>
-                itemIndex !== index &&
-                item.email.trim().toLowerCase() === row.email.trim().toLowerCase(),
+                itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
             ).length;
             return duplicates > 0 ? "This faculty is already selected in another role." : null;
           }}
@@ -315,96 +295,61 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
+        <Field label="Sponsored" error={submitted ? errors.sponsored : undefined}>
           <SelectDropdown
-            value={form.yearOfStudy || ""}
-            onChange={(value) =>
-              setForm((c) => {
-                const nextYear = normalizeYearOfStudy(value) ?? "";
-                const nextSemester = isSemesterAllowed(
-                  nextYear || undefined,
-                  c.currentSemester ?? undefined,
-                )
-                  ? c.currentSemester
-                  : null;
-                return withAcademicProgressionCompatibility({
-                  ...c,
-                  yearOfStudy: nextYear,
-                  currentSemester: nextSemester,
-                }) as GuestLectureEntry;
-              })
-            }
-            options={YEAR_OF_STUDY_OPTIONS}
-            placeholder="Select year"
-            disabled={coreFieldDisabled("yearOfStudy")}
-            error={submitted && !!errors.yearOfStudy}
+            value={form.sponsored || ""}
+            onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
+            options={SPONSORED_OPTIONS}
+            placeholder="Select"
+            disabled={coreFieldDisabled("sponsored")}
+            error={submitted && !!errors.sponsored}
           />
         </Field>
 
-        <Field
-          label="Current Semester"
-          error={submitted ? errors.currentSemester : undefined}
-          hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
-        >
-          <SelectDropdown
-            value={form.currentSemester === null ? "" : String(form.currentSemester)}
-            disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
-            onChange={(value) =>
-              setForm((c) =>
-                withAcademicProgressionCompatibility({
-                  ...c,
-                  currentSemester: value ? Number(value) : null,
-                }) as GuestLectureEntry,
-              )
-            }
-            options={semesterOptions.map((o) => ({ label: String(o), value: String(o) }))}
-            placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
-            error={submitted && !!errors.currentSemester}
-          />
-        </Field>
+        {form.sponsored === "Yes" && (
+          <>
+            <Field label="Name of the Funding Agency" error={submitted ? errors.fundingAgency : undefined}>
+              <input
+                value={form.fundingAgency || ""}
+                onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
+                disabled={coreFieldDisabled("fundingAgency")}
+                className={cx(
+                  "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+                  submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+                  coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
+                )}
+              />
+            </Field>
 
-        <Field
-          label="Number of Participants"
-          error={submitted ? errors.participants : undefined}
-          hint="Digits only"
-        >
-          <input
-            inputMode="numeric"
-            value={form.participants === null ? "" : String(form.participants)}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, "");
-              setForm((c) => ({
-                ...c,
-                participants: digits === "" ? null : Number(digits),
-              }));
-            }}
-            disabled={coreFieldDisabled("participants")}
-            className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
-              submitted && errors.participants
-                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-              coreFieldDisabled("participants") && "cursor-not-allowed opacity-60",
-            )}
-          />
-        </Field>
+            <Field label="Amount of Funding (\u20B9) \u2014 optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+              <CurrencyField
+                value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
+                onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
+                disabled={coreFieldDisabled("fundingAmount")}
+                error={submitted && !!errors.fundingAmount}
+                placeholder="50000"
+              />
+            </Field>
+          </>
+        )}
       </div>
 
       <div className="mt-5 space-y-4">
+        <p className="text-sm text-muted-foreground">Streaks apply only for upcoming lecture dates.</p>
+
         {uploadsVisible ? (
           <>
             <StageTwoDivider />
-            <div className="animate-highlight-new grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {UPLOAD_CONFIG.map(({ slot, label }) => (
-              <MultiPhotoUpload
-                key={`${form.id}-${slot}`}
-                title={label}
-                value={form.uploads[slot]}
+            <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
+              <UploadFieldMulti
+                key={`${form.id}-permissionLetter`}
+                title="Permission Letter"
+                value={form.permissionLetter}
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
                     buildNextEntry: (current) => ({
                       ...current,
-                      uploads: { ...current.uploads, [slot]: [...current.uploads[slot], meta] },
+                      permissionLetter: [...current.permissionLetter, meta],
                     }),
                   });
                 }}
@@ -412,66 +357,137 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
                   await persistCurrentMutation({
                     buildNextEntry: (current) => ({
                       ...current,
-                      uploads: {
-                        ...current.uploads,
-                        [slot]: current.uploads[slot].filter(
-                          (item) => item.storedPath !== meta.storedPath,
-                        ),
-                      },
+                      permissionLetter: current.permissionLetter.filter(
+                        (item) => item.storedPath !== meta.storedPath
+                      ),
                     }),
                   });
                 }}
                 uploadEndpoint="/api/me/guest-lectures/file"
                 email={email}
                 recordId={form.id}
-                slotName={slot}
+                slotName="permissionLetter"
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText={errors.permissionLetter}
+                onStatusChange={() => {}}
                 disabled={controlsDisabled}
                 viewOnly={isViewMode}
-                showRequiredError={submitAttemptedFinal && form.uploads[slot].length === 0}
-                requiredErrorText="This upload is mandatory."
-                onStatusChange={(status) =>
-                  setSingleUploadStatus((c) => ({ ...c, [slot]: status }))
-                }
               />
-            ))}
 
-            <MultiPhotoUpload
-              title="Geotagged Photos"
-              value={form.uploads.geotaggedPhotos}
-              onUploaded={async (meta) => {
-                await persistCurrentMutation({
-                  buildNextEntry: (current) => ({
-                    ...current,
-                    uploads: {
-                      ...current.uploads,
-                      geotaggedPhotos: [...current.uploads.geotaggedPhotos, meta],
-                    },
-                  }),
-                });
-              }}
-              onDeleted={async (meta) => {
-                await persistCurrentMutation({
-                  buildNextEntry: (current) => ({
-                    ...current,
-                    uploads: {
-                      ...current.uploads,
-                      geotaggedPhotos: current.uploads.geotaggedPhotos.filter(
-                        (item) => item.storedPath !== meta.storedPath,
+              <UploadFieldMulti
+                key={`${form.id}-geotaggedPhotos`}
+                title="Geotagged Photos"
+                value={form.geotaggedPhotos}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      geotaggedPhotos: [...current.geotaggedPhotos, meta],
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      geotaggedPhotos: current.geotaggedPhotos.filter(
+                        (item) => item.storedPath !== meta.storedPath
                       ),
-                    },
-                  }),
-                });
-              }}
-              uploadEndpoint="/api/me/guest-lectures/file"
-              email={email}
-              recordId={form.id}
-              slotName="geotaggedPhotos"
-              disabled={controlsDisabled}
-              viewOnly={isViewMode}
-              showRequiredError={submitAttemptedFinal && form.uploads.geotaggedPhotos.length === 0}
-              requiredErrorText="At least one geotagged photo is required."
-              onStatusChange={setPhotoUploadStatus}
-            />
+                    }),
+                  });
+                }}
+                uploadEndpoint="/api/me/guest-lectures/file"
+                email={email}
+                recordId={form.id}
+                slotName="geotaggedPhotos"
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText={errors.geotaggedPhotos}
+                onStatusChange={setPhotoUploadStatus}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
+              />
+
+              <UploadFieldMulti
+                key={`${form.id}-attendanceSheet`}
+                title="Attendance Sheet"
+                value={form.attendanceSheet}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      attendanceSheet: [...current.attendanceSheet, meta],
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      attendanceSheet: current.attendanceSheet.filter(
+                        (item) => item.storedPath !== meta.storedPath
+                      ),
+                    }),
+                  });
+                }}
+                uploadEndpoint="/api/me/guest-lectures/file"
+                email={email}
+                recordId={form.id}
+                slotName="attendanceSheet"
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText={errors.attendanceSheet}
+                onStatusChange={() => {}}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
+              />
+
+              <Field label="Number of Participants">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.numberOfParticipants === null ? "" : String(form.numberOfParticipants)}
+                  onChange={(e) => setForm((c) => ({ ...c, numberOfParticipants: e.target.value === "" ? null : Number(e.target.value) }))}
+                  disabled={controlsDisabled}
+                  className={cx(
+                    "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+                    "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+                    controlsDisabled && "cursor-not-allowed opacity-60",
+                  )}
+                  placeholder="e.g. 45"
+                />
+              </Field>
+
+              <UploadFieldMulti
+                key={`${form.id}-officialPoster`}
+                title="Official Poster"
+                value={form.officialPoster}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      officialPoster: [...current.officialPoster, meta],
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      officialPoster: current.officialPoster.filter(
+                        (item) => item.storedPath !== meta.storedPath
+                      ),
+                    }),
+                  });
+                }}
+                uploadEndpoint="/api/me/guest-lectures/file"
+                email={email}
+                recordId={form.id}
+                slotName="officialPoster"
+                showRequiredError={false}
+                requiredErrorText={errors.officialPoster}
+                onStatusChange={() => {}}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
+              />
             </div>
           </>
         ) : null}
@@ -480,67 +496,96 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
   );
 }
 
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
 export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
   return (
     <BaseEntryAdapter<GuestLectureEntry>
       {...props}
       category="guest-lectures"
       emptyForm={emptyForm}
-      hydrateEntry={hydrateEntry}
+      hydrateEntry={(entry) => {
+        const e = entry as unknown as Record<string, unknown>;
+        const uploads = e.uploads as Record<string, unknown> | undefined;
+        return {
+          ...emptyForm(),
+          ...e,
+          academicYear: safeString(e.academicYear),
+          semesterType: safeString(e.semesterType),
+          level: safeString(e.level),
+          mode: safeString(e.mode),
+          startDate: safeString(e.startDate),
+          endDate: safeString(e.endDate),
+          topicOfLecture: safeString(e.topicOfLecture) || safeString(e.eventName),
+          guestSpeakerName: safeString(e.guestSpeakerName) || safeString(e.speakerName),
+          guestSpeakerDesignation: safeString(e.guestSpeakerDesignation),
+          guestSpeakerOrganisation: safeString(e.guestSpeakerOrganisation) || safeString(e.organizationName),
+          coordinatorName: safeString(e.coordinatorName),
+          coordinatorEmail: safeString(e.coordinatorEmail),
+          coCoordinators: ensureFacultyArray(e.coCoordinators),
+          sponsored: safeBoolString(e.sponsored),
+          fundingAgency: safeString(e.fundingAgency),
+          fundingAmount: safeNumber(e.fundingAmount),
+          numberOfParticipants: safeNumber(e.numberOfParticipants) ?? safeNumber(e.participants),
+          permissionLetter: ensureFileMetaArray(e.permissionLetter).length > 0 ? ensureFileMetaArray(e.permissionLetter) : ensureFileMetaArray(uploads?.permissionLetter),
+          geotaggedPhotos: ensureFileMetaArray(e.geotaggedPhotos).length > 0 ? ensureFileMetaArray(e.geotaggedPhotos) : ensureFileMetaArray(uploads?.geotaggedPhotos),
+          attendanceSheet: ensureFileMetaArray(e.attendanceSheet).length > 0 ? ensureFileMetaArray(e.attendanceSheet) : ensureFileMetaArray(uploads?.attendance),
+          officialPoster: ensureFileMetaArray(e.officialPoster),
+          streak: ensureStreak(e.streak),
+        } as GuestLectureEntry;
+      }}
       validateFields={validateFields}
       renderFormFields={(ctx) => <GuestLectureFormFields ctx={ctx} />}
-      buildListEntryTitle={(entry) => entry.eventName}
-      buildListEntrySubtitle={(entry) => `Speaker: ${entry.speakerName} • ${entry.organizationName}`}
+      buildListEntryTitle={(entry) => (entry.topicOfLecture || "").trim() || "Untitled lecture"}
+      buildListEntrySubtitle={(entry) =>
+        entry.guestSpeakerName
+          ? `Speaker: ${entry.guestSpeakerName}${entry.guestSpeakerOrganisation ? ` \u2014 ${entry.guestSpeakerOrganisation}` : ""}`
+          : ""
+      }
       renderListEntryBody={({ entry }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
         const startStr = formatDisplayDate(entry.startDate);
         const endStr = formatDisplayDate(entry.endDate);
         const parts: string[] = [];
         if (entry.academicYear) parts.push(entry.academicYear);
-        if (entry.currentSemester) parts.push(`Semester ${entry.currentSemester}`);
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
+        if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
+        if (entry.level) parts.push(entry.level);
+        if (entry.mode) parts.push(entry.mode);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
-        if (entry.participants) parts.push(`${entry.participants} participants`);
-
-        const people: string[] = [];
-        const coord = formatFacultyDisplay(entry.coordinator);
-        if (coord) people.push(coord);
-        if (entry.coCoordinators.length > 0) {
-          people.push(...entry.coCoordinators.map(formatFacultyDisplay).filter(Boolean));
+        if (entry.sponsored === "Yes" && entry.fundingAgency) {
+          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (\u20B9${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
+          parts.push(`Funded by ${fundingStr}`);
         }
-
+        if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);
+        if (entry.coCoordinators.length > 0) {
+          parts.push(`Co-coordinators: ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`);
+        }
         return (
           <>
-            {parts.length > 0 && (
-              <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>
-            )}
-            {people.length > 0 && (
-              <div className="text-xs text-muted-foreground">{people.join(", ")}</div>
-            )}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              {UPLOAD_CONFIG.map(({ slot, label }) =>
-                entry.uploads[slot].map((meta, i) => (
-                  <a
-                    key={meta.storedPath}
-                    className="underline"
-                    href={meta.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {label}{entry.uploads[slot].length > 1 ? ` ${i + 1}` : ""}
-                  </a>
-                )),
-              )}
-              {entry.uploads.geotaggedPhotos.map((meta, photoIndex) => (
-                <a
-                  key={meta.storedPath}
-                  className="underline"
-                  href={meta.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+              {entry.permissionLetter.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}
+                </a>
+              ))}
+              {entry.geotaggedPhotos.map((meta, photoIndex) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
                   Geotagged Photo {photoIndex + 1}
+                </a>
+              ))}
+              {entry.attendanceSheet.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Attendance Sheet{entry.attendanceSheet.length > 1 ? ` ${i + 1}` : ""}
+                </a>
+              ))}
+              {entry.officialPoster.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Official Poster{entry.officialPoster.length > 1 ? ` ${i + 1}` : ""}
                 </a>
               ))}
             </div>
@@ -548,7 +593,7 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
         );
       }}
       title="Guest Lectures"
-      subtitle="Record event details, student participation, and the required supporting documents."
+      subtitle="Record guest lectures organised, along with speaker details and supporting documents."
       formTitle="Guest Lecture Entry"
       formSubtitle="Add the entry details and generate the entry to unlock uploads."
       deleteDescription="This permanently deletes this guest-lecture entry and its associated uploaded files."
