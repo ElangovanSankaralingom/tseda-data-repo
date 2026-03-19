@@ -80,9 +80,9 @@ const CATEGORY_UPLOAD_CONFIG: Record<CategorySlug, SlotConfig> = {
     nested: false,
   },
   workshops: {
-    slots: new Set(["permissionLetter", "brochure", "attendance", "organiserProfile", "geotaggedPhotos"]),
-    arraySlots: new Set(["permissionLetter", "brochure", "attendance", "organiserProfile", "geotaggedPhotos"]),
-    nested: true,
+    slots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
+    arraySlots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
+    nested: false,
   },
 };
 
