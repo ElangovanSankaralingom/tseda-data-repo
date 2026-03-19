@@ -444,6 +444,18 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-fetch list when navigating back to list view (e.g. closing a form)
+  const prevActiveEntryIdRef = useRef(activeEntryId);
+  useEffect(() => {
+    const prev = prevActiveEntryIdRef.current;
+    prevActiveEntryIdRef.current = activeEntryId;
+    // When activeEntryId transitions from a value to empty, we navigated back to the list
+    if (prev && !activeEntryId && !loading) {
+      void refreshList();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeEntryId]);
+
   // --- Form management ---
   function resetForm() {
     setSubmitted(false);
@@ -457,6 +469,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   function closeForm(targetHref = categoryPath) {
     resetForm();
     setFormOpen(false);
+    void refreshList();
     router.refresh();
     safeBack(router, targetHref);
   }

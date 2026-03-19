@@ -202,7 +202,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
                 )}
               />
             </Field>
-            <Field label="Amount of Funding (\u20B9)" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label="Amount of Funding (₹)" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -317,14 +317,14 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
         if (entry.level) parts.push(entry.level);
         if (entry.mode) parts.push(entry.mode);
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) parts.push(`Funded by ${entry.fundingAgency}`);
-        if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(`\u20B9${entry.fundingAmount.toLocaleString("en-IN")}`);
+        if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(`₹${entry.fundingAmount.toLocaleString("en-IN")}`);
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {entry.permissionLetter.map((meta, i) => (
                 <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}</a>
@@ -336,7 +336,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
           </>
         );
       }}
-      title="FDP \u2014 Attended"
+      title="FDP — Attended"
       subtitle="Record faculty development programmes attended, along with support amount and the two required supporting documents."
       formTitle="FDP Entry"
       formSubtitle="Add the entry details and upload the required documents."
