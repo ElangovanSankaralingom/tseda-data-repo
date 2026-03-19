@@ -31,11 +31,18 @@ export default function NavigationRefresh() {
         router.refresh();
       }
     }
+    function handlePageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        router.refresh();
+      }
+    }
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pageshow", handlePageShow);
     return () => {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pageshow", handlePageShow);
     };
   }, [router]);
 
