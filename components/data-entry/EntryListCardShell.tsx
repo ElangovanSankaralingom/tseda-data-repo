@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Clock,
   Lock,
@@ -41,7 +42,7 @@ const GROUP_ICON_COLORS: Record<EntryListGroup, string> = {
   streak_runners: "text-amber-500",
   on_the_clock: "text-blue-500",
   unlocked: "text-purple-500",
-  in_the_works: "text-slate-500",
+  in_the_works: "text-slate-600",
   under_review: "text-amber-400",
   locked_in: "text-emerald-500",
 };
@@ -55,7 +56,7 @@ const PROGRESS_BAR_COLORS: Record<string, string> = {
 function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
   if (group === "in_the_works") {
     return (
-      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
         Draft
       </span>
     );
@@ -109,8 +110,8 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 
 function getEditTimeUrgencyClass(remainingMs: number): string {
   if (remainingMs < 24 * 60 * 60 * 1000) return "text-red-600 font-semibold";
-  if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-600";
-  return "text-slate-500";
+  if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-700";
+  return "text-slate-600";
 }
 
 function TimeInfo({ group, editTime, createdAt, updatedAt }: {
@@ -137,24 +138,24 @@ function TimeInfo({ group, editTime, createdAt, updatedAt }: {
   // Drafts
   if (group === "in_the_works") {
     const time = formatRelativeTime(createdAt);
-    return time ? <span className="text-xs text-slate-500">Created {time}</span> : null;
+    return time ? <span className="text-xs text-slate-600">Created {time}</span> : null;
   }
 
   // Under review
   if (group === "under_review") {
     const time = formatRelativeTime(updatedAt || createdAt);
-    return time ? <span className="text-xs text-amber-600">Requested {time}</span> : null;
+    return time ? <span className="text-xs text-amber-700">Requested {time}</span> : null;
   }
 
   // Finalized
   if (group === "locked_in") {
     const time = formatRelativeTime(updatedAt || createdAt);
-    return time ? <span className="text-xs text-slate-500">Finalized {time}</span> : null;
+    return time ? <span className="text-xs text-slate-600">Finalized {time}</span> : null;
   }
 
   // Fallback
   const time = formatRelativeTime(updatedAt || createdAt);
-  return time ? <span className="text-xs text-slate-500">Updated {time}</span> : null;
+  return time ? <span className="text-xs text-slate-600">Updated {time}</span> : null;
 }
 
 function EditWindowProgressBar({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
@@ -212,12 +213,24 @@ export default function EntryListCardShell({
   actions,
   children,
 }: EntryListCardShellProps) {
+  const router = useRouter();
   const Icon = GROUP_ICONS[group];
   const iconColor = GROUP_ICON_COLORS[group];
   const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
 
   return (
-    <div data-entry-card className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass}`}>
+    <div
+      data-entry-card
+      tabIndex={0}
+      aria-label={`${title} entry`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(href);
+        }
+      }}
+      className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A5F]/30 focus-visible:ring-offset-1`}
+    >
       {/* Row 1 — Identity */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -238,7 +251,7 @@ export default function EntryListCardShell({
         <div className="mt-2 pl-5.5">
           {children}
           {metadata && !children ? (
-            <div className="text-xs text-slate-500">{metadata}</div>
+            <div className="text-xs text-slate-600">{metadata}</div>
           ) : null}
         </div>
       )}
@@ -247,7 +260,7 @@ export default function EntryListCardShell({
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
         <TimeInfo group={group} editTime={editTime} createdAt={createdAt} updatedAt={updatedAt} />
         {actions ? (
-          <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
+          <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 sm:group-focus-within:opacity-100 sm:group-focus-within:translate-x-0 transition-all duration-200">
             {actions}
           </div>
         ) : null}

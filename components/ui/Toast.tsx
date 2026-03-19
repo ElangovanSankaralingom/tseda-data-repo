@@ -7,10 +7,12 @@ import type { UiToast } from "@/lib/ui/notify";
 export default function Toast({ toast, position = "inline", className, onDismiss }: { toast: UiToast | null | undefined; position?: "fixed" | "inline"; className?: string; onDismiss?: () => void }) {
   if (!toast) return null;
 
-  const colors =
-    toast.type === "ok"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : "border-red-200 bg-red-50 text-red-800";
+  const isError = toast.type === "err";
+  const colors = isError
+    ? "border-red-200 bg-red-50 text-red-800"
+    : "border-emerald-200 bg-emerald-50 text-emerald-800";
+  const ariaRole = isError ? "alert" : "status";
+  const ariaLive = isError ? "assertive" as const : "polite" as const;
 
   const dismissButton = onDismiss ? (
     <button
@@ -25,7 +27,7 @@ export default function Toast({ toast, position = "inline", className, onDismiss
 
   if (position === "fixed") {
     return (
-      <div className="fixed right-4 top-20 z-50" role="status" aria-live="polite">
+      <div className="fixed right-4 top-20 z-50" role={ariaRole} aria-live={ariaLive}>
         <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-sm", colors, className)}>
           <span className="flex-1">{toast.msg}</span>
           {dismissButton}
@@ -36,8 +38,8 @@ export default function Toast({ toast, position = "inline", className, onDismiss
 
   return (
     <div
-      role="status"
-      aria-live="polite"
+      role={ariaRole}
+      aria-live={ariaLive}
       className={cn("flex items-center gap-2 rounded-xl border px-4 py-3 text-sm", colors, className)}
     >
       <span className="flex-1">{toast.msg}</span>

@@ -44,6 +44,14 @@ export default function RequestActionDropdown({
     return () => window.removeEventListener("keydown", handleKey);
   }, [open]);
 
+  // Auto-focus first menu item when dropdown opens
+  useEffect(() => {
+    if (open && ref.current) {
+      const firstItem = ref.current.querySelector('[role="menuitem"]') as HTMLElement;
+      firstItem?.focus();
+    }
+  }, [open]);
+
   // Raise parent card z-index when open so dropdown isn't clipped by sibling cards
   useEffect(() => {
     if (!ref.current) return;
@@ -98,16 +106,23 @@ export default function RequestActionDropdown({
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={requesting}
+        aria-expanded={open}
+        aria-haspopup="menu"
         className="inline-flex h-8 items-center gap-1 rounded-lg border border-transparent px-2.5 text-sm font-medium text-purple-600 transition-all duration-150 hover:bg-purple-50 active:scale-[0.97] disabled:opacity-50"
       >
         Request Action
         <ChevronDown className={`size-3.5 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
           <button
             type="button"
+            role="menuitem"
             onClick={handleRequestEdit}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
+              if (e.key === "ArrowUp") { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
+            }}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
           >
             <Pencil className="size-3.5 text-slate-500" />
@@ -115,7 +130,12 @@ export default function RequestActionDropdown({
           </button>
           <button
             type="button"
+            role="menuitem"
             onClick={handleRequestDelete}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
+              if (e.key === "ArrowUp") { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
+            }}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
           >
             <Trash2 className="size-3.5 text-red-400" />
