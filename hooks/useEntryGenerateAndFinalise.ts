@@ -94,7 +94,7 @@ export function useEntryGenerateAndFinalise<TEntry extends CategoryPageEntry>(
         return true;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Finalise failed.";
-        options.showToast("err", message, 1800);
+        options.showToast("err", message);
         return false;
       } finally {
         setFinalisingIds((prev) => ({ ...prev, [entryId]: false }));

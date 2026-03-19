@@ -195,7 +195,7 @@ type DeleteEntryConfig<T extends { id?: unknown }> = {
   setList: Dispatch<SetStateAction<T[]>>;
   refreshList: () => Promise<unknown>;
   onDeletedActiveEntry?: (id: string) => void;
-  showToast: (type: "ok" | "err", msg: string, duration: number) => void;
+  showToast: (type: "ok" | "err", msg: string, duration?: number) => void;
 };
 
 export function createDeleteEntry<T extends { id?: unknown }>(
@@ -274,7 +274,7 @@ export function createDeleteEntry<T extends { id?: unknown }>(
       }
       const message =
         error instanceof Error ? error.message : "Delete failed.";
-      config.showToast("err", message, 1500);
+      config.showToast("err", message);
     }
   };
 }

@@ -268,6 +268,20 @@ export async function listBackups(): Promise<Result<BackupListItem[]>> {
   }
 }
 
+async function verifyBackupZip(filePath: string): Promise<boolean> {
+  try {
+    const stats = await fs.stat(filePath);
+    if (stats.size < 22) return false;
+    const fd = await fs.open(filePath, "r");
+    const buffer = Buffer.alloc(4);
+    await fd.read(buffer, 0, 4, 0);
+    await fd.close();
+    return buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04;
+  } catch {
+    return false;
+  }
+}
+
 export async function createBackupZip(): Promise<Result<BackupCreateResult>> {
   try {
     const startedAt = Date.now();
@@ -288,6 +302,11 @@ export async function createBackupZip(): Promise<Result<BackupCreateResult>> {
 
     const buffer = await buildDataBackupBuffer();
     await fs.writeFile(filePath, buffer);
+
+    const isValid = await verifyBackupZip(filePath);
+    if (!isValid) {
+      logger.warn({ event: "backup.verify.failed", filePath });
+    }
 
     let retention: number = BACKUP_KEEP_LAST_DEFAULT;
     try { retention = await getBackupRetention(); } catch { /* use default */ }

@@ -38,7 +38,7 @@ export function useEntryRequestActions<TEntry extends CategoryPageEntry>(
     persistRequest: options.persistRequestEdit,
     persistCancel: options.persistCancelRequestEdit,
     onSuccess: (message) => options.showToast("ok", message, 1400),
-    onError: (message) => options.showToast("err", message, 1800),
+    onError: (message) => options.showToast("err", message),
   });
 
   const { requestingIds: requestingDeleteIds, requestDelete: rawRequestDelete, cancelRequestDelete: rawCancelRequestDelete } = useRequestDelete<TEntry>({
@@ -46,14 +46,14 @@ export function useEntryRequestActions<TEntry extends CategoryPageEntry>(
     persistRequest: options.persistRequestDelete,
     persistCancel: options.persistCancelRequestDelete,
     onSuccess: (message) => options.showToast("ok", message, 1400),
-    onError: (message) => options.showToast("err", message, 1800),
+    onError: (message) => options.showToast("err", message),
   });
 
   const { sendingIds: sendingConfirmationIds, sendForConfirmation: rawSendForConfirmation } = useEntryConfirmation<TEntry>({
     category: options.category,
     setItems: options.setList,
     onSuccess: (message) => options.showToast("ok", message, 1400),
-    onError: (message) => options.showToast("err", message, 1800),
+    onError: (message) => options.showToast("err", message),
   });
 
   // Wrap each action with the shared guard

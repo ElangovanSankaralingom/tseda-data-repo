@@ -99,9 +99,10 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
   );
 
   const showToast = useCallback(
-    (type: ToastState["type"], msg: string, durationMs = 1800) => {
+    (type: ToastState["type"], msg: string, durationMs?: number) => {
+      const defaultDuration = type === "err" ? 4000 : 1500;
       options.setToast({ type, msg });
-      setTimeout(() => options.setToast(null), durationMs);
+      setTimeout(() => options.setToast(null), durationMs ?? defaultDuration);
     },
     [options],
   );

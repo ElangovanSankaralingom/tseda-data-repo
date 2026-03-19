@@ -69,7 +69,7 @@ export function computeCompletionState(
   return {
     stage1Complete,
     stage2Complete,
-    allComplete: stage1Complete && stage2Complete && pdfFresh,
+    allComplete,
     pdfExists,
     pdfFresh,
     stage1Total: stage1Fields.length,
