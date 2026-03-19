@@ -70,8 +70,8 @@ const CATEGORY_UPLOAD_CONFIG: Record<CategorySlug, SlotConfig> = {
     nested: false,
   },
   "case-studies": {
-    slots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos"]),
-    arraySlots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos"]),
+    slots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos", "report", "feedback", "advanceClosure"]),
+    arraySlots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos", "report", "feedback", "advanceClosure"]),
     nested: false,
   },
   "guest-lectures": {
