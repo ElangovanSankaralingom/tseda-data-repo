@@ -60,6 +60,7 @@ type UseAutoSaveResult<T> = {
   flush: () => Promise<Result<T> | null>;
   cancel: () => void;
   markSaved: (value?: T) => void;
+  autoSaveFailed: boolean;
 };
 
 function useLatestRef<T>(value: T) {
@@ -88,6 +89,8 @@ export function useAutoSave<T>({
   const lastAttemptedHashRef = useRef(currentHash);
   const savingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveFailCountRef = useRef(0);
+  const [autoSaveFailed, setAutoSaveFailed] = useState(false);
 
   const [status, setStatus] = useState<AutoSaveStatus>({
     phase: "idle",
@@ -113,6 +116,8 @@ export function useAutoSave<T>({
       const hash = stableStringify(nextValue ?? valueRef.current);
       lastSavedHashRef.current = hash;
       lastAttemptedHashRef.current = hash;
+      autoSaveFailCountRef.current = 0;
+      setAutoSaveFailed(false);
       pushStatus({
         phase: "saved",
         savedAtISO: new Date().toISOString(),
@@ -252,7 +257,25 @@ export function useAutoSave<T>({
     }
 
     timerRef.current = setTimeout(() => {
-      void runSave(false);
+      void (async () => {
+        const delays = [1000, 3000, 10000];
+        for (let attempt = 0; attempt <= 3; attempt++) {
+          const result = await runSave(false);
+          if (result === null || (result && result.ok)) {
+            autoSaveFailCountRef.current = 0;
+            setAutoSaveFailed(false);
+            return;
+          }
+          // Save failed
+          autoSaveFailCountRef.current++;
+          if (autoSaveFailCountRef.current >= 3) {
+            setAutoSaveFailed(true);
+          }
+          if (attempt < 3) {
+            await new Promise(r => setTimeout(r, delays[attempt]));
+          }
+        }
+      })();
     }, debounceMs);
 
     return () => clearTimer();
@@ -265,5 +288,6 @@ export function useAutoSave<T>({
     flush,
     cancel,
     markSaved,
+    autoSaveFailed,
   };
 }

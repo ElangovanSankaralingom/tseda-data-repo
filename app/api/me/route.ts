@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { ensureDirs, PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
 import { assertActionPayload } from "@/lib/security/limits";
+import { apiUnauthorized } from "@/lib/api/apiResponse";
 
 type AnyObj = Record<string, unknown>;
 
@@ -95,7 +96,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
-  if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!email) return apiUnauthorized();
 
   const profile = readProfile(email);
   const canonical = findFacultyByEmail(email);
@@ -125,7 +126,7 @@ export async function PUT(req: Request) {
   const session = await getServerSession(authOptions);
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
-  if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!email) return apiUnauthorized();
 
   let patch: AnyObj;
   try {

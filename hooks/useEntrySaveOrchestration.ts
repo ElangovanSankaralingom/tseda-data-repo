@@ -188,6 +188,7 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
   const {
     status: autoSaveStatus,
     markSaved: markAutoSaveSaved,
+    autoSaveFailed,
   } = useAutoSave<TEntry>({
     enabled: options.autoSaveEnabled,
     value: options.form,
@@ -237,6 +238,7 @@ export function useEntrySaveOrchestration<TEntry extends CategoryPageEntry>(
     runWithSaveGuard,
     persistCurrentMutation,
     autoSaveStatus,
+    autoSaveFailed,
     markAutoSaveSaved,
     hasUnsavedChanges,
     handleCancel,

@@ -5,11 +5,12 @@ import { isCategoryKey } from "@/lib/categories";
 import { logError, normalizeError } from "@/lib/errors";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { runGenerateEntryRequest } from "@/lib/server/generateEntry";
+import { apiUnauthorized } from "@/lib/api/apiResponse";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiUnauthorized();
   }
 
   try {

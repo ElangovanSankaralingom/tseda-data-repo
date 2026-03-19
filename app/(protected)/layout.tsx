@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import NavigationRefresh from "@/components/NavigationRefresh";
+import NetworkStatus from "@/components/NetworkStatus";
 import ShellClient from "@/app/ShellClient";
 import { authOptions } from "@/lib/auth";
 import { findFacultyByEmail } from "@/lib/facultyDirectory";
@@ -24,6 +25,7 @@ export default async function ProtectedLayout({
   return (
     <ShellClient>
       <NavigationRefresh />
+      <NetworkStatus />
       {children}
     </ShellClient>
   );
