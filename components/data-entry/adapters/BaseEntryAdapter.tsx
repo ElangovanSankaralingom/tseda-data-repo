@@ -17,6 +17,7 @@ import { useSeedEntry } from "@/hooks/useSeedEntry";
 import { useEntryViewMode } from "@/hooks/useEntryViewMode";
 import { useEntryFormAccess } from "@/hooks/useEntryFormAccess";
 import { useEntryPageModeTelemetry } from "@/hooks/useEntryPageModeTelemetry";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
 import { entryDetail, entryList, entryNew, safeBack } from "@/lib/entryNavigation";
@@ -164,6 +165,8 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     editEntryId,
     startInNewMode,
   });
+
+  useRefreshOnFocus();
 
   const { isPreviewMode: isViewModeRaw, backHref, backDisabled } = useEntryViewMode(
     categoryPath,
@@ -469,9 +472,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   function closeForm(targetHref = categoryPath) {
     resetForm();
     setFormOpen(false);
-    void refreshList();
-    router.refresh();
-    safeBack(router, targetHref);
+    window.location.href = targetHref;
   }
 
   const seedLoadedEntry = useCallback(

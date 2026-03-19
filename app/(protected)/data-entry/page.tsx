@@ -5,6 +5,7 @@ import { getDashboardSummary } from "@/lib/dashboard/getDashboardSummary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { entryList, entryNew } from "@/lib/entryNavigation";
 import DataEntryClient from "@/components/data-entry/DataEntryClient";
+import RefreshOnFocus from "@/components/RefreshOnFocus";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export const dynamic = "force-dynamic";
@@ -62,11 +63,14 @@ export default async function DataEntryHomePage() {
   };
 
   return (
+    <>
+    <RefreshOnFocus />
     <DataEntryClient
       greeting={greeting}
       userName={session?.user?.name ?? null}
       categories={categories}
       totals={totals}
     />
+    </>
   );
 }
