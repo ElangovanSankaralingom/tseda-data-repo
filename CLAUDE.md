@@ -154,6 +154,14 @@ PATCH actions: `save`, `generate`, `finalise`, `request_edit`, `request_delete`,
 - `lib/security/` — CSRF, file validation, sanitization, rate limiting
 - `lib/admin/roles.ts` — role-based access control
 - `lib/data/dataLayer.ts` — abstract storage interface (JSON backend)
+- `lib/entries/hydrateEntry.ts` — universal entry hydration (safe defaults for missing/old fields)
+- `lib/constants/messages.ts` — centralized user-facing strings
+- `lib/api/apiResponse.ts` — shared API response helpers (apiSuccess, apiError, apiUnauthorized, etc.)
+- `lib/jobs/orphanFileCleanup.ts` — orphan upload file detection (nightly job)
+- `components/ErrorBoundaryFallback.tsx` — React error boundary for form area
+- `components/NavigationRefresh.tsx` — global route refresh on navigation + focus + bfcache
+- `components/NetworkStatus.tsx` — offline/online status banner
+- `components/data-entry/EntryListSkeleton.tsx` — skeleton loading cards
 
 ### Nightly Job
 `app/api/cron/nightly/route.ts` → `lib/jobs/nightly.ts`
@@ -228,6 +236,10 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 - **Build: clean** (Turbopack warnings are cosmetic)
 - **Docker + CI/CD ready** (GitHub Actions)
 - **5 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops
+  - All categories use: semesterType, level, mode, sponsored pattern (except case-studies keeps yearOfStudy/currentSemester)
+  - All uploads are multi-file (FileMeta[])
+  - Guest lectures uses topicOfLecture, guestSpeaker* fields
+  - Workshops uses workshopName, resourcePerson* fields
 
 ## Do NOT
 
