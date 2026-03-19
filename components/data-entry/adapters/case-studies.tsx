@@ -1,20 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
-import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
-import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
+import UploadFieldMulti from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
-import { ACADEMIC_YEAR_OPTIONS, ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
-import { isISODate, getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
+import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
+import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid } from "@/lib/utils/idHelpers";
-import { nowISTTimestampISO } from "@/lib/time";
-import { hydratePdfSnapshot } from "@/lib/pdfSnapshot";
 import {
   allowedSemestersForYear,
   isSemesterAllowed,
@@ -22,42 +20,52 @@ import {
   YEAR_OF_STUDY_OPTIONS,
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
+import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
-import { safeString, safeNumber, ensureFaculty, ensureFacultyArray, ensureFileMetaArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
-function buildStaffKey(selection: StaffSelection) {
-  const email = selection.email.trim().toLowerCase();
-  if (email) return `email:${email}`;
-  return `name:${selection.name.trim().toLowerCase()}`;
-}
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
-function emptyStaff(): StaffSelection {
-  return { id: uuid(), name: "", email: "", isLocked: false, savedAtISO: null };
-}
+const SPONSORED_OPTIONS = [
+  { label: "Yes", value: "Yes" },
+  { label: "No", value: "No" },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function emptyForm(): CaseStudyEntry {
   return withAcademicProgressionCompatibility({
     id: uuid(),
     requestEditStatus: "none",
     requestEditRequestedAtISO: null,
+    requestEditMessage: "",
     academicYear: "",
-    startDate: "",
-    endDate: "",
-    coordinator: emptyStaff(),
-    placeOfVisit: "",
-    purposeOfVisit: "",
-    staffAccompanying: [],
     yearOfStudy: "",
     currentSemester: null,
-    participants: null,
-    amountSupport: null,
+    startDate: "",
+    endDate: "",
+    placeOfVisit: "",
+    purposeOfVisit: "",
+    coordinatorName: "",
+    coordinatorEmail: "",
+    staffAccompanying: [],
+    sponsored: "",
+    fundingAgency: "",
+    fundingAmount: null,
     pdfMeta: null,
-    pdfSourceHash: "",
     pdfStale: false,
+    pdfSourceHash: "",
     permissionLetter: [],
     travelPlan: [],
     geotaggedPhotos: [],
+    report: [],
+    feedback: [],
+    advanceClosure: [],
+    numberOfParticipants: null,
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
@@ -65,87 +73,66 @@ function emptyForm(): CaseStudyEntry {
 }
 
 function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
-  const withPdf = withAcademicProgressionCompatibility(
-    hydratePdfSnapshot(entry, "case-studies") as CaseStudyEntry,
-  ) as CaseStudyEntry;
-  const e = withPdf as unknown as Record<string, unknown>;
-  return {
-    ...withPdf,
+  const e = entry as unknown as Record<string, unknown>;
+  return withAcademicProgressionCompatibility({
+    ...emptyForm(),
+    ...e,
     academicYear: safeString(e.academicYear),
-    startDate: safeString(e.startDate),
-    endDate: safeString(e.endDate),
-    coordinator: ensureFaculty(e.coordinator),
-    placeOfVisit: safeString(e.placeOfVisit),
-    purposeOfVisit: safeString(e.purposeOfVisit),
-    staffAccompanying: ensureFacultyArray(e.staffAccompanying),
     yearOfStudy: safeString(e.yearOfStudy),
     currentSemester: safeNumber(e.currentSemester),
-    participants: safeNumber(e.participants),
-    amountSupport: safeNumber(e.amountSupport),
+    startDate: safeString(e.startDate),
+    endDate: safeString(e.endDate),
+    placeOfVisit: safeString(e.placeOfVisit),
+    purposeOfVisit: safeString(e.purposeOfVisit),
+    coordinatorName: safeString(e.coordinatorName),
+    coordinatorEmail: safeString(e.coordinatorEmail),
+    staffAccompanying: ensureFacultyArray(e.staffAccompanying),
+    sponsored: safeBoolString(e.sponsored),
+    fundingAgency: safeString(e.fundingAgency),
+    fundingAmount: safeNumber(e.fundingAmount) ?? safeNumber(e.amountSupport),
     permissionLetter: ensureFileMetaArray(e.permissionLetter),
     travelPlan: ensureFileMetaArray(e.travelPlan),
     geotaggedPhotos: ensureFileMetaArray(e.geotaggedPhotos),
+    report: ensureFileMetaArray(e.report),
+    feedback: ensureFileMetaArray(e.feedback),
+    advanceClosure: ensureFileMetaArray(e.advanceClosure),
+    numberOfParticipants: safeNumber(e.numberOfParticipants) ?? safeNumber(e.participants),
     streak: ensureStreak(e.streak),
-  } as CaseStudyEntry;
+  }) as CaseStudyEntry;
 }
+
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
 
 function validateFields(form: CaseStudyEntry): Record<string, string> {
   const errors = validateEntryFields("case-studies", form as unknown as Record<string, unknown>);
 
   // Category-specific: staffAccompanying duplicate detection
-  const duplicateKeys = new Map<string, number>();
-  form.staffAccompanying.forEach((staff) => {
-    const key = buildStaffKey(staff);
-    if (key !== "name:") {
-      duplicateKeys.set(key, (duplicateKeys.get(key) ?? 0) + 1);
+  const emailCounts = new Map<string, number>();
+  const selectedEmails = [form.coordinatorEmail, ...form.staffAccompanying.map((v) => v.email)]
+    .map((v) => (v || "").trim().toLowerCase())
+    .filter(Boolean);
+  for (const selectedEmail of selectedEmails) {
+    emailCounts.set(selectedEmail, (emailCounts.get(selectedEmail) ?? 0) + 1);
+  }
+  form.staffAccompanying.forEach((value, index) => {
+    if (value.email && (emailCounts.get(value.email.toLowerCase()) ?? 0) > 1) {
+      errors[`staffAccompanying.${index}`] = "This faculty is already selected in another role.";
     }
   });
-  form.staffAccompanying.forEach((staff, index) => {
-    if (!staff.name.trim()) {
-      errors[`staffAccompanying.${index}`] = "Staff member is required.";
-      return;
-    }
-    const key = buildStaffKey(staff);
-    if (key !== "name:" && (duplicateKeys.get(key) ?? 0) > 1) {
-      errors[`staffAccompanying.${index}`] = "This faculty is already selected in another row.";
-    }
-  });
+
+  if (form.sponsored === "Yes") {
+    if (!form.fundingAgency?.trim()) errors.fundingAgency = "Funding agency is required when sponsored.";
+    if (form.fundingAmount === null) errors.fundingAmount = "Funding amount is required when sponsored.";
+  }
 
   return errors;
 }
 
-function validateRowForFacultySave(entryDraft: CaseStudyEntry, row: StaffSelection) {
-  const selectedEmail = row.email.trim().toLowerCase();
-  if (!selectedEmail) {
-    return { ok: false, error: "Select a faculty member first." };
-  }
-
-  const duplicateCount = entryDraft.staffAccompanying.filter(
-    (s) => s.email.trim().toLowerCase() === selectedEmail,
-  ).length;
-  if (duplicateCount > 1) {
-    return { ok: false, error: "This faculty is already selected in another row." };
-  }
-
-  if (!ACADEMIC_YEAR_OPTIONS.includes(entryDraft.academicYear as (typeof ACADEMIC_YEAR_OPTIONS)[number])) {
-    return { ok: false, error: "Select academic year first." };
-  }
-
-  if (!isISODate(entryDraft.startDate)) {
-    return { ok: false, error: "Select a valid starting date first." };
-  }
-
-  const range = getAcademicYearRange(entryDraft.academicYear);
-  if (range && (entryDraft.startDate < range.start || entryDraft.startDate > range.end)) {
-    return { ok: false, error: `Starting date must fall within ${entryDraft.academicYear}.` };
-  }
-
-  if (!isISODate(entryDraft.endDate) || entryDraft.endDate < entryDraft.startDate) {
-    return { ok: false, error: "Select a valid ending date first." };
-  }
-
-  return { ok: true, error: null };
-}
+// ---------------------------------------------------------------------------
+// Form fields component
+// ---------------------------------------------------------------------------
 
 function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }) {
   const {
@@ -158,7 +145,6 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
     isViewMode,
     uploadsVisible,
     persistCurrentMutation,
-    showToast,
     submitAttemptedFinal,
     email,
     userDisplayName,
@@ -167,97 +153,21 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
   const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-
-  const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
-
-  // Keep status in sync — unused by BaseEntryAdapter but needed by MultiPhotoUpload
-  void photoUploadStatus;
-
-  const coordinatorRow: FacultyRowValue = useMemo(
-    () => ({
-      id: form.coordinator?.id ?? "",
-      name: userDisplayName,
-      email,
-      isLocked: true,
-      savedAtISO: null,
-    }),
-    [email, userDisplayName, form.coordinator?.id],
-  );
-
-  // ---- Staff persistence via persistCurrentMutation ----
-
-  async function persistStaffRows(
-    nextRows: StaffSelection[],
-    context: {
-      row: StaffSelection;
-      rowId: string;
-      index: number;
-      previousRows: StaffSelection[];
-      savedAtISO: string;
-    },
-  ) {
-    const savedRows = nextRows
-      .filter((s) => s.isLocked && s.email.trim())
-      .map((s) => ({
-        ...s,
-        email: s.email.trim().toLowerCase(),
-        savedAtISO: s.savedAtISO ?? nowISTTimestampISO(),
-      }));
-
-    const entryToValidate: CaseStudyEntry = {
-      ...form,
-      coordinator: coordinatorRow,
-      staffAccompanying: nextRows,
-    };
-
-    const rowValidation = validateRowForFacultySave(entryToValidate, context.row);
-    if (!rowValidation.ok) {
-      throw new Error(rowValidation.error ?? "Save faculty failed.");
-    }
-
-    const result = await persistCurrentMutation({
-      buildNextEntry: (current) => ({
-        ...current,
-        coordinator: coordinatorRow,
-        staffAccompanying: savedRows,
-      }),
-      selectResult: (persisted) => persisted,
-    });
-
-    const savedEntry = result as unknown as CaseStudyEntry;
-    const mergedRows = nextRows.map((item) => {
-      const savedStaff =
-        savedEntry.staffAccompanying?.find(
-          (c) => c.email.trim().toLowerCase() === item.email.trim().toLowerCase(),
-        ) ?? null;
-
-      return savedStaff
-        ? {
-            ...item,
-            id: savedStaff.id ?? item.id,
-            name: savedStaff.name,
-            email: savedStaff.email,
-            isLocked: !!savedStaff.isLocked,
-            savedAtISO: savedStaff.savedAtISO ?? item.savedAtISO ?? null,
-          }
-        : item;
-    });
-
-    setForm((current) => ({
-      ...current,
-      sharedEntryId: savedEntry.sharedEntryId,
-      sourceEmail: savedEntry.sourceEmail,
-      coordinator: savedEntry.coordinator,
-      createdAt: savedEntry.createdAt,
-      updatedAt: savedEntry.updatedAt,
-      staffAccompanying: mergedRows,
-    }));
-
-    showToast("ok", `Saved for ${context.row.name}.`, 1400);
-    return mergedRows;
-  }
+  const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
   const requiredUploadsComplete = form.permissionLetter.length > 0 && form.travelPlan.length > 0 && form.geotaggedPhotos.length > 0;
+
+  async function persistStaffRows(nextRows: FacultyRowValue[]) {
+    return persistCurrentMutation({
+      buildNextEntry: (current) => ({
+        ...current,
+        coordinatorName: userDisplayName || current.coordinatorName,
+        coordinatorEmail: email || current.coordinatorEmail,
+        staffAccompanying: nextRows,
+      }),
+      selectResult: (persisted) => persisted.staffAccompanying,
+    });
+  }
 
   return (
     <>
@@ -273,123 +183,69 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           />
         </Field>
 
-        <Field
-          label="Starting Date"
-          error={submitted ? errors.startDate : undefined}
-          hint={form.academicYear ? getAcademicYearRange(form.academicYear)?.label : undefined}
-        >
-          <DateField
-            value={form.startDate}
-            onChange={(v) => setForm((c) => ({ ...c, startDate: v }))}
-            disabled={coreFieldDisabled("startDate")}
-            error={submitted && !!errors.startDate}
-          />
-        </Field>
-
-        <Field
-          label="Ending Date"
-          error={submitted ? errors.endDate : undefined}
-          hint={
-            inclusiveDays
-              ? `Number of Days: ${inclusiveDays}`
-              : "Number of Days will be calculated automatically."
-          }
-        >
-          <DateField
-            value={form.endDate}
-            onChange={(v) => setForm((c) => ({ ...c, endDate: v }))}
-            disabled={coreFieldDisabled("endDate")}
-            error={submitted && !!errors.endDate}
-          />
-        </Field>
-      </div>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label="Place of Visit" error={submitted ? errors.placeOfVisit : undefined}>
-          <input
-            value={form.placeOfVisit || ""}
-            onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
-            disabled={coreFieldDisabled("placeOfVisit")}
-            className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
-              submitted && errors.placeOfVisit
-                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-            )}
-          />
-        </Field>
-
-        <Field label="Purpose of Visit" error={submitted ? errors.purposeOfVisit : undefined}>
-          <textarea
-            value={form.purposeOfVisit || ""}
-            onChange={(e) => setForm((c) => ({ ...c, purposeOfVisit: e.target.value }))}
-            rows={4}
-            disabled={coreFieldDisabled("purposeOfVisit")}
-            className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
-              submitted && errors.purposeOfVisit
-                ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
-            )}
-          />
-        </Field>
-
         <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
           <SelectDropdown
             value={form.yearOfStudy || ""}
             onChange={(value) =>
               setForm((c) => {
                 const nextYear = normalizeYearOfStudy(value) ?? "";
-                const nextSemester = isSemesterAllowed(nextYear || undefined, c.currentSemester ?? undefined)
-                  ? c.currentSemester
-                  : null;
-                return withAcademicProgressionCompatibility({
-                  ...c,
-                  yearOfStudy: nextYear,
-                  currentSemester: nextSemester,
-                }) as CaseStudyEntry;
+                const nextSemester = isSemesterAllowed(nextYear || undefined, c.currentSemester ?? undefined) ? c.currentSemester : null;
+                return withAcademicProgressionCompatibility({ ...c, yearOfStudy: nextYear, currentSemester: nextSemester }) as CaseStudyEntry;
               })
             }
             options={YEAR_OF_STUDY_OPTIONS}
-            placeholder="Select year"
+            placeholder="Select year of study"
             disabled={coreFieldDisabled("yearOfStudy")}
             error={submitted && !!errors.yearOfStudy}
           />
         </Field>
 
-        <Field
-          label="Current Semester"
-          error={submitted ? errors.currentSemester : undefined}
-          hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}
-        >
+        <Field label="Current Semester" error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}>
           <SelectDropdown
             value={form.currentSemester === null ? "" : String(form.currentSemester)}
-            disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
-            onChange={(value) =>
-              setForm((c) =>
-                withAcademicProgressionCompatibility({
-                  ...c,
-                  currentSemester: value ? Number(value) : null,
-                }) as CaseStudyEntry,
-              )
-            }
+            onChange={(value) => setForm((c) => withAcademicProgressionCompatibility({ ...c, currentSemester: value ? Number(value) : null }) as CaseStudyEntry)}
             options={semesterOptions.map((o) => ({ label: String(o), value: String(o) }))}
             placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
+            disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
             error={submitted && !!errors.currentSemester}
           />
         </Field>
 
-        <Field
-          label="Amount of Support"
-          error={submitted ? errors.amountSupport : undefined}
-          hint="Optional. Digits only"
-        >
-          <CurrencyField
-            value={form.amountSupport === null ? "" : String(form.amountSupport)}
-            onChange={(value) => setForm((c) => ({ ...c, amountSupport: value === "" ? null : Number(value) }))}
-            disabled={coreFieldDisabled("amountSupport")}
-            error={submitted && !!errors.amountSupport}
-            placeholder="Enter amount"
+        <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
+          <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
+        </Field>
+
+        <Field label="Ending Date" error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
+          <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
+        </Field>
+
+        <Field label="Number of Days" hint="Inclusive day count">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{inclusiveDays ?? "-"}</div>
+        </Field>
+
+        <Field label="Place of Visit" error={submitted ? errors.placeOfVisit : undefined}>
+          <input
+            value={form.placeOfVisit || ""}
+            onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
+            disabled={coreFieldDisabled("placeOfVisit")}
+            className={cx(
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              submitted && errors.placeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              coreFieldDisabled("placeOfVisit") && "cursor-not-allowed opacity-60",
+            )}
+          />
+        </Field>
+
+        <Field label="Purpose of Visit" error={submitted ? errors.purposeOfVisit : undefined}>
+          <input
+            value={form.purposeOfVisit || ""}
+            onChange={(e) => setForm((c) => ({ ...c, purposeOfVisit: e.target.value }))}
+            disabled={coreFieldDisabled("purposeOfVisit")}
+            className={cx(
+              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              submitted && errors.purposeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+              coreFieldDisabled("purposeOfVisit") && "cursor-not-allowed opacity-60",
+            )}
           />
         </Field>
       </div>
@@ -401,145 +257,171 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
       <div className="mt-5">
         <FacultyRowPicker
           title="Staff Accompanying"
-          helperText="Add at least one staff member. Already selected faculty are disabled in other rows."
+          helperText="Add staff members accompanying the visit."
           addLabel="Add Staff"
           rowLabelPrefix="Staff"
           rows={form.staffAccompanying}
           onRowsChange={(rows) => setForm((c) => ({ ...c, staffAccompanying: rows }))}
-          onPersistRow={persistStaffRows}
+          onPersistRow={async (rows) => persistStaffRows(rows)}
           facultyEndpoint="/api/faculty"
           parentLocked={coreFieldDisabled("staffAccompanying")}
           viewOnly={isViewMode}
+          disableEmails={[form.coordinatorEmail || email]}
           sectionError={errors.staffAccompanying}
           showSectionError={submitted}
           emptyStateText="No staff added."
-          validateRow={(rows, row) => {
-            const tempEntry: CaseStudyEntry = {
-              ...form,
-              coordinator: coordinatorRow,
-              staffAccompanying: rows,
-            };
-            return validateRowForFacultySave(tempEntry, row).error;
+          validateRow={(rows, row, index) => {
+            if (!row.email) return "Select a faculty member from the list.";
+            const coordEmail = form.coordinatorEmail || email;
+            if (row.email.trim().toLowerCase() === coordEmail.trim().toLowerCase()) {
+              return "This faculty is already selected in another role.";
+            }
+            const duplicates = rows.filter(
+              (item, itemIndex) =>
+                itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
+            ).length;
+            return duplicates > 0 ? "This faculty is already selected in another role." : null;
           }}
         />
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label="Number of Participants" hint="Optional. Digits only">
-          <input
-            inputMode="numeric"
-            value={form.participants === null ? "" : String(form.participants)}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, "");
-              setForm((c) => ({ ...c, participants: digits === "" ? null : Number(digits) }));
-            }}
-            disabled={coreFieldDisabled("participants")}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-2 focus-visible:ring-[#1E3A5F]/20 placeholder:text-slate-500"
+        <Field label="Sponsored" error={submitted ? errors.sponsored : undefined}>
+          <SelectDropdown
+            value={form.sponsored || ""}
+            onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
+            options={SPONSORED_OPTIONS}
+            placeholder="Select"
+            disabled={coreFieldDisabled("sponsored")}
+            error={submitted && !!errors.sponsored}
           />
         </Field>
+
+        {form.sponsored === "Yes" && (
+          <>
+            <Field label="Name of the Funding Agency" error={submitted ? errors.fundingAgency : undefined}>
+              <input
+                value={form.fundingAgency || ""}
+                onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
+                disabled={coreFieldDisabled("fundingAgency")}
+                className={cx(
+                  "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+                  submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+                  coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
+                )}
+              />
+            </Field>
+
+            <Field label="Amount of Funding (\u20B9) \u2014 optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+              <CurrencyField
+                value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
+                onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
+                disabled={coreFieldDisabled("fundingAmount")}
+                error={submitted && !!errors.fundingAmount}
+                placeholder="50000"
+              />
+            </Field>
+          </>
+        )}
       </div>
 
       <div className="mt-5 space-y-4">
+        <p className="text-sm text-muted-foreground">Streaks apply only for upcoming visit dates.</p>
+
         {uploadsVisible ? (
           <>
             <StageTwoDivider />
-            <div className="animate-highlight-new grid gap-4 sm:grid-cols-3">
-              <MultiPhotoUpload
+            <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
+              <UploadFieldMulti
                 key={`${form.id}-permissionLetter`}
                 title="Permission Letter"
                 value={form.permissionLetter}
-                onUploaded={async (meta) => {
-                  await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      permissionLetter: [...current.permissionLetter, meta],
-                    }),
-                  });
-                }}
-                onDeleted={async (meta) => {
-                  await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      permissionLetter: current.permissionLetter.filter(
-                        (item) => item.storedPath !== meta.storedPath,
-                      ),
-                    }),
-                  });
-                }}
+                onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, permissionLetter: [...c.permissionLetter, meta] }) }); }}
+                onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, permissionLetter: c.permissionLetter.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
                 uploadEndpoint="/api/me/case-studies/file"
-                email={email}
-                recordId={form.id}
-                slotName="permissionLetter"
-                disabled={controlsDisabled}
-                viewOnly={isViewMode}
+                email={email} recordId={form.id} slotName="permissionLetter"
                 showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
-                requiredErrorText="This upload is mandatory."
-                onStatusChange={() => {}}
+                requiredErrorText={errors.permissionLetter}
+                onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
               />
 
-              <MultiPhotoUpload
+              <UploadFieldMulti
                 key={`${form.id}-travelPlan`}
                 title="Travel Plan"
                 value={form.travelPlan}
-                onUploaded={async (meta) => {
-                  await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      travelPlan: [...current.travelPlan, meta],
-                    }),
-                  });
-                }}
-                onDeleted={async (meta) => {
-                  await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      travelPlan: current.travelPlan.filter(
-                        (item) => item.storedPath !== meta.storedPath,
-                      ),
-                    }),
-                  });
-                }}
+                onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, travelPlan: [...c.travelPlan, meta] }) }); }}
+                onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, travelPlan: c.travelPlan.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
                 uploadEndpoint="/api/me/case-studies/file"
-                email={email}
-                recordId={form.id}
-                slotName="travelPlan"
-                disabled={controlsDisabled}
-                viewOnly={isViewMode}
+                email={email} recordId={form.id} slotName="travelPlan"
                 showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
-                requiredErrorText="This upload is mandatory."
-                onStatusChange={() => {}}
+                requiredErrorText={errors.travelPlan}
+                onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
               />
 
-            <MultiPhotoUpload
-              title="Geotagged Photos"
-              value={form.geotaggedPhotos}
-              onUploaded={async (meta) => {
-                await persistCurrentMutation({
-                  buildNextEntry: (current) => ({
-                    ...current,
-                    geotaggedPhotos: [...current.geotaggedPhotos, meta],
-                  }),
-                });
-              }}
-              onDeleted={async (meta) => {
-                await persistCurrentMutation({
-                  buildNextEntry: (current) => ({
-                    ...current,
-                    geotaggedPhotos: current.geotaggedPhotos.filter(
-                      (item) => item.storedPath !== meta.storedPath,
-                    ),
-                  }),
-                });
-              }}
-              uploadEndpoint="/api/me/case-studies/file"
-              email={email}
-              recordId={form.id}
-              slotName="geotaggedPhotos"
-              disabled={controlsDisabled}
-              viewOnly={isViewMode}
-              showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
-              onStatusChange={setPhotoUploadStatus}
-            />
+              <UploadFieldMulti
+                key={`${form.id}-geotaggedPhotos`}
+                title="Geotagged Photos"
+                value={form.geotaggedPhotos}
+                onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, geotaggedPhotos: [...c.geotaggedPhotos, meta] }) }); }}
+                onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, geotaggedPhotos: c.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
+                uploadEndpoint="/api/me/case-studies/file"
+                email={email} recordId={form.id} slotName="geotaggedPhotos"
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText={errors.geotaggedPhotos}
+                onStatusChange={setPhotoUploadStatus} disabled={controlsDisabled} viewOnly={isViewMode}
+              />
+
+              <UploadFieldMulti
+                key={`${form.id}-report`}
+                title="Report"
+                value={form.report}
+                onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, report: [...c.report, meta] }) }); }}
+                onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, report: c.report.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
+                uploadEndpoint="/api/me/case-studies/file"
+                email={email} recordId={form.id} slotName="report"
+                showRequiredError={false}
+                onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
+              />
+
+              <UploadFieldMulti
+                key={`${form.id}-feedback`}
+                title="Feedback from Students and Industry"
+                value={form.feedback}
+                onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, feedback: [...c.feedback, meta] }) }); }}
+                onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, feedback: c.feedback.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
+                uploadEndpoint="/api/me/case-studies/file"
+                email={email} recordId={form.id} slotName="feedback"
+                showRequiredError={false}
+                onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
+              />
+
+              <UploadFieldMulti
+                key={`${form.id}-advanceClosure`}
+                title="Advance Closure"
+                value={form.advanceClosure}
+                onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, advanceClosure: [...c.advanceClosure, meta] }) }); }}
+                onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, advanceClosure: c.advanceClosure.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
+                uploadEndpoint="/api/me/case-studies/file"
+                email={email} recordId={form.id} slotName="advanceClosure"
+                showRequiredError={false}
+                onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
+              />
+
+              <Field label="Number of Participants">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.numberOfParticipants === null ? "" : String(form.numberOfParticipants)}
+                  onChange={(e) => setForm((c) => ({ ...c, numberOfParticipants: e.target.value === "" ? null : Number(e.target.value) }))}
+                  disabled={controlsDisabled}
+                  className={cx(
+                    "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+                    "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+                    controlsDisabled && "cursor-not-allowed opacity-60",
+                  )}
+                  placeholder="e.g. 45"
+                />
+              </Field>
             </div>
           </>
         ) : null}
@@ -547,6 +429,10 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
     </>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
 
 export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
   return (
@@ -557,31 +443,27 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
       hydrateEntry={hydrateEntry}
       validateFields={validateFields}
       renderFormFields={(ctx) => <CaseStudyFormFields ctx={ctx} />}
-      buildListEntryTitle={(entry) =>
-        `${entry.academicYear} • ${entry.yearOfStudy || "-"} • Semester ${entry.currentSemester ?? "-"}`
-      }
-      buildListEntrySubtitle={(entry) =>
-        `${entry.placeOfVisit} • ${entry.yearOfStudy || "-"} • Semester ${entry.currentSemester ?? "-"}`
-      }
+      buildListEntryTitle={(entry) => (entry.placeOfVisit || "").trim() || "Untitled visit"}
+      buildListEntrySubtitle={(entry) => entry.purposeOfVisit || ""}
       renderListEntryBody={({ entry }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
         const startStr = formatDisplayDate(entry.startDate);
         const endStr = formatDisplayDate(entry.endDate);
         const parts: string[] = [];
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
+        if (entry.academicYear) parts.push(entry.academicYear);
+        if (entry.yearOfStudy) parts.push(entry.yearOfStudy);
+        if (entry.currentSemester) parts.push(`Semester ${entry.currentSemester}`);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
-        if (entry.staffAccompanying.length > 0) parts.push(`${entry.staffAccompanying.length} staff`);
-        if (entry.amountSupport !== null && entry.amountSupport !== undefined)
-          parts.push(`₹${Number(entry.amountSupport).toLocaleString("en-IN")}`);
+        if (entry.sponsored === "Yes" && entry.fundingAgency) {
+          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (\u20B9${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
+          parts.push(`Funded by ${fundingStr}`);
+        }
+        if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);
         return (
           <>
-            {parts.length > 0 && (
-              <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>
-            )}
-            {entry.purposeOfVisit ? (
-              <div className="text-xs text-muted-foreground line-clamp-2">{entry.purposeOfVisit}</div>
-            ) : null}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {entry.permissionLetter.map((meta, i) => (
                 <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
@@ -594,14 +476,23 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
                 </a>
               ))}
               {entry.geotaggedPhotos.map((meta, photoIndex) => (
-                <a
-                  key={meta.storedPath}
-                  className="underline"
-                  href={meta.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
                   Geotagged Photo {photoIndex + 1}
+                </a>
+              ))}
+              {entry.report.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Report{entry.report.length > 1 ? ` ${i + 1}` : ""}
+                </a>
+              ))}
+              {entry.feedback.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Feedback{entry.feedback.length > 1 ? ` ${i + 1}` : ""}
+                </a>
+              ))}
+              {entry.advanceClosure.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Advance Closure{entry.advanceClosure.length > 1 ? ` ${i + 1}` : ""}
                 </a>
               ))}
             </div>
@@ -609,7 +500,7 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
         );
       }}
       title="Case Studies"
-      subtitle="Record case study visits with academic context, staff involvement, dates, and the required supporting documents."
+      subtitle="Record industry visits and field studies, along with staff details and supporting documents."
       formTitle="Case Study Entry"
       formSubtitle="Add the entry details and generate the entry to unlock uploads."
       deleteDescription="This permanently deletes this case-study entry and its associated uploaded files."
