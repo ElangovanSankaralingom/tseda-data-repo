@@ -124,7 +124,7 @@ function formatFieldValue(field: SchemaFieldDefinition, entry: Record<string, un
   if (field.kind === "number") {
     const numericText = formatNumberText(value);
     if (!numericText) return "";
-    if (field.key === "supportAmount" || field.key === "amountSupport") {
+    if (field.key === "supportAmount" || field.key === "amountSupport" || field.key === "fundingAmount") {
       const num = Number(numericText);
       return Number.isFinite(num) ? `Rs. ${num.toLocaleString("en-IN")}` : numericText;
     }
