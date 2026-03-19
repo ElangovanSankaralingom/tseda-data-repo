@@ -200,12 +200,6 @@ export type CaseStudyEntry = {
 };
 
 // ---------------------------------------------------------------------------
-// UploadStatus (used by guest-lectures)
-// ---------------------------------------------------------------------------
-
-export type UploadStatus = { hasPending: boolean; busy: boolean };
-
-// ---------------------------------------------------------------------------
 // GuestLectureEntry
 // ---------------------------------------------------------------------------
 
@@ -217,32 +211,40 @@ export type GuestLectureEntry = {
   confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
   academicYear: string;
+  semesterType: string;
+  level: string;
+  mode: string;
   startDate: string;
   endDate: string;
-  eventName: string;
-  speakerName: string;
-  organizationName: string;
-  coordinator: FacultyRowValue;
+  topicOfLecture: string;
+  guestSpeakerName: string;
+  guestSpeakerDesignation: string;
+  guestSpeakerOrganisation: string;
+  coordinatorName: string;
+  coordinatorEmail: string;
   coCoordinators: FacultyRowValue[];
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
-  participants: number | null;
+  sponsored: string;
+  fundingAgency: string;
+  fundingAmount: number | null;
   pdfMeta?: {
     storedPath: string;
     url: string;
     fileName: string;
     generatedAtISO: string;
   } | null;
-  pdfSourceHash?: string;
   pdfStale?: boolean;
-  uploads: Record<"permissionLetter" | "brochure" | "attendance" | "speakerProfile", FileMeta[]> & { geotaggedPhotos: FileMeta[] };
-  streak?: {
-    activatedAtISO?: string | null;
-    dueAtISO?: string | null;
-    completedAtISO?: string | null;
-    windowDays?: number;
-  };
+  pdfSourceHash?: string;
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string | null;
+  permanentlyLocked?: boolean;
+  permissionLetter: FileMeta[];
+  geotaggedPhotos: FileMeta[];
+  attendanceSheet: FileMeta[];
+  officialPoster: FileMeta[];
+  numberOfParticipants: number | null;
+  streak: StreakState;
   createdAt: string;
   updatedAt: string;
 };
