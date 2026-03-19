@@ -36,6 +36,11 @@ const MODE_OPTIONS = [
   { label: "Offline", value: "Offline" },
 ] as const;
 
+const SPONSORED_OPTIONS = [
+  { label: "Yes", value: "Yes" },
+  { label: "No", value: "No" },
+] as const;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -54,7 +59,9 @@ function emptyForm(): FdpAttended {
     endDate: "",
     programName: "",
     organisingBody: "",
-    supportAmount: null,
+    sponsored: "",
+    fundingAgency: "",
+    fundingAmount: null,
     pdfMeta: null,
     pdfStale: false,
     pdfSourceHash: "",
@@ -86,7 +93,12 @@ function uploadFdpFileXHR(opts: {
 // ---------------------------------------------------------------------------
 
 function validateFields(form: FdpAttended): Record<string, string> {
-  return validateEntryFields("fdp-attended", form as unknown as Record<string, unknown>);
+  const errors = validateEntryFields("fdp-attended", form as unknown as Record<string, unknown>);
+  if (form.sponsored === "Yes") {
+    if (!form.fundingAgency?.trim()) errors.fundingAgency = "Funding agency is required when sponsored.";
+    if (form.fundingAmount === null || form.fundingAmount === undefined) errors.fundingAmount = "Funding amount is required when sponsored.";
+  }
+  return errors;
 }
 
 // ---------------------------------------------------------------------------
@@ -262,15 +274,42 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
           />
         </Field>
 
-        <Field label="Amount of Support (₹) — optional" error={submitted ? errors.supportAmount : undefined} hint="Numbers only">
-          <CurrencyField
-            value={form.supportAmount === null ? "" : String(form.supportAmount)}
-            onChange={(value) => setForm((c) => ({ ...c, supportAmount: value === "" ? null : Number(value) }))}
-            disabled={coreFieldDisabled("supportAmount")}
-            error={submitted && !!errors.supportAmount}
-            placeholder="15000"
+        <Field label="Sponsored" error={submitted ? errors.sponsored : undefined}>
+          <SelectDropdown
+            value={form.sponsored || ""}
+            onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value === "No" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
+            options={SPONSORED_OPTIONS}
+            placeholder="Select"
+            disabled={coreFieldDisabled("sponsored")}
+            error={submitted && !!errors.sponsored}
           />
         </Field>
+
+        {form.sponsored === "Yes" && (
+          <>
+            <Field label="Name of the Funding Agency" error={submitted ? errors.fundingAgency : undefined}>
+              <input
+                value={form.fundingAgency || ""}
+                onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
+                disabled={coreFieldDisabled("fundingAgency")}
+                className={cx(
+                  "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+                  submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+                  coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
+                )}
+              />
+            </Field>
+            <Field label="Amount of Funding (₹)" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+              <CurrencyField
+                value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
+                onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
+                disabled={coreFieldDisabled("fundingAmount")}
+                error={submitted && !!errors.fundingAmount}
+                placeholder="15000"
+              />
+            </Field>
+          </>
+        )}
       </div>
 
       <div className="mt-5 space-y-4">
@@ -350,7 +389,8 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
-        if (typeof entry.supportAmount === "number") parts.push(`₹${entry.supportAmount.toLocaleString("en-IN")}`);
+        if (entry.sponsored === "Yes" && entry.fundingAgency) parts.push(`Funded by ${entry.fundingAgency}`);
+        if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(`₹${entry.fundingAmount.toLocaleString("en-IN")}`);
         return (
           <>
             {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
