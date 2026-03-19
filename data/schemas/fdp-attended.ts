@@ -12,7 +12,9 @@ const fields = [
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "programName", label: "Program Name", kind: "string" },
   { key: "organisingBody", label: "Organising Body", kind: "string" },
-  { key: "supportAmount", label: "Support Amount", kind: "number", required: false },
+  { key: "sponsored", label: "Sponsored", kind: "string", stage: 1, enumValues: ["Yes", "No"] },
+  { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false, stage: 1 },
+  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, stage: 1 },
   { key: "permissionLetter", label: "Permission Letter", kind: "object", upload: true, stage: 2 },
   { key: "completionCertificate", label: "Completion Certificate", kind: "object", upload: true, stage: 2 },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
@@ -31,7 +33,9 @@ export const fdpAttendedSchema: EntrySchema = {
     "endDate",
     "programName",
     "organisingBody",
-    "supportAmount",
+    "sponsored",
+    "fundingAgency",
+    "fundingAmount",
   ],
   requiredForCommit: [
     "academicYear",
@@ -42,6 +46,7 @@ export const fdpAttendedSchema: EntrySchema = {
     "endDate",
     "programName",
     "organisingBody",
+    "sponsored",
   ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);

@@ -90,7 +90,9 @@ export type FdpAttended = {
   endDate: string;
   programName: string;
   organisingBody: string;
-  supportAmount: number | null;
+  sponsored: string;
+  fundingAgency: string;
+  fundingAmount: number | null;
   pdfMeta?: {
     storedPath: string;
     url: string;
