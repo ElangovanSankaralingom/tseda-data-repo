@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
+import FormErrorBoundary from "@/components/ErrorBoundaryFallback";
 import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
+import EntryListSkeleton from "@/components/data-entry/EntryListSkeleton";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { createGroupedEntryListCard } from "@/components/data-entry/GroupedEntrySections";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
@@ -421,7 +423,6 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       DEFAULT_WORKFLOW_CONFIG,
       { saving: controller.saving, loading, hasBusyUploads: uploadBusySources.length > 0, fieldsDirty: formDirty },
     ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [form, category, controller.saving, loading, uploadBusySources.length, formDirty]
   );
 
@@ -654,6 +655,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       loading={loading}
       showForm={showForm}
       toast={toast}
+      onDismissToast={() => setToast(null)}
       formCard={
         showForm
           ? {
@@ -662,7 +664,9 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
               subtitle: formSubtitle,
               content: (
                 <>
-                  {renderFormFields(formFieldsCtx)}
+                  <FormErrorBoundary fallbackMessage="Something went wrong loading the form.">
+                    {renderFormFields(formFieldsCtx)}
+                  </FormErrorBoundary>
 
                   {/* Compact document bar */}
                   <div className="mt-5">
@@ -683,14 +687,21 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           : null
       }
       listCard={
-        !loading && !isEditing
-          ? createGroupedEntryListCard({
-              title: `Saved ${config.label} Entries`,
-              subtitle: "Your saved records are stored locally and keyed by your signed-in email.",
-              groupedEntries: smartGroupedEntries,
-              renderEntry: renderSavedEntry,
-            })
-          : null
+        isEditing
+          ? null
+          : loading && list.length === 0
+            ? {
+                title: `Saved ${config.label} Entries`,
+                subtitle: "Your saved records are stored locally and keyed by your signed-in email.",
+                content: <EntryListSkeleton count={3} />,
+                stats: { total: 1, drafts: 0, active: 0, finalized: 0, pending: 0, streakActive: 0 },
+              }
+            : createGroupedEntryListCard({
+                title: `Saved ${config.label} Entries`,
+                subtitle: "Your saved records are stored locally and keyed by your signed-in email.",
+                groupedEntries: smartGroupedEntries,
+                renderEntry: renderSavedEntry,
+              })
       }
       confirmationDialog={confirmationDialog}
       onRequestEdit={() => void controller.requestEdit(form).then(() => {

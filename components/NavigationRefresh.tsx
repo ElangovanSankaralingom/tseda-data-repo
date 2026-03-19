@@ -12,6 +12,7 @@ export default function NavigationRefresh() {
   const pathname = usePathname();
   const router = useRouter();
   const prevPathname = useRef(pathname);
+  const lastRefreshRef = useRef(0);
 
   // Re-render server components on every client navigation
   useEffect(() => {
@@ -23,17 +24,24 @@ export default function NavigationRefresh() {
 
   // Re-render when tab regains focus (user switches back)
   useEffect(() => {
-    function handleFocus() {
+    function debouncedRefresh() {
+      const now = Date.now();
+      if (now - lastRefreshRef.current < 500) return;
+      lastRefreshRef.current = now;
       router.refresh();
+    }
+
+    function handleFocus() {
+      debouncedRefresh();
     }
     function handleVisibility() {
       if (document.visibilityState === "visible") {
-        router.refresh();
+        debouncedRefresh();
       }
     }
     function handlePageShow(e: PageTransitionEvent) {
       if (e.persisted) {
-        router.refresh();
+        debouncedRefresh();
       }
     }
     window.addEventListener("focus", handleFocus);

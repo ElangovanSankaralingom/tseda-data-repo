@@ -37,12 +37,15 @@ export default function ConfettiBurst({ active }: { active: boolean }) {
 
   useEffect(() => {
     if (!active) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setParticles(createParticles());
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVisible(true);
-    const timer = setTimeout(() => setVisible(false), 1500);
-    return () => clearTimeout(timer);
+    const init = setTimeout(() => {
+      setParticles(createParticles());
+      setVisible(true);
+    }, 0);
+    const hide = setTimeout(() => setVisible(false), 1500);
+    return () => {
+      clearTimeout(init);
+      clearTimeout(hide);
+    };
   }, [active]);
 
   if (!visible) return null;

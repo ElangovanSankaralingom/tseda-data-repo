@@ -13,6 +13,7 @@ type CategoryEntryRuntimeProps = {
   loadingMessage?: React.ReactNode;
   showForm: boolean;
   toast?: UiToast | null;
+  onDismissToast?: () => void;
   formCard?: React.ComponentProps<typeof CategoryEntryPageShell>["formCard"];
   listCard?: React.ComponentProps<typeof CategoryEntryPageShell>["listCard"];
   confirmationDialog?: React.ReactNode;
@@ -28,6 +29,7 @@ export default function CategoryEntryRuntime({
   loadingMessage,
   showForm,
   toast,
+  onDismissToast,
   formCard,
   listCard,
   confirmationDialog,
@@ -45,7 +47,7 @@ export default function CategoryEntryRuntime({
       loading={loading}
       loadingMessage={loadingMessage}
       showForm={showForm}
-      topContent={<Toast toast={toast} />}
+      topContent={<Toast toast={toast} onDismiss={onDismissToast} />}
       formCard={formCard}
       listCard={listCard}
       confirmationDialog={confirmationDialog}
