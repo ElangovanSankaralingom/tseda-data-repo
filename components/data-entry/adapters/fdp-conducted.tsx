@@ -108,7 +108,7 @@ function validateFields(form: FdpConducted): Record<string, string> {
   // Category-specific: duplicate co-coordinator emails
   const emailCounts = new Map<string, number>();
   const selectedEmails = [form.coordinatorEmail, ...form.coCoordinators.map((v) => v.email)]
-    .map((v) => v.trim().toLowerCase())
+    .map((v) => (v || "").trim().toLowerCase())
     .filter(Boolean);
   for (const selectedEmail of selectedEmails) {
     emailCounts.set(selectedEmail, (emailCounts.get(selectedEmail) ?? 0) + 1);
@@ -392,7 +392,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
               />
             </Field>
 
-            <Field label="Amount of Funding (\u20B9) \u2014 optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label="Amount of Funding (₹) — optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -544,7 +544,7 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.coCoordinators.length > 0) {
           parts.push(`Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`);
         }
-        return parts.join(" \u2022 ");
+        return parts.join(" • ");
       }}
       renderListEntryBody={({ entry }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
@@ -555,17 +555,17 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
         if (entry.level) parts.push(entry.level);
         if (entry.mode) parts.push(entry.mode);
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) {
-          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (\u20B9${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
+          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (₹${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
           parts.push(`Funded by ${fundingStr}`);
         }
         if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {entry.permissionLetter ? (
                 <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
@@ -591,7 +591,7 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
           </>
         );
       }}
-      title="FDP \u2014 Conducted"
+      title="FDP — Conducted"
       subtitle="Record faculty development programmes conducted, along with coordinator details and supporting documents."
       formTitle="FDP Entry"
       formSubtitle="Add the entry details and generate the entry to unlock uploads."

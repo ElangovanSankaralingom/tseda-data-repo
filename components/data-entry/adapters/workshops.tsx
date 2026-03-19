@@ -419,7 +419,7 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
       validateFields={validateFields}
       renderFormFields={(ctx) => <WorkshopFormFields ctx={ctx} />}
       buildListEntryTitle={(entry) => entry.eventName}
-      buildListEntrySubtitle={(entry) => `Speaker: ${entry.speakerName} \u2022 ${entry.organisationName}`}
+      buildListEntrySubtitle={(entry) => `Speaker: ${entry.speakerName} • ${entry.organisationName}`}
       renderListEntryBody={({ entry }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
         const startStr = formatDisplayDate(entry.startDate);
@@ -427,7 +427,7 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
         const parts: string[] = [];
         if (entry.academicYear) parts.push(entry.academicYear);
         if (entry.currentSemester) parts.push(`Semester ${entry.currentSemester}`);
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.participants) parts.push(`${entry.participants} participants`);
@@ -439,7 +439,7 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
 
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
             {people.length > 0 && <div className="text-xs text-muted-foreground">{people.join(", ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {UPLOAD_CONFIG.map(({ slot, label }) =>
