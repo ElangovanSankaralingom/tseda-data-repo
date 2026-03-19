@@ -158,6 +158,22 @@ export default function SelectDropdown({
             setHasTypedSinceOpen(false);
             setHighlightedIndex(-1);
             setOpen(false);
+          } else if (event.key === "Home") {
+            event.preventDefault();
+            if (open) setHighlightedIndex(firstEnabledIndex);
+          } else if (event.key === "End") {
+            event.preventDefault();
+            if (open) {
+              for (let i = filteredOptions.length - 1; i >= 0; i--) {
+                if (!filteredOptions[i].disabled) { setHighlightedIndex(i); break; }
+              }
+            }
+          } else if (event.key === " " && !hasTypedSinceOpen) {
+            if (!open || resolvedHighlightedIndex < 0) return;
+            const highlighted = filteredOptions[resolvedHighlightedIndex];
+            if (!highlighted || highlighted.disabled) return;
+            event.preventDefault();
+            chooseOption(highlighted);
           }
         }}
         placeholder={placeholder}
@@ -169,6 +185,7 @@ export default function SelectDropdown({
         aria-haspopup="listbox"
         aria-autocomplete="list"
         aria-controls={id ? `${id}-options` : undefined}
+        aria-activedescendant={open && id && resolvedHighlightedIndex >= 0 ? `${id}-option-${resolvedHighlightedIndex}` : undefined}
         value={displayValue}
         className={cx(
           "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
@@ -191,6 +208,7 @@ export default function SelectDropdown({
             filteredOptions.map((option, index) => (
               <button
                 key={option.value}
+                id={id ? `${id}-option-${index}` : undefined}
                 type="button"
                 role="option"
                 aria-selected={index === resolvedHighlightedIndex}

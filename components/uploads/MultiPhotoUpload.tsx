@@ -36,7 +36,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
 function ProgressBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full border border-border bg-muted">
+    <div className="h-2 w-full overflow-hidden rounded-full border border-border bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
       <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
     </div>
   );
@@ -159,7 +159,7 @@ export default function MultiPhotoUpload({
   }
 
   return (
-    <div className="rounded-xl border border-border p-4 space-y-3">
+    <div className="rounded-xl border border-border p-4 space-y-3" aria-busy={busy || undefined}>
       <div className="text-sm font-semibold">{title}</div>
 
       {value.length > 0 ? (
@@ -259,6 +259,7 @@ export default function MultiPhotoUpload({
               type="file"
               multiple
               className="hidden"
+              aria-label="Upload file"
               accept={acceptedFileTypes.join(",")}
               onChange={(event) => {
                 const selected = Array.from(event.target.files ?? []);
