@@ -47,6 +47,29 @@ export async function GET() {
         ? "ok"
         : `missing: ${missingEnv.join(", ")}`;
 
+    // Version from package.json
+    let version = "unknown";
+    try {
+      const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), "package.json"), "utf-8"));
+      version = pkg.version ?? "unknown";
+    } catch {
+      // Fallback
+    }
+
+    // Last nightly maintenance run
+    let lastNightlyRun = null;
+    try {
+      const lastRunData = await fs.readFile(path.join(dataRoot, "maintenance", "lastRun.json"), "utf-8");
+      const parsed = JSON.parse(lastRunData);
+      lastNightlyRun = {
+        startedAt: parsed.startedAt ?? null,
+        finishedAt: parsed.finishedAt ?? null,
+        overallSuccess: parsed.overallSuccess ?? null,
+      };
+    } catch {
+      // No last run data
+    }
+
     // Memory usage
     const memoryUsage = process.memoryUsage();
 
@@ -68,7 +91,8 @@ export async function GET() {
           accessible: dataDirStatus === "ok",
           userCount,
         },
-        version: process.env.npm_package_version || "unknown",
+        version,
+        lastNightlyRun,
         node: process.version,
         environment: process.env.NODE_ENV || "development",
         checks: {

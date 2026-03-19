@@ -48,7 +48,7 @@ export default function FacultySelect({
 
   // Use fetched results when fetchEndpoint is provided and no static options
   const useApi = !!fetchEndpoint && !options;
-  const sourceOptions = useApi ? fetchedOptions : (options ?? []);
+  const sourceOptions = useMemo(() => useApi ? fetchedOptions : (options ?? []), [useApi, fetchedOptions, options]);
 
   const filteredOptions = useMemo(() => {
     if (useApi) return sourceOptions;

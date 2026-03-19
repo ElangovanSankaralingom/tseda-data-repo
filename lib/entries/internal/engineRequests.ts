@@ -5,6 +5,7 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { AppError } from "@/lib/errors";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { canRequestAction, isEntryCommitted, normalizeEntryStatus, transitionEntry } from "@/lib/entries/workflow";
+import { logger } from "@/lib/logger";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isEntryWon } from "@/lib/streakProgress";
 import { pauseTimer, clearTimer } from "@/lib/workflow/timerManager";
@@ -90,6 +91,7 @@ export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecor
     extraValidation: validateRequestEligibility,
     applyTransition: (existing, nowISO) => applyRequestFields(existing as EntryLike, category, "requestEdit", nowISO, message),
     afterSuccess: (entry) => {
+      logger.info({ event: "entry.request", action: "edit_requested", category, entryId: String(entry.id ?? entryId), userEmail });
       const normalized = normalizeEmail(userEmail);
       fireAndForget(
         import("@/lib/confirmations/adminNotificationHelpers").then(({ notifyAdminEditRequest }) =>
@@ -218,6 +220,7 @@ export async function requestDelete<T extends EntryEngineRecord = EntryEngineRec
     },
     applyTransition: (existing, nowISO) => applyRequestFields(existing as EntryLike, category, "requestDelete", nowISO, message),
     afterSuccess: (entry) => {
+      logger.info({ event: "entry.request", action: "delete_requested", category, entryId: String(entry.id ?? entryId), userEmail });
       const normalized = normalizeEmail(userEmail);
       fireAndForget(
         import("@/lib/confirmations/adminNotificationHelpers").then(({ notifyAdminDeleteRequest }) =>

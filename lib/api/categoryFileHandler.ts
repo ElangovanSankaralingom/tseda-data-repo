@@ -26,6 +26,7 @@ import { isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry"
 import { readCategoryEntryById, upsertCategoryEntry } from "@/lib/dataStore";
 import { normalizeError } from "@/lib/errors";
 import { isEntryEditable } from "@/lib/entries/lock";
+import { logger } from "@/lib/logger";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { safeEmailDir } from "@/lib/userStore";
@@ -231,6 +232,15 @@ export async function handleCategoryFilePost(request: Request, category: Categor
     await fs.mkdir(path.dirname(absPath), { recursive: true });
     await fs.writeFile(absPath, Buffer.from(fileBuffer));
 
+    logger.info({
+      event: "upload.success",
+      category,
+      slot,
+      fileName: file.name,
+      sizeBytes: file.size,
+      userEmail: email,
+    });
+
     return NextResponse.json({
       fileName: file.name,
       mimeType: file.type,
@@ -293,6 +303,14 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
 
     // Delete the file
     await fs.unlink(path.join(process.cwd(), "public", storedPath)).catch(() => null);
+
+    logger.info({
+      event: "upload.delete",
+      category,
+      slot: parsed?.slot ?? null,
+      storedPath,
+      userEmail: email,
+    });
 
     // Update entry to clear the slot
     if (parsed?.recordId && parsed.slot && config.slots.has(parsed.slot)) {

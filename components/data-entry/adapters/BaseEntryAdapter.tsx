@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
+import { SYSTEM } from "@/lib/constants/messages";
 import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
 import FormErrorBoundary from "@/components/ErrorBoundaryFallback";
 import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
@@ -584,9 +585,9 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   return (
     <>
     {autoSaveFailed && (
-      <div className="sticky top-0 z-40 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-sm">
+      <div className="sticky top-0 z-40 mx-[-1rem] flex items-center gap-2 rounded-none border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-sm sm:mx-0 sm:rounded-lg">
         <AlertTriangle className="size-4 shrink-0" />
-        <span>Changes not saved — check your connection and try again.</span>
+        <span>{SYSTEM.autoSaveFailed}</span>
       </div>
     )}
     <CategoryEntryRuntime

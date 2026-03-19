@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AUTH } from "@/lib/constants/messages";
 
 type ApiSuccessOptions = {
   status?: number;
@@ -23,11 +24,11 @@ export function apiError(message: string, options: ApiErrorOptions = {}) {
   );
 }
 
-export function apiUnauthorized(message = "Unauthorized") {
+export function apiUnauthorized(message = AUTH.unauthorized) {
   return apiError(message, { status: 401, code: "UNAUTHORIZED" });
 }
 
-export function apiForbidden(message = "Access denied") {
+export function apiForbidden(message = AUTH.accessDenied) {
   return apiError(message, { status: 403, code: "FORBIDDEN" });
 }
 

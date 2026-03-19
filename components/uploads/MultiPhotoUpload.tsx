@@ -201,7 +201,7 @@ export default function MultiPhotoUpload({
                     }
                     disabled={busy || disabled}
                     className={cx(
-                      "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
+                      "inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
                       busy || disabled
                         ? "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60"
                         : "border-border text-red-600 transition hover:bg-red-50"
@@ -249,6 +249,7 @@ export default function MultiPhotoUpload({
         <div className="flex flex-wrap gap-2">
           <label
             className={cx(
+              "min-h-[44px]",
               busy || disabled
                 ? getButtonClass("context", { disabled: true })
                 : `${getButtonClass("context")} cursor-pointer`

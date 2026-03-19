@@ -23,6 +23,7 @@ import {
 } from "@/lib/student-academic";
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
+import { safeString, safeNumber, ensureFaculty, ensureFacultyArray, ensureFileMetaArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 function buildStaffKey(selection: StaffSelection) {
@@ -64,9 +65,28 @@ function emptyForm(): CaseStudyEntry {
 }
 
 function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
-  return withAcademicProgressionCompatibility(
+  const withPdf = withAcademicProgressionCompatibility(
     hydratePdfSnapshot(entry, "case-studies") as CaseStudyEntry,
   ) as CaseStudyEntry;
+  const e = withPdf as unknown as Record<string, unknown>;
+  return {
+    ...withPdf,
+    academicYear: safeString(e.academicYear),
+    startDate: safeString(e.startDate),
+    endDate: safeString(e.endDate),
+    coordinator: ensureFaculty(e.coordinator),
+    placeOfVisit: safeString(e.placeOfVisit),
+    purposeOfVisit: safeString(e.purposeOfVisit),
+    staffAccompanying: ensureFacultyArray(e.staffAccompanying),
+    yearOfStudy: safeString(e.yearOfStudy),
+    currentSemester: safeNumber(e.currentSemester),
+    participants: safeNumber(e.participants),
+    amountSupport: safeNumber(e.amountSupport),
+    permissionLetter: ensureFileMetaArray(e.permissionLetter),
+    travelPlan: ensureFileMetaArray(e.travelPlan),
+    geotaggedPhotos: ensureFileMetaArray(e.geotaggedPhotos),
+    streak: ensureStreak(e.streak),
+  } as CaseStudyEntry;
 }
 
 function validateFields(form: CaseStudyEntry): Record<string, string> {
