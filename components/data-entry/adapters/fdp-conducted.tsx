@@ -4,19 +4,16 @@ import { useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
-import UploadField from "@/components/entry/UploadField";
 import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
-import { useUploadController } from "@/hooks/useUploadController";
 import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
-import { uploadFile } from "@/lib/upload/uploadService";
 import type { FdpConducted } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
@@ -72,30 +69,15 @@ function emptyForm(): FdpConducted {
     pdfMeta: null,
     pdfStale: false,
     pdfSourceHash: "",
-    permissionLetter: null,
+    permissionLetter: [],
     geotaggedPhotos: [],
-    attendanceSheet: null,
+    attendanceSheet: [],
     numberOfParticipants: null,
-    officialPoster: null,
+    officialPoster: [],
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
   } as FdpConducted;
-}
-
-function uploadConductedFileXHR(opts: {
-  recordId: string;
-  slot: "permissionLetter" | "attendanceSheet" | "officialPoster";
-  file: File;
-  onProgress: (pct: number) => void;
-}): Promise<FileMeta> {
-  return uploadFile({
-    endpoint: "/api/me/fdp-conducted/file",
-    recordId: opts.recordId,
-    slot: opts.slot,
-    file: opts.file,
-    onProgress: opts.onProgress,
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -137,10 +119,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
     isViewMode,
     uploadsVisible,
     persistCurrentMutation,
-    showToast,
     submitAttemptedFinal,
-    uploadPersisting,
-    setUploadPersistingCount,
     email,
     userDisplayName,
   } = ctx;
@@ -148,102 +127,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
-  const requiredUploadsComplete = !!form.permissionLetter && form.geotaggedPhotos.length > 0 && !!form.attendanceSheet;
-
-  const permissionController = useUploadController<FileMeta>({
-    locked: controlsDisabled,
-    savedToServer: !!form.pdfMeta,
-    upload: (file, onProgress) =>
-      uploadConductedFileXHR({ recordId: form.id, slot: "permissionLetter", file, onProgress }),
-    remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-conducted/file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || "Delete failed.");
-    },
-  });
-
-  const attendanceController = useUploadController<FileMeta>({
-    locked: controlsDisabled,
-    savedToServer: !!form.pdfMeta,
-    upload: (file, onProgress) =>
-      uploadConductedFileXHR({ recordId: form.id, slot: "attendanceSheet", file, onProgress }),
-    remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-conducted/file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || "Delete failed.");
-    },
-  });
-
-  const posterController = useUploadController<FileMeta>({
-    locked: controlsDisabled,
-    savedToServer: !!form.pdfMeta,
-    upload: (file, onProgress) =>
-      uploadConductedFileXHR({ recordId: form.id, slot: "officialPoster", file, onProgress }),
-    remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-conducted/file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || "Delete failed.");
-    },
-  });
-
-  async function uploadSlot(slot: "permissionLetter" | "attendanceSheet" | "officialPoster") {
-    const controller = slot === "permissionLetter" ? permissionController : slot === "attendanceSheet" ? attendanceController : posterController;
-    const previousMeta = form[slot];
-    try {
-      const meta = await controller.uploadAndSave();
-      if (!meta) return;
-      if (previousMeta?.storedPath && previousMeta.storedPath !== meta.storedPath) {
-        void fetch("/api/me/fdp-conducted/file", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ storedPath: previousMeta.storedPath }),
-        }).catch(() => null);
-      }
-      setUploadPersistingCount((c) => c + 1);
-      try {
-        await persistCurrentMutation({
-          buildNextEntry: (current) => ({ ...current, [slot]: meta }) as FdpConducted,
-        });
-      } finally {
-        setUploadPersistingCount((c) => Math.max(0, c - 1));
-      }
-    } catch (error) {
-      showToast("err", error instanceof Error ? error.message : "Upload failed.", 1800);
-    }
-  }
-
-  async function deleteSlot(slot: "permissionLetter" | "attendanceSheet" | "officialPoster") {
-    const meta = form[slot];
-    if (!meta?.storedPath) { showToast("err", "File path missing.", 1500); return; }
-    try {
-      const controller = slot === "permissionLetter" ? permissionController : slot === "attendanceSheet" ? attendanceController : posterController;
-      const deleted = await controller.deleteFile(meta);
-      if (!deleted) return;
-      setUploadPersistingCount((c) => c + 1);
-      try {
-        await persistCurrentMutation({
-          buildNextEntry: (current) => ({ ...current, [slot]: null }) as FdpConducted,
-        });
-      } finally {
-        setUploadPersistingCount((c) => Math.max(0, c - 1));
-      }
-      showToast("ok", "File deleted.", 1200);
-    } catch (error) {
-      showToast("err", error instanceof Error ? error.message : "Delete failed.", 1500);
-    }
-  }
+  const requiredUploadsComplete = form.permissionLetter.length > 0 && form.geotaggedPhotos.length > 0 && form.attendanceSheet.length > 0;
 
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
     return persistCurrentMutation({
@@ -392,7 +276,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
               />
             </Field>
 
-            <Field label="Amount of Funding (₹) — optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label="Amount of Funding (\u20B9) \u2014 optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -412,27 +296,41 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           <>
             <StageTwoDivider />
             <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
-              <UploadField
-                title="Upload Permission Letter"
-                mode={isViewMode ? "view" : "edit"}
-                meta={form.permissionLetter}
-                pendingFile={permissionController.pendingFile}
-                progress={permissionController.progress}
-                busy={permissionController.busy || uploadPersisting}
-                error={permissionController.error}
-                canChoose={permissionController.canChoose && !uploadPersisting}
-                canUpload={permissionController.canUpload && !uploadPersisting}
-                canDelete={permissionController.canDelete && !uploadPersisting}
-                needsEntry={permissionController.needsEntry}
-                onSelectFile={permissionController.selectFile}
-                onUpload={() => void uploadSlot("permissionLetter")}
-                onDelete={() => void deleteSlot("permissionLetter")}
-                showValidationError={submitAttemptedFinal}
-                validationMessage={errors.permissionLetter}
+              <UploadFieldMulti
+                key={`${form.id}-permissionLetter`}
+                title="Permission Letter"
+                value={form.permissionLetter}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      permissionLetter: [...current.permissionLetter, meta],
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      permissionLetter: current.permissionLetter.filter(
+                        (item) => item.storedPath !== meta.storedPath
+                      ),
+                    }),
+                  });
+                }}
+                uploadEndpoint="/api/me/fdp-conducted/file"
+                email={email}
+                recordId={form.id}
+                slotName="permissionLetter"
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText={errors.permissionLetter}
+                onStatusChange={() => {}}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
               />
 
               <UploadFieldMulti
-                key={form.id}
+                key={`${form.id}-geotaggedPhotos`}
                 title="Geotagged Photos"
                 value={form.geotaggedPhotos}
                 onUploaded={async (meta) => {
@@ -464,23 +362,37 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
                 viewOnly={isViewMode}
               />
 
-              <UploadField
-                title="Upload Attendance Sheet"
-                mode={isViewMode ? "view" : "edit"}
-                meta={form.attendanceSheet}
-                pendingFile={attendanceController.pendingFile}
-                progress={attendanceController.progress}
-                busy={attendanceController.busy || uploadPersisting}
-                error={attendanceController.error}
-                canChoose={attendanceController.canChoose && !uploadPersisting}
-                canUpload={attendanceController.canUpload && !uploadPersisting}
-                canDelete={attendanceController.canDelete && !uploadPersisting}
-                needsEntry={attendanceController.needsEntry}
-                onSelectFile={attendanceController.selectFile}
-                onUpload={() => void uploadSlot("attendanceSheet")}
-                onDelete={() => void deleteSlot("attendanceSheet")}
-                showValidationError={submitAttemptedFinal}
-                validationMessage={errors.attendanceSheet}
+              <UploadFieldMulti
+                key={`${form.id}-attendanceSheet`}
+                title="Attendance Sheet"
+                value={form.attendanceSheet}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      attendanceSheet: [...current.attendanceSheet, meta],
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      attendanceSheet: current.attendanceSheet.filter(
+                        (item) => item.storedPath !== meta.storedPath
+                      ),
+                    }),
+                  });
+                }}
+                uploadEndpoint="/api/me/fdp-conducted/file"
+                email={email}
+                recordId={form.id}
+                slotName="attendanceSheet"
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText={errors.attendanceSheet}
+                onStatusChange={() => {}}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
               />
 
               <Field label="Number of Participants">
@@ -499,23 +411,37 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
                 />
               </Field>
 
-              <UploadField
-                title="Upload Official Poster"
-                mode={isViewMode ? "view" : "edit"}
-                meta={form.officialPoster}
-                pendingFile={posterController.pendingFile}
-                progress={posterController.progress}
-                busy={posterController.busy || uploadPersisting}
-                error={posterController.error}
-                canChoose={posterController.canChoose && !uploadPersisting}
-                canUpload={posterController.canUpload && !uploadPersisting}
-                canDelete={posterController.canDelete && !uploadPersisting}
-                needsEntry={posterController.needsEntry}
-                onSelectFile={posterController.selectFile}
-                onUpload={() => void uploadSlot("officialPoster")}
-                onDelete={() => void deleteSlot("officialPoster")}
-                showValidationError={submitAttemptedFinal}
-                validationMessage={errors.officialPoster}
+              <UploadFieldMulti
+                key={`${form.id}-officialPoster`}
+                title="Official Poster"
+                value={form.officialPoster}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      officialPoster: [...current.officialPoster, meta],
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      officialPoster: current.officialPoster.filter(
+                        (item) => item.storedPath !== meta.storedPath
+                      ),
+                    }),
+                  });
+                }}
+                uploadEndpoint="/api/me/fdp-conducted/file"
+                email={email}
+                recordId={form.id}
+                slotName="officialPoster"
+                showRequiredError={false}
+                requiredErrorText={errors.officialPoster}
+                onStatusChange={() => {}}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
               />
             </div>
           </>
@@ -544,7 +470,7 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.coCoordinators.length > 0) {
           parts.push(`Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`);
         }
-        return parts.join(" • ");
+        return parts.join(" \u2022 ");
       }}
       renderListEntryBody={({ entry }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
@@ -555,43 +481,43 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
         if (entry.level) parts.push(entry.level);
         if (entry.mode) parts.push(entry.mode);
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) {
-          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (₹${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
+          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (\u20B9${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
           parts.push(`Funded by ${fundingStr}`);
         }
         if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              {entry.permissionLetter ? (
-                <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-                  Permission Letter
+              {entry.permissionLetter.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}
                 </a>
-              ) : null}
+              ))}
               {entry.geotaggedPhotos.map((meta, photoIndex) => (
                 <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
                   Geotagged Photo {photoIndex + 1}
                 </a>
               ))}
-              {entry.attendanceSheet ? (
-                <a className="underline" href={entry.attendanceSheet.url} target="_blank" rel="noreferrer">
-                  Attendance Sheet
+              {entry.attendanceSheet.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Attendance Sheet{entry.attendanceSheet.length > 1 ? ` ${i + 1}` : ""}
                 </a>
-              ) : null}
-              {entry.officialPoster ? (
-                <a className="underline" href={entry.officialPoster.url} target="_blank" rel="noreferrer">
-                  Official Poster
+              ))}
+              {entry.officialPoster.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Official Poster{entry.officialPoster.length > 1 ? ` ${i + 1}` : ""}
                 </a>
-              ) : null}
+              ))}
             </div>
           </>
         );
       }}
-      title="FDP — Conducted"
+      title="FDP \u2014 Conducted"
       subtitle="Record faculty development programmes conducted, along with coordinator details and supporting documents."
       formTitle="FDP Entry"
       formSubtitle="Add the entry details and generate the entry to unlock uploads."

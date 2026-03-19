@@ -9,7 +9,6 @@ import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
-import EntryUploader from "@/components/upload/EntryUploader";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
@@ -46,12 +45,12 @@ const EMPTY_UPLOAD_STATUS: Record<UploadSlot, UploadStatus> = {
 };
 const FACULTY_OPTIONS = FACULTY;
 
-function emptyUploads(): Record<UploadSlot, FileMeta | null> {
+function emptyUploads(): Record<UploadSlot, FileMeta[]> {
   return {
-    permissionLetter: null,
-    brochure: null,
-    attendance: null,
-    speakerProfile: null,
+    permissionLetter: [],
+    brochure: [],
+    attendance: [],
+    speakerProfile: [],
   };
 }
 
@@ -375,37 +374,42 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
             <StageTwoDivider />
             <div className="animate-highlight-new grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {UPLOAD_CONFIG.map(({ slot, label }) => (
-              <EntryUploader
-                key={slot}
+              <MultiPhotoUpload
+                key={`${form.id}-${slot}`}
                 title={label}
-                mode={isViewMode ? "view" : "edit"}
-                meta={form.uploads[slot]}
-                uploadEndpoint="/api/me/guest-lectures/file"
-                email={email}
-                recordId={form.id}
-                slot={slot}
-                disabled={controlsDisabled}
-                showValidationError={submitAttemptedFinal}
-                validationMessage="This upload is mandatory."
-                onStatusChange={(status) =>
-                  setSingleUploadStatus((c) => ({ ...c, [slot]: status }))
-                }
+                value={form.uploads[slot]}
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
                     buildNextEntry: (current) => ({
                       ...current,
-                      uploads: { ...current.uploads, [slot]: meta },
+                      uploads: { ...current.uploads, [slot]: [...current.uploads[slot], meta] },
                     }),
                   });
                 }}
-                onDeleted={async () => {
+                onDeleted={async (meta) => {
                   await persistCurrentMutation({
                     buildNextEntry: (current) => ({
                       ...current,
-                      uploads: { ...current.uploads, [slot]: null },
+                      uploads: {
+                        ...current.uploads,
+                        [slot]: current.uploads[slot].filter(
+                          (item) => item.storedPath !== meta.storedPath,
+                        ),
+                      },
                     }),
                   });
                 }}
+                uploadEndpoint="/api/me/guest-lectures/file"
+                email={email}
+                recordId={form.id}
+                slotName={slot}
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
+                showRequiredError={submitAttemptedFinal && form.uploads[slot].length === 0}
+                requiredErrorText="This upload is mandatory."
+                onStatusChange={(status) =>
+                  setSingleUploadStatus((c) => ({ ...c, [slot]: status }))
+                }
               />
             ))}
 
@@ -494,17 +498,17 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
             )}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {UPLOAD_CONFIG.map(({ slot, label }) =>
-                entry.uploads[slot] ? (
+                entry.uploads[slot].map((meta, i) => (
                   <a
-                    key={slot}
+                    key={meta.storedPath}
                     className="underline"
-                    href={entry.uploads[slot]?.url ?? "#"}
+                    href={meta.url}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {label}
+                    {label}{entry.uploads[slot].length > 1 ? ` ${i + 1}` : ""}
                   </a>
-                ) : null,
+                )),
               )}
               {entry.uploads.geotaggedPhotos.map((meta, photoIndex) => (
                 <a

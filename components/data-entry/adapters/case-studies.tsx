@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
-import EntryUploader from "@/components/upload/EntryUploader";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
@@ -26,11 +25,6 @@ import {
 import { withAcademicProgressionCompatibility } from "@/lib/types/academicProgression";
 import type { StaffSelection, CaseStudyEntry } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
-
-const SINGLE_UPLOAD_SLOTS: Array<{ slot: "permissionLetter" | "travelPlan"; label: string }> = [
-  { slot: "permissionLetter", label: "Permission Letter" },
-  { slot: "travelPlan", label: "Travel Plan" },
-];
 
 const FACULTY_OPTIONS = FACULTY;
 
@@ -63,8 +57,8 @@ function emptyForm(): CaseStudyEntry {
     pdfMeta: null,
     pdfSourceHash: "",
     pdfStale: false,
-    permissionLetter: null,
-    travelPlan: null,
+    permissionLetter: [],
+    travelPlan: [],
     geotaggedPhotos: [],
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
@@ -162,16 +156,9 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
 
-  const [singleUploadStatus, setSingleUploadStatus] = useState<
-    Record<"permissionLetter" | "travelPlan", { hasPending: boolean; busy: boolean }>
-  >({
-    permissionLetter: { hasPending: false, busy: false },
-    travelPlan: { hasPending: false, busy: false },
-  });
   const [photoUploadStatus, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
-  // Keep status in sync — these are unused by BaseEntryAdapter but needed by EntryUploader/MultiPhotoUpload
-  void singleUploadStatus;
+  // Keep status in sync — unused by BaseEntryAdapter but needed by MultiPhotoUpload
   void photoUploadStatus;
 
   const coordinatorRow: FacultyRowValue = useMemo(
@@ -258,7 +245,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
     return mergedRows;
   }
 
-  const requiredUploadsComplete = !!form.permissionLetter && !!form.travelPlan && form.geotaggedPhotos.length > 0;
+  const requiredUploadsComplete = form.permissionLetter.length > 0 && form.travelPlan.length > 0 && form.geotaggedPhotos.length > 0;
 
   return (
     <>
@@ -445,34 +432,71 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           <>
             <StageTwoDivider />
             <div className="animate-highlight-new grid gap-4 sm:grid-cols-3">
-            {SINGLE_UPLOAD_SLOTS.map(({ slot, label }) => (
-              <EntryUploader
-                key={slot}
-                title={label}
-                mode={isViewMode ? "view" : "edit"}
-                meta={form[slot]}
+              <MultiPhotoUpload
+                key={`${form.id}-permissionLetter`}
+                title="Permission Letter"
+                value={form.permissionLetter}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      permissionLetter: [...current.permissionLetter, meta],
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      permissionLetter: current.permissionLetter.filter(
+                        (item) => item.storedPath !== meta.storedPath,
+                      ),
+                    }),
+                  });
+                }}
                 uploadEndpoint="/api/me/case-studies/file"
                 email={email}
                 recordId={form.id}
-                slot={slot}
+                slotName="permissionLetter"
                 disabled={controlsDisabled}
-                showValidationError={submitAttemptedFinal}
-                validationMessage="This upload is mandatory."
-                onStatusChange={(status) =>
-                  setSingleUploadStatus((c) => ({ ...c, [slot]: status }))
-                }
+                viewOnly={isViewMode}
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText="This upload is mandatory."
+                onStatusChange={() => {}}
+              />
+
+              <MultiPhotoUpload
+                key={`${form.id}-travelPlan`}
+                title="Travel Plan"
+                value={form.travelPlan}
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => ({ ...current, [slot]: meta }),
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      travelPlan: [...current.travelPlan, meta],
+                    }),
                   });
                 }}
-                onDeleted={async () => {
+                onDeleted={async (meta) => {
                   await persistCurrentMutation({
-                    buildNextEntry: (current) => ({ ...current, [slot]: null }),
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      travelPlan: current.travelPlan.filter(
+                        (item) => item.storedPath !== meta.storedPath,
+                      ),
+                    }),
                   });
                 }}
+                uploadEndpoint="/api/me/case-studies/file"
+                email={email}
+                recordId={form.id}
+                slotName="travelPlan"
+                disabled={controlsDisabled}
+                viewOnly={isViewMode}
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText="This upload is mandatory."
+                onStatusChange={() => {}}
               />
-            ))}
 
             <MultiPhotoUpload
               title="Geotagged Photos"
@@ -547,16 +571,16 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
               <div className="text-xs text-muted-foreground line-clamp-2">{entry.purposeOfVisit}</div>
             ) : null}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              {entry.permissionLetter ? (
-                <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">
-                  Permission Letter
+              {entry.permissionLetter.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}
                 </a>
-              ) : null}
-              {entry.travelPlan ? (
-                <a className="underline" href={entry.travelPlan.url} target="_blank" rel="noreferrer">
-                  Travel Plan
+              ))}
+              {entry.travelPlan.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                  Travel Plan{entry.travelPlan.length > 1 ? ` ${i + 1}` : ""}
                 </a>
-              ) : null}
+              ))}
               {entry.geotaggedPhotos.map((meta, photoIndex) => (
                 <a
                   key={meta.storedPath}
