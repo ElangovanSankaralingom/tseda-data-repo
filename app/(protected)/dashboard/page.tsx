@@ -6,7 +6,6 @@ import {
   Flame,
 } from "lucide-react";
 import DashboardClient from "@/components/dashboard/DashboardClient";
-import RefreshOnFocus from "@/components/RefreshOnFocus";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { getDashboardSummary } from "@/lib/entries/summary";
@@ -66,7 +65,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <RefreshOnFocus />
       {/* Welcome Header */}
       <div className="flex flex-wrap items-start justify-between gap-3 animate-fade-in-up">
         <div className="min-w-0">
