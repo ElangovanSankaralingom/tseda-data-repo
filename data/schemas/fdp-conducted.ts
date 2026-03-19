@@ -1,21 +1,25 @@
 import { validateByFieldDefinitions } from "@/data/schemas/common";
 import type { EntrySchema } from "@/data/schemas/types";
-import { YEAR_OF_STUDY_VALUES } from "@/lib/types/academicProgression";
 import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/workflowConfig";
 
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
   { key: "academicYear", label: "Academic Year", kind: "string" },
-  { key: "yearOfStudy", label: "Year of Study", kind: "string", enumValues: YEAR_OF_STUDY_VALUES },
-  { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10 },
+  { key: "semesterType", label: "Semester Type", kind: "string", stage: 1 },
+  { key: "level", label: "Level", kind: "string", stage: 1, enumValues: ["National", "International"] },
+  { key: "mode", label: "Mode of FDP", kind: "string", stage: 1, enumValues: ["Online", "Offline"] },
   { key: "startDate", label: "Start Date", kind: "date" },
   { key: "endDate", label: "End Date", kind: "date" },
-  { key: "eventName", label: "Event Name", kind: "string" },
-  { key: "coordinatorName", label: "Coordinator Name", kind: "string" },
-  { key: "coordinatorEmail", label: "Coordinator Email", kind: "string" },
-  { key: "coCoordinators", label: "Co-Coordinators", kind: "array" },
+  { key: "programName", label: "Program Name", kind: "string" },
+  { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false },
+  { key: "sponsored", label: "Sponsored", kind: "string", required: false, enumValues: ["Yes", "No"] },
+  { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false },
+  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false },
   { key: "permissionLetter", label: "Permission Letter", kind: "object", upload: true, stage: 2 },
   { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array", upload: true, stage: 2 },
+  { key: "attendanceSheet", label: "Attendance Sheet", kind: "object", upload: true, stage: 2 },
+  { key: "numberOfParticipants", label: "Number of Participants", kind: "number", required: false, stage: 2 },
+  { key: "officialPoster", label: "Official Poster", kind: "object", upload: true, stage: 2 },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
@@ -27,22 +31,25 @@ export const fdpConductedSchema: EntrySchema = {
   fields,
   immutableWhenPending: [
     "academicYear",
-    "yearOfStudy",
-    "currentSemester",
+    "semesterType",
+    "level",
+    "mode",
     "startDate",
     "endDate",
-    "eventName",
-    "coordinatorName",
-    "coordinatorEmail",
+    "programName",
     "coCoordinators",
+    "sponsored",
+    "fundingAgency",
+    "fundingAmount",
   ],
   requiredForCommit: [
     "academicYear",
-    "yearOfStudy",
-    "currentSemester",
+    "semesterType",
+    "level",
+    "mode",
     "startDate",
     "endDate",
-    "eventName",
+    "programName",
   ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);

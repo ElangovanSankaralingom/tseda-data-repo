@@ -85,6 +85,7 @@ export type FdpAttended = {
   academicYear: string;
   semesterType: string;
   level: string;
+  mode: string;
   startDate: string;
   endDate: string;
   programName: string;
@@ -119,14 +120,18 @@ export type FdpConducted = {
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
-  yearOfStudy: YearOfStudy | "";
-  currentSemester: number | null;
+  semesterType: string;
+  level: string;
+  mode: string;
   startDate: string;
   endDate: string;
-  eventName: string;
+  programName: string;
   coordinatorName: string;
   coordinatorEmail: string;
   coCoordinators: FacultyRowValue[];
+  sponsored: string;
+  fundingAgency: string;
+  fundingAmount: number | null;
   pdfMeta?: {
     storedPath: string;
     url: string;
@@ -135,8 +140,14 @@ export type FdpConducted = {
   } | null;
   pdfStale?: boolean;
   pdfSourceHash?: string;
+  pdfGenerated?: boolean;
+  pdfGeneratedAt?: string | null;
+  permanentlyLocked?: boolean;
   permissionLetter: FileMeta | null;
   geotaggedPhotos: FileMeta[];
+  attendanceSheet: FileMeta | null;
+  numberOfParticipants: number | null;
+  officialPoster: FileMeta | null;
   streak: StreakState;
   createdAt: string;
   updatedAt: string;
