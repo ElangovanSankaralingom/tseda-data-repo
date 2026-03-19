@@ -66,7 +66,7 @@ export type WorkshopEntry = {
   pdfGenerated?: boolean;
   pdfGeneratedAt?: string | null;
   permanentlyLocked?: boolean;
-  uploads: Record<"permissionLetter" | "brochure" | "attendance" | "organiserProfile", FileMeta | null> & { geotaggedPhotos: FileMeta[] };
+  uploads: Record<"permissionLetter" | "brochure" | "attendance" | "organiserProfile", FileMeta[]> & { geotaggedPhotos: FileMeta[] };
   streak: StreakState;
   createdAt: string;
   updatedAt: string;
@@ -104,8 +104,8 @@ export type FdpAttended = {
   pdfGenerated?: boolean;
   pdfGeneratedAt?: string | null;
   permanentlyLocked?: boolean;
-  permissionLetter: FileMeta | null;
-  completionCertificate: FileMeta | null;
+  permissionLetter: FileMeta[];
+  completionCertificate: FileMeta[];
   streak: StreakState;
   createdAt: string;
   updatedAt: string;
@@ -145,11 +145,11 @@ export type FdpConducted = {
   pdfGenerated?: boolean;
   pdfGeneratedAt?: string | null;
   permanentlyLocked?: boolean;
-  permissionLetter: FileMeta | null;
+  permissionLetter: FileMeta[];
   geotaggedPhotos: FileMeta[];
-  attendanceSheet: FileMeta | null;
+  attendanceSheet: FileMeta[];
   numberOfParticipants: number | null;
-  officialPoster: FileMeta | null;
+  officialPoster: FileMeta[];
   streak: StreakState;
   createdAt: string;
   updatedAt: string;
@@ -191,8 +191,8 @@ export type CaseStudyEntry = {
   pdfGenerated?: boolean;
   pdfGeneratedAt?: string | null;
   permanentlyLocked?: boolean;
-  permissionLetter: FileMeta | null;
-  travelPlan: FileMeta | null;
+  permissionLetter: FileMeta[];
+  travelPlan: FileMeta[];
   geotaggedPhotos: FileMeta[];
   streak: StreakState;
   createdAt: string;
@@ -236,7 +236,7 @@ export type GuestLectureEntry = {
   } | null;
   pdfSourceHash?: string;
   pdfStale?: boolean;
-  uploads: Record<"permissionLetter" | "brochure" | "attendance" | "speakerProfile", FileMeta | null> & { geotaggedPhotos: FileMeta[] };
+  uploads: Record<"permissionLetter" | "brochure" | "attendance" | "speakerProfile", FileMeta[]> & { geotaggedPhotos: FileMeta[] };
   streak?: {
     activatedAtISO?: string | null;
     dueAtISO?: string | null;

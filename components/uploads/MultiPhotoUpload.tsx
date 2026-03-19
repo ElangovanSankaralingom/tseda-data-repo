@@ -19,7 +19,7 @@ type MultiPhotoUploadProps = {
   uploadEndpoint: string;
   email: string;
   recordId: string;
-  slotName: "geotaggedPhotos";
+  slotName: string;
   showRequiredError?: boolean;
   requiredErrorText?: string;
   onStatusChange?: (status: { hasPending: boolean; busy: boolean }) => void;

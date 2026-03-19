@@ -9,7 +9,6 @@ import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import MultiPhotoUpload from "@/components/entry/UploadFieldMulti";
-import EntryUploader from "@/components/upload/EntryUploader";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS, getAcademicYearRange } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
@@ -49,12 +48,12 @@ const FACULTY_OPTIONS = FACULTY;
 // Helpers
 // ---------------------------------------------------------------------------
 
-function emptyUploads(): Record<UploadSlot, FileMeta | null> {
+function emptyUploads(): Record<UploadSlot, FileMeta[]> {
   return {
-    permissionLetter: null,
-    brochure: null,
-    attendance: null,
-    organiserProfile: null,
+    permissionLetter: [],
+    brochure: [],
+    attendance: [],
+    organiserProfile: [],
   };
 }
 
@@ -156,10 +155,10 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
   const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
   const requiredUploadsComplete =
-    !!form.uploads.permissionLetter &&
-    !!form.uploads.brochure &&
-    !!form.uploads.attendance &&
-    !!form.uploads.organiserProfile &&
+    form.uploads.permissionLetter.length > 0 &&
+    form.uploads.brochure.length > 0 &&
+    form.uploads.attendance.length > 0 &&
+    form.uploads.organiserProfile.length > 0 &&
     form.uploads.geotaggedPhotos.length > 0;
 
   async function persistCoCoordinatorRows(nextRows: FacultyRowValue[]) {
@@ -323,40 +322,45 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
             <StageTwoDivider />
             <div className="animate-highlight-new grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {UPLOAD_CONFIG.map(({ slot, label }) => (
-              <EntryUploader
-                key={slot}
+              <MultiPhotoUpload
+                key={`${form.id}-${slot}`}
                 title={label}
-                mode={isViewMode ? "view" : "edit"}
-                meta={form.uploads[slot]}
+                value={form.uploads[slot]}
+                onUploaded={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      uploads: { ...current.uploads, [slot]: [...current.uploads[slot], meta] },
+                    }),
+                  });
+                }}
+                onDeleted={async (meta) => {
+                  await persistCurrentMutation({
+                    buildNextEntry: (current) => ({
+                      ...current,
+                      uploads: {
+                        ...current.uploads,
+                        [slot]: current.uploads[slot].filter(
+                          (item) => item.storedPath !== meta.storedPath,
+                        ),
+                      },
+                    }),
+                  });
+                }}
                 uploadEndpoint="/api/me/workshops/file"
                 email={ctx.email}
                 recordId={form.id}
-                slot={slot}
+                slotName={slot}
                 disabled={controlsDisabled}
-                showValidationError={submitAttemptedFinal}
-                validationMessage="This upload is mandatory."
+                viewOnly={isViewMode}
+                showRequiredError={submitAttemptedFinal && !requiredUploadsComplete}
+                requiredErrorText="This upload is mandatory."
                 onStatusChange={(status) =>
                   setSingleUploadStatus((current) => ({
                     ...current,
                     [slot]: status,
                   }))
                 }
-                onUploaded={async (meta) => {
-                  await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      uploads: { ...current.uploads, [slot]: meta },
-                    }),
-                  });
-                }}
-                onDeleted={async () => {
-                  await persistCurrentMutation({
-                    buildNextEntry: (current) => ({
-                      ...current,
-                      uploads: { ...current.uploads, [slot]: null },
-                    }),
-                  });
-                }}
               />
             ))}
 
@@ -443,9 +447,11 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
             {people.length > 0 && <div className="text-xs text-muted-foreground">{people.join(", ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {UPLOAD_CONFIG.map(({ slot, label }) =>
-                entry.uploads[slot] ? (
-                  <a key={slot} className="underline" href={entry.uploads[slot]?.url ?? "#"} target="_blank" rel="noreferrer">{label}</a>
-                ) : null,
+                entry.uploads[slot].map((meta, i) => (
+                  <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
+                    {label}{entry.uploads[slot].length > 1 ? ` ${i + 1}` : ""}
+                  </a>
+                )),
               )}
               {entry.uploads.geotaggedPhotos.map((meta, photoIndex) => (
                 <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">Geotagged Photo {photoIndex + 1}</a>

@@ -60,27 +60,27 @@ type SlotConfig = {
 const CATEGORY_UPLOAD_CONFIG: Record<CategorySlug, SlotConfig> = {
   "fdp-attended": {
     slots: new Set(["permissionLetter", "completionCertificate"]),
-    arraySlots: new Set(),
+    arraySlots: new Set(["permissionLetter", "completionCertificate"]),
     nested: false,
   },
   "fdp-conducted": {
-    slots: new Set(["permissionLetter", "geotaggedPhotos"]),
-    arraySlots: new Set(["geotaggedPhotos"]),
+    slots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
+    arraySlots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
     nested: false,
   },
   "case-studies": {
     slots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos"]),
-    arraySlots: new Set(["geotaggedPhotos"]),
+    arraySlots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos"]),
     nested: false,
   },
   "guest-lectures": {
     slots: new Set(["permissionLetter", "brochure", "attendance", "speakerProfile", "geotaggedPhotos"]),
-    arraySlots: new Set(["geotaggedPhotos"]),
+    arraySlots: new Set(["permissionLetter", "brochure", "attendance", "speakerProfile", "geotaggedPhotos"]),
     nested: true,
   },
   workshops: {
     slots: new Set(["permissionLetter", "brochure", "attendance", "organiserProfile", "geotaggedPhotos"]),
-    arraySlots: new Set(["geotaggedPhotos"]),
+    arraySlots: new Set(["permissionLetter", "brochure", "attendance", "organiserProfile", "geotaggedPhotos"]),
     nested: true,
   },
 };

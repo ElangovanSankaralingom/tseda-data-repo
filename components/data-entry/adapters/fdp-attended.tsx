@@ -3,17 +3,14 @@
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
-import UploadField from "@/components/entry/UploadField";
+import UploadFieldMulti, { type FileMeta } from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
-import { useUploadController } from "@/hooks/useUploadController";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { uuid, cx } from "@/lib/utils/idHelpers";
-import type { FileMeta } from "@/lib/types/entry";
-import { uploadFile } from "@/lib/upload/uploadService";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
@@ -65,27 +62,12 @@ function emptyForm(): FdpAttended {
     pdfMeta: null,
     pdfStale: false,
     pdfSourceHash: "",
-    permissionLetter: null,
-    completionCertificate: null,
+    permissionLetter: [],
+    completionCertificate: [],
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
   } as FdpAttended;
-}
-
-function uploadFdpFileXHR(opts: {
-  recordId: string;
-  slot: "permissionLetter" | "completionCertificate";
-  file: File;
-  onProgress: (pct: number) => void;
-}): Promise<FileMeta> {
-  return uploadFile({
-    endpoint: "/api/me/fdp-attended/file",
-    recordId: opts.recordId,
-    slot: opts.slot,
-    file: opts.file,
-    onProgress: opts.onProgress,
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -106,88 +88,9 @@ function validateFields(form: FdpAttended): Record<string, string> {
 // ---------------------------------------------------------------------------
 
 function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> }) {
-  const { form, setForm, submitted, errors, coreFieldDisabled, isViewMode, uploadsVisible, persistCurrentMutation, showToast, submitAttemptedFinal, uploadPersisting, setUploadPersistingCount } = ctx;
+  const { form, setForm, submitted, errors, coreFieldDisabled, controlsDisabled, isViewMode, uploadsVisible, persistCurrentMutation, submitAttemptedFinal, email } = ctx;
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
-
-  const permissionController = useUploadController<FileMeta>({
-    locked: ctx.controlsDisabled,
-    savedToServer: !!form.pdfMeta,
-    upload: (file, onProgress) =>
-      uploadFdpFileXHR({ recordId: form.id, slot: "permissionLetter", file, onProgress }),
-    remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-attended/file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || "Delete failed.");
-    },
-  });
-
-  const completionController = useUploadController<FileMeta>({
-    locked: ctx.controlsDisabled,
-    savedToServer: !!form.pdfMeta,
-    upload: (file, onProgress) =>
-      uploadFdpFileXHR({ recordId: form.id, slot: "completionCertificate", file, onProgress }),
-    remove: async (meta) => {
-      const response = await fetch("/api/me/fdp-attended/file", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storedPath: meta.storedPath }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || "Delete failed.");
-    },
-  });
-
-  async function uploadSlot(slot: "permissionLetter" | "completionCertificate") {
-    const controller = slot === "permissionLetter" ? permissionController : completionController;
-    const previousMeta = form[slot];
-    try {
-      const meta = await controller.uploadAndSave();
-      if (!meta) return;
-      if (previousMeta?.storedPath && previousMeta.storedPath !== meta.storedPath) {
-        void fetch("/api/me/fdp-attended/file", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ storedPath: previousMeta.storedPath }),
-        }).catch(() => null);
-      }
-      setUploadPersistingCount((c) => c + 1);
-      try {
-        await persistCurrentMutation({
-          buildNextEntry: (current) => ({ ...current, [slot]: meta }) as FdpAttended,
-        });
-      } finally {
-        setUploadPersistingCount((c) => Math.max(0, c - 1));
-      }
-    } catch (error) {
-      showToast("err", error instanceof Error ? error.message : "Upload failed.", 1800);
-    }
-  }
-
-  async function deleteSlot(slot: "permissionLetter" | "completionCertificate") {
-    const meta = form[slot];
-    if (!meta?.storedPath) { showToast("err", "File path missing.", 1500); return; }
-    try {
-      const controller = slot === "permissionLetter" ? permissionController : completionController;
-      const deleted = await controller.deleteFile(meta);
-      if (!deleted) return;
-      setUploadPersistingCount((c) => c + 1);
-      try {
-        await persistCurrentMutation({
-          buildNextEntry: (current) => ({ ...current, [slot]: null }) as FdpAttended,
-        });
-      } finally {
-        setUploadPersistingCount((c) => Math.max(0, c - 1));
-      }
-      showToast("ok", "File deleted.", 1200);
-    } catch (error) {
-      showToast("err", error instanceof Error ? error.message : "Delete failed.", 1500);
-    }
-  }
 
   return (
     <>
@@ -299,7 +202,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
                 )}
               />
             </Field>
-            <Field label="Amount of Funding (₹)" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label="Amount of Funding (\u20B9)" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -318,41 +221,69 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
           <>
             <StageTwoDivider />
             <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
-            <UploadField
-              title="Upload Permission Letter"
-              mode={isViewMode ? "view" : "edit"}
-              meta={form.permissionLetter}
-              pendingFile={permissionController.pendingFile}
-              progress={permissionController.progress}
-              busy={permissionController.busy || uploadPersisting}
-              error={permissionController.error}
-              canChoose={permissionController.canChoose && !uploadPersisting}
-              canUpload={permissionController.canUpload && !uploadPersisting}
-              canDelete={permissionController.canDelete && !uploadPersisting}
-              needsEntry={permissionController.needsEntry}
-              onSelectFile={permissionController.selectFile}
-              onUpload={() => void uploadSlot("permissionLetter")}
-              onDelete={() => void deleteSlot("permissionLetter")}
-              showValidationError={submitAttemptedFinal}
-              validationMessage={errors.permissionLetter}
+            <UploadFieldMulti
+              key={`${form.id}-permissionLetter`}
+              title="Permission Letter"
+              value={form.permissionLetter}
+              onUploaded={async (meta) => {
+                await persistCurrentMutation({
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    permissionLetter: [...current.permissionLetter, meta],
+                  }),
+                });
+              }}
+              onDeleted={async (meta) => {
+                await persistCurrentMutation({
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    permissionLetter: current.permissionLetter.filter(
+                      (item) => item.storedPath !== meta.storedPath
+                    ),
+                  }),
+                });
+              }}
+              uploadEndpoint="/api/me/fdp-attended/file"
+              email={email}
+              recordId={form.id}
+              slotName="permissionLetter"
+              showRequiredError={submitAttemptedFinal && form.permissionLetter.length === 0}
+              requiredErrorText={errors.permissionLetter}
+              onStatusChange={() => {}}
+              disabled={controlsDisabled}
+              viewOnly={isViewMode}
             />
-            <UploadField
-              title="Upload Completion Certificate"
-              mode={isViewMode ? "view" : "edit"}
-              meta={form.completionCertificate}
-              pendingFile={completionController.pendingFile}
-              progress={completionController.progress}
-              busy={completionController.busy || uploadPersisting}
-              error={completionController.error}
-              canChoose={completionController.canChoose && !uploadPersisting}
-              canUpload={completionController.canUpload && !uploadPersisting}
-              canDelete={completionController.canDelete && !uploadPersisting}
-              needsEntry={completionController.needsEntry}
-              onSelectFile={completionController.selectFile}
-              onUpload={() => void uploadSlot("completionCertificate")}
-              onDelete={() => void deleteSlot("completionCertificate")}
-              showValidationError={submitAttemptedFinal}
-              validationMessage={errors.completionCertificate}
+            <UploadFieldMulti
+              key={`${form.id}-completionCertificate`}
+              title="Completion Certificate"
+              value={form.completionCertificate}
+              onUploaded={async (meta) => {
+                await persistCurrentMutation({
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    completionCertificate: [...current.completionCertificate, meta],
+                  }),
+                });
+              }}
+              onDeleted={async (meta) => {
+                await persistCurrentMutation({
+                  buildNextEntry: (current) => ({
+                    ...current,
+                    completionCertificate: current.completionCertificate.filter(
+                      (item) => item.storedPath !== meta.storedPath
+                    ),
+                  }),
+                });
+              }}
+              uploadEndpoint="/api/me/fdp-attended/file"
+              email={email}
+              recordId={form.id}
+              slotName="completionCertificate"
+              showRequiredError={submitAttemptedFinal && form.completionCertificate.length === 0}
+              requiredErrorText={errors.completionCertificate}
+              onStatusChange={() => {}}
+              disabled={controlsDisabled}
+              viewOnly={isViewMode}
             />
             </div>
           </>
@@ -386,22 +317,26 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
         if (entry.level) parts.push(entry.level);
         if (entry.mode) parts.push(entry.mode);
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) parts.push(`Funded by ${entry.fundingAgency}`);
-        if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(`₹${entry.fundingAmount.toLocaleString("en-IN")}`);
+        if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(`\u20B9${entry.fundingAmount.toLocaleString("en-IN")}`);
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              {entry.permissionLetter ? <a className="underline" href={entry.permissionLetter.url} target="_blank" rel="noreferrer">Permission Letter</a> : null}
-              {entry.completionCertificate ? <a className="underline" href={entry.completionCertificate.url} target="_blank" rel="noreferrer">Completion Certificate</a> : null}
+              {entry.permissionLetter.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}</a>
+              ))}
+              {entry.completionCertificate.map((meta, i) => (
+                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">Completion Certificate{entry.completionCertificate.length > 1 ? ` ${i + 1}` : ""}</a>
+              ))}
             </div>
           </>
         );
       }}
-      title="FDP — Attended"
+      title="FDP \u2014 Attended"
       subtitle="Record faculty development programmes attended, along with support amount and the two required supporting documents."
       formTitle="FDP Entry"
       formSubtitle="Add the entry details and upload the required documents."

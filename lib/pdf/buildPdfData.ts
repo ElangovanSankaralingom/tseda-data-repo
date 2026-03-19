@@ -36,6 +36,8 @@ const OMIT_FROM_PDF = new Set([
   "attendance",
   "speakerProfile",
   "organiserProfile",
+  "attendanceSheet",
+  "officialPoster",
   "pdfMeta",
   "pdfSourceHash",
   "pdfStale",
