@@ -4,6 +4,50 @@ All notable changes to this project will be documented in this file.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Session 5 — March 19, 2026
+
+### Categories
+- Overhauled FDP Conducted, Guest Lectures, Case Studies, Workshops with standardized fields
+- Added Mode of FDP (Online/Offline) to FDP Attended and Conducted
+- Replaced supportAmount with Sponsored (Yes/No) + Funding Agency + Amount pattern across all categories
+- All uploads converted to multi-file (FileMeta[]) — no more single-upload fields
+- Guest Lectures: new fields topicOfLecture, guestSpeakerName/Designation/Organisation
+- Workshops: new fields workshopName, resourcePersonName/Designation/Organisation
+- Case Studies: added report, feedback, advanceClosure upload slots; kept yearOfStudy/currentSemester
+
+### Security and Reliability
+- beforeunload guard prevents data loss on tab close
+- Client-side file validation (size + type) before upload
+- Auto-save retry with exponential backoff (1s, 3s, 10s) and failure banner
+- Offline/online network status banner
+- API response helpers (apiSuccess, apiError, apiUnauthorized, apiForbidden)
+- Form error boundary prevents form crash from killing the list
+- Skeleton loading cards during initial data fetch
+- Toast improvements: 4s errors, 1.5s success, dismiss button
+- Orphan file detection in nightly maintenance job
+- Debounced NavigationRefresh with bfcache handling
+- Backup ZIP verification (magic bytes check)
+- Improved in-memory rate limiter with fixed-window counters and bucket cap
+
+### Accessibility
+- ARIA attributes on SelectDropdown, RequestActionDropdown, Toast, UploadFieldMulti, ConfirmDialog
+- Keyboard navigation for entry cards (Enter/Space), dropdown menus (Arrow keys), SelectDropdown (Home/End)
+- Skip navigation link in ShellClient
+- WCAG AA color contrast fixes on status badges and timestamps
+- Focus-visible rings on entry cards, action buttons visible on focus
+
+### Infrastructure
+- Universal entry hydration utility (lib/entries/hydrateEntry.ts)
+- Centralized message constants (lib/constants/messages.ts)
+- NavigationRefresh component with pathname change + focus + bfcache handling
+- NetworkStatus offline banner component
+- Structured logging for uploads, entry requests, admin actions
+- Enhanced health check with version from package.json and last nightly run
+- DataLayer abstraction: added listUsers(), updated documentation
+- Faculty search API with debounced client-side fetch
+- Pagination support on category list endpoints
+- Schema validation tests, hydration tests, upload slot tests
+
 ## [0.3.0] - 2026-03-09
 
 Backend hardening, background jobs, testing, and performance.
