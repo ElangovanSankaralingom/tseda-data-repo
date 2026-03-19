@@ -9,6 +9,7 @@ import "server-only";
  * This class is a thin adapter — it does not add business logic.
  */
 
+import fs from "node:fs/promises";
 import {
   readCategoryEntries,
   writeCategoryEntries,
@@ -17,6 +18,9 @@ import {
   deleteCategoryEntry,
 } from "@/lib/dataStore";
 import { withLock } from "@/lib/data/locks";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { getUsersRootDir } from "@/lib/userStore";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import {
   readIndexRaw,
   writeIndexFile,
@@ -50,6 +54,20 @@ export class JsonDataLayer implements DataLayer {
 
   async deleteEntry(email: string, category: CategoryKey, id: string): Promise<DataLayerEntry | null> {
     return deleteCategoryEntry(email, category, id);
+  }
+
+  async listUsers(): Promise<string[]> {
+    const usersRoot = getUsersRootDir();
+    try {
+      const entries = await fs.readdir(usersRoot, { withFileTypes: true });
+      return entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => normalizeEmail(entry.name))
+        .filter((email) => email.endsWith(ALLOWED_EMAIL_SUFFIX))
+        .sort((left, right) => left.localeCompare(right));
+    } catch {
+      return [];
+    }
   }
 
   async getUserIndex(email: string): Promise<UserIndex | null> {

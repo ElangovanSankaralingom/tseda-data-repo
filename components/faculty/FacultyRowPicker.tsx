@@ -33,7 +33,8 @@ type FacultyRowPickerProps = {
       savedAtISO: string;
     }
   ) => Promise<FacultyRowValue[] | void>;
-  facultyOptions: FacultyOption[];
+  facultyOptions?: FacultyOption[];
+  facultyEndpoint?: string;
   parentLocked?: boolean;
   viewOnly?: boolean;
   disableEmails?: string[];
@@ -85,6 +86,7 @@ export default function FacultyRowPicker({
   onRowsChange,
   onPersistRow,
   facultyOptions,
+  facultyEndpoint = "/api/faculty",
   parentLocked = false,
   viewOnly = false,
   disableEmails = [],
@@ -179,7 +181,7 @@ export default function FacultyRowPicker({
     let error: string | null = null;
     if (!rowEmail) {
       error = "Select a faculty member first.";
-    } else if (!facultyOptions.some((option) => option.email.trim().toLowerCase() === rowEmail)) {
+    } else if (facultyOptions && !facultyOptions.some((option) => option.email.trim().toLowerCase() === rowEmail)) {
       error = "Select a faculty member from the list.";
     } else if (duplicateCount > 0) {
       error = "This faculty is already selected in another row.";
@@ -279,6 +281,7 @@ export default function FacultyRowPicker({
                       value={row}
                       onChange={(next) => handleChangeRow(index, next)}
                       options={facultyOptions}
+                      fetchEndpoint={!facultyOptions ? facultyEndpoint : undefined}
                       disabledEmails={getDisabledEmailsForRow(index)}
                       placeholder={`Search or type ${rowLabelPrefix.toLowerCase()}`}
                       disabled={viewOnly || parentLocked || !!row.isLocked}

@@ -55,6 +55,10 @@ export class SqliteDataLayer implements DataLayer {
     notImplemented("deleteEntry");
   }
 
+  async listUsers(): Promise<string[]> {
+    notImplemented("listUsers");
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getUserIndex(_email: string): Promise<UserIndex | null> {
     notImplemented("getUserIndex");

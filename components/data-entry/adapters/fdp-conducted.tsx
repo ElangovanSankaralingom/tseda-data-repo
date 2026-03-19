@@ -10,7 +10,6 @@ import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/Facu
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
-import { FACULTY_DIRECTORY, type FacultyDirectoryEntry } from "@/lib/faculty-directory";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
@@ -20,8 +19,6 @@ import { validateEntryFields } from "@/lib/validation/schemaValidator";
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-const FACULTY_OPTIONS: FacultyDirectoryEntry[] = FACULTY_DIRECTORY;
 
 const SEMESTER_TYPE_OPTIONS = [
   { label: "ODD Semester", value: "ODD" },
@@ -227,7 +224,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           rows={form.coCoordinators}
           onRowsChange={(rows) => setForm((c) => ({ ...c, coCoordinators: rows }))}
           onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
-          facultyOptions={FACULTY_OPTIONS}
+          facultyEndpoint="/api/faculty"
           parentLocked={coreFieldDisabled("coCoordinators")}
           viewOnly={isViewMode}
           disableEmails={[form.coordinatorEmail || email]}

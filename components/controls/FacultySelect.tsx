@@ -15,7 +15,8 @@ export type FacultySelection = {
 type FacultySelectProps = {
   value: FacultySelection;
   onChange: (next: FacultySelection) => void;
-  options: FacultyOption[];
+  options?: FacultyOption[];
+  fetchEndpoint?: string;
   disabledEmails: Set<string>;
   placeholder?: string;
   disabled?: boolean;
@@ -30,6 +31,7 @@ export default function FacultySelect({
   value,
   onChange,
   options,
+  fetchEndpoint,
   disabledEmails,
   placeholder,
   disabled,
@@ -38,22 +40,57 @@ export default function FacultySelect({
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [fetchedOptions, setFetchedOptions] = useState<FacultyOption[]>([]);
+  const [fetching, setFetching] = useState(false);
   const inputValue = value.name;
   const normalizedQuery = inputValue.trim().toLowerCase();
 
+  // Use fetched results when fetchEndpoint is provided and no static options
+  const useApi = !!fetchEndpoint && !options;
+  const sourceOptions = useApi ? fetchedOptions : (options ?? []);
+
   const filteredOptions = useMemo(() => {
-    return options.filter((option) => {
+    if (useApi) return sourceOptions;
+    return sourceOptions.filter((option) => {
       if (!normalizedQuery) return true;
       return (
         option.name.toLowerCase().includes(normalizedQuery) ||
         option.email.toLowerCase().includes(normalizedQuery)
       );
     });
-  }, [options, normalizedQuery]);
+  }, [sourceOptions, normalizedQuery, useApi]);
 
   const firstEnabledIndex = filteredOptions.findIndex(
     (option) => !disabledEmails.has(option.email.toLowerCase())
   );
+
+  // Debounced API search
+  useEffect(() => {
+    if (!useApi || !open) return;
+    if (normalizedQuery.length < 2) {
+      setFetchedOptions([]);
+      return;
+    }
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(async () => {
+      setFetching(true);
+      try {
+        const res = await fetch(`${fetchEndpoint}?q=${encodeURIComponent(normalizedQuery)}`);
+        const body = await res.json();
+        const items = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+        setFetchedOptions(items.map((f: Record<string, unknown>) => ({
+          name: String(f.fullName ?? f.name ?? ""),
+          email: String(f.email ?? ""),
+        })));
+      } catch {
+        setFetchedOptions([]);
+      } finally {
+        setFetching(false);
+      }
+    }, 300);
+    return () => clearTimeout(searchTimerRef.current);
+  }, [useApi, open, normalizedQuery, fetchEndpoint]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,6 +105,10 @@ export default function FacultySelect({
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
+
+  useEffect(() => {
+    return () => clearTimeout(searchTimerRef.current);
+  }, []);
 
   function chooseOption(option: FacultyOption) {
     if (disabled) return;
@@ -146,9 +187,11 @@ export default function FacultySelect({
 
       {open ? (
         <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
-          {filteredOptions.length === 0 ? (
+          {fetching ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">Searching...</div>
+          ) : filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">
-              No matching faculty. Press Save to keep typed text.
+              {useApi && normalizedQuery.length < 2 ? "Type at least 2 characters to search." : "No matching faculty. Press Save to keep typed text."}
             </div>
           ) : (
             filteredOptions.map((option, index) => {
