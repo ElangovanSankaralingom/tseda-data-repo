@@ -181,7 +181,7 @@ export default function MultiPhotoUpload({
                   href={meta.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                  className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
                 >
                   Preview
                 </a>
