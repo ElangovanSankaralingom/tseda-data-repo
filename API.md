@@ -123,7 +123,7 @@ All routes are under `/api/`. Authentication uses NextAuth v4 with Google OAuth 
 
 | Method | Path | Auth | Rate Limited | Description |
 |---|---|---|---|---|
-| GET | `/api/faculty` | Yes | No | List faculty directory |
+| GET | `/api/faculty` | Yes | No | List faculty directory (supports `?q=search_term` for search) |
 | POST | `/api/faculty` | Admin (canAccessAdminConsole) | No | Add faculty member |
 | PUT | `/api/faculty` | Admin (canAccessAdminConsole) | No | Update faculty member |
 | DELETE | `/api/faculty` | Admin (canAccessAdminConsole) | No | Remove faculty member |
@@ -144,7 +144,7 @@ All routes are under `/api/`. Authentication uses NextAuth v4 with Google OAuth 
 
 | Method | Path | Auth | Rate Limited | Description |
 |---|---|---|---|---|
-| GET | `/api/health` | No | No | System health check (storage, user count, version, node) |
+| GET | `/api/health` | No | No | System health check (see Health Check Response below) |
 
 ## Admin Maintenance Routes (`/api/admin/maintenance/*`)
 
@@ -189,3 +189,76 @@ All mutation routes return errors via category-specific `mutationErrorResponse` 
 ```
 
 Common error codes: `VALIDATION_ERROR`, `NOT_FOUND`, `UNAUTHORIZED`, `RATE_LIMITED`, `FORBIDDEN`.
+
+## API Response Helpers
+
+Defined in `lib/api/apiResponse.ts`. All API routes should use these helpers for consistent response formatting:
+
+| Helper | Status | Description |
+|---|---|---|
+| `apiSuccess(data, status?)` | 200 (default) | Success response with `{ ok: true, ...data }` |
+| `apiError(message, status?)` | 400 (default) | Error response with `{ ok: false, error: message }` |
+| `apiUnauthorized(message?)` | 401 | Authentication required |
+| `apiForbidden(message?)` | 403 | Insufficient permissions |
+| `apiNotFound(message?)` | 404 | Resource not found |
+| `apiServerError(message?)` | 500 | Internal server error |
+
+## Pagination
+
+List endpoints support pagination via query parameters:
+
+- `?page=1&limit=50` (defaults: page 1, limit 50)
+
+Paginated response shape:
+
+```json
+{
+  "ok": true,
+  "data": [...],
+  "total": 150,
+  "page": 1,
+  "pageSize": 50,
+  "totalPages": 3
+}
+```
+
+## Faculty Search
+
+`GET /api/faculty?q=search_term` returns filtered faculty results (max 20), searching by name or email. The `q` parameter is optional; omitting it returns the full list (paginated).
+
+## Upload Slots per Category
+
+Each category defines which Stage 2 upload slots are available:
+
+| Category | Upload Slots |
+|---|---|
+| `fdp-attended` | `permissionLetter`, `completionCertificate` |
+| `fdp-conducted` | `permissionLetter`, `geotaggedPhotos`, `attendanceSheet`, `officialPoster` |
+| `guest-lectures` | `permissionLetter`, `geotaggedPhotos`, `attendanceSheet`, `officialPoster` |
+| `case-studies` | `permissionLetter`, `travelPlan`, `geotaggedPhotos`, `report`, `feedback`, `advanceClosure` |
+| `workshops` | `permissionLetter`, `geotaggedPhotos`, `attendanceSheet`, `officialPoster` |
+
+All upload slots store `FileMeta[]` arrays (multi-file).
+
+## Health Check Response
+
+`GET /api/health` returns:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-03-20T12:00:00.000Z",
+  "uptime": 3600,
+  "memory": {
+    "rss": 104857600,
+    "heapUsed": 52428800,
+    "heapTotal": 67108864
+  },
+  "version": "1.0.0",
+  "lastNightlyRun": "2026-03-20T02:00:00.000Z",
+  "storage": { ... },
+  "checks": { ... }
+}
+```
+
+Fields: `status` (ok/degraded), `timestamp` (ISO 8601), `uptime` (seconds), `memory` (rss/heapUsed/heapTotal in bytes), `version` (from package.json), `lastNightlyRun` (ISO 8601 or null), `storage` (disk usage info), `checks` (individual subsystem check results).

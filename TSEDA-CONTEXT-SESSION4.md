@@ -1,3 +1,5 @@
+> **Note:** This document is from Session 4 and may contain outdated information. See TSEDA-CONTEXT-SESSION5.md for the current handoff and CHANGELOG.md for the latest changes.
+
 # TSEDA PROJECT — CONTEXT HANDOFF (Session 3 → Session 4)
 ## Upload this file at the start of the new chat
 ## Last updated: March 10, 2026

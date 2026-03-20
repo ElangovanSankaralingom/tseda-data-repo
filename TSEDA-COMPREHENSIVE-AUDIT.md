@@ -1,3 +1,5 @@
+> **Note:** This document is from an earlier audit. See AUDIT.md for the current audit status and resolution tracking.
+
 # TSEDA COMPREHENSIVE CODE AUDIT
 ## 18-Category Deep Analysis
 ## Date: March 10, 2026

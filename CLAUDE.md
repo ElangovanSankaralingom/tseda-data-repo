@@ -190,6 +190,12 @@ Then:
 
 Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-derives from schema.
 
+**Schema field notes:**
+- Upload fields should use `kind: "array"` with `upload: true, stage: 2`
+- All uploads are multi-file (`FileMeta[]`) — no single-file upload fields
+- If the category can be sponsored, add the `sponsored`/`fundingAgency`/`fundingAmount` conditional pattern (sponsored Yes/No drives visibility of funding fields)
+- Add icons to `Level`, `Mode`, and `Sponsored` option lists using lucide-react icons (see existing schemas for examples)
+
 ---
 
 ## Conventions

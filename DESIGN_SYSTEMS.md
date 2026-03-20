@@ -202,6 +202,87 @@ Between dashboard groups, between form sections:
 ```
 No horizontal rules (`<hr>`). Use spacing and headers only.
 
+### 7. SelectDropdown
+
+Combobox with optional icon support.
+
+**Props:** `value`, `onChange`, `options` (with optional `icon`), `placeholder`, `disabled`, `error`, `id`, `name`.
+
+**ARIA:** `role="combobox"`, `aria-expanded`, `aria-haspopup="listbox"`, `aria-activedescendant`.
+
+**Keyboard:** Arrow keys navigate, Enter selects, Escape closes, Home/End jump, Space selects when not typing.
+
+Options support icons via `SelectDropdownOption.icon` prop (`React.ComponentType<{className?}>`). Selected value shows icon overlay with `pl-9` padding.
+
+### 8. UploadFieldMulti
+
+Multi-file upload component.
+
+**Props:** `title`, `value` (`FileMeta[]`), `onUploaded`, `onDeleted`, `uploadEndpoint`, `email`, `recordId`, `slotName`, `maxFileSizeMB` (default 20), `acceptedFileTypes` (default `.pdf/.jpg/.jpeg/.png`).
+
+Client-side validation on file selection (size + extension). Progress bar with `role="progressbar"` and `aria-valuenow`. Delete with confirmation dialog. `aria-busy` during upload. `min-h-[44px]` touch targets.
+
+### 9. FormErrorBoundary
+
+React class component error boundary. Wraps only the form fields area in `BaseEntryAdapter`. Shows red error card with `AlertTriangle` icon, error message, and "Try Again" button that resets error state. Prevents form crashes from killing the entry list.
+
+### 10. EntryListSkeleton
+
+Animated placeholder cards (`animate-pulse`) shown while entry lists load.
+
+**Props:** `count` (default 3).
+
+Each card mimics entry card structure with rounded divs for title, badge, subtitle, and metadata areas.
+
+### 11. NavigationRefresh
+
+Global component placed in protected layout. Two effects:
+
+1. Pathname change triggers immediate `router.refresh()`.
+2. Focus/visibilitychange/pageshow events trigger debounced refresh (500ms throttle via `lastRefreshRef`).
+
+Handles bfcache via `pageshow` event with `e.persisted` check.
+
+### 12. NetworkStatus
+
+Offline/online status banner. Uses `useState` with deferred `navigator.onLine` (`setTimeout 0` to avoid hydration mismatch). Fixed bottom, responsive positioning (`inset-x-4` mobile, centered `sm:max-w-md` desktop). `WifiOff` icon. Text from `SYSTEM.offline` constant.
+
+### 13. Toast Pattern
+
+Toast component supports `onDismiss` callback with X button.
+
+**Duration rules:** success 1500ms, error 4000ms.
+
+**ARIA:** `role="alert"` + `aria-live="assertive"` for errors, `role="status"` + `aria-live="polite"` for success.
+
+Auto-save failure shows persistent amber banner with `AlertTriangle` icon.
+
+### 14. Skip Navigation
+
+Visually hidden link as first focusable element in `ShellClient`. Target: `#main-content` on the main element. Classes: `sr-only focus:not-sr-only` with fixed positioning, `z-[100]`, dark blue bg.
+
+### 15. Entry Card Keyboard Navigation
+
+Cards have `tabIndex={0}`, `onKeyDown` for Enter/Space navigation. `focus-visible:ring-2 focus-visible:ring-[#1E3A5F]/30`. Actions visible on `group-focus-within` (not just hover).
+
+`RequestActionDropdown`: `aria-expanded`, `aria-haspopup="menu"`, `role="menu"`/`"menuitem"`, arrow key navigation, auto-focus first item on open.
+
+### 16. Dropdown Icons
+
+`SelectDropdownOption.icon`: optional `React.ComponentType<{className?}>`.
+
+**Icon mapping:**
+```
+Flag        → National
+Globe       → International
+Monitor     → Online
+Building2   → Offline
+CloudSun    → ODD
+Sun         → EVEN
+Banknote    → Yes
+BanknoteX   → No
+```
+
 ---
 
 ## Page Layout Templates

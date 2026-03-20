@@ -1,3 +1,5 @@
+> **Note:** This overhaul strategy has been largely completed in Session 5. See CHANGELOG.md for implementation details and ARCHITECTURE.md for current architecture.
+
 # TSEDA CODEBASE OVERHAUL — COMPLETE STRATEGY
 ## Production Readiness Plan
 ## Generated: March 9, 2026
