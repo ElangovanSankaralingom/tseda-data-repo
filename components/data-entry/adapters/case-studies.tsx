@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Banknote, BanknoteX } from "lucide-react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -29,9 +30,9 @@ import { validateEntryFields } from "@/lib/validation/schemaValidator";
 // ---------------------------------------------------------------------------
 
 const SPONSORED_OPTIONS = [
-  { label: "Yes", value: "Yes" },
-  { label: "No", value: "No" },
-] as const;
+  { label: "Yes", value: "Yes", icon: Banknote },
+  { label: "No", value: "No", icon: BanknoteX },
+];
 
 // ---------------------------------------------------------------------------
 // Helpers

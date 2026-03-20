@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Flag, Globe, Monitor, Building2 } from "lucide-react";
+import { Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX } from "lucide-react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -23,9 +23,9 @@ import { validateEntryFields } from "@/lib/validation/schemaValidator";
 // ---------------------------------------------------------------------------
 
 const SEMESTER_TYPE_OPTIONS = [
-  { label: "ODD Semester", value: "ODD" },
-  { label: "EVEN Semester", value: "EVEN" },
-] as const;
+  { label: "ODD Semester", value: "ODD", icon: CloudSun },
+  { label: "EVEN Semester", value: "EVEN", icon: Sun },
+];
 
 const LEVEL_OPTIONS = [
   { label: "National", value: "National", icon: Flag },
@@ -38,9 +38,9 @@ const MODE_OPTIONS = [
 ];
 
 const SPONSORED_OPTIONS = [
-  { label: "Yes", value: "Yes" },
-  { label: "No", value: "No" },
-] as const;
+  { label: "Yes", value: "Yes", icon: Banknote },
+  { label: "No", value: "No", icon: BanknoteX },
+];
 
 // ---------------------------------------------------------------------------
 // Helpers
