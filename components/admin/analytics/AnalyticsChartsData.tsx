@@ -168,7 +168,7 @@ export function CategoryRow({
               c.direction === "up" ? "text-emerald-600" : "text-red-500"
             }`}
           >
-            {c.direction === "up" ? "\u2191" : "\u2193"} {Math.abs(c.percentChange)}%
+            {c.direction === "up" ? "↑" : "↓"} {Math.abs(c.percentChange)}%
           </span>
         )}
         <ChevronDown

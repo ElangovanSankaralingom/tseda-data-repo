@@ -22,6 +22,10 @@ function isFieldFilled(entry: Record<string, unknown>, key: string, kind: string
   const val = entry[key];
   if (val === null || val === undefined) return false;
 
+  // Arrays (including multi-upload fields) — check length
+  if (kind === "array") return Array.isArray(val) && val.length > 0;
+
+  // Single object uploads or object fields
   if (upload || kind === "object") {
     if (typeof val === "object" && val !== null) {
       const obj = val as Record<string, unknown>;
@@ -30,8 +34,6 @@ function isFieldFilled(entry: Record<string, unknown>, key: string, kind: string
     }
     return false;
   }
-
-  if (kind === "array") return Array.isArray(val) && val.length > 0;
 
   return String(val).trim() !== "";
 }
