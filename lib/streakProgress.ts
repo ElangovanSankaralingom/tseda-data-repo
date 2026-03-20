@@ -400,7 +400,7 @@ export function computeStreakProgressAggregate(
 
     if (finalized) {
       // Win check: complete mandatory DATA fields (NOT file uploads) + valid (non-stale) PDF
-      const userDataFields = fields.filter((f) => f.exportable !== false && f.upload !== true);
+      const userDataFields = fields.filter((f) => f.exportable !== false && f.upload !== true && f.required !== false);
       const complete = userDataFields.every((field) => isFieldFilled(entry, field));
       const validPdf = entry.pdfStale !== true;
 

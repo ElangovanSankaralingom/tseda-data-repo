@@ -71,8 +71,15 @@ Defined in `lib/types/entry.ts`. Every entry is a `Record<string, unknown>` with
 | `streakEligible` | `boolean` | Whether entry qualifies for streak (end date was future at Generate time) |
 | `streakPermanentlyRemoved` | `boolean` | Whether entry was permanently removed from streak counts |
 | `permanentlyLocked` | `boolean` | Set true after second finalization; blocks Request Edit |
-| `permissionLetter` | `string` | Uploaded permission letter file path (Stage 2) |
-| `completionCertificate` | `string` | Uploaded completion certificate file path (Stage 2) |
+| `permissionLetter` | `FileMeta[]` | Uploaded permission letter files (Stage 2) |
+| `completionCertificate` | `FileMeta[]` | Uploaded completion certificate files (Stage 2) |
+| `geotaggedPhotos` | `FileMeta[]` | Uploaded geotagged photo files (Stage 2) |
+| `attendanceSheet` | `FileMeta[]` | Uploaded attendance sheet files (Stage 2) |
+| `officialPoster` | `FileMeta[]` | Uploaded official poster files (Stage 2) |
+| `travelPlan` | `FileMeta[]` | Uploaded travel plan files (Stage 2) |
+| `report` | `FileMeta[]` | Uploaded report files (Stage 2) |
+| `feedback` | `FileMeta[]` | Uploaded feedback files (Stage 2) |
+| `advanceClosure` | `FileMeta[]` | Uploaded advance closure files (Stage 2) |
 | `attachments` | `UploadedFile[]` | Uploaded file metadata |
 | `data` | `Record<string, unknown>` | Category-specific field values |
 
@@ -92,6 +99,30 @@ Canonical values (defined in `lib/types/entry.ts`):
 **Stage 1 (data fields):** Text inputs, dates, selections, descriptions. Changes to these fields mark the PDF as stale. The PDF must be regenerated before finalizing. Stage 1 fields are hashed by `lib/pdfSnapshot.ts:hashPrePdfFields()` to detect staleness.
 
 **Stage 2 (file uploads):** Permission letters, completion certificates, geotagged photos, brochures. Changes to these fields do NOT affect PDF staleness. Users can upload/remove files freely without regenerating the PDF.
+
+### Per-Category Fields
+
+Each category stores its own set of Stage 1 (data) and Stage 2 (upload) fields on the entry. Upload fields are all `FileMeta[]` arrays. The `sponsored` pattern uses three fields: `sponsored` (Yes/No), `fundingAgency` (string, shown when sponsored=Yes), and `fundingAmount` (number, shown when sponsored=Yes).
+
+**FDP Attended:**
+Stage 1: `academicYear`, `semesterType`, `level`, `mode`, `startDate`, `endDate`, `programName`, `organisingBody`, `sponsored`, `fundingAgency`, `fundingAmount`
+Stage 2: `permissionLetter[]`, `completionCertificate[]`
+
+**FDP Conducted:**
+Stage 1: `academicYear`, `semesterType`, `level`, `mode`, `startDate`, `endDate`, `programName`, `coCoordinators`, `sponsored`, `fundingAgency`, `fundingAmount`, `numberOfParticipants`
+Stage 2: `permissionLetter[]`, `geotaggedPhotos[]`, `attendanceSheet[]`, `officialPoster[]`
+
+**Guest Lectures:**
+Stage 1: `academicYear`, `semesterType`, `level`, `mode`, `startDate`, `endDate`, `topicOfLecture`, `guestSpeakerName`, `guestSpeakerDesignation`, `guestSpeakerOrganisation`, `coCoordinators`, `sponsored`, `fundingAgency`, `fundingAmount`, `numberOfParticipants`
+Stage 2: `permissionLetter[]`, `geotaggedPhotos[]`, `attendanceSheet[]`, `officialPoster[]`
+
+**Case Studies:**
+Stage 1: `academicYear`, `yearOfStudy`, `currentSemester`, `startDate`, `endDate`, `placeOfVisit`, `purposeOfVisit`, `staffAccompanying`, `sponsored`, `fundingAgency`, `fundingAmount`, `numberOfParticipants`
+Stage 2: `permissionLetter[]`, `travelPlan[]`, `geotaggedPhotos[]`, `report[]`, `feedback[]`, `advanceClosure[]`
+
+**Workshops:**
+Stage 1: `academicYear`, `semesterType`, `level`, `mode`, `startDate`, `endDate`, `workshopName`, `resourcePersonName`, `resourcePersonDesignation`, `resourcePersonOrganisation`, `coCoordinators`, `sponsored`, `fundingAgency`, `fundingAmount`, `numberOfParticipants`
+Stage 2: `permissionLetter[]`, `geotaggedPhotos[]`, `attendanceSheet[]`, `officialPoster[]`
 
 ### Uploaded File Shape
 

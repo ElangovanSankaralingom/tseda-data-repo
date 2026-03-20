@@ -1,3 +1,5 @@
+> **Note:** Some URLs in this document may be outdated. See API.md for current API endpoints and the app/(protected)/ directory for current page routes.
+
 # TSEDA REPO — RAW URL INDEX
 # Paste any section below into Claude chat to unlock those files
 # Base: https://raw.githubusercontent.com/ElangovanSankaralingom/tseda-data-repo/main
