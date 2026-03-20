@@ -1,3 +1,5 @@
+import type React from "react";
+
 // Canonical shared UI types used across components and hooks.
 
 export type ToastState = {
@@ -37,4 +39,5 @@ export type SelectDropdownOption = {
   label: string;
   value: string;
   disabled?: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
 };

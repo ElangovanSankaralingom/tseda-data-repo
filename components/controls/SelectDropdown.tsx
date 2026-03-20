@@ -102,6 +102,11 @@ export default function SelectDropdown({
   return (
     <div ref={containerRef} className="relative">
       {name && <input type="hidden" name={name} value={value} />}
+      {selectedOption?.icon && !open ? (
+        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-10">
+          <selectedOption.icon className="size-4 text-slate-500" />
+        </div>
+      ) : null}
       <input
         id={id}
         ref={inputRef}
@@ -188,7 +193,8 @@ export default function SelectDropdown({
         aria-activedescendant={open && id && resolvedHighlightedIndex >= 0 ? `${id}-option-${resolvedHighlightedIndex}` : undefined}
         value={displayValue}
         className={cx(
-          "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
+          "w-full rounded-lg border bg-white py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
+          selectedOption?.icon && !open ? "pl-9 pr-3" : "px-3",
           error
             ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
             : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
@@ -215,13 +221,14 @@ export default function SelectDropdown({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => chooseOption(option)}
                 className={cx(
-                  "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm",
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm",
                   index === resolvedHighlightedIndex && !option.disabled && "bg-muted",
                   option.disabled
                     ? "pointer-events-none cursor-not-allowed text-muted-foreground opacity-50"
                     : "hover:bg-muted"
                 )}
               >
+                {option.icon ? <option.icon className="size-4 shrink-0 text-slate-500" /> : null}
                 {option.label}
               </button>
             ))

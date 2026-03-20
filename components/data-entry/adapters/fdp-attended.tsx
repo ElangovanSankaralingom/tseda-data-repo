@@ -1,5 +1,6 @@
 "use client";
 
+import { Flag, Globe, Monitor, Building2 } from "lucide-react";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -25,14 +26,14 @@ const SEMESTER_TYPE_OPTIONS = [
 ] as const;
 
 const LEVEL_OPTIONS = [
-  { label: "National", value: "National" },
-  { label: "International", value: "International" },
-] as const;
+  { label: "National", value: "National", icon: Flag },
+  { label: "International", value: "International", icon: Globe },
+];
 
 const MODE_OPTIONS = [
-  { label: "Online", value: "Online" },
-  { label: "Offline", value: "Offline" },
-] as const;
+  { label: "Online", value: "Online", icon: Monitor },
+  { label: "Offline", value: "Offline", icon: Building2 },
+];
 
 const SPONSORED_OPTIONS = [
   { label: "Yes", value: "Yes" },
