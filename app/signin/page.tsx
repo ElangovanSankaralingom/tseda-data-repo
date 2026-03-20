@@ -163,7 +163,7 @@ export default function SignInPage() {
                 <span className="inline-flex items-center justify-center rounded-full bg-background/90 p-1 transition-transform duration-200 group-hover:rotate-[5deg]">
                   <GoogleIcon className="h-5 w-5" />
                 </span>
-                <span>{busy ? "Signing in\u2026" : "Sign in with Google"}</span>
+                <span>{busy ? "Signing in…" : "Sign in with Google"}</span>
               </button>
 
               <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-slate-500 animate-fade-in-up stagger-3">

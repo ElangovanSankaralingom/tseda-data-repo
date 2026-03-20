@@ -321,7 +321,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
               />
             </Field>
 
-            <Field label="Amount of Funding (\u20B9) \u2014 optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label="Amount of Funding (₹) — optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -459,7 +459,7 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
       buildListEntryTitle={(entry) => (entry.workshopName || "").trim() || "Untitled workshop"}
       buildListEntrySubtitle={(entry) =>
         entry.resourcePersonName
-          ? `Resource Person: ${entry.resourcePersonName}${entry.resourcePersonOrganisation ? ` \u2014 ${entry.resourcePersonOrganisation}` : ""}`
+          ? `Resource Person: ${entry.resourcePersonName}${entry.resourcePersonOrganisation ? ` — ${entry.resourcePersonOrganisation}` : ""}`
           : ""
       }
       renderListEntryBody={({ entry }) => {
@@ -471,11 +471,11 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
         if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
         if (entry.level) parts.push(entry.level);
         if (entry.mode) parts.push(entry.mode);
-        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} \u2013 ${endStr}`);
+        if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) {
-          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (\u20B9${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
+          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (₹${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
           parts.push(`Funded by ${fundingStr}`);
         }
         if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);
@@ -484,7 +484,7 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
         }
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" \u2022 ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {entry.permissionLetter.map((meta, i) => (
                 <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">

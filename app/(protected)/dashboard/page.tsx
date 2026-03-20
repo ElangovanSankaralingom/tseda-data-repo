@@ -61,7 +61,7 @@ export default async function DashboardPage() {
     ? `You have ${streakActivated} ${streakActivated === 1 ? "entry" : "entries"} to complete`
     : streakWins > 0
     ? "All entries complete!"
-    : "Here\u2019s your progress overview";
+    : "Here's your progress overview";
 
   return (
     <div className="space-y-8">

@@ -35,7 +35,7 @@ export default function DashboardClient({
                 ? `${streakActivated} ${streakActivated === 1 ? "entry" : "entries"} to complete`
                 : "Generate an entry with a future end date"
             }
-            hoverDescription="Entries you've kickstarted \u2014 waiting for you to finish the job."
+            hoverDescription="Entries you've kickstarted — waiting for you to finish the job."
             staggerClass="stagger-1"
           />
           <StreakCard
@@ -46,7 +46,7 @@ export default function DashboardClient({
                 ? `${streakWins} completed`
                 : "Complete all fields to earn wins"
             }
-            hoverDescription="Entries you crushed from start to finish. Each one's a victory. \uD83C\uDFC6"
+            hoverDescription="Entries you crushed from start to finish. Each one's a victory."
             staggerClass="stagger-2"
           />
         </div>
@@ -84,7 +84,7 @@ export default function DashboardClient({
             iconColor="text-emerald-500"
             iconBg="bg-emerald-100"
             hoverRing="hover:ring-2 hover:ring-emerald-200/50"
-            hoverDescription="Done and dusted. These are locked in forever. \uD83D\uDD12"
+            hoverDescription="Done and dusted. These are locked in forever."
             staggerClass="stagger-4"
           />
           <StatCard
@@ -95,7 +95,7 @@ export default function DashboardClient({
             iconColor="text-amber-500"
             iconBg="bg-amber-100"
             hoverRing="hover:ring-2 hover:ring-amber-200/50"
-            hoverDescription="The clock's ticking. Edit these before they lock. \u23F3"
+            hoverDescription="The clock's ticking. Edit these before they lock."
             staggerClass="stagger-5"
           />
         </div>
