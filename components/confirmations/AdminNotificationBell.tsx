@@ -181,14 +181,16 @@ export default function AdminNotificationBell({
           setOpen((v) => !v);
           if (!open) setLoaded(false);
         }}
-        className="relative flex size-9 items-center justify-center rounded-xl transition-colors hover:bg-indigo-50"
+        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-indigo-50" : "hover:bg-slate-100"}`}
         aria-label={`Admin Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         title="Admin Notifications"
       >
-        <ShieldAlert className="size-[18px] text-indigo-500 transition-colors hover:text-indigo-700" />
+        <ShieldAlert className={`size-[18px] ${unreadCount > 0 ? "text-indigo-600 fill-indigo-100" : "text-indigo-300"}`} />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white ring-2 ring-white animate-subtle-pulse">
-            {unreadCount > 9 ? "9+" : unreadCount}
+          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-indigo-500 font-bold text-white ring-2 ring-white animate-subtle-pulse ${
+            unreadCount >= 10 ? "min-w-5 h-4 px-1 text-[8px]" : "size-4 text-[10px]"
+          }`}>
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
@@ -234,7 +236,7 @@ export default function AdminNotificationBell({
                 <div
                   key={n.id}
                   className={`border-b border-slate-100 px-4 py-3 transition-colors hover:bg-slate-50 ${
-                    !n.read ? "bg-indigo-50/50" : ""
+                    !n.read ? "bg-indigo-50 border-l-3 border-l-indigo-500" : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -244,7 +246,7 @@ export default function AdminNotificationBell({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="text-sm font-semibold text-slate-900">{n.title}</div>
-                        {!n.read && <span className="mt-1 size-2 shrink-0 rounded-full bg-indigo-500" />}
+                        {!n.read && <span className="mt-1 size-2.5 shrink-0 rounded-full bg-indigo-500" />}
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">{n.message}</p>
                       <div className="mt-1.5 flex items-center gap-2">

@@ -44,6 +44,7 @@ export async function notifyEditGranted(
   ownerEmail: string,
   entryTitle: string,
   editWindowDays?: number,
+  category?: string,
 ): Promise<void> {
   const timeMsg = editWindowDays ? ` — ${editWindowDays} days to edit` : "";
   await notifyUser(
@@ -51,6 +52,7 @@ export async function notifyEditGranted(
     "edit_request_granted",
     "Edit access granted",
     `Edit access granted for '${entryTitle}'${timeMsg}`,
+    category ? `/data-entry/${category}` : undefined,
   );
 }
 
@@ -61,6 +63,7 @@ export async function notifyEditRejected(
   ownerEmail: string,
   entryTitle: string,
   reason?: string,
+  category?: string,
 ): Promise<void> {
   const reasonMsg = reason ? ` — ${reason}` : "";
   await notifyUser(
@@ -68,6 +71,7 @@ export async function notifyEditRejected(
     "edit_request_rejected",
     "Edit request denied",
     `Edit request denied for '${entryTitle}'${reasonMsg}. This entry is now permanently locked.`,
+    category ? `/data-entry/${category}` : undefined,
   );
 }
 
@@ -77,12 +81,14 @@ export async function notifyEditRejected(
 export async function notifyEntryFinalized(
   ownerEmail: string,
   entryTitle: string,
+  category?: string,
 ): Promise<void> {
   await notifyUser(
     ownerEmail,
     "entry_finalized",
     "Entry finalized",
     `Your entry '${entryTitle}' has been finalized`,
+    category ? `/data-entry/${category}` : undefined,
   );
 }
 
@@ -92,12 +98,14 @@ export async function notifyEntryFinalized(
 export async function notifyStreakWon(
   ownerEmail: string,
   entryTitle: string,
+  category?: string,
 ): Promise<void> {
   await notifyUser(
     ownerEmail,
     "streak_won",
     "Streak completed!",
     `Streak completed! '${entryTitle}' is fully done`,
+    category ? `/data-entry/${category}` : undefined,
   );
 }
 
@@ -107,12 +115,14 @@ export async function notifyStreakWon(
 export async function notifyDeleteApproved(
   ownerEmail: string,
   entryTitle: string,
+  category?: string,
 ): Promise<void> {
   await notifyUser(
     ownerEmail,
     "delete_approved",
     "Entry deleted",
     `Your delete request for '${entryTitle}' was approved`,
+    category ? `/data-entry/${category}` : undefined,
   );
 }
 
@@ -122,12 +132,14 @@ export async function notifyDeleteApproved(
 export async function notifyDeleteRejected(
   ownerEmail: string,
   entryTitle: string,
+  category?: string,
 ): Promise<void> {
   await notifyUser(
     ownerEmail,
     "delete_rejected",
     "Delete request denied",
     `Your delete request for '${entryTitle}' was rejected. This entry is now permanently locked.`,
+    category ? `/data-entry/${category}` : undefined,
   );
 }
 

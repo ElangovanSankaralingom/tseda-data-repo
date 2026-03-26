@@ -157,13 +157,15 @@ export default function NotificationBell({
           setOpen((v) => !v);
           if (!open) setLoaded(false); // Refresh on reopen
         }}
-        className="relative flex size-9 items-center justify-center rounded-xl transition-colors hover:bg-slate-100"
+        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-blue-50" : "hover:bg-slate-100"}`}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
       >
-        <Bell className="size-5 text-slate-500" />
+        <Bell className={`size-5 ${unreadCount > 0 ? "text-slate-700 fill-slate-700" : "text-slate-400"}`} />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white animate-subtle-pulse">
-            {unreadCount > 9 ? "9+" : unreadCount}
+          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-red-500 font-bold text-white ring-2 ring-white animate-subtle-pulse ${
+            unreadCount >= 10 ? "min-w-5 h-4.5 px-1 text-[8px]" : "size-4.5 text-[10px]"
+          }`}>
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
@@ -210,7 +212,7 @@ export default function NotificationBell({
                 <div
                   key={n.id}
                   className={`border-b border-slate-100 px-4 py-3 transition-colors hover:bg-slate-50 ${
-                    !n.read ? "bg-blue-50/50" : ""
+                    !n.read ? "bg-blue-50 border-l-3 border-l-blue-500" : ""
                   }`}
                 >
                   {n.actionUrl ? (
@@ -265,7 +267,7 @@ function NotificationContent({ notification: n }: { notification: PersistentNoti
     <div className="min-w-0 flex-1">
       <div className="flex items-start justify-between gap-2">
         <div className="text-sm font-semibold text-slate-900">{n.title}</div>
-        {!n.read && <span className="mt-1 size-2 shrink-0 rounded-full bg-blue-500" />}
+        {!n.read && <span className="mt-1 size-2.5 shrink-0 rounded-full bg-blue-500" />}
       </div>
       <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">{n.message}</p>
       <span className="mt-1 text-xs text-slate-500">{formatRelative(n.createdAt)}</span>

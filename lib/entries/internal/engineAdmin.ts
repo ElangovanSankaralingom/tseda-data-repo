@@ -75,7 +75,7 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
       });
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle: ext }) =>
-          notifyEditGranted(normalized, ext(entry as unknown as Record<string, unknown>)),
+          notifyEditGranted(normalized, ext(entry as unknown as Record<string, unknown>), undefined, category),
         ),
         "notifyEditGranted",
       );
@@ -136,7 +136,7 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
       });
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle: ext }) =>
-          notifyEditRejected(normalized, ext(entry as unknown as Record<string, unknown>), reason?.trim()),
+          notifyEditRejected(normalized, ext(entry as unknown as Record<string, unknown>), reason?.trim(), category),
         ),
         "notifyEditRejected",
       );
@@ -298,8 +298,8 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
 
     // Notify user
     fireAndForget(
-      import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteApproved, extractEntryTitle }) =>
-        notifyDeleteApproved(normalizedOwner, extractEntryTitle(deletedEntry as unknown as Record<string, unknown>)),
+      import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteApproved, extractEntryTitle: ext }) =>
+        notifyDeleteApproved(normalizedOwner, ext(deletedEntry as unknown as Record<string, unknown>), category),
       ),
       "notifyDeleteApproved",
     );
@@ -372,7 +372,7 @@ export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEng
       });
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteRejected, extractEntryTitle: ext }) =>
-          notifyDeleteRejected(normalized, ext(entry as unknown as Record<string, unknown>)),
+          notifyDeleteRejected(normalized, ext(entry as unknown as Record<string, unknown>), category),
         ),
         "notifyDeleteRejected",
       );
