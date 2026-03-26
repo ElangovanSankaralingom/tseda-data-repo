@@ -10,6 +10,7 @@ import ExperienceTab from "@/components/account/ExperienceTab";
 import UploadsTab from "@/components/account/UploadsTab";
 import { MiniButton } from "@/components/account/AccountUI";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { dashboard } from "@/lib/entryNavigation";
 import {
   cx,
@@ -32,6 +33,7 @@ import {
 
 export default function AccountPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -180,7 +182,7 @@ export default function AccountPage() {
     const preferred = (draft.userPreferredName || "").trim();
     if (preferred) return preferred;
     const email = (draft.email || "").trim();
-    if (!email) return "Profile";
+    if (!email) return t("common.profile");
     return email.split("@")[0];
   }, [draft.officialName, draft.userPreferredName, draft.email]);
 
@@ -196,13 +198,13 @@ export default function AccountPage() {
         {activeTabDirty ? (
           <div className="flex items-center gap-2">
             <MiniButton variant="ghost" onClick={cancel} disabled={saving || loading}>
-              Cancel
+              {t("entry.cancel")}
             </MiniButton>
             <MiniButton
               onClick={() => void saveCurrentTab({ tab: activeTab })}
               disabled={saving || loading || hasBlockingErrors || !activeTabDirty}
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </MiniButton>
           </div>
         ) : null}
@@ -364,7 +366,7 @@ export default function AccountPage() {
                 disabled={clearConfirmText.toLowerCase() !== (draft.email || "").toLowerCase() || clearing}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {clearing ? "Deleting..." : "Delete All My Data"}
+                {clearing ? t("common.processing") : t("common.delete")}
               </button>
             </div>
           </div>
