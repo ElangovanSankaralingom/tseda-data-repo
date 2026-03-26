@@ -8,12 +8,12 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-scale-in">
+      <div className="absolute inset-0 bg-[var(--color-modal-overlay)] backdrop-blur-sm" />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-modal-bg)] p-6 shadow-2xl animate-scale-in">
         {/* Status icon */}
         <div className="flex justify-center mb-4">
           {p.status === "running" && (
-            <Loader2 className="size-10 text-slate-600 animate-spin" />
+            <Loader2 className="size-10 text-[var(--color-text-secondary)] animate-spin" />
           )}
           {p.status === "success" && (
             <div className="flex size-12 items-center justify-center rounded-full bg-emerald-100">
@@ -27,22 +27,22 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
           )}
         </div>
 
-        <h3 className="text-center text-base font-semibold text-slate-900">{p.title}</h3>
+        <h3 className="text-center text-base font-semibold text-[var(--color-text-primary)]">{p.title}</h3>
 
         {p.message && (
-          <p className="mt-1 text-center text-sm text-slate-500">{p.message}</p>
+          <p className="mt-1 text-center text-sm text-[var(--color-text-secondary)]">{p.message}</p>
         )}
 
         {/* Progress bar */}
         {p.status === "running" && p.progress != null && (
           <div className="mt-4">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-dropdown-hover)]">
               <div
-                className="h-full rounded-full bg-[#1E3A5F] transition-all duration-300"
+                className="h-full rounded-full bg-[var(--color-button-primary-bg)] transition-all duration-300"
                 style={{ width: `${Math.min(p.progress, 100)}%` }}
               />
             </div>
-            <div className="mt-1 text-center text-xs text-slate-500 tabular-nums">
+            <div className="mt-1 text-center text-xs text-[var(--color-text-secondary)] tabular-nums">
               {Math.round(p.progress)}%
             </div>
           </div>
@@ -50,7 +50,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
 
         {/* Result */}
         {isComplete && p.result && (
-          <p className={`mt-3 text-center text-sm ${p.status === "error" ? "text-red-600" : "text-slate-600"}`}>
+          <p className={`mt-3 text-center text-sm ${p.status === "error" ? "text-red-600" : "text-[var(--color-text-secondary)]"}`}>
             {p.result.summary}
           </p>
         )}
@@ -61,7 +61,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
             <button
               type="button"
               onClick={onDismiss}
-              className="rounded-lg bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#162d4a]"
+              className="rounded-lg bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-button-primary-hover)]"
             >
               {p.status === "success" ? "Done" : "Close"}
             </button>
@@ -70,7 +70,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
 
         {/* Elapsed time */}
         {p.status === "running" && (
-          <div className="mt-3 text-center text-xs text-slate-500">
+          <div className="mt-3 text-center text-xs text-[var(--color-text-secondary)]">
             Running...
           </div>
         )}

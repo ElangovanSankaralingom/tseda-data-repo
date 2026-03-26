@@ -25,8 +25,8 @@ export default function HeaderNavPill({
       className={cn(
         "relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200",
         active
-          ? "bg-[#1E3A5F] text-white shadow-sm"
-          : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+          ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+          : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-dropdown-hover)]"
       )}
     >
       <Icon className="size-4" />
@@ -35,7 +35,7 @@ export default function HeaderNavPill({
         <span className={cn("size-1.5 rounded-full animate-subtle-pulse", dotColor)} />
       )}
       {active && (
-        <span className="absolute -bottom-2.5 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[#1E3A5F]" />
+        <span className="absolute -bottom-2.5 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[var(--color-button-primary-bg)]" />
       )}
     </Link>
   );

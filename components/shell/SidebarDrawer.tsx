@@ -52,8 +52,8 @@ function NavItem({
       className={cn(
         "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
         active
-          ? "bg-[#1E3A5F] text-white shadow-sm"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+          : "text-[var(--color-sidebar-text)] hover:bg-[var(--color-sidebar-hover-bg)] hover:text-[var(--color-text-primary)]",
         visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
       )}
       style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
@@ -109,7 +109,7 @@ export default function SidebarDrawer({
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-40 bg-[var(--color-modal-overlay)] backdrop-blur-sm transition-opacity duration-300",
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
@@ -119,32 +119,32 @@ export default function SidebarDrawer({
       {/* Panel */}
       <div
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-full w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-out sm:w-80",
+          "fixed left-0 top-0 z-50 flex h-full w-full flex-col bg-[var(--color-sidebar-bg)] shadow-2xl transition-transform duration-300 ease-out sm:w-80",
           open ? "translate-x-0" : "-translate-x-full"
         )}
         role="dialog"
         aria-label="Navigation menu"
       >
         {/* 1. User profile section */}
-        <div className="border-b border-slate-100 p-6 pb-4">
+        <div className="border-b border-[var(--color-card-border)] p-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-slate-100">
+            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--color-card-border)]">
               {profilePhoto ? (
                 <span
                   className="h-full w-full bg-cover bg-center bg-no-repeat"
                   style={{ backgroundImage: `url("${profilePhoto}")` }}
                 />
               ) : (
-                <span className="flex size-full items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600">
+                <span className="flex size-full items-center justify-center bg-[var(--color-dropdown-hover)] text-sm font-semibold text-[var(--color-sidebar-text)]">
                   {profileInitials}
                 </span>
               )}
             </div>
             <div className="min-w-0">
-              <div className="truncate text-base font-semibold text-slate-900">{profileName}</div>
-              <div className="truncate text-xs text-slate-500">{profileEmail}</div>
+              <div className="truncate text-base font-semibold text-[var(--color-text-primary)]">{profileName}</div>
+              <div className="truncate text-xs text-[var(--color-text-secondary)]">{profileEmail}</div>
               {profileDesignation ? (
-                <span className="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                <span className="mt-1 inline-block rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs text-[var(--color-sidebar-text)]">
                   {profileDesignation}
                 </span>
               ) : null}
@@ -155,7 +155,7 @@ export default function SidebarDrawer({
         {/* 2. Navigation section */}
         <div className="flex-1 overflow-y-auto p-3">
           <div className="px-3 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Navigation</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">Navigation</span>
           </div>
           <nav aria-label="Sidebar navigation" className="space-y-0.5">
             <NavItem
@@ -199,9 +199,9 @@ export default function SidebarDrawer({
           {/* Admin section */}
           {canAccessAdmin ? (
             <>
-              <div className="my-2 h-px bg-slate-100" />
+              <div className="my-2 h-px bg-[var(--color-card-border)]" />
               <div className="px-3 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Admin</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">Admin</span>
               </div>
               <nav aria-label="Admin navigation" className="space-y-0.5">
                 <NavItem
@@ -219,11 +219,11 @@ export default function SidebarDrawer({
         </div>
 
         {/* 3. Bottom section */}
-        <div className="border-t border-slate-100 p-4 space-y-1">
-          <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 cursor-not-allowed" title="Coming soon">
+        <div className="border-t border-[var(--color-card-border)] p-4 space-y-1">
+          <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--color-text-secondary)] cursor-not-allowed" title="Coming soon">
             <Sun className="size-5" />
             <span className="flex-1">Appearance</span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">Soon</span>
+            <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs text-[var(--color-sidebar-text)]">Soon</span>
           </div>
 
           {canAccessAdmin ? (

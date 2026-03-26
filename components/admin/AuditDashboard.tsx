@@ -99,13 +99,13 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
     <div className="space-y-6">
       {/* View toggle + refresh */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
+        <div className="flex rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-0.5 shadow-sm">
           <button
             onClick={() => setView("timeline")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
               view === "timeline"
-                ? "bg-[#1E3A5F] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
             Timeline
@@ -114,8 +114,8 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
             onClick={() => setView("table")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
               view === "table"
-                ? "bg-[#1E3A5F] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
             Table
@@ -125,7 +125,7 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
         <button
           onClick={refresh}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition-all duration-200 hover:border-slate-300 hover:text-slate-900 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] shadow-sm transition-all duration-200 hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] disabled:opacity-50"
         >
           <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
@@ -163,8 +163,8 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
       {stats && (
         <div className="lg:hidden">
           <details className="group">
-            <summary className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
-              <ChevronRight className="size-4 text-slate-500 transition-transform duration-200 group-open:rotate-90" />
+            <summary className="flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 py-3 text-sm font-medium text-[var(--color-text-primary)] shadow-sm">
+              <ChevronRight className="size-4 text-[var(--color-text-secondary)] transition-transform duration-200 group-open:rotate-90" />
               View Statistics
             </summary>
             <div className="mt-3">

@@ -44,7 +44,7 @@ const TYPE_CONFIG: Record<
 };
 
 const CONFIRM_STYLE: Record<string, string> = {
-  primary: "bg-[#1E3A5F] text-white hover:bg-[#162d4a]",
+  primary: "bg-[var(--color-button-primary-bg)] text-white hover:bg-[var(--color-button-primary-hover)]",
   danger: "bg-red-500 text-white hover:bg-red-600",
   warning: "bg-amber-500 text-white hover:bg-amber-600",
 };
@@ -156,7 +156,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       <div
-        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-150 ${
+        className={`absolute inset-0 bg-[var(--color-modal-overlay)] backdrop-blur-sm transition-opacity duration-150 ${
           animateIn ? "opacity-100" : "opacity-0"
         }`}
         onClick={handleOverlayClick}
@@ -168,7 +168,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative z-10 w-full max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200 ${
+        className={`relative z-10 w-full max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-modal-bg)] shadow-2xl transition-all duration-200 ${
           config.accent ?? ""
         } ${animateIn ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
       >
@@ -186,8 +186,8 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
           </div>
 
           {/* Title + Message */}
-          <h2 className="text-center text-lg font-semibold text-slate-900">{title}</h2>
-          <p className="mt-2 text-center text-sm text-slate-600">{message}</p>
+          <h2 className="text-center text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2>
+          <p className="mt-2 text-center text-sm text-[var(--color-text-secondary)]">{message}</p>
 
           {/* Expandable details */}
           {details && (
@@ -195,7 +195,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
               <button
                 type="button"
                 onClick={() => setShowDetails((v) => !v)}
-                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors mx-auto"
+                className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors mx-auto"
               >
                 <ChevronDown
                   className={`size-3.5 transition-transform duration-200 ${showDetails ? "rotate-180" : ""}`}
@@ -203,7 +203,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
                 {showDetails ? "Hide details" : "Show details"}
               </button>
               {showDetails && (
-                <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-700 animate-fade-in">
+                <div className="mt-2 rounded-lg bg-[var(--color-body-bg)] p-3 text-xs text-[var(--color-text-primary)] animate-fade-in">
                   {details}
                 </div>
               )}
@@ -213,7 +213,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
           {/* Typed confirmation */}
           {requireTypedConfirmation && (
             <div className="mt-4">
-              <label className="block text-xs text-slate-500 mb-1.5">
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1.5">
                 Type <span className="font-mono font-semibold text-red-600">{requireTypedConfirmation}</span> to
                 confirm
               </label>
@@ -222,7 +222,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
                 value={typedText}
                 onChange={(e) => setTypedText(e.target.value)}
                 placeholder={requireTypedConfirmation}
-                className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                className="w-full rounded-lg border border-red-200 bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                 autoComplete="off"
                 spellCheck={false}
               />
@@ -231,13 +231,13 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4">
+        <div className="flex justify-end gap-3 border-t border-[var(--color-card-border)] px-6 py-4">
           {type !== "success" && (
             <button
               ref={cancelRef}
               type="button"
               onClick={() => onResult(false)}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
             >
               {cancelLabel}
             </button>

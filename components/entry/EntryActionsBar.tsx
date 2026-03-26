@@ -198,8 +198,8 @@ function EditModeActionBar({
   const buttonClass = isSuccess
     ? "bg-emerald-500 text-white"
     : workflowDisabled || isGenerating
-      ? "cursor-not-allowed bg-emerald-600 text-white opacity-50"
-      : "bg-emerald-600 text-white hover:bg-emerald-700";
+      ? "cursor-not-allowed bg-[var(--color-generate-bg)] text-white opacity-50"
+      : "bg-[var(--color-generate-bg)] text-white hover:bg-[var(--color-generate-hover)]";
 
   // Show only ONE primary workflow button at a time:
   // - If workflowAction exists (Generate/Regenerate): show that
@@ -244,10 +244,10 @@ function EditModeActionBar({
                   finaliseState === "done"
                     ? "bg-emerald-500 text-white animate-finalise-pop"
                     : finaliseState === "finalising"
-                      ? "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+                      ? "bg-[var(--color-generate-bg)] text-white opacity-50 cursor-not-allowed"
                       : finalise.canFinalise
-                        ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                        : "bg-emerald-600 text-white opacity-50 cursor-not-allowed"
+                        ? "bg-[var(--color-generate-bg)] text-white hover:bg-[var(--color-generate-hover)]"
+                        : "bg-[var(--color-generate-bg)] text-white opacity-50 cursor-not-allowed"
                 }`}
                 title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
               >
@@ -268,7 +268,7 @@ function EditModeActionBar({
           ) : null}
         </div>
         {showGenerate && workflowAction && workflowDisabled && !isGenerating && !isSuccess ? (
-          <p className="text-xs text-slate-500">{workflowDisabledHint}</p>
+          <p className="text-xs text-[var(--color-text-secondary)]">{workflowDisabledHint}</p>
         ) : null}
       </div>
 
@@ -288,28 +288,28 @@ function EditModeActionBar({
       {showFinaliseConfirm ? createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
           <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+            className="fixed inset-0 bg-[var(--color-modal-overlay)] backdrop-blur-sm"
             onClick={() => setShowFinaliseConfirm(false)}
           />
-          <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-xl border border-slate-200 animate-scale-in">
+          <div className="relative w-full max-w-sm rounded-2xl bg-[var(--color-modal-bg)] shadow-xl border border-[var(--color-card-border)] animate-scale-in">
             <div className="px-6 pt-6 pb-5">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50">
                   <Lock className="size-5 text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-slate-900">Finalise this entry?</h3>
-                  <p className="text-xs text-slate-500">This action locks the entry</p>
+                  <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Finalise this entry?</h3>
+                  <p className="text-xs text-[var(--color-text-secondary)]">This action locks the entry</p>
                 </div>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
                 Once finalised, all fields become read-only. You&apos;ll need admin approval to make any future changes.
               </p>
               {(() => {
                 const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt);
                 return timeInfo ? (
-                  <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                    <p className="text-xs text-slate-500">{timeInfo}</p>
+                  <div className="mt-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2">
+                    <p className="text-xs text-[var(--color-text-secondary)]">{timeInfo}</p>
                   </div>
                 ) : null;
               })()}
@@ -317,7 +317,7 @@ function EditModeActionBar({
                 <button
                   type="button"
                   onClick={() => setShowFinaliseConfirm(false)}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 active:scale-[0.98]"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] active:scale-[0.98]"
                 >
                   Keep Editing
                 </button>
@@ -327,7 +327,7 @@ function EditModeActionBar({
                     setShowFinaliseConfirm(false);
                     void handleFinalise();
                   }}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-emerald-700 active:scale-[0.98]"
+                  className="rounded-lg bg-[var(--color-generate-bg)] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[var(--color-generate-hover)] active:scale-[0.98]"
                 >
                   Finalise Entry
                 </button>

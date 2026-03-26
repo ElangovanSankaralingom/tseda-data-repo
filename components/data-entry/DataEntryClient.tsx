@@ -76,7 +76,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
       className={cn(
         "group relative flex flex-col min-h-[160px] rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up",
         hasEntries
-          ? cn("border border-t-[3px] bg-white border-slate-200 shadow-sm", theme.borderColor)
+          ? cn("border border-t-[3px] bg-[var(--color-card-bg)] border-[var(--color-card-border)] shadow-sm", theme.borderColor)
           : "border border-dashed border-slate-300 bg-slate-50",
         `stagger-${Math.min(index + 1, 5)}`
       )}
@@ -92,24 +92,24 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
       <Link href={hasEntries ? cat.href : cat.newHref} className="flex flex-1 items-start gap-4">
         <div className={cn(
           "flex size-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110",
-          hasEntries ? theme.accentBg : "bg-slate-200"
+          hasEntries ? theme.accentBg : "bg-[var(--color-body-bg)]"
         )}>
-          <Icon className={cn("size-6", hasEntries ? theme.accentText : "text-slate-500")} />
+          <Icon className={cn("size-6", hasEntries ? theme.accentText : "text-[var(--color-text-secondary)]")} />
         </div>
 
         <div className="min-w-0 flex-1">
           <h3 className={cn(
             "text-base font-semibold",
-            hasEntries ? "text-slate-900" : "text-slate-600"
+            hasEntries ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
           )}>
             {cat.label}
           </h3>
 
           {hasEntries ? (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-text-secondary)]">
               <span>{cat.totalEntries} {cat.totalEntries === 1 ? "entry" : "entries"}</span>
               {cat.draftCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
                   <Pencil className="size-3" />
                   {cat.draftCount} {cat.draftCount === 1 ? "draft" : "drafts"}
                 </span>
@@ -135,20 +135,20 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
             </div>
           ) : (
             <>
-              <p className="mt-1 text-sm text-slate-500">No entries yet</p>
-              <p className="mt-0 max-h-0 overflow-hidden text-xs italic text-slate-500 opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100">
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">No entries yet</p>
+              <p className="mt-0 max-h-0 overflow-hidden text-xs italic text-[var(--color-text-secondary)] opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100">
                 Create your first entry to begin tracking this category
               </p>
             </>
           )}
 
           {cat.lastActivity && (
-            <p className="mt-1 text-xs text-slate-400">Last: {relativeTime(cat.lastActivity)}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Last: {relativeTime(cat.lastActivity)}</p>
           )}
         </div>
 
         {hasEntries && (
-          <ChevronRight className="mt-1 size-5 shrink-0 text-slate-400 transition-all duration-200 group-hover:translate-x-1 group-hover:text-slate-600" />
+          <ChevronRight className="mt-1 size-5 shrink-0 text-[var(--color-text-muted)] transition-all duration-200 group-hover:translate-x-1 group-hover:text-[var(--color-text-secondary)]" />
         )}
       </Link>
 
@@ -158,7 +158,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
           <>
             <Link
               href={cat.href}
-              className="inline-flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-[0.97]"
+              className="inline-flex h-8 items-center rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 text-sm font-medium text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-input-border)] hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97]"
             >
               View All
             </Link>
@@ -173,7 +173,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
         ) : (
           <Link
             href={cat.newHref}
-            className="inline-flex h-8 items-center gap-1 rounded-lg bg-slate-500 px-3 text-sm font-medium text-white transition-all hover:bg-[#1E3A5F] active:scale-[0.97]"
+            className="inline-flex h-8 items-center gap-1 rounded-lg bg-[var(--color-text-secondary)] px-3 text-sm font-medium text-white transition-all hover:bg-[var(--color-button-primary-bg)] active:scale-[0.97]"
           >
             <Plus className="size-3.5" />
             Create First Entry
@@ -202,10 +202,10 @@ export default function DataEntryClient({ greeting, userName, categories, totals
       {/* Header — matches dashboard style */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6 animate-fade-in-up">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
             {greeting}{firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">{statusText}</p>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{statusText}</p>
         </div>
 
         {hasAnyEntries && (
@@ -237,10 +237,10 @@ export default function DataEntryClient({ greeting, userName, categories, totals
       {!hasAnyEntries && (
         <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center animate-fade-in-up stagger-3">
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-slate-100">
-            <FileText className="size-8 text-slate-600" />
+            <FileText className="size-8 text-[var(--color-text-secondary)]" />
           </div>
-          <p className="mt-3 text-base font-medium text-slate-600">Choose a category above to begin</p>
-          <p className="mt-1 text-sm text-slate-600">Track FDPs, lectures, workshops, and more</p>
+          <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">Choose a category above to begin</p>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Track FDPs, lectures, workshops, and more</p>
         </div>
       )}
     </div>

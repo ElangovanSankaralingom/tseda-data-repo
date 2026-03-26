@@ -36,7 +36,7 @@ type CategoryEntryPageShellProps = {
 
 function LoadingState({ message }: { message: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-muted-foreground shadow-sm">
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-6 text-sm text-muted-foreground shadow-sm">
       {message}
     </div>
   );
@@ -151,17 +151,17 @@ function CategoryEmptyState({
         {/* eslint-disable-next-line react-hooks/static-components */}
         <Icon className={`size-10 ${accent}`} />
       </div>
-      <h2 className="mt-5 text-lg font-semibold text-slate-700">
+      <h2 className="mt-5 text-lg font-semibold text-[var(--color-text-secondary)]">
         No {title?.toLowerCase() || "entries"} yet
       </h2>
-      <p className="mt-1.5 text-sm text-slate-500">
+      <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
         Create your first entry to start tracking
       </p>
       {onAdd && (
         <button
           type="button"
           onClick={onAdd}
-          className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#1E3A5F] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#162d4a] hover:-translate-y-0.5 transition-all duration-200"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-button-primary-bg)] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-button-primary-hover)] hover:-translate-y-0.5 transition-all duration-200"
         >
           <Plus className="size-4" />
           {addLabel || "Create First Entry"}

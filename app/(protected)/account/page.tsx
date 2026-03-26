@@ -238,8 +238,8 @@ export default function AccountPage() {
               className={cx(
                 "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
                 activeTab === key
-                  ? "bg-[#1E3A5F] text-white shadow-sm scale-100"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 scale-[0.97] hover:scale-100"
+                  ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm scale-100"
+                  : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] scale-[0.97] hover:scale-100"
               )}
             >
               {label}
@@ -293,12 +293,12 @@ export default function AccountPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="mt-10 rounded-2xl border border-red-200 bg-white p-5">
+      <div className="mt-10 rounded-2xl border border-red-200 bg-[var(--color-card-bg)] p-5">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-red-800">Clear All My Data</h3>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
               Permanently delete all your entries, uploads, notifications, and profile data. This cannot be undone.
             </p>
           </div>
@@ -324,19 +324,19 @@ export default function AccountPage() {
       </div>
 
       {showClearConfirm ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-modal-overlay)] p-4">
+          <div className="w-full max-w-md rounded-2xl bg-[var(--color-modal-bg)] p-6 shadow-xl">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
                 <AlertTriangle className="size-5 text-red-600" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900">Clear All Your Data</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Clear All Your Data</h3>
             </div>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
               This will permanently delete all your entries, uploads, notifications, and profile data. This action cannot be undone.
             </p>
             <div className="mt-4">
-              <label className="text-sm text-slate-600">
+              <label className="text-sm text-[var(--color-text-secondary)]">
                 Type your email <span className="font-mono font-semibold text-red-600">{draft.email}</span> to confirm:
               </label>
               <input
@@ -345,7 +345,7 @@ export default function AccountPage() {
                 onChange={(e) => setClearConfirmText(e.target.value)}
                 placeholder={draft.email}
                 aria-label="Type your email to confirm"
-                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                className="mt-1.5 w-full rounded-lg border border-[var(--color-input-border)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                 autoFocus
               />
             </div>
@@ -354,7 +354,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={() => { setShowClearConfirm(false); setClearConfirmText(""); }}
                 disabled={clearing}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-card-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
               >
                 Keep My Data
               </button>

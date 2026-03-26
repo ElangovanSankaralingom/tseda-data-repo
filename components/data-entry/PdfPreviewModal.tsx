@@ -23,22 +23,22 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-modal-overlay)] backdrop-blur-sm animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl max-h-[85vh] animate-scale-in">
+      <div className="flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[var(--color-modal-bg)] shadow-2xl max-h-[85vh] animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-card-border)] px-6 py-4">
           <div className="flex items-center gap-2">
-            <FileText className="size-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-900">Entry Preview</h2>
+            <FileText className="size-5 text-[var(--color-text-secondary)]" />
+            <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Entry Preview</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            className="flex size-8 items-center justify-center rounded-lg text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)]"
             aria-label="Close"
           >
             <X className="size-5" />
@@ -46,7 +46,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-auto bg-slate-50 p-0">
+        <div className="flex-1 overflow-auto bg-[var(--color-body-bg)] p-0">
           <iframe
             src={pdfUrl}
             className="h-full min-h-[600px] w-full border-0"
@@ -55,11 +55,11 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[var(--color-card-border)] px-6 py-4">
           <a
             href={pdfUrl}
             download={pdfFileName}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#1E3A5F] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#162d4a]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-button-primary-bg)] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--color-button-primary-hover)]"
           >
             <Download className="size-4" />
             Download PDF
@@ -67,7 +67,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            className="rounded-xl border border-[var(--color-input-border)] bg-[var(--color-card-bg)] px-5 py-2.5 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
             Close
           </button>

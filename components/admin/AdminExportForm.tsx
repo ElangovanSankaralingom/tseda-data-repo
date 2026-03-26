@@ -148,7 +148,7 @@ export default function AdminExportForm({
             type="date"
             value={fromDate}
             onChange={(event) => setFromDate(event.target.value)}
-            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
+            className="select-styled h-10 w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm shadow-sm outline-none transition-colors hover:border-[var(--color-text-muted)] focus:border-[var(--color-input-focus-ring)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)]/20"
           />
         </label>
         <label className="space-y-1 text-sm">
@@ -157,7 +157,7 @@ export default function AdminExportForm({
             type="date"
             value={toDate}
             onChange={(event) => setToDate(event.target.value)}
-            className="select-styled h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
+            className="select-styled h-10 w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm shadow-sm outline-none transition-colors hover:border-[var(--color-text-muted)] focus:border-[var(--color-input-focus-ring)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)]/20"
           />
         </label>
       </div>

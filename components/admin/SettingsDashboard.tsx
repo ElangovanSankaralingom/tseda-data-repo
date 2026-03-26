@@ -262,19 +262,19 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       {/* Top actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search settings..."
             aria-label="Search settings"
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+            className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-input-bg)] pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-500 hover:text-slate-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               <X className="size-3.5" />
             </button>
@@ -284,21 +284,21 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
         <div className="flex items-center gap-2">
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Download className="size-3.5" />
             Export
           </button>
           <button
             onClick={handleImport}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Upload className="size-3.5" />
             Import
           </button>
           <button
             onClick={() => setResetAllOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition-all hover:bg-red-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition-all hover:bg-red-50"
           >
             <RotateCcw className="size-3.5" />
             Reset All
@@ -310,7 +310,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
         {/* Sidebar */}
         <nav aria-label="Settings categories" className="hidden lg:block">
-          <div className="sticky top-24 space-y-1 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+          <div className="sticky top-24 space-y-1 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-2 shadow-sm">
             {CATEGORY_ORDER.map((cat) => {
               const Icon = CATEGORY_ICONS[cat];
               const meta = CATEGORY_META[cat];
@@ -323,8 +323,8 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                   onClick={() => { setActiveCategory(cat); setSearch(""); }}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "bg-[#1E3A5F] text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+                      : "text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)]"
                   }`}
                 >
                   <Icon className="size-4 shrink-0" />
@@ -357,8 +357,8 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                 onClick={() => { setActiveCategory(cat); setSearch(""); }}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                   isActive
-                    ? "bg-[#1E3A5F] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-[var(--color-button-primary-bg)] text-white"
+                    : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                 }`}
               >
                 <Icon className="size-3.5" />
@@ -373,17 +373,17 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           {/* Category header */}
           {!isSearching && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
                 {CATEGORY_META[activeCategory].label}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                 {CATEGORY_META[activeCategory].description}
               </p>
             </div>
           )}
 
           {isSearching && (
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-[var(--color-text-secondary)]">
               {filteredSettings.length} {filteredSettings.length === 1 ? "result" : "results"} for &quot;{search}&quot;
             </div>
           )}
@@ -392,8 +392,8 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           {Array.from(grouped.entries()).map(([group, items]) => (
             <div key={group} className="space-y-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-slate-700">{group}</h3>
-                <div className="h-px flex-1 bg-slate-100" />
+                <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{group}</h3>
+                <div className="h-px flex-1 bg-[var(--color-card-border)]" />
               </div>
               {items.map((s) => (
                 <SettingRow
@@ -407,18 +407,18 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           ))}
 
           {filteredSettings.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-              <Search className="size-8 text-slate-400 mb-3" />
-              <div className="text-sm font-medium text-slate-500">No settings found</div>
-              <div className="mt-1 text-xs text-slate-500">Try a different search term</div>
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-16 text-center">
+              <Search className="size-8 text-[var(--color-text-muted)] mb-3" />
+              <div className="text-sm font-medium text-[var(--color-text-secondary)]">No settings found</div>
+              <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try a different search term</div>
             </div>
           )}
 
           {/* Changelog */}
-          <div className="border-t border-slate-200 pt-6">
+          <div className="border-t border-[var(--color-card-border)] pt-6">
             <button
               onClick={() => { setShowChangelog(!showChangelog); }}
-              className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors"
+              className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               <ChevronRight className={`size-4 transition-transform duration-200 ${showChangelog ? "rotate-90" : ""}`} />
               Recent Changes
@@ -427,26 +427,26 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             {showChangelog && (
               <div className="mt-4 space-y-2 animate-fade-in">
                 {changelog.length === 0 ? (
-                  <p className="text-sm text-slate-500">No changes yet</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">No changes yet</p>
                 ) : (
                   changelog.slice(0, 15).map((entry, i) => (
                     <div
                       key={`${entry.key}-${entry.changedAt}-${i}`}
-                      className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-xs"
+                      className="flex items-start gap-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3 text-xs"
                     >
-                      <Clock className="mt-0.5 size-3.5 shrink-0 text-slate-500" />
+                      <Clock className="mt-0.5 size-3.5 shrink-0 text-[var(--color-text-secondary)]" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-slate-700">
+                        <div className="text-[var(--color-text-primary)]">
                           <span className="font-medium">{entry.key}</span>
                           {" changed by "}
                           <span className="font-medium">{emailName(entry.changedBy)}</span>
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-slate-500">
+                        <div className="mt-0.5 flex items-center gap-2 text-[var(--color-text-secondary)]">
                           <span className="line-through">{JSON.stringify(entry.oldValue)}</span>
-                          <span className="text-slate-400">&rarr;</span>
-                          <span className="text-slate-600 font-medium">{JSON.stringify(entry.newValue)}</span>
+                          <span className="text-[var(--color-text-muted)]">&rarr;</span>
+                          <span className="text-[var(--color-text-secondary)] font-medium">{JSON.stringify(entry.newValue)}</span>
                         </div>
-                        <div className="mt-0.5 text-slate-500">{formatRelative(entry.changedAt)}</div>
+                        <div className="mt-0.5 text-[var(--color-text-secondary)]">{formatRelative(entry.changedAt)}</div>
                       </div>
                     </div>
                   ))
