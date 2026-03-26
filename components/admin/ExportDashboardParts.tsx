@@ -79,15 +79,15 @@ export function TemplateCard({
   const iconBg = TEMPLATE_ICON_BG[template.icon] ?? "bg-slate-50 text-slate-600";
 
   return (
-    <div className={`group rounded-xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}>
+    <div className={`group rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}>
       <div className="flex items-start gap-3">
         <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${iconBg} transition-transform duration-200 group-hover:scale-110`}>
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-slate-800">{template.name}</div>
-          <div className="mt-0.5 text-xs text-slate-500">{template.description}</div>
-          <div className="mt-0.5 text-xs italic text-slate-500">{template.funSubtitle}</div>
+          <div className="text-sm font-semibold text-[var(--color-text-primary)]">{template.name}</div>
+          <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{template.description}</div>
+          <div className="mt-0.5 text-xs italic text-[var(--color-text-secondary)]">{template.funSubtitle}</div>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between">
@@ -96,7 +96,7 @@ export function TemplateCard({
           type="button"
           disabled={running}
           onClick={() => onExport(template.id)}
-          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-all duration-150 hover:bg-slate-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {running ? (
             <span className="flex items-center gap-1.5">
@@ -129,14 +129,14 @@ export function FormatSelector({ value, onChange }: { value: string; onChange: (
           onClick={() => onChange(fmt.key)}
           className={`rounded-xl border p-4 text-left transition-all duration-200 ${
             value === fmt.key
-              ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900"
-              : "border-slate-200 hover:border-slate-300"
+              ? "border-[var(--color-text-primary)] bg-[var(--color-body-bg)] ring-2 ring-[var(--color-text-primary)]"
+              : "border-[var(--color-card-border)] hover:border-[var(--color-text-muted)]"
           }`}
         >
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+          <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
             {fmt.icon} {fmt.label}
           </div>
-          <div className="mt-1 text-xs text-slate-500">{fmt.sub}</div>
+          <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{fmt.sub}</div>
         </button>
       ))}
     </div>
@@ -145,17 +145,17 @@ export function FormatSelector({ value, onChange }: { value: string; onChange: (
 
 export function HistoryRow({ entry }: { entry: ExportHistoryEntry }) {
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 px-1 py-2.5 last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--color-divider)] px-1 py-2.5 last:border-0">
       <FormatBadge format={entry.format} />
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-slate-700">
+        <div className="text-sm font-medium text-[var(--color-text-secondary)]">
           {entry.templateId ?? entry.scope} &middot; {entry.category}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-[var(--color-text-secondary)]">
           {entry.recordCount} entries &middot; {formatBytes(entry.fileSize)} &middot; {entry.durationMs}ms
         </div>
       </div>
-      <div className="text-xs text-slate-500">{formatTimeAgo(entry.createdAt)}</div>
+      <div className="text-xs text-[var(--color-text-secondary)]">{formatTimeAgo(entry.createdAt)}</div>
     </div>
   );
 }

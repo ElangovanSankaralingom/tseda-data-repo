@@ -53,7 +53,7 @@ const TYPE_CONFIG: Record<
   loading: {
     Icon: Loader2,
     iconBg: "bg-slate-100",
-    iconColor: "text-slate-600",
+    iconColor: "text-[var(--color-text-secondary)]",
     border: "border-l-slate-400",
     defaultDuration: 0,
   },
@@ -155,7 +155,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
             {toast.title}
           </div>
           {toast.message && (
-            <p className={`mt-0.5 text-xs ${isUndo ? "text-slate-300" : "text-[var(--color-text-secondary)]"}`}>
+            <p className={`mt-0.5 text-xs ${isUndo ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-secondary)]"}`}>
               {toast.message}
             </p>
           )}
@@ -168,7 +168,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
             onClick={toast.action.onClick}
             className={`shrink-0 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               isUndo
-                ? "bg-white text-slate-900 hover:bg-slate-100"
+                ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] hover:bg-[var(--color-dropdown-hover)]"
                 : "text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
             }`}
           >

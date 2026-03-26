@@ -42,9 +42,38 @@
   --color-skeleton-shine: #F1F5F9;
 }
 
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 body {
   background-color: var(--color-body-bg);
   color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode adjustments */
+.dark {
+  color-scheme: dark;
+}
+
+.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+.dark .shadow-md { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+.dark .shadow-lg { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3); }
+.dark .shadow-xl { box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3); }
+.dark .shadow-2xl { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); }
+
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--color-body-bg);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-divider);
+  border-radius: 4px;
 }
 
 @theme inline {

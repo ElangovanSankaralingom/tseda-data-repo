@@ -268,7 +268,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               onClick={() => setRange(r.key)}
               className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                 range === r.key
-                  ? "bg-white text-slate-900"
+                  ? "bg-white text-[var(--color-text-primary)]"
                   : "bg-white/10 text-white hover:bg-white/20"
               }`}
             >
@@ -356,12 +356,12 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Entry Trends */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-2">
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-2">
         <SH title="Entry Activity" description="How entries are being created over time" />
         <AreaChart data={trendData} previousData={prevTrendData} />
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-500">
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-[var(--color-text-secondary)]">
           <span>
-            Busiest day: <span className="font-medium text-slate-700">{busiestDay.day}</span> with avg{" "}
+            Busiest day: <span className="font-medium text-[var(--color-text-secondary)]">{busiestDay.day}</span> with avg{" "}
             {busiestDay.count} entries
           </span>
           <span>
@@ -373,7 +373,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
       {/* Category Breakdown */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-3">
+        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-3">
           <SH title="By Category" description="Entry distribution" />
           <DonutChart
             segments={categoryData.map((c) => ({
@@ -384,9 +384,9 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             total={totalEntries}
           />
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-4">
+        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-4">
           <SH title="Category Comparison" description="Performance by category" />
-          <div className="rounded-lg border border-slate-100">
+          <div className="rounded-lg border border-[var(--color-divider)]">
             {categoryData
               .slice()
               .sort((a, b) => b.count - a.count)
@@ -406,13 +406,13 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Leaderboard */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-5">
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-5">
         <SH title="Top Contributors" description="Faculty making the most impact" />
         <Leaderboard users={snapshot.users} />
       </div>
 
       {/* Heatmap */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-6">
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-6">
         <SH title="When People Work" description="Activity patterns over the last 12 weeks" />
         <Heatmap entries={snapshot.entries} />
       </div>
@@ -420,7 +420,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       {/* Streak + Edit Requests */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Streak funnel */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-7">
+        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-7">
           <SH title="Streak Insights" description="How the gamification is working" />
           <div className="grid gap-6 sm:grid-cols-2">
             <StreakFunnel
@@ -429,20 +429,20 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               wins={snapshot.streaks.totalWins}
             />
             <div>
-              <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+              <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-text-secondary)]">
                 <Flame className="size-4 text-amber-500 animate-flame" />
                 Streak Champions
               </h3>
               <div className="space-y-1.5">
                 {snapshot.streaks.byUser.slice(0, 5).map((u, i) => (
                   <div key={u.email} className="flex items-center gap-2 text-sm">
-                    <span className="w-4 text-xs font-bold text-slate-500">#{i + 1}</span>
-                    <span className="flex-1 truncate text-slate-600">{u.name}</span>
+                    <span className="w-4 text-xs font-bold text-[var(--color-text-secondary)]">#{i + 1}</span>
+                    <span className="flex-1 truncate text-[var(--color-text-secondary)]">{u.name}</span>
                     <span className="font-semibold text-amber-600">{u.wins}</span>
                   </div>
                 ))}
                 {snapshot.streaks.byUser.length === 0 && (
-                  <div className="text-xs text-slate-500">No streak wins yet</div>
+                  <div className="text-xs text-[var(--color-text-secondary)]">No streak wins yet</div>
                 )}
               </div>
             </div>
@@ -450,27 +450,27 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         </div>
 
         {/* Edit request metrics */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-8">
+        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
           <SH title="Edit Requests" description="How often entries need unlocking" />
           <div className="grid gap-4 grid-cols-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-slate-900">{editRequestMetrics.total}</div>
-              <div className="text-[10px] uppercase text-slate-500">Total</div>
+              <div className="text-2xl font-bold text-[var(--color-text-primary)]">{editRequestMetrics.total}</div>
+              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">Total</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-slate-900">
+              <div className="text-2xl font-bold text-[var(--color-text-primary)]">
                 {editRequestMetrics.avgResponseHrs}h
               </div>
-              <div className="text-[10px] uppercase text-slate-500">Avg Response</div>
+              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">Avg Response</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-slate-900">{editRequestMetrics.grantRate}%</div>
-              <div className="text-[10px] uppercase text-slate-500">Grant Rate</div>
+              <div className="text-2xl font-bold text-[var(--color-text-primary)]">{editRequestMetrics.grantRate}%</div>
+              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">Grant Rate</div>
             </div>
           </div>
           {snapshot.editRequests.length > 0 && (
             <div className="mt-4">
-              <div className="text-xs font-medium text-slate-500 mb-2">By Category</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)] mb-2">By Category</div>
               {snapshot.categories.map((cat) => {
                 const count = snapshot.editRequests.filter(
                   (r) => r.category === cat.slug,
@@ -478,8 +478,8 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
                 if (count === 0) return null;
                 return (
                   <div key={cat.slug} className="flex items-center justify-between text-sm py-1">
-                    <span className="text-slate-600">{cat.name}</span>
-                    <span className="font-medium text-slate-800">{count}</span>
+                    <span className="text-[var(--color-text-secondary)]">{cat.name}</span>
+                    <span className="font-medium text-[var(--color-text-primary)]">{count}</span>
                   </div>
                 );
               })}
@@ -489,43 +489,43 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Data Health Summary */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-fade-in-up stagger-8">
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
         <SH title="System Health" description="Quick pulse check" />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Link
             href="/admin/integrity"
-            className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50"
+            className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
             <div className="flex size-8 items-center justify-center rounded-full bg-emerald-100">
               <Target className="size-4 text-emerald-500" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-slate-700">Integrity</div>
-              <div className="text-[10px] text-slate-500">View scan results</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)]">Integrity</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">View scan results</div>
             </div>
           </Link>
           <a
             href="/admin/backups"
-            className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50"
+            className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
             <div className="flex size-8 items-center justify-center rounded-full bg-blue-100">
               <ClipboardList className="size-4 text-blue-500" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-slate-700">Backups</div>
-              <div className="text-[10px] text-slate-500">Manage backups</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)]">Backups</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">Manage backups</div>
             </div>
           </a>
           <a
             href="/admin/maintenance"
-            className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50"
+            className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
             <div className="flex size-8 items-center justify-center rounded-full bg-amber-100">
               <Clock className="size-4 text-amber-500" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-slate-700">Maintenance</div>
-              <div className="text-[10px] text-slate-500">View job status</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)]">Maintenance</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">View job status</div>
             </div>
           </a>
         </div>

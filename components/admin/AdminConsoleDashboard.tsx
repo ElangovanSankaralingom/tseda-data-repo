@@ -35,7 +35,7 @@ function HealthDot({ status, size = "sm" }: { status: HealthStatus; size?: "sm" 
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="mb-4">
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2>
     </div>
   );
 }
@@ -49,14 +49,14 @@ function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) 
   return (
     <Link
       href={card.href}
-      className={`group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+      className={`group flex items-start gap-4 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
     >
       <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${card.accentBg} transition-transform duration-200 group-hover:scale-110`}>
         <Icon className={`size-6 ${card.accent}`} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-base font-semibold text-slate-900">{card.title}</span>
+          <span className="text-base font-semibold text-[var(--color-text-primary)]">{card.title}</span>
           {card.badge && card.badge > 0 ? (
             <span className={`flex size-5 items-center justify-center rounded-full text-xs font-bold text-white ${card.badgeColor ?? "bg-amber-500"} ${card.badgeColor === "bg-amber-500" ? "animate-subtle-pulse" : ""}`}>
               {card.badge}
@@ -66,9 +66,9 @@ function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) 
             <span className={`size-2.5 rounded-full ${card.badgeColor ?? "bg-red-500"} animate-subtle-pulse`} />
           ) : null}
         </div>
-        <p className="mt-0.5 text-sm text-slate-500 line-clamp-1">{card.description}</p>
+        <p className="mt-0.5 text-sm text-[var(--color-text-secondary)] line-clamp-1">{card.description}</p>
       </div>
-      <ChevronRight className="mt-1 size-5 shrink-0 text-slate-400 transition-all duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
+      <ChevronRight className="mt-1 size-5 shrink-0 text-[var(--color-text-muted)] transition-all duration-200 group-hover:translate-x-1 group-hover:text-[var(--color-text-secondary)]" />
     </Link>
   );
 }
@@ -220,7 +220,7 @@ export default function AdminConsoleDashboard({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-xl border border-slate-200 bg-white animate-pulse" />
+            <div key={i} className="h-24 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] animate-pulse" />
           ))}
         </div>
       </div>
