@@ -16,6 +16,7 @@ import { useConfirmation } from "@/components/confirmations/ConfirmationProvider
 import Toast from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 import { isMasterAdmin } from "@/lib/admin";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   adminHome,
   dashboard,
@@ -90,6 +91,7 @@ export default function ShellClient({
   const [toast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [menuProfile, setMenuProfile] = useState<ProfileSummary | null>(null);
   const scrolled = useScrolled(0);
+  const { t } = useTranslation();
 
   const [adminBellOpen, setAdminBellOpen] = useState(false);
   const [userBellOpen, setUserBellOpen] = useState(false);
@@ -225,10 +227,10 @@ export default function ShellClient({
 
           {/* Center: Navigation Pills */}
           <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
-            <HeaderNavPill href={dashboard()} icon={LayoutDashboard} label="Dashboard" active={isActive(dashboard())} />
-            <HeaderNavPill href={dataEntryHome()} icon={ClipboardList} label="Data Entry" active={isActive(dataEntryHome())} />
+            <HeaderNavPill href={dashboard()} icon={LayoutDashboard} label={t('nav.dashboard')} active={isActive(dashboard())} />
+            <HeaderNavPill href={dataEntryHome()} icon={ClipboardList} label={t('nav.dataEntry')} active={isActive(dataEntryHome())} />
             {canAccessAdmin && (
-              <HeaderNavPill href={adminHome()} icon={Shield} label="Admin" active={isActive(adminHome())} />
+              <HeaderNavPill href={adminHome()} icon={Shield} label={t('nav.admin')} active={isActive(adminHome())} />
             )}
           </nav>
 

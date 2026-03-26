@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { type FileMetaLike } from "./entryComponentTypes";
 
 type UploadFieldProps = {
@@ -57,6 +58,7 @@ export default function UploadField({
   showValidationError = false,
   validationMessage,
 }: UploadFieldProps) {
+  const { t } = useTranslation();
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const neutralHelper = useMemo(() => {
     if (needsEntry) return "Save the entry first to upload files.";
@@ -83,12 +85,12 @@ export default function UploadField({
                 rel="noreferrer"
                 className={getButtonClass("context")}
               >
-                Preview
+                {t('entry.viewPdf')}
               </a>
             </div>
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground">Not uploaded</div>
+          <div className="text-xs text-muted-foreground">{t('entry.uploadHint')}</div>
         )
       ) : (
         <>
@@ -125,7 +127,7 @@ export default function UploadField({
                   rel="noreferrer"
                   className={getButtonClass("context")}
                 >
-                  Preview
+                  {t('entry.viewPdf')}
                 </a>
                 <ActionButton
                   role="destructive"
@@ -135,14 +137,14 @@ export default function UploadField({
                       title: "Remove uploaded file?",
                       description:
                         "This removes the currently uploaded file from this entry. You can upload a replacement afterward.",
-                      confirmLabel: "Remove",
-                      cancelLabel: "Cancel",
+                      confirmLabel: t('entry.delete'),
+                      cancelLabel: t('entry.cancel'),
                       variant: "destructive",
                       onConfirm: onDelete,
                     })
                   }
                 >
-                  Delete
+                  {t('entry.delete')}
                 </ActionButton>
               </>
             ) : null}

@@ -2,6 +2,7 @@
 
 import BackTo from "@/components/nav/BackTo";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 import {
   getCategoryConfig,
@@ -33,13 +34,6 @@ type EntryShellProps = {
   unsavedLabel?: string;
 };
 
-function getModeTitle(mode: EntryShellMode) {
-  if (mode === "new") return "New Entry";
-  if (mode === "edit") return "Edit Entry";
-  if (mode === "view") return "View Entry";
-  return "Entries";
-}
-
 export default function EntryShell({
   category,
   mode,
@@ -57,9 +51,11 @@ export default function EntryShell({
   showUnsavedChanges = false,
   unsavedLabel = "Unsaved changes",
 }: EntryShellProps) {
+  const { t } = useTranslation();
   const config = getCategoryConfig(category);
   const entryTitle = entry ? getCategoryTitle(entry, category) : "";
-  const resolvedTitle = title?.trim() || entryTitle || getModeTitle(mode);
+  const modeTitle = mode === "new" ? t('entry.newEntry') : mode === "edit" ? t('entry.editEntry') : mode === "view" ? "View Entry" : "Entries";
+  const resolvedTitle = title?.trim() || entryTitle || modeTitle;
   const resolvedSubtitle = subtitle ?? config.subtitle ?? "";
   const statusValue =
     status ??
@@ -82,7 +78,7 @@ export default function EntryShell({
             </span>
             {mode === "view" ? (
               <span className="inline-flex items-center rounded-full border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">
-                Preview
+                {t('entry.viewPdf')}
               </span>
             ) : null}
           </div>

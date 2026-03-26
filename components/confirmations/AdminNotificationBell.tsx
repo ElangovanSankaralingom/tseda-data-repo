@@ -15,6 +15,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type { AdminNotification, AdminNotificationType } from "@/lib/confirmations/types";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const TYPE_CONFIG: Record<
   AdminNotificationType,
@@ -54,6 +55,7 @@ export default function AdminNotificationBell({
   onPanelToggle?: (isOpen: boolean) => void;
   forceClose?: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<AdminNotificationWithRead[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -183,7 +185,7 @@ export default function AdminNotificationBell({
         }}
         className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-indigo-50" : "hover:bg-[var(--color-dropdown-hover)]"}`}
         aria-label={`Admin Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
-        title="Admin Notifications"
+        title={t('notification.adminTitle')}
       >
         <ShieldAlert className={`size-[18px] ${unreadCount > 0 ? "text-indigo-600 fill-indigo-100" : "text-indigo-300"}`} />
         {unreadCount > 0 && (
@@ -202,7 +204,7 @@ export default function AdminNotificationBell({
           <div className="flex items-center justify-between border-b border-indigo-100 bg-indigo-50/50 px-4 py-3">
             <div className="flex items-center gap-2">
               <Shield className="size-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Admin Notifications</h3>
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{t('notification.adminTitle')}</h3>
               {unreadCount > 0 && (
                 <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
                   {unreadCount}
@@ -215,7 +217,7 @@ export default function AdminNotificationBell({
                 onClick={() => void markAllRead()}
                 className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors"
               >
-                Mark all read
+                {t('notification.markAllRead')}
               </button>
             )}
           </div>
@@ -225,8 +227,8 @@ export default function AdminNotificationBell({
             {notifications.length === 0 && loaded && (
               <div className="flex flex-col items-center justify-center py-12">
                 <ShieldAlert className="size-8 text-indigo-200 mb-3" />
-                <div className="text-sm font-medium text-[var(--color-text-secondary)]">No admin alerts</div>
-                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Everything&apos;s running smooth</p>
+                <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t('notification.adminNoAlerts')}</div>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t('notification.adminAllSmooth')}</p>
               </div>
             )}
             {notifications.map((n) => {

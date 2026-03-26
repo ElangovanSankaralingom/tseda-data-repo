@@ -21,6 +21,7 @@ import {
   profile,
 } from "@/lib/entryNavigation";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type NavItemProps = {
   href: string;
@@ -97,6 +98,7 @@ export default function SidebarDrawer({
   onSignOut: () => void;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   function isActive(href: string) {
     return pathname === href || pathname?.startsWith(href + "/");
@@ -161,7 +163,7 @@ export default function SidebarDrawer({
             <NavItem
               href={dashboard()}
               icon={LayoutDashboard}
-              label="Dashboard"
+              label={t('nav.dashboard')}
               active={isActive(dashboard())}
               onClick={onClose}
               delay={30 * navIndex++}
@@ -170,7 +172,7 @@ export default function SidebarDrawer({
             <NavItem
               href={dataEntryHome()}
               icon={ClipboardList}
-              label="Data Entry"
+              label={t('nav.dataEntry')}
               active={isActive(dataEntryHome()) && !isActive(dataEntrySearch())}
               onClick={onClose}
               delay={30 * navIndex++}
@@ -179,7 +181,7 @@ export default function SidebarDrawer({
             <NavItem
               href={dataEntrySearch()}
               icon={Search}
-              label="Search"
+              label={t('nav.search')}
               active={isActive(dataEntrySearch())}
               onClick={onClose}
               delay={30 * navIndex++}
@@ -188,7 +190,7 @@ export default function SidebarDrawer({
             <NavItem
               href={profile()}
               icon={User}
-              label="My Account"
+              label={t('nav.account')}
               active={isActive(profile())}
               onClick={onClose}
               delay={30 * navIndex++}
@@ -207,7 +209,7 @@ export default function SidebarDrawer({
                 <NavItem
                   href={adminHome()}
                   icon={Shield}
-                  label="Admin Console"
+                  label={t('nav.admin')}
                   active={isActive(adminHome())}
                   onClick={onClose}
                   delay={30 * navIndex++}
@@ -223,7 +225,7 @@ export default function SidebarDrawer({
           <NavItem
             href="/settings/appearance"
             icon={Palette}
-            label="Appearance"
+            label={t('nav.appearance')}
             active={isActive("/settings/appearance")}
             onClick={onClose}
             delay={0}
@@ -250,7 +252,7 @@ export default function SidebarDrawer({
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
           >
             <LogOut className="size-5" />
-            <span className="flex-1 text-left">Sign out</span>
+            <span className="flex-1 text-left">{t('nav.signOut')}</span>
           </button>
         </div>
       </div>

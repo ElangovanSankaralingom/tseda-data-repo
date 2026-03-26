@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Banknote, BanknoteX } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -151,6 +152,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
     userDisplayName,
   } = ctx;
 
+  const { fieldLabel } = useTranslation();
   const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
@@ -173,7 +175,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
+        <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined}>
           <SelectDropdown
             value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
@@ -184,7 +186,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           />
         </Field>
 
-        <Field label="Year of Study" error={submitted ? errors.yearOfStudy : undefined}>
+        <Field label={fieldLabel('yearOfStudy')} error={submitted ? errors.yearOfStudy : undefined}>
           <SelectDropdown
             value={form.yearOfStudy || ""}
             onChange={(value) =>
@@ -201,7 +203,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           />
         </Field>
 
-        <Field label="Current Semester" error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}>
+        <Field label={fieldLabel('currentSemester')} error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}>
           <SelectDropdown
             value={form.currentSemester === null ? "" : String(form.currentSemester)}
             onChange={(value) => setForm((c) => withAcademicProgressionCompatibility({ ...c, currentSemester: value ? Number(value) : null }) as CaseStudyEntry)}
@@ -212,11 +214,11 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           />
         </Field>
 
-        <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
+        <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined}>
           <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
         </Field>
 
-        <Field label="Ending Date" error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
+        <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
           <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
         </Field>
 
@@ -224,7 +226,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
         </Field>
 
-        <Field label="Place of Visit" error={submitted ? errors.placeOfVisit : undefined}>
+        <Field label={fieldLabel('placeOfVisit')} error={submitted ? errors.placeOfVisit : undefined}>
           <input
             value={form.placeOfVisit || ""}
             onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
@@ -237,7 +239,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           />
         </Field>
 
-        <Field label="Purpose of Visit" error={submitted ? errors.purposeOfVisit : undefined}>
+        <Field label={fieldLabel('purposeOfVisit')} error={submitted ? errors.purposeOfVisit : undefined}>
           <input
             value={form.purposeOfVisit || ""}
             onChange={(e) => setForm((c) => ({ ...c, purposeOfVisit: e.target.value }))}
@@ -287,7 +289,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label="Sponsored" error={submitted ? errors.sponsored : undefined}>
+        <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
           <SelectDropdown
             value={form.sponsored || ""}
             onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
@@ -300,7 +302,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
         {form.sponsored === "Yes" && (
           <>
-            <Field label="Name of the Funding Agency" error={submitted ? errors.fundingAgency : undefined}>
+            <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
               <input
                 value={form.fundingAgency || ""}
                 onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
@@ -313,7 +315,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
               />
             </Field>
 
-            <Field label="Amount of Funding (₹) — optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -335,7 +337,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
             <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
               <UploadFieldMulti
                 key={`${form.id}-permissionLetter`}
-                title="Permission Letter"
+                title={fieldLabel('permissionLetter')}
                 value={form.permissionLetter}
                 onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, permissionLetter: [...c.permissionLetter, meta] }) }); }}
                 onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, permissionLetter: c.permissionLetter.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
@@ -348,7 +350,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
               <UploadFieldMulti
                 key={`${form.id}-travelPlan`}
-                title="Travel Plan"
+                title={fieldLabel('travelPlan')}
                 value={form.travelPlan}
                 onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, travelPlan: [...c.travelPlan, meta] }) }); }}
                 onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, travelPlan: c.travelPlan.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
@@ -361,7 +363,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
               <UploadFieldMulti
                 key={`${form.id}-geotaggedPhotos`}
-                title="Geotagged Photos"
+                title={fieldLabel('geotaggedPhotos')}
                 value={form.geotaggedPhotos}
                 onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, geotaggedPhotos: [...c.geotaggedPhotos, meta] }) }); }}
                 onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, geotaggedPhotos: c.geotaggedPhotos.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
@@ -374,7 +376,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
               <UploadFieldMulti
                 key={`${form.id}-report`}
-                title="Report"
+                title={fieldLabel('report')}
                 value={form.report}
                 onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, report: [...c.report, meta] }) }); }}
                 onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, report: c.report.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
@@ -386,7 +388,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
               <UploadFieldMulti
                 key={`${form.id}-feedback`}
-                title="Feedback from Students and Industry"
+                title={fieldLabel('feedback')}
                 value={form.feedback}
                 onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, feedback: [...c.feedback, meta] }) }); }}
                 onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, feedback: c.feedback.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
@@ -398,7 +400,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
               <UploadFieldMulti
                 key={`${form.id}-advanceClosure`}
-                title="Advance Closure"
+                title={fieldLabel('advanceClosure')}
                 value={form.advanceClosure}
                 onUploaded={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, advanceClosure: [...c.advanceClosure, meta] }) }); }}
                 onDeleted={async (meta) => { await persistCurrentMutation({ buildNextEntry: (c) => ({ ...c, advanceClosure: c.advanceClosure.filter((item) => item.storedPath !== meta.storedPath) }) }); }}
@@ -408,7 +410,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
                 onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
               />
 
-              <Field label="Number of Participants">
+              <Field label={fieldLabel('numberOfParticipants')}>
                 <input
                   type="number"
                   min="0"

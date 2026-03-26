@@ -14,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { PersistentNotification, PersistentNotificationType } from "@/lib/confirmations/types";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const TYPE_CONFIG: Record<
   PersistentNotificationType,
@@ -49,6 +50,7 @@ export default function NotificationBell({
   onPanelToggle?: (isOpen: boolean) => void;
   forceClose?: boolean;
 } = {}) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<PersistentNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -176,7 +178,7 @@ export default function NotificationBell({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--color-divider)] px-4 py-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Notifications</h3>
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{t('notification.title')}</h3>
               {unreadCount > 0 && (
                 <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                   {unreadCount}
@@ -189,7 +191,7 @@ export default function NotificationBell({
                 onClick={() => void markAllRead()}
                 className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
               >
-                Mark all read
+                {t('notification.markAllRead')}
               </button>
             )}
           </div>
@@ -199,9 +201,9 @@ export default function NotificationBell({
             {notifications.length === 0 && loaded && (
               <div className="flex flex-col items-center justify-center py-12">
                 <Bell className="size-8 text-[var(--color-text-muted)] mb-3" />
-                <div className="text-sm font-medium text-[var(--color-text-secondary)]">No notifications yet</div>
+                <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t('notification.noNotifications')}</div>
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)] text-center px-8">
-                  You&apos;ll see updates about your entries and edit requests here
+                  {t('notification.noNotificationsHint')}
                 </p>
               </div>
             )}

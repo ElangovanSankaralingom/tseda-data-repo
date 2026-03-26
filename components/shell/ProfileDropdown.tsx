@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import { profile } from "@/lib/entryNavigation";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function ProfileDropdown({
   name,
@@ -21,6 +22,7 @@ export default function ProfileDropdown({
   isAdmin: boolean;
   onSignOut: () => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +102,7 @@ export default function ProfileDropdown({
             className="mx-1 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)] cursor-pointer"
           >
             <User className="size-4" />
-            My Account
+            {t('nav.account')}
           </Link>
 
           <div className="my-1 h-px bg-[var(--color-card-border)]" />
@@ -116,7 +118,7 @@ export default function ProfileDropdown({
             className="mx-1 flex w-[calc(100%-0.5rem)] items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
           >
             <LogOut className="size-4" />
-            Sign Out
+            {t('nav.signOut')}
           </button>
         </div>
       )}

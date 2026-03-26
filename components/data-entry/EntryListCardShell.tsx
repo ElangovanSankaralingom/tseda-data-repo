@@ -9,6 +9,7 @@ import {
   Unlock,
   Zap,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { LucideIcon } from "lucide-react";
 import { getGroupCardClass } from "@/components/entry/entryCardStyles";
 import type { EntryListGroup } from "@/lib/entryCategorization";
@@ -54,10 +55,12 @@ const PROGRESS_BAR_COLORS: Record<string, string> = {
 };
 
 function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
+  const { t } = useTranslation();
+
   if (group === "in_the_works") {
     return (
       <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-        Draft
+        {t('entry.draft')}
       </span>
     );
   }
@@ -65,7 +68,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
   if (group === "locked_in") {
     return (
       <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-        Finalized
+        {t('entry.finalized')}
       </span>
     );
   }
@@ -73,7 +76,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
   if (group === "under_review") {
     return (
       <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
-        Edit Requested
+        {t('entry.editRequested')}
       </span>
     );
   }
