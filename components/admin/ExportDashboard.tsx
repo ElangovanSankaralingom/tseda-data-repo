@@ -152,8 +152,8 @@ export default function ExportDashboard({
     <div className="space-y-6">
       <div>
         <div className="mb-3">
-          <div className="text-sm font-semibold text-slate-800">Quick Exports</div>
-          <div className="text-xs text-slate-500">One-click exports for common needs</div>
+          <div className="text-sm font-semibold text-[var(--color-text-primary)]">Quick Exports</div>
+          <div className="text-xs text-[var(--color-text-secondary)]">One-click exports for common needs</div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {templates.map((t, i) => (
@@ -168,26 +168,26 @@ export default function ExportDashboard({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-fade-in-up">
+      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-6 animate-fade-in-up">
         <div className="mb-5">
-          <div className="text-sm font-semibold text-slate-800">Custom Export</div>
-          <div className="text-xs text-slate-500">Build exactly the export you need</div>
+          <div className="text-sm font-semibold text-[var(--color-text-primary)]">Custom Export</div>
+          <div className="text-xs text-[var(--color-text-secondary)]">Build exactly the export you need</div>
         </div>
 
         <div className="space-y-5">
           <div>
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Format</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">Format</div>
             <FormatSelector value={format} onChange={setFormat} />
           </div>
 
           <div>
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Scope</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">Scope</div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setAllUsers(true)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                  allUsers ? "bg-[#1E3A5F] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  allUsers ? "bg-[var(--color-button-primary-bg)] text-white" : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                 }`}
               >
                 All Users
@@ -196,7 +196,7 @@ export default function ExportDashboard({
                 type="button"
                 onClick={() => setAllUsers(false)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                  !allUsers ? "bg-[#1E3A5F] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  !allUsers ? "bg-[var(--color-button-primary-bg)] text-white" : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                 }`}
               >
                 Specific User
@@ -226,15 +226,15 @@ export default function ExportDashboard({
             <button
               type="button"
               onClick={() => setShowFilters((p) => !p)}
-              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+              className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               <ChevronDown className={`size-3.5 transition-transform duration-200 ${showFilters ? "rotate-0" : "-rotate-90"}`} />
               Add Filters (optional)
             </button>
             {showFilters ? (
-              <div className="mt-3 space-y-3 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+              <div className="mt-3 space-y-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4">
                 <div>
-                  <div className="mb-1 text-xs text-slate-500">Status</div>
+                  <div className="mb-1 text-xs text-[var(--color-text-secondary)]">Status</div>
                   <div className="flex flex-wrap gap-1.5">
                     {statusOptions.map((s) => (
                       <button
@@ -243,8 +243,8 @@ export default function ExportDashboard({
                         onClick={() => toggleStatus(s.key)}
                         className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
                           selectedStatuses.includes(s.key)
-                            ? "bg-[#1E3A5F] text-white"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            ? "bg-[var(--color-button-primary-bg)] text-white"
+                            : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                         }`}
                       >
                         {s.label}
@@ -254,21 +254,21 @@ export default function ExportDashboard({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="space-y-1 text-xs">
-                    <span className="text-slate-500">From Date</span>
+                    <span className="text-[var(--color-text-secondary)]">From Date</span>
                     <input
                       type="date"
                       value={fromDate}
                       onChange={(e) => setFromDate(e.target.value)}
-                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+                      className="h-9 w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm"
                     />
                   </label>
                   <label className="space-y-1 text-xs">
-                    <span className="text-slate-500">To Date</span>
+                    <span className="text-[var(--color-text-secondary)]">To Date</span>
                     <input
                       type="date"
                       value={toDate}
                       onChange={(e) => setToDate(e.target.value)}
-                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+                      className="h-9 w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm"
                     />
                   </label>
                 </div>
@@ -280,13 +280,13 @@ export default function ExportDashboard({
             <button
               type="button"
               onClick={() => setShowFields((p) => !p)}
-              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+              className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               <ChevronDown className={`size-3.5 transition-transform duration-200 ${showFields ? "rotate-0" : "-rotate-90"}`} />
               Choose Fields ({selectedFields.length}/{fieldOptions.length})
             </button>
             {showFields ? (
-              <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+              <div className="mt-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4">
                 <div className="mb-2 flex gap-2">
                   <button
                     type="button"
@@ -298,14 +298,14 @@ export default function ExportDashboard({
                   <button
                     type="button"
                     onClick={() => setSelectedFields([])}
-                    className="text-xs text-slate-500 hover:text-slate-700"
+                    className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                   >
                     Clear
                   </button>
                 </div>
                 <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
                   {fieldOptions.map((f) => (
-                    <label key={f.key} className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                    <label key={f.key} className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
                       <input
                         type="checkbox"
                         checked={selectedFields.includes(f.key)}
@@ -320,21 +320,21 @@ export default function ExportDashboard({
             ) : null}
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4">
             {loadingPreview ? (
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                 <RefreshCw className="size-3 animate-spin" /> Loading preview...
               </div>
             ) : preview ? (
               <div className="space-y-2">
-                <div className="text-sm text-slate-700">
+                <div className="text-sm text-[var(--color-text-primary)]">
                   This export will include <span className="font-semibold"><AnimatedCount value={preview.recordCount} /></span> entries
                   from <span className="font-semibold">{preview.userCount}</span> user{preview.userCount !== 1 ? "s" : ""}
                 </div>
                 {Object.keys(preview.statusBreakdown).length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {Object.entries(preview.statusBreakdown).map(([status, count]) => (
-                      <span key={status} className="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600">
+                      <span key={status} className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">
                         {status}: {count}
                       </span>
                     ))}
@@ -342,7 +342,7 @@ export default function ExportDashboard({
                 ) : null}
               </div>
             ) : (
-              <div className="text-xs text-slate-500">Select options above to see a preview</div>
+              <div className="text-xs text-[var(--color-text-secondary)]">Select options above to see a preview</div>
             )}
           </div>
 
@@ -352,8 +352,8 @@ export default function ExportDashboard({
             onClick={handleCustomExport}
             className={`w-full rounded-xl px-6 py-3 text-sm font-medium shadow-lg transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${
               exportSuccess
-                ? "bg-emerald-600 text-white"
-                : "bg-[#1E3A5F] text-white hover:bg-[#162d4a]"
+                ? "bg-[var(--color-generate-bg)] text-white"
+                : "bg-[var(--color-button-primary-bg)] text-white hover:bg-[var(--color-button-primary-hover)]"
             }`}
           >
             {exporting ? (
@@ -375,9 +375,9 @@ export default function ExportDashboard({
       </div>
 
       {history.length > 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Clock className="size-4 text-slate-500" />
+        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+            <Clock className="size-4 text-[var(--color-text-secondary)]" />
             Recent Exports
           </div>
           {history.map((entry, i) => (
@@ -385,8 +385,8 @@ export default function ExportDashboard({
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center animate-fade-in-up">
-          <div className="text-sm text-slate-500">No exports yet — create your first one above!</div>
+        <div className="rounded-2xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-6 text-center animate-fade-in-up">
+          <div className="text-sm text-[var(--color-text-secondary)]">No exports yet — create your first one above!</div>
         </div>
       )}
     </div>

@@ -20,15 +20,15 @@ export default function FilterTabs({ tabs, activeKey, onChange, activeClassName 
           className={cn(
             "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
             tab.key === activeKey
-              ? (activeClassName ?? "bg-[#1E3A5F] text-white shadow-sm") + " scale-100"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200 scale-[0.97] hover:scale-100"
+              ? (activeClassName ?? "bg-[var(--color-button-primary-bg)] text-white shadow-sm") + " scale-100"
+              : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] scale-[0.97] hover:scale-100"
           )}
         >
           {tab.label}
           {tab.count !== undefined && tab.count > 0 ? (
             <span className={cn(
               "ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 text-xs transition-colors duration-200",
-              tab.key === activeKey ? "bg-white/20" : "bg-slate-200"
+              tab.key === activeKey ? "bg-white/20" : "bg-[var(--color-dropdown-hover)]"
             )}>
               {tab.count}
             </span>

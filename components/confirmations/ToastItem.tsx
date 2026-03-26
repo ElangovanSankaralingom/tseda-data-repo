@@ -130,8 +130,8 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
         exiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
       } ${
         isUndo
-          ? "bg-[#1E3A5F] text-white"
-          : "border border-slate-200 border-l-4 bg-white " + config.border
+          ? "bg-[var(--color-button-primary-bg)] text-white"
+          : "border border-[var(--color-card-border)] border-l-4 bg-[var(--color-toast-bg)] " + config.border
       }`}
       style={{ minWidth: 320, maxWidth: 440 }}
     >
@@ -151,11 +151,11 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <div className={`text-sm font-semibold ${isUndo ? "text-white" : "text-slate-900"}`}>
+          <div className={`text-sm font-semibold ${isUndo ? "text-white" : "text-[var(--color-text-primary)]"}`}>
             {toast.title}
           </div>
           {toast.message && (
-            <p className={`mt-0.5 text-xs ${isUndo ? "text-slate-300" : "text-slate-500"}`}>
+            <p className={`mt-0.5 text-xs ${isUndo ? "text-slate-300" : "text-[var(--color-text-secondary)]"}`}>
               {toast.message}
             </p>
           )}
@@ -169,7 +169,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
             className={`shrink-0 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               isUndo
                 ? "bg-white text-slate-900 hover:bg-slate-100"
-                : "text-slate-600 hover:bg-slate-100"
+                : "text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
             }`}
           >
             {toast.action.label}
@@ -182,7 +182,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
             type="button"
             onClick={dismiss}
             className={`shrink-0 rounded p-0.5 transition-colors ${
-              isUndo ? "text-slate-500 hover:text-white" : "text-slate-500 hover:text-slate-600"
+              isUndo ? "text-[var(--color-text-secondary)] hover:text-white" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
             aria-label="Dismiss"
           >

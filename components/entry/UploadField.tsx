@@ -33,8 +33,8 @@ function ProgressBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, value));
 
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-      <div className="h-full rounded-full bg-[#1E3A5F]" style={{ width: `${pct}%` }} />
+    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-card-border)]">
+      <div className="h-full rounded-full bg-[var(--color-button-primary-bg)]" style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -66,8 +66,8 @@ export default function UploadField({
   }, [meta, needsEntry, pendingFile]);
 
   return (
-    <div className="space-y-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-5 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm">
-      <div className="text-sm font-semibold text-slate-700">{title}</div>
+    <div className="space-y-3 rounded-xl border-2 border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)]/50 p-5 transition-all duration-200 hover:border-[var(--color-input-border)] hover:bg-[var(--color-body-bg)] hover:shadow-sm">
+      <div className="text-sm font-semibold text-[var(--color-text-secondary)]">{title}</div>
 
       {mode === "view" ? (
         meta ? (

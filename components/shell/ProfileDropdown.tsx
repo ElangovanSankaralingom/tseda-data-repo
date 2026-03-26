@@ -47,13 +47,13 @@ export default function ProfileDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors hover:bg-slate-100 cursor-pointer"
+        className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors hover:bg-[var(--color-dropdown-hover)] cursor-pointer"
         aria-label="Account menu"
         aria-haspopup="menu"
         aria-expanded={open}
       >
         {/* Avatar */}
-        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-slate-100">
+        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--color-card-border)]">
           {photoUrl ? (
             <span
               className="h-full w-full bg-cover bg-center bg-no-repeat"
@@ -67,9 +67,9 @@ export default function ProfileDropdown({
         </span>
         {/* Name + chevron (hidden on mobile) */}
         <span className="hidden items-center gap-1 sm:flex">
-          <span className="max-w-[120px] truncate text-sm font-medium text-slate-700">{name}</span>
+          <span className="max-w-[120px] truncate text-sm font-medium text-[var(--color-text-primary)]">{name}</span>
           <ChevronDown className={cn(
-            "size-3 text-slate-500 transition-transform duration-200",
+            "size-3 text-[var(--color-text-secondary)] transition-transform duration-200",
             open && "rotate-180"
           )} />
         </span>
@@ -79,12 +79,12 @@ export default function ProfileDropdown({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-slate-200 bg-white py-2 shadow-2xl animate-scale-in"
+          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-2 shadow-2xl animate-scale-in"
         >
           {/* User info */}
-          <div className="border-b border-slate-100 px-4 py-3">
-            <div className="text-sm font-semibold text-slate-900">{name}</div>
-            <div className="truncate font-mono text-xs text-slate-500">{email}</div>
+          <div className="border-b border-[var(--color-card-border)] px-4 py-3">
+            <div className="text-sm font-semibold text-[var(--color-text-primary)]">{name}</div>
+            <div className="truncate font-mono text-xs text-[var(--color-text-secondary)]">{email}</div>
             {isAdmin && (
               <span className="mt-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
                 Admin
@@ -97,13 +97,13 @@ export default function ProfileDropdown({
             href={profile()}
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="mx-1 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+            className="mx-1 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)] cursor-pointer"
           >
             <User className="size-4" />
             My Account
           </Link>
 
-          <div className="my-1 h-px bg-slate-100" />
+          <div className="my-1 h-px bg-[var(--color-card-border)]" />
 
           {/* Sign out */}
           <button

@@ -154,7 +154,7 @@ export default function AdminConfirmationsClient() {
           onClick={() => setActiveTab("pending")}
           className={`px-4 py-2 text-sm transition-colors ${
             activeTab === "pending"
-              ? "border-b-2 border-[#1E3A5F] text-[#1E3A5F] font-medium"
+              ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)] font-medium"
               : "text-slate-500 hover:text-slate-700"
           }`}
         >
@@ -164,7 +164,7 @@ export default function AdminConfirmationsClient() {
           onClick={() => setActiveTab("history")}
           className={`px-4 py-2 text-sm transition-colors ${
             activeTab === "history"
-              ? "border-b-2 border-[#1E3A5F] text-[#1E3A5F] font-medium"
+              ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)] font-medium"
               : "text-slate-500 hover:text-slate-700"
           }`}
         >

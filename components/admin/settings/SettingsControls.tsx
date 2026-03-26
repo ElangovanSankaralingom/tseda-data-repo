@@ -47,12 +47,12 @@ export function Toggle({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-text-primary)]/20 disabled:cursor-not-allowed disabled:opacity-50 ${
         checked
           ? dangerous
             ? "bg-red-500"
-            : "bg-[#1E3A5F]"
-          : "bg-slate-200"
+            : "bg-[var(--color-button-primary-bg)]"
+          : "bg-[var(--color-dropdown-hover)]"
       }`}
     >
       <span
@@ -116,7 +116,7 @@ export function NumberInput({
           type="button"
           disabled={disabled || (min !== undefined && value <= min)}
           onClick={() => onChange(Math.max(min ?? -Infinity, value - 1))}
-          className="flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-40"
+          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-card-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           -
         </button>
@@ -130,20 +130,20 @@ export function NumberInput({
           onBlur={commit}
           onKeyDown={(e) => e.key === "Enter" && commit()}
           className={`h-8 w-16 rounded-lg border px-2 text-center text-sm outline-none transition-colors ${
-            error ? "border-red-400 text-red-600" : "border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+            error ? "border-red-400 text-red-600" : "border-[var(--color-card-border)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           }`}
         />
         <button
           type="button"
           disabled={disabled || (max !== undefined && value >= max)}
           onClick={() => onChange(Math.min(max ?? Infinity, value + 1))}
-          className="flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-40"
+          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-card-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           +
         </button>
       </div>
       {(error || (min !== undefined && max !== undefined)) && (
-        <div className={`text-xs ${error ? "text-red-500" : "text-slate-500"}`}>
+        <div className={`text-xs ${error ? "text-red-500" : "text-[var(--color-text-secondary)]"}`}>
           {error || `Range: ${min} – ${max}`}
         </div>
       )}
@@ -188,7 +188,7 @@ export function StringInput({
       onChange={(e) => setLocal(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => e.key === "Enter" && commit()}
-      className="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-50"
+      className="h-9 w-full rounded-lg border border-[var(--color-card-border)] px-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10 disabled:bg-[var(--color-dropdown-hover)]"
     />
   );
 }
@@ -272,13 +272,13 @@ export function SettingRow({
     <>
       <div
         className={`group relative rounded-xl border p-4 transition-all duration-300 ${
-          def.dangerous ? "border-l-4 border-l-red-400 border-slate-200" : "border-slate-200"
+          def.dangerous ? "border-l-4 border-l-red-400 border-[var(--color-card-border)]" : "border-[var(--color-card-border)]"
         } ${
           status === "saved"
             ? "bg-emerald-50/60"
             : status === "error"
             ? "bg-red-50/60"
-            : "bg-white hover:border-slate-300"
+            : "bg-[var(--color-card-bg)] hover:border-[var(--color-text-muted)]"
         }`}
       >
         <div className={`flex ${isInline ? "items-center justify-between gap-4" : "flex-col gap-3"}`}>
@@ -288,7 +288,7 @@ export function SettingRow({
               {!isDefault && (
                 <span className="size-1.5 rounded-full bg-amber-400 animate-subtle-pulse" title="Changed from default" />
               )}
-              <span className="text-sm font-medium text-slate-900">{def.label}</span>
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">{def.label}</span>
               {def.requiresRestart && (
                 <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
                   Restart required
@@ -298,7 +298,7 @@ export function SettingRow({
                 <Check className="size-3.5 text-emerald-500 animate-fade-in" />
               )}
             </div>
-            <p className="mt-0.5 text-xs text-slate-500">{def.description}</p>
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{def.description}</p>
             {def.dangerous && (
               <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                 <AlertTriangle className="size-3" />
@@ -308,7 +308,7 @@ export function SettingRow({
             {!isDefault && (
               <button
                 onClick={handleReset}
-                className="mt-1 text-xs text-slate-500 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
+                className="mt-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors opacity-0 group-hover:opacity-100"
               >
                 Reset to default ({JSON.stringify(def.default)})
               </button>
@@ -353,9 +353,9 @@ export function SettingRow({
                   aria-label="Color picker"
                   value={value as string}
                   onChange={(e) => handleSave(e.target.value)}
-                  className="size-8 cursor-pointer rounded border border-slate-200"
+                  className="size-8 cursor-pointer rounded border border-[var(--color-card-border)]"
                 />
-                <span className="font-mono text-xs text-slate-500">{value as string}</span>
+                <span className="font-mono text-xs text-[var(--color-text-secondary)]">{value as string}</span>
               </div>
             )}
           </div>
@@ -363,7 +363,7 @@ export function SettingRow({
 
         {/* Meta */}
         {setting.lastChangedBy && (
-          <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-500">
+          <div className="mt-2 flex items-center gap-1 text-[10px] text-[var(--color-text-secondary)]">
             <Clock className="size-3" />
             Changed by {emailName(setting.lastChangedBy)}
             {setting.lastChangedAt && ` — ${formatRelative(setting.lastChangedAt)}`}

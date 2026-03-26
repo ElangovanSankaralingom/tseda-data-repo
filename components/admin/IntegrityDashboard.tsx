@@ -64,20 +64,20 @@ function HealthRing({ percentage, status }: { percentage: number; status: Integr
     status === "healthy" ? "stroke-emerald-500" :
     status === "warnings" ? "stroke-amber-500" :
     status === "critical" ? "stroke-red-500" :
-    "stroke-slate-200";
+    "stroke-[var(--color-card-border)]";
 
   const textColor =
     status === "healthy" ? "text-emerald-600" :
     status === "warnings" ? "text-amber-600" :
     status === "critical" ? "text-red-600" :
-    "text-slate-500";
+    "text-[var(--color-text-secondary)]";
 
   return (
     <div className="relative flex items-center justify-center">
       <svg width="180" height="180" className="-rotate-90">
         <circle
           cx="90" cy="90" r={radius}
-          fill="none" stroke="#e2e8f0" strokeWidth={stroke}
+          fill="none" stroke="var(--color-card-border)" strokeWidth={stroke}
         />
         <circle
           cx="90" cy="90" r={radius}
@@ -175,22 +175,22 @@ function CategoryCard({
 
   return (
     <div
-      className={`group border-l-2 ${statusBorderColor(status)} rounded-xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${def.accentRing} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+      className={`group border-l-2 ${statusBorderColor(status)} rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${def.accentRing} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
     >
       <div className="flex items-start gap-3">
         <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${def.iconBg} transition-transform duration-200 group-hover:scale-110`}>
           {def.icon}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-slate-800">{def.label}</div>
+          <div className="text-sm font-semibold text-[var(--color-text-primary)]">{def.label}</div>
           <div className="mt-1 flex items-center gap-1.5">
             <StatusIcon status={status} />
-            <span className="text-xs text-slate-600">
+            <span className="text-xs text-[var(--color-text-secondary)]">
               {status === "pass" ? def.passText : `${issues} ${def.failText}`}
             </span>
           </div>
           {checks > 0 ? (
-            <div className="mt-1 text-xs text-slate-500">{checks} checks run</div>
+            <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{checks} checks run</div>
           ) : null}
         </div>
       </div>
@@ -205,7 +205,7 @@ function ScanProgress() {
     <div className="flex flex-col items-center gap-4 py-8">
       <div className="relative flex items-center justify-center">
         <svg width="180" height="180" className="animate-spin" style={{ animationDuration: "3s" }}>
-          <circle cx="90" cy="90" r="70" fill="none" stroke="#e2e8f0" strokeWidth="8" />
+          <circle cx="90" cy="90" r="70" fill="none" stroke="var(--color-card-border)" strokeWidth="8" />
           <circle
             cx="90" cy="90" r="70"
             fill="none"
@@ -217,10 +217,10 @@ function ScanProgress() {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <RefreshCw className="size-6 text-blue-500 animate-spin" style={{ animationDuration: "2s" }} />
-          <span className="mt-1 text-xs font-medium text-slate-500">Scanning...</span>
+          <span className="mt-1 text-xs font-medium text-[var(--color-text-secondary)]">Scanning...</span>
         </div>
       </div>
-      <div className="text-sm text-slate-500">Checking all users and categories...</div>
+      <div className="text-sm text-[var(--color-text-secondary)]">Checking all users and categories...</div>
     </div>
   );
 }
@@ -233,12 +233,12 @@ function UserSummaryRow({ summary }: { summary: IntegrityReport["userSummaries"]
   const dotColor = hasErrors ? "bg-red-500" : hasWarnings ? "bg-amber-500" : "bg-emerald-500";
 
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 px-1 py-2 last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2 last:border-0">
       <div className={`size-2 shrink-0 rounded-full ${dotColor}`} />
-      <div className="min-w-0 flex-1 text-sm text-slate-700 truncate">
+      <div className="min-w-0 flex-1 text-sm text-[var(--color-text-primary)] truncate">
         {summary.userEmail}
       </div>
-      <div className="flex items-center gap-3 text-xs text-slate-500">
+      <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
         {summary.errorCount > 0 ? <span className="text-red-600">E:{summary.errorCount}</span> : null}
         {summary.warnCount > 0 ? <span className="text-amber-600">W:{summary.warnCount}</span> : null}
         {summary.infoCount > 0 ? <span>I:{summary.infoCount}</span> : null}
@@ -273,15 +273,15 @@ function HistoryRow({ report }: { report: IntegrityReport }) {
     : 100;
 
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 px-1 py-2.5 last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2.5 last:border-0">
       <div className={`size-2.5 shrink-0 rounded-full ${dotColor}`} />
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-slate-700">{pct}% healthy</div>
-        <div className="text-xs text-slate-500">
+        <div className="text-sm font-medium text-[var(--color-text-primary)]">{pct}% healthy</div>
+        <div className="text-xs text-[var(--color-text-secondary)]">
           {formatTimeAgo(report.runAt)} &middot; {totalIssues} issue{totalIssues !== 1 ? "s" : ""} &middot; {report.durationMs}ms
         </div>
       </div>
-      <div className="text-xs text-slate-500">
+      <div className="text-xs text-[var(--color-text-secondary)]">
         {report.usersScanned} user{report.usersScanned !== 1 ? "s" : ""}
       </div>
     </div>
@@ -389,7 +389,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       ) : null}
 
       {/* Hero: Health Ring + Actions */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-fade-in-up">
+      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-6 animate-fade-in-up">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
           {/* Ring */}
           <div className="shrink-0">
@@ -425,7 +425,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
             ) : null}
 
             {/* Health message */}
-            <div className="text-sm text-slate-500 mb-1">
+            <div className="text-sm text-[var(--color-text-secondary)] mb-1">
               {scanning
                 ? "Running full integrity scan..."
                 : getHealthMessage(report?.status ?? null, hasReport)}
@@ -433,12 +433,12 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
 
             {/* Sub stats */}
             {hasReport && !scanning ? (
-              <div className="text-xs text-slate-500 mb-4">
+              <div className="text-xs text-[var(--color-text-secondary)] mb-4">
                 {report.summary.passed} of {report.summary.totalChecks} checks passed &middot;{" "}
                 Scanned {formatTimeAgo(report.runAt)} &middot; {report.durationMs}ms
               </div>
             ) : !hasReport && !scanning ? (
-              <div className="text-xs text-slate-500 mb-4">Never scanned</div>
+              <div className="text-xs text-[var(--color-text-secondary)] mb-4">Never scanned</div>
             ) : null}
 
             {/* Action buttons */}
@@ -447,7 +447,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
                 type="button"
                 disabled={scanning}
                 onClick={() => void runScan()}
-                className="rounded-xl border border-[#1E3A5F] bg-[#1E3A5F] px-5 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-[#162d4a] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-[var(--color-primary)] bg-[var(--color-button-primary-bg)] px-5 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {scanning ? (
                   <span className="flex items-center gap-1.5">
@@ -497,13 +497,13 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
 
       {/* Per-User Results (collapsible) */}
       {hasReport && !scanning && report.userSummaries.length > 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <button
             type="button"
             onClick={() => setUsersExpanded((prev) => !prev)}
-            className="flex w-full items-center gap-2 text-sm font-semibold text-slate-800"
+            className="flex w-full items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]"
           >
-            {usersExpanded ? <ChevronDown className="size-4 text-slate-500" /> : <ChevronRight className="size-4 text-slate-500" />}
+            {usersExpanded ? <ChevronDown className="size-4 text-[var(--color-text-secondary)]" /> : <ChevronRight className="size-4 text-[var(--color-text-secondary)]" />}
             Per-User Results ({report.userSummaries.length} users)
           </button>
           {usersExpanded ? (
@@ -526,9 +526,9 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
 
       {/* Scan History */}
       {history.length > 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Clock className="size-4 text-slate-500" />
+        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+            <Clock className="size-4 text-[var(--color-text-secondary)]" />
             Scan History
           </div>
           {history.map((h) => (

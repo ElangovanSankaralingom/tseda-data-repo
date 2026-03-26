@@ -96,7 +96,7 @@ function AnimatedCount({ value }: { value: number }) {
 }
 
 function ActionBadge({ action }: { action: string }) {
-  const info = ACTION_LABELS[action] ?? { label: action, color: "text-slate-700", bg: "bg-slate-50 border-slate-200" };
+  const info = ACTION_LABELS[action] ?? { label: action, color: "text-[var(--color-text-primary)]", bg: "bg-[var(--color-dropdown-hover)] border-[var(--color-card-border)]" };
   return (
     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${info.bg} ${info.color}`}>
       {info.label}
@@ -106,15 +106,15 @@ function ActionBadge({ action }: { action: string }) {
 
 function StatMini({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Activity }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex size-10 items-center justify-center rounded-lg bg-slate-100">
-        <Icon className="size-5 text-slate-600" />
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex size-10 items-center justify-center rounded-lg bg-[var(--color-dropdown-hover)]">
+        <Icon className="size-5 text-[var(--color-text-secondary)]" />
       </div>
       <div>
-        <div className="text-xl font-bold text-slate-900 tracking-tight">
+        <div className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">
           <AnimatedCount value={value} />
         </div>
-        <div className="text-xs text-slate-500">{label}</div>
+        <div className="text-xs text-[var(--color-text-secondary)]">{label}</div>
       </div>
     </div>
   );
@@ -130,7 +130,7 @@ function ActivitySparkline({ data }: { data: { date: string; count: number }[] }
       {recent.map((d) => (
         <div
           key={d.date}
-          className="w-2 rounded-sm bg-slate-300 transition-all duration-300 hover:bg-[#1E3A5F]"
+          className="w-2 rounded-sm bg-[var(--color-text-muted)] transition-all duration-300 hover:bg-[var(--color-button-primary-bg)]"
           style={{ height: `${Math.max((d.count / max) * 100, 8)}%` }}
           title={`${d.date}: ${d.count} events`}
         />
@@ -150,14 +150,14 @@ function ActionBreakdownBar({ stats }: { stats: AuditStats }) {
         const pct = (count / total) * 100;
         return (
           <div key={action} className="flex items-center gap-3 text-sm">
-            <div className="w-28 text-xs text-slate-500 truncate">{info?.label ?? action}</div>
-            <div className="relative h-2 flex-1 rounded-full bg-slate-100">
+            <div className="w-28 text-xs text-[var(--color-text-secondary)] truncate">{info?.label ?? action}</div>
+            <div className="relative h-2 flex-1 rounded-full bg-[var(--color-dropdown-hover)]">
               <div
-                className="absolute inset-y-0 left-0 rounded-full bg-slate-400 transition-all duration-500 animate-grow-width"
+                className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-text-muted)] transition-all duration-500 animate-grow-width"
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <div className="w-10 text-right text-xs font-medium text-slate-600">{count}</div>
+            <div className="w-10 text-right text-xs font-medium text-[var(--color-text-secondary)]">{count}</div>
           </div>
         );
       })}
@@ -185,17 +185,17 @@ export function FilterBar({
 }) {
   const hasFilters = filters.search || filters.action || filters.category || filters.dateRange;
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
           <input
             type="text"
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder="Search by email, entry ID, or summary..."
             aria-label="Search audit logs"
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+            className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-input-bg)] pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
         </div>
 
@@ -241,7 +241,7 @@ export function FilterBar({
         {hasFilters && (
           <button
             onClick={onReset}
-            className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)]"
           >
             <X className="size-3.5" />
             Clear
@@ -249,7 +249,7 @@ export function FilterBar({
         )}
       </div>
 
-      <div className="mt-2 text-xs text-slate-500">
+      <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
         {resultCount} {resultCount === 1 ? "event" : "events"}
         {hasFilters ? " matching filters" : ""}
       </div>
@@ -264,66 +264,66 @@ function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }
     <div className="flex gap-3">
       {/* Timeline line + dot */}
       <div className="flex flex-col items-center">
-        <div className="mt-1.5 size-2.5 rounded-full bg-slate-300 ring-4 ring-white" />
-        {!isLast && <div className="w-px flex-1 bg-slate-200" />}
+        <div className="mt-1.5 size-2.5 rounded-full bg-[var(--color-text-muted)] ring-4 ring-[var(--color-card-bg)]" />
+        {!isLast && <div className="w-px flex-1 bg-[var(--color-card-border)]" />}
       </div>
 
       {/* Content */}
       <div className={`flex-1 pb-6 ${isLast ? "" : ""}`}>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="group w-full rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+          className="group w-full rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3 text-left shadow-sm transition-all duration-200 hover:border-[var(--color-text-muted)] hover:shadow-md"
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <ActionBadge action={event.action} />
-                <span className="text-xs text-slate-500">{formatRelative(event.ts)}</span>
+                <span className="text-xs text-[var(--color-text-secondary)]">{formatRelative(event.ts)}</span>
               </div>
-              <div className="mt-1.5 text-sm text-slate-700">
-                <span className="font-medium text-slate-900">{emailName(event.actorEmail)}</span>
+              <div className="mt-1.5 text-sm text-[var(--color-text-primary)]">
+                <span className="font-medium text-[var(--color-text-primary)]">{emailName(event.actorEmail)}</span>
                 {event.actorEmail !== event.userEmail && (
                   <>
                     {" on "}
-                    <span className="font-medium text-slate-900">{emailName(event.userEmail)}</span>
+                    <span className="font-medium text-[var(--color-text-primary)]">{emailName(event.userEmail)}</span>
                     {"'s entry"}
                   </>
                 )}
                 {" in "}
-                <span className="text-slate-600">{CATEGORY_LABELS[event.category] ?? event.category}</span>
+                <span className="text-[var(--color-text-secondary)]">{CATEGORY_LABELS[event.category] ?? event.category}</span>
               </div>
             </div>
-            <ChevronDown className={`size-4 text-slate-500 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+            <ChevronDown className={`size-4 text-[var(--color-text-secondary)] transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
           </div>
 
           {expanded && (
-            <div className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-xs animate-fade-in">
+            <div className="mt-3 space-y-2 border-t border-[var(--color-card-border)] pt-3 text-xs animate-fade-in">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-slate-500">Entry ID</span>
-                  <div className="font-mono text-slate-600">{event.entryId.slice(0, 8)}...</div>
+                  <span className="text-[var(--color-text-secondary)]">Entry ID</span>
+                  <div className="font-mono text-[var(--color-text-secondary)]">{event.entryId.slice(0, 8)}...</div>
                 </div>
                 <div>
-                  <span className="text-slate-500">Time</span>
-                  <div className="text-slate-600">{formatDateTime(event.ts)}</div>
+                  <span className="text-[var(--color-text-secondary)]">Time</span>
+                  <div className="text-[var(--color-text-secondary)]">{formatDateTime(event.ts)}</div>
                 </div>
                 {event.statusFrom && (
                   <div>
-                    <span className="text-slate-500">Status From</span>
-                    <div className="text-slate-600">{event.statusFrom}</div>
+                    <span className="text-[var(--color-text-secondary)]">Status From</span>
+                    <div className="text-[var(--color-text-secondary)]">{event.statusFrom}</div>
                   </div>
                 )}
                 {event.statusTo && (
                   <div>
-                    <span className="text-slate-500">Status To</span>
-                    <div className="text-slate-600">{event.statusTo}</div>
+                    <span className="text-[var(--color-text-secondary)]">Status To</span>
+                    <div className="text-[var(--color-text-secondary)]">{event.statusTo}</div>
                   </div>
                 )}
               </div>
               {event.summary !== "No tracked field changes." && (
                 <div>
-                  <span className="text-slate-500">Changes</span>
-                  <div className="mt-0.5 text-slate-600">{event.summary}</div>
+                  <span className="text-[var(--color-text-secondary)]">Changes</span>
+                  <div className="mt-0.5 text-[var(--color-text-secondary)]">{event.summary}</div>
                 </div>
               )}
             </div>
@@ -339,10 +339,10 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-        <Activity className="size-8 text-slate-400 mb-3" />
-        <div className="text-sm font-medium text-slate-500">No audit events found</div>
-        <div className="mt-1 text-xs text-slate-500">Try adjusting your filters</div>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-16 text-center">
+        <Activity className="size-8 text-[var(--color-text-muted)] mb-3" />
+        <div className="text-sm font-medium text-[var(--color-text-secondary)]">No audit events found</div>
+        <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try adjusting your filters</div>
       </div>
     );
   }
@@ -352,9 +352,9 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
       {Array.from(grouped.entries()).map(([date, dayEvents]) => (
         <div key={date}>
           <div className="mb-3 flex items-center gap-2">
-            <Calendar className="size-4 text-slate-500" />
-            <h3 className="text-sm font-semibold text-slate-700">{formatDateHeading(date)}</h3>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+            <Calendar className="size-4 text-[var(--color-text-secondary)]" />
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{formatDateHeading(date)}</h3>
+            <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">
               {dayEvents.length}
             </span>
           </div>
@@ -376,19 +376,19 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
 export function TableView({ events }: { events: AuditEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-        <Activity className="size-8 text-slate-400 mb-3" />
-        <div className="text-sm font-medium text-slate-500">No audit events found</div>
-        <div className="mt-1 text-xs text-slate-500">Try adjusting your filters</div>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-16 text-center">
+        <Activity className="size-8 text-[var(--color-text-muted)] mb-3" />
+        <div className="text-sm font-medium text-[var(--color-text-secondary)]">No audit events found</div>
+        <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try adjusting your filters</div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-sm">
       <table className="w-full min-w-[900px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50/80 text-left text-xs uppercase tracking-wide text-slate-700">
+          <tr className="border-b border-[var(--color-card-border)] bg-[var(--color-dropdown-hover)] text-left text-xs uppercase tracking-wide text-[var(--color-text-primary)]">
             <th className="px-3 py-2.5 font-medium">Time</th>
             <th className="px-3 py-2.5 font-medium">Action</th>
             <th className="px-3 py-2.5 font-medium">Actor</th>
@@ -402,28 +402,28 @@ export function TableView({ events }: { events: AuditEvent[] }) {
           {events.map((event, i) => (
             <tr
               key={`${event.ts}:${event.entryId}:${event.action}`}
-              className={`border-b border-slate-100 align-top transition-colors hover:bg-slate-50/60 ${
+              className={`border-b border-[var(--color-card-border)] align-top transition-colors hover:bg-[var(--color-dropdown-hover)] ${
                 i < 5 ? `animate-fade-in-up stagger-${Math.min(i + 1, 8)}` : ""
               }`}
             >
               <td className="px-3 py-2.5 whitespace-nowrap">
-                <div className="text-slate-700">{formatRelative(event.ts)}</div>
-                <div className="text-xs text-slate-500">{formatDateTime(event.ts)}</div>
+                <div className="text-[var(--color-text-primary)]">{formatRelative(event.ts)}</div>
+                <div className="text-xs text-[var(--color-text-secondary)]">{formatDateTime(event.ts)}</div>
               </td>
               <td className="px-3 py-2.5">
                 <ActionBadge action={event.action} />
               </td>
               <td className="px-3 py-2.5">
-                <div className="font-medium text-slate-700">{emailName(event.actorEmail)}</div>
-                <div className="text-xs text-slate-500">{event.actorRole}</div>
+                <div className="font-medium text-[var(--color-text-primary)]">{emailName(event.actorEmail)}</div>
+                <div className="text-xs text-[var(--color-text-secondary)]">{event.actorRole}</div>
               </td>
-              <td className="px-3 py-2.5 text-slate-600">{emailName(event.userEmail)}</td>
-              <td className="px-3 py-2.5 text-slate-600">{CATEGORY_LABELS[event.category] ?? event.category}</td>
+              <td className="px-3 py-2.5 text-[var(--color-text-secondary)]">{emailName(event.userEmail)}</td>
+              <td className="px-3 py-2.5 text-[var(--color-text-secondary)]">{CATEGORY_LABELS[event.category] ?? event.category}</td>
               <td className="px-3 py-2.5">
-                <span className="font-mono text-xs text-slate-500">{event.entryId.slice(0, 8)}</span>
+                <span className="font-mono text-xs text-[var(--color-text-secondary)]">{event.entryId.slice(0, 8)}</span>
               </td>
               <td className="px-3 py-2.5 max-w-[260px]">
-                <div className="truncate text-xs text-slate-500" title={event.summary}>
+                <div className="truncate text-xs text-[var(--color-text-secondary)]" title={event.summary}>
                   {event.summary}
                 </div>
               </td>
@@ -448,48 +448,48 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
         <StatMini label="Categories" value={Object.keys(stats.byCategory).length} icon={FileText} />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-slate-700">Recent Activity</h4>
-          <span className="text-xs text-slate-500">Last 14 days</span>
+          <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">Recent Activity</h4>
+          <span className="text-xs text-[var(--color-text-secondary)]">Last 14 days</span>
         </div>
         <ActivitySparkline data={stats.recentDays} />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h4 className="mb-3 text-sm font-semibold text-slate-700">Action Breakdown</h4>
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
+        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">Action Breakdown</h4>
         <ActionBreakdownBar stats={stats} />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h4 className="mb-3 text-sm font-semibold text-slate-700">By Category</h4>
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
+        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">By Category</h4>
         <div className="space-y-2">
           {Object.entries(stats.byCategory)
             .sort(([, a], [, b]) => b - a)
             .map(([cat, count]) => (
               <div key={cat} className="flex items-center justify-between text-sm">
-                <span className="text-slate-600">{CATEGORY_LABELS[cat] ?? cat}</span>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{count}</span>
+                <span className="text-[var(--color-text-secondary)]">{CATEGORY_LABELS[cat] ?? cat}</span>
+                <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">{count}</span>
               </div>
             ))}
         </div>
       </div>
 
       {stats.topEntries.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h4 className="mb-3 text-sm font-semibold text-slate-700">Most Active Entries</h4>
+        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
+          <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">Most Active Entries</h4>
           <div className="space-y-2">
             {stats.topEntries.slice(0, 5).map((entry, i) => (
               <div key={`${entry.category}:${entry.entryId}`} className="flex items-center gap-2 text-xs">
-                <span className="flex size-5 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
+                <span className="flex size-5 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)] text-[10px] font-bold text-[var(--color-text-secondary)]">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <span className="font-mono text-slate-600">{entry.entryId.slice(0, 8)}</span>
-                  <span className="mx-1 text-slate-400">|</span>
-                  <span className="text-slate-500">{emailName(entry.userEmail)}</span>
+                  <span className="font-mono text-[var(--color-text-secondary)]">{entry.entryId.slice(0, 8)}</span>
+                  <span className="mx-1 text-[var(--color-text-muted)]">|</span>
+                  <span className="text-[var(--color-text-secondary)]">{emailName(entry.userEmail)}</span>
                 </div>
-                <span className="text-slate-500 font-medium">{entry.count}</span>
+                <span className="text-[var(--color-text-secondary)] font-medium">{entry.count}</span>
               </div>
             ))}
           </div>

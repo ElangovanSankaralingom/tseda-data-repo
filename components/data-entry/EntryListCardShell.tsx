@@ -111,7 +111,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 function getEditTimeUrgencyClass(remainingMs: number): string {
   if (remainingMs < 24 * 60 * 60 * 1000) return "text-red-600 font-semibold";
   if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-700";
-  return "text-slate-600";
+  return "text-[var(--color-text-secondary)]";
 }
 
 function TimeInfo({ group, editTime, createdAt, updatedAt }: {
@@ -138,7 +138,7 @@ function TimeInfo({ group, editTime, createdAt, updatedAt }: {
   // Drafts
   if (group === "in_the_works") {
     const time = formatRelativeTime(createdAt);
-    return time ? <span className="text-xs text-slate-600">Created {time}</span> : null;
+    return time ? <span className="text-xs text-[var(--color-text-secondary)]">Created {time}</span> : null;
   }
 
   // Under review
@@ -150,12 +150,12 @@ function TimeInfo({ group, editTime, createdAt, updatedAt }: {
   // Finalized
   if (group === "locked_in") {
     const time = formatRelativeTime(updatedAt || createdAt);
-    return time ? <span className="text-xs text-slate-600">Finalized {time}</span> : null;
+    return time ? <span className="text-xs text-[var(--color-text-secondary)]">Finalized {time}</span> : null;
   }
 
   // Fallback
   const time = formatRelativeTime(updatedAt || createdAt);
-  return time ? <span className="text-xs text-slate-600">Updated {time}</span> : null;
+  return time ? <span className="text-xs text-[var(--color-text-secondary)]">Updated {time}</span> : null;
 }
 
 function EditWindowProgressBar({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
@@ -229,20 +229,20 @@ export default function EntryListCardShell({
           router.push(href);
         }
       }}
-      className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A5F]/30 focus-visible:ring-offset-1`}
+      className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)]/30 focus-visible:ring-offset-1`}
     >
       {/* Row 1 — Identity */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Icon className={`size-3.5 shrink-0 ${iconColor}`} />
-            <Link href={href} className="text-base font-semibold text-slate-900 hover:text-slate-700 truncate transition-colors">
+            <Link href={href} className="text-base font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] truncate transition-colors">
               {title}
             </Link>
             <GroupBadge group={group} editTime={editTime} />
             {badges}
           </div>
-          {subtitle ? <div className="mt-0.5 pl-5.5 text-sm text-slate-600">{subtitle}</div> : null}
+          {subtitle ? <div className="mt-0.5 pl-5.5 text-sm text-[var(--color-text-secondary)]">{subtitle}</div> : null}
         </div>
       </div>
 
@@ -251,13 +251,13 @@ export default function EntryListCardShell({
         <div className="mt-2 pl-5.5">
           {children}
           {metadata && !children ? (
-            <div className="text-xs text-slate-600">{metadata}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">{metadata}</div>
           ) : null}
         </div>
       )}
 
       {/* Row 3 — Footer: time info + actions */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-card-border)] pt-2.5">
         <TimeInfo group={group} editTime={editTime} createdAt={createdAt} updatedAt={updatedAt} />
         {actions ? (
           <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 sm:group-focus-within:opacity-100 sm:group-focus-within:translate-x-0 transition-all duration-200">

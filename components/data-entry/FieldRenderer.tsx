@@ -104,10 +104,10 @@ export default function FieldRenderer({
             aria-invalid={a11yProps["aria-invalid"]}
             aria-disabled={disabled || undefined}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-secondary)]",
               showError
                 ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+                : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
               disabled && "cursor-not-allowed opacity-60",
             )}
           />
@@ -132,10 +132,10 @@ export default function FieldRenderer({
             aria-invalid={a11yProps["aria-invalid"]}
             aria-disabled={disabled || undefined}
             className={cx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-slate-500",
+              "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-secondary)]",
               showError
                 ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-                : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+                : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
               disabled && "cursor-not-allowed opacity-60",
             )}
           />

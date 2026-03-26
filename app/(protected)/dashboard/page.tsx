@@ -69,16 +69,16 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-start justify-between gap-3 animate-fade-in-up">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
               {greeting}, {firstName} <span className="animate-wave">👋</span>
             </h1>
             {hasAnyEntries && (
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
                 {totalEntries} {totalEntries === 1 ? "entry" : "entries"}
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             {welcomeSubtext}
           </p>
         </div>
@@ -95,18 +95,18 @@ export default async function DashboardPage() {
       {/* Empty state */}
       {!hasAnyEntries ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center animate-fade-in-up stagger-1">
-          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-slate-100">
-            <ClipboardList className="size-10 text-slate-600" />
+          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
+            <ClipboardList className="size-10 text-[var(--color-text-secondary)]" />
           </div>
-          <p className="mt-3 text-base font-medium text-slate-600">
+          <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">
             No entries yet
           </p>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Start collecting data to build your streak!
           </p>
           <Link
             href={dataEntryHome()}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#2D5F8A] hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[var(--color-primary-light)] hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
           >
             Go to Data Entry
           </Link>

@@ -110,14 +110,14 @@ function formatTimeAgo(isoString: string) {
 
 function StatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
   return (
-    <div className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-transform duration-200 group-hover:scale-110">
+    <div className="group flex items-center gap-3 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] transition-transform duration-200 group-hover:scale-110">
         {icon}
       </div>
       <div className="min-w-0">
-        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
-        <div className="text-lg font-bold text-slate-900">{value}</div>
-        {sub ? <div className="text-xs text-slate-500">{sub}</div> : null}
+        <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">{label}</div>
+        <div className="text-lg font-bold text-[var(--color-text-primary)]">{value}</div>
+        {sub ? <div className="text-xs text-[var(--color-text-secondary)]">{sub}</div> : null}
       </div>
     </div>
   );
@@ -131,7 +131,7 @@ function AnimatedStatTile({ icon, label, value, sub }: { icon: React.ReactNode; 
 function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }) {
   if (!lastRun) {
     return (
-      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+      <span className="rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-primary)]">
         No runs yet
       </span>
     );
@@ -153,8 +153,8 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
 
 function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data: Record<string, unknown> } | { ok: false; errorCode: string; message: string } }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
-      <span className="text-sm text-slate-700">{label}</span>
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-2">
+      <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
       {step.ok ? (
         <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
           <CheckCircle2 className="size-3.5" /> OK
@@ -170,13 +170,13 @@ function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data
 
 function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 px-1 py-2.5 last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2.5 last:border-0">
       <div className={`flex size-6 shrink-0 items-center justify-center rounded-full ${entry.success ? "bg-emerald-50 text-emerald-500" : "bg-red-50 text-red-500"}`}>
         {entry.success ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-slate-700">{entry.action}</div>
-        <div className="text-xs text-slate-500">
+        <div className="text-sm font-medium text-[var(--color-text-primary)]">{entry.action}</div>
+        <div className="text-xs text-[var(--color-text-secondary)]">
           {entry.actorEmail.split("@")[0]} &middot; {formatTimeAgo(entry.ts)} &middot; {entry.durationMs}ms
         </div>
       </div>
@@ -217,7 +217,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       <div className="flex flex-wrap items-center gap-3">
         <LastRunBadge lastRun={lastRun} />
         {lastRun ? (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[var(--color-text-secondary)]">
             Last run: {new Date(lastRun.finishedAt).toLocaleString()}
           </span>
         ) : null}
@@ -254,9 +254,9 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
 
       {/* Last Nightly Run Summary */}
       {lastRun ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Activity className="size-4 text-slate-500" />
+        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+            <Activity className="size-4 text-[var(--color-text-secondary)]" />
             Last Nightly Run
           </div>
           <div className="space-y-2">
@@ -273,23 +273,23 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
 
       {/* Job Controls */}
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-          <Server className="size-4 text-slate-500" />
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+          <Server className="size-4 text-[var(--color-text-secondary)]" />
           Maintenance Jobs
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {JOBS.map((job, index) => (
             <div
               key={job.id}
-              className={`group relative rounded-xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${job.accent} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+              className={`group relative rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${job.accent} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
             >
               <div className="flex items-start gap-3">
                 <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${job.iconBg} transition-transform duration-200 group-hover:scale-110`}>
                   {job.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-slate-800">{job.label}</div>
-                  <div className="mt-0.5 text-xs text-slate-500">{job.description}</div>
+                  <div className="text-sm font-semibold text-[var(--color-text-primary)]">{job.label}</div>
+                  <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{job.description}</div>
                 </div>
               </div>
 
@@ -307,7 +307,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
                 type="button"
                 disabled={running[job.id]}
                 onClick={() => void runJob(job)}
-                className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-all duration-150 hover:bg-slate-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {running[job.id] ? (
                   <span className="flex items-center justify-center gap-1.5">
@@ -324,17 +324,17 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       </div>
 
       {/* Run Full Nightly */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5">
         <div className="flex flex-wrap items-center gap-3">
           <form action="/admin/maintenance/run" method="post">
             <button
               type="submit"
-              className="rounded-xl border border-[#1E3A5F] bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-[#162d4a] active:scale-[0.97]"
+              className="rounded-xl border border-[var(--color-primary)] bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
             >
               Run Full Nightly Maintenance
             </button>
           </form>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[var(--color-text-secondary)]">
             Runs backup + integrity check + housekeeping + auto-archive + edit grant expiry in sequence. Rate limited to 2/hour.
           </span>
         </div>
@@ -342,9 +342,9 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
 
       {/* Action History */}
       {actionLog.length > 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 animate-fade-in-up">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Clock className="size-4 text-slate-500" />
+        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+            <Clock className="size-4 text-[var(--color-text-secondary)]" />
             Recent Actions
           </div>
           <div className="divide-y-0">

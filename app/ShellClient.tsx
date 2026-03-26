@@ -30,7 +30,7 @@ function HamburgerIcon({ isOpen }: { isOpen: boolean }) {
     <div className="group flex flex-col items-center justify-center gap-[5px]">
       <span
         className={cn(
-          "block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ease-in-out",
+          "block h-[2px] w-[18px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-300 ease-in-out",
           isOpen
             ? "translate-y-[7px] rotate-45"
             : "group-hover:translate-x-[1px]"
@@ -38,13 +38,13 @@ function HamburgerIcon({ isOpen }: { isOpen: boolean }) {
       />
       <span
         className={cn(
-          "block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ease-in-out",
+          "block h-[2px] w-[18px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-300 ease-in-out",
           isOpen && "opacity-0"
         )}
       />
       <span
         className={cn(
-          "block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ease-in-out",
+          "block h-[2px] w-[18px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-300 ease-in-out",
           isOpen
             ? "-translate-y-[7px] -rotate-45"
             : "group-hover:-translate-x-[1px]"
@@ -182,10 +182,10 @@ export default function ShellClient({
   }
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-white text-slate-900">
+    <div className="min-h-dvh overflow-x-hidden bg-[var(--color-body-bg)] text-[var(--color-text-primary)]">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-[#1E3A5F] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg focus:outline-none"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--color-button-primary-bg)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg focus:outline-none"
       >
         Skip to main content
       </a>
@@ -194,8 +194,8 @@ export default function ShellClient({
         className={cn(
           "fixed top-0 left-0 right-0 z-50 h-14 border-b backdrop-blur-xl transition-shadow duration-200",
           scrolled
-            ? "bg-white/90 border-slate-200/80 shadow-sm"
-            : "bg-white/70 border-slate-200/50"
+            ? "bg-[var(--color-card-bg)]/90 border-[var(--color-card-border)]/80 shadow-sm"
+            : "bg-[var(--color-card-bg)]/70 border-[var(--color-card-border)]/50"
         )}
       >
         <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-6">
@@ -206,7 +206,7 @@ export default function ShellClient({
               onClick={() => setOpen((v) => !v)}
               className={cn(
                 "flex size-9 items-center justify-center rounded-xl transition-colors duration-150",
-                open ? "bg-slate-100" : "hover:bg-slate-100"
+                open ? "bg-[var(--color-dropdown-hover)]" : "hover:bg-[var(--color-dropdown-hover)]"
               )}
               aria-label={open ? "Close menu" : "Open menu"}
             >
@@ -217,7 +217,7 @@ export default function ShellClient({
               <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 text-sm font-bold text-white transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105">
                 T
               </span>
-              <span className="hidden text-base font-bold tracking-tight text-slate-900 sm:block">
+              <span className="hidden text-base font-bold tracking-tight text-[var(--color-text-primary)] sm:block">
                 T&apos;SEDA
               </span>
             </Link>

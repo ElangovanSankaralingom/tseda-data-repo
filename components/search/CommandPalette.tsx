@@ -357,7 +357,7 @@ export default function CommandPalette({
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 z-50 bg-[var(--color-modal-overlay)] backdrop-blur-sm animate-fade-in"
         onClick={onClose}
         aria-hidden
       />
@@ -369,12 +369,12 @@ export default function CommandPalette({
         aria-label="Search"
       >
         <div
-          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          className="overflow-hidden rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-modal-bg)] shadow-2xl"
           onKeyDown={handleKeyDown}
         >
           {/* Search input */}
-          <div className="flex items-center gap-3 border-b border-slate-100 px-5 h-14">
-            <SearchIcon className="size-5 shrink-0 text-slate-500" />
+          <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-5 h-14">
+            <SearchIcon className="size-5 shrink-0 text-[var(--color-text-secondary)]" />
             <input
               ref={inputRef}
               type="text"
@@ -382,16 +382,16 @@ export default function CommandPalette({
               onChange={(e) => setQuery(e.target.value)}
               placeholder={isAdmin ? "Search entries, categories, users..." : "Search your entries..."}
               aria-label="Search commands"
-              className="h-full flex-1 bg-transparent text-lg outline-none placeholder:text-slate-500"
+              className="h-full flex-1 bg-transparent text-lg outline-none placeholder:text-[var(--color-text-secondary)]"
             />
-            <kbd className="hidden rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 sm:inline-block">
+            <kbd className="hidden rounded bg-[var(--color-input-bg)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)] sm:inline-block">
               ESC
             </kbd>
           </div>
 
           {/* Filter chips */}
           {hasQuery && (
-            <div className="flex gap-1.5 border-b border-slate-50 px-5 py-2">
+            <div className="flex gap-1.5 border-b border-[var(--color-divider)] px-5 py-2">
               {(["entry", "user", "category", "page"] as const).map((type) => {
                 if (type === "user" && !isAdmin) return null;
                 const active = activeFilters.has(type);
@@ -402,8 +402,8 @@ export default function CommandPalette({
                     className={cn(
                       "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                       active
-                        ? "bg-[#1E3A5F] text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                        ? "bg-[var(--color-button-primary-bg)] text-white"
+                        : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]",
                     )}
                   >
                     {TYPE_LABELS[type]}
@@ -420,7 +420,7 @@ export default function CommandPalette({
                 <div className="py-2">
                   {grouped.map((group) => (
                     <div key={group.type}>
-                      <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
                         {TYPE_LABELS[group.type]} ({group.items.length})
                       </div>
                       {group.items.map((result) => {
@@ -433,7 +433,7 @@ export default function CommandPalette({
                             onClick={() => navigate(result.item)}
                             className={cn(
                               "flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors",
-                              isSelected ? "bg-slate-100" : "hover:bg-slate-50",
+                              isSelected ? "bg-[var(--color-dropdown-hover)]" : "hover:bg-[var(--color-dropdown-hover)]",
                             )}
                           >
                             <div
@@ -445,17 +445,17 @@ export default function CommandPalette({
                               <TypeIcon type={result.item.type} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-medium text-slate-800">
+                              <div className="truncate text-sm font-medium text-[var(--color-text-primary)]">
                                 <HighlightedText
                                   text={getResultTitle(result.item)}
                                   query={query}
                                 />
                               </div>
-                              <div className="truncate text-xs text-slate-500">
+                              <div className="truncate text-xs text-[var(--color-text-secondary)]">
                                 {getResultSubtitle(result.item)}
                               </div>
                             </div>
-                            <ChevronRight className="size-4 shrink-0 text-slate-300" />
+                            <ChevronRight className="size-4 shrink-0 text-[var(--color-text-muted)]" />
                           </button>
                         );
                       })}
@@ -465,11 +465,11 @@ export default function CommandPalette({
               ) : (
                 /* No results */
                 <div className="flex flex-col items-center gap-2 py-12">
-                  <SearchX className="size-8 text-slate-300" />
-                  <div className="text-sm text-slate-500">
+                  <SearchX className="size-8 text-[var(--color-text-muted)]" />
+                  <div className="text-sm text-[var(--color-text-secondary)]">
                     No results for &ldquo;{query}&rdquo;
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-[var(--color-text-secondary)]">
                     Try different keywords or check your filters
                   </div>
                 </div>
@@ -477,7 +477,7 @@ export default function CommandPalette({
             ) : (
               /* Empty query: quick actions */
               <div className="py-2">
-                <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <div className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
                   Quick Actions
                 </div>
                 {quickActions.map((action, i) => {
@@ -492,21 +492,21 @@ export default function CommandPalette({
                       }}
                       className={cn(
                         "flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors",
-                        isSelected ? "bg-slate-100" : "hover:bg-slate-50",
+                        isSelected ? "bg-[var(--color-dropdown-hover)]" : "hover:bg-[var(--color-dropdown-hover)]",
                       )}
                     >
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-input-bg)]">
                         <ActionIcon type={action.icon} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-slate-800">
+                        <div className="truncate text-sm font-medium text-[var(--color-text-primary)]">
                           {action.title}
                         </div>
-                        <div className="truncate text-xs text-slate-500">
+                        <div className="truncate text-xs text-[var(--color-text-secondary)]">
                           {action.subtitle}
                         </div>
                       </div>
-                      <ChevronRight className="size-4 shrink-0 text-slate-300" />
+                      <ChevronRight className="size-4 shrink-0 text-[var(--color-text-muted)]" />
                     </button>
                   );
                 })}
@@ -515,14 +515,14 @@ export default function CommandPalette({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-2">
-            <div className="flex items-center gap-3 text-[10px] text-slate-500">
+          <div className="flex items-center justify-between border-t border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-5 py-2">
+            <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-secondary)]">
               <span>↑↓ Navigate</span>
               <span>↵ Open</span>
               <span>ESC Close</span>
             </div>
             {hasQuery && (
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[10px] text-[var(--color-text-secondary)]">
                 {results.length} {results.length === 1 ? "result" : "results"}
               </span>
             )}

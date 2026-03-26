@@ -199,7 +199,7 @@ export default function ResetPage() {
                 <button
                   type="button"
                   onClick={() => { router.push(dashboard()); router.refresh(); }}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+                  className="rounded-lg bg-[var(--color-generate-bg)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-generate-hover)] transition-colors"
                 >
                   Go to Dashboard
                 </button>

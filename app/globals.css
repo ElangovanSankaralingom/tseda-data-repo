@@ -42,6 +42,11 @@
   --color-skeleton-shine: #F1F5F9;
 }
 
+body {
+  background-color: var(--color-body-bg);
+  color: var(--color-text-primary);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

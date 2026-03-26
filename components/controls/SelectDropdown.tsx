@@ -104,7 +104,7 @@ export default function SelectDropdown({
       {name && <input type="hidden" name={name} value={value} />}
       {selectedOption?.icon && !open ? (
         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-10">
-          <selectedOption.icon className="size-4 text-slate-500" />
+          <selectedOption.icon className="size-4 text-[var(--color-text-secondary)]" />
         </div>
       ) : null}
       <input
@@ -193,11 +193,11 @@ export default function SelectDropdown({
         aria-activedescendant={open && id && resolvedHighlightedIndex >= 0 ? `${id}-option-${resolvedHighlightedIndex}` : undefined}
         value={displayValue}
         className={cx(
-          "w-full rounded-lg border bg-white py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-slate-500",
+          "w-full rounded-lg border bg-[var(--color-input-bg)] py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-[var(--color-text-secondary)]",
           selectedOption?.icon && !open ? "pl-9 pr-3" : "px-3",
           error
             ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-            : "border-slate-300 hover:border-slate-400 focus-visible:border-[#1E3A5F] focus-visible:ring-[#1E3A5F]/20",
+            : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
           disabled && "pointer-events-none cursor-not-allowed opacity-60"
         )}
       />
@@ -206,7 +206,7 @@ export default function SelectDropdown({
         <div
           id={id ? `${id}-options` : undefined}
           role="listbox"
-          className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+          className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-card-border)] bg-[var(--color-dropdown-bg)] p-1 shadow-lg"
         >
           {filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">No matching options.</div>
@@ -228,7 +228,7 @@ export default function SelectDropdown({
                     : "hover:bg-muted"
                 )}
               >
-                {option.icon ? <option.icon className="size-4 shrink-0 text-slate-500" /> : null}
+                {option.icon ? <option.icon className="size-4 shrink-0 text-[var(--color-text-secondary)]" /> : null}
                 {option.label}
               </button>
             ))
