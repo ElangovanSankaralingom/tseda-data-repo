@@ -188,7 +188,6 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
 
 // ── Main Component ─────────────────────────────────────────────────
 export default function DataEntryClient({ greeting, userName, categories, totals }: Props) {
-  const { t } = useTranslation();
   const sorted = useMemo(() => sortByUrgency(categories), [categories]);
   const hasAnyEntries = totals.totalEntries > 0;
   const firstName = userName?.split(" ")[0] ?? null;
