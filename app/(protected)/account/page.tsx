@@ -306,7 +306,7 @@ export default function AccountPage() {
             type="button"
             onClick={() => setShowClearConfirm(true)}
             disabled={clearing || loading}
-            className="shrink-0 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+            className="shrink-0 rounded-lg border border-red-300 bg-[var(--color-card-bg)] px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
           >
             {clearing ? (
               <span className="flex items-center gap-2">

@@ -25,7 +25,7 @@ export default function AppShell({
   return (
     <div className="relative min-h-screen bg-[#FAFBFC]">
       {/* Header */}
-      <header className="h-14 border-b border-slate-200 flex items-center justify-between px-4">
+      <header className="h-14 border-b border-[var(--color-card-border)] flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setDrawerOpen(true)}
@@ -59,13 +59,13 @@ export default function AppShell({
 
       {/* Drawer */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-72 bg-[var(--color-card-bg)] shadow-lg z-50 transform transition-transform duration-300 ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 border-b border-slate-200">
+        <div className="p-4 border-b border-[var(--color-card-border)]">
           <div className="font-semibold">T&apos;SEDA Data Repository</div>
-          <div className="text-xs text-slate-500 mt-1">{email}</div>
+          <div className="text-xs text-[var(--color-text-secondary)] mt-1">{email}</div>
         </div>
 
         <div className="flex flex-col h-full justify-between">
@@ -78,8 +78,8 @@ export default function AppShell({
                 onClick={() => setDrawerOpen(false)}
                 className={`block px-3 py-2 rounded text-sm ${
                   pathname === item.href
-                    ? "bg-slate-200"
-                    : "hover:bg-slate-100"
+                    ? "bg-[var(--color-dropdown-hover)]"
+                    : "hover:bg-[var(--color-dropdown-hover)]"
                 }`}
               >
                 {item.label}
@@ -88,11 +88,11 @@ export default function AppShell({
           </div>
 
           {/* Bottom Section */}
-          <div className="p-3 border-t border-slate-200 space-y-1">
+          <div className="p-3 border-t border-[var(--color-card-border)] space-y-1">
             <Link
               href={profile()}
               onClick={() => setDrawerOpen(false)}
-              className="block px-3 py-2 rounded text-sm hover:bg-slate-100"
+              className="block px-3 py-2 rounded text-sm hover:bg-[var(--color-dropdown-hover)]"
             >
               My Account
             </Link>

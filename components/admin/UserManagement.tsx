@@ -93,15 +93,15 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className={`flex size-10 items-center justify-center rounded-lg ${accent}`}>
         <Icon className="size-5 text-white" />
       </div>
       <div>
-        <div className="text-xl font-bold text-slate-900 tracking-tight">
+        <div className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">
           <AnimatedCount value={value} />
         </div>
-        <div className="text-xs text-slate-500">{label}</div>
+        <div className="text-xs text-[var(--color-text-secondary)]">{label}</div>
       </div>
     </div>
   );
@@ -118,11 +118,11 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
         <img
           src={user.image}
           alt={user.name}
-          className={`${sizeClasses} rounded-full ring-2 ring-white shadow-sm object-cover`}
+          className={`${sizeClasses} rounded-full ring-2 ring-[var(--color-card-bg)] shadow-sm object-cover`}
           referrerPolicy="no-referrer"
         />
         {user.role === "admin" && (
-          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500 ring-2 ring-white">
+          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500 ring-2 ring-[var(--color-card-bg)]">
             <Shield className="size-2.5 text-white" />
           </div>
         )}
@@ -133,12 +133,12 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
   return (
     <div className="relative">
       <div
-        className={`${sizeClasses} flex items-center justify-center rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-2 ring-white shadow-sm`}
+        className={`${sizeClasses} flex items-center justify-center rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-2 ring-[var(--color-card-bg)] shadow-sm`}
       >
         <span className={`${textSize} font-bold text-white`}>{initials(user.name)}</span>
       </div>
       {user.role === "admin" && (
-        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500 ring-2 ring-white">
+        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500 ring-2 ring-[var(--color-card-bg)]">
           <Shield className="size-2.5 text-white" />
         </div>
       )}
@@ -165,10 +165,10 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
       href={`/admin/users/${encodeURIComponent(user.email)}`}
       className={`group block rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         isTopPerformer
-          ? "border-t-2 border-t-amber-400 border-slate-200 bg-white"
+          ? "border-t-2 border-t-amber-400 border-[var(--color-card-border)] bg-[var(--color-card-bg)]"
           : user.totalEntries === 0
-          ? "border-slate-200 bg-slate-50/50"
-          : "border-slate-200 bg-white"
+          ? "border-[var(--color-card-border)] bg-[var(--color-body-bg)]/50"
+          : "border-[var(--color-card-border)] bg-[var(--color-card-bg)]"
       } ${
         rank <= 8
           ? `animate-fade-in-up stagger-${rank}`
@@ -182,7 +182,7 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
         {/* Identity */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-base font-semibold text-slate-900 truncate">{user.name}</span>
+            <span className="text-base font-semibold text-[var(--color-text-primary)] truncate">{user.name}</span>
             {user.role === "admin" && (
               <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
                 <Shield className="size-3" />
@@ -200,9 +200,9 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
               </span>
             )}
           </div>
-          <div className="mt-0.5 text-xs text-slate-500 font-mono truncate">{user.email}</div>
+          <div className="mt-0.5 text-xs text-[var(--color-text-secondary)] font-mono truncate">{user.email}</div>
           {(user.department || user.designation) && (
-            <div className="mt-0.5 text-xs text-slate-500">
+            <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
               {[user.department, user.designation].filter(Boolean).join(" · ")}
             </div>
           )}
@@ -213,11 +213,11 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
           {trendIcon(user.activityTrend)}
           <span
             className={`size-2 rounded-full ${
-              user.isActive ? "bg-emerald-500" : "bg-slate-300"
+              user.isActive ? "bg-emerald-500" : "bg-[var(--color-text-muted)]"
             }`}
             title={user.isActive ? "Active" : "Inactive"}
           />
-          <ChevronRight className="size-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-slate-500" />
+          <ChevronRight className="size-4 text-[var(--color-text-muted)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[var(--color-text-secondary)]" />
         </div>
       </div>
 
@@ -225,51 +225,51 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
       {user.totalEntries > 0 ? (
         <>
           <div className="mt-4 grid grid-cols-4 gap-2">
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-center">
-              <div className="text-lg font-bold text-slate-900">{user.totalEntries}</div>
-              <div className="text-[10px] text-slate-500">entries</div>
+            <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
+              <div className="text-lg font-bold text-[var(--color-text-primary)]">{user.totalEntries}</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">entries</div>
             </div>
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-center">
-              <div className="text-lg font-bold text-slate-900">
+            <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
+              <div className="text-lg font-bold text-[var(--color-text-primary)]">
                 {(user.entriesByStatus["GENERATED"] ?? 0) + (user.entriesByStatus["EDIT_GRANTED"] ?? 0)}
               </div>
-              <div className="text-[10px] text-slate-500">done</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">done</div>
             </div>
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-900">
+            <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-lg font-bold text-[var(--color-text-primary)]">
                 <Flame className="size-3.5 text-amber-500" />
                 {user.streakActivated}
               </div>
-              <div className="text-[10px] text-slate-500">active</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">active</div>
             </div>
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-900">
+            <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-lg font-bold text-[var(--color-text-primary)]">
                 <Trophy className="size-3.5 text-amber-500" />
                 {user.streakWins}
               </div>
-              <div className="text-[10px] text-slate-500">wins</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">wins</div>
             </div>
           </div>
 
           {/* Completion bar */}
           <div className="mt-3 flex items-center gap-2">
-            <div className="relative h-1.5 flex-1 rounded-full bg-slate-100">
+            <div className="relative h-1.5 flex-1 rounded-full bg-[var(--color-dropdown-hover)]">
               <div
                 className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${completionColor(user.completionRate)}`}
                 style={{ width: `${Math.min(user.completionRate, 100)}%` }}
               />
             </div>
-            <span className="text-xs text-slate-500 tabular-nums">{user.completionRate}%</span>
+            <span className="text-xs text-[var(--color-text-secondary)] tabular-nums">{user.completionRate}%</span>
           </div>
         </>
       ) : (
-        <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-center">
-          <p className="text-xs text-slate-500">No entries yet</p>
+        <div className="mt-4 rounded-lg border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-4 py-3 text-center">
+          <p className="text-xs text-[var(--color-text-secondary)]">No entries yet</p>
         </div>
       )}
 
       {/* Last active */}
-      <div className="mt-2 text-[10px] text-slate-500">
+      <div className="mt-2 text-[10px] text-[var(--color-text-secondary)]">
         Last active: {formatRelative(user.lastActiveAt)}
       </div>
     </Link>
@@ -301,31 +301,31 @@ function FilterBar({
   totalCount: number;
 }) {
   return (
-    <div className="sticky top-20 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="sticky top-20 z-10 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
           <input
             type="text"
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder="Search by name or email..."
             aria-label="Search users"
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10"
+            className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
         </div>
 
         {/* Role toggle */}
-        <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+        <div className="flex rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-0.5">
           {(["all", "user", "admin"] as const).map((r) => (
             <button
               key={r}
               onClick={() => onChange({ ...filters, role: r })}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
                 filters.role === r
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-sm"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
               {r === "all" ? "All" : r === "admin" ? "Admins" : "Users"}
@@ -334,15 +334,15 @@ function FilterBar({
         </div>
 
         {/* Activity toggle */}
-        <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+        <div className="flex rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-0.5">
           {(["all", "active", "inactive"] as const).map((a) => (
             <button
               key={a}
               onClick={() => onChange({ ...filters, activity: a })}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
                 filters.activity === a
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-sm"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
               {a === "all" ? "All" : a.charAt(0).toUpperCase() + a.slice(1)}
@@ -367,7 +367,7 @@ function FilterBar({
         </div>
       </div>
 
-      <div className="mt-2 text-xs text-slate-500">
+      <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
         Showing {matchCount} of {totalCount} users
       </div>
     </div>
@@ -445,14 +445,14 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
 
       {/* Quick summary pills */}
       <div className="flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+        <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-[var(--color-text-secondary)]">
           {stats.totalUsers} users
         </span>
         <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
           {stats.activeUsers} active
         </span>
         {stats.inactiveUsers > 0 && (
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+          <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-[var(--color-text-secondary)]">
             {stats.inactiveUsers} inactive
           </span>
         )}
@@ -479,10 +479,10 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
       </div>
 
       {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-          <Users className="size-8 text-slate-400 mb-3" />
-          <div className="text-sm font-medium text-slate-500">No users match your filters</div>
-          <div className="mt-1 text-xs text-slate-500">Try adjusting the search or filters</div>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-text-muted)] bg-[var(--color-body-bg)] py-16 text-center">
+          <Users className="size-8 text-[var(--color-text-muted)] mb-3" />
+          <div className="text-sm font-medium text-[var(--color-text-secondary)]">No users match your filters</div>
+          <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try adjusting the search or filters</div>
         </div>
       )}
     </div>

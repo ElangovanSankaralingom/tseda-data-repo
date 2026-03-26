@@ -70,7 +70,7 @@ export default function RequestActionDropdown({
         type="button"
         onClick={onCancelRequest}
         disabled={requesting}
-        className="inline-flex h-8 items-center gap-1 rounded-lg border border-transparent px-2.5 text-sm font-medium text-slate-500 transition-all duration-150 hover:bg-slate-100 active:scale-[0.97] disabled:opacity-50"
+        className="inline-flex h-8 items-center gap-1 rounded-lg border border-transparent px-2.5 text-sm font-medium text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:opacity-50"
       >
         Cancel Request
       </button>
@@ -80,7 +80,7 @@ export default function RequestActionDropdown({
   // After clicking a request action, show greyed out confirmation text
   if (requestSent) {
     return (
-      <span className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-sm font-medium text-slate-400 cursor-not-allowed">
+      <span className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-sm font-medium text-[var(--color-text-muted)] cursor-not-allowed">
         {requestSent === "edit" ? "Edit Request Sent" : "Delete Request Sent"}
       </span>
     );
@@ -114,7 +114,7 @@ export default function RequestActionDropdown({
         <ChevronDown className={`size-3.5 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? (
-        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-1 shadow-lg">
           <button
             type="button"
             role="menuitem"
@@ -123,9 +123,9 @@ export default function RequestActionDropdown({
               if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
               if (e.key === "ArrowUp") { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
             }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            <Pencil className="size-3.5 text-slate-500" />
+            <Pencil className="size-3.5 text-[var(--color-text-secondary)]" />
             Request Edit
           </button>
           <button

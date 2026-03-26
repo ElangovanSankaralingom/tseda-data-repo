@@ -149,13 +149,13 @@ export default function AdminConfirmationsClient() {
   return (
     <div>
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-200 mb-6">
+      <div className="flex border-b border-[var(--color-card-border)] mb-6">
         <button
           onClick={() => setActiveTab("pending")}
           className={`px-4 py-2 text-sm transition-colors ${
             activeTab === "pending"
               ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)] font-medium"
-              : "text-slate-500 hover:text-slate-700"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           }`}
         >
           Pending
@@ -165,7 +165,7 @@ export default function AdminConfirmationsClient() {
           className={`px-4 py-2 text-sm transition-colors ${
             activeTab === "history"
               ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)] font-medium"
-              : "text-slate-500 hover:text-slate-700"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           }`}
         >
           History
@@ -183,8 +183,8 @@ export default function AdminConfirmationsClient() {
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50">
               <CheckCircle2 className="size-8 text-emerald-600" />
             </div>
-            <p className="mt-4 text-base font-medium text-slate-600">No pending requests</p>
-            <p className="mt-1 text-sm text-slate-500">All caught up! Check back later.</p>
+            <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">No pending requests</p>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">All caught up! Check back later.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -197,7 +197,7 @@ export default function AdminConfirmationsClient() {
               return (
                 <div
                   key={rowKey}
-                  className="rounded-xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:shadow-sm"
+                  className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:shadow-sm"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     {/* Avatar + User Info */}
@@ -207,7 +207,7 @@ export default function AdminConfirmationsClient() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-slate-900 truncate">{row.title}</span>
+                          <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{row.title}</span>
                           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                             isDeleteRequest
                               ? "bg-red-100 text-red-700"
@@ -216,16 +216,16 @@ export default function AdminConfirmationsClient() {
                             {isDeleteRequest ? "Delete Request" : "Edit Request"}
                           </span>
                         </div>
-                        <div className="mt-0.5 text-xs text-slate-500">
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium">{row.categoryKey}</span>
+                        <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                          <span className="rounded bg-[var(--color-dropdown-hover)] px-1.5 py-0.5 text-xs font-medium">{row.categoryKey}</span>
                           <span className="mx-1.5">&middot;</span>
                           <span className="truncate">{row.ownerEmail}</span>
                         </div>
                         {relative && (
-                          <div className="mt-0.5 text-xs text-slate-500">Requested {relative}</div>
+                          <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">Requested {relative}</div>
                         )}
                         {!isDeleteRequest && row.editRequestMessage ? (
-                          <div className="mt-1 text-xs text-slate-600 italic">&ldquo;{row.editRequestMessage}&rdquo;</div>
+                          <div className="mt-1 text-xs text-[var(--color-text-secondary)] italic">&ldquo;{row.editRequestMessage}&rdquo;</div>
                         ) : null}
                       </div>
                     </div>

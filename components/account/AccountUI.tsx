@@ -13,7 +13,7 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-white/70 p-5">
+    <div className="rounded-2xl border border-border bg-[var(--color-card-bg)]/70 p-5">
       <div>
         <h2 className="text-base font-semibold">{title}</h2>
         {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}

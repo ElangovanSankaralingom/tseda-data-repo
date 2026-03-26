@@ -181,13 +181,13 @@ export default function AdminNotificationBell({
           setOpen((v) => !v);
           if (!open) setLoaded(false);
         }}
-        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-indigo-50" : "hover:bg-slate-100"}`}
+        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-indigo-50" : "hover:bg-[var(--color-dropdown-hover)]"}`}
         aria-label={`Admin Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         title="Admin Notifications"
       >
         <ShieldAlert className={`size-[18px] ${unreadCount > 0 ? "text-indigo-600 fill-indigo-100" : "text-indigo-300"}`} />
         {unreadCount > 0 && (
-          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-indigo-500 font-bold text-white ring-2 ring-white animate-subtle-pulse ${
+          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-indigo-500 font-bold text-white ring-2 ring-[var(--color-card-bg)] animate-subtle-pulse ${
             unreadCount >= 10 ? "min-w-5 h-4 px-1 text-[8px]" : "size-4 text-[10px]"
           }`}>
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -197,12 +197,12 @@ export default function AdminNotificationBell({
 
       {/* Panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[420px] max-h-[70vh] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl animate-scale-in max-sm:fixed max-sm:inset-x-4 max-sm:right-auto max-sm:w-auto">
+        <div className="absolute right-0 top-full mt-2 w-[420px] max-h-[70vh] overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-2xl animate-scale-in max-sm:fixed max-sm:inset-x-4 max-sm:right-auto max-sm:w-auto">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-indigo-100 bg-indigo-50/50 px-4 py-3">
             <div className="flex items-center gap-2">
               <Shield className="size-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold text-slate-900">Admin Notifications</h3>
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Admin Notifications</h3>
               {unreadCount > 0 && (
                 <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
                   {unreadCount}
@@ -225,8 +225,8 @@ export default function AdminNotificationBell({
             {notifications.length === 0 && loaded && (
               <div className="flex flex-col items-center justify-center py-12">
                 <ShieldAlert className="size-8 text-indigo-200 mb-3" />
-                <div className="text-sm font-medium text-slate-500">No admin alerts</div>
-                <p className="mt-1 text-xs text-slate-500">Everything&apos;s running smooth</p>
+                <div className="text-sm font-medium text-[var(--color-text-secondary)]">No admin alerts</div>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Everything&apos;s running smooth</p>
               </div>
             )}
             {notifications.map((n) => {
@@ -235,7 +235,7 @@ export default function AdminNotificationBell({
               return (
                 <div
                   key={n.id}
-                  className={`border-b border-slate-100 px-4 py-3 transition-colors hover:bg-slate-50 ${
+                  className={`border-b border-[var(--color-divider)] px-4 py-3 transition-colors hover:bg-[var(--color-dropdown-hover)] ${
                     !n.read ? "bg-indigo-50 border-l-3 border-l-indigo-500" : ""
                   }`}
                 >
@@ -245,12 +245,12 @@ export default function AdminNotificationBell({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="text-sm font-semibold text-slate-900">{n.title}</div>
+                        <div className="text-sm font-semibold text-[var(--color-text-primary)]">{n.title}</div>
                         {!n.read && <span className="mt-1 size-2.5 shrink-0 rounded-full bg-indigo-500" />}
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">{n.message}</p>
+                      <p className="mt-0.5 text-xs text-[var(--color-text-secondary)] line-clamp-2">{n.message}</p>
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="text-xs text-slate-500">{formatRelative(n.createdAt)}</span>
+                        <span className="text-xs text-[var(--color-text-secondary)]">{formatRelative(n.createdAt)}</span>
                         {n.actionUrl && n.actionLabel && (
                           <Link
                             href={n.actionUrl}

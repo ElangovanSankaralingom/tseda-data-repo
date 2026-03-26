@@ -70,7 +70,7 @@ export default function SignInPage() {
   }, []);
 
   return (
-    <div className="min-h-[calc(100vh-0px)] w-full bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-[calc(100vh-0px)] w-full bg-gradient-to-br from-[var(--color-body-bg)] to-[var(--color-dropdown-hover)]">
       {/* Subtle neutral background */}
       <div
         aria-hidden="true"
@@ -124,7 +124,7 @@ export default function SignInPage() {
               </h1>
               {/* Accent line */}
               <div className="mx-auto mt-2 h-0.5 w-16 rounded-full bg-amber-400 animate-grow-width" />
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 Sign in with your tce.edu ID only.
               </p>
             </div>
@@ -166,7 +166,7 @@ export default function SignInPage() {
                 <span>{busy ? "Signing in…" : "Sign in with Google"}</span>
               </button>
 
-              <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-slate-500 animate-fade-in-up stagger-3">
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-[var(--color-text-secondary)] animate-fade-in-up stagger-3">
                 <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-2" aria-hidden="true">
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0110 0v4" />
@@ -177,10 +177,10 @@ export default function SignInPage() {
           </div>
 
           {/* footer hint */}
-          <div className="mt-4 text-center text-xs text-slate-500 animate-fade-in-up stagger-4">
+          <div className="mt-4 text-center text-xs text-[var(--color-text-secondary)] animate-fade-in-up stagger-4">
             If you face issues, sign out of other Google accounts and try again.
           </div>
-          <div className="mt-6 text-center text-xs text-slate-300 animate-fade-in-up stagger-5">
+          <div className="mt-6 text-center text-xs text-[var(--color-text-muted)] animate-fade-in-up stagger-5">
             T&apos;SEDA &mdash; Thiagarajar College of Engineering
           </div>
         </div>

@@ -8,7 +8,7 @@ import { pct, catColor } from "./AnalyticsChartsCore";
 export function Leaderboard({ users }: { users: { email: string; name: string; entryCount: number; streakWins: number }[] }) {
   const top = users.slice(0, 10);
   if (top.length === 0) {
-    return <div className="text-sm text-slate-500">No users with entries yet</div>;
+    return <div className="text-sm text-[var(--color-text-secondary)]">No users with entries yet</div>;
   }
 
   const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
@@ -27,23 +27,23 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
               key={user.email}
               className={`flex w-28 flex-col items-center rounded-xl border p-3 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
                 isFirst
-                  ? "border-amber-200 bg-gradient-to-b from-amber-50 to-white shadow-sm"
-                  : "border-slate-200 bg-gradient-to-b from-slate-50 to-white"
+                  ? "border-amber-200 bg-gradient-to-b from-amber-50 to-[var(--color-card-bg)] shadow-sm"
+                  : "border-[var(--color-card-border)] bg-gradient-to-b from-[var(--color-body-bg)] to-[var(--color-card-bg)]"
               } ${isFirst ? "pb-5" : "pb-3"}`}
             >
               <span className="text-xl">{medals[idx]}</span>
               <div
-                className={`mt-1 flex items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 ${
+                className={`mt-1 flex items-center justify-center rounded-full bg-[var(--color-card-border)] text-xs font-bold text-[var(--color-text-secondary)] ${
                   isFirst ? "size-14" : "size-10"
                 }`}
               >
                 {user.name.slice(0, 2).toUpperCase()}
               </div>
-              <div className="mt-2 w-full truncate text-xs font-semibold text-slate-800">
+              <div className="mt-2 w-full truncate text-xs font-semibold text-[var(--color-text-primary)]">
                 {user.name}
               </div>
-              <div className="text-lg font-bold text-slate-900">{user.entryCount}</div>
-              <div className="text-[10px] text-slate-500">entries</div>
+              <div className="text-lg font-bold text-[var(--color-text-primary)]">{user.entryCount}</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">entries</div>
               {user.streakWins > 0 && (
                 <div className="mt-1 flex items-center gap-0.5 text-[10px] text-amber-600">
                   <Trophy className="size-3" /> {user.streakWins}
@@ -54,22 +54,22 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
         })}
       </div>
       {rest.length > 0 && (
-        <div className="rounded-lg border border-slate-200">
+        <div className="rounded-lg border border-[var(--color-card-border)]">
           {rest.map((user, i) => (
             <div
               key={user.email}
               className={`flex items-center gap-3 px-4 py-2.5 ${
-                i % 2 === 0 ? "bg-white" : "bg-slate-50"
-              } ${i < rest.length - 1 ? "border-b border-slate-100" : ""}`}
+                i % 2 === 0 ? "bg-[var(--color-card-bg)]" : "bg-[var(--color-body-bg)]"
+              } ${i < rest.length - 1 ? "border-b border-[var(--color-divider)]" : ""}`}
             >
-              <span className="w-5 text-xs font-bold text-slate-500">#{i + 4}</span>
-              <div className="flex size-7 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
+              <span className="w-5 text-xs font-bold text-[var(--color-text-secondary)]">#{i + 4}</span>
+              <div className="flex size-7 items-center justify-center rounded-full bg-[var(--color-card-border)] text-[10px] font-bold text-[var(--color-text-secondary)]">
                 {user.name.slice(0, 2).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-slate-700">{user.name}</div>
+                <div className="truncate text-sm font-medium text-[var(--color-text-secondary)]">{user.name}</div>
               </div>
-              <div className="text-sm font-semibold tabular-nums text-slate-900">
+              <div className="text-sm font-semibold tabular-nums text-[var(--color-text-primary)]">
                 {user.entryCount}
               </div>
               {user.streakWins > 0 && (
@@ -106,10 +106,10 @@ export function StreakFunnel({
       {bars.map((bar) => (
         <div key={bar.label} className="space-y-1">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-600">{bar.label}</span>
-            <span className="font-semibold text-slate-800">{bar.value}</span>
+            <span className="text-[var(--color-text-secondary)]">{bar.label}</span>
+            <span className="font-semibold text-[var(--color-text-primary)]">{bar.value}</span>
           </div>
-          <div className="h-4 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-4 w-full overflow-hidden rounded-full bg-[var(--color-dropdown-hover)]">
             <div
               className={`h-full rounded-full ${bar.color} transition-all duration-700`}
               style={{ width: `${pct(bar.value, maxVal)}%` }}
@@ -118,7 +118,7 @@ export function StreakFunnel({
         </div>
       ))}
       {total > 0 && (
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-[var(--color-text-secondary)]">
           Completion rate: {pct(wins, activated + wins)}%
         </div>
       )}
@@ -146,20 +146,20 @@ export function CategoryRow({
   const c = compare(growth.current, growth.previous);
 
   return (
-    <div className="border-b border-slate-100 last:border-0">
+    <div className="border-b border-[var(--color-divider)] last:border-0">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[var(--color-dropdown-hover)]"
       >
         <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: catColor(slug) }} />
-        <span className="w-28 shrink-0 truncate text-sm font-medium text-slate-700 sm:w-36">{name}</span>
-        <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+        <span className="w-28 shrink-0 truncate text-sm font-medium text-[var(--color-text-secondary)] sm:w-36">{name}</span>
+        <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-dropdown-hover)]">
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
             style={{ width: `${barPct}%`, backgroundColor: catColor(slug) }}
           />
         </div>
-        <span className="w-12 text-right text-sm font-semibold tabular-nums text-slate-800">
+        <span className="w-12 text-right text-sm font-semibold tabular-nums text-[var(--color-text-primary)]">
           {count}
         </span>
         {c.direction !== "flat" && (
@@ -172,7 +172,7 @@ export function CategoryRow({
           </span>
         )}
         <ChevronDown
-          className={`size-4 text-slate-300 transition-transform duration-200 ${
+          className={`size-4 text-[var(--color-text-muted)] transition-transform duration-200 ${
             expanded ? "rotate-180" : ""
           }`}
         />
@@ -182,7 +182,7 @@ export function CategoryRow({
           {Object.entries(statusBreakdown).map(([status, cnt]) => (
             <span
               key={status}
-              className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600"
+              className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-secondary)]"
             >
               {status}: {cnt}
             </span>

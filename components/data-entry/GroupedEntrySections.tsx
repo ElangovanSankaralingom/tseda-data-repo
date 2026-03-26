@@ -66,14 +66,14 @@ function SectionHeader({ group, count, isUrgent }: { group: EntryListGroup; coun
         <span className={`inline-block ${isUrgent ? "animate-subtle-pulse" : ""}`}>
           <Icon className={`size-4 ${color}`} />
         </span>
-        <span className={`text-xs font-bold uppercase tracking-wider ${isUrgent ? color : "text-slate-500"}`}>
+        <span className={`text-xs font-bold uppercase tracking-wider ${isUrgent ? color : "text-[var(--color-text-secondary)]"}`}>
           {config.title}
         </span>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+        <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">
           {count}
         </span>
       </div>
-      <div className="h-px bg-slate-200" />
+      <div className="h-px bg-[var(--color-card-border)]" />
     </div>
   );
 }
@@ -101,26 +101,26 @@ function Section<TEntry>({
 
 function DefaultEmptyState() {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-      <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-slate-100">
-        <ClipboardList className="size-8 text-slate-700" />
+    <div className="rounded-xl border border-dashed border-[var(--color-text-muted)] bg-[var(--color-body-bg)] p-10 text-center">
+      <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
+        <ClipboardList className="size-8 text-[var(--color-text-secondary)]" />
       </div>
-      <p className="mt-4 text-base font-medium text-slate-700">No entries yet</p>
-      <p className="mt-1 text-sm text-slate-600">Create your first entry to get started</p>
+      <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">No entries yet</p>
+      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Create your first entry to get started</p>
     </div>
   );
 }
 
 function FilteredEmptyState({ onClear }: { onClear: () => void }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-      <Search className="mx-auto size-8 text-slate-700" />
-      <p className="mt-3 text-sm text-slate-600">No entries match your filters</p>
-      <p className="mt-1 text-xs text-slate-600">Try different keywords or clear your filters</p>
+    <div className="rounded-xl border border-dashed border-[var(--color-text-muted)] bg-[var(--color-body-bg)] p-8 text-center">
+      <Search className="mx-auto size-8 text-[var(--color-text-secondary)]" />
+      <p className="mt-3 text-sm text-[var(--color-text-secondary)]">No entries match your filters</p>
+      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Try different keywords or clear your filters</p>
       <button
         type="button"
         onClick={onClear}
-        className="mt-3 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-200 transition-colors"
+        className="mt-3 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] transition-colors"
       >
         Clear filters
       </button>
@@ -208,20 +208,20 @@ export function SmartGroupedEntrySections<TEntry>({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {searchable && (
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search entries..."
               aria-label="Search entries"
-              className="h-9 w-full rounded-xl bg-slate-100 pl-9 pr-8 text-sm text-slate-700 outline-none placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-400 transition-all"
+              className="h-9 w-full rounded-xl bg-[var(--color-dropdown-hover)] pl-9 pr-8 text-sm text-[var(--color-text-secondary)] outline-none placeholder:text-[var(--color-text-secondary)] focus:bg-[var(--color-card-bg)] focus:ring-2 focus:ring-[var(--color-text-muted)] transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               >
                 <X className="size-3.5" />
               </button>
@@ -238,13 +238,13 @@ export function SmartGroupedEntrySections<TEntry>({
 
       {/* Showing count */}
       {isFiltered && (
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
           <span>Showing {totalFiltered} of {totalAll} entries</span>
           {searchQuery && (
             <button
               type="button"
               onClick={() => { setSearchQuery(""); setActiveFilter("all"); }}
-              className="text-slate-500 hover:text-slate-700 underline"
+              className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline"
             >
               Clear
             </button>
@@ -313,7 +313,7 @@ export default function GroupedEntrySections<TEntry>({
 export function createGroupedEntryListCard<TEntry>({
   title,
   subtitle,
-  className = "bg-white/70 p-5",
+  className = "bg-[var(--color-card-bg)]/70 p-5",
   groupedEntries,
   renderEntry,
   emptyState,

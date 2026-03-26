@@ -158,8 +158,8 @@ export default function ResetPage() {
     <div className="mx-auto max-w-3xl space-y-6 py-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Testing Reset Center</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Testing Reset Center</h1>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Clear test data during development. This feature will be removed before production.
         </p>
       </div>
@@ -219,13 +219,13 @@ export default function ResetPage() {
       {/* Target Groups */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="size-6 animate-spin text-slate-500" />
+          <Loader2 className="size-6 animate-spin text-[var(--color-text-secondary)]" />
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(groups).map(([groupName, options]) => (
-            <div key={groupName} className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
+            <div key={groupName} className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
                 {groupName}
               </h2>
               <div className="space-y-3">
@@ -236,7 +236,7 @@ export default function ResetPage() {
                     <label
                       key={opt.key}
                       className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors ${
-                        isChecked ? "bg-red-50 ring-1 ring-red-200" : "hover:bg-slate-50"
+                        isChecked ? "bg-red-50 ring-1 ring-red-200" : "hover:bg-[var(--color-dropdown-hover)]"
                       }`}
                     >
                       <input
@@ -244,21 +244,21 @@ export default function ResetPage() {
                         checked={isChecked}
                         onChange={() => toggleTarget(opt.key)}
                         disabled={clearing || (selected.has("everything") && opt.key !== "everything")}
-                        className="mt-0.5 size-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                        className="mt-0.5 size-4 rounded border-[var(--color-card-border)] text-red-600 focus:ring-red-500"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
-                          <span className="text-sm font-medium text-slate-800">{opt.label}</span>
+                          <span className="text-sm font-medium text-[var(--color-text-primary)]">{opt.label}</span>
                           {stat && stat.count > 0 && (
-                            <span className="shrink-0 text-xs text-slate-500">
+                            <span className="shrink-0 text-xs text-[var(--color-text-secondary)]">
                               {stat.count} file{stat.count === 1 ? "" : "s"}, {formatSize(stat.size)}
                             </span>
                           )}
                           {stat && stat.count === 0 && (
-                            <span className="shrink-0 text-xs text-slate-300">empty</span>
+                            <span className="shrink-0 text-xs text-[var(--color-text-muted)]">empty</span>
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-slate-500">{opt.description}</p>
+                        <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{opt.description}</p>
                       </div>
                     </label>
                   );
@@ -268,7 +268,7 @@ export default function ResetPage() {
           ))}
 
           {/* Nuclear Option */}
-          <div className="rounded-xl border-2 border-red-200 bg-white p-5">
+          <div className="rounded-xl border-2 border-red-200 bg-[var(--color-card-bg)] p-5">
             <div className="mb-3 flex items-center gap-2">
               <div className="h-px flex-1 bg-red-200" />
               <span className="text-xs font-semibold uppercase tracking-wider text-red-400">Nuclear Option</span>
@@ -322,11 +322,11 @@ export default function ResetPage() {
       {/* Confirmation Dialog */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">Clear test data?</h3>
+          <div className="w-full max-w-md rounded-2xl bg-[var(--color-card-bg)] p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Clear test data?</h3>
             <div className="mt-3 space-y-1">
-              <p className="text-sm text-slate-600">The following will be cleared:</p>
-              <ul className="ml-4 list-disc space-y-0.5 text-sm text-slate-700">
+              <p className="text-sm text-[var(--color-text-secondary)]">The following will be cleared:</p>
+              <ul className="ml-4 list-disc space-y-0.5 text-sm text-[var(--color-text-secondary)]">
                 {selectedLabels.map((label) => (
                   <li key={label}>{label}</li>
                 ))}
@@ -336,7 +336,7 @@ export default function ResetPage() {
               This action cannot be undone.
             </p>
             <div className="mt-4">
-              <label className="text-sm text-slate-600">
+              <label className="text-sm text-[var(--color-text-secondary)]">
                 Type <span className="font-mono font-bold">CLEAR</span> to confirm:
               </label>
               <input
@@ -344,7 +344,7 @@ export default function ResetPage() {
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="CLEAR"
-                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none"
+                className="mt-1.5 w-full rounded-lg border border-[var(--color-input-border)] px-3 py-2 text-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none"
                 autoFocus
               />
             </div>
@@ -352,7 +352,7 @@ export default function ResetPage() {
               <button
                 type="button"
                 onClick={() => { setShowConfirm(false); setConfirmText(""); }}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-card-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] transition-colors"
               >
                 Cancel
               </button>

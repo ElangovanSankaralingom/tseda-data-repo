@@ -43,7 +43,7 @@ function StatCard({
         staggerClass,
         hasGradient
           ? cn("border border-transparent text-white shadow-lg", gradient)
-          : "border border-slate-200 bg-white shadow-sm",
+          : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-sm",
         accent,
         hoverRing
       )}
@@ -51,11 +51,11 @@ function StatCard({
       <div
         className={cn(
           "flex size-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110",
-          hasGradient ? "bg-white/20" : iconBg ?? "bg-slate-100"
+          hasGradient ? "bg-white/20" : iconBg ?? "bg-[var(--color-dropdown-hover)]"
         )}
       >
         <Icon
-          className={cn("size-5", hasGradient ? "text-white/80" : iconColor ?? "text-slate-600")}
+          className={cn("size-5", hasGradient ? "text-white/80" : iconColor ?? "text-[var(--color-text-secondary)]")}
         />
       </div>
       <div className="mt-3">
@@ -65,7 +65,7 @@ function StatCard({
         <div
           className={cn(
             "mt-0.5 text-xs font-medium uppercase tracking-wide",
-            hasGradient ? "text-white/80" : "text-slate-600"
+            hasGradient ? "text-white/80" : "text-[var(--color-text-secondary)]"
           )}
         >
           {label}
@@ -75,7 +75,7 @@ function StatCard({
         <p
           className={cn(
             "mt-2 text-xs",
-            hasGradient ? "text-white/70" : "text-slate-600"
+            hasGradient ? "text-white/70" : "text-[var(--color-text-secondary)]"
           )}
         >
           {description}
@@ -86,7 +86,7 @@ function StatCard({
           className={cn(
             "mt-1 max-h-0 overflow-hidden text-xs italic opacity-0 transition-all duration-200",
             "group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100",
-            hasGradient ? "text-white/60" : "text-slate-600"
+            hasGradient ? "text-white/60" : "text-[var(--color-text-secondary)]"
           )}
         >
           {hoverDescription}

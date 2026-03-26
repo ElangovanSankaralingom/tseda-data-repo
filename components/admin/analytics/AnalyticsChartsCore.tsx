@@ -40,7 +40,7 @@ export function ComparisonBadge({ current, previous }: { current: number; previo
   const c = compare(current, previous);
   if (c.direction === "flat") {
     return (
-      <span className="flex items-center gap-0.5 text-xs text-slate-500">
+      <span className="flex items-center gap-0.5 text-xs text-[var(--color-text-secondary)]">
         <Minus className="size-3" /> No change
       </span>
     );
@@ -87,7 +87,7 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <div
-      className={`group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up ${accent} ${hoverRing} stagger-${stagger}`}
+      className={`group rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up ${accent} ${hoverRing} stagger-${stagger}`}
     >
       <div
         className={`flex size-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 ${iconBg}`}
@@ -95,10 +95,10 @@ export function MetricCard({
         <Icon className={`size-5 ${iconColor}`} />
       </div>
       <div className="mt-3">
-        <div className="text-3xl font-bold tabular-nums text-slate-900">
+        <div className="text-3xl font-bold tabular-nums text-[var(--color-text-primary)]">
           <AnimatedCount value={value} suffix={suffix} />
         </div>
-        <div className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="mt-0.5 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">
           {label}
         </div>
       </div>
@@ -112,8 +112,8 @@ export function MetricCard({
 export function SH({ title, description }: { title: string; description: string }) {
   return (
     <div className="mb-4">
-      <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
-      <p className="text-sm text-slate-500">{description}</p>
+      <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2>
+      <p className="text-sm text-[var(--color-text-secondary)]">{description}</p>
     </div>
   );
 }

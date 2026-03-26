@@ -174,15 +174,15 @@ export default function ActionHistoryTab() {
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="animate-pulse rounded-lg border border-slate-100 p-4">
+              <div key={i} className="animate-pulse rounded-lg border border-[var(--color-divider)] p-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-4 w-24 rounded bg-slate-200" />
-                  <div className="h-4 w-40 rounded bg-slate-200" />
-                  <div className="ml-auto h-4 w-20 rounded bg-slate-200" />
+                  <div className="h-4 w-24 rounded bg-[var(--color-dropdown-hover)]" />
+                  <div className="h-4 w-40 rounded bg-[var(--color-dropdown-hover)]" />
+                  <div className="ml-auto h-4 w-20 rounded bg-[var(--color-dropdown-hover)]" />
                 </div>
                 <div className="mt-2 flex items-center gap-3">
-                  <div className="h-3 w-32 rounded bg-slate-100" />
-                  <div className="h-3 w-24 rounded bg-slate-100" />
+                  <div className="h-3 w-32 rounded bg-[var(--color-divider)]" />
+                  <div className="h-3 w-24 rounded bg-[var(--color-divider)]" />
                 </div>
               </div>
             ))}
@@ -193,11 +193,11 @@ export default function ActionHistoryTab() {
           </div>
         ) : records.length === 0 ? (
           <div className="py-8 text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-slate-50">
-              <Clock className="size-8 text-slate-400" />
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-body-bg)]">
+              <Clock className="size-8 text-[var(--color-text-muted)]" />
             </div>
-            <p className="mt-4 text-base font-medium text-slate-600">No history records found</p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">No history records found</p>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               {actionType || category
                 ? "Try adjusting your filters."
                 : "Action history will appear here as requests are processed."}
@@ -210,7 +210,7 @@ export default function ActionHistoryTab() {
               {records.map((record) => (
                 <div
                   key={record.id}
-                  className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50"
+                  className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-colors hover:bg-[var(--color-dropdown-hover)]"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -219,19 +219,19 @@ export default function ActionHistoryTab() {
                       >
                         {BADGE_LABELS[record.actionType]}
                       </span>
-                      <span className="text-sm font-medium text-slate-900 truncate">
+                      <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
                         {record.entryTitle}
                       </span>
                     </div>
                     <span
-                      className="shrink-0 text-xs text-slate-500"
+                      className="shrink-0 text-xs text-[var(--color-text-secondary)]"
                       title={new Date(record.timestamp).toLocaleString()}
                     >
                       {timeAgo(record.timestamp)}
                     </span>
                   </div>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-secondary)]">
+                    <span className="rounded bg-[var(--color-dropdown-hover)] px-1.5 py-0.5 font-medium">
                       {record.category}
                     </span>
                     <span>{record.userName || record.userEmail}</span>
@@ -248,15 +248,15 @@ export default function ActionHistoryTab() {
 
             {/* Pagination */}
             {total > PAGE_SIZE && (
-              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                <span className="text-xs text-slate-500">
+              <div className="mt-4 flex items-center justify-between border-t border-[var(--color-divider)] pt-4">
+                <span className="text-xs text-[var(--color-text-secondary)]">
                   Showing {showFrom}\u2013{showTo} of {total}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-card-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ChevronLeft className="size-3.5" />
                     Previous
@@ -264,7 +264,7 @@ export default function ActionHistoryTab() {
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-card-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Next
                     <ChevronRight className="size-3.5" />

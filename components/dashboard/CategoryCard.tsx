@@ -50,8 +50,8 @@ function CategoryCard({
       className={cn(
         "group block rounded-xl border p-5 transition-all duration-200 cursor-pointer",
         isEmpty
-          ? "border-dashed border-slate-300 bg-slate-50"
-          : "border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:ring-2",
+          ? "border-dashed border-[var(--color-text-muted)] bg-[var(--color-body-bg)]"
+          : "border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:ring-2",
         !isEmpty && accent.ring
       )}
     >
@@ -71,12 +71,12 @@ function CategoryCard({
         <div
           className={cn(
             "text-3xl font-bold tabular-nums",
-            isEmpty ? "text-slate-600" : "text-slate-900"
+            isEmpty ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-primary)]"
           )}
         >
           {displayCount}
         </div>
-        <div className="text-sm text-slate-600">
+        <div className="text-sm text-[var(--color-text-secondary)]">
           {isEmpty ? label : `${total === 1 ? "entry" : "entries"}`}
         </div>
       </div>

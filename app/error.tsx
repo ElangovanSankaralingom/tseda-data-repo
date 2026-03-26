@@ -14,21 +14,21 @@ export default function GlobalError({
 }) {
   return (
     <div className="mx-auto flex min-h-[50vh] w-full max-w-md flex-col items-center justify-center px-4 py-10">
-      <div className="w-full rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+      <div className="w-full rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-8 text-center shadow-sm">
         <AlertTriangle className="mx-auto size-12 text-red-400" />
-        <h2 className="mt-4 text-base font-medium text-slate-700">Something went wrong</h2>
-        <p className="mt-2 text-sm text-slate-500">{toUserMessage(error)}</p>
+        <h2 className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">Something went wrong</h2>
+        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{toUserMessage(error)}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
             onClick={reset}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 text-sm font-medium text-[var(--color-text-secondary)] transition hover:bg-[var(--color-dropdown-hover)]"
           >
             Try again
           </button>
           <Link
             href={dashboard()}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 text-sm font-medium text-[var(--color-text-secondary)] transition hover:bg-[var(--color-dropdown-hover)]"
           >
             Go to Dashboard
           </Link>
