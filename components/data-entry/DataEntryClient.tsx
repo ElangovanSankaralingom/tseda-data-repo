@@ -175,7 +175,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
         ) : (
           <Link
             href={cat.newHref}
-            className="inline-flex h-8 items-center gap-1 rounded-lg bg-[var(--color-text-secondary)] px-3 text-sm font-medium text-white transition-all hover:bg-[var(--color-button-primary-bg)] active:scale-[0.97]"
+            className="inline-flex h-8 items-center gap-1 rounded-lg bg-[var(--color-button-primary-bg)] px-3 text-sm font-medium text-white transition-all hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
           >
             <Plus className="size-3.5" />
             {t('dashboard.createFirst')}
@@ -219,7 +219,7 @@ export default function DataEntryClient({ greeting, userName, categories, totals
               </div>
             )}
             {totals.streakWinsCount > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-900 border border-emerald-100">
+              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-400 border border-emerald-500/20">
                 <Trophy className="size-4" />
                 <span>{totals.streakWinsCount} wins</span>
               </div>
