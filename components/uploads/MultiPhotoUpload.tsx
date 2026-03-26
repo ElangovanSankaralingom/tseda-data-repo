@@ -8,6 +8,7 @@ import { safeAction } from "@/lib/safeAction";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { deleteFile, uploadFile } from "@/lib/upload/uploadService";
 import { type FileMeta } from "@/lib/types/entry";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export type { FileMeta };
 
@@ -59,6 +60,7 @@ export default function MultiPhotoUpload({
   maxFileSizeMB = 20,
   acceptedFileTypes = [".pdf", ".jpg", ".jpeg", ".png"],
 }: MultiPhotoUploadProps) {
+  const { t } = useTranslation();
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -183,7 +185,7 @@ export default function MultiPhotoUpload({
                   rel="noreferrer"
                   className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
                 >
-                  Preview
+                  {t("entry.preview")}
                 </a>
                 {!viewOnly ? (
                   <button
@@ -193,8 +195,8 @@ export default function MultiPhotoUpload({
                         title: "Remove uploaded file?",
                         description:
                           "This deletes the uploaded file from this entry. You can upload it again if needed.",
-                        confirmLabel: "Remove",
-                        cancelLabel: "Cancel",
+                        confirmLabel: t("entry.remove"),
+                        cancelLabel: t("entry.cancel"),
                         variant: "destructive",
                         onConfirm: () => deletePhoto(meta),
                       })
@@ -207,7 +209,7 @@ export default function MultiPhotoUpload({
                         : "border-border text-red-600 transition hover:bg-red-50"
                     )}
                   >
-                    Delete
+                    {t("common.delete")}
                   </button>
                 ) : null}
               </div>

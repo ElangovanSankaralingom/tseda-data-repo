@@ -2,8 +2,10 @@
 
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import type { ProgressNotification } from "@/lib/confirmations/types";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function ProgressOverlay({ progress: p, onDismiss }: { progress: ProgressNotification; onDismiss: () => void }) {
+  const { t } = useTranslation();
   const isComplete = p.status !== "running";
 
   return (
@@ -63,7 +65,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
               onClick={onDismiss}
               className="rounded-lg bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-button-primary-hover)]"
             >
-              {p.status === "success" ? "Done" : "Close"}
+              {p.status === "success" ? t("common.confirm") : t("common.close")}
             </button>
           </div>
         )}
@@ -71,7 +73,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
         {/* Elapsed time */}
         {p.status === "running" && (
           <div className="mt-3 text-center text-xs text-[var(--color-text-secondary)]">
-            Running...
+            {t("common.processing")}
           </div>
         )}
       </div>

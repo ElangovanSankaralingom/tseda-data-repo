@@ -1,6 +1,7 @@
 "use client";
 
 import { getCategoryConfig } from "@/data/categoryRegistry";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { type EditorProgressHeaderProps } from "./dataEntryTypes";
 
 const DEFAULT_ACCENT = { bar: "from-[var(--color-text-muted)] to-[var(--color-text-secondary)]", bg: "bg-[var(--color-dropdown-hover)]", text: "text-[var(--color-text-secondary)]" };
@@ -11,6 +12,7 @@ export default function EditorProgressHeader({
   isGenerated,
   streakEligible,
 }: EditorProgressHeaderProps) {
+  const { t } = useTranslation();
   const config = getCategoryConfig(category);
   const accent = config?.color ?? DEFAULT_ACCENT;
 
@@ -18,11 +20,11 @@ export default function EditorProgressHeader({
     <div className="mb-4">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-          {progress.completed} of {progress.total} {isGenerated ? "fields" : "required fields"}
-          {isGenerated && progress.completed < progress.total ? " — upload supporting documents" : ""}
+          {progress.completed} {t('common.of')} {progress.total} {isGenerated ? t('entry.fields') : t('entry.requiredFields')}
+          {isGenerated && progress.completed < progress.total ? ` \u2014 ${t('entry.uploadSupportingDocsShort')}` : ""}
         </span>
         {streakEligible ? (
-          <span className="text-xs font-medium text-amber-600">&#9889; Streak Entry</span>
+          <span className="text-xs font-medium text-amber-600">&#9889; {t('entry.streakEntry')}</span>
         ) : null}
       </div>
       <div className="h-1.5 rounded-full bg-[var(--color-dropdown-hover)] overflow-hidden">

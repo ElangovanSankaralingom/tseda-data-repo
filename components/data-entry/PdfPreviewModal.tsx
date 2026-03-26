@@ -2,8 +2,10 @@
 
 import { useEffect } from "react";
 import { Download, FileText, X } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfUrl: string; pdfFileName: string; onClose: () => void }) {
+  const { t } = useTranslation();
   // Close on Escape
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -33,7 +35,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
         <div className="flex items-center justify-between border-b border-[var(--color-card-border)] px-6 py-4">
           <div className="flex items-center gap-2">
             <FileText className="size-5 text-[var(--color-text-secondary)]" />
-            <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Entry Preview</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('entry.entryPreview')}</h2>
           </div>
           <button
             type="button"
@@ -62,14 +64,14 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
             className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-button-primary-bg)] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--color-button-primary-hover)]"
           >
             <Download className="size-4" />
-            Download PDF
+            {t('entry.downloadPdf')}
           </a>
           <button
             type="button"
             onClick={onClose}
             className="rounded-xl border border-[var(--color-input-border)] bg-[var(--color-card-bg)] px-5 py-2.5 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>

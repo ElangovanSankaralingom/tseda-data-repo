@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type ConfirmSubmitButtonProps = {
   formId: string;
@@ -19,13 +20,16 @@ export default function ConfirmSubmitButton({
   formId,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel: confirmLabelProp,
+  cancelLabel: cancelLabelProp,
   variant = "default",
   className,
   disabled = false,
   children,
 }: ConfirmSubmitButtonProps) {
+  const { t } = useTranslation();
+  const confirmLabel = confirmLabelProp ?? t("common.confirm");
+  const cancelLabel = cancelLabelProp ?? t("confirm.cancel");
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
 
   const submitForm = useCallback(() => {

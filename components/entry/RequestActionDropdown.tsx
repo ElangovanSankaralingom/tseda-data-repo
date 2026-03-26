@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function RequestActionDropdown({
   editRequestPending = false,
@@ -18,6 +19,7 @@ export default function RequestActionDropdown({
   onRequestDelete: () => void;
   onCancelRequest?: () => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [requestSent, setRequestSent] = useState<"edit" | "delete" | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -72,7 +74,7 @@ export default function RequestActionDropdown({
         disabled={requesting}
         className="inline-flex h-8 items-center gap-1 rounded-lg border border-transparent px-2.5 text-sm font-medium text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:opacity-50"
       >
-        Cancel Request
+        {t("entry.cancelRequest")}
       </button>
     );
   }
@@ -81,7 +83,7 @@ export default function RequestActionDropdown({
   if (requestSent) {
     return (
       <span className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-sm font-medium text-[var(--color-text-muted)] cursor-not-allowed">
-        {requestSent === "edit" ? "Edit Request Sent" : "Delete Request Sent"}
+        {requestSent === "edit" ? t("entry.editRequested") : t("entry.deleteRequested")}
       </span>
     );
   }
@@ -126,7 +128,7 @@ export default function RequestActionDropdown({
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
             <Pencil className="size-3.5 text-[var(--color-text-secondary)]" />
-            Request Edit
+            {t("entry.requestEdit")}
           </button>
           <button
             type="button"
@@ -139,7 +141,7 @@ export default function RequestActionDropdown({
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
           >
             <Trash2 className="size-3.5 text-red-400" />
-            Request Delete
+            {t("entry.requestDelete")}
           </button>
         </div>
       ) : null}

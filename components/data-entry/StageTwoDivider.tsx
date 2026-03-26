@@ -1,8 +1,10 @@
 "use client";
 
 import { Unlock } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function StageTwoDivider() {
+  const { t } = useTranslation();
   return (
     <div className="my-6 animate-fade-in-up">
       <div className="flex items-center">
@@ -12,13 +14,13 @@ export default function StageTwoDivider() {
             <Unlock className="size-3 text-amber-600" />
           </span>
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
-            Supporting Documents
+            {t('entry.supportingDocuments')}
           </span>
         </span>
         <div className="flex-1 border-t border-dashed border-[var(--color-input-border)]" />
       </div>
       <p className="mt-2 text-center text-xs text-[var(--color-text-secondary)]">
-        Upload the required documents to complete this entry
+        {t('entry.uploadSupportingDocsHint')}
       </p>
     </div>
   );

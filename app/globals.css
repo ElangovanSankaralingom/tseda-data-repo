@@ -40,6 +40,7 @@
   --color-modal-bg: #FFFFFF;
   --color-skeleton-base: #E2E8F0;
   --color-skeleton-shine: #F1F5F9;
+  --color-header-tint: rgba(30, 58, 95, 0.06);
 }
 
 html {

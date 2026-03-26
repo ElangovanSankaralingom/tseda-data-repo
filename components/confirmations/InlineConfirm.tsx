@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 /**
  * Contextual confirmation strip that replaces a trigger button.
@@ -21,6 +22,7 @@ export default function InlineConfirm({
   autoCancel?: number;
   variant?: "danger" | "warning";
 }) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   // Animate in
@@ -65,7 +67,7 @@ export default function InlineConfirm({
         onClick={onCancel}
         className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
       >
-        Cancel
+        {t("entry.cancel")}
       </button>
     </div>
   );

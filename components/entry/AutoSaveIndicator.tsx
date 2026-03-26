@@ -1,6 +1,7 @@
 "use client";
 
 import { type AutoSaveStatus } from "@/hooks/useAutoSave";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function getSavedLabel(value: string | null) {
   if (!value) return "Autosave enabled";
@@ -26,8 +27,10 @@ export default function AutoSaveIndicator({
 }: {
   status: AutoSaveStatus;
 }) {
+  const { t } = useTranslation();
+
   if (status.phase === "saving") {
-    return <p className="text-xs text-muted-foreground">Saving...</p>;
+    return <p className="text-xs text-muted-foreground">{t("common.saving")}</p>;
   }
 
   if (status.phase === "error") {

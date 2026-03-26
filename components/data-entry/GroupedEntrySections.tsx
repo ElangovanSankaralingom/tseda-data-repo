@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import FilterTabs, { type FilterTab } from "@/components/ui/FilterTabs";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   ENTRY_LIST_GROUP_ORDER,
   type EntryListGroup,
@@ -34,12 +35,12 @@ import {
 export type { GroupedEntries, GroupedEntryRender, GroupedEntryListCardConfig, ListStats, SmartGroupedEntryRender };
 
 const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
-  streak_runners: { title: "STREAK RUNNERS", icon: Zap, iconColor: "text-amber-500", urgentColor: "text-amber-600" },
-  on_the_clock: { title: "ON THE CLOCK", icon: Clock, iconColor: "text-blue-500", urgentColor: "text-blue-600" },
-  unlocked: { title: "UNLOCKED", icon: Unlock, iconColor: "text-purple-500" },
-  in_the_works: { title: "IN THE WORKS", icon: Pencil, iconColor: "text-[var(--color-text-secondary)]" },
-  under_review: { title: "UNDER REVIEW", icon: Clock, iconColor: "text-amber-400" },
-  locked_in: { title: "LOCKED IN", icon: Lock, iconColor: "text-emerald-500" },
+  streak_runners: { title: "entry.streakRunners", icon: Zap, iconColor: "text-amber-500", urgentColor: "text-amber-600" },
+  on_the_clock: { title: "entry.onTheClock", icon: Clock, iconColor: "text-blue-500", urgentColor: "text-blue-600" },
+  unlocked: { title: "entry.unlocked", icon: Unlock, iconColor: "text-purple-500" },
+  in_the_works: { title: "entry.inTheWorks", icon: Pencil, iconColor: "text-[var(--color-text-secondary)]" },
+  under_review: { title: "entry.underReview", icon: Clock, iconColor: "text-amber-400" },
+  locked_in: { title: "entry.lockedIn", icon: Lock, iconColor: "text-emerald-500" },
 };
 
 import { type FilterKey } from "@/lib/types/ui";
@@ -56,6 +57,7 @@ function getFilterGroups(filterKey: FilterKey): Set<EntryListGroup> | null {
 }
 
 function SectionHeader({ group, count, isUrgent }: { group: EntryListGroup; count: number; isUrgent?: boolean }) {
+  const { t } = useTranslation();
   const config = SECTION_CONFIGS[group];
   const Icon = config.icon;
   const color = isUrgent && config.urgentColor ? config.urgentColor : config.iconColor;
@@ -67,7 +69,7 @@ function SectionHeader({ group, count, isUrgent }: { group: EntryListGroup; coun
           <Icon className={`size-4 ${color}`} />
         </span>
         <span className={`text-xs font-bold uppercase tracking-wider ${isUrgent ? color : "text-[var(--color-text-secondary)]"}`}>
-          {config.title}
+          {t(config.title as Parameters<typeof t>[0])}
         </span>
         <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">
           {count}
@@ -100,44 +102,46 @@ function Section<TEntry>({
 }
 
 function DefaultEmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-dashed border-[var(--color-text-muted)] bg-[var(--color-body-bg)] p-10 text-center">
       <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
         <ClipboardList className="size-8 text-[var(--color-text-secondary)]" />
       </div>
-      <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">No entries yet</p>
-      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Create your first entry to get started</p>
+      <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t('entry.noEntries')}</p>
+      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('entry.createFirstToStart')}</p>
     </div>
   );
 }
 
 function FilteredEmptyState({ onClear }: { onClear: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-dashed border-[var(--color-text-muted)] bg-[var(--color-body-bg)] p-8 text-center">
       <Search className="mx-auto size-8 text-[var(--color-text-secondary)]" />
-      <p className="mt-3 text-sm text-[var(--color-text-secondary)]">No entries match your filters</p>
-      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Try different keywords or clear your filters</p>
+      <p className="mt-3 text-sm text-[var(--color-text-secondary)]">{t('entry.noEntriesMatch')}</p>
+      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t('entry.tryDifferentFilters')}</p>
       <button
         type="button"
         onClick={onClear}
         className="mt-3 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] transition-colors"
       >
-        Clear filters
+        {t('entry.clearFilters')}
       </button>
     </div>
   );
 }
 
-function buildFilterTabs<TEntry>(groups: ListGroupedEntries<TEntry>): FilterTab[] {
+function buildFilterTabs<TEntry>(groups: ListGroupedEntries<TEntry>, t: (key: string) => string): FilterTab[] {
   const total = ENTRY_LIST_GROUP_ORDER.reduce((sum, key) => sum + groups[key].length, 0);
   const activeCount = groups.streak_runners.length + groups.on_the_clock.length + groups.unlocked.length;
 
   return [
-    { key: "all", label: "All", count: total },
-    { key: "active", label: "Active", count: activeCount },
-    { key: "drafts", label: "Drafts", count: groups.in_the_works.length },
-    { key: "finalized", label: "Finalized", count: groups.locked_in.length },
-    { key: "pending", label: "Pending", count: groups.under_review.length },
+    { key: "all", label: t('common.all'), count: total },
+    { key: "active", label: t('common.active'), count: activeCount },
+    { key: "drafts", label: t('common.drafts'), count: groups.in_the_works.length },
+    { key: "finalized", label: t('common.finalized'), count: groups.locked_in.length },
+    { key: "pending", label: t('common.pending'), count: groups.under_review.length },
   ];
 }
 
@@ -167,6 +171,7 @@ export function SmartGroupedEntrySections<TEntry>({
   searchable = false,
   activeClassName,
 }: SmartGroupedEntrySectionsProps<TEntry>) {
+  const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -193,7 +198,7 @@ export function SmartGroupedEntrySections<TEntry>({
     return <>{emptyState ?? <DefaultEmptyState />}</>;
   }
 
-  const tabs = buildFilterTabs(filteredGroups);
+  const tabs = buildFilterTabs(filteredGroups, t as (key: string) => string);
   const allowedGroups = getFilterGroups(activeFilter);
   const totalFiltered = ENTRY_LIST_GROUP_ORDER.reduce((sum, key) => {
     if (allowedGroups && !allowedGroups.has(key)) return sum;
@@ -213,7 +218,7 @@ export function SmartGroupedEntrySections<TEntry>({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search entries..."
+              placeholder={t('entry.searchEntries')}
               aria-label="Search entries"
               className="h-9 w-full rounded-xl bg-[var(--color-dropdown-hover)] pl-9 pr-8 text-sm text-[var(--color-text-secondary)] outline-none placeholder:text-[var(--color-text-secondary)] focus:bg-[var(--color-card-bg)] focus:ring-2 focus:ring-[var(--color-text-muted)] transition-all"
             />
@@ -239,14 +244,14 @@ export function SmartGroupedEntrySections<TEntry>({
       {/* Showing count */}
       {isFiltered && (
         <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-          <span>Showing {totalFiltered} of {totalAll} entries</span>
+          <span>{t('common.showing')} {totalFiltered} {t('common.of')} {totalAll} {t('dashboard.entries')}</span>
           {searchQuery && (
             <button
               type="button"
               onClick={() => { setSearchQuery(""); setActiveFilter("all"); }}
               className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline"
             >
-              Clear
+              {t('common.clear')}
             </button>
           )}
         </div>

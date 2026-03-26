@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { AlertTriangle, Archive, Clock, Lock, Shield, Unlock } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { type EditorStatusBannersProps } from "./dataEntryTypes";
 
 /**
@@ -145,6 +146,7 @@ export function EditorStatusBanners({
   onCancelRequest,
   onCancelRequestDelete,
 }: EditorStatusBannersProps) {
+  const { t } = useTranslation();
   const [cancelling, setCancelling] = useState(false);
 
   const handleCancelEdit = useCallback(async () => {
@@ -175,7 +177,7 @@ export function EditorStatusBanners({
     return (
       <StatusStrip
         variant="expiring_soon"
-        message={`Edit window closes in ${editTimeLabel} — save your changes`}
+        message={`${t('entry.editWindowClosesIn')} ${editTimeLabel} \u2014 ${t('entry.saveYourChanges')}`}
       />
     );
   }
@@ -184,7 +186,7 @@ export function EditorStatusBanners({
     return (
       <StatusStrip
         variant="edit_granted"
-        message={editTimeLabel ? `Edit access granted · Expires in ${editTimeLabel}` : "Edit access granted"}
+        message={editTimeLabel ? `${t('entry.editAccessGranted')} \u00B7 ${t('entry.expiresIn')} ${editTimeLabel}` : t('entry.editAccessGranted')}
       />
     );
   }
@@ -193,8 +195,8 @@ export function EditorStatusBanners({
     return (
       <StatusStrip
         variant="edit_requested"
-        message="Edit request pending · Waiting for admin approval"
-        actionLabel={cancelling ? "Cancelling..." : "Cancel Request"}
+        message={t('entry.editRequestPending')}
+        actionLabel={cancelling ? t('entry.cancellingRequest') : t('entry.cancelRequest')}
         onAction={handleCancelEdit}
         actionDisabled={cancelling}
       />
@@ -205,8 +207,8 @@ export function EditorStatusBanners({
     return (
       <StatusStrip
         variant="delete_requested"
-        message="Delete request pending · Waiting for admin approval"
-        actionLabel={cancelling ? "Cancelling..." : "Cancel Request"}
+        message={t('entry.deleteRequestPending')}
+        actionLabel={cancelling ? t('entry.cancellingRequest') : t('entry.cancelRequest')}
         onAction={handleCancelDelete}
         actionDisabled={cancelling}
       />
@@ -217,7 +219,7 @@ export function EditorStatusBanners({
     return (
       <StatusStrip
         variant="archived"
-        message="This entry has been archived"
+        message={t('entry.entryArchived')}
       />
     );
   }
@@ -227,14 +229,14 @@ export function EditorStatusBanners({
       return (
         <StatusStrip
           variant="permanently_locked"
-          message="Entry finalised · Permanently locked"
+          message={t('entry.entryFinalised')}
         />
       );
     }
     return (
       <StatusStrip
         variant="finalized"
-        message={`Entry finalised · Read-only${hasPdf ? " · Document available below" : ""}`}
+        message={`${t('entry.entryFinalisedReadOnly')}${hasPdf ? ` \u00B7 ${t('entry.documentAvailableBelow')}` : ""}`}
       />
     );
   }
@@ -244,7 +246,7 @@ export function EditorStatusBanners({
     return (
       <StatusStrip
         variant="editable"
-        message={`Entry generated · Edit window closes in ${editTimeLabel.replace(/ left$/, "")}`}
+        message={`${t('entry.entryGenerated')} \u00B7 ${t('entry.editWindowClosesIn')} ${editTimeLabel.replace(/ left$/, "")}`}
       />
     );
   }

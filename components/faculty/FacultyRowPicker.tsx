@@ -7,6 +7,7 @@ import FacultySelect, {
 } from "@/components/controls/FacultySelect";
 import { RoleButton } from "@/components/ui/RoleButton";
 import { nowISTTimestampISO } from "@/lib/time";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export type FacultyRowValue = {
   id?: string;
@@ -95,6 +96,7 @@ export default function FacultyRowPicker({
   emptyStateText = "No faculty added.",
   validateRow,
 }: FacultyRowPickerProps) {
+  const { t } = useTranslation();
   const [attemptedRowSave, setAttemptedRowSave] = useState<Record<string, boolean>>({});
   const [rowSaveErrors, setRowSaveErrors] = useState<Record<string, string | null>>({});
   const [rowSaving, setRowSaving] = useState<Record<string, boolean>>({});
@@ -293,7 +295,7 @@ export default function FacultyRowPicker({
                 {!viewOnly ? (
                   <>
                     <RoleButton role="context" onClick={() => void handleSaveRow(index)} disabled={saveDisabled}>
-                      {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
+                      {isSaving ? t("common.saving") : isSaved ? t("common.saved") : t("common.save")}
                     </RoleButton>
 
                     <RoleButton
@@ -301,7 +303,7 @@ export default function FacultyRowPicker({
                       onClick={() => handleDeleteRow(index)}
                       disabled={deleteDisabled}
                     >
-                      Delete
+                      {t("common.delete")}
                     </RoleButton>
                   </>
                 ) : null}

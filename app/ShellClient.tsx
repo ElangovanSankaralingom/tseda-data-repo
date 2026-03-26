@@ -194,10 +194,10 @@ export default function ShellClient({
       {/* ─── Fixed Header ─── */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 h-14 border-b backdrop-blur-xl transition-shadow duration-200",
+          "fixed top-0 left-0 right-0 z-50 h-14 border-b bg-[var(--color-header-tint)] transition-shadow duration-200",
           scrolled
-            ? "bg-[var(--color-card-bg)]/90 border-[var(--color-card-border)]/80 shadow-sm"
-            : "bg-[var(--color-card-bg)]/70 border-[var(--color-card-border)]/50"
+            ? "backdrop-blur-xl border-[var(--color-card-border)]/80 shadow-sm"
+            : "backdrop-blur-md border-[var(--color-card-border)]/50"
         )}
       >
         <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-6">
