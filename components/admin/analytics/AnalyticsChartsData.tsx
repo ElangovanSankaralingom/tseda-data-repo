@@ -95,7 +95,7 @@ export function StreakFunnel({
   wins: number;
 }) {
   const bars = [
-    { label: "Total Eligible", value: activated + wins, color: "bg-slate-500" },
+    { label: "Total Eligible", value: activated + wins, color: "bg-[var(--color-text-muted)]" },
     { label: "In Progress", value: activated, color: "bg-amber-500" },
     { label: "Completed", value: wins, color: "bg-emerald-500" },
   ];

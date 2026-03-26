@@ -109,7 +109,7 @@ export default function CategoryEntryRecordCard({
                 <button
                   type="button"
                   onClick={onView}
-                  className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
+                  className="rounded-xl bg-[var(--color-dropdown-hover)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
                 >
                   View
                 </button>
@@ -129,7 +129,7 @@ export default function CategoryEntryRecordCard({
                 <button
                   type="button"
                   onClick={onView}
-                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 px-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-200 active:scale-[0.97]"
+                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-dropdown-hover)] px-3 text-sm font-medium text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97]"
                 >
                   View
                 </button>

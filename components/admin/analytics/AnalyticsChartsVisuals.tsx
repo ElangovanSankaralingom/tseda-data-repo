@@ -16,7 +16,7 @@ export function AreaChart({
 }) {
   if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-slate-500">
+      <div className="flex h-48 items-center justify-center text-sm text-[var(--color-text-secondary)]">
         Not enough data for chart
       </div>
     );
@@ -54,16 +54,16 @@ export function AreaChart({
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="xMidYMid meet">
       <defs>
         <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0F172A" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#0F172A" stopOpacity="0.01" />
+          <stop offset="0%" stopColor="var(--color-text-primary)" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="var(--color-text-primary)" stopOpacity="0.01" />
         </linearGradient>
       </defs>
       {yLabels.map((v) => {
         const y = padY + chartH - (v / maxVal) * chartH;
         return (
           <g key={v}>
-            <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="#E2E8F0" strokeWidth="1" />
-            <text x={padX - 6} y={y + 4} textAnchor="end" className="fill-slate-400 text-[10px]">
+            <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="var(--color-card-border)" strokeWidth="1" />
+            <text x={padX - 6} y={y + 4} textAnchor="end" className="fill-[var(--color-text-muted)] text-[10px]">
               {v}
             </text>
           </g>
@@ -73,15 +73,15 @@ export function AreaChart({
         <polyline
           points={prevLine}
           fill="none"
-          stroke="#CBD5E1"
+          stroke="var(--color-text-muted)"
           strokeWidth="1.5"
           strokeDasharray="4 3"
         />
       )}
       <polygon points={area} fill="url(#areaFill)" />
-      <polyline points={line} fill="none" stroke="#0F172A" strokeWidth="2" strokeLinejoin="round" />
+      <polyline points={line} fill="none" stroke="var(--color-text-primary)" strokeWidth="2" strokeLinejoin="round" />
       {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="3" fill="#0F172A">
+        <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--color-text-primary)">
           <title>
             {data[i].label}: {data[i].value}
           </title>
@@ -96,7 +96,7 @@ export function AreaChart({
             x={p.x}
             y={height - 4}
             textAnchor="middle"
-            className="fill-slate-400 text-[10px]"
+            className="fill-[var(--color-text-muted)] text-[10px]"
           >
             {data[i].label}
           </text>
@@ -132,7 +132,7 @@ export function DonutChart({
   return (
     <div className="flex flex-col items-center gap-4">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="16" />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--color-divider)" strokeWidth="16" />
         {arcs.map((arc) => (
           <circle
             key={arc.label}
@@ -156,7 +156,7 @@ export function DonutChart({
           x={cx}
           y={cy - 6}
           textAnchor="middle"
-          className="fill-slate-900 text-2xl font-bold"
+          className="fill-[var(--color-text-primary)] text-2xl font-bold"
         >
           {total}
         </text>
@@ -173,7 +173,7 @@ export function DonutChart({
         {segments
           .filter((s) => s.value > 0)
           .map((s) => (
-            <div key={s.label} className="flex items-center gap-1.5 text-xs text-slate-600">
+            <div key={s.label} className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
               <span className="size-2 rounded-full" style={{ backgroundColor: s.color }} />
               {s.label}
               <span className="font-medium">{s.value}</span>
@@ -216,7 +216,7 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
   }, []);
 
   function cellColor(count: number) {
-    if (count === 0) return "bg-slate-100";
+    if (count === 0) return "bg-[var(--color-dropdown-hover)]";
     if (count <= 2) return "bg-emerald-200";
     if (count <= 5) return "bg-emerald-400";
     if (count <= 10) return "bg-emerald-600";
@@ -228,7 +228,7 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         <div className="flex shrink-0 flex-col gap-1 pr-1 pt-0">
           {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-            <div key={i} className="flex h-3 w-4 items-center text-[9px] text-slate-500">
+            <div key={i} className="flex h-3 w-4 items-center text-[9px] text-[var(--color-text-secondary)]">
               {i % 2 === 0 ? d : ""}
             </div>
           ))}
@@ -248,9 +248,9 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-1 text-[10px] text-slate-500">
+      <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-secondary)]">
         <span>Less</span>
-        <span className="size-3 rounded-sm bg-slate-100" />
+        <span className="size-3 rounded-sm bg-[var(--color-dropdown-hover)]" />
         <span className="size-3 rounded-sm bg-emerald-200" />
         <span className="size-3 rounded-sm bg-emerald-400" />
         <span className="size-3 rounded-sm bg-emerald-600" />

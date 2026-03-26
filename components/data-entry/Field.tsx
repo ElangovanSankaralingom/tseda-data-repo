@@ -25,11 +25,11 @@ export default function Field({ label, error, hint, required, children }: FieldP
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={fieldId} className="text-sm font-medium text-slate-700">
+        <label htmlFor={fieldId} className="text-sm font-medium text-[var(--color-text-primary)]">
           {label}
           {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
         </label>
-        {hint ? <span id={hintId} className="text-xs text-slate-500">{hint}</span> : null}
+        {hint ? <span id={hintId} className="text-xs text-[var(--color-text-secondary)]">{hint}</span> : null}
       </div>
       {typeof children === "function"
         ? children(childProps)

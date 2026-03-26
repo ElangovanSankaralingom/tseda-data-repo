@@ -52,9 +52,9 @@ const TYPE_CONFIG: Record<
   },
   loading: {
     Icon: Loader2,
-    iconBg: "bg-slate-100",
+    iconBg: "bg-[var(--color-dropdown-hover)]",
     iconColor: "text-[var(--color-text-secondary)]",
-    border: "border-l-slate-400",
+    border: "border-l-[var(--color-text-muted)]",
     defaultDuration: 0,
   },
   undo: {

@@ -76,7 +76,7 @@ export function TemplateCard({
   running: boolean;
 }) {
   const icon = TEMPLATE_ICONS[template.icon] ?? <Download className="size-5" />;
-  const iconBg = TEMPLATE_ICON_BG[template.icon] ?? "bg-slate-50 text-slate-600";
+  const iconBg = TEMPLATE_ICON_BG[template.icon] ?? "bg-[var(--color-body-bg)] text-[var(--color-text-secondary)]";
 
   return (
     <div className={`group rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}>

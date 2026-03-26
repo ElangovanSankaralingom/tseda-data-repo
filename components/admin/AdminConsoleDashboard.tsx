@@ -181,8 +181,8 @@ export default function AdminConsoleDashboard({
             description: "Full action traceability",
             href: "/admin/audit",
             icon: ScrollText,
-            accent: "text-slate-600",
-            accentBg: "bg-slate-100",
+            accent: "text-[var(--color-text-secondary)]",
+            accentBg: "bg-[var(--color-dropdown-hover)]",
           }
         : null,
       permissions.maintenance
@@ -201,8 +201,8 @@ export default function AdminConsoleDashboard({
             description: "Configure app behavior",
             href: "/admin/settings",
             icon: Settings,
-            accent: "text-slate-600",
-            accentBg: "bg-slate-100",
+            accent: "text-[var(--color-text-secondary)]",
+            accentBg: "bg-[var(--color-dropdown-hover)]",
             badgeDot: data?.health.system.maintenanceMode,
             badgeColor: "bg-amber-500",
           }
@@ -216,7 +216,7 @@ export default function AdminConsoleDashboard({
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 mb-8">
           <h1 className="text-2xl font-bold text-white">Admin Console</h1>
-          <p className="mt-1 text-sm text-slate-300">Loading...</p>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Loading...</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -245,25 +245,25 @@ export default function AdminConsoleDashboard({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Admin Console</h1>
-            <p className="mt-1 text-sm text-slate-300">Manage, monitor, and maintain T&apos;SEDA</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">Manage, monitor, and maintain T&apos;SEDA</p>
           </div>
 
           {/* Health traffic lights */}
           <div className="flex items-center gap-5">
             <Link href="/admin/backups" className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.backup.status} size="md" />
-              <span className="text-xs text-slate-500 group-hover:text-slate-200 transition-colors">Backup</span>
+              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">Backup</span>
             </Link>
             <Link href="/admin/integrity" className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.integrity.status} size="md" />
-              <span className="text-xs text-slate-500 group-hover:text-slate-200 transition-colors">Integrity</span>
+              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">Integrity</span>
             </Link>
             <Link href="/admin/settings" className="flex flex-col items-center gap-1.5 group">
               <HealthDot
                 status={data.health.system.maintenanceMode ? "amber" : "green"}
                 size="md"
               />
-              <span className="text-xs text-slate-500 group-hover:text-slate-200 transition-colors">System</span>
+              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">System</span>
             </Link>
           </div>
         </div>

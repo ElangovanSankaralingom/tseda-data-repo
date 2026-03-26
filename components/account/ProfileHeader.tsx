@@ -35,10 +35,10 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
         </div>
         <div className="text-center sm:text-left">
           <h1 className="text-2xl font-bold text-white">{employeeLabel}</h1>
-          <p className="mt-0.5 text-sm text-slate-300">{draft.email || ""}</p>
+          <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">{draft.email || ""}</p>
           {draft.academic?.designation && (
             <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
-              <span className="rounded-full bg-white/10 px-3 py-0.5 text-xs text-slate-200">
+              <span className="rounded-full bg-white/10 px-3 py-0.5 text-xs text-[var(--color-text-muted)]">
                 {draft.academic.designation} Professor
               </span>
             </div>

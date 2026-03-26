@@ -63,9 +63,9 @@ const BADGE_STYLES: Record<ActionType, string> = {
   edit_rejected: "bg-red-100 text-red-700",
   delete_approved: "bg-red-100 text-red-700",
   delete_rejected: "bg-amber-100 text-amber-700",
-  user_cancelled: "bg-slate-100 text-slate-600",
+  user_cancelled: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
   auto_finalised: "bg-blue-100 text-blue-700",
-  auto_deleted: "bg-slate-100 text-slate-600",
+  auto_deleted: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
 };
 
 const BADGE_LABELS: Record<ActionType, string> = {

@@ -26,7 +26,7 @@ const TYPE_CONFIG: Record<
   delete_rejected: { Icon: XCircle, iconBg: "bg-red-100", iconColor: "text-red-600" },
   auto_archived: { Icon: Archive, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
   timer_warning: { Icon: Clock, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
-  entry_finalized: { Icon: Lock, iconBg: "bg-slate-100", iconColor: "text-slate-600" },
+  entry_finalized: { Icon: Lock, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
   streak_won: { Icon: Trophy, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
   system_announcement: { Icon: Megaphone, iconBg: "bg-blue-100", iconColor: "text-blue-600" },
 };

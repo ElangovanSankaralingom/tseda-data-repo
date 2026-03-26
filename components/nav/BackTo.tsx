@@ -45,9 +45,9 @@ export default function BackTo({
   };
 
   const disabledClass =
-    "pointer-events-none cursor-not-allowed inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600 opacity-50";
+    "pointer-events-none cursor-not-allowed inline-flex items-center gap-1.5 rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] opacity-50";
   const enabledClass =
-    "group inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-slate-200 hover:text-slate-900 active:scale-95 cursor-pointer";
+    "group inline-flex items-center gap-1.5 rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)] active:scale-95 cursor-pointer";
 
   return (
     <button

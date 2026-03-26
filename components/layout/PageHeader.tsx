@@ -37,7 +37,7 @@ export default function PageHeader({
           <h1 className={cx("text-2xl font-semibold tracking-tight", titleClassName)}>{title}</h1>
         </div>
         {subtitle ? (
-          <p className={cx("mt-1 text-sm text-slate-500", subtitleClassName)}>{subtitle}</p>
+          <p className={cx("mt-1 text-sm text-[var(--color-text-secondary)]", subtitleClassName)}>{subtitle}</p>
         ) : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

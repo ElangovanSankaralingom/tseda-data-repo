@@ -65,8 +65,8 @@ export default function AppearanceSettings() {
                     <Check className="size-3" />
                   </span>
                 )}
-                <Icon className={`size-6 ${key === "dark" ? "text-slate-300" : "text-[var(--color-text-secondary)]"}`} />
-                <span className={`text-sm font-medium ${key === "dark" ? "text-slate-200" : "text-[var(--color-text-primary)]"}`}>{t(tKey)}</span>
+                <Icon className={`size-6 ${key === "dark" ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-secondary)]"}`} />
+                <span className={`text-sm font-medium ${key === "dark" ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-primary)]"}`}>{t(tKey)}</span>
                 {/* Mini preview strip */}
                 <div className="flex w-full gap-1 rounded-md overflow-hidden h-3">
                   <div className="flex-1 rounded-sm" style={{ backgroundColor: preview.header }} />

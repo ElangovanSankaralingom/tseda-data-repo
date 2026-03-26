@@ -43,7 +43,7 @@ const GROUP_ICON_COLORS: Record<EntryListGroup, string> = {
   streak_runners: "text-amber-500",
   on_the_clock: "text-blue-500",
   unlocked: "text-purple-500",
-  in_the_works: "text-slate-600",
+  in_the_works: "text-[var(--color-text-secondary)]",
   under_review: "text-amber-400",
   locked_in: "text-emerald-500",
 };
@@ -59,7 +59,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 
   if (group === "in_the_works") {
     return (
-      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+      <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-primary)]">
         {t('entry.draft')}
       </span>
     );
