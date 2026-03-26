@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { Palette } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { getUserPreferences } from "@/lib/preferences/userPreferences";
 import { dashboard } from "@/lib/entryNavigation";
 import AppearanceSettings from "@/components/settings/AppearanceSettings";
 
@@ -13,8 +12,6 @@ export default async function AppearancePage() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) redirect(dashboard());
-
-  const prefs = getUserPreferences(email);
 
   return (
     <div className="mx-auto max-w-2xl py-6">
@@ -31,7 +28,7 @@ export default async function AppearancePage() {
       </div>
 
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-6 shadow-sm">
-        <AppearanceSettings initialLanguage={prefs.language as "en" | "ta"} />
+        <AppearanceSettings />
       </div>
     </div>
   );

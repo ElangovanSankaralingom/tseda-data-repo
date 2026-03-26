@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { Check, Moon, Palette, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import type { ThemeMode, ColorPalette } from "@/lib/theme/themeTokens";
+import type { Language } from "@/lib/i18n";
 
 const THEME_MODES: { key: ThemeMode; label: string; Icon: typeof Sun; preview: { header: string; card: string; text: string } }[] = [
   {
@@ -34,24 +34,8 @@ const PALETTES: { key: ColorPalette; label: string; swatch: string }[] = [
   { key: "rose-pink", label: "Rose Pink", swatch: "#9B1B5E" },
 ];
 
-type Language = "en" | "ta";
-
-export default function AppearanceSettings({
-  initialLanguage,
-}: {
-  initialLanguage: Language;
-}) {
-  const { mode, palette, setMode, setPalette } = useTheme();
-  const [language, setLanguage] = useState<Language>(initialLanguage);
-
-  function handleLanguageChange(lang: Language) {
-    setLanguage(lang);
-    void fetch("/api/me/preferences", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ language: lang }),
-    });
-  }
+export default function AppearanceSettings() {
+  const { mode, palette, language, setMode, setPalette, setLanguage } = useTheme();
 
   return (
     <div className="space-y-8">
@@ -143,7 +127,7 @@ export default function AppearanceSettings({
               <button
                 key={key}
                 type="button"
-                onClick={() => handleLanguageChange(key)}
+                onClick={() => setLanguage(key)}
                 className={`relative flex w-28 flex-col items-center gap-1.5 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.02] ${
                   selected
                     ? "ring-2 ring-[var(--color-primary)] border-[var(--color-primary)]"
