@@ -11,6 +11,7 @@ import { getCategorySchema } from "@/data/categoryRegistry";
 import { computeWorkflowState } from "@/lib/workflow";
 import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
 import { notifyAutoArchived, extractEntryTitle } from "@/lib/confirmations/notificationHelpers";
+import { appendActionHistory } from "@/lib/admin/actionHistory";
 import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -93,6 +94,19 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
             await upsertCategoryEntry(userEmail, category, entry);
             locked++;
 
+            try {
+              appendActionHistory({
+                actionType: "auto_finalised",
+                entryId: String(entry.id ?? ""),
+                category,
+                entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+                userEmail,
+                userName: userEmail.split("@")[0],
+              });
+            } catch (err) {
+              logger.warn({ event: "action_history.append_failed", actionType: "auto_finalised", entryId: String(entry.id ?? "") }, err instanceof Error ? err.message : String(err));
+            }
+
             logger.info({
               event: "nightly.auto-finalise",
               userEmail,
@@ -100,6 +114,20 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
               entryId: String(entry.id ?? ""),
             });
           } else if (state.autoAction === "delete") {
+            // Log action history BEFORE deletion
+            try {
+              appendActionHistory({
+                actionType: "auto_deleted",
+                entryId: String(entry.id ?? ""),
+                category,
+                entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+                userEmail,
+                userName: userEmail.split("@")[0],
+              });
+            } catch (err) {
+              logger.warn({ event: "action_history.append_failed", actionType: "auto_deleted", entryId: String(entry.id ?? "") }, err instanceof Error ? err.message : String(err));
+            }
+
             // Auto-delete: permanently remove entry + files
             await permanentlyDeleteEntry(userEmail, category as CategoryKey, entry as Record<string, unknown>);
             deleted++;
