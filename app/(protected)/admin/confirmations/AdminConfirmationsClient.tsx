@@ -9,6 +9,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { toUserMessage } from "@/lib/errors";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { safeAction } from "@/lib/safeAction";
+import ActionHistoryTab from "./ActionHistoryTab";
 
 type PendingConfirmationRow = {
   ownerEmail: string;
@@ -50,8 +51,11 @@ function getRequestTimestamp(row: PendingConfirmationRow): string | null {
   return row.editRequestedAtISO ?? row.updatedAtISO ?? null;
 }
 
+type Tab = "pending" | "history";
+
 export default function AdminConfirmationsClient() {
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
+  const [activeTab, setActiveTab] = useState<Tab>("pending");
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [rows, setRows] = useState<PendingConfirmationRow[]>([]);
@@ -144,6 +148,33 @@ export default function AdminConfirmationsClient() {
 
   return (
     <div>
+      {/* Tab Navigation */}
+      <div className="flex border-b border-slate-200 mb-6">
+        <button
+          onClick={() => setActiveTab("pending")}
+          className={`px-4 py-2 text-sm transition-colors ${
+            activeTab === "pending"
+              ? "border-b-2 border-[#1E3A5F] text-[#1E3A5F] font-medium"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Pending
+        </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`px-4 py-2 text-sm transition-colors ${
+            activeTab === "history"
+              ? "border-b-2 border-[#1E3A5F] text-[#1E3A5F] font-medium"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          History
+        </button>
+      </div>
+
+      {activeTab === "history" ? (
+        <ActionHistoryTab />
+      ) : (<>
       <SectionCard>
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading...</div>
@@ -296,6 +327,7 @@ export default function AdminConfirmationsClient() {
           {error}
         </div>
       ) : null}
+      </>)}
       {confirmationDialog}
     </div>
   );
