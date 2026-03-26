@@ -2,6 +2,46 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+:root {
+  --color-primary: #1E3A5F;
+  --color-primary-light: #2D5F8A;
+  --color-primary-muted: #E8EEF4;
+  --color-primary-hover: #16304F;
+  --color-accent: #10B981;
+  --color-accent-light: #D1FAE5;
+  --color-header-bg: #1E3A5F;
+  --color-header-text: #FFFFFF;
+  --color-sidebar-bg: #FFFFFF;
+  --color-sidebar-text: #334155;
+  --color-sidebar-active-bg: #EFF6FF;
+  --color-sidebar-active-text: #1E3A5F;
+  --color-sidebar-hover-bg: #F8FAFC;
+  --color-body-bg: #F8FAFC;
+  --color-card-bg: #FFFFFF;
+  --color-card-border: #E2E8F0;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+  --color-input-bg: #FFFFFF;
+  --color-input-border: #CBD5E1;
+  --color-input-focus-ring: #1E3A5F;
+  --color-badge-bg: #6366F1;
+  --color-badge-text: #FFFFFF;
+  --color-button-primary-bg: #1E3A5F;
+  --color-button-primary-text: #FFFFFF;
+  --color-button-primary-hover: #16304F;
+  --color-generate-bg: #059669;
+  --color-generate-hover: #047857;
+  --color-divider: #E2E8F0;
+  --color-dropdown-bg: #FFFFFF;
+  --color-dropdown-hover: #F1F5F9;
+  --color-toast-bg: #FFFFFF;
+  --color-modal-overlay: rgba(0,0,0,0.2);
+  --color-modal-bg: #FFFFFF;
+  --color-skeleton-base: #E2E8F0;
+  --color-skeleton-shine: #F1F5F9;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
