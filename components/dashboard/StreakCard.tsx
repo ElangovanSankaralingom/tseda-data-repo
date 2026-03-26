@@ -11,7 +11,7 @@ const CONFIG = {
     label: "Streak Activated",
     gradient:
       "border-orange-400/50 bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-orange-500/20",
-    zeroGradient: "border-dashed border-slate-300 bg-slate-50",
+    zeroGradient: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
     zeroCta: "Generate your first entry!",
     hoverRing: "hover:ring-2 hover:ring-amber-300/50",
   },
@@ -20,7 +20,7 @@ const CONFIG = {
     label: "Streak Wins",
     gradient:
       "border-yellow-400/50 bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg shadow-yellow-500/20",
-    zeroGradient: "border-dashed border-slate-300 bg-slate-50",
+    zeroGradient: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
     zeroCta: "Complete all fields to earn wins",
     hoverRing: "hover:ring-2 hover:ring-yellow-300/50",
   },
@@ -44,7 +44,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
         <div
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110",
-            hasValue ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
+            hasValue ? "bg-white/20 text-white" : "bg-[var(--color-skeleton-base)] text-[var(--color-text-secondary)]"
           )}
         >
           {type === "active" ? (
@@ -59,7 +59,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-xs font-medium uppercase tracking-wide",
-              hasValue ? "text-white/80" : "text-slate-600"
+              hasValue ? "text-white/80" : "text-[var(--color-text-secondary)]"
             )}
           >
             {label}
@@ -67,7 +67,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-3xl font-bold tabular-nums",
-              hasValue ? "text-white" : "text-slate-600"
+              hasValue ? "text-white" : "text-[var(--color-text-secondary)]"
             )}
           >
             {displayValue.toLocaleString("en-IN")}
@@ -75,7 +75,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-xs",
-              hasValue ? "text-white/90" : "text-slate-600"
+              hasValue ? "text-white/90" : "text-[var(--color-text-secondary)]"
             )}
           >
             {hasValue ? subtext : zeroCta}
@@ -87,7 +87,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           className={cn(
             "mt-0 max-h-0 overflow-hidden text-xs italic opacity-0 transition-all duration-200",
             "group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100",
-            hasValue ? "text-white/80" : "text-slate-600"
+            hasValue ? "text-white/80" : "text-[var(--color-text-secondary)]"
           )}
         >
           {hoverDescription}

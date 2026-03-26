@@ -4,7 +4,7 @@ export default function WorkflowHelpStrip({
   className?: string;
 }) {
   return (
-    <div className={["rounded-xl border border-slate-200 bg-slate-50 px-3 py-2", className ?? ""].join(" ")}>
+    <div className={["rounded-xl border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2", className ?? ""].join(" ")}>
       <div className="text-xs text-muted-foreground">
         <span className="font-medium text-foreground">Save Draft</span> saves and stays.{" "}
         <span className="font-medium text-foreground">Save &amp; Close</span> saves and exits.{" "}

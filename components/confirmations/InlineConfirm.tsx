@@ -63,7 +63,7 @@ export default function InlineConfirm({
       <button
         type="button"
         onClick={onCancel}
-        className="text-xs text-slate-500 hover:text-slate-700 transition-colors"
+        className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
       >
         Cancel
       </button>

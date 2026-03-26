@@ -242,12 +242,12 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               <BarChart3 className="size-6 text-white/80" />
               <h1 className="text-2xl font-bold text-white">Analytics</h1>
             </div>
-            <p className="mt-1 text-sm text-slate-300">
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               How T&apos;SEDA is being used — the full picture
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-[var(--color-text-muted)]">
               Updated {formatAge(cacheAge)}
             </span>
             <button

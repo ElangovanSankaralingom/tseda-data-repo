@@ -28,8 +28,8 @@ const TYPE_CONFIG: Record<
   integrity_issues: { Icon: ShieldCheck, iconBg: "bg-red-100", iconColor: "text-red-600" },
   wal_warning: { Icon: HardDrive, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
   new_user: { Icon: UserPlus, iconBg: "bg-blue-100", iconColor: "text-blue-600" },
-  user_status_change: { Icon: UserPlus, iconBg: "bg-slate-100", iconColor: "text-slate-600" },
-  settings_changed: { Icon: Settings, iconBg: "bg-slate-100", iconColor: "text-slate-600" },
+  user_status_change: { Icon: UserPlus, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
+  settings_changed: { Icon: Settings, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
   migration_complete: { Icon: Wrench, iconBg: "bg-emerald-100", iconColor: "text-emerald-600" },
   system_error: { Icon: AlertOctagon, iconBg: "bg-red-100", iconColor: "text-red-600" },
 };

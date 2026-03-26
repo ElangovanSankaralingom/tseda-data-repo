@@ -37,7 +37,7 @@ const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
   streak_runners: { title: "STREAK RUNNERS", icon: Zap, iconColor: "text-amber-500", urgentColor: "text-amber-600" },
   on_the_clock: { title: "ON THE CLOCK", icon: Clock, iconColor: "text-blue-500", urgentColor: "text-blue-600" },
   unlocked: { title: "UNLOCKED", icon: Unlock, iconColor: "text-purple-500" },
-  in_the_works: { title: "IN THE WORKS", icon: Pencil, iconColor: "text-slate-500" },
+  in_the_works: { title: "IN THE WORKS", icon: Pencil, iconColor: "text-[var(--color-text-secondary)]" },
   under_review: { title: "UNDER REVIEW", icon: Clock, iconColor: "text-amber-400" },
   locked_in: { title: "LOCKED IN", icon: Lock, iconColor: "text-emerald-500" },
 };

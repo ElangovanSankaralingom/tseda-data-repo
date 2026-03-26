@@ -28,7 +28,7 @@ export default function EntryPageHeader({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         </div>
 
-        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{subtitle}</p>
       </div>
 
       {actions ? <div className="flex gap-2">{actions}</div> : null}

@@ -79,7 +79,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
         "group relative flex flex-col min-h-[160px] rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up",
         hasEntries
           ? cn("border border-t-[3px] bg-[var(--color-card-bg)] border-[var(--color-card-border)] shadow-sm", theme.borderColor)
-          : "border border-dashed border-slate-300 bg-slate-50",
+          : "border border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
         `stagger-${Math.min(index + 1, 5)}`
       )}
     >
@@ -237,8 +237,8 @@ export default function DataEntryClient({ greeting, userName, categories, totals
 
       {/* Empty state — matches dashboard empty state */}
       {!hasAnyEntries && (
-        <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center animate-fade-in-up stagger-3">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-slate-100">
+        <div className="mt-8 rounded-xl border border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)] p-8 text-center animate-fade-in-up stagger-3">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
             <FileText className="size-8 text-[var(--color-text-secondary)]" />
           </div>
           <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">Choose a category above to begin</p>

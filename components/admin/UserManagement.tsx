@@ -66,7 +66,7 @@ function trendIcon(trend: ActivityTrend) {
     case "declining":
       return <TrendingDown className="size-3.5 text-amber-500" />;
     case "stable":
-      return <Minus className="size-3.5 text-slate-500" />;
+      return <Minus className="size-3.5 text-[var(--color-text-secondary)]" />;
     case "inactive":
       return <X className="size-3.5 text-red-400" />;
   }
@@ -438,7 +438,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <StatCard label="Total Users" value={stats.totalUsers} icon={Users} accent="bg-blue-500" />
         <StatCard label="Active (90d)" value={stats.activeUsers} icon={UserCheck} accent="bg-emerald-500" />
-        <StatCard label="Inactive" value={stats.inactiveUsers} icon={UserX} accent="bg-slate-400" />
+        <StatCard label="Inactive" value={stats.inactiveUsers} icon={UserX} accent="bg-[var(--color-text-muted)]" />
         <StatCard label="Avg Entries" value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-amber-500" />
         <StatCard label="Avg Completion" value={stats.averageCompletionRate} icon={Target} accent="bg-purple-500" />
       </div>

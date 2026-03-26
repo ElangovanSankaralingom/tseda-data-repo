@@ -56,10 +56,10 @@ const STRIP_STYLES: Record<string, StripConfig> = {
   },
   archived: {
     icon: Archive,
-    bg: "bg-slate-50",
-    border: "border-slate-200",
-    text: "text-slate-700",
-    iconColor: "text-slate-600",
+    bg: "bg-[var(--color-body-bg)]",
+    border: "border-[var(--color-card-border)]",
+    text: "text-[var(--color-text-primary)]",
+    iconColor: "text-[var(--color-text-secondary)]",
   },
   expiring_soon: {
     icon: AlertTriangle,
@@ -70,10 +70,10 @@ const STRIP_STYLES: Record<string, StripConfig> = {
   },
   permanently_locked: {
     icon: Shield,
-    bg: "bg-slate-50",
-    border: "border-slate-200",
-    text: "text-slate-600",
-    iconColor: "text-slate-500",
+    bg: "bg-[var(--color-body-bg)]",
+    border: "border-[var(--color-card-border)]",
+    text: "text-[var(--color-text-secondary)]",
+    iconColor: "text-[var(--color-text-secondary)]",
   },
 };
 

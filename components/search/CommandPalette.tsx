@@ -77,7 +77,7 @@ function TypeIcon({ type }: { type: SearchableItem["type"] }) {
     case "category":
       return <FolderOpen className="size-4 text-amber-500" />;
     case "page":
-      return <Layout className="size-4 text-slate-500" />;
+      return <Layout className="size-4 text-[var(--color-text-secondary)]" />;
   }
 }
 
@@ -90,7 +90,7 @@ function TypeBg({ type }: { type: SearchableItem["type"] }) {
     case "category":
       return "bg-amber-100";
     case "page":
-      return "bg-slate-100";
+      return "bg-[var(--color-dropdown-hover)]";
   }
 }
 

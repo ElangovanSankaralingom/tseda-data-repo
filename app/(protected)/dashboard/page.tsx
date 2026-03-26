@@ -94,7 +94,7 @@ export default async function DashboardPage() {
 
       {/* Empty state */}
       {!hasAnyEntries ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center animate-fade-in-up stagger-1">
+        <div className="rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-8 text-center animate-fade-in-up stagger-1">
           <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
             <ClipboardList className="size-10 text-[var(--color-text-secondary)]" />
           </div>

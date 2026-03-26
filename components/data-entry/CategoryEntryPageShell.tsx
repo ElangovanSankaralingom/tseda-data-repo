@@ -149,7 +149,7 @@ function CategoryEmptyState({
   const bgAccent = config.color.bg;
 
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center max-w-md mx-auto animate-fade-in-up stagger-2">
+    <div className="rounded-2xl border border-dashed border-[var(--color-input-border)] p-12 text-center max-w-md mx-auto animate-fade-in-up stagger-2">
       <div className={`mx-auto flex size-24 items-center justify-center rounded-full ${bgAccent}`}>
         {/* eslint-disable-next-line react-hooks/static-components */}
         <Icon className={`size-10 ${accent}`} />
