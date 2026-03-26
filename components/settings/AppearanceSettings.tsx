@@ -2,49 +2,52 @@
 
 import { Check, Moon, Palette, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import type { TranslationKey } from "@/lib/i18n";
 import type { ThemeMode, ColorPalette } from "@/lib/theme/themeTokens";
 import type { Language } from "@/lib/i18n";
 
-const THEME_MODES: { key: ThemeMode; label: string; Icon: typeof Sun; preview: { header: string; card: string; text: string } }[] = [
+const THEME_MODES: { key: ThemeMode; tKey: TranslationKey; Icon: typeof Sun; preview: { header: string; card: string; text: string } }[] = [
   {
     key: "light",
-    label: "Light",
+    tKey: "appearance.light",
     Icon: Sun,
     preview: { header: "#1E3A5F", card: "#FFFFFF", text: "#E2E8F0" },
   },
   {
     key: "dark",
-    label: "Dark",
+    tKey: "appearance.dark",
     Icon: Moon,
     preview: { header: "#111827", card: "#1F2937", text: "#374151" },
   },
   {
     key: "color",
-    label: "Color",
+    tKey: "appearance.color",
     Icon: Palette,
     preview: { header: "#4A1D6A", card: "#FFFFFF", text: "#E2E8F0" },
   },
 ];
 
-const PALETTES: { key: ColorPalette; label: string; swatch: string }[] = [
-  { key: "ocean-blue", label: "Ocean Blue", swatch: "#1E3A5F" },
-  { key: "forest-green", label: "Forest Green", swatch: "#1B4332" },
-  { key: "royal-purple", label: "Royal Purple", swatch: "#4A1D6A" },
-  { key: "sunset-warm", label: "Sunset Warm", swatch: "#8B3A14" },
-  { key: "rose-pink", label: "Rose Pink", swatch: "#9B1B5E" },
+const PALETTES: { key: ColorPalette; tKey: TranslationKey; swatch: string }[] = [
+  { key: "ocean-blue", tKey: "appearance.oceanBlue", swatch: "#1E3A5F" },
+  { key: "forest-green", tKey: "appearance.forestGreen", swatch: "#1B4332" },
+  { key: "royal-purple", tKey: "appearance.royalPurple", swatch: "#4A1D6A" },
+  { key: "sunset-warm", tKey: "appearance.sunsetWarm", swatch: "#8B3A14" },
+  { key: "rose-pink", tKey: "appearance.rosePink", swatch: "#9B1B5E" },
 ];
 
 export default function AppearanceSettings() {
   const { mode, palette, language, setMode, setPalette, setLanguage } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-8">
       {/* Theme Mode */}
       <section>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Theme</h2>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Choose how TSEDA appears on your device</p>
+        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">{t('appearance.theme')}</h2>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('appearance.subtitle')}</p>
         <div className="mt-4 flex flex-wrap gap-3">
-          {THEME_MODES.map(({ key, label, Icon, preview }) => {
+          {THEME_MODES.map(({ key, tKey, Icon, preview }) => {
             const selected = mode === key;
             return (
               <button
@@ -63,7 +66,7 @@ export default function AppearanceSettings() {
                   </span>
                 )}
                 <Icon className={`size-6 ${key === "dark" ? "text-slate-300" : "text-[var(--color-text-secondary)]"}`} />
-                <span className={`text-sm font-medium ${key === "dark" ? "text-slate-200" : "text-[var(--color-text-primary)]"}`}>{label}</span>
+                <span className={`text-sm font-medium ${key === "dark" ? "text-slate-200" : "text-[var(--color-text-primary)]"}`}>{t(tKey)}</span>
                 {/* Mini preview strip */}
                 <div className="flex w-full gap-1 rounded-md overflow-hidden h-3">
                   <div className="flex-1 rounded-sm" style={{ backgroundColor: preview.header }} />
@@ -85,10 +88,10 @@ export default function AppearanceSettings() {
           mode === "color" ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Color Palette</h2>
+        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">{t('appearance.colorPalette')}</h2>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Pick an accent color for the interface</p>
         <div className="mt-4 flex flex-wrap gap-3">
-          {PALETTES.map(({ key, label, swatch }) => {
+          {PALETTES.map(({ key, tKey, swatch }) => {
             const selected = palette === key;
             return (
               <button
@@ -105,7 +108,7 @@ export default function AppearanceSettings() {
                   className="size-6 shrink-0 rounded-full ring-1 ring-black/10"
                   style={{ backgroundColor: swatch }}
                 />
-                <span className="text-sm font-medium text-[var(--color-text-primary)]">{label}</span>
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">{t(tKey)}</span>
                 {selected && <Check className="size-4 text-[var(--color-primary)]" />}
               </button>
             );
@@ -115,7 +118,7 @@ export default function AppearanceSettings() {
 
       {/* Language */}
       <section>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Language</h2>
+        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">{t('appearance.language')}</h2>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Select your preferred language</p>
         <div className="mt-4 flex flex-wrap gap-3">
           {([
@@ -145,9 +148,6 @@ export default function AppearanceSettings() {
             );
           })}
         </div>
-        {language === "ta" && (
-          <p className="mt-2 text-xs text-[var(--color-text-muted)]">Tamil translation coming soon</p>
-        )}
       </section>
     </div>
   );

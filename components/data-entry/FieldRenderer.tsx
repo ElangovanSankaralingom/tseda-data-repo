@@ -3,6 +3,7 @@
 import DateField from "@/components/controls/DateField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import Field from "@/components/data-entry/Field";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { SchemaFieldDefinition } from "@/data/schemas/types";
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -37,8 +38,11 @@ export default function FieldRenderer({
   submitted = false,
   hint,
 }: FieldRendererProps) {
+  const { fieldLabel: resolveFieldLabel } = useTranslation();
   const showError = submitted && !!error;
   const isRequired = field.required !== false;
+  const translatedLabel = resolveFieldLabel(field.key);
+  const label = translatedLabel !== field.key ? translatedLabel : field.label;
 
   // Skip non-renderable fields
   if (field.key === "id" || field.key === "pdfMeta" || field.key === "streak") {
@@ -53,14 +57,14 @@ export default function FieldRenderer({
   // Select dropdown for enum fields
   if (field.enumValues && field.enumValues.length > 0) {
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
+      <Field label={label} error={showError ? error : undefined} hint={hint} required={isRequired}>
         {(a11yProps: { id: string; "aria-describedby"?: string; "aria-required"?: boolean; "aria-invalid"?: boolean }) => (
           <SelectDropdown
             id={a11yProps.id}
             value={String(value ?? "")}
             onChange={(v) => onChange(v)}
             options={field.enumValues!.map((v) => ({ label: String(v), value: String(v) }))}
-            placeholder={`Select ${field.label.toLowerCase()}`}
+            placeholder={`Select ${label.toLowerCase()}`}
             disabled={disabled}
             error={showError}
           />
@@ -72,7 +76,7 @@ export default function FieldRenderer({
   // Date field
   if (field.kind === "date") {
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
+      <Field label={label} error={showError ? error : undefined} hint={hint} required={isRequired}>
         <DateField
           value={String(value ?? "")}
           onChange={(v) => onChange(v)}
@@ -86,7 +90,7 @@ export default function FieldRenderer({
   // Number field
   if (field.kind === "number") {
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
+      <Field label={label} error={showError ? error : undefined} hint={hint} required={isRequired}>
         {(a11yProps: { id: string; "aria-describedby"?: string; "aria-required"?: boolean; "aria-invalid"?: boolean }) => (
           <input
             id={a11yProps.id}
@@ -119,7 +123,7 @@ export default function FieldRenderer({
   // Default: text input for string and unknown kinds
   if (field.kind === "string" || field.kind === "unknown") {
     return (
-      <Field label={field.label} error={showError ? error : undefined} hint={hint} required={isRequired}>
+      <Field label={label} error={showError ? error : undefined} hint={hint} required={isRequired}>
         {(a11yProps: { id: string; "aria-describedby"?: string; "aria-required"?: boolean; "aria-invalid"?: boolean }) => (
           <input
             id={a11yProps.id}

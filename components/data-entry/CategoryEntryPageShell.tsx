@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Plus,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import EntryShell from "@/components/entry/EntryShell";
 import SectionCard from "@/components/layout/SectionCard";
 import EditorProgressHeader from "@/components/data-entry/EditorProgressHeader";
@@ -57,6 +58,7 @@ function CategoryHero({
   onAdd?: () => void;
   addLabel?: string;
 }) {
+  const { t } = useTranslation();
   const config = getCategoryConfig(category);
   const gradient = config.color.gradient;
   const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
@@ -69,7 +71,7 @@ function CategoryHero({
         className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white/80 hover:bg-white/20 hover:text-white transition-all group/back"
       >
         <ArrowLeft className="size-4 transition-transform group-hover/back:-translate-x-0.5" />
-        Data Entry
+        {t('nav.dataEntry')}
       </Link>
 
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -122,7 +124,7 @@ function CategoryHero({
           } px-5 py-2.5 text-sm font-semibold shadow-lg hover:bg-white/90 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200`}
         >
           <Plus className="size-4" />
-          {addLabel || "New Entry"}
+          {addLabel || t('entry.newEntry')}
         </button>
       )}
     </div>
@@ -131,15 +133,16 @@ function CategoryHero({
 
 function CategoryEmptyState({
   category,
-  title,
+
   onAdd,
   addLabel,
 }: {
   category: CategorySlug;
-  title?: string;
+
   onAdd?: () => void;
   addLabel?: string;
 }) {
+  const { t } = useTranslation();
   const config = getCategoryConfig(category);
   const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
   const accent = config.color.text;
@@ -152,10 +155,10 @@ function CategoryEmptyState({
         <Icon className={`size-10 ${accent}`} />
       </div>
       <h2 className="mt-5 text-lg font-semibold text-[var(--color-text-secondary)]">
-        No {title?.toLowerCase() || "entries"} yet
+        {t('entry.noEntries')}
       </h2>
       <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
-        Create your first entry to start tracking
+        {t('entry.createFirstEntry')}
       </p>
       {onAdd && (
         <button
@@ -164,7 +167,7 @@ function CategoryEmptyState({
           className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-button-primary-bg)] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-button-primary-hover)] hover:-translate-y-0.5 transition-all duration-200"
         >
           <Plus className="size-4" />
-          {addLabel || "Create First Entry"}
+          {addLabel || t('entry.newEntry')}
         </button>
       )}
     </div>
@@ -174,7 +177,7 @@ function CategoryEmptyState({
 export default function CategoryEntryPageShell({
   entryShell,
   loading,
-  loadingMessage = "Loading...",
+  loadingMessage,
   showForm,
   topContent,
   formCard,
@@ -185,6 +188,9 @@ export default function CategoryEntryPageShell({
   onCancelRequestEdit,
   onCancelRequestDelete,
 }: CategoryEntryPageShellProps) {
+  const { t } = useTranslation();
+  const resolvedLoadingMessage = loadingMessage ?? t('common.loading');
+
   // Form mode — enhanced editor layout
   if (showForm) {
     const entry = entryShell.entry as Record<string, unknown> | null;
@@ -223,7 +229,7 @@ export default function CategoryEntryPageShell({
 
           {topContent}
 
-          {loading ? <LoadingState message={loadingMessage} /> : null}
+          {loading ? <LoadingState message={resolvedLoadingMessage} /> : null}
 
           {/* Layer 2: Form card with progress bar inside */}
           {!loading && formCard ? (
@@ -265,7 +271,6 @@ export default function CategoryEntryPageShell({
     <div className="mx-auto w-full max-w-5xl">
       <CategoryHero
         category={category}
-        title={entryShell.title}
         subtitle={entryShell.subtitle}
         stats={stats}
         onAdd={onAddEntry}
@@ -274,7 +279,7 @@ export default function CategoryEntryPageShell({
 
       {topContent}
 
-      {loading ? <LoadingState message={loadingMessage} /> : null}
+      {loading ? <LoadingState message={resolvedLoadingMessage} /> : null}
 
       {!loading && listCard && hasEntries ? (
         <div className="animate-fade-in-up stagger-1">
@@ -285,7 +290,6 @@ export default function CategoryEntryPageShell({
       {!loading && !hasEntries ? (
         <CategoryEmptyState
           category={category}
-          title={entryShell.title}
           onAdd={onAddEntry}
           addLabel={addEntryLabel}
         />

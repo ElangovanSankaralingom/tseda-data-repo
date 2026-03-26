@@ -3,24 +3,17 @@
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { safeBack } from "@/lib/entryNavigation";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
-/** Derive a human label from a back-navigation href. */
-function labelFromHref(href: string): string {
-  // /data-entry → "Data Entry"
-  if (href === "/data-entry" || href === "/data-entry/") return "Data Entry";
-  // /dashboard → "Dashboard"
-  if (href === "/dashboard" || href === "/dashboard/") return "Dashboard";
-  // /admin → "Admin"
-  if (href === "/admin" || href === "/admin/") return "Admin";
-  // /data-entry/<category> → prettify slug
+function useLabelFromHref(href: string): string {
+  const { t, categoryLabel } = useTranslation();
+  if (href === "/data-entry" || href === "/data-entry/") return t("nav.dataEntry");
+  if (href === "/dashboard" || href === "/dashboard/") return t("nav.dashboard");
+  if (href === "/admin" || href === "/admin/") return t("nav.admin");
   const catMatch = href.match(/^\/data-entry\/([a-z-]+)\/?$/);
   if (catMatch) {
-    return catMatch[1]
-      .split("-")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
+    return categoryLabel(catMatch[1]);
   }
-  // /admin/<sub> → prettify
   const adminMatch = href.match(/^\/admin\/([a-z-]+)\/?$/);
   if (adminMatch) {
     return adminMatch[1]
@@ -28,7 +21,7 @@ function labelFromHref(href: string): string {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
   }
-  return "Back";
+  return t("common.back");
 }
 
 export default function BackTo({
@@ -39,7 +32,8 @@ export default function BackTo({
   onClick,
 }: { href: string; label?: string; disabled?: boolean; compact?: boolean; onClick?: (() => void | Promise<void>) | undefined }) {
   const router = useRouter();
-  const resolvedLabel = label || labelFromHref(href);
+  const derivedLabel = useLabelFromHref(href);
+  const resolvedLabel = label || derivedLabel;
 
   const handleClick = () => {
     if (disabled) return;

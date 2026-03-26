@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 export { type SelectDropdownOption } from "@/lib/types/ui";
 import { type SelectDropdownOption } from "@/lib/types/ui";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type SelectDropdownProps = {
   value: string;
@@ -29,6 +30,13 @@ export default function SelectDropdown({
   id,
   name,
 }: SelectDropdownProps) {
+  const { valueLabel } = useTranslation();
+
+  function resolveLabel(option: SelectDropdownOption): string {
+    const translated = valueLabel(option.value);
+    return translated !== option.value ? translated : option.label;
+  }
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -47,8 +55,8 @@ export default function SelectDropdown({
     const normalizedQuery = inputText.trim().toLowerCase();
     if (!normalizedQuery) return options;
 
-    return options.filter((option) => option.label.toLowerCase().includes(normalizedQuery));
-  }, [hasTypedSinceOpen, inputText, options]);
+    return options.filter((option) => resolveLabel(option).toLowerCase().includes(normalizedQuery));
+  }, [hasTypedSinceOpen, inputText, options, resolveLabel]);
   const defaultHighlightedIndex = filteredOptions.findIndex(
     (option) => option.value === value && !option.disabled
   );
@@ -62,7 +70,7 @@ export default function SelectDropdown({
         ? defaultHighlightedIndex
         : firstEnabledIndex;
   const displayValue =
-    open && hasTypedSinceOpen ? inputText : (selectedOption?.label ?? "");
+    open && hasTypedSinceOpen ? inputText : (selectedOption ? resolveLabel(selectedOption) : "");
 
   useEffect(() => {
     if (!open) return;
@@ -122,7 +130,7 @@ export default function SelectDropdown({
           if (disabled) return;
           const nextValue = event.target.value;
           const nextFilteredOptions = options.filter((option) =>
-            option.label.toLowerCase().includes(nextValue.trim().toLowerCase())
+            resolveLabel(option).toLowerCase().includes(nextValue.trim().toLowerCase())
           );
           const nextEnabledIndex = nextFilteredOptions.findIndex((option) => !option.disabled);
           setInputText(nextValue);
@@ -229,7 +237,7 @@ export default function SelectDropdown({
                 )}
               >
                 {option.icon ? <option.icon className="size-4 shrink-0 text-[var(--color-text-secondary)]" /> : null}
-                {option.label}
+                {resolveLabel(option)}
               </button>
             ))
           )}

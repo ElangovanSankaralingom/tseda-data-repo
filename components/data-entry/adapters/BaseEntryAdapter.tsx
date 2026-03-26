@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { SYSTEM } from "@/lib/constants/messages";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
 import FormErrorBoundary from "@/components/ErrorBoundaryFallback";
 import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
@@ -141,6 +142,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   formSubtitle: formSubtitleProp,
   deleteDescription,
 }: BaseEntryAdapterProps<T>) {
+  const { t } = useTranslation();
   const config = getCategoryConfig(category);
   const title = titleProp ?? config.label;
   const subtitle = subtitleProp ?? config.subtitle ?? "";
@@ -484,7 +486,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
 
   function closeForm(targetHref = categoryPath, skipConfirm = false) {
     if (!skipConfirm && hasUnsavedChanges) {
-      const confirmed = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+      const confirmed = window.confirm(t('entry.unsavedChanges'));
       if (!confirmed) return;
     }
     resetForm();
@@ -536,13 +538,13 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     },
     hideActions: (entry) => !!(activeEntryId && entry.id === activeEntryId),
     enableWorkflowActions: (_entry, group) => group === "locked_in",
-    deleteLabel: "Delete entry",
+    deleteLabel: t('entry.delete'),
     requestConfirmation,
     buildDeleteRequest: (entry) => ({
-      title: "Delete entry?",
-      description: deleteDescription ?? `This permanently deletes this ${config.label} entry and its associated uploaded files.`,
-      confirmLabel: "Delete",
-      cancelLabel: "Cancel",
+      title: t('confirm.deleteTitle'),
+      description: deleteDescription ?? t('confirm.deleteMessage'),
+      confirmLabel: t('confirm.deleteConfirm'),
+      cancelLabel: t('confirm.cancel'),
       variant: "destructive",
       onConfirm: () => deleteEntry(entry.id),
     }),
@@ -619,7 +621,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
               label: workflowState.buttons.generate.label,
               onClick: () => controller.generateEntry(),
               disabled: !workflowState.buttons.generate.enabled,
-              busyLabel: "Generating...",
+              busyLabel: t('entry.generating'),
             };
           }
           return undefined;

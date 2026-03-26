@@ -16,6 +16,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { type CategoryOverview, type Totals } from "./dataEntryTypes";
 
 type Props = {
@@ -66,6 +67,7 @@ function relativeTime(iso: string): string {
 
 // ── Category Card ──────────────────────────────────────────────────
 function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) {
+  const { t, categoryLabel } = useTranslation();
   const theme = CATEGORY_THEME[cat.slug] ?? DEFAULT_THEME;
   const Icon = theme.icon;
   const hasEntries = cat.totalEntries > 0;
@@ -102,16 +104,16 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
             "text-base font-semibold",
             hasEntries ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
           )}>
-            {cat.label}
+            {categoryLabel(cat.slug)}
           </h3>
 
           {hasEntries ? (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-text-secondary)]">
-              <span>{cat.totalEntries} {cat.totalEntries === 1 ? "entry" : "entries"}</span>
+              <span>{cat.totalEntries} {cat.totalEntries === 1 ? "entry" : t('dashboard.entries')}</span>
               {cat.draftCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
                   <Pencil className="size-3" />
-                  {cat.draftCount} {cat.draftCount === 1 ? "draft" : "drafts"}
+                  {cat.draftCount} {cat.draftCount === 1 ? "draft" : t('dashboard.drafts')}
                 </span>
               )}
               {cat.streakActivated > 0 && (
@@ -135,9 +137,9 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
             </div>
           ) : (
             <>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">No entries yet</p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('entry.noEntries')}</p>
               <p className="mt-0 max-h-0 overflow-hidden text-xs italic text-[var(--color-text-secondary)] opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100">
-                Create your first entry to begin tracking this category
+                {t('entry.createFirstEntry')}
               </p>
             </>
           )}
@@ -160,14 +162,14 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
               href={cat.href}
               className="inline-flex h-8 items-center rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 text-sm font-medium text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-input-border)] hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97]"
             >
-              View All
+              {t('dashboard.viewAll')}
             </Link>
             <Link
               href={cat.newHref}
               className={`inline-flex h-8 items-center gap-1 rounded-lg ${theme.buttonBg} px-3 text-sm font-medium text-white transition-all ${theme.buttonHover} active:scale-[0.97]`}
             >
               <Plus className="size-3.5" />
-              New Entry
+              {t('entry.newEntry')}
             </Link>
           </>
         ) : (
@@ -176,7 +178,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
             className="inline-flex h-8 items-center gap-1 rounded-lg bg-[var(--color-text-secondary)] px-3 text-sm font-medium text-white transition-all hover:bg-[var(--color-button-primary-bg)] active:scale-[0.97]"
           >
             <Plus className="size-3.5" />
-            Create First Entry
+            {t('dashboard.createFirst')}
           </Link>
         )}
       </div>
@@ -186,6 +188,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
 
 // ── Main Component ─────────────────────────────────────────────────
 export default function DataEntryClient({ greeting, userName, categories, totals }: Props) {
+  const { t } = useTranslation();
   const sorted = useMemo(() => sortByUrgency(categories), [categories]);
   const hasAnyEntries = totals.totalEntries > 0;
   const firstName = userName?.split(" ")[0] ?? null;

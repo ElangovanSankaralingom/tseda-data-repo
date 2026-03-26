@@ -24,6 +24,7 @@ import {
   type SearchResult,
 } from "@/lib/search/engine";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Quick actions
@@ -212,6 +213,7 @@ export default function CommandPalette({
   isAdmin,
 }: CommandPaletteProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
@@ -380,7 +382,7 @@ export default function CommandPalette({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={isAdmin ? "Search entries, categories, users..." : "Search your entries..."}
+              placeholder={isAdmin ? "Search entries, actions, admin..." : "Search entries, actions..."}
               aria-label="Search commands"
               className="h-full flex-1 bg-transparent text-lg outline-none placeholder:text-[var(--color-text-secondary)]"
             />
@@ -467,10 +469,10 @@ export default function CommandPalette({
                 <div className="flex flex-col items-center gap-2 py-12">
                   <SearchX className="size-8 text-[var(--color-text-muted)]" />
                   <div className="text-sm text-[var(--color-text-secondary)]">
-                    No results for &ldquo;{query}&rdquo;
+                    {`${t('common.noResults')} "${query}"`}
                   </div>
                   <div className="text-xs text-[var(--color-text-secondary)]">
-                    Try different keywords or check your filters
+                    Try different keywords or check your spelling
                   </div>
                 </div>
               )

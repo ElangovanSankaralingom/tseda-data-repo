@@ -9,6 +9,7 @@ import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { SaveButton } from "@/components/ui/SaveButton";
 import { type GenerateButtonState } from "@/lib/types/ui";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   type FinaliseState,
   type HeaderEntryActionsBarProps,
@@ -55,6 +56,7 @@ export function HeaderEntryActionsBar({
   permanentlyLocked = false,
   requestActionUsed = false,
 }: HeaderEntryActionsBarProps) {
+  const { t } = useTranslation();
   // View mode: simplified layout
   if (isEditing && isViewMode) {
     const isEditRequested = entryStatus === "EDIT_REQUESTED" || editRequestPending;
@@ -77,7 +79,7 @@ export function HeaderEntryActionsBar({
         {/* Right: Back button */}
         <div className="flex flex-wrap items-center gap-2">
           <ActionButton role="ghost" onClick={onCancel}>
-            Back
+            {t('common.back')}
           </ActionButton>
         </div>
       </div>
@@ -141,6 +143,7 @@ function EditModeActionBar({
   onDone: () => void;
   doneDisabled: boolean;
 }) {
+  const { t } = useTranslation();
   const [genState, setGenState] = useState<GenerateButtonState>("idle");
   const [finaliseState, setFinaliseState] = useState<"idle" | "finalising" | "done">("idle");
   const [showFinaliseConfirm, setShowFinaliseConfirm] = useState(false);
@@ -227,9 +230,9 @@ function EditModeActionBar({
                 <Zap className="size-4" />
               )}
               {isGenerating
-                ? (workflowAction.busyLabel ?? "Generating...")
+                ? (workflowAction.busyLabel ?? t('entry.generating'))
                 : isSuccess
-                  ? "Generated Successfully"
+                  ? t('entry.generated')
                   : workflowAction.label}
             </button>
           ) : null}
@@ -259,10 +262,10 @@ function EditModeActionBar({
                   <Lock className="size-4" />
                 )}
                 {finaliseState === "finalising"
-                  ? "Finalising..."
+                  ? t('entry.finalising')
                   : finaliseState === "done"
-                    ? "Finalised!"
-                    : "Finalise Now"}
+                    ? t('entry.finalized')
+                    : t('entry.finalise')}
               </button>
             </div>
           ) : null}
@@ -274,13 +277,13 @@ function EditModeActionBar({
 
       <div className="flex flex-wrap items-center gap-2">
         <ActionButton role="ghost" onClick={onCancel} disabled={cancelDisabled}>
-          Cancel
+          {t('entry.cancel')}
         </ActionButton>
         <SaveButton onClick={onSave} disabled={saveDisabled || !formHasData}>
-          {saving && saveIntent === "save" ? "Saving..." : "Save Draft"}
+          {saving && saveIntent === "save" ? t('entry.saving') : t('entry.save')}
         </SaveButton>
         <ActionButton role="primary" onClick={onDone} disabled={doneDisabled || !formHasData}>
-          {saving && saveIntent === "done" ? "Saving..." : "Save & Close"}
+          {saving && saveIntent === "done" ? t('entry.saving') : t('entry.saved')}
         </ActionButton>
       </div>
 
@@ -298,12 +301,12 @@ function EditModeActionBar({
                   <Lock className="size-5 text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Finalise this entry?</h3>
-                  <p className="text-xs text-[var(--color-text-secondary)]">This action locks the entry</p>
+                  <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{t('confirm.finaliseTitle')}</h3>
+                  <p className="text-xs text-[var(--color-text-secondary)]">{t('entry.finalise')}</p>
                 </div>
               </div>
               <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                Once finalised, all fields become read-only. You&apos;ll need admin approval to make any future changes.
+                {t('confirm.finaliseMessage')}
               </p>
               {(() => {
                 const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt);
@@ -319,7 +322,7 @@ function EditModeActionBar({
                   onClick={() => setShowFinaliseConfirm(false)}
                   className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] active:scale-[0.98]"
                 >
-                  Keep Editing
+                  {t('confirm.cancel')}
                 </button>
                 <button
                   type="button"
@@ -329,7 +332,7 @@ function EditModeActionBar({
                   }}
                   className="rounded-lg bg-[var(--color-generate-bg)] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[var(--color-generate-hover)] active:scale-[0.98]"
                 >
-                  Finalise Entry
+                  {t('confirm.finaliseConfirm')}
                 </button>
               </div>
             </div>
@@ -349,6 +352,7 @@ export function PdfEntryActionsBar({
   pdfMeta,
   pdfDisabled,
 }: PdfEntryActionsBarProps) {
+  const { t } = useTranslation();
   const normalizedPdfMeta =
     pdfMeta?.url
       ? {
@@ -362,7 +366,7 @@ export function PdfEntryActionsBar({
     <div className="flex flex-wrap gap-2">
       {!isViewMode ? (
         <ActionButton role="primary" onClick={onGenerate} disabled={!canGenerate || generating}>
-          {generating ? "Generating..." : "Generate Entry"}
+          {generating ? t('entry.generating') : t('entry.generate')}
         </ActionButton>
       ) : null}
       <EntryPdfActions pdfMeta={normalizedPdfMeta} disabled={actionsDisabled} />

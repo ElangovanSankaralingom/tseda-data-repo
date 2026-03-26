@@ -7,7 +7,7 @@ import {
   valueLabel as resolveValueLabel,
   categoryLabel as resolveCategoryLabel,
   type TranslationKey,
-  type Language,
+
 } from "./index";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 

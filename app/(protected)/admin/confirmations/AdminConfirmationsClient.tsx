@@ -8,6 +8,7 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { useConfirmAction } from "@/hooks/useConfirmAction";
 import { toUserMessage } from "@/lib/errors";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { safeAction } from "@/lib/safeAction";
 import ActionHistoryTab from "./ActionHistoryTab";
 
@@ -54,6 +55,7 @@ function getRequestTimestamp(row: PendingConfirmationRow): string | null {
 type Tab = "pending" | "history";
 
 export default function AdminConfirmationsClient() {
+  const { t } = useTranslation();
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const [activeTab, setActiveTab] = useState<Tab>("pending");
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,7 @@ export default function AdminConfirmationsClient() {
               : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           }`}
         >
-          Pending
+          {t('admin.pending')}
         </button>
         <button
           onClick={() => setActiveTab("history")}
@@ -168,7 +170,7 @@ export default function AdminConfirmationsClient() {
               : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           }`}
         >
-          History
+          {t('admin.history')}
         </button>
       </div>
 
@@ -177,14 +179,14 @@ export default function AdminConfirmationsClient() {
       ) : (<>
       <SectionCard>
         {loading ? (
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
         ) : rows.length === 0 ? (
           <div className="py-8 text-center">
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50">
               <CheckCircle2 className="size-8 text-emerald-600" />
             </div>
-            <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">No pending requests</p>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">All caught up! Check back later.</p>
+            <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t('common.noResults')}</p>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('entry.noEntries')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -213,7 +215,7 @@ export default function AdminConfirmationsClient() {
                               ? "bg-red-100 text-red-700"
                               : "bg-amber-100 text-amber-700"
                           }`}>
-                            {isDeleteRequest ? "Delete Request" : "Edit Request"}
+                            {isDeleteRequest ? t('entry.requestDelete') : t('entry.requestEdit')}
                           </span>
                         </div>
                         <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
@@ -246,34 +248,32 @@ export default function AdminConfirmationsClient() {
                             role="destructive"
                             onClick={() =>
                               requestConfirmation({
-                                title: "Permanently delete this entry?",
-                                description:
-                                  "This will permanently delete the entry and all uploaded files. This action cannot be undone.",
-                                confirmLabel: "Delete Permanently",
-                                cancelLabel: "Cancel",
+                                title: t('confirm.deleteTitle'),
+                                description: t('confirm.deleteMessage'),
+                                confirmLabel: t('confirm.deleteConfirm'),
+                                cancelLabel: t('confirm.cancel'),
                                 variant: "destructive",
                                 onConfirm: () => resolve(row, "approve_delete"),
                               })
                             }
                             disabled={busy}
                           >
-                            {busy ? "Processing..." : "Delete Permanently"}
+                            {busy ? t('common.loading') : t('confirm.deleteConfirm')}
                           </ActionButton>
                           <ActionButton
                             role="context"
                             onClick={() =>
                               requestConfirmation({
-                                title: "Reject delete request?",
-                                description:
-                                  "This will deny the delete request and permanently lock the entry. The user will not be able to request changes again.",
-                                confirmLabel: "Reject",
-                                cancelLabel: "Cancel",
+                                title: t('admin.reject'),
+                                description: t('entry.permanentlyLocked'),
+                                confirmLabel: t('admin.reject'),
+                                cancelLabel: t('confirm.cancel'),
                                 onConfirm: () => resolve(row, "reject_delete"),
                               })
                             }
                             disabled={busy}
                           >
-                            Reject
+                            {t('admin.reject')}
                           </ActionButton>
                         </>
                       ) : (
@@ -282,34 +282,32 @@ export default function AdminConfirmationsClient() {
                             role="context"
                             onClick={() =>
                               requestConfirmation({
-                                title: "Grant edit access?",
-                                description:
-                                  "This will allow the user to edit and re-generate this entry.",
-                                confirmLabel: "Grant",
-                                cancelLabel: "Cancel",
+                                title: t('admin.grant'),
+                                description: t('entry.requestEdit'),
+                                confirmLabel: t('admin.grant'),
+                                cancelLabel: t('confirm.cancel'),
                                 onConfirm: () => resolve(row, "grant"),
                               })
                             }
                             disabled={busy}
                           >
-                            {busy ? "Saving..." : "Grant"}
+                            {busy ? t('entry.saving') : t('admin.grant')}
                           </ActionButton>
                           <ActionButton
                             role="destructive"
                             onClick={() =>
                               requestConfirmation({
-                                title: "Reject edit request?",
-                                description:
-                                  "This will deny the edit request and permanently lock the entry. The user will not be able to request changes again.",
-                                confirmLabel: "Reject",
-                                cancelLabel: "Cancel",
+                                title: t('admin.reject'),
+                                description: t('entry.permanentlyLocked'),
+                                confirmLabel: t('admin.reject'),
+                                cancelLabel: t('confirm.cancel'),
                                 variant: "destructive",
                                 onConfirm: () => resolve(row, "reject"),
                               })
                             }
                             disabled={busy}
                           >
-                            Reject
+                            {t('admin.reject')}
                           </ActionButton>
                         </>
                       )}

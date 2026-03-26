@@ -5,12 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { dashboard, profile, signin } from "@/lib/entryNavigation";
-
-const nav = [
-  { href: dashboard(), label: "Dashboard" },
-  { href: profile(), label: "My Account" },
-  { href: `${profile()}/print`, label: "Print Profile" },
-];
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function AppShell({
   children,
@@ -20,7 +15,14 @@ export default function AppShell({
   email: string;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const nav = [
+    { href: dashboard(), label: t("nav.dashboard") },
+    { href: profile(), label: t("nav.account") },
+    { href: `${profile()}/print`, label: "Print Profile" },
+  ];
 
   return (
     <div className="relative min-h-screen bg-[#FAFBFC]">
@@ -44,7 +46,7 @@ export default function AppShell({
             href={profile()}
             className="text-sm px-3 py-1 border rounded"
           >
-            My Account
+            {t("nav.account")}
           </Link>
         </div>
       </header>
@@ -94,14 +96,14 @@ export default function AppShell({
               onClick={() => setDrawerOpen(false)}
               className="block px-3 py-2 rounded text-sm hover:bg-[var(--color-dropdown-hover)]"
             >
-              My Account
+              {t("nav.account")}
             </Link>
 
             <button
               onClick={() => signOut({ callbackUrl: signin() })}
               className="w-full text-left px-3 py-2 rounded text-sm text-red-600 hover:bg-red-50"
             >
-              Sign Out
+              {t("nav.signOut")}
             </button>
           </div>
         </div>

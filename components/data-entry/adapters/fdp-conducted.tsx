@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -123,6 +124,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
     userDisplayName,
   } = ctx;
 
+  const { fieldLabel } = useTranslation();
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
@@ -143,7 +145,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Academic Year" error={submitted ? errors.academicYear : undefined}>
+        <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined}>
           <SelectDropdown
             value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
@@ -154,7 +156,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           />
         </Field>
 
-        <Field label="Semester Type" error={submitted ? errors.semesterType : undefined}>
+        <Field label={fieldLabel('semesterType')} error={submitted ? errors.semesterType : undefined}>
           <SelectDropdown
             value={form.semesterType || ""}
             onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
@@ -165,7 +167,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           />
         </Field>
 
-        <Field label="Level" error={submitted ? errors.level : undefined}>
+        <Field label={fieldLabel('level')} error={submitted ? errors.level : undefined}>
           <SelectDropdown
             value={form.level || ""}
             onChange={(value) => setForm((c) => ({ ...c, level: value }))}
@@ -176,7 +178,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           />
         </Field>
 
-        <Field label="Mode of FDP" error={submitted ? errors.mode : undefined}>
+        <Field label={fieldLabel('mode')} error={submitted ? errors.mode : undefined}>
           <SelectDropdown
             value={form.mode || ""}
             onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
@@ -187,11 +189,11 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           />
         </Field>
 
-        <Field label="Starting Date" error={submitted ? errors.startDate : undefined}>
+        <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined}>
           <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
         </Field>
 
-        <Field label="Ending Date" error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
+        <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
           <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
         </Field>
 
@@ -199,7 +201,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
         </Field>
 
-        <Field label="Name of the Faculty Development Program" error={submitted ? errors.programName : undefined}>
+        <Field label={fieldLabel('programName')} error={submitted ? errors.programName : undefined}>
           <input
             value={form.programName || ""}
             onChange={(e) => setForm((c) => ({ ...c, programName: e.target.value }))}
@@ -249,7 +251,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label="Sponsored" error={submitted ? errors.sponsored : undefined}>
+        <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
           <SelectDropdown
             value={form.sponsored || ""}
             onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
@@ -262,7 +264,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
 
         {form.sponsored === "Yes" && (
           <>
-            <Field label="Name of the Funding Agency" error={submitted ? errors.fundingAgency : undefined}>
+            <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
               <input
                 value={form.fundingAgency || ""}
                 onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
@@ -275,7 +277,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
               />
             </Field>
 
-            <Field label="Amount of Funding (₹) — optional" error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -297,7 +299,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
             <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
               <UploadFieldMulti
                 key={`${form.id}-permissionLetter`}
-                title="Permission Letter"
+                title={fieldLabel('permissionLetter')}
                 value={form.permissionLetter}
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
@@ -330,7 +332,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
 
               <UploadFieldMulti
                 key={`${form.id}-geotaggedPhotos`}
-                title="Geotagged Photos"
+                title={fieldLabel('geotaggedPhotos')}
                 value={form.geotaggedPhotos}
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
@@ -363,7 +365,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
 
               <UploadFieldMulti
                 key={`${form.id}-attendanceSheet`}
-                title="Attendance Sheet"
+                title={fieldLabel('attendanceSheet')}
                 value={form.attendanceSheet}
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
@@ -394,7 +396,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
                 viewOnly={isViewMode}
               />
 
-              <Field label="Number of Participants">
+              <Field label={fieldLabel('numberOfParticipants')}>
                 <input
                   type="number"
                   min="0"
@@ -412,7 +414,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
 
               <UploadFieldMulti
                 key={`${form.id}-officialPoster`}
-                title="Official Poster"
+                title={fieldLabel('officialPoster')}
                 value={form.officialPoster}
                 onUploaded={async (meta) => {
                   await persistCurrentMutation({
