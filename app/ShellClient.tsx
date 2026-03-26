@@ -216,7 +216,7 @@ export default function ShellClient({
             </button>
 
             <Link href={dashboard()} className="flex items-center gap-2 group">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 text-sm font-bold text-white transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] text-sm font-bold text-white transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105">
                 T
               </span>
               <span className="hidden text-base font-bold tracking-tight text-[var(--color-text-primary)] sm:block">

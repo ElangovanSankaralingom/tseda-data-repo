@@ -41,6 +41,8 @@
   --color-skeleton-base: #E2E8F0;
   --color-skeleton-shine: #F1F5F9;
   --color-header-tint: rgba(30, 58, 95, 0.06);
+  --color-gradient-from: #1E3A5F;
+  --color-gradient-to: #2D5F8A;
 }
 
 html {

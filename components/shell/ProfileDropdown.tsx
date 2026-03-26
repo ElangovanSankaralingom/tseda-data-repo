@@ -62,7 +62,7 @@ export default function ProfileDropdown({
               style={{ backgroundImage: `url("${photoUrl}")` }}
             />
           ) : (
-            <span className="flex size-full items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-xs font-bold text-white">
+            <span className="flex size-full items-center justify-center bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] text-xs font-bold text-white">
               {initials}
             </span>
           )}

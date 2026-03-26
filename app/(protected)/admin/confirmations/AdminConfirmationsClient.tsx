@@ -204,7 +204,7 @@ export default function AdminConfirmationsClient() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     {/* Avatar + User Info */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-sm font-bold text-white">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] text-sm font-bold text-white">
                         {getInitials(row.ownerEmail)}
                       </div>
                       <div className="min-w-0">

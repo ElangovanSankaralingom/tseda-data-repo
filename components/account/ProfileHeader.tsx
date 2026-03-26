@@ -14,10 +14,10 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
   }, [photo]);
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 animate-fade-in-up">
+    <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 animate-fade-in-up">
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
         <div className="ring-4 ring-white/20 rounded-full shadow-lg transition-shadow duration-500">
-          <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-900">
+          <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)]">
             {photo && !avatarLoadFailed ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img

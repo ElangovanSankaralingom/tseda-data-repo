@@ -133,7 +133,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
   return (
     <div className="relative">
       <div
-        className={`${sizeClasses} flex items-center justify-center rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-2 ring-[var(--color-card-bg)] shadow-sm`}
+        className={`${sizeClasses} flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] ring-2 ring-[var(--color-card-bg)] shadow-sm`}
       >
         <span className={`${textSize} font-bold text-white`}>{initials(user.name)}</span>
       </div>

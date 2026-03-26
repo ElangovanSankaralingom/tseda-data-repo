@@ -4,32 +4,33 @@ import React from "react";
 import { Flame, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
-const CONFIG = {
+const STYLE_CONFIG = {
   active: {
     icon: Flame,
-    label: "Streak Activated",
     gradient:
       "border-orange-400/50 bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-orange-500/20",
     zeroGradient: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
-    zeroCta: "Generate your first entry!",
     hoverRing: "hover:ring-2 hover:ring-amber-300/50",
   },
   wins: {
     icon: Trophy,
-    label: "Streak Wins",
     gradient:
       "border-yellow-400/50 bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg shadow-yellow-500/20",
     zeroGradient: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
-    zeroCta: "Complete all fields to earn wins",
     hoverRing: "hover:ring-2 hover:ring-yellow-300/50",
   },
 } as const;
 
 function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { type: "active" | "wins"; value: number; subtext?: string; hoverDescription?: string; staggerClass?: string }) {
-  const { icon: Icon, label, gradient, zeroGradient, zeroCta, hoverRing } = CONFIG[type];
+  const { t } = useTranslation();
+  const { icon: Icon, gradient, zeroGradient, hoverRing } = STYLE_CONFIG[type];
   const hasValue = value > 0;
   const displayValue = useCountUp(value);
+
+  const label = type === "active" ? t("streak.activated") : t("streak.won");
+  const zeroCta = type === "active" ? t("dashboard.generateFirstEntry") : t("dashboard.completeFieldsToWin");
 
   return (
     <div
