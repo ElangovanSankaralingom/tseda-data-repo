@@ -8,8 +8,22 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { AppError } from "@/lib/errors";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { logger } from "@/lib/logger";
+import { appendActionHistory } from "@/lib/admin/actionHistory";
+import { extractEntryTitle } from "@/lib/confirmations/notificationHelpers";
 import type { EntryEngineRecord, EntryLike } from "./engineHelpers.ts";
 import { runAdminMutation } from "./engineMutationRunner.ts";
+
+function safeAppendHistory(params: Parameters<typeof appendActionHistory>[0]) {
+  try {
+    appendActionHistory(params);
+  } catch (err) {
+    logger.warn({ event: "action_history.append_failed", actionType: params.actionType, entryId: params.entryId }, err instanceof Error ? err.message : String(err));
+  }
+}
+
+function userNameFromEmail(email: string): string {
+  return email.split("@")[0];
+}
 
 /**
  * Grants edit access to a finalized entry on behalf of an admin. Transitions
@@ -50,9 +64,18 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
     afterSuccess: (entry) => {
       logger.info({ event: "entry.admin_action", action: "grant_edit", category, entryId: String(entry.id ?? entryId), adminEmail });
       const normalized = normalizeEmail(ownerEmail);
+      safeAppendHistory({
+        actionType: "edit_granted",
+        entryId: String(entry.id ?? entryId),
+        category,
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        userEmail: normalized,
+        userName: userNameFromEmail(normalized),
+        adminEmail,
+      });
       fireAndForget(
-        import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle }) =>
-          notifyEditGranted(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>)),
+        import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle: ext }) =>
+          notifyEditGranted(normalized, ext(entry as unknown as Record<string, unknown>)),
         ),
         "notifyEditGranted",
       );
@@ -102,9 +125,18 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
     afterSuccess: (entry) => {
       logger.info({ event: "entry.admin_action", action: "reject_edit", category, entryId: String(entry.id ?? entryId), adminEmail });
       const normalized = normalizeEmail(ownerEmail);
+      safeAppendHistory({
+        actionType: "edit_rejected",
+        entryId: String(entry.id ?? entryId),
+        category,
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        userEmail: normalized,
+        userName: userNameFromEmail(normalized),
+        adminEmail,
+      });
       fireAndForget(
-        import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle }) =>
-          notifyEditRejected(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>), reason?.trim()),
+        import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle: ext }) =>
+          notifyEditRejected(normalized, ext(entry as unknown as Record<string, unknown>), reason?.trim()),
         ),
         "notifyEditRejected",
       );
@@ -195,6 +227,17 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
           after: null,
         })
       );
+
+      // Log action history BEFORE deletion
+      safeAppendHistory({
+        actionType: "delete_approved",
+        entryId: id,
+        category,
+        entryTitle: extractEntryTitle(existing as unknown as Record<string, unknown>),
+        userEmail: normalizedOwner,
+        userName: userNameFromEmail(normalizedOwner),
+        adminEmail,
+      });
 
       // Delete the entry from the JSON store
       await deleteEntryRaw(normalizedOwner, category, id);
@@ -318,9 +361,18 @@ export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEng
     },
     afterSuccess: (entry) => {
       const normalized = normalizeEmail(ownerEmail);
+      safeAppendHistory({
+        actionType: "delete_rejected",
+        entryId: String(entry.id ?? entryId),
+        category,
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        userEmail: normalized,
+        userName: userNameFromEmail(normalized),
+        adminEmail,
+      });
       fireAndForget(
-        import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteRejected, extractEntryTitle }) =>
-          notifyDeleteRejected(normalized, extractEntryTitle(entry as unknown as Record<string, unknown>)),
+        import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteRejected, extractEntryTitle: ext }) =>
+          notifyDeleteRejected(normalized, ext(entry as unknown as Record<string, unknown>)),
         ),
         "notifyDeleteRejected",
       );

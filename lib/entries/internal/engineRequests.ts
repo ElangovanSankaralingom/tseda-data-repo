@@ -9,8 +9,18 @@ import { logger } from "@/lib/logger";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isEntryWon } from "@/lib/streakProgress";
 import { pauseTimer, clearTimer } from "@/lib/workflow/timerManager";
+import { appendActionHistory } from "@/lib/admin/actionHistory";
+import { extractEntryTitle } from "@/lib/confirmations/notificationHelpers";
 import type { EntryEngineRecord, EntryLike, WorkflowEntryLike } from "./engineHelpers.ts";
 import { runUserRequestMutation } from "./engineMutationRunner.ts";
+
+function safeAppendHistory(params: Parameters<typeof appendActionHistory>[0]) {
+  try {
+    appendActionHistory(params);
+  } catch (err) {
+    logger.warn({ event: "action_history.append_failed", actionType: params.actionType, entryId: params.entryId }, err instanceof Error ? err.message : String(err));
+  }
+}
 
 function validateRequestEligibility(existing: EntryLike) {
   if ((existing as Record<string, unknown>).permanentlyLocked === true) {
@@ -145,6 +155,17 @@ export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngin
       (transitioned as Record<string, unknown>).permanentlyLocked = true;
       return transitioned as EntryLike;
     },
+    afterSuccess: (entry) => {
+      const normalized = normalizeEmail(userEmail);
+      safeAppendHistory({
+        actionType: "user_cancelled",
+        entryId: String(entry.id ?? entryId),
+        category,
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        userEmail: normalized,
+        userName: normalized.split("@")[0],
+      });
+    },
   });
 }
 
@@ -273,6 +294,17 @@ export async function cancelDeleteRequest<T extends EntryEngineRecord = EntryEng
       (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
       (transitioned as Record<string, unknown>).permanentlyLocked = true;
       return transitioned as EntryLike;
+    },
+    afterSuccess: (entry) => {
+      const normalized = normalizeEmail(userEmail);
+      safeAppendHistory({
+        actionType: "user_cancelled",
+        entryId: String(entry.id ?? entryId),
+        category,
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        userEmail: normalized,
+        userName: normalized.split("@")[0],
+      });
     },
   });
 }
