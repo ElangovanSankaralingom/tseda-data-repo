@@ -157,17 +157,54 @@ body {
   }
   html,
   body {
-    @apply bg-[#FAFBFC] text-foreground;
-    background-image: radial-gradient(circle, #e2e8f0 0.5px, transparent 0.5px);
+    background-color: var(--color-body-bg);
+    color: var(--color-text-primary);
+    background-image: radial-gradient(circle, var(--color-card-border) 0.5px, transparent 0.5px);
     background-size: 32px 32px;
   }
+}
+
+/* Global dark-mode-aware element styles */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="url"],
+input[type="tel"],
+input[type="search"],
+textarea,
+select {
+  background-color: var(--color-input-bg);
+  color: var(--color-text-primary);
+  border-color: var(--color-input-border);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-input-focus-ring);
+  outline-color: var(--color-input-focus-ring);
+}
+
+::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dark input[type="date"],
+.dark input[type="time"] {
+  color-scheme: dark;
 }
 
 @layer components {
   .date-modern {
     appearance: none;
     -webkit-appearance: none;
-    color-scheme: light;
+    color-scheme: inherit;
   }
 
   .date-modern::-webkit-calendar-picker-indicator {
