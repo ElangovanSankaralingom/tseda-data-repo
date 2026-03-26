@@ -257,3 +257,47 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 - Commit `.data/` or `public/uploads/`
 - Modify business logic without running `npm test`
 - Use emojis in the UI
+
+---
+
+## NO-HARDCODE PRINCIPLE (MANDATORY)
+
+NOTHING in TSEDA is hardcoded. Everything is schema-driven and modular:
+
+### UI Strings
+- ALL user-facing text uses `t('key')` from `lib/i18n/useTranslation.ts`
+- English dictionary (`lib/i18n/en.ts`) is the source of truth
+- Tamil dictionary (`lib/i18n/ta.ts`) is type-checked against English — missing key = compile error
+- New languages: create a new file typed against `TranslationDict`, add to Language union
+
+### Field Labels
+- Schemas define field structure, NOT display labels
+- Display labels resolve through `fieldLabel(fieldName)` which reads from translation dictionary
+- If translation exists → translated. If not → fallback to fieldName.
+
+### Dropdown Options
+- Schema defines `options: [{ value: 'national', label: 'National' }]`
+- At render time: `valueLabel(option.value)` resolves through translation
+- Schema `label` is the English fallback only
+
+### Category Names
+- `categoryLabel(slug)` resolves through translation dictionary
+- categoryRegistry defines slug, icon, color — NOT display name
+
+### Toast / Error Messages
+- All toast messages use translation keys: `t('toast.saved')`
+- Error messages use: `t('common.error')` or specific error keys
+
+### Adding a New Feature Checklist
+1. Add data to schema/registry (structure only, no display strings)
+2. Add English key to `lib/i18n/en.ts`
+3. TypeScript forces Tamil key in `lib/i18n/ta.ts`
+4. Component uses `t()`, `fieldLabel()`, `valueLabel()`, or `categoryLabel()`
+5. NEVER write a hardcoded string in a component — always go through translation
+
+### Adding a New Language
+1. Create `lib/i18n/<code>.ts` typed against `TranslationDict`
+2. Add to `Language` union in `lib/i18n/index.ts`
+3. Add to dictionaries map
+4. Add option in appearance settings
+5. Done — compiler guarantees completeness

@@ -10,6 +10,7 @@ import { signin } from "@/lib/entryNavigation";
 import { getUserPreferences } from "@/lib/preferences/userPreferences";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import type { ThemeMode, ColorPalette } from "@/lib/theme/themeTokens";
+import type { Language } from "@/lib/i18n";
 
 export default async function ProtectedLayout({
   children,
@@ -31,6 +32,7 @@ export default async function ProtectedLayout({
     <ThemeProvider
       initialMode={prefs.themeMode as ThemeMode}
       initialPalette={prefs.colorPalette as ColorPalette}
+      initialLanguage={prefs.language as Language}
     >
       <ShellClient>
         <NavigationRefresh />

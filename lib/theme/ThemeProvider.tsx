@@ -7,19 +7,24 @@ import {
   type ColorPalette,
   type ThemeTokens,
 } from "./themeTokens";
+import type { Language } from "@/lib/i18n";
 
 interface ThemeContextValue {
   mode: ThemeMode;
   palette: ColorPalette;
+  language: Language;
   setMode: (mode: ThemeMode) => void;
   setPalette: (palette: ColorPalette) => void;
+  setLanguage: (language: Language) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   mode: "light",
   palette: "ocean-blue",
+  language: "en",
   setMode: () => {},
   setPalette: () => {},
+  setLanguage: () => {},
 });
 
 export const useTheme = () => useContext(ThemeContext);
@@ -36,14 +41,19 @@ export default function ThemeProvider({
   children,
   initialMode,
   initialPalette,
+  initialLanguage,
 }: {
   children: React.ReactNode;
   initialMode?: ThemeMode;
   initialPalette?: ColorPalette;
+  initialLanguage?: Language;
 }) {
   const [mode, setModeState] = useState<ThemeMode>(initialMode ?? "light");
   const [palette, setPaletteState] = useState<ColorPalette>(
     initialPalette ?? "ocean-blue",
+  );
+  const [language, setLanguageState] = useState<Language>(
+    initialLanguage ?? "en",
   );
 
   useEffect(() => {
@@ -52,14 +62,11 @@ export default function ThemeProvider({
   }, [mode, palette]);
 
   const persistPreferences = useCallback(
-    (newMode: ThemeMode, newPalette: ColorPalette) => {
+    (update: Record<string, string>) => {
       void fetch("/api/me/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          themeMode: newMode,
-          colorPalette: newPalette,
-        }),
+        body: JSON.stringify(update),
       });
     },
     [],
@@ -68,21 +75,31 @@ export default function ThemeProvider({
   const setMode = useCallback(
     (newMode: ThemeMode) => {
       setModeState(newMode);
-      persistPreferences(newMode, palette);
+      persistPreferences({ themeMode: newMode });
     },
-    [palette, persistPreferences],
+    [persistPreferences],
   );
 
   const setPalette = useCallback(
     (newPalette: ColorPalette) => {
       setPaletteState(newPalette);
-      persistPreferences(mode, newPalette);
+      persistPreferences({ colorPalette: newPalette });
     },
-    [mode, persistPreferences],
+    [persistPreferences],
+  );
+
+  const setLanguage = useCallback(
+    (newLanguage: Language) => {
+      setLanguageState(newLanguage);
+      persistPreferences({ language: newLanguage });
+    },
+    [persistPreferences],
   );
 
   return (
-    <ThemeContext.Provider value={{ mode, palette, setMode, setPalette }}>
+    <ThemeContext.Provider
+      value={{ mode, palette, language, setMode, setPalette, setLanguage }}
+    >
       {children}
     </ThemeContext.Provider>
   );
