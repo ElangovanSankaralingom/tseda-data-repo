@@ -20,7 +20,7 @@ yarn-debug.log*
 # OS
 .DS_Store
 tmp/
-Users/
+/Users/
 
 # Runtime data (NEVER commit)
 .data/
