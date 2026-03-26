@@ -1,149 +1,204 @@
 "use client";
 
-import { Check, Moon, Palette, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import type { TranslationKey } from "@/lib/i18n";
-import type { ThemeMode, ColorPalette } from "@/lib/theme/themeTokens";
+import type { ColorPalette } from "@/lib/theme/themeTokens";
 import type { Language } from "@/lib/i18n";
 
-const THEME_MODES: { key: ThemeMode; tKey: TranslationKey; Icon: typeof Sun; preview: { header: string; card: string; text: string } }[] = [
-  {
-    key: "light",
-    tKey: "appearance.light",
-    Icon: Sun,
-    preview: { header: "#1E3A5F", card: "#FFFFFF", text: "#E2E8F0" },
-  },
-  {
-    key: "dark",
-    tKey: "appearance.dark",
-    Icon: Moon,
-    preview: { header: "#111827", card: "#1F2937", text: "#374151" },
-  },
-  {
-    key: "color",
-    tKey: "appearance.color",
-    Icon: Palette,
-    preview: { header: "#4A1D6A", card: "#FFFFFF", text: "#E2E8F0" },
-  },
+const PALETTE_OPTIONS: readonly {
+  id: ColorPalette;
+  color: string;
+  short: string;
+}[] = [
+  { id: "ocean-blue", color: "#1E3A5F", short: "Ocean" },
+  { id: "forest-green", color: "#1B4332", short: "Forest" },
+  { id: "royal-purple", color: "#4A1D6A", short: "Royal" },
+  { id: "sunset-warm", color: "#8B3A14", short: "Sunset" },
+  { id: "rose-pink", color: "#9B1B5E", short: "Rose" },
 ];
 
-const PALETTES: { key: ColorPalette; tKey: TranslationKey; swatch: string }[] = [
-  { key: "ocean-blue", tKey: "appearance.oceanBlue", swatch: "#1E3A5F" },
-  { key: "forest-green", tKey: "appearance.forestGreen", swatch: "#1B4332" },
-  { key: "royal-purple", tKey: "appearance.royalPurple", swatch: "#4A1D6A" },
-  { key: "sunset-warm", tKey: "appearance.sunsetWarm", swatch: "#8B3A14" },
-  { key: "rose-pink", tKey: "appearance.rosePink", swatch: "#9B1B5E" },
-];
+function ThemePreview() {
+  return (
+    <div className="rounded-xl overflow-hidden border border-[var(--color-card-border)]">
+      <div
+        className="h-10 flex items-center px-4 border-b border-[var(--color-card-border)]/50"
+        style={{ backgroundColor: `color-mix(in srgb, var(--color-header-tint) 40%, var(--color-card-bg) 60%)` }}
+      >
+        <div className="flex gap-1.5">
+          <div className="size-2 rounded-full bg-[var(--color-text-muted)]/30" />
+          <div className="size-2 rounded-full bg-[var(--color-text-muted)]/30" />
+          <div className="size-2 rounded-full bg-[var(--color-text-muted)]/30" />
+        </div>
+        <span className="text-xs text-[var(--color-text-primary)] ml-3 font-medium opacity-70">T&apos;SEDA</span>
+      </div>
+      <div className="p-4 flex gap-2.5 bg-[var(--color-body-bg)]">
+        <div className="flex-1 rounded-lg p-3 border border-[var(--color-card-border)] bg-[var(--color-card-bg)]">
+          <div className="w-3/5 h-2 rounded bg-[var(--color-text-primary)] opacity-15 mb-2" />
+          <div className="w-2/5 h-1.5 rounded bg-[var(--color-text-primary)] opacity-[0.08]" />
+        </div>
+        <div className="flex-1 rounded-lg p-3 border border-[var(--color-card-border)] bg-[var(--color-card-bg)]">
+          <div className="w-1/2 h-2 rounded bg-[var(--color-text-primary)] opacity-15 mb-2" />
+          <div className="w-3/4 h-1.5 rounded bg-[var(--color-text-primary)] opacity-[0.08]" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AppearanceSettings() {
   const { mode, palette, language, setMode, setPalette, setLanguage } = useTheme();
   const { t } = useTranslation();
 
+  const isDark = mode === "dark";
+
+  function handlePalette(id: ColorPalette) {
+    setPalette(id);
+    if (mode === "light") {
+      setMode("color");
+    }
+  }
+
+  function handleTheme(target: "light" | "dark") {
+    if (target === "light") {
+      setMode(palette === "ocean-blue" ? "light" : "color");
+    } else {
+      setMode("dark");
+    }
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Theme Mode */}
+    <div className="space-y-7">
+      {/* Header */}
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          {t("nav.appearance")}
+        </div>
+        <h1 className="mt-1 text-2xl font-semibold text-[var(--color-text-primary)]">
+          {t("appearance.title")}
+        </h1>
+      </div>
+
+      {/* Theme */}
       <section>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">{t('appearance.theme')}</h2>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('appearance.subtitle')}</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {THEME_MODES.map(({ key, tKey, Icon, preview }) => {
-            const selected = mode === key;
+        <div className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
+          {t("appearance.theme")}
+        </div>
+        <div className="flex gap-2.5">
+          <button
+            type="button"
+            onClick={() => handleTheme("light")}
+            className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
+              !isDark
+                ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
+                : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:border-[var(--color-input-border)]"
+            }`}
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-[#f8fafc]">
+              <Sun className="size-4 text-[#64748b]" />
+            </div>
+            <span className="text-sm font-medium text-[var(--color-text-primary)]">
+              {t("appearance.light")}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTheme("dark")}
+            className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
+              isDark
+                ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
+                : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:border-[var(--color-input-border)]"
+            }`}
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#334155] bg-[#1e293b]">
+              <Moon className="size-4 text-[#94a3b8]" />
+            </div>
+            <span className="text-sm font-medium text-[var(--color-text-primary)]">
+              {t("appearance.dark")}
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* Accent color */}
+      <section>
+        <div className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
+          {t("appearance.colorPalette")}
+        </div>
+        <p className="text-xs text-[var(--color-text-secondary)] mb-3">
+          {t("appearance.subtitle")}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PALETTE_OPTIONS.map((p) => {
+            const selected = palette === p.id;
             return (
               <button
-                key={key}
+                key={p.id}
                 type="button"
-                onClick={() => setMode(key)}
-                className={`relative flex w-full flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.02] sm:w-40 h-32 ${
+                onClick={() => handlePalette(p.id)}
+                className={`flex items-center gap-2 rounded-full px-4 py-2.5 transition-all duration-200 cursor-pointer ${
                   selected
-                    ? "ring-2 ring-[var(--color-primary)] border-[var(--color-primary)]"
-                    : "border-[var(--color-card-border)] hover:border-[var(--color-text-muted)]"
-                } ${key === "dark" ? "bg-gray-900" : "bg-[var(--color-card-bg)]"}`}
+                    ? "border-2 bg-[var(--color-primary-muted)]"
+                    : "border border-[var(--color-card-border)] hover:border-[var(--color-input-border)]"
+                }`}
+                style={selected ? { borderColor: p.color } : undefined}
               >
-                {selected && (
-                  <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-[var(--color-primary)] text-white">
-                    <Check className="size-3" />
-                  </span>
-                )}
-                <Icon className={`size-6 ${key === "dark" ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-secondary)]"}`} />
-                <span className={`text-sm font-medium ${key === "dark" ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-primary)]"}`}>{t(tKey)}</span>
-                {/* Mini preview strip */}
-                <div className="flex w-full gap-1 rounded-md overflow-hidden h-3">
-                  <div className="flex-1 rounded-sm" style={{ backgroundColor: preview.header }} />
-                  <div className="flex-[2] rounded-sm" style={{ backgroundColor: preview.card }} />
-                  <div className="flex-[3] space-y-0.5 rounded-sm px-0.5 py-0.5" style={{ backgroundColor: preview.card }}>
-                    <div className="h-0.5 w-full rounded-full" style={{ backgroundColor: preview.text }} />
-                    <div className="h-0.5 w-3/4 rounded-full" style={{ backgroundColor: preview.text }} />
-                  </div>
-                </div>
+                <span
+                  className="size-5 shrink-0 rounded-full ring-1 ring-black/10"
+                  style={{ backgroundColor: p.color }}
+                />
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  {p.short}
+                </span>
               </button>
             );
           })}
         </div>
       </section>
 
-      {/* Color Palette */}
-      <section
-        className={`overflow-hidden transition-all duration-300 ${
-          mode === "color" ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">{t('appearance.colorPalette')}</h2>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Pick an accent color for the interface</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {PALETTES.map(({ key, tKey, swatch }) => {
-            const selected = palette === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setPalette(key)}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-200 hover:scale-[1.02] ${
-                  selected
-                    ? "ring-2 ring-[var(--color-primary)] border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                    : "border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:border-[var(--color-text-muted)]"
-                }`}
-              >
-                <span
-                  className="size-6 shrink-0 rounded-full ring-1 ring-black/10"
-                  style={{ backgroundColor: swatch }}
-                />
-                <span className="text-sm font-medium text-[var(--color-text-primary)]">{t(tKey)}</span>
-                {selected && <Check className="size-4 text-[var(--color-primary)]" />}
-              </button>
-            );
-          })}
+      {/* Live preview */}
+      <section>
+        <div className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
+          Preview
         </div>
+        <ThemePreview />
       </section>
+
+      {/* Divider */}
+      <div className="border-t border-[var(--color-divider)]" />
 
       {/* Language */}
       <section>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">{t('appearance.language')}</h2>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Select your preferred language</p>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
+          {t("appearance.language")}
+        </div>
+        <p className="text-xs text-[var(--color-text-secondary)] mb-3">
+          {t("appearance.subtitle")}
+        </p>
+        <div className="flex gap-2.5">
           {([
-            { key: "en" as Language, symbol: "EN", label: "English" },
-            { key: "ta" as Language, symbol: "\u0BA4", label: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD" },
-          ]).map(({ key, symbol, label }) => {
+            { key: "en" as Language, char: "EN", name: "English", sub: "Default" },
+            { key: "ta" as Language, char: "\u0BA4", name: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD", sub: "Tamil" },
+          ]).map(({ key, char, name, sub }) => {
             const selected = language === key;
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => setLanguage(key)}
-                className={`relative flex w-28 flex-col items-center gap-1.5 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.02] ${
+                className={`flex flex-1 items-center gap-3 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
                   selected
-                    ? "ring-2 ring-[var(--color-primary)] border-[var(--color-primary)]"
-                    : "border-[var(--color-card-border)] hover:border-[var(--color-text-muted)]"
-                } bg-[var(--color-card-bg)]`}
+                    ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
+                    : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:border-[var(--color-input-border)]"
+                }`}
               >
-                {selected && (
-                  <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-[var(--color-primary)] text-white">
-                    <Check className="size-3" />
-                  </span>
-                )}
-                <span className="text-xl font-bold text-[var(--color-text-primary)]">{symbol}</span>
-                <span className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</span>
+                <div className="flex size-8 shrink-0 items-center justify-center text-lg font-medium text-[var(--color-text-primary)]">
+                  {char}
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-medium text-[var(--color-text-primary)]">{name}</div>
+                  <div className="text-xs text-[var(--color-text-secondary)]">{sub}</div>
+                </div>
               </button>
             );
           })}

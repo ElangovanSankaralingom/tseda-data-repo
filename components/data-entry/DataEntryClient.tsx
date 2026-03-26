@@ -109,29 +109,29 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
 
           {hasEntries ? (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-text-secondary)]">
-              <span>{cat.totalEntries} {cat.totalEntries === 1 ? "entry" : t('dashboard.entries')}</span>
+              <span>{cat.totalEntries} {cat.totalEntries === 1 ? t('dashboard.entry') : t('dashboard.entries')}</span>
               {cat.draftCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
                   <Pencil className="size-3" />
-                  {cat.draftCount} {cat.draftCount === 1 ? "draft" : t('dashboard.drafts')}
+                  {cat.draftCount} {cat.draftCount === 1 ? t('dashboard.draft') : t('dashboard.drafts')}
                 </span>
               )}
               {cat.streakActivated > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-amber-600">
                   <Flame className="size-3" />
-                  {cat.streakActivated} active
+                  {cat.streakActivated} {t('dashboard.active')}
                 </span>
               )}
               {cat.streakWins > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
                   <Trophy className="size-3" />
-                  {cat.streakWins} done
+                  {cat.streakWins} {t('dashboard.done')}
                 </span>
               )}
               {cat.editRequestedCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-purple-600">
                   <Clock className="size-3" />
-                  {cat.editRequestedCount} pending
+                  {cat.editRequestedCount} {t('dashboard.pending')}
                 </span>
               )}
             </div>
@@ -188,16 +188,17 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
 
 // ── Main Component ─────────────────────────────────────────────────
 export default function DataEntryClient({ greeting, userName, categories, totals }: Props) {
+  const { t } = useTranslation();
   const sorted = useMemo(() => sortByUrgency(categories), [categories]);
   const hasAnyEntries = totals.totalEntries > 0;
   const firstName = userName?.split(" ")[0] ?? null;
   const actionItems = totals.draftCount + totals.streakActivatedCount + totals.editRequestedCount;
 
   const statusText = !hasAnyEntries
-    ? "Start documenting your professional development"
+    ? t('dashboard.startDocumenting')
     : actionItems > 0
-      ? `${actionItems} ${actionItems === 1 ? "item needs" : "items need"} your attention`
-      : "You're all caught up";
+      ? `${actionItems} ${actionItems === 1 ? t('dashboard.itemNeedsAttention') : t('dashboard.itemsNeedAttention')}`
+      : t('dashboard.allCaughtUp');
 
   return (
     <div className="mx-auto w-full max-w-5xl">
@@ -215,13 +216,13 @@ export default function DataEntryClient({ greeting, userName, categories, totals
             {totals.streakActivatedCount > 0 && (
               <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 border border-amber-100">
                 <Flame className="size-4" />
-                <span>{totals.streakActivatedCount} active</span>
+                <span>{totals.streakActivatedCount} {t('dashboard.active')}</span>
               </div>
             )}
             {totals.streakWinsCount > 0 && (
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-400 border border-emerald-500/20">
                 <Trophy className="size-4" />
-                <span>{totals.streakWinsCount} wins</span>
+                <span>{totals.streakWinsCount} {t('dashboard.wins')}</span>
               </div>
             )}
           </div>
@@ -241,8 +242,8 @@ export default function DataEntryClient({ greeting, userName, categories, totals
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
             <FileText className="size-8 text-[var(--color-text-secondary)]" />
           </div>
-          <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">Choose a category above to begin</p>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Track FDPs, lectures, workshops, and more</p>
+          <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">{t('dashboard.chooseCategory')}</p>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('dashboard.trackActivities')}</p>
         </div>
       )}
     </div>

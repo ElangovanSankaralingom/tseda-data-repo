@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function formatRelative(iso?: string): string | null {
   if (!iso) return null;
@@ -31,14 +32,15 @@ export default function EditorMetadataFooter({
   streakEligible?: boolean;
   editWindowExpires?: string;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   const items: string[] = [];
   if (entryId) items.push(`ID: ${entryId.slice(0, 8)}`);
   const created = formatRelative(createdAt);
-  if (created) items.push(`Created: ${created}`);
+  if (created) items.push(`${t('entry.created')}: ${created}`);
   const updated = formatRelative(updatedAt);
-  if (updated) items.push(`Last updated: ${updated}`);
+  if (updated) items.push(`${t('entry.lastUpdated')}: ${updated}`);
 
   if (items.length === 0) return null;
 
@@ -52,7 +54,7 @@ export default function EditorMetadataFooter({
         <ChevronDown
           className={`size-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
         />
-        Show details
+        {t('entry.showDetails')}
       </button>
       {expanded ? (
         <div className="mt-2 rounded-lg border border-[var(--color-divider)] bg-[var(--color-body-bg)]/50 px-3 py-2">

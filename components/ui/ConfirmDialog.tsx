@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export type { ConfirmDialogVariant } from "@/lib/types/ui";
 import type { ConfirmDialogVariant } from "@/lib/types/ui";
@@ -27,14 +28,17 @@ export default function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel: confirmLabelProp,
+  cancelLabel: cancelLabelProp,
   variant = "default",
   confirmClassName,
   confirming = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  const confirmLabel = confirmLabelProp ?? t("common.confirm");
+  const cancelLabel = cancelLabelProp ?? t("confirm.cancel");
   useEffect(() => {
     if (!open) return;
 
@@ -94,7 +98,7 @@ export default function ConfirmDialog({
                 confirmClassName,
               )}
             >
-              {confirming ? "Please wait..." : confirmLabel}
+              {confirming ? t("common.processing") : confirmLabel}
             </button>
           ) : (
             <ActionButton
@@ -103,7 +107,7 @@ export default function ConfirmDialog({
               disabled={confirming}
               className={cx(variant === "default" && "font-medium")}
             >
-              {confirming ? "Please wait..." : confirmLabel}
+              {confirming ? t("common.processing") : confirmLabel}
             </ActionButton>
           )}
         </div>

@@ -13,6 +13,7 @@ import {
   type EntryListGroup,
 } from "@/lib/entryCategorization";
 import { isEntryCommitted } from "@/lib/entries/workflow";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   type CategoryEntryRenderEntry,
   type CategoryEntryRecordCardProps,
@@ -34,7 +35,7 @@ export default function CategoryEntryRecordCard({
   onView,
   onEdit,
   onDelete,
-  deleteLabel = "Delete",
+  deleteLabel,
   requestEdit,
   requestDelete,
   requestInFlight = false,
@@ -42,6 +43,8 @@ export default function CategoryEntryRecordCard({
   requestActionUsed = false,
   children,
 }: CategoryEntryRecordCardProps) {
+  const { t } = useTranslation();
+  const resolvedDeleteLabel = deleteLabel || t('common.delete');
   const isDraft = group === "in_the_works";
   const isFinalized = group === "locked_in";
   const isUnderReview = group === "under_review";
@@ -66,11 +69,11 @@ export default function CategoryEntryRecordCard({
             {isDraft ? (
               <>
                 {onEdit ? (
-                  <ActionButton role="primary" onClick={onEdit}>Continue</ActionButton>
+                  <ActionButton role="primary" onClick={onEdit}>{t('entry.continue')}</ActionButton>
                 ) : null}
                 {onDelete ? (
                   <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                    {deleteLabel}
+                    {resolvedDeleteLabel}
                   </ActionButton>
                 ) : null}
               </>
@@ -81,12 +84,12 @@ export default function CategoryEntryRecordCard({
               <>
                 {onEdit ? (
                   <ActionButton role="primary" onClick={onEdit}>
-                    Edit
+                    {t('entry.edit')}
                   </ActionButton>
                 ) : null}
                 {onDelete ? (
                   <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                    {deleteLabel}
+                    {resolvedDeleteLabel}
                   </ActionButton>
                 ) : null}
               </>
@@ -97,7 +100,7 @@ export default function CategoryEntryRecordCard({
               <>
                 {onEdit ? (
                   <ActionButton role="primary" onClick={onEdit} className="!bg-purple-600 hover:!bg-purple-700">
-                    Continue
+                    {t('entry.continue')}
                   </ActionButton>
                 ) : null}
               </>
@@ -111,7 +114,7 @@ export default function CategoryEntryRecordCard({
                   onClick={onView}
                   className="rounded-xl bg-[var(--color-dropdown-hover)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
                 >
-                  View
+                  {t('entry.view')}
                 </button>
                 {!permanentlyLocked && !requestActionUsed && requestEdit && requestDelete ? (
                   <RequestActionDropdown
@@ -131,16 +134,16 @@ export default function CategoryEntryRecordCard({
                   onClick={onView}
                   className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-dropdown-hover)] px-3 text-sm font-medium text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97]"
                 >
-                  View
+                  {t('entry.view')}
                 </button>
                 {confirmationStatus === "EDIT_REQUESTED" && requestEdit?.onCancel ? (
                   <ActionButton role="ghost" onClick={requestEdit.onCancel} disabled={requestInFlight} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 disabled:opacity-50">
-                    {requestInFlight ? "Cancelling..." : "Cancel Edit Request"}
+                    {requestInFlight ? t('entry.cancellingRequest') : t('entry.cancelEditRequest')}
                   </ActionButton>
                 ) : null}
                 {confirmationStatus === "DELETE_REQUESTED" && requestDelete?.onCancel ? (
                   <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-50">
-                    {requestInFlight ? "Cancelling..." : "Cancel Delete Request"}
+                    {requestInFlight ? t('entry.cancellingRequest') : t('entry.cancelDeleteRequest')}
                   </ActionButton>
                 ) : null}
               </>

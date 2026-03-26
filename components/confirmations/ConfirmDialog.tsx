@@ -9,6 +9,7 @@ import {
   Info,
 } from "lucide-react";
 import type { ConfirmationDialogOptions, ConfirmationType } from "@/lib/confirmations/types";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const TYPE_CONFIG: Record<
   ConfirmationType,
@@ -50,18 +51,20 @@ const CONFIRM_STYLE: Record<string, string> = {
 };
 
 export default function ConfirmDialog({ options, onResult }: { options: ConfirmationDialogOptions; onResult: (confirmed: boolean) => void }) {
+  const { t } = useTranslation();
   const {
     type,
     title,
     message,
     details,
     confirmLabel,
-    cancelLabel = "Cancel",
+    cancelLabel: cancelLabelProp,
     confirmStyle,
     requireTypedConfirmation,
     countdown,
     preventOutsideClose,
   } = options;
+  const cancelLabel = cancelLabelProp ?? t("confirm.cancel");
 
   const [typedText, setTypedText] = useState("");
   const [showDetails, setShowDetails] = useState(false);

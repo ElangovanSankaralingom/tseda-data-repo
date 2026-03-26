@@ -39,6 +39,7 @@ export interface ThemeTokens {
   "--color-modal-bg": string;
   "--color-skeleton-base": string;
   "--color-skeleton-shine": string;
+  "--color-header-tint": string;
 }
 
 export const LIGHT_BASE: ThemeTokens = {
@@ -79,6 +80,7 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-modal-bg": "#FFFFFF",
   "--color-skeleton-base": "#E2E8F0",
   "--color-skeleton-shine": "#F1F5F9",
+  "--color-header-tint": "rgba(30, 58, 95, 0.06)",
 };
 
 export const DARK_BASE: ThemeTokens = {
@@ -119,11 +121,13 @@ export const DARK_BASE: ThemeTokens = {
   "--color-modal-bg": "#1F2937",
   "--color-skeleton-base": "#374151",
   "--color-skeleton-shine": "#4B5563",
+  "--color-header-tint": "rgba(59, 130, 246, 0.08)",
 };
 
 export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
   "ocean-blue": {},
   "forest-green": {
+    "--color-header-tint": "rgba(27, 67, 50, 0.06)",
     "--color-primary": "#1B4332",
     "--color-primary-light": "#2D6A4F",
     "--color-primary-muted": "#E8F0EC",
@@ -141,6 +145,7 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
     "--color-generate-hover": "#047857",
   },
   "royal-purple": {
+    "--color-header-tint": "rgba(74, 29, 106, 0.06)",
     "--color-primary": "#4A1D6A",
     "--color-primary-light": "#6B3FA0",
     "--color-primary-muted": "#F0E8F5",
@@ -158,6 +163,7 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
     "--color-generate-hover": "#6D28D9",
   },
   "sunset-warm": {
+    "--color-header-tint": "rgba(139, 58, 20, 0.06)",
     "--color-primary": "#8B3A14",
     "--color-primary-light": "#B85C38",
     "--color-primary-muted": "#F5EDE8",
@@ -175,6 +181,7 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
     "--color-generate-hover": "#B45309",
   },
   "rose-pink": {
+    "--color-header-tint": "rgba(155, 27, 94, 0.06)",
     "--color-primary": "#9B1B5E",
     "--color-primary-light": "#C2267A",
     "--color-primary-muted": "#F5E8F0",
@@ -193,8 +200,35 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
   },
 };
 
+/** Extract only accent/primary tokens from a palette for dark mode merging. */
+function darkPaletteOverrides(palette: Partial<ThemeTokens>): Partial<ThemeTokens> {
+  const accentKeys: (keyof ThemeTokens)[] = [
+    "--color-primary",
+    "--color-primary-light",
+    "--color-primary-hover",
+    "--color-accent",
+    "--color-accent-light",
+    "--color-header-bg",
+    "--color-sidebar-active-text",
+    "--color-input-focus-ring",
+    "--color-badge-bg",
+    "--color-button-primary-bg",
+    "--color-button-primary-hover",
+    "--color-generate-bg",
+    "--color-generate-hover",
+    "--color-header-tint",
+  ];
+  const overrides: Partial<ThemeTokens> = {};
+  for (const key of accentKeys) {
+    if (palette[key]) overrides[key] = palette[key];
+  }
+  return overrides;
+}
+
 export function resolveTokens(mode: ThemeMode, palette: ColorPalette): ThemeTokens {
-  if (mode === "dark") return { ...DARK_BASE };
+  if (mode === "dark") {
+    return { ...DARK_BASE, ...darkPaletteOverrides(COLOR_PALETTES[palette]) };
+  }
   if (mode === "color") return { ...LIGHT_BASE, ...COLOR_PALETTES[palette] };
   return { ...LIGHT_BASE };
 }
