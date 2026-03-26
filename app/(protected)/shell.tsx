@@ -25,7 +25,7 @@ export default function AppShell({
   ];
 
   return (
-    <div className="relative min-h-screen bg-[#FAFBFC]">
+    <div className="relative min-h-screen bg-[var(--color-body-bg)]">
       {/* Header */}
       <header className="h-14 border-b border-[var(--color-card-border)] flex items-center justify-between px-4">
         <div className="flex items-center gap-3">

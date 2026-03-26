@@ -214,7 +214,7 @@ export default function AdminConsoleDashboard({
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 mb-8">
+        <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-8">
           <h1 className="text-2xl font-bold text-white">Admin Console</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">Loading...</p>
         </div>
@@ -230,7 +230,7 @@ export default function AdminConsoleDashboard({
   if (!data) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+        <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8">
           <h1 className="text-2xl font-bold text-white">Admin Console</h1>
           <p className="mt-2 text-sm text-red-300">Failed to load dashboard data. Please refresh.</p>
         </div>
@@ -241,7 +241,7 @@ export default function AdminConsoleDashboard({
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       {/* ── Header ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 mb-8 animate-fade-in-up">
+      <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-8 animate-fade-in-up">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Admin Console</h1>

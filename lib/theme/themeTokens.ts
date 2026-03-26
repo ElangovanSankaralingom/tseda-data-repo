@@ -40,6 +40,8 @@ export interface ThemeTokens {
   "--color-skeleton-base": string;
   "--color-skeleton-shine": string;
   "--color-header-tint": string;
+  "--color-gradient-from": string;
+  "--color-gradient-to": string;
 }
 
 export const LIGHT_BASE: ThemeTokens = {
@@ -81,6 +83,8 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-skeleton-base": "#E2E8F0",
   "--color-skeleton-shine": "#F1F5F9",
   "--color-header-tint": "rgba(30, 58, 95, 0.06)",
+  "--color-gradient-from": "#1E3A5F",
+  "--color-gradient-to": "#2D5F8A",
 };
 
 export const DARK_BASE: ThemeTokens = {
@@ -122,12 +126,16 @@ export const DARK_BASE: ThemeTokens = {
   "--color-skeleton-base": "#374151",
   "--color-skeleton-shine": "#4B5563",
   "--color-header-tint": "rgba(59, 130, 246, 0.08)",
+  "--color-gradient-from": "#111827",
+  "--color-gradient-to": "#1F2937",
 };
 
 export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
   "ocean-blue": {},
   "forest-green": {
     "--color-header-tint": "rgba(27, 67, 50, 0.06)",
+    "--color-gradient-from": "#1B4332",
+    "--color-gradient-to": "#2D6A4F",
     "--color-primary": "#1B4332",
     "--color-primary-light": "#2D6A4F",
     "--color-primary-muted": "#E8F0EC",
@@ -146,6 +154,8 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
   },
   "royal-purple": {
     "--color-header-tint": "rgba(74, 29, 106, 0.06)",
+    "--color-gradient-from": "#4A1D6A",
+    "--color-gradient-to": "#6B3FA0",
     "--color-primary": "#4A1D6A",
     "--color-primary-light": "#6B3FA0",
     "--color-primary-muted": "#F0E8F5",
@@ -164,6 +174,8 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
   },
   "sunset-warm": {
     "--color-header-tint": "rgba(139, 58, 20, 0.06)",
+    "--color-gradient-from": "#8B3A14",
+    "--color-gradient-to": "#B85C38",
     "--color-primary": "#8B3A14",
     "--color-primary-light": "#B85C38",
     "--color-primary-muted": "#F5EDE8",
@@ -182,6 +194,8 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
   },
   "rose-pink": {
     "--color-header-tint": "rgba(155, 27, 94, 0.06)",
+    "--color-gradient-from": "#9B1B5E",
+    "--color-gradient-to": "#C2267A",
     "--color-primary": "#9B1B5E",
     "--color-primary-light": "#C2267A",
     "--color-primary-muted": "#F5E8F0",
@@ -217,6 +231,8 @@ function darkPaletteOverrides(palette: Partial<ThemeTokens>): Partial<ThemeToken
     "--color-generate-bg",
     "--color-generate-hover",
     "--color-header-tint",
+    "--color-gradient-from",
+    "--color-gradient-to",
   ];
   const overrides: Partial<ThemeTokens> = {};
   for (const key of accentKeys) {

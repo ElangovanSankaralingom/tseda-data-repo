@@ -16,6 +16,7 @@ import {
 } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import DashboardWelcome from "@/components/dashboard/DashboardWelcome";
 
 export const dynamic = "force-dynamic";
 
@@ -53,64 +54,23 @@ export default async function DashboardPage() {
   const firstName = userName.split(/\s+/)[0] ?? userName;
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
-  const welcomeSubtext = !hasAnyEntries
-    ? "Start your first entry to begin your streak"
-    : streakActivated > 0
-    ? `You have ${streakActivated} ${streakActivated === 1 ? "entry" : "entries"} to complete`
-    : streakWins > 0
-    ? "All entries complete!"
-    : "Here's your progress overview";
+  const greetingKey = hour < 12 ? "greetingMorning" : hour < 17 ? "greetingAfternoon" : "greetingEvening";
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 animate-fade-in-up">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-              {greeting}, {firstName} <span className="animate-wave">👋</span>
-            </h1>
-            {hasAnyEntries && (
-              <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
-                {totalEntries} {totalEntries === 1 ? "entry" : "entries"}
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            {welcomeSubtext}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {streakActivated > 0 && (
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900">
-              <Flame className="size-4" />
-              {streakActivated}
-            </div>
-          )}
-        </div>
-      </div>
+      <DashboardWelcome
+        greetingKey={greetingKey}
+        firstName={firstName}
+        totalEntries={totalEntries}
+        streakActivated={streakActivated}
+        streakWins={streakWins}
+        hasAnyEntries={hasAnyEntries}
+      />
 
       {/* Empty state */}
       {!hasAnyEntries ? (
-        <div className="rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-8 text-center animate-fade-in-up stagger-1">
-          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
-            <ClipboardList className="size-10 text-[var(--color-text-secondary)]" />
-          </div>
-          <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">
-            No entries yet
-          </p>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            Start collecting data to build your streak!
-          </p>
-          <Link
-            href={dataEntryHome()}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[var(--color-primary-light)] hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
-          >
-            Go to Data Entry
-          </Link>
-        </div>
+        <DashboardEmptyState />
       ) : (
         <DashboardClient
           streakActivated={streakActivated}
@@ -120,6 +80,28 @@ export default async function DashboardPage() {
           editRequestedCount={editRequestedCount}
         />
       )}
+    </div>
+  );
+}
+
+function DashboardEmptyState() {
+  return (
+    <div className="rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-8 text-center animate-fade-in-up stagger-1">
+      <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
+        <ClipboardList className="size-10 text-[var(--color-text-secondary)]" />
+      </div>
+      <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">
+        No entries yet
+      </p>
+      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+        Start collecting data to build your streak!
+      </p>
+      <Link
+        href={dataEntryHome()}
+        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[var(--color-primary-light)] hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+      >
+        Go to Data Entry
+      </Link>
     </div>
   );
 }
