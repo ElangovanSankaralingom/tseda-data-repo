@@ -140,7 +140,7 @@ export default function AdminConsoleDashboard({
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-8">
           <h1 className="text-2xl font-bold text-white">{t("adminConsole.title")}</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Loading...</p>
+          <p className="mt-1 text-sm text-white/60">Loading...</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -169,25 +169,25 @@ export default function AdminConsoleDashboard({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">{t("adminConsole.title")}</h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t("adminConsole.subtitle")}</p>
+            <p className="mt-1 text-sm text-white/60">{t("adminConsole.subtitle")}</p>
           </div>
 
           {/* Health traffic lights */}
           <div className="flex items-center gap-5">
             <Link href={adminBackups()} className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.backup.status} size="md" />
-              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">{t("adminConsole.backup")}</span>
+              <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">{t("adminConsole.backup")}</span>
             </Link>
             <Link href={adminIntegrity()} className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.integrity.status} size="md" />
-              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">{t("adminConsole.integrity")}</span>
+              <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">{t("adminConsole.integrity")}</span>
             </Link>
             <Link href={adminSettings()} className="flex flex-col items-center gap-1.5 group">
               <HealthDot
                 status={data.health.system.maintenanceMode ? "amber" : "green"}
                 size="md"
               />
-              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">System</span>
+              <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">System</span>
             </Link>
           </div>
         </div>
