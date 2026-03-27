@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
+import { getCategoryTitle } from "@/data/categoryRegistry";
 import { isCategoryKey } from "@/lib/categories";
 import type { WalAction, WalEvent } from "@/lib/data/wal";
 import { normalizeEntryStatus } from "@/lib/entries/workflow";
@@ -63,23 +64,9 @@ function getEntryStatus(value: Entry | null): EntryStatus | null {
   return normalizeEntryStatus(value);
 }
 
-function pickEntryTitle(entry: Entry | null) {
+function pickEntryTitle(entry: Entry | null, category: string) {
   if (!entry) return "";
-  const candidates = [
-    entry.programName,
-    entry.eventName,
-    entry.placeOfVisit,
-    entry.organizationName,
-    entry.organisationName,
-    entry.speakerName,
-    entry.purposeOfVisit,
-  ];
-
-  for (const candidate of candidates) {
-    const text = String(candidate ?? "").trim();
-    if (text) return text;
-  }
-  return "";
+  return getCategoryTitle(entry as unknown as Record<string, unknown>, category);
 }
 
 function collectAttachmentIds(value: unknown, out: Set<string>) {
@@ -122,7 +109,7 @@ function countAttachments(entry: Entry | null) {
   return ids.size;
 }
 
-function toSummary(event: WalEvent, before: Entry | null, after: Entry | null) {
+function toSummary(event: WalEvent, before: Entry | null, after: Entry | null, category: string) {
   const parts = new Array<string>();
   const statusFrom = getEntryStatus(before);
   const statusTo = getEntryStatus(after);
@@ -133,8 +120,8 @@ function toSummary(event: WalEvent, before: Entry | null, after: Entry | null) {
     parts.push(`status: ${statusTo}`);
   }
 
-  const beforeTitle = pickEntryTitle(before);
-  const afterTitle = pickEntryTitle(after);
+  const beforeTitle = pickEntryTitle(before, category);
+  const afterTitle = pickEntryTitle(after, category);
   if (beforeTitle && afterTitle && beforeTitle !== afterTitle) {
     parts.push(`title: "${beforeTitle}" -> "${afterTitle}"`);
   } else if (!beforeTitle && afterTitle) {
@@ -190,7 +177,7 @@ function parseWalEvent(line: string): ParsedAuditEvent | null {
     action: actionRaw,
     statusFrom: getEntryStatus(before),
     statusTo: getEntryStatus(after),
-    summary: toSummary(event, before, after),
+    summary: toSummary(event, before, after, categoryRaw),
   };
 
   if (!mapped.userEmail || !mapped.entryId) return null;

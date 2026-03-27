@@ -36,6 +36,14 @@ export type CategoryColor = {
   cta: string;
   /** Hero gradient: "from-blue-600 via-blue-700 to-blue-900" */
   gradient: string;
+  /** Dashboard card accent background: "bg-blue-500/10" */
+  accentBg: string;
+  /** Dashboard card top border: "border-t-blue-500" */
+  borderTop: string;
+  /** Dashboard CTA button background: "bg-blue-600" */
+  buttonBg: string;
+  /** Dashboard CTA button hover: "hover:bg-blue-700" */
+  buttonHover: string;
 };
 
 export type CategoryConfig = {
@@ -70,6 +78,10 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       ring: "hover:ring-blue-200",
       cta: "text-blue-500",
       gradient: "from-blue-600 via-blue-700 to-blue-900",
+      accentBg: "bg-blue-500/10",
+      borderTop: "border-t-blue-500",
+      buttonBg: "bg-blue-600",
+      buttonHover: "hover:bg-blue-700",
     },
     subtitle: "Record FDPs you attended with support amount and required supporting documents.",
     entryTitleField: "programName",
@@ -91,6 +103,10 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       ring: "hover:ring-emerald-200",
       cta: "text-emerald-500",
       gradient: "from-emerald-600 via-emerald-700 to-emerald-900",
+      accentBg: "bg-emerald-500/10",
+      borderTop: "border-t-emerald-500",
+      buttonBg: "bg-emerald-600",
+      buttonHover: "hover:bg-emerald-700",
     },
     subtitle: "Capture FDPs conducted with coordinator details, dates, and required supporting documents.",
     entryTitleField: "eventName",
@@ -112,6 +128,10 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       ring: "hover:ring-amber-200",
       cta: "text-amber-500",
       gradient: "from-amber-600 via-amber-700 to-amber-900",
+      accentBg: "bg-amber-500/10",
+      borderTop: "border-t-amber-500",
+      buttonBg: "bg-amber-600",
+      buttonHover: "hover:bg-amber-700",
     },
     subtitle: "Maintain case study records with academic context, outcomes, and supporting material.",
     entryTitleField: "placeOfVisit",
@@ -133,6 +153,10 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       ring: "hover:ring-purple-200",
       cta: "text-purple-500",
       gradient: "from-purple-600 via-purple-700 to-purple-900",
+      accentBg: "bg-purple-500/10",
+      borderTop: "border-t-purple-500",
+      buttonBg: "bg-purple-600",
+      buttonHover: "hover:bg-purple-700",
     },
     subtitle: "Record event details and supporting documents.",
     entryTitleField: "eventName",
@@ -154,6 +178,10 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       ring: "hover:ring-rose-200",
       cta: "text-rose-500",
       gradient: "from-rose-600 via-rose-700 to-rose-900",
+      accentBg: "bg-rose-500/10",
+      borderTop: "border-t-rose-500",
+      buttonBg: "bg-rose-600",
+      buttonHover: "hover:bg-rose-700",
     },
     subtitle: "Record workshop details and supporting documents.",
     entryTitleField: "eventName",

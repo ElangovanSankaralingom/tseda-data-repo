@@ -5,10 +5,14 @@ import {
   runNightlyMaintenance,
 } from "@/lib/jobs/nightly";
 import { normalizeError, toUserMessage } from "@/lib/errors";
+import { getRequestIp, enforceRateLimitOrThrow } from "@/lib/security/rateLimit";
 
 async function handleNightlyCron(request: Request) {
   const startedAt = Date.now();
   try {
+    const ip = getRequestIp(request) ?? "unknown";
+    enforceRateLimitOrThrow(`ip:${ip}:action:cron.nightly`, { windowMs: 300_000, max: 2 });
+
     assertCronSecret(request.headers.get("x-cron-secret"));
 
     const maintenanceResult = await runNightlyMaintenance();
@@ -36,7 +40,7 @@ async function handleNightlyCron(request: Request) {
     );
   } catch (error) {
     const normalized = normalizeError(error);
-    const status = normalized.code === "UNAUTHORIZED" ? 401 : 500;
+    const status = normalized.code === "RATE_LIMITED" ? 429 : normalized.code === "UNAUTHORIZED" ? 401 : 500;
     logger.warn({
       event: "jobs.cron.nightly.rejected",
       errorCode: normalized.code,

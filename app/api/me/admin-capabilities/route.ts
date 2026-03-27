@@ -16,8 +16,10 @@ import {
   isMasterAdmin,
 } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
 
@@ -28,6 +30,21 @@ export async function GET() {
       },
       { status: 200 }
     );
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "me.admin-capabilities.get",
+      options: RATE_LIMIT_PRESETS.entryReads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   return NextResponse.json(

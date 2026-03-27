@@ -2,6 +2,7 @@ import "server-only";
 // lib/uploadStore.ts
 import fs from "fs";
 import path from "path";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 
 export const DATA_DIR = path.join(process.cwd(), "data");
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
@@ -24,11 +25,9 @@ export function extFromFileName(fileName: string) {
 
 export function assertAllowedUpload(contentType: string, fileName: string) {
   const ext = extFromFileName(fileName);
-  const okExt = [".pdf", ".png", ".jpg", ".jpeg"].includes(ext);
-  const okType =
-    contentType === "application/pdf" ||
-    contentType === "image/png" ||
-    contentType === "image/jpeg";
+  const okExt = (APP_CONFIG.upload.allowedExtensions as readonly string[]).includes(ext);
+  const allMimeTypes = [...APP_CONFIG.upload.allowedDocMimeTypes, ...APP_CONFIG.upload.allowedImageMimeTypes];
+  const okType = allMimeTypes.includes(contentType);
   if (!okExt || !okType) {
     throw new Error("Only pdf/jpg/png are allowed.");
   }

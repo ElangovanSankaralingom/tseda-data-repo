@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getDataRoot } from "@/lib/userStore";
+import { getRequestIp, enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 const REQUIRED_ENV_VARS = [
   "GOOGLE_CLIENT_ID",
@@ -19,7 +21,18 @@ async function checkDirectory(dirPath: string): Promise<"ok" | string> {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  try {
+    const ip = getRequestIp(request) ?? "unknown";
+    enforceRateLimitOrThrow(`ip:${ip}:action:health.get`, RATE_LIMIT_PRESETS.health);
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
+
   const dataRoot = path.join(process.cwd(), getDataRoot());
   const usersDir = path.join(dataRoot, "users");
   const uploadsDir = path.join(process.cwd(), "public", "uploads");

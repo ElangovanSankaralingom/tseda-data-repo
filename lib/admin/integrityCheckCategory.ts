@@ -19,7 +19,7 @@ import {
 } from "@/lib/types/entry";
 import { getUserCategoryStoreFile } from "@/lib/userStore";
 import {
-  ATTACHMENT_KEYS,
+  getAttachmentKeys,
   compareTime,
   hasPathTraversal,
   isRecord,
@@ -60,7 +60,7 @@ export function collectAttachmentSanityIssues(
     );
   }
 
-  for (const key of ATTACHMENT_KEYS) {
+  for (const key of getAttachmentKeys(category)) {
     const value = root[key];
     if (value === null || value === undefined) continue;
 

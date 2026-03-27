@@ -109,7 +109,7 @@ export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecor
             notifyAdminEditRequest(
               normalized,
               undefined,
-              extractEntryTitle(entry as unknown as Record<string, unknown>),
+              extractEntryTitle(entry as unknown as Record<string, unknown>, category),
               category,
               String(entry.id ?? entryId),
             ),
@@ -161,7 +161,7 @@ export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngin
         actionType: "user_cancelled",
         entryId: String(entry.id ?? entryId),
         category,
-        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>, category),
         userEmail: normalized,
         userName: normalized.split("@")[0],
       });
@@ -249,7 +249,7 @@ export async function requestDelete<T extends EntryEngineRecord = EntryEngineRec
             notifyAdminDeleteRequest(
               normalized,
               undefined,
-              extractEntryTitle(entry as unknown as Record<string, unknown>),
+              extractEntryTitle(entry as unknown as Record<string, unknown>, category),
               category,
               String(entry.id ?? entryId),
             ),
@@ -301,7 +301,7 @@ export async function cancelDeleteRequest<T extends EntryEngineRecord = EntryEng
         actionType: "user_cancelled",
         entryId: String(entry.id ?? entryId),
         category,
-        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>, category),
         userEmail: normalized,
         userName: normalized.split("@")[0],
       });

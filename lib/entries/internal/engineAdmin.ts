@@ -68,14 +68,14 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
         actionType: "edit_granted",
         entryId: String(entry.id ?? entryId),
         category,
-        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>, category),
         userEmail: normalized,
         userName: userNameFromEmail(normalized),
         adminEmail,
       });
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyEditGranted, extractEntryTitle: ext }) =>
-          notifyEditGranted(normalized, ext(entry as unknown as Record<string, unknown>), undefined, category),
+          notifyEditGranted(normalized, ext(entry as unknown as Record<string, unknown>, category), undefined, category),
         ),
         "notifyEditGranted",
       );
@@ -129,14 +129,14 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
         actionType: "edit_rejected",
         entryId: String(entry.id ?? entryId),
         category,
-        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>, category),
         userEmail: normalized,
         userName: userNameFromEmail(normalized),
         adminEmail,
       });
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyEditRejected, extractEntryTitle: ext }) =>
-          notifyEditRejected(normalized, ext(entry as unknown as Record<string, unknown>), reason?.trim(), category),
+          notifyEditRejected(normalized, ext(entry as unknown as Record<string, unknown>, category), reason?.trim(), category),
         ),
         "notifyEditRejected",
       );
@@ -233,7 +233,7 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
         actionType: "delete_approved",
         entryId: id,
         category,
-        entryTitle: extractEntryTitle(existing as unknown as Record<string, unknown>),
+        entryTitle: extractEntryTitle(existing as unknown as Record<string, unknown>, category),
         userEmail: normalizedOwner,
         userName: userNameFromEmail(normalizedOwner),
         adminEmail,
@@ -299,7 +299,7 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
     // Notify user
     fireAndForget(
       import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteApproved, extractEntryTitle: ext }) =>
-        notifyDeleteApproved(normalizedOwner, ext(deletedEntry as unknown as Record<string, unknown>), category),
+        notifyDeleteApproved(normalizedOwner, ext(deletedEntry as unknown as Record<string, unknown>, category), category),
       ),
       "notifyDeleteApproved",
     );
@@ -365,14 +365,14 @@ export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEng
         actionType: "delete_rejected",
         entryId: String(entry.id ?? entryId),
         category,
-        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+        entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>, category),
         userEmail: normalized,
         userName: userNameFromEmail(normalized),
         adminEmail,
       });
       fireAndForget(
         import("@/lib/confirmations/notificationHelpers").then(({ notifyDeleteRejected, extractEntryTitle: ext }) =>
-          notifyDeleteRejected(normalized, ext(entry as unknown as Record<string, unknown>), category),
+          notifyDeleteRejected(normalized, ext(entry as unknown as Record<string, unknown>, category), category),
         ),
         "notifyDeleteRejected",
       );

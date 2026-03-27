@@ -24,6 +24,8 @@ import type {
   SearchableCategory,
   SearchablePage,
 } from "@/lib/search/engine";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 function toISO(value: unknown): string {
   if (typeof value === "string" && value.trim()) return value.trim();
@@ -86,11 +88,26 @@ function buildCategoryItems(entryCounts: Record<string, number>): SearchableCate
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "search.get",
+      options: RATE_LIMIT_PRESETS.entryReads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   const isAdmin = canAccessAdminConsole(email);

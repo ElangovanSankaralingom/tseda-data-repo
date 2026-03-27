@@ -4,19 +4,16 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isMasterAdmin } from "@/lib/admin";
+import { CATEGORY_SLUGS } from "@/data/categoryRegistry";
+import { normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
 const BACKUPS_ROOT = path.join(process.cwd(), ".data_backups");
 
-const CATEGORY_FILES = [
-  "fdp-attended.json",
-  "fdp-conducted.json",
-  "guest-lectures.json",
-  "case-studies.json",
-  "workshops.json",
-];
+const CATEGORY_FILES = CATEGORY_SLUGS.map((slug) => `${slug}.json`);
 
 type ClearResult = { target: string; filesDeleted: number; error?: string };
 
@@ -48,24 +45,21 @@ async function clearTarget(target: string): Promise<ClearResult> {
   try {
     const usersDir = path.join(DATA_ROOT, "users");
 
-    switch (target) {
-      case "fdp-attended":
-      case "fdp-conducted":
-      case "guest-lectures":
-      case "case-studies":
-      case "workshops": {
-        const userFolders = await getUserFolders();
-        let count = 0;
-        for (const folder of userFolders) {
-          const filePath = path.join(usersDir, folder, `${target}.json`);
-          try {
-            await fs.unlink(filePath);
-            count++;
-          } catch { /* file doesn't exist */ }
-        }
-        return { target, filesDeleted: count };
+    // Handle individual category targets
+    if ((CATEGORY_SLUGS as readonly string[]).includes(target)) {
+      const userFolders = await getUserFolders();
+      let count = 0;
+      for (const folder of userFolders) {
+        const filePath = path.join(usersDir, folder, `${target}.json`);
+        try {
+          await fs.unlink(filePath);
+          count++;
+        } catch { /* file doesn't exist */ }
       }
+      return { target, filesDeleted: count };
+    }
 
+    switch (target) {
       case "all-entries": {
         const userFolders = await getUserFolders();
         let count = 0;
@@ -153,11 +147,26 @@ async function clearTarget(target: string): Promise<ClearResult> {
 }
 
 // Stats endpoint (GET) — returns file counts and sizes per target
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!isMasterAdmin(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "admin.reset.get",
+      options: RATE_LIMIT_PRESETS.adminOps,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   const usersDir = path.join(DATA_ROOT, "users");
@@ -202,7 +211,7 @@ export async function GET() {
 
   // Build stats for each category
   const categoryStats: Record<string, { count: number; size: number }> = {};
-  for (const cat of ["fdp-attended", "fdp-conducted", "guest-lectures", "case-studies", "workshops"]) {
+  for (const cat of CATEGORY_SLUGS) {
     const paths = userFolders.map((f) => path.join(usersDir, f, `${cat}.json`));
     categoryStats[cat] = await countFiles(paths);
   }
@@ -250,6 +259,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "admin.reset.post",
+      options: RATE_LIMIT_PRESETS.adminMaintenanceSlow,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
+
   let body: { targets?: string[]; confirmCode?: string } = {};
   try {
     body = await request.json();
@@ -267,8 +291,7 @@ export async function POST(request: Request) {
   }
 
   const validTargets = new Set([
-    "all-entries", "fdp-attended", "fdp-conducted", "guest-lectures",
-    "case-studies", "workshops", "user-profiles", "uploads",
+    "all-entries", ...CATEGORY_SLUGS, "user-profiles", "uploads",
     "admin-notifications", "admin-users", "maintenance", "telemetry",
     "backups", "everything",
   ]);

@@ -22,7 +22,7 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import { isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry";
+import { getCategorySchema, isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry";
 import { readCategoryEntryById, upsertCategoryEntry } from "@/lib/dataStore";
 import { normalizeError } from "@/lib/errors";
 import { isEntryEditable } from "@/lib/entries/lock";
@@ -32,25 +32,23 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 import { safeEmailDir } from "@/lib/userStore";
 import { validateCsrf } from "@/lib/security/csrf";
 import { validateUploadedFile, sanitizeFilename } from "@/lib/security/fileValidation";
-import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { ALLOWED_EMAIL_SUFFIX, APP_CONFIG } from "@/lib/config/appConfig";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const MAX_BYTES = 20 * 1024 * 1024;
+const MAX_BYTES = APP_CONFIG.upload.maxFileSizeBytes;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
+const ALLOWED_MIME_TYPES = new Set([...APP_CONFIG.upload.allowedDocMimeTypes, ...APP_CONFIG.upload.allowedImageMimeTypes]);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
+const ALLOWED_EXTENSIONS = new Set(APP_CONFIG.upload.allowedExtensions);
 
-// ── Per-category upload slot configuration ───────────────────────────────────
+// ── Schema-derived upload slot configuration ─────────────────────────────────
 //
-// Each entry lists allowed slot names and whether the slot stores an array
-// (e.g. geotaggedPhotos) or a single object (e.g. permissionLetter).
-// `nested` means uploads are stored under `entry.uploads.{slot}` rather
-// than `entry.{slot}`.
+// Upload slots are derived from schema fields annotated with `upload: true`.
+// All upload fields use `kind: "array"` and are stored as top-level entry fields.
 
 type SlotConfig = {
   slots: ReadonlySet<string>;
@@ -58,33 +56,25 @@ type SlotConfig = {
   nested: boolean;
 };
 
-const CATEGORY_UPLOAD_CONFIG: Record<CategorySlug, SlotConfig> = {
-  "fdp-attended": {
-    slots: new Set(["permissionLetter", "completionCertificate"]),
-    arraySlots: new Set(["permissionLetter", "completionCertificate"]),
+const slotConfigCache = new Map<string, SlotConfig>();
+
+function getUploadSlotConfig(category: CategorySlug): SlotConfig {
+  let cached = slotConfigCache.get(category);
+  if (cached) return cached;
+
+  const schema = getCategorySchema(category);
+  const uploadFields = schema.fields.filter(f => f.upload === true);
+  const slotKeys = uploadFields.map(f => f.key);
+  const arrayKeys = uploadFields.filter(f => f.kind === "array").map(f => f.key);
+
+  cached = {
+    slots: new Set(slotKeys),
+    arraySlots: new Set(arrayKeys),
     nested: false,
-  },
-  "fdp-conducted": {
-    slots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
-    arraySlots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
-    nested: false,
-  },
-  "case-studies": {
-    slots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos", "report", "feedback", "advanceClosure"]),
-    arraySlots: new Set(["permissionLetter", "travelPlan", "geotaggedPhotos", "report", "feedback", "advanceClosure"]),
-    nested: false,
-  },
-  "guest-lectures": {
-    slots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
-    arraySlots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
-    nested: false,
-  },
-  workshops: {
-    slots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
-    arraySlots: new Set(["permissionLetter", "geotaggedPhotos", "attendanceSheet", "officialPoster"]),
-    nested: false,
-  },
-};
+  };
+  slotConfigCache.set(category, cached);
+  return cached;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -170,7 +160,7 @@ export async function handleCategoryFilePost(request: Request, category: Categor
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
   }
 
-  const config = CATEGORY_UPLOAD_CONFIG[category];
+  const config = getUploadSlotConfig(category);
 
   try {
     enforceRateLimitForRequest({
@@ -269,7 +259,7 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
   }
 
-  const config = CATEGORY_UPLOAD_CONFIG[category];
+  const config = getUploadSlotConfig(category);
 
   try {
     enforceRateLimitForRequest({

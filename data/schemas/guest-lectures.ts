@@ -17,7 +17,7 @@ const fields = [
   { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false },
   { key: "sponsored", label: "Sponsored", kind: "string", required: false, enumValues: ["Yes", "No"] },
   { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false },
-  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false },
+  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, format: "currency" },
   { key: "permissionLetter", label: "Permission Letter", kind: "array", upload: true, stage: 2 },
   { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array", upload: true, stage: 2 },
   { key: "attendanceSheet", label: "Attendance Sheet", kind: "array", upload: true, stage: 2 },

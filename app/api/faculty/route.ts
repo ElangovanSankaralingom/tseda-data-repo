@@ -5,6 +5,8 @@ import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { assertActionPayload } from "@/lib/security/limits";
 import { newId, readJson, writeJson } from "@/lib/storage";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 type FacultyProfile = {
   id: string;
@@ -37,6 +39,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "faculty.get",
+      options: RATE_LIMIT_PRESETS.entryReads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
+
   const items = await readJson<FacultyProfile[]>(FILE, []);
 
   const url = new URL(req.url);
@@ -59,6 +76,21 @@ export async function POST(req: Request) {
   }
   if (!requireAdmin(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "faculty.post",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   const body = (await req.json()) as Partial<FacultyProfile>;
@@ -100,6 +132,21 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "faculty.put",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
+
   const body = (await req.json()) as Partial<FacultyProfile>;
   assertActionPayload(body, "faculty.update");
 
@@ -135,6 +182,21 @@ export async function DELETE(req: Request) {
   }
   if (!requireAdmin(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "faculty.delete",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   const { searchParams } = new URL(req.url);

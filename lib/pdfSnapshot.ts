@@ -111,12 +111,11 @@ function getStage2FieldKeys(category: string): Set<string> {
   return cached;
 }
 
-function normalizeValue(value: unknown, key: string): unknown {
+function normalizeValue(value: unknown, key: string, numericFields: Set<string>): unknown {
   if (value === undefined || value === null || value === '') return undefined;
   if (typeof value === 'number') return normalizeNullableNumber(value);
   if (typeof value === 'string') {
-    // Check if it looks like a number field
-    if (key === 'semesterNumber' || key === 'supportAmount' || key === 'participants' || key === 'amountSupport' || key === 'currentSemester') {
+    if (numericFields.has(key)) {
       return normalizeNullableNumber(value);
     }
     return normalizeText(value);
@@ -139,15 +138,36 @@ function normalizeValue(value: unknown, key: string): unknown {
   return value;
 }
 
+/** Cache of numeric field keys per category */
+const numericFieldCache = new Map<string, Set<string>>();
+
+function getNumericFieldKeys(category: string): Set<string> {
+  let cached = numericFieldCache.get(category);
+  if (cached) return cached;
+  try {
+    const schema = getCategorySchema(category);
+    cached = new Set(
+      schema.fields
+        .filter(f => f.kind === "number")
+        .map(f => f.key)
+    );
+  } catch {
+    cached = new Set();
+  }
+  numericFieldCache.set(category, cached);
+  return cached;
+}
+
 function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCategory) {
   const stage2Fields = getStage2FieldKeys(category);
+  const numericFields = getNumericFieldKeys(category);
   const payload: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(entry)) {
     if (LIFECYCLE_FIELDS.has(key)) continue;
     if (stage2Fields.has(key)) continue;
 
-    const normalized = normalizeValue(value, key);
+    const normalized = normalizeValue(value, key, numericFields);
     if (normalized !== undefined) {
       payload[key] = normalized;
     }
