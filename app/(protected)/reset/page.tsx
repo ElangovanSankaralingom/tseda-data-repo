@@ -165,7 +165,7 @@ export default function ResetPage() {
       </div>
 
       {/* Warning Banner */}
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+      <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
           <div>
@@ -181,7 +181,7 @@ export default function ResetPage() {
 
       {/* Success Result */}
       {result && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
             <div>
@@ -206,7 +206,7 @@ export default function ResetPage() {
                 <button
                   type="button"
                   onClick={() => setResult(null)}
-                  className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                  className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-500/15 transition-colors"
                 >
                   Clear More
                 </button>
@@ -236,7 +236,7 @@ export default function ResetPage() {
                     <label
                       key={opt.key}
                       className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors ${
-                        isChecked ? "bg-red-50 ring-1 ring-red-200" : "hover:bg-[var(--color-dropdown-hover)]"
+                        isChecked ? "bg-red-500/10 ring-1 ring-red-200" : "hover:bg-[var(--color-dropdown-hover)]"
                       }`}
                     >
                       <input
@@ -268,7 +268,7 @@ export default function ResetPage() {
           ))}
 
           {/* Nuclear Option */}
-          <div className="rounded-xl border-2 border-red-200 bg-[var(--color-card-bg)] p-5">
+          <div className="rounded-xl border-2 border-red-500/20 bg-[var(--color-card-bg)] p-5">
             <div className="mb-3 flex items-center gap-2">
               <div className="h-px flex-1 bg-red-200" />
               <span className="text-xs font-semibold uppercase tracking-wider text-red-400">Nuclear Option</span>
@@ -276,7 +276,7 @@ export default function ResetPage() {
             </div>
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors ${
-                selected.has("everything") ? "bg-red-100 ring-1 ring-red-300" : "hover:bg-red-50"
+                selected.has("everything") ? "bg-red-500/15 ring-1 ring-red-300" : "hover:bg-red-500/10"
               }`}
             >
               <input

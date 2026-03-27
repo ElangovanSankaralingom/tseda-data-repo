@@ -156,13 +156,13 @@ export default function AdminNotificationBell({
           setOpen((v) => !v);
           if (!open) setLoaded(false);
         }}
-        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-indigo-50" : "hover:bg-[var(--color-dropdown-hover)]"}`}
+        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-indigo-500/10" : "hover:bg-[var(--color-dropdown-hover)]"}`}
         aria-label={`Admin Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         title={t('notification.adminTitle')}
       >
         <ShieldAlert className={`size-[18px] ${unreadCount > 0 ? "text-indigo-600 fill-indigo-100" : "text-indigo-300"}`} />
         {unreadCount > 0 && (
-          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-indigo-500 font-bold text-white ring-2 ring-[var(--color-card-bg)] animate-subtle-pulse ${
+          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-indigo-500/15 font-bold text-white ring-2 ring-[var(--color-card-bg)] animate-subtle-pulse ${
             unreadCount >= 10 ? "min-w-5 h-4 px-1 text-[8px]" : "size-4 text-[10px]"
           }`}>
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -174,12 +174,12 @@ export default function AdminNotificationBell({
       {open && (
         <div className="absolute right-0 top-full mt-2 w-[420px] max-h-[70vh] overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-2xl animate-scale-in max-sm:fixed max-sm:inset-x-4 max-sm:right-auto max-sm:w-auto">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-indigo-100 bg-indigo-50/50 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-indigo-100 bg-indigo-500/10/50 px-4 py-3">
             <div className="flex items-center gap-2">
               <Shield className="size-4 text-indigo-600" />
               <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{t('notification.adminTitle')}</h3>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-700">
                   {unreadCount}
                 </span>
               )}
@@ -211,7 +211,7 @@ export default function AdminNotificationBell({
                 <div
                   key={n.id}
                   className={`border-b border-[var(--color-divider)] px-4 py-3 transition-colors hover:bg-[var(--color-dropdown-hover)] ${
-                    !n.read ? "bg-indigo-50 border-l-3 border-l-indigo-500" : ""
+                    !n.read ? "bg-indigo-500/10 border-l-3 border-l-indigo-500" : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -221,7 +221,7 @@ export default function AdminNotificationBell({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="text-sm font-semibold text-[var(--color-text-primary)]">{n.title}</div>
-                        {!n.read && <span className="mt-1 size-2.5 shrink-0 rounded-full bg-indigo-500" />}
+                        {!n.read && <span className="mt-1 size-2.5 shrink-0 rounded-full bg-indigo-500/15" />}
                       </div>
                       <p className="mt-0.5 text-xs text-[var(--color-text-secondary)] line-clamp-2">{n.message}</p>
                       <div className="mt-1.5 flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function AdminNotificationBell({
                               if (!n.read) void markRead(n.id);
                               setOpen(false);
                             }}
-                            className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-100 hover:text-indigo-700"
+                            className="rounded-lg bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-100 hover:text-indigo-700"
                           >
                             {n.actionLabel}
                           </Link>

@@ -59,12 +59,12 @@ const CATEGORY_OPTIONS: readonly SelectDropdownOption[] = [
 ];
 
 const BADGE_STYLES: Record<ActionType, string> = {
-  edit_granted: "bg-emerald-100 text-emerald-700",
-  edit_rejected: "bg-red-100 text-red-700",
-  delete_approved: "bg-red-100 text-red-700",
-  delete_rejected: "bg-amber-100 text-amber-700",
+  edit_granted: "bg-emerald-500/15 text-emerald-700",
+  edit_rejected: "bg-red-500/15 text-red-700",
+  delete_approved: "bg-red-500/15 text-red-700",
+  delete_rejected: "bg-amber-500/15 text-amber-700",
   user_cancelled: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
-  auto_finalised: "bg-blue-100 text-blue-700",
+  auto_finalised: "bg-blue-500/15 text-blue-700",
   auto_deleted: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
 };
 
@@ -188,7 +188,7 @@ export default function ActionHistoryTab() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         ) : records.length === 0 ? (

@@ -39,9 +39,9 @@ function CategoryCard({
 
   const pills: StatusPill[] = [
     { label: "drafts", count: draftCount, className: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]" },
-    { label: "generated", count: generatedCount, className: "bg-blue-100 text-blue-700" },
-    { label: "edit requested", count: editRequestedCount, className: "bg-amber-100 text-amber-700" },
-    { label: "editable", count: editGrantedCount, className: "bg-emerald-100 text-emerald-700" },
+    { label: "generated", count: generatedCount, className: "bg-blue-500/15 text-blue-700" },
+    { label: "edit requested", count: editRequestedCount, className: "bg-amber-500/15 text-amber-700" },
+    { label: "editable", count: editGrantedCount, className: "bg-emerald-500/15 text-emerald-700" },
   ].filter((p) => p.count > 0);
 
   return (

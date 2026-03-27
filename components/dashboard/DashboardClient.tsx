@@ -74,7 +74,7 @@ export default function DashboardClient({
             description={t("dashboard.acrossAllCategories")}
             accent="border-t-2 border-t-blue-400"
             iconColor="text-blue-500"
-            iconBg="bg-blue-100"
+            iconBg="bg-blue-500/15"
             hoverRing="hover:ring-2 hover:ring-blue-200/50"
             hoverDescription={t("dashboard.totalEntriesHover")}
             staggerClass="stagger-3"
@@ -85,7 +85,7 @@ export default function DashboardClient({
             value={generatedCount}
             accent="border-t-2 border-t-emerald-400"
             iconColor="text-emerald-500"
-            iconBg="bg-emerald-100"
+            iconBg="bg-emerald-500/15"
             hoverRing="hover:ring-2 hover:ring-emerald-200/50"
             hoverDescription={t("dashboard.generatedHover")}
             staggerClass="stagger-4"
@@ -96,7 +96,7 @@ export default function DashboardClient({
             value={editRequestedCount}
             accent="border-t-2 border-t-amber-400"
             iconColor="text-amber-500"
-            iconBg="bg-amber-100"
+            iconBg="bg-amber-500/15"
             hoverRing="hover:ring-2 hover:ring-amber-200/50"
             hoverDescription={t("dashboard.editRequestedHover")}
             staggerClass="stagger-5"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { SectionCard, MiniButton, ProgressBar } from "./AccountUI";
 import { uploadDocXHR } from "./uploadHelpers";
 import {
@@ -19,6 +20,7 @@ interface UploadsTabProps {
 }
 
 export default function UploadsTab({ draft, setDraft, saveCurrentTab, showToast }: UploadsTabProps) {
+  const { t } = useTranslation();
   const [pendingDocFile, setPendingDocFile] = useState<Record<DocType, File | null>>({
     appointmentLetter: null,
     joiningLetter: null,
@@ -122,15 +124,15 @@ export default function UploadsTab({ draft, setDraft, saveCurrentTab, showToast 
   }
 
   return (
-    <SectionCard title="Uploads" subtitle="Single file each. Max 20MB. Choose file → Upload & Save → Preview.">
+    <SectionCard title={t("account.uploadsTitle")} subtitle={t("account.uploadsSubtitle")}>
       <div className="space-y-4">
         {(
           [
-            ["appointmentLetter", "Appointment Letter"],
-            ["joiningLetter", "Joining Letter"],
-            ["aadhar", "Aadhar"],
+            ["appointmentLetter", t("account.appointmentLetter")],
+            ["joiningLetter", t("account.joiningLetter")],
+            ["aadhar", t("account.aadhar")],
             ["panCard", "PAN Card"],
-          ] as const
+          ] as [DocType, string][]
         ).map(([docType, label]) => {
           const key = `doc:${docType}`;
           const meta = draft.uploads?.[docType] ?? null;
@@ -159,7 +161,7 @@ export default function UploadsTab({ draft, setDraft, saveCurrentTab, showToast 
                   )}
 
                   <div className="mt-2 text-xs text-muted-foreground">
-                    {pending ? `Selected: ${pending.name}` : "Select a file to enable Upload & Save."}
+                    {pending ? `Selected: ${pending.name}` : t("account.selectFile")}
                   </div>
 
                   {busy ? (

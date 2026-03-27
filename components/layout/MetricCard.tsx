@@ -10,9 +10,9 @@ export default function MetricCard({ label, value, hint, tone = "neutral" }: { l
       className={cx(
         "rounded-2xl border bg-card p-4",
         tone === "neutral" && "border-border",
-        tone === "warning" && "border-amber-200 bg-amber-50/60",
-        tone === "success" && "border-emerald-200 bg-emerald-50/60",
-        tone === "danger" && "border-red-200 bg-red-50/60"
+        tone === "warning" && "border-amber-500/20 bg-amber-500/10",
+        tone === "success" && "border-emerald-500/20 bg-emerald-500/10",
+        tone === "danger" && "border-red-500/20 bg-red-500/10"
       )}
     >
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>

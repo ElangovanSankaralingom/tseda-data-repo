@@ -101,7 +101,7 @@ function CategoryHero({
               </span>
             )}
             {stats.drafts > 0 && (
-              <span className="rounded-full bg-amber-500/20 px-3 py-1 text-sm text-amber-300">
+              <span className="rounded-full bg-amber-500/10 px-3 py-1 text-sm text-amber-300">
                 {stats.drafts} {stats.drafts === 1 ? "draft" : "drafts"}
               </span>
             )}

@@ -199,7 +199,7 @@ function EditModeActionBar({
   const buttonDisabled = workflowDisabled || isGenerating || isSuccess;
 
   const buttonClass = isSuccess
-    ? "bg-emerald-500 text-white"
+    ? "bg-emerald-500/15 text-white"
     : workflowDisabled || isGenerating
       ? "cursor-not-allowed bg-[var(--color-generate-bg)] text-white opacity-50"
       : "bg-[var(--color-generate-bg)] text-white hover:bg-[var(--color-generate-hover)]";
@@ -245,7 +245,7 @@ function EditModeActionBar({
                 disabled={!finalise.canFinalise || finaliseState !== "idle"}
                 className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
                   finaliseState === "done"
-                    ? "bg-emerald-500 text-white animate-finalise-pop"
+                    ? "bg-emerald-500/15 text-white animate-finalise-pop"
                     : finaliseState === "finalising"
                       ? "bg-[var(--color-generate-bg)] text-white opacity-50 cursor-not-allowed"
                       : finalise.canFinalise
@@ -297,7 +297,7 @@ function EditModeActionBar({
           <div className="relative w-full max-w-sm rounded-2xl bg-[var(--color-modal-bg)] shadow-xl border border-[var(--color-card-border)] animate-scale-in">
             <div className="px-6 pt-6 pb-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10">
                   <Lock className="size-5 text-emerald-600" />
                 </div>
                 <div>

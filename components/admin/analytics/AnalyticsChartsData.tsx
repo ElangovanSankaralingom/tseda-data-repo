@@ -27,7 +27,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
               key={user.email}
               className={`flex w-28 flex-col items-center rounded-xl border p-3 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
                 isFirst
-                  ? "border-amber-200 bg-gradient-to-b from-amber-50 to-[var(--color-card-bg)] shadow-sm"
+                  ? "border-amber-500/20 bg-gradient-to-b from-amber-50 to-[var(--color-card-bg)] shadow-sm"
                   : "border-[var(--color-card-border)] bg-gradient-to-b from-[var(--color-body-bg)] to-[var(--color-card-bg)]"
               } ${isFirst ? "pb-5" : "pb-3"}`}
             >
@@ -96,8 +96,8 @@ export function StreakFunnel({
 }) {
   const bars = [
     { label: "Total Eligible", value: activated + wins, color: "bg-[var(--color-text-muted)]" },
-    { label: "In Progress", value: activated, color: "bg-amber-500" },
-    { label: "Completed", value: wins, color: "bg-emerald-500" },
+    { label: "In Progress", value: activated, color: "bg-amber-500/15" },
+    { label: "Completed", value: wins, color: "bg-emerald-500/15" },
   ];
   const maxVal = Math.max(...bars.map((b) => b.value), 1);
 

@@ -56,8 +56,8 @@ function initials(name: string): string {
 }
 
 function completionColor(rate: number): string {
-  if (rate >= 80) return "bg-emerald-500";
-  if (rate >= 50) return "bg-amber-500";
+  if (rate >= 80) return "bg-emerald-500/15";
+  if (rate >= 50) return "bg-amber-500/15";
   return "bg-red-400";
 }
 
@@ -124,7 +124,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
           referrerPolicy="no-referrer"
         />
         {user.role === "admin" && (
-          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500 ring-2 ring-[var(--color-card-bg)]">
+          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-card-bg)]">
             <Shield className="size-2.5 text-white" />
           </div>
         )}
@@ -140,7 +140,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
         <span className={`${textSize} font-bold text-white`}>{initials(user.name)}</span>
       </div>
       {user.role === "admin" && (
-        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500 ring-2 ring-[var(--color-card-bg)]">
+        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-card-bg)]">
           <Shield className="size-2.5 text-white" />
         </div>
       )}
@@ -187,18 +187,18 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold text-[var(--color-text-primary)] truncate">{user.name}</span>
             {user.role === "admin" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-700">
                 <Shield className="size-3" />
                 Admin
               </span>
             )}
             {isTopPerformer && (
-              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+              <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
                 Top {rank}
               </span>
             )}
             {isNew && (
-              <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+              <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
                 New
               </span>
             )}
@@ -216,7 +216,7 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
           {trendIcon(user.activityTrend)}
           <span
             className={`size-2 rounded-full ${
-              user.isActive ? "bg-emerald-500" : "bg-[var(--color-text-muted)]"
+              user.isActive ? "bg-emerald-500/15" : "bg-[var(--color-text-muted)]"
             }`}
             title={user.isActive ? "Active" : "Inactive"}
           />
@@ -441,11 +441,11 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
     <div className="space-y-6">
       {/* Stats strip */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label={t("adminUsers.totalUsers")} value={stats.totalUsers} icon={Users} accent="bg-blue-500" />
-        <StatCard label={t("adminUsers.active90d")} value={stats.activeUsers} icon={UserCheck} accent="bg-emerald-500" />
+        <StatCard label={t("adminUsers.totalUsers")} value={stats.totalUsers} icon={Users} accent="bg-blue-500/15" />
+        <StatCard label={t("adminUsers.active90d")} value={stats.activeUsers} icon={UserCheck} accent="bg-emerald-500/15" />
         <StatCard label={t("adminUsers.inactive")} value={stats.inactiveUsers} icon={UserX} accent="bg-[var(--color-text-muted)]" />
-        <StatCard label={t("adminUsers.avgEntries")} value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-amber-500" />
-        <StatCard label={t("adminUsers.avgCompletion")} value={stats.averageCompletionRate} icon={Target} accent="bg-purple-500" />
+        <StatCard label={t("adminUsers.avgEntries")} value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-amber-500/15" />
+        <StatCard label={t("adminUsers.avgCompletion")} value={stats.averageCompletionRate} icon={Target} accent="bg-purple-500/15" />
       </div>
 
       {/* Quick summary pills */}
@@ -453,7 +453,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
         <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-[var(--color-text-secondary)]">
           {stats.totalUsers} {t("adminUsers.users")}
         </span>
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+        <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-700">
           {stats.activeUsers} {t("adminUsers.active")}
         </span>
         {stats.inactiveUsers > 0 && (
@@ -462,7 +462,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
           </span>
         )}
         {stats.adminUsers > 0 && (
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
+          <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-700">
             {stats.adminUsers} {t("adminUsers.admins")}
           </span>
         )}

@@ -1,13 +1,15 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { SectionCard, Field } from "./AccountUI";
 import type { Profile } from "./types";
 
 export default function ProfileTab({ draft, setDraft, errors, shouldShowError }: { draft: Profile; setDraft: React.Dispatch<React.SetStateAction<Profile>>; errors: Record<string, string>; shouldShowError: (key: string) => boolean }) {
+  const { t } = useTranslation();
   return (
-    <SectionCard title="Profile">
+    <SectionCard title={t("account.profile")}>
       <div className="space-y-5">
-        <Field label="Email (keyed by email)" error={shouldShowError("email") ? errors.email : undefined} hint="Read-only">
+        <Field label={t("account.email")} error={shouldShowError("email") ? errors.email : undefined} hint={t("account.readOnly")}>
           <input
             value={draft.email || ""}
             readOnly
@@ -15,7 +17,7 @@ export default function ProfileTab({ draft, setDraft, errors, shouldShowError }:
           />
         </Field>
 
-        <Field label="Official Name" hint="From faculty directory">
+        <Field label={t("account.officialName")} hint={t("account.fromFacultyDirectory")}>
           <input
             value={draft.officialName ?? ""}
             readOnly
@@ -23,7 +25,7 @@ export default function ProfileTab({ draft, setDraft, errors, shouldShowError }:
           />
         </Field>
 
-        <Field label="Preferred Name (optional)">
+        <Field label={t("account.preferredNameOptional")}>
           <input
             value={draft.userPreferredName ?? ""}
             onChange={(e) => setDraft((d) => ({ ...d, userPreferredName: e.target.value }))}

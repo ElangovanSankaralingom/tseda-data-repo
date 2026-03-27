@@ -42,7 +42,7 @@ function NavItem({
   label,
   active,
   badge,
-  badgeColor = "bg-amber-500",
+  badgeColor = "bg-amber-500/15",
   onClick,
   delay = 0,
   visible = true,
@@ -237,7 +237,7 @@ export default function SidebarDrawer({
             <Link
               href="/reset"
               onClick={onClose}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600"
             >
               <Trash2 className="size-5" />
               <span className="flex-1 text-left">Reset Test Data</span>
@@ -250,7 +250,7 @@ export default function SidebarDrawer({
               onClose();
               onSignOut();
             }}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-500/10 hover:text-red-700"
           >
             <LogOut className="size-5" />
             <span className="flex-1 text-left">{t('nav.signOut')}</span>

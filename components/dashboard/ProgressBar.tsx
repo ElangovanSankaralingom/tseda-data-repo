@@ -35,7 +35,7 @@ export default function ProgressBar({
       <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-skeleton-base)]">
         {barWidth > 0 && (
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-blue-500 transition-all duration-500 ease-out"
+            className="absolute inset-y-0 left-0 rounded-full bg-blue-500/15 transition-all duration-500 ease-out"
             style={{ width: `${barWidth}%` }}
           />
         )}

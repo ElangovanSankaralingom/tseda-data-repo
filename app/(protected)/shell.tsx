@@ -101,7 +101,7 @@ export default function AppShell({
 
             <button
               onClick={() => signOut({ callbackUrl: signin() })}
-              className="w-full text-left px-3 py-2 rounded text-sm text-red-600 hover:bg-red-50"
+              className="w-full text-left px-3 py-2 rounded text-sm text-red-600 hover:bg-red-500/10"
             >
               {t("nav.signOut")}
             </button>

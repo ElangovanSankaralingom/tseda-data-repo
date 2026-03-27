@@ -182,7 +182,7 @@ export default function AdminConfirmationsClient() {
           <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
         ) : rows.length === 0 ? (
           <div className="py-8 text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50">
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
               <CheckCircle2 className="size-8 text-emerald-600" />
             </div>
             <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t('common.noResults')}</p>
@@ -212,8 +212,8 @@ export default function AdminConfirmationsClient() {
                           <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{row.title}</span>
                           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                             isDeleteRequest
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-700"
+                              ? "bg-red-500/15 text-red-700"
+                              : "bg-amber-500/15 text-amber-700"
                           }`}>
                             {isDeleteRequest ? t('entry.requestDelete') : t('entry.requestEdit')}
                           </span>
@@ -321,7 +321,7 @@ export default function AdminConfirmationsClient() {
       </SectionCard>
 
       {error ? (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
           {error}
         </div>
       ) : null}

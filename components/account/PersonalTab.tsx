@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import DateField from "@/components/controls/DateField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { SectionCard, Field } from "./AccountUI";
@@ -20,10 +21,11 @@ interface PersonalTabProps {
 }
 
 export default function PersonalTab({ draft, setDraft, errors, shouldShowError }: PersonalTabProps) {
+  const { t } = useTranslation();
   return (
-    <SectionCard title="Personal Details">
+    <SectionCard title={t("account.personalDetails")}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Date of Birth" error={shouldShowError("dob") ? errors.dob : undefined}>
+        <Field label={t("account.dateOfBirth")} error={shouldShowError("dob") ? errors.dob : undefined}>
           <DateField
             value={draft.personal?.dob ?? ""}
             onChange={(value) =>
@@ -33,7 +35,7 @@ export default function PersonalTab({ draft, setDraft, errors, shouldShowError }
           />
         </Field>
 
-        <Field label="Blood Group">
+        <Field label={t("account.bloodGroup")}>
           <SelectDropdown
             value={draft.personal?.bloodGroup ?? ""}
             onChange={(value) =>
@@ -43,12 +45,12 @@ export default function PersonalTab({ draft, setDraft, errors, shouldShowError }
               }))
             }
             options={BLOOD_GROUP_OPTIONS}
-            placeholder="Select blood group"
+            placeholder={t("account.selectBloodGroup")}
           />
         </Field>
 
         <Field
-          label="Aadhar Number"
+          label={t("account.aadharNumber")}
           error={shouldShowError("aadharNumber") ? errors.aadharNumber : undefined}
           hint="12-digit format"
         >
@@ -74,7 +76,7 @@ export default function PersonalTab({ draft, setDraft, errors, shouldShowError }
         </Field>
 
         <Field
-          label="PAN Card Number"
+          label={t("account.panCardNumber")}
           error={shouldShowError("panCardNumber") ? errors.panCardNumber : undefined}
           hint="ABCDE1234F"
         >

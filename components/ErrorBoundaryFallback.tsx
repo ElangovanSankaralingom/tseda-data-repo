@@ -19,7 +19,7 @@ export default class FormErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">
           <AlertTriangle className="mx-auto mb-3 size-8 text-red-400" />
           <h3 className="text-base font-semibold text-red-800">
             {this.props.fallbackMessage || "Something went wrong loading this section."}

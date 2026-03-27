@@ -15,11 +15,11 @@ function getBadgeText(deadlineState: StreakDeadlineState) {
 
 function getBadgeClass(deadlineState: StreakDeadlineState) {
   if (deadlineState.isExpired || deadlineState.color === "red") {
-    return "border-red-200 bg-red-50 text-red-700";
+    return "border-red-500/20 bg-red-500/10 text-red-700";
   }
 
   if (deadlineState.color === "yellow") {
-    return "border-amber-200 bg-amber-50 text-amber-900";
+    return "border-amber-500/20 bg-amber-500/10 text-amber-900";
   }
 
   return "border-[var(--color-card-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]";
