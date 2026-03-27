@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Banknote, BanknoteX } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { t as staticT } from "@/lib/i18n";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -121,13 +122,13 @@ function validateFields(form: CaseStudyEntry): Record<string, string> {
   }
   form.staffAccompanying.forEach((value, index) => {
     if (value.email && (emailCounts.get(value.email.toLowerCase()) ?? 0) > 1) {
-      errors[`staffAccompanying.${index}`] = "This faculty is already selected in another role.";
+      errors[`staffAccompanying.${index}`] = staticT('entry.facultyAlreadySelected', 'en');
     }
   });
 
   if (form.sponsored === "Yes") {
-    if (!form.fundingAgency?.trim()) errors.fundingAgency = "Funding agency is required when sponsored.";
-    if (form.fundingAmount === null) errors.fundingAmount = "Funding amount is required when sponsored.";
+    if (!form.fundingAgency?.trim()) errors.fundingAgency = staticT('entry.fundingAgencyRequired', 'en');
+    if (form.fundingAmount === null) errors.fundingAmount = staticT('entry.fundingAmountRequired', 'en');
   }
 
   return errors;
@@ -153,7 +154,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
     userDisplayName,
   } = ctx;
 
-  const { fieldLabel } = useTranslation();
+  const { t, fieldLabel } = useTranslation();
   const normalizedStudentYear = normalizeYearOfStudy(form.yearOfStudy);
   const semesterOptions = allowedSemestersForYear(normalizedStudentYear);
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
@@ -181,7 +182,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
             value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
             options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
-            placeholder="Select academic year"
+            placeholder={t('placeholder.selectAcademicYear')}
             disabled={coreFieldDisabled("academicYear")}
             error={submitted && !!errors.academicYear}
           />
@@ -198,18 +199,18 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
               })
             }
             options={YEAR_OF_STUDY_OPTIONS}
-            placeholder="Select year of study"
+            placeholder={t('placeholder.selectYearOfStudy')}
             disabled={coreFieldDisabled("yearOfStudy")}
             error={submitted && !!errors.yearOfStudy}
           />
         </Field>
 
-        <Field label={fieldLabel('currentSemester')} error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? "Select semester (based on year)" : "Select year of study first"}>
+        <Field label={fieldLabel('currentSemester')} error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? t('placeholder.semesterBasedOnYear') : t('placeholder.selectYearFirst')}>
           <SelectDropdown
             value={form.currentSemester === null ? "" : String(form.currentSemester)}
             onChange={(value) => setForm((c) => withAcademicProgressionCompatibility({ ...c, currentSemester: value ? Number(value) : null }) as CaseStudyEntry)}
             options={semesterOptions.map((o) => ({ label: String(o), value: String(o) }))}
-            placeholder={normalizedStudentYear ? "Select current semester" : "Select year of study first"}
+            placeholder={normalizedStudentYear ? t('placeholder.selectCurrentSemester') : t('placeholder.selectYearFirst')}
             disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
             error={submitted && !!errors.currentSemester}
           />
@@ -223,7 +224,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
         </Field>
 
-        <Field label="Number of Days" hint="Inclusive day count">
+        <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
           <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
         </Field>
 
@@ -255,15 +256,15 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
       </div>
 
       <div className="mt-5 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-4 py-3 text-sm text-muted-foreground">
-        Coordinator: <span className="font-medium text-foreground">{userDisplayName || "-"}</span>
+        {t('entry.coordinator')} <span className="font-medium text-foreground">{userDisplayName || "-"}</span>
       </div>
 
       <div className="mt-5">
         <FacultyRowPicker
-          title="Staff Accompanying"
-          helperText="Add staff members accompanying the visit."
-          addLabel="Add Staff"
-          rowLabelPrefix="Staff"
+          title={t('entry.staffAccompanyingTitle')}
+          helperText={t('entry.staffAccompanyingHint')}
+          addLabel={t('entry.addStaff')}
+          rowLabelPrefix={t('entry.staffLabel')}
           rows={form.staffAccompanying}
           onRowsChange={(rows) => setForm((c) => ({ ...c, staffAccompanying: rows }))}
           onPersistRow={async (rows) => persistStaffRows(rows)}
@@ -273,18 +274,18 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
           disableEmails={[form.coordinatorEmail || email]}
           sectionError={errors.staffAccompanying}
           showSectionError={submitted}
-          emptyStateText="No staff added."
+          emptyStateText={t('entry.noStaffAdded')}
           validateRow={(rows, row, index) => {
-            if (!row.email) return "Select a faculty member from the list.";
+            if (!row.email) return t('entry.selectFaculty');
             const coordEmail = form.coordinatorEmail || email;
             if (row.email.trim().toLowerCase() === coordEmail.trim().toLowerCase()) {
-              return "This faculty is already selected in another role.";
+              return t('entry.facultyAlreadySelected');
             }
             const duplicates = rows.filter(
               (item, itemIndex) =>
                 itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
             ).length;
-            return duplicates > 0 ? "This faculty is already selected in another role." : null;
+            return duplicates > 0 ? t('entry.facultyAlreadySelected') : null;
           }}
         />
       </div>
@@ -295,7 +296,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
             value={form.sponsored || ""}
             onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
             options={SPONSORED_OPTIONS}
-            placeholder="Select"
+            placeholder={t('placeholder.select')}
             disabled={coreFieldDisabled("sponsored")}
             error={submitted && !!errors.sponsored}
           />
@@ -316,7 +317,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
               />
             </Field>
 
-            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -330,7 +331,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
       </div>
 
       <div className="mt-5 space-y-4">
-        <p className="text-sm text-muted-foreground">Streaks apply only for upcoming visit dates.</p>
+        <p className="text-sm text-muted-foreground">{t('entry.streakEligibility')}</p>
 
         {uploadsVisible ? (
           <>
@@ -439,6 +440,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 // ---------------------------------------------------------------------------
 
 export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
+  const { t } = useTranslation();
   return (
     <BaseEntryAdapter<CaseStudyEntry>
       {...props}
@@ -447,7 +449,7 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
       hydrateEntry={hydrateEntry}
       validateFields={validateFields}
       renderFormFields={(ctx) => <CaseStudyFormFields ctx={ctx} />}
-      buildListEntryTitle={(entry) => (entry.placeOfVisit || "").trim() || "Untitled visit"}
+      buildListEntryTitle={(entry) => (entry.placeOfVisit || "").trim() || t('entry.untitledEntry')}
       buildListEntrySubtitle={(entry) => entry.purposeOfVisit || ""}
       renderListEntryBody={({ entry }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
@@ -456,15 +458,15 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
         const parts: string[] = [];
         if (entry.academicYear) parts.push(entry.academicYear);
         if (entry.yearOfStudy) parts.push(entry.yearOfStudy);
-        if (entry.currentSemester) parts.push(`Semester ${entry.currentSemester}`);
+        if (entry.currentSemester) parts.push(`${t('entry.semester')} ${entry.currentSemester}`);
         if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
-        if (days) parts.push(`${days} days`);
+        if (days) parts.push(`${days} ${t('timer.days')}`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) {
           const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (${formatCurrency(entry.fundingAmount, "en")})` : entry.fundingAgency;
-          parts.push(`Funded by ${fundingStr}`);
+          parts.push(`${t('entry.fundedBy')} ${fundingStr}`);
         }
-        if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);
+        if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} ${t('entry.participants')}`);
         return (
           <>
             {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
@@ -503,11 +505,11 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
           </>
         );
       }}
-      title="Case Studies"
-      subtitle="Record industry visits and field studies, along with staff details and supporting documents."
-      formTitle="Case Study Entry"
-      formSubtitle="Add the entry details and generate the entry to unlock uploads."
-      deleteDescription="This permanently deletes this case-study entry and its associated uploaded files."
+      title={t('entry.caseStudiesPageTitle')}
+      subtitle={t('entry.caseStudiesPageSubtitle')}
+      formTitle={t('entry.caseStudiesFormTitle')}
+      formSubtitle={t('entry.caseStudiesFormSubtitle')}
+      deleteDescription={t('entry.caseStudiesDeleteDesc')}
     />
   );
 }

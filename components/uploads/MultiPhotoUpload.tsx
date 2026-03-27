@@ -112,12 +112,12 @@ export default function MultiPhotoUpload({
           file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg";
 
         if (!allowed) {
-          setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: "Only PDF/JPG/PNG allowed." })));
+          setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: t("upload.onlyAllowed") })));
           return;
         }
 
         if (file.size > 20 * 1024 * 1024) {
-          setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: "Max file size is 20MB." })));
+          setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: t("upload.maxFileSize") })));
           return;
         }
 
@@ -192,9 +192,8 @@ export default function MultiPhotoUpload({
                     type="button"
                     onClick={() =>
                       requestConfirmation({
-                        title: "Remove uploaded file?",
-                        description:
-                          "This deletes the uploaded file from this entry. You can upload it again if needed.",
+                        title: t("upload.removeConfirmTitle"),
+                        description: t("upload.removeConfirmDesc"),
                         confirmLabel: t("entry.remove"),
                         cancelLabel: t("entry.cancel"),
                         variant: "destructive",
@@ -219,20 +218,20 @@ export default function MultiPhotoUpload({
       ) : (
         <div className={cx("text-xs", viewOnly ? "text-muted-foreground" : showRequiredError ? "text-red-600" : "text-muted-foreground")}>
           {viewOnly
-            ? "Not uploaded"
+            ? t("upload.notUploaded")
             : showRequiredError
-              ? requiredErrorText || "At least one geotagged photo is required."
-              : "No geotagged photos uploaded yet."}
+              ? requiredErrorText || t("upload.mandatory")
+              : t("upload.notUploaded")}
         </div>
       )}
 
       {!viewOnly ? (
         <div className="text-xs text-muted-foreground">
           {hasPending
-            ? `${pendingFiles.length} file${pendingFiles.length === 1 ? "" : "s"} selected`
+            ? `${pendingFiles.length} ${pendingFiles.length === 1 ? t("upload.fileAccepted") : t("upload.filesAccepted")}`
             : value.length > 0
-              ? "Choose more files to add additional photos."
-              : "Choose one or more files to enable upload."}
+              ? t("upload.chooseMoreFiles")
+              : t("upload.chooseFilesToEnable")}
         </div>
       ) : null}
 
@@ -240,7 +239,7 @@ export default function MultiPhotoUpload({
         <div className="space-y-2">
           <ProgressBar value={overallProgress} />
           <div className="text-xs text-muted-foreground">
-            {overallProgress}% uploading...
+            {overallProgress}% {t("upload.uploadingProgress")}
           </div>
         </div>
       ) : null}
@@ -257,7 +256,7 @@ export default function MultiPhotoUpload({
                 : `${getButtonClass("context")} cursor-pointer`
             )}
           >
-            Choose files
+            {t("upload.chooseFiles")}
             <input
               type="file"
               multiple
@@ -272,11 +271,11 @@ export default function MultiPhotoUpload({
                 for (const file of selected) {
                   const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
                   if (!acceptedFileTypes.includes(ext)) {
-                    setError(`Only ${acceptedFileTypes.join(", ")} files are accepted.`);
+                    setError(t("upload.onlyAllowed"));
                     return;
                   }
                   if (file.size > maxBytes) {
-                    setError(`File exceeds ${maxFileSizeMB}MB limit.`);
+                    setError(`${t("upload.fileExceedsLimit")} ${maxFileSizeMB}${t("upload.mbLimit")}`);
                     return;
                   }
                   valid.push(file);
@@ -294,7 +293,7 @@ export default function MultiPhotoUpload({
             onClick={() => void uploadSelected()}
             disabled={!hasPending || busy || disabled}
           >
-            Upload Selected
+            {t("upload.uploadSelected")}
           </RoleButton>
         </div>
       ) : null}
