@@ -19,6 +19,7 @@ import {
   dataEntryHome,
   dataEntrySearch,
   profile,
+  settingsAppearance,
 } from "@/lib/entryNavigation";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -223,10 +224,10 @@ export default function SidebarDrawer({
         {/* 3. Bottom section */}
         <div className="border-t border-[var(--color-card-border)] p-4 space-y-1">
           <NavItem
-            href="/settings/appearance"
+            href={settingsAppearance()}
             icon={Palette}
             label={t('nav.appearance')}
-            active={isActive("/settings/appearance")}
+            active={isActive(settingsAppearance())}
             onClick={onClose}
             delay={0}
             visible={open}

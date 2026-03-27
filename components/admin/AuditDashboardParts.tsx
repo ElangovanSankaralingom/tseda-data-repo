@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useCountUp } from "@/hooks/useCountUp";
+import { formatDate, formatNumber } from "@/lib/i18n/locale";
 import type { AuditEvent, AuditStats } from "@/lib/types/admin";
 
 export const ACTION_LABELS: Record<string, { label: string; color: string; bg: string }> = {
@@ -48,13 +49,13 @@ function formatRelative(ts: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(then).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return formatDate(new Date(then), "en", { day: "numeric", month: "short" });
 }
 
 function formatDateTime(ts: string): string {
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleString("en-IN", {
+  return formatDate(d, "en", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -83,7 +84,7 @@ function formatDateHeading(dateStr: string): string {
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
   if (dateStr === today) return "Today";
   if (dateStr === yesterday) return "Yesterday";
-  return new Date(dateStr).toLocaleDateString("en-IN", {
+  return formatDate(new Date(dateStr), "en", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -92,7 +93,7 @@ function formatDateHeading(dateStr: string): string {
 
 function AnimatedCount({ value }: { value: number }) {
   const display = useCountUp(value, 400);
-  return <>{display.toLocaleString("en-IN")}</>;
+  return <>{formatNumber(display, "en")}</>;
 }
 
 function ActionBadge({ action }: { action: string }) {

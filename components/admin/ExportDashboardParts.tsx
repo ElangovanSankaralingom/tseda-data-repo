@@ -13,6 +13,7 @@ import {
 import type { ExportTemplate } from "@/lib/export/templates";
 import type { ExportHistoryEntry } from "@/lib/export/history";
 import { useCountUp } from "@/hooks/useCountUp";
+import { formatNumber } from "@/lib/i18n/locale";
 
 const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
   CheckCircle: <CheckCircle className="size-5" />,
@@ -61,7 +62,7 @@ export function FormatBadge({ format }: { format: string }) {
 
 export function AnimatedCount({ value }: { value: number }) {
   const animated = useCountUp(value);
-  return <>{animated.toLocaleString("en-IN")}</>;
+  return <>{formatNumber(animated, "en")}</>;
 }
 
 export function TemplateCard({

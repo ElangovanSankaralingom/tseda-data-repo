@@ -20,6 +20,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
+import { formatNumber } from "@/lib/i18n/locale";
 import type { ActivityTrend, UserProfile, UserStats } from "@/lib/types/admin";
 
 type Props = {
@@ -78,7 +79,7 @@ function trendIcon(trend: ActivityTrend) {
 
 function AnimatedCount({ value }: { value: number }) {
   const display = useCountUp(value, 400);
-  return <>{display.toLocaleString("en-IN")}</>;
+  return <>{formatNumber(display, "en")}</>;
 }
 
 function StatCard({

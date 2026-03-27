@@ -54,8 +54,15 @@ export const APP_CONFIG = {
   },
   upload: {
     maxFileSizeBytes: 10 * 1024 * 1024,
+    maxFileSizeMB: 10,
     allowedImageMimeTypes: ["image/jpeg", "image/png", "image/webp"] as readonly string[],
     allowedDocMimeTypes: ["application/pdf"] as readonly string[],
+    allowedExtensions: [".pdf", ".png", ".jpg", ".jpeg"] as readonly string[],
+  },
+  pdf: {
+    signatoryName: "Dr. Jinu Louishidha Kitchley",
+    signatoryDesignation: "Head of the Department",
+    footerText: "T'SEDA Data Repository",
   },
 } as const;
 

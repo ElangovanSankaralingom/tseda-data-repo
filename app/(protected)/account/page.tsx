@@ -192,7 +192,7 @@ export default function AccountPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Click Save once you complete your updates.</p>
+          <p className="text-sm text-muted-foreground">{t("account.saveHint")}</p>
         </div>
 
         {activeTabDirty ? (
@@ -228,10 +228,10 @@ export default function AccountPage() {
           {(
             [
               ["profile", employeeLabel],
-              ["personal", "Personal"],
-              ["academic", "Academic"],
-              ["experience", "Experience"],
-              ["uploads", "Uploads"],
+              ["personal", t("account.personal")],
+              ["academic", t("account.academic")],
+              ["experience", t("account.experience")],
+              ["uploads", t("account.uploads")],
             ] as Array<[TabKey, string]>
           ).map(([key, label]) => (
             <button
@@ -299,9 +299,9 @@ export default function AccountPage() {
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-red-800">Clear All My Data</h3>
+            <h3 className="text-sm font-semibold text-red-800">{t("account.deleteAllMyData")}</h3>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-              Permanently delete all your entries, uploads, notifications, and profile data. This cannot be undone.
+              {t("account.deleteAllWarning")}
             </p>
           </div>
           <button
@@ -335,11 +335,11 @@ export default function AccountPage() {
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Clear All Your Data</h3>
             </div>
             <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
-              This will permanently delete all your entries, uploads, notifications, and profile data. This action cannot be undone.
+              {t("account.deleteAllWarning")}
             </p>
             <div className="mt-4">
               <label className="text-sm text-[var(--color-text-secondary)]">
-                Type your email <span className="font-mono font-semibold text-red-600">{draft.email}</span> to confirm:
+                {t("account.typeEmailToConfirm")} <span className="font-mono font-semibold text-red-600">{draft.email}</span>
               </label>
               <input
                 type="text"

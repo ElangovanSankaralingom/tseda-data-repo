@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { formatDate } from "@/lib/i18n/locale";
 import { type CategoryOverview, type Totals } from "./dataEntryTypes";
 
 type Props = {
@@ -53,7 +54,7 @@ function sortByUrgency(categories: CategoryOverview[]): CategoryOverview[] {
   });
 }
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, language: "en" | "ta" = "en"): string {
   const diff = Date.now() - Date.parse(iso);
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return "Just now";
@@ -62,12 +63,12 @@ function relativeTime(iso: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return formatDate(new Date(iso), language, { day: "numeric", month: "short" });
 }
 
 // ── Category Card ──────────────────────────────────────────────────
 function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) {
-  const { t, categoryLabel } = useTranslation();
+  const { t, language, categoryLabel } = useTranslation();
   const theme = CATEGORY_THEME[cat.slug] ?? DEFAULT_THEME;
   const Icon = theme.icon;
   const hasEntries = cat.totalEntries > 0;
@@ -145,7 +146,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
           )}
 
           {cat.lastActivity && (
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Last: {relativeTime(cat.lastActivity)}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Last: {relativeTime(cat.lastActivity, language)}</p>
           )}
         </div>
 

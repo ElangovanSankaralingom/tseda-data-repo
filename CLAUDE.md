@@ -301,3 +301,14 @@ NOTHING in TSEDA is hardcoded. Everything is schema-driven and modular:
 3. Add to dictionaries map
 4. Add option in appearance settings
 5. Done — compiler guarantees completeness
+
+### Registries and Config (single source of truth)
+- **Admin tools:** `data/adminToolRegistry.ts` — all admin console tool cards (icon, route, accent color, badge config). AdminConsoleDashboard maps over this registry.
+- **Notification types:** `data/notificationTypeConfig.ts` — shared icon/color config for both user and admin notification types. Imported by NotificationBell and AdminNotificationBell.
+- **Category config:** `data/categoryRegistry.ts` — category slug, icon, color, schema, gradient. Do NOT duplicate category metadata.
+- **Routes:** `lib/entryNavigation.ts` — all route paths. NEVER hardcode `/admin/...` or `/data-entry/...` in components.
+- **Dates & numbers:** `lib/i18n/locale.ts` — `formatDate()`, `formatNumber()`, `formatCurrency()`. NEVER hardcode `"en-IN"`.
+- **File limits:** `lib/config/appConfig.ts` — `APP_CONFIG.upload.maxFileSizeBytes`, `.maxFileSizeMB`, `.allowedExtensions`.
+- **PDF config:** `lib/config/appConfig.ts` — `APP_CONFIG.pdf.signatoryName`, `.signatoryDesignation`, `.footerText`.
+- **Theme tokens:** `lib/theme/themeTokens.ts` — ALL colors as CSS variables. NEVER use hardcoded hex/Tailwind slate colors.
+- **Theming:** `lib/theme/ThemeProvider.tsx` — `useTheme()` provides mode, palette, language. All components use CSS variables.

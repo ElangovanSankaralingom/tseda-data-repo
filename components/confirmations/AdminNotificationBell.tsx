@@ -2,37 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  AlertOctagon,
-  FileEdit,
-  HardDrive,
-  Settings,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  Trash2,
-  UserPlus,
-  Wrench,
-} from "lucide-react";
-import type { AdminNotification, AdminNotificationType } from "@/lib/confirmations/types";
+import { Shield, ShieldAlert } from "lucide-react";
+import type { AdminNotification } from "@/lib/confirmations/types";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-
-const TYPE_CONFIG: Record<
-  AdminNotificationType,
-  { Icon: typeof Shield; iconBg: string; iconColor: string }
-> = {
-  edit_request: { Icon: FileEdit, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
-  delete_request: { Icon: Trash2, iconBg: "bg-red-100", iconColor: "text-red-600" },
-  pending_requests_reminder: { Icon: FileEdit, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
-  backup_overdue: { Icon: ShieldAlert, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
-  integrity_issues: { Icon: ShieldCheck, iconBg: "bg-red-100", iconColor: "text-red-600" },
-  wal_warning: { Icon: HardDrive, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
-  new_user: { Icon: UserPlus, iconBg: "bg-blue-100", iconColor: "text-blue-600" },
-  user_status_change: { Icon: UserPlus, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
-  settings_changed: { Icon: Settings, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
-  migration_complete: { Icon: Wrench, iconBg: "bg-emerald-100", iconColor: "text-emerald-600" },
-  system_error: { Icon: AlertOctagon, iconBg: "bg-red-100", iconColor: "text-red-600" },
-};
+import { ADMIN_NOTIFICATION_STYLES, FALLBACK_STYLE } from "@/data/notificationTypeConfig";
 
 function formatRelative(ts: string): string {
   const diff = Date.now() - Date.parse(ts);
@@ -232,7 +205,7 @@ export default function AdminNotificationBell({
               </div>
             )}
             {notifications.map((n) => {
-              const conf = TYPE_CONFIG[n.type] ?? TYPE_CONFIG.system_error;
+              const conf = ADMIN_NOTIFICATION_STYLES[n.type] ?? FALLBACK_STYLE;
               const NIcon = conf.Icon;
               return (
                 <div

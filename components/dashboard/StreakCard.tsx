@@ -5,6 +5,7 @@ import { Flame, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { formatNumber } from "@/lib/i18n/locale";
 
 const STYLE_CONFIG = {
   active: {
@@ -24,7 +25,7 @@ const STYLE_CONFIG = {
 } as const;
 
 function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { type: "active" | "wins"; value: number; subtext?: string; hoverDescription?: string; staggerClass?: string }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { icon: Icon, gradient, zeroGradient, hoverRing } = STYLE_CONFIG[type];
   const hasValue = value > 0;
   const displayValue = useCountUp(value);
@@ -71,7 +72,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
               hasValue ? "text-white" : "text-[var(--color-text-secondary)]"
             )}
           >
-            {displayValue.toLocaleString("en-IN")}
+            {formatNumber(displayValue, language)}
           </div>
           <div
             className={cn(
