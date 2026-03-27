@@ -4,6 +4,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { profile as profileRoute, signin } from "@/lib/entryNavigation";
+import { useApi } from "@/hooks/useApi";
 import type { ProfileSummary } from "@/components/shell/shellTypes";
 
 function getInitials(name: string, email: string) {
@@ -17,31 +18,12 @@ function getInitials(name: string, email: string) {
   return source.slice(0, 2).toUpperCase();
 }
 
-export default function AvatarMenu({ refreshKey = 0, showName = false }: { refreshKey?: number; showName?: boolean }) {
+export default function AvatarMenu({ showName = false }: { refreshKey?: number; showName?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-  useEffect(() => {
-    let ignore = false;
-
-    (async () => {
-      try {
-        const response = await fetch("/api/me", { cache: "no-store" });
-        const payload = (await response.json()) as ProfileSummary;
-        if (!ignore && response.ok) {
-          setProfile(payload);
-        }
-      } catch {
-        // Keep fallback initials state only.
-      }
-    })();
-
-    return () => {
-      ignore = true;
-    };
-  }, [refreshKey]);
+  const { data: profile } = useApi<ProfileSummary>("/api/me");
 
   useEffect(() => {
     if (!open) return;

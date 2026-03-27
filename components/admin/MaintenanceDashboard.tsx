@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   Database,
   HardDrive,
@@ -91,7 +91,7 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
   );
 }
 
-function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data: Record<string, unknown> } | { ok: false; errorCode: string; message: string } }) {
+const NightlyStepRow = memo(function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data: Record<string, unknown> } | { ok: false; errorCode: string; message: string } }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-2">
       <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
@@ -106,9 +106,9 @@ function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data
       )}
     </div>
   );
-}
+});
 
-function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
+const ActionLogRow = memo(function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
   return (
     <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2.5 last:border-0">
       <div className={`flex size-6 shrink-0 items-center justify-center rounded-full ${entry.success ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
@@ -122,7 +122,7 @@ function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
       </div>
     </div>
   );
-}
+});
 
 export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Props) {
   const { t } = useTranslation();

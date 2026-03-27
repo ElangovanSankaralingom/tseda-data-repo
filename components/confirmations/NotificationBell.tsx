@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { mutate } from "swr";
 import type { PersistentNotification } from "@/lib/confirmations/types";
+import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { USER_NOTIFICATION_STYLES, FALLBACK_STYLE } from "@/data/notificationTypeConfig";
 
@@ -27,44 +29,22 @@ export default function NotificationBell({
   forceClose?: boolean;
 } = {}) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [notifications, setNotifications] = useState<PersistentNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Force close from parent (when admin bell opens)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (forceClose && open) setOpen(false);
-  }, [forceClose, open]);
+  // Derive effective open state — forceClose from parent overrides
+  const open = internalOpen && !forceClose;
 
-  // Notify parent of panel state
-  useEffect(() => {
-    onPanelToggle?.(open);
-  }, [open, onPanelToggle]);
+  // SWR: poll unread count every 60s
+  const { data: unreadData } = useApi<{ count: number }>(
+    "/api/me/notifications/unread-count",
+    { refreshInterval: 60_000 },
+  );
+  const unreadCount = unreadData?.count ?? 0;
 
-  // Fetch unread count on mount and periodically
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const res = await fetch("/api/me/notifications/unread-count", { cache: "no-store" });
-      if (res.ok) {
-        const data = (await res.json()) as { count: number };
-        setUnreadCount(data.count);
-      }
-    } catch {
-      // Silently fail
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchUnreadCount();
-    const interval = setInterval(() => void fetchUnreadCount(), 60_000);
-    return () => clearInterval(interval);
-  }, [fetchUnreadCount]);
-
-  // Fetch full list when panel opens
+  // Fetch full notification list
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await fetch("/api/me/notifications", { cache: "no-store" });
@@ -78,23 +58,28 @@ export default function NotificationBell({
     }
   }, []);
 
-  useEffect(() => {
-    if (open && !loaded) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void fetchNotifications();
-    }
-  }, [open, loaded, fetchNotifications]);
+  const handleOpen = useCallback(() => {
+    setInternalOpen(true);
+    setLoaded(false);
+    void fetchNotifications();
+    onPanelToggle?.(true);
+  }, [fetchNotifications, onPanelToggle]);
 
-  // Close on click outside
+  const handleClose = useCallback(() => {
+    setInternalOpen(false);
+    onPanelToggle?.(false);
+  }, [onPanelToggle]);
+
+  // Close on click outside / Escape
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        handleClose();
       }
     }
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") handleClose();
     }
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleEscape);
@@ -102,13 +87,13 @@ export default function NotificationBell({
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
+  }, [open, handleClose]);
 
   const markAllRead = useCallback(async () => {
     try {
       await fetch("/api/me/notifications/read-all", { method: "PUT" });
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
+      void mutate("/api/me/notifications/unread-count");
     } catch {
       // Silently fail
     }
@@ -120,7 +105,7 @@ export default function NotificationBell({
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      void mutate("/api/me/notifications/unread-count");
     } catch {
       // Silently fail
     }
@@ -131,10 +116,7 @@ export default function NotificationBell({
       {/* Bell button */}
       <button
         type="button"
-        onClick={() => {
-          setOpen((v) => !v);
-          if (!open) setLoaded(false); // Refresh on reopen
-        }}
+        onClick={() => { if (open) handleClose(); else handleOpen(); }}
         className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-blue-500/10" : "hover:bg-[var(--color-dropdown-hover)]"}`}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
       >
@@ -198,7 +180,7 @@ export default function NotificationBell({
                       href={n.actionUrl}
                       onClick={() => {
                         if (!n.read) void markRead(n.id);
-                        setOpen(false);
+                        handleClose();
                       }}
                       className="flex items-start gap-3"
                     >
@@ -224,7 +206,7 @@ export default function NotificationBell({
   );
 }
 
-function NotificationIcon({
+const NotificationIcon = memo(function NotificationIcon({
   Icon,
   iconBg,
   iconColor,
@@ -238,9 +220,9 @@ function NotificationIcon({
       <Icon className={`size-4 ${iconColor}`} />
     </div>
   );
-}
+});
 
-function NotificationContent({ notification: n }: { notification: PersistentNotification }) {
+const NotificationContent = memo(function NotificationContent({ notification: n }: { notification: PersistentNotification }) {
   return (
     <div className="min-w-0 flex-1">
       <div className="flex items-start justify-between gap-2">
@@ -251,4 +233,4 @@ function NotificationContent({ notification: n }: { notification: PersistentNoti
       <span className="mt-1 text-xs text-[var(--color-text-secondary)]">{formatRelative(n.createdAt)}</span>
     </div>
   );
-}
+});

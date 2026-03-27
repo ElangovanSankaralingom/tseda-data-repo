@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import Link from "next/link";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import {
@@ -84,7 +84,7 @@ function AnimatedCount({ value }: { value: number }) {
   return <>{formatNumber(display, "en")}</>;
 }
 
-function StatCard({
+const StatCard = memo(function StatCard({
   label,
   value,
   icon: Icon,
@@ -108,7 +108,7 @@ function StatCard({
       </div>
     </div>
   );
-}
+});
 
 function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" | "lg" }) {
   const sizeClasses = size === "lg" ? "size-16" : size === "md" ? "size-11" : "size-8";
@@ -154,7 +154,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
 // User Card
 // ---------------------------------------------------------------------------
 
-function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
+const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
   const { t } = useTranslation();
   const isTopPerformer = rank <= 3 && user.totalEntries > 0;
   const isNew = useMemo(
@@ -279,7 +279,7 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
       </div>
     </Link>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Filter Bar

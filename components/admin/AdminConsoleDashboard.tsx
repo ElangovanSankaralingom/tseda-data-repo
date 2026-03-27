@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
@@ -36,7 +36,7 @@ function SectionHeader({ title }: { title: string }) {
 // Feature Card (large, prominent — Section 1)
 // ---------------------------------------------------------------------------
 
-function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) {
+const FeatureCardItem = memo(function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) {
   const Icon = card.icon;
   return (
     <Link
@@ -63,7 +63,7 @@ function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) 
       <ChevronRight className="mt-1 size-5 shrink-0 text-[var(--color-text-muted)] transition-all duration-200 group-hover:translate-x-1 group-hover:text-[var(--color-text-secondary)]" />
     </Link>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main Component

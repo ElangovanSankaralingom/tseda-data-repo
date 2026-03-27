@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
   Download,
   FileSpreadsheet,
@@ -84,7 +85,7 @@ function ExportButtonIdle() {
   );
 }
 
-export function TemplateCard({
+export const TemplateCard = memo(function TemplateCard({
   template,
   index,
   onExport,
@@ -127,7 +128,7 @@ export function TemplateCard({
       </div>
     </div>
   );
-}
+});
 
 export function FormatSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const formats = [
@@ -159,7 +160,7 @@ export function FormatSelector({ value, onChange }: { value: string; onChange: (
   );
 }
 
-export function HistoryRow({ entry }: { entry: ExportHistoryEntry }) {
+export const HistoryRow = memo(function HistoryRow({ entry }: { entry: ExportHistoryEntry }) {
   return (
     <div className="flex items-center gap-3 border-b border-[var(--color-divider)] px-1 py-2.5 last:border-0">
       <FormatBadge format={entry.format} />
@@ -174,4 +175,4 @@ export function HistoryRow({ entry }: { entry: ExportHistoryEntry }) {
       <div className="text-xs text-[var(--color-text-secondary)]">{formatTimeAgo(entry.createdAt)}</div>
     </div>
   );
-}
+});

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Shield, ShieldAlert } from "lucide-react";
+import { mutate } from "swr";
 import type { AdminNotification } from "@/lib/confirmations/types";
+import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { ADMIN_NOTIFICATION_STYLES, FALLBACK_STYLE } from "@/data/notificationTypeConfig";
 
@@ -29,40 +31,23 @@ export default function AdminNotificationBell({
   forceClose?: boolean;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [notifications, setNotifications] = useState<AdminNotificationWithRead[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [, setViewerEmail] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Force close from parent (when user bell opens)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (forceClose && open) setOpen(false);
-  }, [forceClose, open]);
+  // Derive effective open state — forceClose from parent overrides
+  const open = internalOpen && !forceClose;
 
-  // Fetch unread count on mount and periodically
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/notifications/unread-count", { cache: "no-store" });
-      if (res.ok) {
-        const data = (await res.json()) as { count: number };
-        setUnreadCount(data.count);
-      }
-    } catch {
-      // Silently fail
-    }
-  }, []);
+  // SWR: poll unread count every 60s
+  const { data: unreadData } = useApi<{ count: number }>(
+    "/api/admin/notifications/unread-count",
+    { refreshInterval: 60_000 },
+  );
+  const unreadCount = unreadData?.count ?? 0;
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchUnreadCount();
-    const interval = setInterval(() => void fetchUnreadCount(), 60_000);
-    return () => clearInterval(interval);
-  }, [fetchUnreadCount]);
-
-  // Fetch full list when panel opens
+  // Fetch full notification list
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/notifications", { cache: "no-store" });
@@ -82,23 +67,28 @@ export default function AdminNotificationBell({
     }
   }, []);
 
-  useEffect(() => {
-    if (open && !loaded) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void fetchNotifications();
-    }
-  }, [open, loaded, fetchNotifications]);
+  const handleOpen = useCallback(() => {
+    setInternalOpen(true);
+    setLoaded(false);
+    void fetchNotifications();
+    onPanelToggle?.(true);
+  }, [fetchNotifications, onPanelToggle]);
 
-  // Close on click outside
+  const handleClose = useCallback(() => {
+    setInternalOpen(false);
+    onPanelToggle?.(false);
+  }, [onPanelToggle]);
+
+  // Close on click outside / Escape
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        handleClose();
       }
     }
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") handleClose();
     }
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleEscape);
@@ -106,18 +96,13 @@ export default function AdminNotificationBell({
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
-
-  // Notify parent of panel state
-  useEffect(() => {
-    onPanelToggle?.(open);
-  }, [open, onPanelToggle]);
+  }, [open, handleClose]);
 
   const markAllRead = useCallback(async () => {
     try {
       await fetch("/api/admin/notifications/read-all", { method: "PUT" });
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
+      void mutate("/api/admin/notifications/unread-count");
     } catch {
       // Silently fail
     }
@@ -129,7 +114,7 @@ export default function AdminNotificationBell({
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      void mutate("/api/admin/notifications/unread-count");
     } catch {
       // Silently fail
     }
@@ -139,23 +124,19 @@ export default function AdminNotificationBell({
   const dismiss = useCallback(async (id: string) => {
     try {
       await fetch(`/api/admin/notifications/${id}`, { method: "DELETE" });
-      const was = notifications.find((n) => n.id === id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
-      if (was && !was.read) setUnreadCount((prev) => Math.max(0, prev - 1));
+      void mutate("/api/admin/notifications/unread-count");
     } catch {
       // Silently fail
     }
-  }, [notifications]);
+  }, []);
 
   return (
     <div className="relative" ref={panelRef}>
       {/* Bell button */}
       <button
         type="button"
-        onClick={() => {
-          setOpen((v) => !v);
-          if (!open) setLoaded(false);
-        }}
+        onClick={() => { if (open) handleClose(); else handleOpen(); }}
         className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-indigo-500/10" : "hover:bg-[var(--color-dropdown-hover)]"}`}
         aria-label={`Admin Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         title={t('notification.adminTitle')}
@@ -231,7 +212,7 @@ export default function AdminNotificationBell({
                             href={n.actionUrl}
                             onClick={() => {
                               if (!n.read) void markRead(n.id);
-                              setOpen(false);
+                              handleClose();
                             }}
                             className="rounded-lg bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-100 hover:text-indigo-700"
                           >

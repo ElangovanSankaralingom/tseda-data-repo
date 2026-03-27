@@ -24,7 +24,10 @@ Faculty log professional development activities across categories. The app gamif
 - **NEVER commit** `.data/`, `public/uploads/`, `.env.local` — all gitignored.
 
 ### Code Quality
-- `npm run build` must pass before every commit (husky pre-commit hook runs lint + typecheck)
+- `npm run build && npm run lint` must pass before every commit (husky pre-commit hook runs both)
+- `npm run build` catches TypeScript and compilation errors
+- `npm run lint` catches React Compiler rules (static-components, set-state-in-effect, exhaustive-deps)
+- NEVER use `npm run build` alone as verification — always run both
 - 0 `any` types. 0 `console.log`. 0 TODO/FIXME.
 - All inputs use `value={field || ""}` to prevent controlled/uncontrolled warnings.
 - All new fields in entry types must be added to `LIFECYCLE_FIELDS` in `lib/pdfSnapshot.ts` if they shouldn't affect the PDF hash.
@@ -186,7 +189,7 @@ Then:
 2. Register in `data/categoryRegistry.ts` — add to CATEGORY_LIST
 3. Add adapter import in `components/data-entry/CategoryPageRouter.tsx`
 4. Flesh out the adapter (form fields, list rendering)
-5. `npm run build`
+5. `npm run build && npm run lint`
 
 Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-derives from schema.
 

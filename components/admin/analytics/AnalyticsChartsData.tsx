@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { ChevronDown, Trophy } from "lucide-react";
 import { compare } from "@/lib/analytics/compare";
 import { pct, catColor } from "./AnalyticsChartsCore";
@@ -126,7 +126,7 @@ export function StreakFunnel({
   );
 }
 
-export function CategoryRow({
+export const CategoryRow = memo(function CategoryRow({
   slug,
   name,
   count,
@@ -191,4 +191,4 @@ export function CategoryRow({
       )}
     </div>
   );
-}
+});
