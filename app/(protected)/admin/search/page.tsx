@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { Search } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import SearchCategorySelect from "@/components/controls/SearchCategorySelect";
 import SectionCard from "@/components/layout/SectionCard";
@@ -68,7 +67,7 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
       title="Admin Search"
       subtitle="Search entries across all users and categories."
       backHref={adminHome()}
-      icon={Search}
+      iconName="Search"
       maxWidthClassName="max-w-6xl"
     >
       <SectionCard>

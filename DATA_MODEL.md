@@ -274,3 +274,62 @@ Defined in `lib/data/locks.ts`:
 - **WAL event:** Event structure normalization, nested entry migration.
 
 After normalization, internal code uses only canonical shapes and statuses. Legacy values are never accepted past the migration boundary.
+
+## Schema Field Annotations
+
+Fields in `data/schemas/*.ts` support these annotations:
+
+| Annotation | Type | Purpose |
+|---|---|---|
+| `kind` | `SchemaFieldKind` | Field type (`string`, `number`, `date`, `array`, `object`, `boolean`) |
+| `required` | `boolean` | Validation enforcement |
+| `stage` | `1 \| 2` | Stage 1 = data fields (affect PDF hash), Stage 2 = uploads |
+| `upload` | `boolean` | Marks as upload field — auto-derives upload slots, PDF exclusion, integrity checks |
+| `format` | `'currency'` | Display formatting (e.g., `Rs.` prefix in PDF) |
+| `exportable` | `boolean` | Whether field appears in CSV/XLSX exports |
+| `exportOrder` | `number` | Column ordering in exports |
+| `exportFormatter` | `SchemaExportFormatter` | Export-specific formatting |
+| `maxLength` | `number` | Max string length for validation |
+| `min` / `max` | `number` | Numeric range validation |
+| `enumValues` | `readonly (string \| number \| boolean)[]` | Allowed values |
+
+## Action History Record
+
+Stored in `.data/admin/action-history.json`:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | UUID |
+| `timestamp` | `string` | ISO 8601 |
+| `actionType` | `string` | `edit_granted`, `edit_rejected`, `delete_approved`, `delete_rejected`, `user_cancelled`, `auto_finalised`, `auto_deleted` |
+| `entryId` | `string` | Entry ID |
+| `category` | `string` | Category slug |
+| `entryTitle` | `string` | Snapshot at time of action |
+| `userEmail` | `string` | Entry owner |
+| `userName` | `string` | Entry owner display name |
+| `adminEmail` | `string?` | Admin who acted (null for auto/user actions) |
+| `requestMessage` | `string?` | User's request message |
+
+## User Preferences
+
+Stored per-user, managed by `lib/preferences/` and `app/api/me/preferences/route.ts`:
+
+| Field | Type | Options |
+|---|---|---|
+| `themeMode` | `string` | `'light'`, `'dark'`, `'color'` |
+| `colorPalette` | `string` | `'ocean-blue'`, `'forest-green'`, `'royal-purple'`, `'sunset-warm'`, `'rose-pink'` |
+| `language` | `string` | `'en'`, `'ta'` |
+
+## Category Registry Metadata
+
+Each category in `data/categoryRegistry.ts` includes:
+
+| Field | Type | Purpose |
+|---|---|---|
+| `slug` | `CategorySlug` | URL-safe identifier |
+| `label` | `string` | Display name (English fallback) |
+| `entryTitleField` | `string?` | Which entry field is the display title |
+| `entryTitleFallback` | `string?` | Fallback title when field is empty |
+| `icon` | `string` | Lucide icon name (resolved client-side) |
+| `color` | `CategoryColor` | Accent colors (accentBg, borderTop, buttonBg, text, gradient, etc.) |
+| `schema` | `EntrySchema` | Bound schema with field definitions |

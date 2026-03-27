@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { Shield } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import SectionCard from "@/components/layout/SectionCard";
 import { authOptions } from "@/lib/auth";
@@ -72,7 +71,7 @@ export default async function AdminBackupsPage({
       title="Backups"
       subtitle="Create and download zipped snapshots of the entire .data store."
       backHref={adminHome()}
-      icon={Shield}
+      iconName="Shield"
       maxWidthClassName="max-w-6xl"
     >
       {status ? (

@@ -439,7 +439,48 @@ This creates: schema, API route, adapter, and 3 page files.
 After running, complete these manual steps:
 
 1. **Edit the schema** (`data/schemas/<slug>.ts`) — add category-specific fields
-2. **Register** in `data/categoryRegistry.ts` — add to `CATEGORY_SLUGS`, import schema, add registry entry
-3. **Flesh out the adapter** (`components/data-entry/adapters/<slug>.tsx`) — form fields, list rendering
-4. **Build:** `npm run build`
-5. **Verify:** `./scripts/verify-categories.sh` — all categories should show green
+2. **Register** in `data/categoryRegistry.ts` — add to `CATEGORY_SLUGS`, import schema, add registry entry (including `entryTitleField`, icon, color with `accentBg`/`borderTop`/`buttonBg`/`buttonHover`)
+3. **Add adapter** to `ADAPTER_MAP` in `components/data-entry/CategoryPageRouter.tsx`
+4. **Add i18n keys** to `lib/i18n/en.ts` and `lib/i18n/ta.ts` (TypeScript enforces parity)
+5. **Flesh out the adapter** (`components/data-entry/adapters/<slug>.tsx`) — form fields, list rendering
+6. **Build and lint:** `npm run build && npm run lint`
+
+## Performance Architecture
+
+### Client-Side Caching
+- SWR (`hooks/useApi.ts`) for all client GET requests with `lib/swr/fetcher.ts`
+- Stale-while-revalidate for instant navigation, background refresh
+- After mutations: `mutate('/api/...')` to revalidate
+
+### Code Splitting
+- `React.lazy` for category adapters in `CategoryPageRouter.tsx`
+- Only the active category adapter is loaded, not all 5
+
+### API Caching
+- `Cache-Control` headers on read-only endpoints (dashboard 60s, overviews 30s)
+- `cachedApiSuccess()` helper in `lib/api/apiResponse.ts`
+- No caching on mutations or real-time endpoints
+
+### Rate Limiting
+- Universal coverage: all routes rate-limited (89/90, NextAuth excluded)
+- Tiers configured per route via `RATE_LIMIT_PRESETS` from `lib/security/rateLimit.ts`
+
+### Server/Client Boundary
+- Icon components cannot cross server-to-client boundary (serialization)
+- Pass string icon names + resolve via client-side icon map
+- Pattern: `AdminPageShell.tsx` uses `ADMIN_ICON_MAP`, `CategoryIcon` uses `ICON_MAP`
+
+## Accessibility
+
+- Skip navigation link in `ShellClient.tsx` targeting `#main-content`
+- All icon-only buttons have `aria-label`
+- `prefers-reduced-motion` media query in `globals.css`
+- Keyboard navigation on custom dropdowns (arrow keys, Escape, Home/End)
+- ARIA roles on interactive components (combobox, listbox, progressbar)
+
+## Admin Action History
+
+- `lib/admin/actionHistory.ts` — persistent audit log at `.data/admin/action-history.json`
+- Records all admin actions, user cancellations, auto-operations from nightly job
+- API: `GET /api/admin/action-history` with pagination and filters
+- UI: "History" tab in admin confirmations page

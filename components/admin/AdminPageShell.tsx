@@ -1,10 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, type LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart3,
+  Download,
+  FileEdit,
+  ScrollText,
+  Search,
+  Settings,
+  Shield,
+  ShieldCheck,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 import { type Pill } from "./adminLocalTypes";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { TranslationKey } from "@/lib/i18n";
+
+const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
+  BarChart3,
+  Download,
+  FileEdit,
+  ScrollText,
+  Search,
+  Settings,
+  Shield,
+  ShieldCheck,
+  Users,
+  Wrench,
+};
 
 type AdminPageShellProps = {
   title?: string;
@@ -13,7 +39,7 @@ type AdminPageShellProps = {
   subtitleKey?: TranslationKey;
   backHref: string;
   backLabel?: string;
-  icon?: LucideIcon;
+  iconName?: string;
   pills?: Pill[];
   actions?: React.ReactNode;
   /** Extra content rendered inside the gradient header, below title row */
@@ -29,13 +55,14 @@ export default function AdminPageShell({
   subtitleKey,
   backHref,
   backLabel = "Admin Console",
-  icon: Icon,
+  iconName,
   pills,
   actions,
   headerChildren,
   children,
   maxWidthClassName = "max-w-7xl",
 }: AdminPageShellProps) {
+  const Icon = iconName ? ADMIN_ICON_MAP[iconName] : undefined;
   const { t } = useTranslation();
   const displayTitle = titleKey ? t(titleKey) : title;
   const displaySubtitle = subtitleKey ? t(subtitleKey) : subtitle;

@@ -156,11 +156,15 @@ PATCH actions: `save`, `generate`, `finalise`, `request_edit`, `request_delete`,
 - `lib/workflow/` — workflow engine (timer, completion, button states)
 - `lib/security/` — CSRF, file validation, sanitization, rate limiting
 - `lib/admin/roles.ts` — role-based access control
+- `lib/admin/actionHistory.ts` — admin action history (append, read, paginate)
 - `lib/data/dataLayer.ts` — abstract storage interface (JSON backend)
 - `lib/entries/hydrateEntry.ts` — universal entry hydration (safe defaults for missing/old fields)
 - `lib/constants/messages.ts` — centralized user-facing strings
-- `lib/api/apiResponse.ts` — shared API response helpers (apiSuccess, apiError, apiUnauthorized, etc.)
+- `lib/api/apiResponse.ts` — shared API response helpers (apiSuccess, cachedApiSuccess, apiError, etc.)
+- `lib/swr/fetcher.ts` — shared SWR fetch function
+- `lib/ui/categoryIcons.ts` — `CategoryIcon` component for server/client icon rendering
 - `lib/jobs/orphanFileCleanup.ts` — orphan upload file detection (nightly job)
+- `hooks/useApi.ts` — SWR-based data fetching hook for client components
 - `components/ErrorBoundaryFallback.tsx` — React error boundary for form area
 - `components/NavigationRefresh.tsx` — global route refresh on navigation + focus + bfcache
 - `components/NetworkStatus.tsx` — offline/online status banner
@@ -216,12 +220,12 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 - Lib files: camelCase (`workflowEngine.ts`)
 
 ### UI Style
-- Primary action color: `bg-[#1E3A5F]` (dark blue)
-- Generate button: `bg-emerald-600` (green)
-- Finalise button: `bg-emerald-600` (green)
-- Cards: `rounded-xl border border-slate-200 shadow-sm` with `hover:-translate-y-0.5 hover:shadow-md`
-- Category accent colors per card (top border `border-t-[3px]`)
-- Empty states: `border-dashed border-slate-300 bg-slate-50`
+- Primary action color: `bg-[var(--color-button-primary-bg)]` (theme-driven, default `#1E3A5F`)
+- Generate/Finalise buttons: `bg-emerald-600`
+- ALL colors use CSS variables from `lib/theme/themeTokens.ts` — NEVER hardcode hex or Tailwind slate colors
+- Cards: `rounded-xl border border-[var(--color-card-border)] shadow-sm` with `hover:-translate-y-0.5 hover:shadow-md`
+- Category accent colors from registry (`data/categoryRegistry.ts` → `color.accentBg`, `color.borderTop`)
+- Empty states: `border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]`
 - No emojis in UI
 - lucide-react icons only
 - Frosted glass modals: `bg-black/20 backdrop-blur-sm` via React portal
@@ -240,8 +244,7 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 ## Current State
 
-- **Audit score: 8.8/10** across 18 categories
-- **352+ tests**, 0 failures
+- **445+ tests** (24 pre-existing failures in streak/workflow edge cases)
 - **Build: clean** (Turbopack warnings are cosmetic)
 - **Docker + CI/CD ready** (GitHub Actions)
 - **5 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops
@@ -315,3 +318,74 @@ NOTHING in TSEDA is hardcoded. Everything is schema-driven and modular:
 - **PDF config:** `lib/config/appConfig.ts` — `APP_CONFIG.pdf.signatoryName`, `.signatoryDesignation`, `.footerText`.
 - **Theme tokens:** `lib/theme/themeTokens.ts` — ALL colors as CSS variables. NEVER use hardcoded hex/Tailwind slate colors.
 - **Theming:** `lib/theme/ThemeProvider.tsx` — `useTheme()` provides mode, palette, language. All components use CSS variables.
+
+---
+
+## Performance Optimizations
+
+### Client-Side Data Caching (SWR)
+- `hooks/useApi.ts` — shared hook wrapping `useSWR` with `lib/swr/fetcher.ts`
+- Use `useApi('/api/...')` instead of `useState + useEffect + fetch` for all GET requests
+- After mutations, call `mutate('/api/...')` from `swr` to revalidate
+- Config: `revalidateOnFocus: false`, `dedupingInterval: 30000`
+
+### Code Splitting
+- Category adapters in `CategoryPageRouter.tsx` use `React.lazy` with `Suspense` fallback
+- Only the adapter for the active category is loaded — not all 5
+
+### React.memo Convention
+- All components rendered inside `.map()` loops MUST be wrapped with `React.memo`
+- Use `useCallback` for event handlers passed to memoized children
+
+### API Response Caching
+- Read endpoints use `Cache-Control: private, max-age=N, stale-while-revalidate=M`
+- Dashboard: 60s, Action History: 30s, Category Overview: 30s
+- Mutation endpoints and real-time endpoints (unread counts): no caching
+- Helper: `cachedApiSuccess(data, maxAge, staleWhileRevalidate?)` in `lib/api/apiResponse.ts`
+
+### Rate Limiting
+- ALL API routes have rate limiting (89/90, NextAuth passthrough excluded)
+- Tiers: entryReads 120/min, entryMutations 30/min, uploadOps 20/min, adminOps 60/min, fileDownloads 30/min, health 60/min
+- Configured via `enforceRateLimitForRequest()` from `lib/security/rateLimit.ts`
+
+### Font and Image Optimization
+- `next/font` with Geist Sans + Geist Mono (`app/layout.tsx`), CSS variables on `<html>`
+- All images use `next/image` — no raw `<img>` tags allowed
+
+---
+
+## Accessibility
+
+- Skip navigation link in `ShellClient.tsx` targeting `#main-content`
+- `sr-only` class available via Tailwind CSS v4 (built-in)
+- All icon-only buttons MUST have `aria-label`
+- `prefers-reduced-motion` support in `globals.css`
+- Keyboard navigation on SelectDropdown (arrow keys, Escape, Home/End)
+- ARIA roles on combobox, listbox, progressbar components
+
+---
+
+## Admin Action History
+
+- `lib/admin/actionHistory.ts` — append, read, paginate
+- `app/api/admin/action-history/route.ts` — GET with filters
+- Records: edit_granted, edit_rejected, delete_approved, delete_rejected, user_cancelled, auto_finalised, auto_deleted
+- Hooked into: `engineAdmin.ts`, `engineRequests.ts`, `nightly.ts`
+- UI: "History" tab in admin confirmations page with filters and pagination
+
+---
+
+## Schema-Driven Satellite Systems
+
+These systems derive their behavior from schema `upload: true` annotations — no hardcoded field lists:
+
+- **Upload slots**: `getUploadSlotConfig()` in `lib/api/categoryFileHandler.ts` reads schema
+- **PDF field exclusion**: `getOmitFromPdfSet()` in `lib/pdf/buildPdfData.ts` reads schema
+- **Integrity checks**: `getAttachmentKeys()` in `lib/admin/integrityTypes.ts` reads schema
+- **Entry title**: `getCategoryTitle()` uses `entryTitleField` from category registry
+- **Numeric field detection**: PDF hash reads `kind: 'number'` from schema
+- **Currency formatting**: PDF reads `format: 'currency'` from schema
+- **Dashboard icons/colors**: Read from category registry, rendered via `CategoryIcon` component
+
+### Server/Client Boundary for Icons
+Server components cannot pass icon components as props to client components (serialization boundary). Pass `iconName` string prop and resolve inside the client component using an icon registry map. See `AdminPageShell.tsx` for the pattern.
