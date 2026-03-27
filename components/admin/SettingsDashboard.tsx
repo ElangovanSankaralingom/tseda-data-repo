@@ -302,7 +302,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           </button>
           <button
             onClick={() => setResetAllOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition-all hover:bg-red-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition-all hover:bg-red-500/10"
           >
             <RotateCcw className="size-3.5" />
             {t("adminSettings.resetAll")}
@@ -337,7 +337,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                       isActive
                         ? "bg-white/20 text-white"
-                        : "bg-amber-100 text-amber-700"
+                        : "bg-amber-500/15 text-amber-700"
                     }`}>
                       {count}
                     </span>

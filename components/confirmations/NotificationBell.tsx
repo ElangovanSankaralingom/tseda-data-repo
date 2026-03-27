@@ -135,12 +135,12 @@ export default function NotificationBell({
           setOpen((v) => !v);
           if (!open) setLoaded(false); // Refresh on reopen
         }}
-        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-blue-50" : "hover:bg-[var(--color-dropdown-hover)]"}`}
+        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-blue-500/10" : "hover:bg-[var(--color-dropdown-hover)]"}`}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
       >
         <Bell className={`size-5 ${unreadCount > 0 ? "text-[var(--color-text-secondary)] fill-[var(--color-text-secondary)]" : "text-[var(--color-text-muted)]"}`} />
         {unreadCount > 0 && (
-          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-red-500 font-bold text-white ring-2 ring-[var(--color-card-bg)] animate-subtle-pulse ${
+          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-red-500/15 font-bold text-white ring-2 ring-[var(--color-card-bg)] animate-subtle-pulse ${
             unreadCount >= 10 ? "min-w-5 h-4.5 px-1 text-[8px]" : "size-4.5 text-[10px]"
           }`}>
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -156,7 +156,7 @@ export default function NotificationBell({
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{t('notification.title')}</h3>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700">
                   {unreadCount}
                 </span>
               )}
@@ -190,7 +190,7 @@ export default function NotificationBell({
                 <div
                   key={n.id}
                   className={`border-b border-[var(--color-divider)] px-4 py-3 transition-colors hover:bg-[var(--color-dropdown-hover)] ${
-                    !n.read ? "bg-blue-50 border-l-3 border-l-blue-500" : ""
+                    !n.read ? "bg-blue-500/10 border-l-3 border-l-blue-500" : ""
                   }`}
                 >
                   {n.actionUrl ? (
@@ -245,7 +245,7 @@ function NotificationContent({ notification: n }: { notification: PersistentNoti
     <div className="min-w-0 flex-1">
       <div className="flex items-start justify-between gap-2">
         <div className="text-sm font-semibold text-[var(--color-text-primary)]">{n.title}</div>
-        {!n.read && <span className="mt-1 size-2.5 shrink-0 rounded-full bg-blue-500" />}
+        {!n.read && <span className="mt-1 size-2.5 shrink-0 rounded-full bg-blue-500/15" />}
       </div>
       <p className="mt-0.5 text-xs text-[var(--color-text-secondary)] line-clamp-2">{n.message}</p>
       <span className="mt-1 text-xs text-[var(--color-text-secondary)]">{formatRelative(n.createdAt)}</span>

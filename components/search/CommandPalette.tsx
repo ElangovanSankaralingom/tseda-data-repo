@@ -84,11 +84,11 @@ function TypeIcon({ type }: { type: SearchableItem["type"] }) {
 function TypeBg({ type }: { type: SearchableItem["type"] }) {
   switch (type) {
     case "entry":
-      return "bg-blue-100";
+      return "bg-blue-500/15";
     case "user":
-      return "bg-emerald-100";
+      return "bg-emerald-500/15";
     case "category":
-      return "bg-amber-100";
+      return "bg-amber-500/15";
     case "page":
       return "bg-[var(--color-dropdown-hover)]";
   }
@@ -135,7 +135,7 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
       parts.push(text.slice(cursor, start));
     }
     parts.push(
-      <mark key={start} className="rounded bg-amber-100 px-0.5 text-amber-900">
+      <mark key={start} className="rounded bg-amber-500/15 px-0.5 text-amber-900">
         {text.slice(start, end)}
       </mark>,
     );

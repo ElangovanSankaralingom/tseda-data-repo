@@ -82,8 +82,8 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
     <span
       className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
         isOk
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-amber-200 bg-amber-50 text-amber-900"
+          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+          : "border-amber-500/20 bg-amber-500/10 text-amber-900"
       }`}
     >
       {isOk ? t("adminMaintenance.allSystemsHealthy") : t("adminMaintenance.partialFailure")} &middot; {formatTimeAgo(lastRun.finishedAt)}
@@ -111,7 +111,7 @@ function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data
 function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
   return (
     <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2.5 last:border-0">
-      <div className={`flex size-6 shrink-0 items-center justify-center rounded-full ${entry.success ? "bg-emerald-50 text-emerald-500" : "bg-red-50 text-red-500"}`}>
+      <div className={`flex size-6 shrink-0 items-center justify-center rounded-full ${entry.success ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
         {entry.success ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
       </div>
       <div className="min-w-0 flex-1">
@@ -138,7 +138,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       endpoint: "/api/admin/maintenance/backup",
       method: "POST",
       accent: "hover:ring-blue-200",
-      iconBg: "bg-blue-50 text-blue-600",
+      iconBg: "bg-blue-500/10 text-blue-600",
     },
     {
       id: "integrity-check",
@@ -148,7 +148,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       endpoint: "/api/admin/maintenance/integrity-check",
       method: "POST",
       accent: "hover:ring-emerald-200",
-      iconBg: "bg-emerald-50 text-emerald-600",
+      iconBg: "bg-emerald-500/10 text-emerald-600",
     },
     {
       id: "wal-compact",
@@ -158,7 +158,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       endpoint: "/api/admin/maintenance/wal-compact",
       method: "POST",
       accent: "hover:ring-amber-200",
-      iconBg: "bg-amber-50 text-amber-600",
+      iconBg: "bg-amber-500/10 text-amber-600",
     },
     {
       id: "cleanup",
@@ -168,7 +168,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       endpoint: "/api/admin/maintenance/cleanup",
       method: "POST",
       accent: "hover:ring-red-200",
-      iconBg: "bg-red-50 text-red-600",
+      iconBg: "bg-red-500/10 text-red-600",
     },
     {
       id: "rebuild-indexes",
@@ -188,7 +188,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       endpoint: "/api/admin/maintenance/migrate",
       method: "POST",
       accent: "hover:ring-indigo-200",
-      iconBg: "bg-indigo-50 text-indigo-600",
+      iconBg: "bg-indigo-500/10 text-indigo-600",
     },
   ], [t]);
 
@@ -300,8 +300,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
               {results[job.id] ? (
                 <div className={`mt-3 rounded-lg px-3 py-1.5 text-xs font-medium ${
                   results[job.id].ok
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border border-red-200 bg-red-50 text-red-700"
+                    ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+                    : "border border-red-500/20 bg-red-500/10 text-red-700"
                 }`}>
                   {results[job.id].message}
                 </div>

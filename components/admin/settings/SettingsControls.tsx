@@ -50,7 +50,7 @@ export function Toggle({
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-text-primary)]/20 disabled:cursor-not-allowed disabled:opacity-50 ${
         checked
           ? dangerous
-            ? "bg-red-500"
+            ? "bg-red-500/15"
             : "bg-[var(--color-button-primary-bg)]"
           : "bg-[var(--color-dropdown-hover)]"
       }`}
@@ -275,9 +275,9 @@ export function SettingRow({
           def.dangerous ? "border-l-4 border-l-red-400 border-[var(--color-card-border)]" : "border-[var(--color-card-border)]"
         } ${
           status === "saved"
-            ? "bg-emerald-50/60"
+            ? "bg-emerald-500/10"
             : status === "error"
-            ? "bg-red-50/60"
+            ? "bg-red-500/10"
             : "bg-[var(--color-card-bg)] hover:border-[var(--color-text-muted)]"
         }`}
       >
@@ -290,7 +290,7 @@ export function SettingRow({
               )}
               <span className="text-sm font-medium text-[var(--color-text-primary)]">{def.label}</span>
               {def.requiresRestart && (
-                <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
+                <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
                   Restart required
                 </span>
               )}

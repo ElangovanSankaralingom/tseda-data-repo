@@ -15,11 +15,11 @@ export default function EntryStatusBadge({ status, className }: { status?: Entry
     <span
       className={cx(
         "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
-        normalized === "GENERATED" && "border-blue-200 bg-blue-50 text-blue-700",
-        normalized === "EDIT_REQUESTED" && "border-amber-200 bg-amber-50 text-amber-800",
-        normalized === "EDIT_GRANTED" && "border-emerald-200 bg-emerald-50 text-emerald-700",
+        normalized === "GENERATED" && "border-blue-500/20 bg-blue-500/10 text-blue-700",
+        normalized === "EDIT_REQUESTED" && "border-amber-500/20 bg-amber-500/10 text-amber-800",
+        normalized === "EDIT_GRANTED" && "border-emerald-500/20 bg-emerald-500/10 text-emerald-700",
         normalized === "DRAFT" && "border-[var(--color-card-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]",
-        normalized === "DELETE_REQUESTED" && "border-red-200 bg-red-50 text-red-700",
+        normalized === "DELETE_REQUESTED" && "border-red-500/20 bg-red-500/10 text-red-700",
         normalized === "ARCHIVED" && "border-[var(--color-input-border)] bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
         className
       )}

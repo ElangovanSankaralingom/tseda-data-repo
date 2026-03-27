@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import DateField from "@/components/controls/DateField";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import { SectionCard, Field } from "./AccountUI";
@@ -20,13 +21,14 @@ interface AcademicTabProps {
 }
 
 export default function AcademicTab({ draft, setDraft, errors, shouldShowError }: AcademicTabProps) {
+  const { t } = useTranslation();
   return (
-    <SectionCard title="Academic Details">
+    <SectionCard title={t("account.academicDetails")}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="Employee ID (6 digits)"
+          label={t("account.employeeId")}
           error={shouldShowError("employeeId") ? errors.employeeId : undefined}
-          hint="Exactly 6 digits"
+          hint={t("account.exactlySixDigits")}
         >
           <input
             inputMode="numeric"
@@ -49,7 +51,7 @@ export default function AcademicTab({ draft, setDraft, errors, shouldShowError }
           />
         </Field>
 
-        <Field label="Date of Joining TCE" error={shouldShowError("doj") ? errors.doj : undefined}>
+        <Field label={t("account.dateOfJoiningTCE")} error={shouldShowError("doj") ? errors.doj : undefined}>
           <DateField
             value={draft.academic?.dateOfJoiningTCE ?? ""}
             onChange={(value) =>
@@ -62,7 +64,7 @@ export default function AcademicTab({ draft, setDraft, errors, shouldShowError }
           />
         </Field>
 
-        <Field label="Current Designation">
+        <Field label={t("account.currentDesignation")}>
           <SelectDropdown
             value={draft.academic?.designation ?? ""}
             onChange={(value) =>
@@ -75,11 +77,11 @@ export default function AcademicTab({ draft, setDraft, errors, shouldShowError }
               }))
             }
             options={DESIGNATION_OPTIONS}
-            placeholder="Select designation"
+            placeholder={t("account.selectDesignation")}
           />
         </Field>
 
-        <Field label="Ph.D. Status">
+        <Field label={t("account.phdStatus")}>
           <SelectDropdown
             value={draft.academic?.phdStatus ?? ""}
             onChange={(value) =>
@@ -92,7 +94,7 @@ export default function AcademicTab({ draft, setDraft, errors, shouldShowError }
               }))
             }
             options={PHD_STATUS_OPTIONS}
-            placeholder="Select Ph.D. status"
+            placeholder={t("account.selectPhdStatus")}
           />
         </Field>
       </div>

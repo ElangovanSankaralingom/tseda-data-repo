@@ -35,11 +35,11 @@ const CATEGORY_THEME: Record<string, {
   buttonBg: string;
   buttonHover: string;
 }> = {
-  "fdp-attended": { icon: BookOpen, accentBg: "bg-blue-50", accentText: "text-blue-600", borderColor: "border-t-blue-500", buttonBg: "bg-blue-600", buttonHover: "hover:bg-blue-700" },
-  "fdp-conducted": { icon: Presentation, accentBg: "bg-emerald-50", accentText: "text-emerald-600", borderColor: "border-t-emerald-500", buttonBg: "bg-emerald-600", buttonHover: "hover:bg-emerald-700" },
-  "case-studies": { icon: FileText, accentBg: "bg-amber-50", accentText: "text-amber-600", borderColor: "border-t-amber-500", buttonBg: "bg-amber-600", buttonHover: "hover:bg-amber-700" },
-  "guest-lectures": { icon: Mic, accentBg: "bg-purple-50", accentText: "text-purple-600", borderColor: "border-t-purple-500", buttonBg: "bg-purple-600", buttonHover: "hover:bg-purple-700" },
-  workshops: { icon: Wrench, accentBg: "bg-rose-50", accentText: "text-rose-600", borderColor: "border-t-rose-500", buttonBg: "bg-rose-600", buttonHover: "hover:bg-rose-700" },
+  "fdp-attended": { icon: BookOpen, accentBg: "bg-blue-500/10", accentText: "text-blue-600", borderColor: "border-t-blue-500", buttonBg: "bg-blue-600", buttonHover: "hover:bg-blue-700" },
+  "fdp-conducted": { icon: Presentation, accentBg: "bg-emerald-500/10", accentText: "text-emerald-600", borderColor: "border-t-emerald-500", buttonBg: "bg-emerald-600", buttonHover: "hover:bg-emerald-700" },
+  "case-studies": { icon: FileText, accentBg: "bg-amber-500/10", accentText: "text-amber-600", borderColor: "border-t-amber-500", buttonBg: "bg-amber-600", buttonHover: "hover:bg-amber-700" },
+  "guest-lectures": { icon: Mic, accentBg: "bg-purple-500/10", accentText: "text-purple-600", borderColor: "border-t-purple-500", buttonBg: "bg-purple-600", buttonHover: "hover:bg-purple-700" },
+  workshops: { icon: Wrench, accentBg: "bg-rose-500/10", accentText: "text-rose-600", borderColor: "border-t-rose-500", buttonBg: "bg-rose-600", buttonHover: "hover:bg-rose-700" },
 };
 
 const DEFAULT_THEME = CATEGORY_THEME["fdp-attended"]!;
@@ -86,7 +86,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
     >
       {/* Notification badge */}
       {actionableCount > 0 && (
-        <span className="absolute -top-2 -right-2 z-10 flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm">
+        <span className="absolute -top-2 -right-2 z-10 flex size-5 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-bold text-white shadow-sm">
           {actionableCount}
         </span>
       )}

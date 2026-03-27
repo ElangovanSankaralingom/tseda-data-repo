@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import DateField from "@/components/controls/DateField";
 import { INDIAN_INSTITUTIONS } from "@/lib/institutions-in";
 import { computeExperienceTotals } from "@/lib/experience";
@@ -80,10 +81,12 @@ export default function ExperienceTab({
     };
   }
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-4">
       <SectionCard
-        title="Current TCE Experience (Auto)"
+        title={t("account.currentTceExperience")}
         subtitle="Calculated from joining date minus LOP. Updates automatically."
       >
         <div className="grid gap-4 sm:grid-cols-3">
@@ -102,7 +105,7 @@ export default function ExperienceTab({
         </div>
       </SectionCard>
 
-      <SectionCard title="Leave on Loss of Pay (LOP)" subtitle="LOP periods must not overlap and must be within Joining Date..Today.">
+      <SectionCard title={t("account.lopTitle")} subtitle={t("account.lopSubtitle")}>
         <div className="flex justify-end">
           <MiniButton
             onClick={() =>
@@ -128,7 +131,7 @@ export default function ExperienceTab({
               <div key={lop.id} className="rounded-xl border border-border p-3">
                 <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                   <Field
-                    label="Start date"
+                    label={t("account.startDate")}
                     error={shouldShowError(`lop.${lop.id}`) ? errors[`lop.${lop.id}`] : undefined}
                     hint={duration ? `Duration: ${duration}` : undefined}
                   >
@@ -144,7 +147,7 @@ export default function ExperienceTab({
                     />
                   </Field>
 
-                  <Field label="End date">
+                  <Field label={t("account.endDate")}>
                     <DateField
                       value={lop.endDate}
                       onChange={(value) =>
@@ -182,7 +185,7 @@ export default function ExperienceTab({
         </div>
       </SectionCard>
 
-      <SectionCard title="Academic Experience Outside TCE" subtitle="No overlaps within list and no overlaps with Industry. Certificate mandatory.">
+      <SectionCard title={t("account.academicOutside")} subtitle={t("account.academicOutsideSubtitle")}>
         <div className="flex justify-end">
           <MiniButton
             onClick={() =>
@@ -218,9 +221,9 @@ export default function ExperienceTab({
               <div key={a.id} className="rounded-xl border border-border p-3 space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field
-                    label="Institution"
+                    label={t("account.institution")}
                     error={shouldShowError(`ao.inst.${a.id}`) ? errors[`ao.inst.${a.id}`] : undefined}
-                    hint="Type to search; custom allowed"
+                    hint={t("account.typeToSearch")}
                   >
                     <input
                       list="indian-institutions"
@@ -239,7 +242,7 @@ export default function ExperienceTab({
 
                   <div className="grid gap-3 grid-cols-2">
                     <Field
-                      label="Start"
+                      label={t("account.start")}
                       error={
                         shouldShowError(`ao.range.${a.id}`) || shouldShowError(`ao.overlap.${a.id}`) || shouldShowError(`cross.${a.id}`)
                           ? errors[`ao.range.${a.id}`] || errors[`ao.overlap.${a.id}`] || errors[`cross.${a.id}`]
@@ -265,7 +268,7 @@ export default function ExperienceTab({
                     </Field>
 
                     <Field
-                      label="End"
+                      label={t("account.end")}
                       error={
                         shouldShowError(`ao.range.${a.id}`) || shouldShowError(`ao.overlap.${a.id}`) || shouldShowError(`cross.${a.id}`)
                           ? errors[`ao.range.${a.id}`] || errors[`ao.overlap.${a.id}`] || errors[`cross.${a.id}`]
@@ -319,7 +322,7 @@ export default function ExperienceTab({
         </div>
       </SectionCard>
 
-      <SectionCard title="Industry Experience" subtitle="Role + certificate mandatory. No overlaps within list and no overlaps with Academic Outside TCE.">
+      <SectionCard title={t("account.industryExperienceTitle")} subtitle={t("account.industryExperienceSubtitle")}>
         <div className="flex justify-end">
           <MiniButton
             onClick={() =>
@@ -346,7 +349,7 @@ export default function ExperienceTab({
             return (
               <div key={x.id} className="rounded-xl border border-border p-3 space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Company / Organization" error={shouldShowError(`in.org.${x.id}`) ? errors[`in.org.${x.id}`] : undefined}>
+                  <Field label={t("account.companyOrganisation")} error={shouldShowError(`in.org.${x.id}`) ? errors[`in.org.${x.id}`] : undefined}>
                     <input
                       value={x.organization}
                       onChange={(ev) =>
@@ -359,7 +362,7 @@ export default function ExperienceTab({
                     />
                   </Field>
 
-                  <Field label="Role (mandatory)" error={shouldShowError(`in.role.${x.id}`) ? errors[`in.role.${x.id}`] : undefined}>
+                  <Field label={t("account.roleMandatory")} error={shouldShowError(`in.role.${x.id}`) ? errors[`in.role.${x.id}`] : undefined}>
                     <input
                       value={x.role}
                       onChange={(ev) =>
@@ -377,7 +380,7 @@ export default function ExperienceTab({
 
                   <div className="grid gap-3 grid-cols-2 sm:col-span-2">
                     <Field
-                      label="Start"
+                      label={t("account.start")}
                       error={
                         shouldShowError(`in.range.${x.id}`) || shouldShowError(`in.overlap.${x.id}`) || shouldShowError(`cross.${x.id}`)
                           ? errors[`in.range.${x.id}`] || errors[`in.overlap.${x.id}`] || errors[`cross.${x.id}`]
@@ -401,7 +404,7 @@ export default function ExperienceTab({
                     </Field>
 
                     <Field
-                      label="End"
+                      label={t("account.end")}
                       error={
                         shouldShowError(`in.range.${x.id}`) || shouldShowError(`in.overlap.${x.id}`) || shouldShowError(`cross.${x.id}`)
                           ? errors[`in.range.${x.id}`] || errors[`in.overlap.${x.id}`] || errors[`cross.${x.id}`]
@@ -451,7 +454,7 @@ export default function ExperienceTab({
         </div>
       </SectionCard>
 
-      <SectionCard title="Totals" subtitle="Totals update automatically.">
+      <SectionCard title={t("account.totals")} subtitle={t("account.totalsSubtitle")}>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-border p-4">
             <div className="text-xs text-muted-foreground">Academic Outside TCE</div>

@@ -18,12 +18,12 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
             <Loader2 className="size-10 text-[var(--color-text-secondary)] animate-spin" />
           )}
           {p.status === "success" && (
-            <div className="flex size-12 items-center justify-center rounded-full bg-emerald-100">
+            <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/15">
               <CheckCircle className="size-6 text-emerald-600" />
             </div>
           )}
           {p.status === "error" && (
-            <div className="flex size-12 items-center justify-center rounded-full bg-red-100">
+            <div className="flex size-12 items-center justify-center rounded-full bg-red-500/15">
               <XCircle className="size-6 text-red-600" />
             </div>
           )}

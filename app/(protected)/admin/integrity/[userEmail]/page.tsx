@@ -39,13 +39,13 @@ function getParam(params: SearchParams, key: string) {
 
 function getNoticeClass(level: string) {
   if (level === "success") {
-    return "rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700";
+    return "rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700";
   }
   if (level === "warn") {
-    return "rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800";
+    return "rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-800";
   }
   if (level === "error") {
-    return "rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700";
+    return "rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700";
   }
   return "rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground";
 }
@@ -95,7 +95,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
           <BackTo href={adminIntegrity()} label="Integrity" />
           <h1 className="text-2xl font-semibold tracking-tight">Integrity Check</h1>
         </div>
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
           Invalid user email route parameter.
         </div>
       </div>
@@ -291,7 +291,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
       </div>
 
       {reportError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{reportError}</div>
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">{reportError}</div>
       ) : report ? (
         <>
           <div className="mb-4 grid gap-3 md:grid-cols-4">
@@ -299,11 +299,11 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
               <div className="text-xs uppercase tracking-wide text-muted-foreground">Total Issues</div>
               <div className="mt-1 text-xl font-semibold">{report.issues.length}</div>
             </div>
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3">
               <div className="text-xs uppercase tracking-wide text-red-700">Errors</div>
               <div className="mt-1 text-xl font-semibold text-red-800">{severity.error}</div>
             </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
               <div className="text-xs uppercase tracking-wide text-amber-800">Warnings</div>
               <div className="mt-1 text-xl font-semibold text-amber-900">{severity.warn}</div>
             </div>

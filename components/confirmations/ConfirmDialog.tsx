@@ -22,32 +22,32 @@ const TYPE_CONFIG: Record<
 > = {
   info: {
     Icon: Info,
-    iconBg: "bg-blue-100",
+    iconBg: "bg-blue-500/15",
     iconColor: "text-blue-600",
   },
   warning: {
     Icon: AlertTriangle,
-    iconBg: "bg-amber-100",
+    iconBg: "bg-amber-500/15",
     iconColor: "text-amber-600",
     accent: "border-l-4 border-l-amber-500",
   },
   danger: {
     Icon: AlertOctagon,
-    iconBg: "bg-red-100",
+    iconBg: "bg-red-500/15",
     iconColor: "text-red-600",
     accent: "border-l-4 border-l-red-500",
   },
   success: {
     Icon: CheckCircle,
-    iconBg: "bg-emerald-100",
+    iconBg: "bg-emerald-500/15",
     iconColor: "text-emerald-600",
   },
 };
 
 const CONFIRM_STYLE: Record<string, string> = {
   primary: "bg-[var(--color-button-primary-bg)] text-white hover:bg-[var(--color-button-primary-hover)]",
-  danger: "bg-red-500 text-white hover:bg-red-600",
-  warning: "bg-amber-500 text-white hover:bg-amber-600",
+  danger: "bg-red-500/15 text-white hover:bg-red-600",
+  warning: "bg-amber-500/15 text-white hover:bg-amber-600",
 };
 
 export default function ConfirmDialog({ options, onResult }: { options: ConfirmationDialogOptions; onResult: (confirmed: boolean) => void }) {
@@ -225,7 +225,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
                 value={typedText}
                 onChange={(e) => setTypedText(e.target.value)}
                 placeholder={requireTypedConfirmation}
-                className="w-full rounded-lg border border-red-200 bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                className="w-full rounded-lg border border-red-500/20 bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                 autoComplete="off"
                 spellCheck={false}
               />

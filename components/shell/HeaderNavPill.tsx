@@ -10,7 +10,7 @@ export default function HeaderNavPill({
   label,
   active,
   hasDot,
-  dotColor = "bg-amber-500",
+  dotColor = "bg-amber-500/15",
 }: {
   href: string;
   icon: LucideIcon;

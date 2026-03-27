@@ -79,8 +79,8 @@ export default async function AdminBackupsPage({
         <div
           className={
             status === "ok"
-              ? "mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
-              : "mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              ? "mb-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
+              : "mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700"
           }
         >
           {message || (status === "ok" ? "Backup operation completed." : "Backup operation failed.")}
@@ -88,7 +88,7 @@ export default async function AdminBackupsPage({
       ) : null}
 
       {errors.length > 0 ? (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
           {errors.join(" ")}
         </div>
       ) : null}

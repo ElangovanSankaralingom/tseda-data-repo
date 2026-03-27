@@ -587,7 +587,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   return (
     <>
     {autoSaveFailed && (
-      <div className="sticky top-0 z-40 mx-[-1rem] flex items-center gap-2 rounded-none border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-sm sm:mx-0 sm:rounded-lg">
+      <div className="sticky top-0 z-40 mx-[-1rem] flex items-center gap-2 rounded-none border border-amber-300 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-800 shadow-sm sm:mx-0 sm:rounded-lg">
         <AlertTriangle className="size-4 shrink-0" />
         <span>{SYSTEM.autoSaveFailed}</span>
       </div>

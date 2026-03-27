@@ -170,7 +170,7 @@ function ScanProgress() {
 function UserSummaryRow({ summary }: { summary: IntegrityReport["userSummaries"][number] }) {
   const hasErrors = summary.checkFailed || summary.errorCount > 0;
   const hasWarnings = summary.warnCount > 0;
-  const dotColor = hasErrors ? "bg-red-500" : hasWarnings ? "bg-amber-500" : "bg-emerald-500";
+  const dotColor = hasErrors ? "bg-red-500/15" : hasWarnings ? "bg-amber-500/15" : "bg-emerald-500/15";
 
   return (
     <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2 last:border-0">
@@ -184,7 +184,7 @@ function UserSummaryRow({ summary }: { summary: IntegrityReport["userSummaries"]
         {summary.infoCount > 0 ? <span>I:{summary.infoCount}</span> : null}
         {summary.totalIssues === 0 ? <span className="text-emerald-600">Clean</span> : null}
         {summary.fixableCount > 0 ? (
-          <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-emerald-600">{summary.fixableCount} fixable</span>
+          <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600">{summary.fixableCount} fixable</span>
         ) : null}
       </div>
     </div>
@@ -203,9 +203,9 @@ function formatTimeAgo(isoString: string) {
 
 function HistoryRow({ report }: { report: IntegrityReport }) {
   const dotColor =
-    report.status === "healthy" ? "bg-emerald-500" :
-    report.status === "warnings" ? "bg-amber-500" :
-    "bg-red-500";
+    report.status === "healthy" ? "bg-emerald-500/15" :
+    report.status === "warnings" ? "bg-amber-500/15" :
+    "bg-red-500/15";
 
   const totalIssues = report.summary.criticalIssues + report.summary.warnings + report.summary.infoItems;
   const pct = report.summary.totalChecks > 0
@@ -233,7 +233,7 @@ function HistoryRow({ report }: { report: IntegrityReport }) {
 function RepairSummary({ data, onClose }: { data: Record<string, unknown>; onClose: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 animate-scale-in">
+    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 animate-scale-in">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
           <Wrench className="size-4 text-emerald-600" />
@@ -271,7 +271,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       label: t("adminIntegrity.fileSystem"),
       icon: <HardDrive className="size-5" />,
       accentRing: "hover:ring-blue-200",
-      iconBg: "bg-blue-50 text-blue-600",
+      iconBg: "bg-blue-500/10 text-blue-600",
       passText: t("adminIntegrity.allFilesHealthy"),
       failText: t("adminIntegrity.corruptFiles"),
     },
@@ -289,7 +289,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       label: t("adminIntegrity.businessRules"),
       icon: <Scale className="size-5" />,
       accentRing: "hover:ring-amber-200",
-      iconBg: "bg-amber-50 text-amber-600",
+      iconBg: "bg-amber-500/10 text-amber-600",
       passText: t("adminIntegrity.allRulesSatisfied"),
       failText: t("adminIntegrity.ruleViolations"),
     },
@@ -298,7 +298,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       label: t("adminIntegrity.references"),
       icon: <Link2 className="size-5" />,
       accentRing: "hover:ring-emerald-200",
-      iconBg: "bg-emerald-50 text-emerald-600",
+      iconBg: "bg-emerald-500/10 text-emerald-600",
       passText: t("adminIntegrity.allReferencesIntact"),
       failText: t("adminIntegrity.brokenReferences"),
     },
@@ -307,7 +307,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       label: t("adminIntegrity.dataQuality"),
       icon: <Sparkles className="size-5" />,
       accentRing: "hover:ring-rose-200",
-      iconBg: "bg-rose-50 text-rose-600",
+      iconBg: "bg-rose-500/10 text-rose-600",
       passText: t("adminIntegrity.dataQualityExcellent"),
       failText: t("adminIntegrity.qualityConcerns"),
     },
@@ -368,7 +368,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
     <div className="space-y-6">
       {/* Error banner */}
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 animate-fade-in-up">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-700 animate-fade-in-up">
           {error}
         </div>
       ) : null}
@@ -399,15 +399,15 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
             {hasReport && !scanning ? (
               <div className="mb-2">
                 {report.status === "healthy" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700">
                     <ShieldCheck className="size-3.5" /> {t("adminIntegrity.allClear")}
                   </span>
                 ) : report.status === "warnings" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-900">
                     <ShieldAlert className="size-3.5" /> {totalIssues} {totalIssues !== 1 ? t("adminIntegrity.warnings") : t("adminIntegrity.warning")}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-medium text-red-700 animate-subtle-pulse">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 animate-subtle-pulse">
                     <ShieldX className="size-3.5" /> {t("adminIntegrity.criticalIssues")}
                   </span>
                 )}
@@ -458,7 +458,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
                   type="button"
                   disabled={repairing || scanning}
                   onClick={() => void runRepair()}
-                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-sm font-medium text-emerald-700 transition-all duration-150 hover:bg-emerald-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-emerald-300 bg-emerald-500/10 px-5 py-2.5 text-sm font-medium text-emerald-700 transition-all duration-150 hover:bg-emerald-500/15 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {repairing ? (
                     <span className="flex items-center gap-1.5">
@@ -514,7 +514,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
 
       {/* Clean scan celebration */}
       {hasReport && !scanning && totalIssues === 0 ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center animate-scale-in">
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 text-center animate-scale-in">
           <ShieldCheck className="mx-auto size-8 text-emerald-500 mb-2" />
           <div className="text-sm font-medium text-emerald-700">{t("adminIntegrity.cleanScanMsg")}</div>
         </div>

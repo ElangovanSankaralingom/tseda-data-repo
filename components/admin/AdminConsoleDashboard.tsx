@@ -17,10 +17,10 @@ function HealthDot({ status, size = "sm" }: { status: HealthStatus; size?: "sm" 
   const sizeClass = size === "md" ? "size-3" : "size-2.5";
   const color =
     status === "green"
-      ? "bg-emerald-500"
+      ? "bg-emerald-500/15"
       : status === "amber"
-        ? "bg-amber-500 animate-subtle-pulse"
-        : "bg-red-500 animate-subtle-pulse";
+        ? "bg-amber-500/15 animate-subtle-pulse"
+        : "bg-red-500/15 animate-subtle-pulse";
   return <span className={`${sizeClass} rounded-full ${color} inline-block`} />;
 }
 
@@ -50,12 +50,12 @@ function FeatureCardItem({ card, index }: { card: FeatureCard; index: number }) 
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold text-[var(--color-text-primary)]">{card.title}</span>
           {card.badge && card.badge > 0 ? (
-            <span className={`flex size-5 items-center justify-center rounded-full text-xs font-bold text-white ${card.badgeColor ?? "bg-amber-500"} ${card.badgeColor === "bg-amber-500" ? "animate-subtle-pulse" : ""}`}>
+            <span className={`flex size-5 items-center justify-center rounded-full text-xs font-bold text-white ${card.badgeColor ?? "bg-amber-500/15"} ${card.badgeColor === "bg-amber-500/15" ? "animate-subtle-pulse" : ""}`}>
               {card.badge}
             </span>
           ) : null}
           {card.badgeDot ? (
-            <span className={`size-2.5 rounded-full ${card.badgeColor ?? "bg-red-500"} animate-subtle-pulse`} />
+            <span className={`size-2.5 rounded-full ${card.badgeColor ?? "bg-red-500/15"} animate-subtle-pulse`} />
           ) : null}
         </div>
         <p className="mt-0.5 text-sm text-[var(--color-text-secondary)] line-clamp-1">{card.description}</p>

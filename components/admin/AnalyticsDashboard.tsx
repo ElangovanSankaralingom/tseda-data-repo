@@ -276,7 +276,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           label={t("adminAnalytics.entries")}
           value={totalEntries}
           accent="border-t-2 border-t-blue-400"
-          iconBg="bg-blue-100"
+          iconBg="bg-blue-500/15"
           iconColor="text-blue-500"
           hoverRing="hover:ring-2 hover:ring-blue-200/50"
           current={totalEntries}
@@ -288,7 +288,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           label={t("adminAnalytics.activeUsers")}
           value={activeUsers}
           accent="border-t-2 border-t-emerald-400"
-          iconBg="bg-emerald-100"
+          iconBg="bg-emerald-500/15"
           iconColor="text-emerald-500"
           hoverRing="hover:ring-2 hover:ring-emerald-200/50"
           current={activeUsers}
@@ -301,7 +301,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           value={completionRate}
           suffix="%"
           accent="border-t-2 border-t-amber-400"
-          iconBg="bg-amber-100"
+          iconBg="bg-amber-500/15"
           iconColor="text-amber-500"
           hoverRing="hover:ring-2 hover:ring-amber-200/50"
           current={completionRate}
@@ -313,7 +313,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           label={t("adminAnalytics.streakWins")}
           value={snapshot.streaks.totalWins}
           accent="border-t-2 border-t-yellow-400"
-          iconBg="bg-yellow-100"
+          iconBg="bg-yellow-500/15"
           iconColor="text-yellow-500"
           hoverRing="hover:ring-2 hover:ring-yellow-200/50"
           current={snapshot.streaks.totalWins}
@@ -325,7 +325,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           label={t("adminAnalytics.avgPerUser")}
           value={avgPerUser}
           accent="border-t-2 border-t-purple-400"
-          iconBg="bg-purple-100"
+          iconBg="bg-purple-500/15"
           iconColor="text-purple-500"
           hoverRing="hover:ring-2 hover:ring-purple-200/50"
           current={avgPerUser}
@@ -337,7 +337,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           label={t("adminAnalytics.pendingEdits")}
           value={pendingRequests}
           accent="border-t-2 border-t-rose-400"
-          iconBg="bg-rose-100"
+          iconBg="bg-rose-500/15"
           iconColor="text-rose-500"
           hoverRing="hover:ring-2 hover:ring-rose-200/50"
           current={pendingRequests}

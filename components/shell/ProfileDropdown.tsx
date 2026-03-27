@@ -88,7 +88,7 @@ export default function ProfileDropdown({
             <div className="text-sm font-semibold text-[var(--color-text-primary)]">{name}</div>
             <div className="truncate font-mono text-xs text-[var(--color-text-secondary)]">{email}</div>
             {isAdmin && (
-              <span className="mt-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              <span className="mt-1 inline-block rounded-full bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-700">
                 Admin
               </span>
             )}
@@ -115,7 +115,7 @@ export default function ProfileDropdown({
               setOpen(false);
               onSignOut();
             }}
-            className="mx-1 flex w-[calc(100%-0.5rem)] items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
+            className="mx-1 flex w-[calc(100%-0.5rem)] items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-500/10 cursor-pointer"
           >
             <LogOut className="size-4" />
             {t('nav.signOut')}

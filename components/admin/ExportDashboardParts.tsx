@@ -24,15 +24,15 @@ const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const TEMPLATE_ICON_BG: Record<string, string> = {
-  CheckCircle: "bg-emerald-50 text-emerald-600",
-  BarChart3: "bg-blue-50 text-blue-600",
+  CheckCircle: "bg-emerald-500/10 text-emerald-600",
+  BarChart3: "bg-blue-500/10 text-blue-600",
   Calendar: "bg-violet-50 text-violet-600",
-  FileWarning: "bg-amber-50 text-amber-600",
+  FileWarning: "bg-amber-500/10 text-amber-600",
 };
 
 const FORMAT_BADGE: Record<string, { bg: string; label: string }> = {
-  xlsx: { bg: "bg-emerald-100 text-emerald-700", label: "XLSX" },
-  csv: { bg: "bg-blue-100 text-blue-700", label: "CSV" },
+  xlsx: { bg: "bg-emerald-500/15 text-emerald-700", label: "XLSX" },
+  csv: { bg: "bg-blue-500/15 text-blue-700", label: "CSV" },
   json: { bg: "bg-violet-100 text-violet-700", label: "JSON" },
 };
 

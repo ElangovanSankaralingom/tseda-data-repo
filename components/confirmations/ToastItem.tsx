@@ -24,28 +24,28 @@ const TYPE_CONFIG: Record<
 > = {
   success: {
     Icon: CheckCircle,
-    iconBg: "bg-emerald-100",
+    iconBg: "bg-emerald-500/15",
     iconColor: "text-emerald-600",
     border: "border-l-emerald-500",
     defaultDuration: 4000,
   },
   error: {
     Icon: XCircle,
-    iconBg: "bg-red-100",
+    iconBg: "bg-red-500/15",
     iconColor: "text-red-600",
     border: "border-l-red-500",
     defaultDuration: 8000,
   },
   warning: {
     Icon: AlertTriangle,
-    iconBg: "bg-amber-100",
+    iconBg: "bg-amber-500/15",
     iconColor: "text-amber-600",
     border: "border-l-amber-500",
     defaultDuration: 6000,
   },
   info: {
     Icon: Info,
-    iconBg: "bg-blue-100",
+    iconBg: "bg-blue-500/15",
     iconColor: "text-blue-600",
     border: "border-l-blue-500",
     defaultDuration: 4000,
@@ -196,7 +196,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
         <div className="absolute bottom-0 left-0 right-0 h-0.5">
           <div
             className={`h-full transition-none ${
-              isUndo ? "bg-white/30" : toast.type === "success" ? "bg-emerald-500" : toast.type === "error" ? "bg-red-500" : toast.type === "warning" ? "bg-amber-500" : "bg-blue-500"
+              isUndo ? "bg-white/30" : toast.type === "success" ? "bg-emerald-500/15" : toast.type === "error" ? "bg-red-500/15" : toast.type === "warning" ? "bg-amber-500/15" : "bg-blue-500/15"
             }`}
             style={{ width: `${progress}%` }}
           />

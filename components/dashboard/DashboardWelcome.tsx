@@ -50,7 +50,7 @@ export default function DashboardWelcome({
       </div>
       <div className="flex items-center gap-3">
         {streakActivated > 0 && (
-          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900">
+          <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-900">
             <Flame className="size-4" />
             {streakActivated}
           </div>
