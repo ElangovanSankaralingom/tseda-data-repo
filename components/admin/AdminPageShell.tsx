@@ -35,7 +35,7 @@ export default function AdminPageShell({
           <div className="min-w-0">
             <Link
               href={backHref}
-              className="group mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] transition-all duration-200 hover:bg-white/20 hover:text-white active:scale-95"
+              className="group mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/70 transition-all duration-200 hover:bg-white/20 hover:text-white active:scale-95"
             >
               <ArrowLeft className="size-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
               {backLabel}
@@ -48,7 +48,7 @@ export default function AdminPageShell({
               )}
               <div>
                 <h1 className="text-2xl font-bold text-white">{title}</h1>
-                <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">{subtitle}</p>
+                <p className="mt-0.5 text-sm text-white/60">{subtitle}</p>
               </div>
             </div>
             {pills && pills.length > 0 && (
