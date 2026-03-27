@@ -58,10 +58,10 @@ export function AreaChart({
           <stop offset="100%" stopColor="var(--color-text-primary)" stopOpacity="0.01" />
         </linearGradient>
       </defs>
-      {yLabels.map((v) => {
+      {yLabels.map((v, i) => {
         const y = padY + chartH - (v / maxVal) * chartH;
         return (
-          <g key={v}>
+          <g key={i}>
             <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="var(--color-card-border)" strokeWidth="1" />
             <text x={padX - 6} y={y + 4} textAnchor="end" className="fill-[var(--color-text-muted)] text-[10px]">
               {v}
