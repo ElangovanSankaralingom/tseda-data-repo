@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getInitials, type Profile } from "./types";
 
@@ -19,10 +20,11 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
         <div className="ring-4 ring-white/20 rounded-full shadow-lg transition-shadow duration-500">
           <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)]">
             {photo && !avatarLoadFailed ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <Image
                 src={photo}
                 alt="Profile"
+                width={80}
+                height={80}
                 className="h-full w-full object-cover"
                 onError={() => setAvatarLoadFailed(true)}
               />

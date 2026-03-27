@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import SelectDropdown from "@/components/controls/SelectDropdown";
@@ -116,10 +117,11 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
   if (user.image) {
     return (
       <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={user.image}
           alt={user.name}
+          width={size === "lg" ? 64 : size === "md" ? 44 : 32}
+          height={size === "lg" ? 64 : size === "md" ? 44 : 32}
           className={`${sizeClasses} rounded-full ring-2 ring-[var(--color-card-bg)] shadow-sm object-cover`}
           referrerPolicy="no-referrer"
         />

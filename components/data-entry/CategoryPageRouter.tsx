@@ -1,23 +1,19 @@
 "use client";
 
+import { lazy, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
-
-import { FdpAttendedPage } from "@/components/data-entry/adapters/fdp-attended";
-import { FdpConductedPage } from "@/components/data-entry/adapters/fdp-conducted";
-import { CaseStudiesPage } from "@/components/data-entry/adapters/case-studies";
-import { GuestLecturesPage } from "@/components/data-entry/adapters/guest-lectures";
-import { WorkshopsPage } from "@/components/data-entry/adapters/workshops";
+import EntryListSkeleton from "@/components/data-entry/EntryListSkeleton";
 
 type AdapterComponent = React.ComponentType<CategoryAdapterPageProps>;
 
-const ADAPTER_MAP: Record<string, AdapterComponent> = {
-  "fdp-attended": FdpAttendedPage,
-  "fdp-conducted": FdpConductedPage,
-  "case-studies": CaseStudiesPage,
-  "guest-lectures": GuestLecturesPage,
-  workshops: WorkshopsPage,
+const ADAPTER_MAP: Record<string, React.LazyExoticComponent<AdapterComponent>> = {
+  "fdp-attended": lazy(() => import("@/components/data-entry/adapters/fdp-attended")),
+  "fdp-conducted": lazy(() => import("@/components/data-entry/adapters/fdp-conducted")),
+  "case-studies": lazy(() => import("@/components/data-entry/adapters/case-studies")),
+  "guest-lectures": lazy(() => import("@/components/data-entry/adapters/guest-lectures")),
+  workshops: lazy(() => import("@/components/data-entry/adapters/workshops")),
 };
 
 export default function CategoryPageRouter({
@@ -29,5 +25,9 @@ export default function CategoryPageRouter({
   const Adapter = ADAPTER_MAP[category];
   if (!Adapter) notFound();
 
-  return <Adapter {...props} />;
+  return (
+    <Suspense fallback={<EntryListSkeleton />}>
+      <Adapter {...props} />
+    </Suspense>
+  );
 }
