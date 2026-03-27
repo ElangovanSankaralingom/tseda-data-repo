@@ -5,34 +5,34 @@ export const STATUS_COLORS: Record<
   { badge: string; border: string; icon: string }
 > = {
   DRAFT: {
-    badge: "border-slate-200 bg-slate-50 text-slate-700",
-    border: "border-l-slate-300",
-    icon: "text-slate-600",
+    badge: "border-[var(--color-card-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]",
+    border: "border-l-[var(--color-text-muted)]",
+    icon: "text-[var(--color-text-secondary)]",
   },
   GENERATED: {
-    badge: "border-blue-200 bg-blue-50 text-blue-700",
+    badge: "border-blue-500/20 bg-blue-500/10 text-blue-500",
     border: "border-l-blue-500",
     icon: "text-blue-500",
   },
   EDIT_REQUESTED: {
-    badge: "border-amber-200 bg-amber-100 text-amber-700",
+    badge: "border-amber-500/20 bg-amber-500/10 text-amber-500",
     border: "border-l-amber-500",
     icon: "text-amber-500",
   },
   DELETE_REQUESTED: {
-    badge: "border-red-200 bg-red-100 text-red-700",
+    badge: "border-red-500/20 bg-red-500/10 text-red-500",
     border: "border-l-red-500",
     icon: "text-red-500",
   },
   EDIT_GRANTED: {
-    badge: "border-emerald-200 bg-emerald-100 text-emerald-700",
+    badge: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
     border: "border-l-emerald-500",
     icon: "text-emerald-500",
   },
   ARCHIVED: {
-    badge: "border-slate-300 bg-slate-100 text-slate-700",
-    border: "border-l-slate-400",
-    icon: "text-slate-600",
+    badge: "border-[var(--color-input-border)] bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
+    border: "border-l-[var(--color-text-muted)]",
+    icon: "text-[var(--color-text-secondary)]",
   },
 };
 
