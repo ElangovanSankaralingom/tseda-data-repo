@@ -67,7 +67,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 
   if (group === "locked_in") {
     return (
-      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+      <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
         {t('entry.finalized')}
       </span>
     );
@@ -75,7 +75,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 
   if (group === "under_review") {
     return (
-      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+      <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500">
         {t('entry.editRequested')}
       </span>
     );
@@ -83,7 +83,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 
   if (group === "streak_runners" && editTime?.hasEditWindow && !editTime.expired) {
     return (
-      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+      <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500">
         ⚡ {editTime.remainingLabel}
       </span>
     );
@@ -93,7 +93,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
     const isUrgent = editTime.remainingMs < 24 * 60 * 60 * 1000;
     return (
       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        isUrgent ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+        isUrgent ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
       }`}>
         {isUrgent ? "Expires today!" : editTime.remainingLabel}
       </span>
@@ -102,7 +102,7 @@ function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: Edi
 
   if (group === "unlocked" && editTime?.hasEditWindow && !editTime.expired) {
     return (
-      <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+      <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-medium text-purple-500">
         Unlocked · {editTime.remainingLabel}
       </span>
     );
