@@ -106,7 +106,7 @@ function CategoryHero({
               </span>
             )}
             {stats.pending > 0 && (
-              <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm text-blue-300">
+              <span className="rounded-full bg-white/20 px-3 py-1 text-sm text-white/90">
                 {stats.pending} pending
               </span>
             )}
