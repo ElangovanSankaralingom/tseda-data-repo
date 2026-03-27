@@ -37,9 +37,8 @@ style: align card padding with design system
 Before opening a pull request, all of these must pass:
 
 ```bash
-npm run build    # Production build succeeds
-npm test         # All tests pass
-npm run lint     # No lint errors
+npm run build && npm run lint   # Production build + lint (both required)
+npm test                        # All tests pass
 ```
 
 ## Five Category Route Rule
@@ -135,3 +134,26 @@ Imports should be ordered with blank lines between groups:
   - Data store -> `tests/entries/dataStore.test.ts`
   - Migrations -> `tests/entries/migrations.test.ts`
   - Index store -> `tests/entries/indexStore.test.ts`
+
+## Code Conventions (Current)
+
+### Data Fetching
+- Use `useApi()` hook from `hooks/useApi.ts` for all client-side GET requests
+- Never use `useState + useEffect + fetch` pattern for data loading
+- After mutations, call `mutate('/api/...')` from `swr` to revalidate
+
+### Memoization
+- Wrap components rendered in `.map()` loops with `React.memo`
+- Use `useCallback` for handlers passed to memoized children
+
+### Code Splitting
+- Category adapters use `React.lazy` in `CategoryPageRouter.tsx`
+- No raw `<img>` tags — use `next/image`
+
+### Accessibility
+- Every icon-only button needs `aria-label`
+- New interactive elements need keyboard support
+
+### Server/Client Boundary
+- Never pass React components or functions as props from Server to Client Components
+- Pass string identifiers and resolve inside the client component (see `AdminPageShell.tsx`)

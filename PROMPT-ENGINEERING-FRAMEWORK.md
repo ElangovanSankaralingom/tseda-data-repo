@@ -110,7 +110,7 @@ Every prompt must end with verification steps. If you can't verify it, the fix i
 **Pattern:**
 ```
 ## Verification
-1. npm run build — must pass
+1. npm run build && npm run lint — both must pass
 2. Delete test entry: rm .data/users/senarch@tce.edu/fdp-attended.json
 3. npm run dev
 4. Create entry → fill fields → Generate PDF

@@ -1,6 +1,5 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { FileEdit } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminConfirmationsClient from "@/app/(protected)/admin/confirmations/AdminConfirmationsClient";
 import { authOptions } from "@/lib/auth";
@@ -22,7 +21,7 @@ export default async function AdminConfirmationsPage() {
       title="Entry Confirmations"
       subtitle="Review entries sent for confirmation. Locked mode activates only after approval."
       backHref={adminHome()}
-      icon={FileEdit}
+      iconName="FileEdit"
       maxWidthClassName="max-w-6xl"
     >
       <AdminConfirmationsClient />

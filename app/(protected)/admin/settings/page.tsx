@@ -1,6 +1,5 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { Settings } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import SettingsDashboard from "@/components/admin/SettingsDashboard";
 import { authOptions } from "@/lib/auth";
@@ -28,7 +27,7 @@ export default async function AdminSettingsPage() {
       title="Settings"
       subtitle="Configure T'SEDA to work exactly how you want"
       backHref={adminHome()}
-      icon={Settings}
+      iconName="Settings"
       maxWidthClassName="max-w-6xl"
     >
       <SettingsDashboard initialSettings={settings} initialCounts={counts} />

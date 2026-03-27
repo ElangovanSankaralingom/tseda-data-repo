@@ -1,6 +1,5 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { BarChart3 } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import { authOptions } from "@/lib/auth";
@@ -34,7 +33,7 @@ export default async function AdminAnalyticsPage() {
         title="Analytics"
         subtitle="Charts, trends, and insights across all faculty data"
         backHref={adminHome()}
-        icon={BarChart3}
+        iconName="BarChart3"
         maxWidthClassName="max-w-6xl"
       >
         <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-700">
@@ -49,7 +48,7 @@ export default async function AdminAnalyticsPage() {
       title="Analytics"
       subtitle="Charts, trends, and insights across all faculty data"
       backHref={adminHome()}
-      icon={BarChart3}
+      iconName="BarChart3"
       maxWidthClassName="max-w-6xl"
     >
       <AnalyticsDashboard snapshot={result.data} />

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import BackTo from "@/components/nav/BackTo";
 import ConfirmSubmitButton from "@/components/ui/ConfirmSubmitButton";
@@ -229,7 +228,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
       subtitle="Category-store, index, WAL, and attachment metadata checks with repair actions."
       backHref={adminIntegrity()}
       backLabel="Data Integrity"
-      icon={ShieldCheck}
+      iconName="ShieldCheck"
     >
       {notice ? <div className={`mb-4 ${getNoticeClass(level)}`}>{notice}</div> : null}
 
