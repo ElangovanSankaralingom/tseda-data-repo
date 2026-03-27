@@ -9,7 +9,6 @@ import {
   Lock,
   Megaphone,
   Settings,
-  Shield,
   ShieldAlert,
   ShieldCheck,
   Trash2,

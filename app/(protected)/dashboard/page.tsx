@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import {
   ClipboardList,
-  Flame,
 } from "lucide-react";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import { canAccessAdminConsole } from "@/lib/admin/roles";

@@ -184,7 +184,7 @@ export default function AccountPage() {
     const email = (draft.email || "").trim();
     if (!email) return t("common.profile");
     return email.split("@")[0];
-  }, [draft.officialName, draft.userPreferredName, draft.email]);
+  }, [draft.officialName, draft.userPreferredName, draft.email, t]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
