@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   HardDrive,
   Layers,
@@ -99,7 +99,7 @@ function StatusIcon({ status }: { status: CheckCategoryStatus }) {
   return <ShieldX className="size-4 text-red-500" />;
 }
 
-function CategoryCard({
+const CategoryCard = memo(function CategoryCard({
   def,
   check,
   index,
@@ -135,7 +135,7 @@ function CategoryCard({
       </div>
     </div>
   );
-}
+});
 
 // ---------- Scan Progress ----------
 
@@ -167,7 +167,7 @@ function ScanProgress() {
 
 // ---------- User Summary Row ----------
 
-function UserSummaryRow({ summary }: { summary: IntegrityReport["userSummaries"][number] }) {
+const UserSummaryRow = memo(function UserSummaryRow({ summary }: { summary: IntegrityReport["userSummaries"][number] }) {
   const hasErrors = summary.checkFailed || summary.errorCount > 0;
   const hasWarnings = summary.warnCount > 0;
   const dotColor = hasErrors ? "bg-red-500/15" : hasWarnings ? "bg-amber-500/15" : "bg-emerald-500/15";
@@ -189,7 +189,7 @@ function UserSummaryRow({ summary }: { summary: IntegrityReport["userSummaries"]
       </div>
     </div>
   );
-}
+});
 
 // ---------- History Row ----------
 
@@ -201,7 +201,7 @@ function formatTimeAgo(isoString: string) {
   return `${Math.floor(ms / 86_400_000)}d ago`;
 }
 
-function HistoryRow({ report }: { report: IntegrityReport }) {
+const HistoryRow = memo(function HistoryRow({ report }: { report: IntegrityReport }) {
   const dotColor =
     report.status === "healthy" ? "bg-emerald-500/15" :
     report.status === "warnings" ? "bg-amber-500/15" :
@@ -226,7 +226,7 @@ function HistoryRow({ report }: { report: IntegrityReport }) {
       </div>
     </div>
   );
-}
+});
 
 // ---------- Repair Summary ----------
 

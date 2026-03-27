@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -73,7 +74,7 @@ export type MetricCardProps = {
   stagger: number;
 };
 
-export function MetricCard({
+export const MetricCard = memo(function MetricCard({
   icon: Icon,
   label,
   value,
@@ -108,7 +109,7 @@ export function MetricCard({
       </div>
     </div>
   );
-}
+});
 
 export function SH({ title, description }: { title: string; description: string }) {
   return (

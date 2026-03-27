@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   ChevronRight,
   Clock,
@@ -48,7 +48,7 @@ function relativeTime(iso: string, language: "en" | "ta" = "en"): string {
 }
 
 // ── Category Card ──────────────────────────────────────────────────
-function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) {
+const CategoryCard = memo(function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) {
   const { t, language, categoryLabel } = useTranslation();
   const config = getCategoryConfig(cat.slug);
   const color = config.color;
@@ -166,7 +166,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
       </div>
     </div>
   );
-}
+});
 
 // ── Main Component ─────────────────────────────────────────────────
 export default function DataEntryClient({ greeting, userName, categories, totals }: Props) {

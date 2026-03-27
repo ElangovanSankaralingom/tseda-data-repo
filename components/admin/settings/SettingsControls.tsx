@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, Clock } from "lucide-react";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -116,6 +116,7 @@ export function NumberInput({
           type="button"
           disabled={disabled || (min !== undefined && value <= min)}
           onClick={() => onChange(Math.max(min ?? -Infinity, value - 1))}
+          aria-label="Decrease value"
           className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-card-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           -
@@ -137,6 +138,7 @@ export function NumberInput({
           type="button"
           disabled={disabled || (max !== undefined && value >= max)}
           onClick={() => onChange(Math.min(max ?? Infinity, value + 1))}
+          aria-label="Increase value"
           className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-card-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           +
@@ -223,7 +225,7 @@ export function SelectInput({
 // Setting Row
 // ---------------------------------------------------------------------------
 
-export function SettingRow({
+export const SettingRow = memo(function SettingRow({
   setting,
   onSave,
   onReset,
@@ -384,4 +386,4 @@ export function SettingRow({
       )}
     </>
   );
-}
+});

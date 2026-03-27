@@ -110,7 +110,7 @@ export default function AppShell({
       </aside>
 
       {/* Page Content */}
-      <main className="p-6">{children}</main>
+      <main id="main-content" tabIndex={-1} className="p-6 outline-none">{children}</main>
     </div>
   );
 }

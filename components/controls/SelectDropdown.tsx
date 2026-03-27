@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 export { type SelectDropdownOption } from "@/lib/types/ui";
 import { type SelectDropdownOption } from "@/lib/types/ui";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -32,10 +32,10 @@ export default function SelectDropdown({
 }: SelectDropdownProps) {
   const { valueLabel } = useTranslation();
 
-  function resolveLabel(option: SelectDropdownOption): string {
+  const resolveLabel = useCallback((option: SelectDropdownOption): string => {
     const translated = valueLabel(option.value);
     return translated !== option.value ? translated : option.label;
-  }
+  }, [valueLabel]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);

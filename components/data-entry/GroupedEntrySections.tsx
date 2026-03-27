@@ -226,6 +226,7 @@ export function SmartGroupedEntrySections<TEntry>({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               >
                 <X className="size-3.5" />
