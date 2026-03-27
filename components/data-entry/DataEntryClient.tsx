@@ -99,14 +99,14 @@ const CategoryCard = memo(function CategoryCard({ cat, index }: { cat: CategoryO
                 </span>
               )}
               {cat.streakActivated > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-                  <Flame className="size-3" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/[0.12] px-2 py-0.5 text-xs font-medium text-amber-600 backdrop-blur-sm">
+                  <Flame className="size-3 opacity-70" />
                   {cat.streakActivated} {t('dashboard.active')}
                 </span>
               )}
               {cat.streakWins > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-                  <Trophy className="size-3" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.12] px-2 py-0.5 text-xs font-medium text-emerald-600 backdrop-blur-sm">
+                  <Trophy className="size-3 opacity-70" />
                   {cat.streakWins} {t('dashboard.done')}
                 </span>
               )}
@@ -194,19 +194,19 @@ export default function DataEntryClient({ greeting, userName, categories, totals
         </div>
 
         {hasAnyEntries && (totals.streakActivatedCount > 0 || totals.streakWinsCount > 0) && (
-          <div className="inline-flex items-center gap-0 rounded-full border border-[var(--color-card-border)] overflow-hidden bg-[var(--color-card-bg)]">
+          <div className="inline-flex items-center gap-2">
             {totals.streakActivatedCount > 0 && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 ${totals.streakWinsCount > 0 ? "border-r border-[var(--color-card-border)]" : ""}`}>
-                <Flame className="size-3.5 text-amber-500" />
-                <span className="text-sm font-medium text-amber-500">{totals.streakActivatedCount}</span>
-                <span className="text-xs text-[var(--color-text-secondary)]">{t('dashboard.active')}</span>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/[0.12] px-3 py-1.5 backdrop-blur-md shadow-[0_1px_3px_rgba(245,158,11,0.08)]">
+                <Flame className="size-3.5 text-amber-600 opacity-70" />
+                <span className="text-sm font-medium text-amber-600">{totals.streakActivatedCount}</span>
+                <span className="text-xs text-amber-600/70">{t('dashboard.active')}</span>
               </div>
             )}
             {totals.streakWinsCount > 0 && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5">
-                <Trophy className="size-3.5 text-emerald-500" />
-                <span className="text-sm font-medium text-emerald-500">{totals.streakWinsCount}</span>
-                <span className="text-xs text-[var(--color-text-secondary)]">{totals.streakWinsCount === 1 ? t('dashboard.win') : t('dashboard.wins')}</span>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/[0.12] px-3 py-1.5 backdrop-blur-md shadow-[0_1px_3px_rgba(16,185,129,0.08)]">
+                <Trophy className="size-3.5 text-emerald-600 opacity-70" />
+                <span className="text-sm font-medium text-emerald-600">{totals.streakWinsCount}</span>
+                <span className="text-xs text-emerald-600/70">{totals.streakWinsCount === 1 ? t('dashboard.win') : t('dashboard.wins')}</span>
               </div>
             )}
           </div>
