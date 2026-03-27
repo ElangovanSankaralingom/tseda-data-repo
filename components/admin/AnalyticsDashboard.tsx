@@ -235,47 +235,35 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-6 sm:p-8 animate-fade-in-up">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <BarChart3 className="size-6 text-white/80" />
-              <h1 className="text-2xl font-bold text-white">Analytics</h1>
-            </div>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              How T&apos;SEDA is being used — the full picture
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-[var(--color-text-muted)]">
-              Updated {formatAge(cacheAge)}
-            </span>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20 disabled:opacity-50"
-            >
-              <RefreshCw className={`size-3 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </button>
-          </div>
-        </div>
-        {/* Time range selector */}
-        <div className="mt-4 flex flex-wrap gap-2">
+      {/* Controls toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in-up">
+        <div className="flex flex-wrap gap-2">
           {RANGES.map((r) => (
             <button
               key={r.key}
               onClick={() => setRange(r.key)}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 range === r.key
-                  ? "bg-white text-[var(--color-text-primary)]"
-                  : "bg-white/10 text-white hover:bg-white/20"
+                  ? "bg-[var(--color-button-primary-bg)] text-white"
+                  : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-card-border)]"
               }`}
             >
               {r.label}
             </button>
           ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-[var(--color-text-muted)]">
+            Updated {formatAge(cacheAge)}
+          </span>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-50"
+          >
+            <RefreshCw className={`size-3 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
         </div>
       </div>
 
