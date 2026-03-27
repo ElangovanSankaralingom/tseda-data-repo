@@ -98,6 +98,10 @@ export function adminIntegrityUser(userEmail: string) {
   return `/admin/integrity/${encodeURIComponent(userEmail)}`;
 }
 
+export function settingsAppearance() {
+  return "/settings/appearance";
+}
+
 export function entryList(category: CategoryKey) {
   return `${dataEntryHome()}/${category}`;
 }

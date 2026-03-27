@@ -20,6 +20,7 @@ import type { NightlyMaintenanceSummary } from "@/lib/jobs/nightly";
 import type { SystemStats } from "@/lib/maintenance/stats";
 import type { MaintenanceAction } from "@/lib/maintenance/log";
 import { useCountUp } from "@/hooks/useCountUp";
+import { formatNumber } from "@/lib/i18n/locale";
 
 type Props = {
   lastRun: NightlyMaintenanceSummary | null;
@@ -125,7 +126,7 @@ function StatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: s
 
 function AnimatedStatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: number; sub?: string }) {
   const animated = useCountUp(value);
-  return <StatTile icon={icon} label={label} value={animated.toLocaleString("en-IN")} sub={sub} />;
+  return <StatTile icon={icon} label={label} value={formatNumber(animated, "en")} sub={sub} />;
 }
 
 function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }) {

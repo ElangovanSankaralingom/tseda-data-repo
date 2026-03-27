@@ -4,6 +4,8 @@ import React from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { formatNumber } from "@/lib/i18n/locale";
 
 type StatCardProps = {
   icon: LucideIcon;
@@ -34,6 +36,7 @@ function StatCard({
 }: StatCardProps) {
   const hasGradient = !!gradient;
   const displayValue = useCountUp(value);
+  const { language } = useTranslation();
 
   return (
     <div
@@ -60,7 +63,7 @@ function StatCard({
       </div>
       <div className="mt-3">
         <div className="text-3xl font-bold tabular-nums">
-          {displayValue.toLocaleString("en-IN")}
+          {formatNumber(displayValue, language)}
         </div>
         <div
           className={cn(

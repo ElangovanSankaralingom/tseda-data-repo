@@ -15,6 +15,7 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
+import { formatCurrency } from "@/lib/i18n/locale";
 import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import type { GuestLectureEntry } from "@/components/data-entry/adapters/adapterTypes";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
@@ -560,7 +561,7 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) {
-          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (₹${entry.fundingAmount.toLocaleString("en-IN")})` : entry.fundingAgency;
+          const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (${formatCurrency(entry.fundingAmount, "en")})` : entry.fundingAgency;
           parts.push(`Funded by ${fundingStr}`);
         }
         if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);

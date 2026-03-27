@@ -18,6 +18,7 @@ import {
   daysAgo,
   groupAndCount,
 } from "@/lib/analytics/compare";
+import { adminIntegrity, adminBackups, adminMaintenance } from "@/lib/entryNavigation";
 import {
   ComparisonBadge,
   MetricCard,
@@ -493,10 +494,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         <SH title="System Health" description="Quick pulse check" />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Link
-            href="/admin/integrity"
+            href={adminIntegrity()}
             className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            <div className="flex size-8 items-center justify-center rounded-full bg-emerald-100">
+            <div className="flex size-8 items-center justify-center rounded-full bg-emerald-500/10">
               <Target className="size-4 text-emerald-500" />
             </div>
             <div className="min-w-0">
@@ -505,10 +506,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             </div>
           </Link>
           <a
-            href="/admin/backups"
+            href={adminBackups()}
             className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            <div className="flex size-8 items-center justify-center rounded-full bg-blue-100">
+            <div className="flex size-8 items-center justify-center rounded-full bg-blue-500/10">
               <ClipboardList className="size-4 text-blue-500" />
             </div>
             <div className="min-w-0">
@@ -517,10 +518,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             </div>
           </a>
           <a
-            href="/admin/maintenance"
+            href={adminMaintenance()}
             className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            <div className="flex size-8 items-center justify-center rounded-full bg-amber-100">
+            <div className="flex size-8 items-center justify-center rounded-full bg-amber-500/10">
               <Clock className="size-4 text-amber-500" />
             </div>
             <div className="min-w-0">

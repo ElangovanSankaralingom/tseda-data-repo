@@ -2,20 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  BarChart3,
-  ChevronRight,
-  Download,
-  FileEdit,
-  ScrollText,
-  Settings,
-  Shield,
-  ShieldCheck,
-  Users,
-  Wrench,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 import { type HealthStatus, type DashboardData, type FeatureCard } from "./adminLocalTypes";
+import { adminBackups, adminIntegrity, adminSettings } from "@/lib/entryNavigation";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { ADMIN_TOOLS } from "@/data/adminToolRegistry";
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -83,6 +75,7 @@ export default function AdminConsoleDashboard({
   adminEmail: string;
   permissions: Record<string, boolean>;
 }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -104,118 +97,49 @@ export default function AdminConsoleDashboard({
     void fetchData();
   }, [fetchData]);
 
-  // Feature cards — filtered by permissions, ordered by usage priority
+  // Feature cards — registry-driven, filtered by permissions
   const featureCards = useMemo<FeatureCard[]>(() => {
-    const cards: (FeatureCard | null)[] = [
-      permissions.confirmations
-        ? {
-            title: "Edit Requests",
-            description: "Review and grant edit access",
-            href: "/admin/confirmations",
-            icon: FileEdit,
-            accent: "text-purple-500",
-            accentBg: "bg-purple-500/10",
-            badge: data?.metrics.pendingRequests,
-            badgeColor: "bg-amber-500",
+    return ADMIN_TOOLS
+      .filter((tool) => permissions[tool.id])
+      .map((tool) => {
+        const metrics = data?.metrics as Record<string, number> | undefined;
+        const health = data?.health as Record<string, { status?: string; issues?: number; maintenanceMode?: boolean }> | undefined;
+
+        let badge: number | undefined;
+        let badgeDot: boolean | undefined;
+
+        if (tool.badgeType === "count" && tool.metricKey && metrics) {
+          const val = metrics[tool.metricKey];
+          if (val && val > 0) badge = val;
+        }
+        if (tool.badgeType === "dot" && tool.healthKey && health) {
+          const h = health[tool.healthKey];
+          if (h) {
+            if ("status" in h && h.status === "red") badgeDot = true;
+            if ("issues" in h && (h.issues ?? 0) > 0) badgeDot = true;
+            if ("maintenanceMode" in h && h.maintenanceMode) badgeDot = true;
           }
-        : null,
-      permissions.users
-        ? {
-            title: "Users",
-            description: "Profiles, roles, and activity",
-            href: "/admin/users",
-            icon: Users,
-            accent: "text-blue-500",
-            accentBg: "bg-blue-500/10",
-            badge: data?.metrics.newUsersThisMonth || undefined,
-            badgeColor: "bg-blue-500",
-          }
-        : null,
-      permissions.analytics
-        ? {
-            title: "Analytics",
-            description: "Charts, trends, and insights",
-            href: "/admin/analytics",
-            icon: BarChart3,
-            accent: "text-emerald-500",
-            accentBg: "bg-emerald-500/10",
-          }
-        : null,
-      permissions.export
-        ? {
-            title: "Export",
-            description: "Extract data in any format",
-            href: "/admin/export",
-            icon: Download,
-            accent: "text-amber-500",
-            accentBg: "bg-amber-500/10",
-          }
-        : null,
-      permissions.backups
-        ? {
-            title: "Backup",
-            description: "Create and restore backups",
-            href: "/admin/backups",
-            icon: Shield,
-            accent: "text-indigo-500",
-            accentBg: "bg-indigo-500/10",
-            badgeDot: data?.health.backup.status === "red",
-            badgeColor: "bg-red-500",
-          }
-        : null,
-      permissions.integrity
-        ? {
-            title: "Integrity",
-            description: "Scan and repair data health",
-            href: "/admin/integrity",
-            icon: ShieldCheck,
-            accent: "text-emerald-500",
-            accentBg: "bg-emerald-500/10",
-            badgeDot: (data?.health.integrity.issues ?? 0) > 0,
-            badgeColor: "bg-red-500",
-          }
-        : null,
-      permissions.audit
-        ? {
-            title: "Audit Trail",
-            description: "Full action traceability",
-            href: "/admin/audit",
-            icon: ScrollText,
-            accent: "text-[var(--color-text-secondary)]",
-            accentBg: "bg-[var(--color-dropdown-hover)]",
-          }
-        : null,
-      permissions.maintenance
-        ? {
-            title: "Maintenance",
-            description: "WAL, cleanup, and migrations",
-            href: "/admin/maintenance",
-            icon: Wrench,
-            accent: "text-rose-500",
-            accentBg: "bg-rose-500/10",
-          }
-        : null,
-      permissions.settings
-        ? {
-            title: "Settings",
-            description: "Configure app behavior",
-            href: "/admin/settings",
-            icon: Settings,
-            accent: "text-[var(--color-text-secondary)]",
-            accentBg: "bg-[var(--color-dropdown-hover)]",
-            badgeDot: data?.health.system.maintenanceMode,
-            badgeColor: "bg-amber-500",
-          }
-        : null,
-    ];
-    return cards.filter((c): c is FeatureCard => c !== null);
-  }, [data, permissions]);
+        }
+
+        return {
+          title: t(tool.titleKey),
+          description: t(tool.descriptionKey),
+          href: tool.href,
+          icon: tool.icon,
+          accent: tool.accentText,
+          accentBg: tool.accentBg,
+          badge,
+          badgeDot,
+          badgeColor: tool.badgeColor,
+        };
+      });
+  }, [data, permissions, t]);
 
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-8">
-          <h1 className="text-2xl font-bold text-white">Admin Console</h1>
+          <h1 className="text-2xl font-bold text-white">{t("adminConsole.title")}</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">Loading...</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -231,7 +155,7 @@ export default function AdminConsoleDashboard({
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8">
-          <h1 className="text-2xl font-bold text-white">Admin Console</h1>
+          <h1 className="text-2xl font-bold text-white">{t("adminConsole.title")}</h1>
           <p className="mt-2 text-sm text-red-300">Failed to load dashboard data. Please refresh.</p>
         </div>
       </div>
@@ -244,21 +168,21 @@ export default function AdminConsoleDashboard({
       <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-8 animate-fade-in-up">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Admin Console</h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">Manage, monitor, and maintain T&apos;SEDA</p>
+            <h1 className="text-2xl font-bold text-white">{t("adminConsole.title")}</h1>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t("adminConsole.subtitle")}</p>
           </div>
 
           {/* Health traffic lights */}
           <div className="flex items-center gap-5">
-            <Link href="/admin/backups" className="flex flex-col items-center gap-1.5 group">
+            <Link href={adminBackups()} className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.backup.status} size="md" />
-              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">Backup</span>
+              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">{t("adminConsole.backup")}</span>
             </Link>
-            <Link href="/admin/integrity" className="flex flex-col items-center gap-1.5 group">
+            <Link href={adminIntegrity()} className="flex flex-col items-center gap-1.5 group">
               <HealthDot status={data.health.integrity.status} size="md" />
-              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">Integrity</span>
+              <span className="text-xs text-[var(--color-text-muted)] group-hover:text-[var(--color-text-muted)] transition-colors">{t("adminConsole.integrity")}</span>
             </Link>
-            <Link href="/admin/settings" className="flex flex-col items-center gap-1.5 group">
+            <Link href={adminSettings()} className="flex flex-col items-center gap-1.5 group">
               <HealthDot
                 status={data.health.system.maintenanceMode ? "amber" : "green"}
                 size="md"
@@ -271,7 +195,7 @@ export default function AdminConsoleDashboard({
 
       {/* ── Admin Tools ── */}
       <section>
-        <SectionHeader title="Admin Tools" />
+        <SectionHeader title={t("adminConsole.adminTools")} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {featureCards.map((card, i) => (
             <FeatureCardItem key={card.title} card={card} index={i} />

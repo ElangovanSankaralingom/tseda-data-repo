@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
 import { safeEmailDir } from "@/lib/userStore";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 
 export type PdfMeta = {
   storedPath: string;
@@ -210,7 +211,7 @@ function drawFooter(page: PDFPage, font: PDFFont, boldFont: PDFFont) {
   });
 
   // Name (larger, bold)
-  page.drawText("Dr. Jinu Louishidha Kitchley", {
+  page.drawText(APP_CONFIG.pdf.signatoryName, {
     x: PAGE_WIDTH - MARGIN_RIGHT - 200,
     y: footerTop,
     font: boldFont,

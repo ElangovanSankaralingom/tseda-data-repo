@@ -13,6 +13,7 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { uuid, cx } from "@/lib/utils/idHelpers";
+import { formatCurrency } from "@/lib/i18n/locale";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
 import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
@@ -345,7 +346,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         else if (startStr !== "-") parts.push(startStr);
         if (days) parts.push(`${days} days`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) parts.push(`Funded by ${entry.fundingAgency}`);
-        if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(`₹${entry.fundingAmount.toLocaleString("en-IN")}`);
+        if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(formatCurrency(entry.fundingAmount, "en"));
         return (
           <>
             {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}

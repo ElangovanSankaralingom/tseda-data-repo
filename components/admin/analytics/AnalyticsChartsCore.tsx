@@ -7,6 +7,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
+import { formatNumber } from "@/lib/i18n/locale";
 import { compare } from "@/lib/analytics/compare";
 
 export function pct(n: number, total: number) {
@@ -30,7 +31,7 @@ export function AnimatedCount({ value, suffix }: { value: number; suffix?: strin
   const count = useCountUp(value);
   return (
     <span>
-      {count.toLocaleString("en-IN")}
+      {formatNumber(count, "en")}
       {suffix}
     </span>
   );

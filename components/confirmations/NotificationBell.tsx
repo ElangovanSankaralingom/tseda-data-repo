@@ -2,34 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  Archive,
-  Bell,
-  CheckCircle,
-  Clock,
-  Lock,
-  Megaphone,
-  Trash2,
-  Trophy,
-  XCircle,
-} from "lucide-react";
-import type { PersistentNotification, PersistentNotificationType } from "@/lib/confirmations/types";
+import { Bell } from "lucide-react";
+import type { PersistentNotification } from "@/lib/confirmations/types";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-
-const TYPE_CONFIG: Record<
-  PersistentNotificationType,
-  { Icon: typeof Bell; iconBg: string; iconColor: string }
-> = {
-  edit_request_granted: { Icon: CheckCircle, iconBg: "bg-emerald-100", iconColor: "text-emerald-600" },
-  edit_request_rejected: { Icon: XCircle, iconBg: "bg-red-100", iconColor: "text-red-600" },
-  delete_approved: { Icon: Trash2, iconBg: "bg-red-100", iconColor: "text-red-600" },
-  delete_rejected: { Icon: XCircle, iconBg: "bg-red-100", iconColor: "text-red-600" },
-  auto_archived: { Icon: Archive, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
-  timer_warning: { Icon: Clock, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
-  entry_finalized: { Icon: Lock, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
-  streak_won: { Icon: Trophy, iconBg: "bg-amber-100", iconColor: "text-amber-600" },
-  system_announcement: { Icon: Megaphone, iconBg: "bg-blue-100", iconColor: "text-blue-600" },
-};
+import { USER_NOTIFICATION_STYLES, FALLBACK_STYLE } from "@/data/notificationTypeConfig";
 
 function formatRelative(ts: string): string {
   const diff = Date.now() - Date.parse(ts);
@@ -208,7 +184,7 @@ export default function NotificationBell({
               </div>
             )}
             {notifications.map((n) => {
-              const conf = TYPE_CONFIG[n.type];
+              const conf = USER_NOTIFICATION_STYLES[n.type] ?? FALLBACK_STYLE;
               const NIcon = conf.Icon;
               return (
                 <div
