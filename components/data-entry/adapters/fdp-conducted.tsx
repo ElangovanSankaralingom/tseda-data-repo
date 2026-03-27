@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { t as staticT } from "@/lib/i18n";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -98,7 +99,7 @@ function validateFields(form: FdpConducted): Record<string, string> {
   }
   form.coCoordinators.forEach((value, index) => {
     if (value.email && (emailCounts.get(value.email.toLowerCase()) ?? 0) > 1) {
-      errors[`coCoordinators.${index}`] = "This faculty is already selected in another role.";
+      errors[`coCoordinators.${index}`] = staticT('entry.facultyAlreadySelected', 'en');
     }
   });
 
@@ -125,7 +126,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
     userDisplayName,
   } = ctx;
 
-  const { fieldLabel } = useTranslation();
+  const { t, fieldLabel } = useTranslation();
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
   const [, setPhotoUploadStatus] = useState({ hasPending: false, busy: false });
 
@@ -151,7 +152,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
             value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
             options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
-            placeholder="Select academic year"
+            placeholder={t('placeholder.selectAcademicYear')}
             disabled={coreFieldDisabled("academicYear")}
             error={submitted && !!errors.academicYear}
           />
@@ -162,7 +163,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
             value={form.semesterType || ""}
             onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
             options={SEMESTER_TYPE_OPTIONS}
-            placeholder="Select semester type"
+            placeholder={t('placeholder.selectSemesterType')}
             disabled={coreFieldDisabled("semesterType")}
             error={submitted && !!errors.semesterType}
           />
@@ -173,7 +174,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
             value={form.level || ""}
             onChange={(value) => setForm((c) => ({ ...c, level: value }))}
             options={LEVEL_OPTIONS}
-            placeholder="Select level"
+            placeholder={t('placeholder.selectLevel')}
             disabled={coreFieldDisabled("level")}
             error={submitted && !!errors.level}
           />
@@ -184,7 +185,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
             value={form.mode || ""}
             onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
             options={MODE_OPTIONS}
-            placeholder="Select mode"
+            placeholder={t('placeholder.selectMode')}
             disabled={coreFieldDisabled("mode")}
             error={submitted && !!errors.mode}
           />
@@ -198,7 +199,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
         </Field>
 
-        <Field label="Number of Days" hint="Inclusive day count">
+        <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
           <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
         </Field>
 
@@ -217,15 +218,15 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
       </div>
 
       <div className="mt-5 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-4 py-3 text-sm text-muted-foreground">
-        Coordinator: <span className="font-medium text-foreground">{userDisplayName || "-"}</span>
+        {t('entry.coordinator')} <span className="font-medium text-foreground">{userDisplayName || "-"}</span>
       </div>
 
       <div className="mt-5">
         <FacultyPickerRows
-          title="Co-coordinator(s)"
-          helperText="Add co-coordinators only when applicable."
-          addLabel="Add Co-coordinator"
-          rowLabelPrefix="Co-coordinator"
+          title={t('entry.coCoordinatorTitle')}
+          helperText={t('entry.coCoordinatorHint')}
+          addLabel={t('entry.addCoCoordinator')}
+          rowLabelPrefix={t('entry.coCoordinatorLabel')}
           rows={form.coCoordinators}
           onRowsChange={(rows) => setForm((c) => ({ ...c, coCoordinators: rows }))}
           onPersistRow={async (rows) => persistCoCoordinatorRows(rows)}
@@ -235,18 +236,18 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           disableEmails={[form.coordinatorEmail || email]}
           sectionError={errors.coCoordinators}
           showSectionError={submitted}
-          emptyStateText="No co-coordinators added."
+          emptyStateText={t('entry.noCoCoordinators')}
           validateRow={(rows, row, index) => {
-            if (!row.email) return "Select a faculty member from the list.";
+            if (!row.email) return t('entry.selectFaculty');
             const coordEmail = form.coordinatorEmail || email;
             if (row.email.trim().toLowerCase() === coordEmail.trim().toLowerCase()) {
-              return "This faculty is already selected in another role.";
+              return t('entry.facultyAlreadySelected');
             }
             const duplicates = rows.filter(
               (item, itemIndex) =>
                 itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
             ).length;
-            return duplicates > 0 ? "This faculty is already selected in another role." : null;
+            return duplicates > 0 ? t('entry.facultyAlreadySelected') : null;
           }}
         />
       </div>
@@ -257,7 +258,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
             value={form.sponsored || ""}
             onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
             options={SPONSORED_OPTIONS}
-            placeholder="Select"
+            placeholder={t('placeholder.select')}
             disabled={coreFieldDisabled("sponsored")}
             error={submitted && !!errors.sponsored}
           />
@@ -278,7 +279,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
               />
             </Field>
 
-            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -292,7 +293,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
       </div>
 
       <div className="mt-5 space-y-4">
-        <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
+        <p className="text-sm text-muted-foreground">{t('entry.streakEligibility')}</p>
 
         {uploadsVisible ? (
           <>
@@ -458,6 +459,7 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
 // ---------------------------------------------------------------------------
 
 export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
+  const { t } = useTranslation();
   return (
     <BaseEntryAdapter<FdpConducted>
       {...props}
@@ -491,11 +493,11 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
       }}
       validateFields={validateFields}
       renderFormFields={(ctx) => <FdpConductedFormFields ctx={ctx} />}
-      buildListEntryTitle={(entry) => (entry.programName || "").trim() || "Untitled FDP"}
+      buildListEntryTitle={(entry) => (entry.programName || "").trim() || t('entry.untitledEntry')}
       buildListEntrySubtitle={(entry) => {
-        const parts = [`Coordinator: ${entry.coordinatorName || entry.coordinatorEmail || "-"}`];
+        const parts = [`${t('entry.coordinator')} ${entry.coordinatorName || entry.coordinatorEmail || "-"}`];
         if (entry.coCoordinators.length > 0) {
-          parts.push(`Co-coordinator(s): ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`);
+          parts.push(`${t('entry.coCoordinatorTitle')}: ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`);
         }
         return parts.join(" • ");
       }}
@@ -505,17 +507,17 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
         const endStr = formatDisplayDate(entry.endDate);
         const parts: string[] = [];
         if (entry.academicYear) parts.push(entry.academicYear);
-        if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
+        if (entry.semesterType) parts.push(`${entry.semesterType} ${t('entry.semester')}`);
         if (entry.level) parts.push(entry.level);
         if (entry.mode) parts.push(entry.mode);
         if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
-        if (days) parts.push(`${days} days`);
+        if (days) parts.push(`${days} ${t('timer.days')}`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) {
           const fundingStr = entry.fundingAmount ? `${entry.fundingAgency} (${formatCurrency(entry.fundingAmount, "en")})` : entry.fundingAgency;
-          parts.push(`Funded by ${fundingStr}`);
+          parts.push(`${t('entry.fundedBy')} ${fundingStr}`);
         }
-        if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} participants`);
+        if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} ${t('entry.participants')}`);
         return (
           <>
             {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
@@ -544,11 +546,11 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
           </>
         );
       }}
-      title="FDP — Conducted"
-      subtitle="Record faculty development programmes conducted, along with coordinator details and supporting documents."
-      formTitle="FDP Entry"
-      formSubtitle="Add the entry details and generate the entry to unlock uploads."
-      deleteDescription="This permanently deletes this FDP entry and its associated uploaded files."
+      title={t('entry.fdpConductedPageTitle')}
+      subtitle={t('entry.fdpConductedPageSubtitle')}
+      formTitle={t('entry.fdpConductedFormTitle')}
+      formSubtitle={t('entry.fdpConductedFormSubtitle')}
+      deleteDescription={t('entry.fdpConductedDeleteDesc')}
     />
   );
 }

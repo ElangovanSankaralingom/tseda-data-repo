@@ -16,18 +16,20 @@ import {
   type PdfEntryActionsBarProps,
 } from "./entryComponentTypes";
 
-function formatTimeRemaining(expiresAt: string | null | undefined): string | null {
+function formatTimeRemaining(expiresAt: string | null | undefined, tr: (key: string) => string): string | null {
   if (!expiresAt) return null;
   const ms = new Date(expiresAt).getTime() - Date.now();
   if (ms <= 0) return null;
   const hours = ms / (1000 * 60 * 60);
-  if (hours < 1) return "Your entry will finalise very soon.";
+  if (hours < 1) return tr("entry.finaliseSoon");
   if (hours < 24) {
     const h = Math.ceil(hours);
-    return `You still have ${h} ${h === 1 ? "hour" : "hours"} left until this entry finalises automatically.`;
+    const unit = h === 1 ? tr("time.hour") : tr("time.hours");
+    return tr("entry.timeRemainingHours").replace("{count}", String(h)).replace("{unit}", unit);
   }
   const days = Math.ceil(hours / 24);
-  return `You still have ${days} ${days === 1 ? "day" : "days"} left until this entry finalises automatically.`;
+  const unit = days === 1 ? tr("time.day") : tr("time.days");
+  return tr("entry.timeRemainingHours").replace("{count}", String(days)).replace("{unit}", unit);
 }
 
 export function HeaderEntryActionsBar({
@@ -36,7 +38,7 @@ export function HeaderEntryActionsBar({
   loading,
   formHasData = true,
   onAdd,
-  addLabel = "+ Add Entry",
+  addLabel,
   onCancel,
   cancelDisabled,
   onSave,
@@ -46,7 +48,7 @@ export function HeaderEntryActionsBar({
   saving,
   saveIntent,
   workflowAction,
-  workflowDisabledHint = "Fill all required fields to generate",
+  workflowDisabledHint,
   finalise,
   entryStatus,
   editRequestPending = false,
@@ -57,6 +59,8 @@ export function HeaderEntryActionsBar({
   requestActionUsed = false,
 }: HeaderEntryActionsBarProps) {
   const { t } = useTranslation();
+  const resolvedAddLabel = addLabel || t("entry.addEntry");
+  const resolvedHint = workflowDisabledHint || t("entry.fillRequiredToGenerate");
   // View mode: simplified layout
   if (isEditing && isViewMode) {
     const isEditRequested = entryStatus === "EDIT_REQUESTED" || editRequestPending;
@@ -90,7 +94,7 @@ export function HeaderEntryActionsBar({
     return (
       <EditModeActionBar
         workflowAction={workflowAction}
-        workflowDisabledHint={workflowDisabledHint}
+        workflowDisabledHint={resolvedHint}
         finalise={finalise}
         formHasData={formHasData}
         saving={saving}
@@ -108,7 +112,7 @@ export function HeaderEntryActionsBar({
   if (!isEditing && !isViewMode && onAdd) {
     return (
       <ActionButton role="primary" onClick={onAdd} disabled={loading}>
-        {addLabel}
+        {resolvedAddLabel}
       </ActionButton>
     );
   }
@@ -309,7 +313,7 @@ function EditModeActionBar({
                 {t('confirm.finaliseMessage')}
               </p>
               {(() => {
-                const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt);
+                const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt, t as (key: string) => string);
                 return timeInfo ? (
                   <div className="mt-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2">
                     <p className="text-xs text-[var(--color-text-secondary)]">{timeInfo}</p>

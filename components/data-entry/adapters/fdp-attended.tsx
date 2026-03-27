@@ -2,6 +2,7 @@
 
 import { Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { t as staticT } from "@/lib/i18n";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -81,8 +82,8 @@ function emptyForm(): FdpAttended {
 function validateFields(form: FdpAttended): Record<string, string> {
   const errors = validateEntryFields("fdp-attended", form as unknown as Record<string, unknown>);
   if (form.sponsored === "Yes") {
-    if (!form.fundingAgency?.trim()) errors.fundingAgency = "Funding agency is required when sponsored.";
-    if (form.fundingAmount === null || form.fundingAmount === undefined) errors.fundingAmount = "Funding amount is required when sponsored.";
+    if (!form.fundingAgency?.trim()) errors.fundingAgency = staticT('entry.fundingAgencyRequired', 'en');
+    if (form.fundingAmount === null || form.fundingAmount === undefined) errors.fundingAmount = staticT('entry.fundingAmountRequired', 'en');
   }
   return errors;
 }
@@ -93,7 +94,7 @@ function validateFields(form: FdpAttended): Record<string, string> {
 
 function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> }) {
   const { form, setForm, submitted, errors, coreFieldDisabled, controlsDisabled, isViewMode, uploadsVisible, persistCurrentMutation, submitAttemptedFinal, email } = ctx;
-  const { fieldLabel } = useTranslation();
+  const { t, fieldLabel } = useTranslation();
 
   const inclusiveDays = getInclusiveDays(form.startDate, form.endDate);
 
@@ -105,7 +106,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
             value={form.academicYear || ""}
             onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
             options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
-            placeholder="Select academic year"
+            placeholder={t('placeholder.selectAcademicYear')}
             disabled={coreFieldDisabled("academicYear")}
             error={submitted && !!errors.academicYear}
           />
@@ -116,7 +117,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
             value={form.semesterType || ""}
             onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
             options={SEMESTER_TYPE_OPTIONS}
-            placeholder="Select semester type"
+            placeholder={t('placeholder.selectSemesterType')}
             disabled={coreFieldDisabled("semesterType")}
             error={submitted && !!errors.semesterType}
           />
@@ -127,7 +128,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
             value={form.level || ""}
             onChange={(value) => setForm((c) => ({ ...c, level: value }))}
             options={LEVEL_OPTIONS}
-            placeholder="Select level"
+            placeholder={t('placeholder.selectLevel')}
             disabled={coreFieldDisabled("level")}
             error={submitted && !!errors.level}
           />
@@ -138,7 +139,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
             value={form.mode || ""}
             onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
             options={MODE_OPTIONS}
-            placeholder="Select mode"
+            placeholder={t('placeholder.selectMode')}
             disabled={coreFieldDisabled("mode")}
             error={submitted && !!errors.mode}
           />
@@ -152,7 +153,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
           <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
         </Field>
 
-        <Field label="Number of Days" hint="Inclusive day count">
+        <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
           <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
         </Field>
 
@@ -187,7 +188,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
             value={form.sponsored || ""}
             onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value === "No" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
             options={SPONSORED_OPTIONS}
-            placeholder="Select"
+            placeholder={t('placeholder.select')}
             disabled={coreFieldDisabled("sponsored")}
             error={submitted && !!errors.sponsored}
           />
@@ -207,7 +208,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
                 )}
               />
             </Field>
-            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint="Numbers only">
+            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
               <CurrencyField
                 value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                 onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -221,7 +222,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
       </div>
 
       <div className="mt-5 space-y-4">
-        <p className="text-sm text-muted-foreground">Streaks apply only for upcoming FDP dates.</p>
+        <p className="text-sm text-muted-foreground">{t('entry.streakEligibility')}</p>
         {uploadsVisible ? (
           <>
             <StageTwoDivider />
@@ -303,6 +304,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
 // ---------------------------------------------------------------------------
 
 export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
+  const { t } = useTranslation();
   return (
     <BaseEntryAdapter<FdpAttended>
       {...props}
@@ -339,13 +341,13 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         const endStr = formatDisplayDate(entry.endDate);
         const parts: string[] = [];
         if (entry.academicYear) parts.push(entry.academicYear);
-        if (entry.semesterType) parts.push(`${entry.semesterType} Semester`);
+        if (entry.semesterType) parts.push(`${entry.semesterType} ${t('entry.semester')}`);
         if (entry.level) parts.push(entry.level);
         if (entry.mode) parts.push(entry.mode);
         if (startStr !== "-" && endStr !== "-") parts.push(`${startStr} – ${endStr}`);
         else if (startStr !== "-") parts.push(startStr);
-        if (days) parts.push(`${days} days`);
-        if (entry.sponsored === "Yes" && entry.fundingAgency) parts.push(`Funded by ${entry.fundingAgency}`);
+        if (days) parts.push(`${days} ${t('timer.days')}`);
+        if (entry.sponsored === "Yes" && entry.fundingAgency) parts.push(`${t('entry.fundedBy')} ${entry.fundingAgency}`);
         if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(formatCurrency(entry.fundingAmount, "en"));
         return (
           <>
@@ -361,11 +363,11 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
           </>
         );
       }}
-      title="FDP — Attended"
-      subtitle="Record faculty development programmes attended, along with support amount and the two required supporting documents."
-      formTitle="FDP Entry"
-      formSubtitle="Add the entry details and upload the required documents."
-      deleteDescription="This permanently deletes this FDP entry and its associated uploaded files."
+      title={t('entry.fdpAttendedPageTitle')}
+      subtitle={t('entry.fdpAttendedPageSubtitle')}
+      formTitle={t('entry.fdpAttendedFormTitle')}
+      formSubtitle={t('entry.fdpAttendedFormSubtitle')}
+      deleteDescription={t('entry.fdpAttendedDeleteDesc')}
     />
   );
 }
