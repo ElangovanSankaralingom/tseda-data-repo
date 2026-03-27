@@ -3,7 +3,6 @@
 import {
   ClipboardList,
   Clock,
-  CheckCircle2,
 } from "lucide-react";
 import SectionHeader from "@/components/dashboard/SectionHeader";
 import StatCard from "@/components/dashboard/StatCard";
@@ -15,7 +14,6 @@ export default function DashboardClient({
   streakActivated,
   streakWins,
   totalEntries,
-  generatedCount,
   editRequestedCount,
 }: { streakActivated: number; streakWins: number; totalEntries: number; generatedCount: number; editRequestedCount: number }) {
   const { t } = useTranslation();
@@ -80,17 +78,6 @@ export default function DashboardClient({
             staggerClass="stagger-3"
           />
           <StatCard
-            icon={CheckCircle2}
-            label={t("dashboard.generated")}
-            value={generatedCount}
-            accent="border-t-2 border-t-emerald-400"
-            iconColor="text-emerald-500"
-            iconBg="bg-emerald-500/15"
-            hoverRing="hover:ring-2 hover:ring-emerald-200/50"
-            hoverDescription={t("dashboard.generatedHover")}
-            staggerClass="stagger-4"
-          />
-          <StatCard
             icon={Clock}
             label={t("dashboard.editRequested")}
             value={editRequestedCount}
@@ -99,7 +86,7 @@ export default function DashboardClient({
             iconBg="bg-amber-500/15"
             hoverRing="hover:ring-2 hover:ring-amber-200/50"
             hoverDescription={t("dashboard.editRequestedHover")}
-            staggerClass="stagger-5"
+            staggerClass="stagger-4"
           />
         </div>
       </div>

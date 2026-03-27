@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { memo, useMemo } from "react";
 import {
-  ChevronRight,
   Clock,
   FileText,
   Flame,
@@ -53,114 +52,94 @@ const CategoryCard = memo(function CategoryCard({ cat, index }: { cat: CategoryO
   const config = getCategoryConfig(cat.slug);
   const color = config.color;
   const hasEntries = cat.totalEntries > 0;
-  const actionableCount = cat.draftCount + cat.streakActivated + cat.editRequestedCount;
+
+  const pills = useMemo(() => {
+    const items: { icon: typeof Pencil; label: string; className: string }[] = [];
+    if (cat.draftCount > 0) items.push({ icon: Pencil, label: `${cat.draftCount} ${cat.draftCount === 1 ? t("dashboard.draft") : t("dashboard.drafts")}`, className: "bg-[var(--color-text-muted)]/[0.08] text-[var(--color-text-secondary)]" });
+    if (cat.streakActivated > 0) items.push({ icon: Flame, label: `${cat.streakActivated} ${t("dashboard.active")}`, className: "bg-amber-500/[0.08] text-amber-600" });
+    if (cat.streakWins > 0) items.push({ icon: Trophy, label: `${cat.streakWins} ${t("dashboard.done")}`, className: "bg-emerald-500/[0.08] text-emerald-600" });
+    if (cat.editRequestedCount > 0) items.push({ icon: Clock, label: `${cat.editRequestedCount} ${t("dashboard.pending")}`, className: "bg-orange-500/[0.08] text-orange-600" });
+    return items;
+  }, [cat.draftCount, cat.streakActivated, cat.streakWins, cat.editRequestedCount, t]);
 
   return (
     <div
       className={cn(
-        "group relative flex flex-col min-h-[160px] rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up",
+        "group relative rounded-2xl p-5 transition-all duration-200 animate-fade-in-up",
         hasEntries
-          ? cn("border border-t-[3px] bg-[var(--color-card-bg)] border-[var(--color-card-border)] shadow-sm", color.borderTop)
-          : "border border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
+          ? "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:border-[var(--color-text-muted)]/30"
+          : "border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)]",
         `stagger-${Math.min(index + 1, 5)}`
       )}
     >
-      {/* Notification badge */}
-      {actionableCount > 0 && (
-        <span className="absolute -top-2 -right-2 z-10 flex size-5 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-bold text-white shadow-sm">
-          {actionableCount}
-        </span>
-      )}
-
-      {/* Top section: Icon + Title + Chevron */}
-      <Link href={hasEntries ? cat.href : cat.newHref} className="flex flex-1 items-start gap-4">
+      {/* Top row: Icon + Title + Entry count */}
+      <Link href={hasEntries ? cat.href : cat.newHref} className="flex items-start gap-3.5">
         <div className={cn(
-          "flex size-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110",
-          hasEntries ? color.accentBg : "bg-[var(--color-body-bg)]"
+          "flex size-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105",
+          hasEntries ? color.accentBg : "bg-[var(--color-dropdown-hover)]"
         )}>
-          <CategoryIcon name={config.icon} className={cn("size-6", hasEntries ? color.text : "text-[var(--color-text-secondary)]")} />
+          <CategoryIcon name={config.icon} className={cn("size-5", hasEntries ? `${color.text} opacity-80` : "text-[var(--color-text-secondary)]")} />
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className={cn(
-            "text-base font-semibold",
-            hasEntries ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
-          )}>
-            {categoryLabel(cat.slug)}
-          </h3>
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className={cn(
+              "text-base font-semibold",
+              hasEntries ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
+            )}>
+              {categoryLabel(cat.slug)}
+            </h3>
+            {hasEntries && (
+              <span className="shrink-0 text-sm text-[var(--color-text-muted)]">
+                {cat.totalEntries} {cat.totalEntries === 1 ? t("dashboard.entry") : t("dashboard.entries")}
+              </span>
+            )}
+          </div>
 
           {hasEntries ? (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-text-secondary)]">
-              <span>{cat.totalEntries} {cat.totalEntries === 1 ? t('dashboard.entry') : t('dashboard.entries')}</span>
-              {cat.draftCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
-                  <Pencil className="size-3" />
-                  {cat.draftCount} {cat.draftCount === 1 ? t('dashboard.draft') : t('dashboard.drafts')}
-                </span>
-              )}
-              {cat.streakActivated > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/[0.12] px-2 py-0.5 text-xs font-medium text-amber-600 backdrop-blur-sm">
-                  <Flame className="size-3 opacity-70" />
-                  {cat.streakActivated} {t('dashboard.active')}
-                </span>
-              )}
-              {cat.streakWins > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.12] px-2 py-0.5 text-xs font-medium text-emerald-600 backdrop-blur-sm">
-                  <Trophy className="size-3 opacity-70" />
-                  {cat.streakWins} {t('dashboard.done')}
-                </span>
-              )}
-              {cat.editRequestedCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-purple-600">
-                  <Clock className="size-3" />
-                  {cat.editRequestedCount} {t('dashboard.pending')}
-                </span>
-              )}
-            </div>
-          ) : (
             <>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('entry.noEntries')}</p>
-              <p className="mt-0 max-h-0 overflow-hidden text-xs italic text-[var(--color-text-secondary)] opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100">
-                {t('entry.createFirstEntry')}
-              </p>
+              {cat.lastActivity && (
+                <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                  {relativeTime(cat.lastActivity, language)}
+                </p>
+              )}
             </>
-          )}
-
-          {cat.lastActivity && (
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Last: {relativeTime(cat.lastActivity, language)}</p>
+          ) : (
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{t("entry.noEntries")}</p>
           )}
         </div>
-
-        {hasEntries && (
-          <ChevronRight className="mt-1 size-5 shrink-0 text-[var(--color-text-muted)] transition-all duration-200 group-hover:translate-x-1 group-hover:text-[var(--color-text-secondary)]" />
-        )}
       </Link>
 
-      {/* Bottom: Action buttons */}
-      <div className="mt-4 flex items-center gap-2 pl-16">
+      {/* Stat pills + action */}
+      <div className="mt-4 flex items-center justify-between gap-3 pl-[3.25rem]">
         {hasEntries ? (
           <>
-            <Link
-              href={cat.href}
-              className="inline-flex h-8 items-center rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 text-sm font-medium text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-input-border)] hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97]"
-            >
-              {t('dashboard.viewAll')}
-            </Link>
+            <div className="flex flex-wrap gap-1.5">
+              {pills.map((pill) => {
+                const PillIcon = pill.icon;
+                return (
+                  <span key={pill.label} className={cn("inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-medium", pill.className)}>
+                    <PillIcon className="size-2.5" />
+                    {pill.label}
+                  </span>
+                );
+              })}
+            </div>
             <Link
               href={cat.newHref}
-              className={`inline-flex h-8 items-center gap-1 rounded-lg ${color.buttonBg} px-3 text-sm font-medium text-white transition-all ${color.buttonHover} active:scale-[0.97]`}
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
             >
               <Plus className="size-3.5" />
-              {t('entry.newEntry')}
+              {t("entry.newEntry")}
             </Link>
           </>
         ) : (
           <Link
             href={cat.newHref}
-            className="inline-flex h-8 items-center gap-1 rounded-lg bg-[var(--color-button-primary-bg)] px-3 text-sm font-medium text-white transition-all hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-button-primary-bg)] px-3 py-1.5 text-sm font-medium text-white transition-all hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
           >
             <Plus className="size-3.5" />
-            {t('dashboard.createFirst')}
+            {t("dashboard.createFirst")}
           </Link>
         )}
       </div>
@@ -177,57 +156,57 @@ export default function DataEntryClient({ greeting, userName, categories, totals
   const actionItems = totals.draftCount + totals.streakActivatedCount + totals.editRequestedCount;
 
   const statusText = !hasAnyEntries
-    ? t('dashboard.startDocumenting')
+    ? t("dashboard.startDocumenting")
     : actionItems > 0
-      ? `${actionItems} ${actionItems === 1 ? t('dashboard.itemNeedsAttention') : t('dashboard.itemsNeedAttention')}`
-      : t('dashboard.allCaughtUp');
+      ? `${actionItems} ${actionItems === 1 ? t("dashboard.itemNeedsAttention") : t("dashboard.itemsNeedAttention")}`
+      : t("dashboard.allCaughtUp");
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      {/* Header — matches dashboard style */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-6 animate-fade-in-up">
+      {/* ─── Header ─── */}
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-divider)] pb-5 mb-6 animate-fade-in-up">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text-primary)]">
             {greeting}{firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{statusText}</p>
+          <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">{statusText}</p>
         </div>
 
         {hasAnyEntries && (totals.streakActivatedCount > 0 || totals.streakWinsCount > 0) && (
           <div className="inline-flex items-center gap-2">
             {totals.streakActivatedCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/[0.12] px-3 py-1.5 backdrop-blur-md shadow-[0_1px_3px_rgba(245,158,11,0.08)]">
-                <Flame className="size-3.5 text-amber-600 opacity-70" />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/15 bg-amber-500/[0.08] px-3 py-1.5 backdrop-blur-sm">
+                <Flame className="size-3.5 text-amber-500 opacity-70" />
                 <span className="text-sm font-medium text-amber-600">{totals.streakActivatedCount}</span>
-                <span className="text-xs text-amber-600/70">{t('dashboard.active')}</span>
+                <span className="text-xs text-[var(--color-text-muted)]">{t("dashboard.active")}</span>
               </div>
             )}
             {totals.streakWinsCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/[0.12] px-3 py-1.5 backdrop-blur-md shadow-[0_1px_3px_rgba(16,185,129,0.08)]">
-                <Trophy className="size-3.5 text-emerald-600 opacity-70" />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.08] px-3 py-1.5 backdrop-blur-sm">
+                <Trophy className="size-3.5 text-emerald-500 opacity-70" />
                 <span className="text-sm font-medium text-emerald-600">{totals.streakWinsCount}</span>
-                <span className="text-xs text-emerald-600/70">{totals.streakWinsCount === 1 ? t('dashboard.win') : t('dashboard.wins')}</span>
+                <span className="text-xs text-[var(--color-text-muted)]">{totals.streakWinsCount === 1 ? t("dashboard.win") : t("dashboard.wins")}</span>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Category cards — 2 column grid matching admin console */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+      {/* ─── Category Cards ─── */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         {sorted.map((cat, index) => (
           <CategoryCard key={cat.slug} cat={cat} index={index} />
         ))}
       </div>
 
-      {/* Empty state — matches dashboard empty state */}
+      {/* ─── Empty State ─── */}
       {!hasAnyEntries && (
-        <div className="mt-8 rounded-xl border border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)] p-8 text-center animate-fade-in-up stagger-3">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
-            <FileText className="size-8 text-[var(--color-text-secondary)]" />
+        <div className="mt-8 rounded-2xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-10 text-center animate-fade-in-up stagger-3">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-xl bg-[var(--color-dropdown-hover)]">
+            <FileText className="size-7 text-[var(--color-text-secondary)]" />
           </div>
-          <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">{t('dashboard.chooseCategory')}</p>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('dashboard.trackActivities')}</p>
+          <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t("dashboard.chooseCategory")}</p>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t("dashboard.trackActivities")}</p>
         </div>
       )}
     </div>
