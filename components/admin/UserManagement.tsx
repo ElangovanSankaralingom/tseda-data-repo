@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
 import { formatNumber } from "@/lib/i18n/locale";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { ActivityTrend, UserProfile, UserStats } from "@/lib/types/admin";
 
 type Props = {
@@ -152,6 +153,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
 // ---------------------------------------------------------------------------
 
 function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
+  const { t } = useTranslation();
   const isTopPerformer = rank <= 3 && user.totalEntries > 0;
   const isNew = useMemo(
     () =>
@@ -228,27 +230,27 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
           <div className="mt-4 grid grid-cols-4 gap-2">
             <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
               <div className="text-lg font-bold text-[var(--color-text-primary)]">{user.totalEntries}</div>
-              <div className="text-[10px] text-[var(--color-text-secondary)]">entries</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">{t("dashboard.entries")}</div>
             </div>
             <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
               <div className="text-lg font-bold text-[var(--color-text-primary)]">
                 {(user.entriesByStatus["GENERATED"] ?? 0) + (user.entriesByStatus["EDIT_GRANTED"] ?? 0)}
               </div>
-              <div className="text-[10px] text-[var(--color-text-secondary)]">done</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">{t("dashboard.done")}</div>
             </div>
             <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
               <div className="flex items-center justify-center gap-1 text-lg font-bold text-[var(--color-text-primary)]">
                 <Flame className="size-3.5 text-amber-500" />
                 {user.streakActivated}
               </div>
-              <div className="text-[10px] text-[var(--color-text-secondary)]">active</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">{t("dashboard.active")}</div>
             </div>
             <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
               <div className="flex items-center justify-center gap-1 text-lg font-bold text-[var(--color-text-primary)]">
                 <Trophy className="size-3.5 text-amber-500" />
                 {user.streakWins}
               </div>
-              <div className="text-[10px] text-[var(--color-text-secondary)]">wins</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">{t("dashboard.wins")}</div>
             </div>
           </div>
 
@@ -265,13 +267,13 @@ function UserCard({ user, rank }: { user: UserProfile; rank: number }) {
         </>
       ) : (
         <div className="mt-4 rounded-lg border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-4 py-3 text-center">
-          <p className="text-xs text-[var(--color-text-secondary)]">No entries yet</p>
+          <p className="text-xs text-[var(--color-text-secondary)]">{t("adminUsers.noEntriesYet")}</p>
         </div>
       )}
 
       {/* Last active */}
       <div className="mt-2 text-[10px] text-[var(--color-text-secondary)]">
-        Last active: {formatRelative(user.lastActiveAt)}
+        {t("adminUsers.lastActive")}: {formatRelative(user.lastActiveAt)}
       </div>
     </Link>
   );
@@ -301,6 +303,7 @@ function FilterBar({
   matchCount: number;
   totalCount: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="sticky top-20 z-10 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
@@ -311,7 +314,7 @@ function FilterBar({
             type="text"
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
-            placeholder="Search by name or email..."
+            placeholder={t("adminUsers.searchPlaceholder")}
             aria-label="Search users"
             className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
@@ -329,7 +332,7 @@ function FilterBar({
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
-              {r === "all" ? "All" : r === "admin" ? "Admins" : "Users"}
+              {r === "all" ? t("adminUsers.all") : r === "admin" ? t("adminUsers.admins") : t("adminUsers.users")}
             </button>
           ))}
         </div>
@@ -346,7 +349,7 @@ function FilterBar({
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
-              {a === "all" ? "All" : a.charAt(0).toUpperCase() + a.slice(1)}
+              {a === "all" ? t("adminUsers.all") : a === "active" ? t("adminUsers.active") : t("adminUsers.inactive")}
             </button>
           ))}
         </div>
@@ -357,19 +360,19 @@ function FilterBar({
             value={filters.sort}
             onChange={(value) => onChange({ ...filters, sort: value })}
             options={[
-              { label: "Most Entries", value: "totalEntries" },
-              { label: "Most Recent", value: "lastActiveAt" },
-              { label: "Name A-Z", value: "name" },
-              { label: "Streak Wins", value: "streakWins" },
-              { label: "Completion Rate", value: "completionRate" },
+              { label: t("adminUsers.sortByMostEntries"), value: "totalEntries" },
+              { label: t("adminUsers.sortByMostRecent"), value: "lastActiveAt" },
+              { label: t("adminUsers.sortByName"), value: "name" },
+              { label: t("adminUsers.sortByStreakWins"), value: "streakWins" },
+              { label: t("adminUsers.sortByCompletionRate"), value: "completionRate" },
             ]}
-            placeholder="Sort by"
+            placeholder={t("adminUsers.sortPlaceholder")}
           />
         </div>
       </div>
 
       <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
-        Showing {matchCount} of {totalCount} users
+        {t("adminUsers.showing")} {matchCount} {t("adminUsers.of")} {totalCount} {t("adminUsers.users")}
       </div>
     </div>
   );
@@ -380,6 +383,7 @@ function FilterBar({
 // ---------------------------------------------------------------------------
 
 export default function UserManagement({ initialUsers, initialStats }: Props) {
+  const { t } = useTranslation();
   const [users] = useState(initialUsers);
   const [stats] = useState(initialStats);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -437,29 +441,29 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
     <div className="space-y-6">
       {/* Stats strip */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label="Total Users" value={stats.totalUsers} icon={Users} accent="bg-blue-500" />
-        <StatCard label="Active (90d)" value={stats.activeUsers} icon={UserCheck} accent="bg-emerald-500" />
-        <StatCard label="Inactive" value={stats.inactiveUsers} icon={UserX} accent="bg-[var(--color-text-muted)]" />
-        <StatCard label="Avg Entries" value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-amber-500" />
-        <StatCard label="Avg Completion" value={stats.averageCompletionRate} icon={Target} accent="bg-purple-500" />
+        <StatCard label={t("adminUsers.totalUsers")} value={stats.totalUsers} icon={Users} accent="bg-blue-500" />
+        <StatCard label={t("adminUsers.active90d")} value={stats.activeUsers} icon={UserCheck} accent="bg-emerald-500" />
+        <StatCard label={t("adminUsers.inactive")} value={stats.inactiveUsers} icon={UserX} accent="bg-[var(--color-text-muted)]" />
+        <StatCard label={t("adminUsers.avgEntries")} value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-amber-500" />
+        <StatCard label={t("adminUsers.avgCompletion")} value={stats.averageCompletionRate} icon={Target} accent="bg-purple-500" />
       </div>
 
       {/* Quick summary pills */}
       <div className="flex flex-wrap gap-2 text-xs">
         <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-[var(--color-text-secondary)]">
-          {stats.totalUsers} users
+          {stats.totalUsers} {t("adminUsers.users")}
         </span>
         <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-          {stats.activeUsers} active
+          {stats.activeUsers} {t("adminUsers.active")}
         </span>
         {stats.inactiveUsers > 0 && (
           <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-[var(--color-text-secondary)]">
-            {stats.inactiveUsers} inactive
+            {stats.inactiveUsers} {t("adminUsers.inactive")}
           </span>
         )}
         {stats.adminUsers > 0 && (
           <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
-            {stats.adminUsers} admins
+            {stats.adminUsers} {t("adminUsers.admins")}
           </span>
         )}
       </div>
@@ -482,8 +486,8 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
       {filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-text-muted)] bg-[var(--color-body-bg)] py-16 text-center">
           <Users className="size-8 text-[var(--color-text-muted)] mb-3" />
-          <div className="text-sm font-medium text-[var(--color-text-secondary)]">No users match your filters</div>
-          <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try adjusting the search or filters</div>
+          <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminUsers.noUsersMatch")}</div>
+          <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminUsers.tryAdjustingFilters")}</div>
         </div>
       )}
     </div>

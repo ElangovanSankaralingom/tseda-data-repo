@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Activity,
   Calendar,
@@ -15,27 +15,32 @@ import SelectDropdown from "@/components/controls/SelectDropdown";
 import { useCountUp } from "@/hooks/useCountUp";
 import { formatDate, formatNumber } from "@/lib/i18n/locale";
 import type { AuditEvent, AuditStats } from "@/lib/types/admin";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import type { TranslationKey } from "@/lib/i18n";
 
-export const ACTION_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  CREATE: { label: "Created", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
-  UPDATE: { label: "Updated", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
-  DELETE: { label: "Deleted", color: "text-red-700", bg: "bg-red-50 border-red-200" },
-  REQUEST_EDIT: { label: "Edit Requested", color: "text-amber-900", bg: "bg-amber-50 border-amber-200" },
-  GRANT_EDIT: { label: "Edit Granted", color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
-  UPLOAD_ADD: { label: "Upload Added", color: "text-cyan-700", bg: "bg-cyan-50 border-cyan-200" },
-  UPLOAD_REMOVE: { label: "Upload Removed", color: "text-orange-700", bg: "bg-orange-50 border-orange-200" },
-  UPLOAD_REPLACE: { label: "Upload Replaced", color: "text-indigo-700", bg: "bg-indigo-50 border-indigo-200" },
+export const ACTION_COLOR: Record<string, { color: string; bg: string }> = {
+  CREATE: { color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20" },
+  UPDATE: { color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20" },
+  DELETE: { color: "text-red-500", bg: "bg-red-500/10 border-red-500/20" },
+  REQUEST_EDIT: { color: "text-amber-500", bg: "bg-amber-500/10 border-amber-500/20" },
+  GRANT_EDIT: { color: "text-purple-500", bg: "bg-purple-500/10 border-purple-500/20" },
+  UPLOAD_ADD: { color: "text-cyan-500", bg: "bg-cyan-500/10 border-cyan-500/20" },
+  UPLOAD_REMOVE: { color: "text-orange-500", bg: "bg-orange-500/10 border-orange-500/20" },
+  UPLOAD_REPLACE: { color: "text-indigo-500", bg: "bg-indigo-500/10 border-indigo-500/20" },
 };
 
-export const ALL_ACTIONS = Object.keys(ACTION_LABELS);
-
-export const CATEGORY_LABELS: Record<string, string> = {
-  "fdp-attended": "FDP Attended",
-  "fdp-conducted": "FDP Conducted",
-  "case-studies": "Case Studies",
-  "guest-lectures": "Guest Lectures",
-  "workshops": "Workshops",
+const ACTION_LABEL_KEYS: Record<string, TranslationKey> = {
+  CREATE: "adminAudit.actionCreated",
+  UPDATE: "adminAudit.actionUpdated",
+  DELETE: "adminAudit.actionDeleted",
+  REQUEST_EDIT: "adminAudit.actionEditRequested",
+  GRANT_EDIT: "adminAudit.actionEditGranted",
+  UPLOAD_ADD: "adminAudit.actionUploadAdded",
+  UPLOAD_REMOVE: "adminAudit.actionUploadRemoved",
+  UPLOAD_REPLACE: "adminAudit.actionUploadReplaced",
 };
+
+export const ALL_ACTIONS = Object.keys(ACTION_COLOR);
 
 function formatRelative(ts: string): string {
   const now = Date.now();
@@ -79,17 +84,7 @@ function groupEventsByDate(events: AuditEvent[]): Map<string, AuditEvent[]> {
   return groups;
 }
 
-function formatDateHeading(dateStr: string): string {
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  if (dateStr === today) return "Today";
-  if (dateStr === yesterday) return "Yesterday";
-  return formatDate(new Date(dateStr), "en", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
+// formatDateHeading is now inside components that use t()
 
 function AnimatedCount({ value }: { value: number }) {
   const display = useCountUp(value, 400);
@@ -97,10 +92,13 @@ function AnimatedCount({ value }: { value: number }) {
 }
 
 function ActionBadge({ action }: { action: string }) {
-  const info = ACTION_LABELS[action] ?? { label: action, color: "text-[var(--color-text-primary)]", bg: "bg-[var(--color-dropdown-hover)] border-[var(--color-card-border)]" };
+  const { t } = useTranslation();
+  const colorInfo = ACTION_COLOR[action] ?? { color: "text-[var(--color-text-primary)]", bg: "bg-[var(--color-dropdown-hover)] border-[var(--color-card-border)]" };
+  const labelKey = ACTION_LABEL_KEYS[action];
+  const label = labelKey ? t(labelKey) : action;
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${info.bg} ${info.color}`}>
-      {info.label}
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${colorInfo.bg} ${colorInfo.color}`}>
+      {label}
     </span>
   );
 }
@@ -141,17 +139,19 @@ function ActivitySparkline({ data }: { data: { date: string; count: number }[] }
 }
 
 function ActionBreakdownBar({ stats }: { stats: AuditStats }) {
+  const { t } = useTranslation();
   const total = stats.totalEvents || 1;
   const actions = Object.entries(stats.byAction).sort(([, a], [, b]) => b - a);
 
   return (
     <div className="space-y-2">
       {actions.map(([action, count]) => {
-        const info = ACTION_LABELS[action];
+        const labelKey = ACTION_LABEL_KEYS[action];
+        const label = labelKey ? t(labelKey) : action;
         const pct = (count / total) * 100;
         return (
           <div key={action} className="flex items-center gap-3 text-sm">
-            <div className="w-28 text-xs text-[var(--color-text-secondary)] truncate">{info?.label ?? action}</div>
+            <div className="w-28 text-xs text-[var(--color-text-secondary)] truncate">{label}</div>
             <div className="relative h-2 flex-1 rounded-full bg-[var(--color-dropdown-hover)]">
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-text-muted)] transition-all duration-500 animate-grow-width"
@@ -184,7 +184,33 @@ export function FilterBar({
   onReset: () => void;
   resultCount: number;
 }) {
+  const { t, categoryLabel } = useTranslation();
   const hasFilters = filters.search || filters.action || filters.category || filters.dateRange;
+
+  const actionOptions = useMemo(() => [
+    { label: t("adminAudit.allActions"), value: "" },
+    ...ALL_ACTIONS.map((a) => {
+      const key = ACTION_LABEL_KEYS[a];
+      return { label: key ? t(key) : a, value: a };
+    }),
+  ], [t]);
+
+  const categoryOptions = useMemo(() => [
+    { label: t("adminAudit.allCategories"), value: "" },
+    ...["fdp-attended", "fdp-conducted", "case-studies", "guest-lectures", "workshops"].map((slug) => ({
+      label: categoryLabel(slug),
+      value: slug,
+    })),
+  ], [t, categoryLabel]);
+
+  const dateRangeOptions = useMemo(() => [
+    { label: t("adminAudit.allTime"), value: "" },
+    { label: t("adminAudit.last24h"), value: "1d" },
+    { label: t("adminAudit.last7d"), value: "7d" },
+    { label: t("adminAudit.last30d"), value: "30d" },
+    { label: t("adminAudit.last90d"), value: "90d" },
+  ], [t]);
+
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
@@ -194,7 +220,7 @@ export function FilterBar({
             type="text"
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
-            placeholder="Search by email, entry ID, or summary..."
+            placeholder={t("adminAudit.searchPlaceholder")}
             aria-label="Search audit logs"
             className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-input-bg)] pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
@@ -204,11 +230,8 @@ export function FilterBar({
           <SelectDropdown
             value={filters.action}
             onChange={(value) => onChange({ ...filters, action: value })}
-            options={[
-              { label: "All Actions", value: "" },
-              ...ALL_ACTIONS.map((a) => ({ label: ACTION_LABELS[a]?.label ?? a, value: a })),
-            ]}
-            placeholder="All Actions"
+            options={actionOptions}
+            placeholder={t("adminAudit.allActions")}
           />
         </div>
 
@@ -216,11 +239,8 @@ export function FilterBar({
           <SelectDropdown
             value={filters.category}
             onChange={(value) => onChange({ ...filters, category: value })}
-            options={[
-              { label: "All Categories", value: "" },
-              ...Object.entries(CATEGORY_LABELS).map(([key, label]) => ({ label, value: key })),
-            ]}
-            placeholder="All Categories"
+            options={categoryOptions}
+            placeholder={t("adminAudit.allCategories")}
           />
         </div>
 
@@ -228,14 +248,8 @@ export function FilterBar({
           <SelectDropdown
             value={filters.dateRange}
             onChange={(value) => onChange({ ...filters, dateRange: value })}
-            options={[
-              { label: "All Time", value: "" },
-              { label: "Last 24 Hours", value: "1d" },
-              { label: "Last 7 Days", value: "7d" },
-              { label: "Last 30 Days", value: "30d" },
-              { label: "Last 90 Days", value: "90d" },
-            ]}
-            placeholder="All Time"
+            options={dateRangeOptions}
+            placeholder={t("adminAudit.allTime")}
           />
         </div>
 
@@ -245,20 +259,21 @@ export function FilterBar({
             className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)]"
           >
             <X className="size-3.5" />
-            Clear
+            {t("adminAudit.clear")}
           </button>
         )}
       </div>
 
       <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
-        {resultCount} {resultCount === 1 ? "event" : "events"}
-        {hasFilters ? " matching filters" : ""}
+        {resultCount} {resultCount === 1 ? t("adminAudit.event") : t("adminAudit.events")}
+        {hasFilters ? ` ${t("adminAudit.matchingFilters")}` : ""}
       </div>
     </div>
   );
 }
 
 function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }) {
+  const { t, categoryLabel } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -285,13 +300,13 @@ function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }
                 <span className="font-medium text-[var(--color-text-primary)]">{emailName(event.actorEmail)}</span>
                 {event.actorEmail !== event.userEmail && (
                   <>
-                    {" on "}
+                    {` ${t("adminAudit.on")} `}
                     <span className="font-medium text-[var(--color-text-primary)]">{emailName(event.userEmail)}</span>
-                    {"'s entry"}
+                    {t("adminAudit.sEntry")}
                   </>
                 )}
-                {" in "}
-                <span className="text-[var(--color-text-secondary)]">{CATEGORY_LABELS[event.category] ?? event.category}</span>
+                {` ${t("adminAudit.in")} `}
+                <span className="text-[var(--color-text-secondary)]">{categoryLabel(event.category)}</span>
               </div>
             </div>
             <ChevronDown className={`size-4 text-[var(--color-text-secondary)] transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
@@ -301,29 +316,29 @@ function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }
             <div className="mt-3 space-y-2 border-t border-[var(--color-card-border)] pt-3 text-xs animate-fade-in">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[var(--color-text-secondary)]">Entry ID</span>
+                  <span className="text-[var(--color-text-secondary)]">{t("adminAudit.colEntryId")}</span>
                   <div className="font-mono text-[var(--color-text-secondary)]">{event.entryId.slice(0, 8)}...</div>
                 </div>
                 <div>
-                  <span className="text-[var(--color-text-secondary)]">Time</span>
+                  <span className="text-[var(--color-text-secondary)]">{t("adminAudit.colTime")}</span>
                   <div className="text-[var(--color-text-secondary)]">{formatDateTime(event.ts)}</div>
                 </div>
                 {event.statusFrom && (
                   <div>
-                    <span className="text-[var(--color-text-secondary)]">Status From</span>
+                    <span className="text-[var(--color-text-secondary)]">{t("adminAudit.colStatusFrom")}</span>
                     <div className="text-[var(--color-text-secondary)]">{event.statusFrom}</div>
                   </div>
                 )}
                 {event.statusTo && (
                   <div>
-                    <span className="text-[var(--color-text-secondary)]">Status To</span>
+                    <span className="text-[var(--color-text-secondary)]">{t("adminAudit.colStatusTo")}</span>
                     <div className="text-[var(--color-text-secondary)]">{event.statusTo}</div>
                   </div>
                 )}
               </div>
-              {event.summary !== "No tracked field changes." && (
+              {event.summary !== t("adminAudit.noTrackedFieldChanges") && (
                 <div>
-                  <span className="text-[var(--color-text-secondary)]">Changes</span>
+                  <span className="text-[var(--color-text-secondary)]">{t("adminAudit.colChanges")}</span>
                   <div className="mt-0.5 text-[var(--color-text-secondary)]">{event.summary}</div>
                 </div>
               )}
@@ -336,14 +351,27 @@ function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }
 }
 
 export function TimelineView({ events }: { events: AuditEvent[] }) {
+  const { t } = useTranslation();
   const grouped = useMemo(() => groupEventsByDate(events), [events]);
+
+  const formatDateHeading = useCallback((dateStr: string): string => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    if (dateStr === today) return t("adminAudit.today");
+    if (dateStr === yesterday) return t("adminAudit.yesterday");
+    return formatDate(new Date(dateStr), "en", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  }, [t]);
 
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-16 text-center">
         <Activity className="size-8 text-[var(--color-text-muted)] mb-3" />
-        <div className="text-sm font-medium text-[var(--color-text-secondary)]">No audit events found</div>
-        <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try adjusting your filters</div>
+        <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminAudit.noEventsFound")}</div>
+        <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminAudit.tryAdjustingFilters")}</div>
       </div>
     );
   }
@@ -375,12 +403,14 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
 }
 
 export function TableView({ events }: { events: AuditEvent[] }) {
+  const { t, categoryLabel } = useTranslation();
+
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-16 text-center">
         <Activity className="size-8 text-[var(--color-text-muted)] mb-3" />
-        <div className="text-sm font-medium text-[var(--color-text-secondary)]">No audit events found</div>
-        <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try adjusting your filters</div>
+        <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminAudit.noEventsFound")}</div>
+        <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminAudit.tryAdjustingFilters")}</div>
       </div>
     );
   }
@@ -390,13 +420,13 @@ export function TableView({ events }: { events: AuditEvent[] }) {
       <table className="w-full min-w-[900px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-[var(--color-card-border)] bg-[var(--color-dropdown-hover)] text-left text-xs uppercase tracking-wide text-[var(--color-text-primary)]">
-            <th className="px-3 py-2.5 font-medium">Time</th>
-            <th className="px-3 py-2.5 font-medium">Action</th>
-            <th className="px-3 py-2.5 font-medium">Actor</th>
-            <th className="px-3 py-2.5 font-medium">Owner</th>
-            <th className="px-3 py-2.5 font-medium">Category</th>
-            <th className="px-3 py-2.5 font-medium">Entry</th>
-            <th className="px-3 py-2.5 font-medium">Details</th>
+            <th className="px-3 py-2.5 font-medium">{t("adminAudit.colTime")}</th>
+            <th className="px-3 py-2.5 font-medium">{t("adminAudit.colAction")}</th>
+            <th className="px-3 py-2.5 font-medium">{t("adminAudit.colActor")}</th>
+            <th className="px-3 py-2.5 font-medium">{t("adminAudit.colOwner")}</th>
+            <th className="px-3 py-2.5 font-medium">{t("adminAudit.colCategory")}</th>
+            <th className="px-3 py-2.5 font-medium">{t("adminAudit.colEntry")}</th>
+            <th className="px-3 py-2.5 font-medium">{t("adminAudit.colDetails")}</th>
           </tr>
         </thead>
         <tbody>
@@ -419,7 +449,7 @@ export function TableView({ events }: { events: AuditEvent[] }) {
                 <div className="text-xs text-[var(--color-text-secondary)]">{event.actorRole}</div>
               </td>
               <td className="px-3 py-2.5 text-[var(--color-text-secondary)]">{emailName(event.userEmail)}</td>
-              <td className="px-3 py-2.5 text-[var(--color-text-secondary)]">{CATEGORY_LABELS[event.category] ?? event.category}</td>
+              <td className="px-3 py-2.5 text-[var(--color-text-secondary)]">{categoryLabel(event.category)}</td>
               <td className="px-3 py-2.5">
                 <span className="font-mono text-xs text-[var(--color-text-secondary)]">{event.entryId.slice(0, 8)}</span>
               </td>
@@ -437,39 +467,40 @@ export function TableView({ events }: { events: AuditEvent[] }) {
 }
 
 export function StatsSidebar({ stats }: { stats: AuditStats }) {
+  const { t, categoryLabel } = useTranslation();
   const uniqueActors = Object.keys(stats.byActor).length;
   const uniqueUsers = Object.keys(stats.byUser).length;
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <StatMini label="Total Events" value={stats.totalEvents} icon={Activity} />
-        <StatMini label="Active Users" value={uniqueUsers} icon={User} />
-        <StatMini label="Actors" value={uniqueActors} icon={Shield} />
-        <StatMini label="Categories" value={Object.keys(stats.byCategory).length} icon={FileText} />
+        <StatMini label={t("adminAudit.totalEvents")} value={stats.totalEvents} icon={Activity} />
+        <StatMini label={t("adminAudit.activeUsers")} value={uniqueUsers} icon={User} />
+        <StatMini label={t("adminAudit.actors")} value={uniqueActors} icon={Shield} />
+        <StatMini label={t("adminAudit.categories")} value={Object.keys(stats.byCategory).length} icon={FileText} />
       </div>
 
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">Recent Activity</h4>
-          <span className="text-xs text-[var(--color-text-secondary)]">Last 14 days</span>
+          <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.recentActivity")}</h4>
+          <span className="text-xs text-[var(--color-text-secondary)]">{t("adminAudit.last14Days")}</span>
         </div>
         <ActivitySparkline data={stats.recentDays} />
       </div>
 
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
-        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">Action Breakdown</h4>
+        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.actionBreakdown")}</h4>
         <ActionBreakdownBar stats={stats} />
       </div>
 
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
-        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">By Category</h4>
+        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.byCategory")}</h4>
         <div className="space-y-2">
           {Object.entries(stats.byCategory)
             .sort(([, a], [, b]) => b - a)
             .map(([cat, count]) => (
               <div key={cat} className="flex items-center justify-between text-sm">
-                <span className="text-[var(--color-text-secondary)]">{CATEGORY_LABELS[cat] ?? cat}</span>
+                <span className="text-[var(--color-text-secondary)]">{categoryLabel(cat)}</span>
                 <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">{count}</span>
               </div>
             ))}
@@ -478,7 +509,7 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
 
       {stats.topEntries.length > 0 && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
-          <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">Most Active Entries</h4>
+          <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.mostActiveEntries")}</h4>
           <div className="space-y-2">
             {stats.topEntries.slice(0, 5).map((entry, i) => (
               <div key={`${entry.category}:${entry.entryId}`} className="flex items-center gap-2 text-xs">

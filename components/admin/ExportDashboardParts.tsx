@@ -14,6 +14,7 @@ import type { ExportTemplate } from "@/lib/export/templates";
 import type { ExportHistoryEntry } from "@/lib/export/history";
 import { useCountUp } from "@/hooks/useCountUp";
 import { formatNumber } from "@/lib/i18n/locale";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
   CheckCircle: <CheckCircle className="size-5" />,
@@ -65,6 +66,24 @@ export function AnimatedCount({ value }: { value: number }) {
   return <>{formatNumber(animated, "en")}</>;
 }
 
+function ExportButtonRunning() {
+  const { t } = useTranslation();
+  return (
+    <span className="flex items-center gap-1.5">
+      <RefreshCw className="size-3 animate-spin" /> {t("adminExport.generating")}
+    </span>
+  );
+}
+
+function ExportButtonIdle() {
+  const { t } = useTranslation();
+  return (
+    <span className="flex items-center gap-1">
+      <Download className="size-3" /> {t("adminExport.exportButton")}
+    </span>
+  );
+}
+
 export function TemplateCard({
   template,
   index,
@@ -100,13 +119,9 @@ export function TemplateCard({
           className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {running ? (
-            <span className="flex items-center gap-1.5">
-              <RefreshCw className="size-3 animate-spin" /> Generating...
-            </span>
+            <ExportButtonRunning />
           ) : (
-            <span className="flex items-center gap-1">
-              <Download className="size-3" /> Export
-            </span>
+            <ExportButtonIdle />
           )}
         </button>
       </div>
