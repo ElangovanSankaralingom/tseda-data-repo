@@ -113,8 +113,8 @@ export default function AdminConsoleDashboard({
             description: "Review and grant edit access",
             href: "/admin/confirmations",
             icon: FileEdit,
-            accent: "text-purple-600",
-            accentBg: "bg-purple-100",
+            accent: "text-purple-500",
+            accentBg: "bg-purple-500/10",
             badge: data?.metrics.pendingRequests,
             badgeColor: "bg-amber-500",
           }
@@ -125,8 +125,8 @@ export default function AdminConsoleDashboard({
             description: "Profiles, roles, and activity",
             href: "/admin/users",
             icon: Users,
-            accent: "text-blue-600",
-            accentBg: "bg-blue-100",
+            accent: "text-blue-500",
+            accentBg: "bg-blue-500/10",
             badge: data?.metrics.newUsersThisMonth || undefined,
             badgeColor: "bg-blue-500",
           }
@@ -137,8 +137,8 @@ export default function AdminConsoleDashboard({
             description: "Charts, trends, and insights",
             href: "/admin/analytics",
             icon: BarChart3,
-            accent: "text-emerald-600",
-            accentBg: "bg-emerald-100",
+            accent: "text-emerald-500",
+            accentBg: "bg-emerald-500/10",
           }
         : null,
       permissions.export
@@ -147,8 +147,8 @@ export default function AdminConsoleDashboard({
             description: "Extract data in any format",
             href: "/admin/export",
             icon: Download,
-            accent: "text-amber-600",
-            accentBg: "bg-amber-100",
+            accent: "text-amber-500",
+            accentBg: "bg-amber-500/10",
           }
         : null,
       permissions.backups
@@ -157,8 +157,8 @@ export default function AdminConsoleDashboard({
             description: "Create and restore backups",
             href: "/admin/backups",
             icon: Shield,
-            accent: "text-indigo-600",
-            accentBg: "bg-indigo-100",
+            accent: "text-indigo-500",
+            accentBg: "bg-indigo-500/10",
             badgeDot: data?.health.backup.status === "red",
             badgeColor: "bg-red-500",
           }
@@ -169,8 +169,8 @@ export default function AdminConsoleDashboard({
             description: "Scan and repair data health",
             href: "/admin/integrity",
             icon: ShieldCheck,
-            accent: "text-emerald-600",
-            accentBg: "bg-emerald-100",
+            accent: "text-emerald-500",
+            accentBg: "bg-emerald-500/10",
             badgeDot: (data?.health.integrity.issues ?? 0) > 0,
             badgeColor: "bg-red-500",
           }
@@ -191,8 +191,8 @@ export default function AdminConsoleDashboard({
             description: "WAL, cleanup, and migrations",
             href: "/admin/maintenance",
             icon: Wrench,
-            accent: "text-rose-600",
-            accentBg: "bg-rose-100",
+            accent: "text-rose-500",
+            accentBg: "bg-rose-500/10",
           }
         : null,
       permissions.settings
