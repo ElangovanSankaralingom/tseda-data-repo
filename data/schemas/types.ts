@@ -18,6 +18,8 @@ export type SchemaExportFormatter =
   | "status"
   | "boolean_yes_no";
 
+export type SchemaFieldFormat = "currency";
+
 export type SchemaFieldDefinition = {
   key: string;
   label: string;
@@ -27,6 +29,8 @@ export type SchemaFieldDefinition = {
   upload?: boolean;
   /** Stage 1 = data field (affects PDF hash), Stage 2 = upload field (does NOT affect PDF hash). Default: 1 */
   stage?: 1 | 2;
+  /** Display format hint for PDF and UI rendering. */
+  format?: SchemaFieldFormat;
   maxLength?: number;
   min?: number;
   max?: number;

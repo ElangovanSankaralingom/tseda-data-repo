@@ -1,9 +1,11 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
+import { cachedApiSuccess, apiError, apiForbidden, apiUnauthorized } from "@/lib/api/apiResponse";
+import { normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getActionHistory } from "@/lib/admin/actionHistory";
-import { apiSuccess, apiForbidden, apiUnauthorized } from "@/lib/api/apiResponse";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import type { ActionType } from "@/lib/admin/actionHistory";
 
 const VALID_ACTION_TYPES: ActionType[] = [
@@ -22,6 +24,21 @@ export async function GET(request: Request) {
   if (!email) return apiUnauthorized();
   if (!canAccessAdminConsole(email)) return apiForbidden();
 
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "admin.action-history.get",
+      options: RATE_LIMIT_PRESETS.adminOps,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return apiError(appError.message, { status: 429 });
+    }
+    throw error;
+  }
+
   const url = new URL(request.url);
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") ?? "20", 10) || 20));
@@ -34,5 +51,5 @@ export async function GET(request: Request) {
       : undefined;
 
   const result = getActionHistory({ page, pageSize, actionType, category });
-  return apiSuccess(result);
+  return cachedApiSuccess(result, 30);
 }

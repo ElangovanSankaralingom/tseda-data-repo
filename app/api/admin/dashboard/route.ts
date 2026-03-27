@@ -12,9 +12,11 @@ import { daysAgo } from "@/lib/analytics/compare";
 import type { AnalyticsSnapshot, EntryDataPoint } from "@/lib/analytics/compute";
 import { getLatestBackupFile, listBackups } from "@/lib/backup/backupService";
 import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
+import { normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getLastReport } from "@/lib/integrity/report";
 import { getScheduleStatus } from "@/lib/integrity/schedule";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { getNonDefaultCounts } from "@/lib/settings/store";
 import { isMaintenanceMode } from "@/lib/settings/consumer";
 
@@ -47,11 +49,26 @@ function entryTrend(entries: EntryDataPoint[], days: number): { date: string; co
 // GET handler
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || (!canAccessAdminConsole(email) && !isMasterAdmin(email))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "admin.dashboard.get",
+      options: RATE_LIMIT_PRESETS.adminOps,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   // Fetch everything in parallel — each source is independent
@@ -307,5 +324,5 @@ export async function GET() {
       pendingItems,
       settingsChanged,
     },
-  });
+  }, { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" } });
 }

@@ -10,6 +10,8 @@ import type { EntryStateLike } from "@/lib/entries/workflow";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isEntryActivated, isEntryWon } from "@/lib/streakProgress";
 import type { StreakProgressEntryLike } from "@/lib/streakProgress";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 export async function GET(
   _request: Request,
@@ -25,6 +27,21 @@ export async function GET(
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request: _request,
+      userEmail: email,
+      action: "me.category.overview.get",
+      options: RATE_LIMIT_PRESETS.entryReads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   const config = getCategoryConfig(category);
@@ -151,6 +168,10 @@ export async function GET(
         completionRate,
       },
       entries: entryDetails,
+    },
+  }, {
+    headers: {
+      "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
     },
   });
 }

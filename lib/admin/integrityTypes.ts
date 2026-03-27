@@ -1,4 +1,5 @@
 import path from "node:path";
+import { getCategorySchema } from "@/data/categoryRegistry";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { CATEGORY_STORE_SCHEMA_VERSION } from "@/lib/migrations";
 import { createEntryStatusRecord, type EntryStatus, type UploadedFile } from "@/lib/types/entry";
@@ -110,17 +111,24 @@ export type CategoryDerivedStats = {
 
 export const INDEX_FILE_NAME = "index.json";
 export const WAL_FILE_NAME = "events.log";
-export const ATTACHMENT_KEYS = [
-  "attachments",
-  "permissionLetter",
-  "completionCertificate",
-  "travelPlan",
-  "brochure",
-  "attendance",
-  "speakerProfile",
-  "organiserProfile",
-  "geotaggedPhotos",
-] as const;
+/** Cache of per-category attachment keys derived from schema upload annotations */
+const attachmentKeysCache = new Map<string, readonly string[]>();
+
+export function getAttachmentKeys(category: CategoryKey): readonly string[] {
+  let cached = attachmentKeysCache.get(category);
+  if (cached) return cached;
+
+  const schema = getCategorySchema(category);
+  const keys = ["attachments"];
+  for (const field of schema.fields) {
+    if (field.upload === true) {
+      keys.push(field.key);
+    }
+  }
+  cached = keys;
+  attachmentKeysCache.set(category, cached);
+  return cached;
+}
 
 // ---------------------------------------------------------------------------
 // Utility functions

@@ -6,6 +6,7 @@ import { logError, normalizeError } from "@/lib/errors";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { runGenerateEntryRequest } from "@/lib/server/generateEntry";
 import { apiUnauthorized } from "@/lib/api/apiResponse";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -14,6 +15,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: session.user.email,
+      action: "me.entry.generate.post",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+
     const body = (await request.json()) as {
       categoryKey?: string;
       id?: string;

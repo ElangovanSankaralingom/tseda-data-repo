@@ -8,6 +8,8 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { safeEmailDir } from "@/lib/userStore";
 import { PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 const LEGACY_DATA_DIR = path.join(process.cwd(), "data");
 const MODERN_USERS_DIR = path.join(process.cwd(), ".data", "users");
@@ -95,13 +97,28 @@ async function clearLegacyProfilesIndex(email: string) {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
 
   if (!email || !email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "me.reset.post",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   const modernEmailKey = safeEmailDir(email);

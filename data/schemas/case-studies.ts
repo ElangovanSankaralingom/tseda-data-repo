@@ -15,7 +15,7 @@ const fields = [
   { key: "staffAccompanying", label: "Staff Accompanying", kind: "array", required: false },
   { key: "sponsored", label: "Sponsored", kind: "string", required: false, enumValues: ["Yes", "No"] },
   { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false },
-  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false },
+  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, format: "currency" },
   { key: "permissionLetter", label: "Permission Letter", kind: "array", upload: true, stage: 2 },
   { key: "travelPlan", label: "Travel Plan", kind: "array", upload: true, stage: 2 },
   { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array", upload: true, stage: 2 },

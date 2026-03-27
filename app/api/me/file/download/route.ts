@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import path from "path";
 import fs from "fs/promises";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 function safeName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -15,6 +17,21 @@ export async function GET(req: Request) {
 
   if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "me.file.download.get",
+      options: RATE_LIMIT_PRESETS.fileDownloads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
   }
 
   const { searchParams } = new URL(req.url);

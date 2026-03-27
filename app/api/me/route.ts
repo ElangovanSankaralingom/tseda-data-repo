@@ -8,6 +8,8 @@ import { ensureDirs, PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
 import { assertActionPayload } from "@/lib/security/limits";
 import { apiUnauthorized } from "@/lib/api/apiResponse";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 type AnyObj = Record<string, unknown>;
 
@@ -92,11 +94,26 @@ function getSessionGooglePhotoURL(session: unknown) {
   return typeof user?.image === "string" ? user.image.trim() : "";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
   if (!email) return apiUnauthorized();
+
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "me.profile.get",
+      options: RATE_LIMIT_PRESETS.entryReads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
 
   const profile = readProfile(email);
   const canonical = findFacultyByEmail(email);
@@ -127,6 +144,21 @@ export async function PUT(req: Request) {
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
   if (!email) return apiUnauthorized();
+
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "me.profile.put",
+      options: RATE_LIMIT_PRESETS.entryMutations,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
 
   let patch: AnyObj;
   try {

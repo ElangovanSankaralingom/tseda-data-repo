@@ -14,7 +14,7 @@ const fields = [
   { key: "organisingBody", label: "Organising Body", kind: "string" },
   { key: "sponsored", label: "Sponsored", kind: "string", stage: 1, enumValues: ["Yes", "No"] },
   { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false, stage: 1 },
-  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, stage: 1 },
+  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, stage: 1, format: "currency" },
   { key: "permissionLetter", label: "Permission Letter", kind: "array", upload: true, stage: 2 },
   { key: "completionCertificate", label: "Completion Certificate", kind: "array", upload: true, stage: 2 },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },

@@ -3,18 +3,16 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import {
-  BookOpen,
   ChevronRight,
   Clock,
   FileText,
   Flame,
-  Mic,
   Pencil,
   Plus,
-  Presentation,
   Trophy,
-  Wrench,
 } from "lucide-react";
+import { getCategoryConfig } from "@/data/categoryRegistry";
+import { CategoryIcon } from "@/lib/ui/categoryIcons";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { formatDate } from "@/lib/i18n/locale";
@@ -26,23 +24,6 @@ type Props = {
   categories: CategoryOverview[];
   totals: Totals;
 };
-
-const CATEGORY_THEME: Record<string, {
-  icon: typeof BookOpen;
-  accentBg: string;
-  accentText: string;
-  borderColor: string;
-  buttonBg: string;
-  buttonHover: string;
-}> = {
-  "fdp-attended": { icon: BookOpen, accentBg: "bg-blue-500/10", accentText: "text-blue-600", borderColor: "border-t-blue-500", buttonBg: "bg-blue-600", buttonHover: "hover:bg-blue-700" },
-  "fdp-conducted": { icon: Presentation, accentBg: "bg-emerald-500/10", accentText: "text-emerald-600", borderColor: "border-t-emerald-500", buttonBg: "bg-emerald-600", buttonHover: "hover:bg-emerald-700" },
-  "case-studies": { icon: FileText, accentBg: "bg-amber-500/10", accentText: "text-amber-600", borderColor: "border-t-amber-500", buttonBg: "bg-amber-600", buttonHover: "hover:bg-amber-700" },
-  "guest-lectures": { icon: Mic, accentBg: "bg-purple-500/10", accentText: "text-purple-600", borderColor: "border-t-purple-500", buttonBg: "bg-purple-600", buttonHover: "hover:bg-purple-700" },
-  workshops: { icon: Wrench, accentBg: "bg-rose-500/10", accentText: "text-rose-600", borderColor: "border-t-rose-500", buttonBg: "bg-rose-600", buttonHover: "hover:bg-rose-700" },
-};
-
-const DEFAULT_THEME = CATEGORY_THEME["fdp-attended"]!;
 
 function sortByUrgency(categories: CategoryOverview[]): CategoryOverview[] {
   return [...categories].sort((a, b) => {
@@ -69,8 +50,8 @@ function relativeTime(iso: string, language: "en" | "ta" = "en"): string {
 // ── Category Card ──────────────────────────────────────────────────
 function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) {
   const { t, language, categoryLabel } = useTranslation();
-  const theme = CATEGORY_THEME[cat.slug] ?? DEFAULT_THEME;
-  const Icon = theme.icon;
+  const config = getCategoryConfig(cat.slug);
+  const color = config.color;
   const hasEntries = cat.totalEntries > 0;
   const actionableCount = cat.draftCount + cat.streakActivated + cat.editRequestedCount;
 
@@ -79,7 +60,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
       className={cn(
         "group relative flex flex-col min-h-[160px] rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up",
         hasEntries
-          ? cn("border border-t-[3px] bg-[var(--color-card-bg)] border-[var(--color-card-border)] shadow-sm", theme.borderColor)
+          ? cn("border border-t-[3px] bg-[var(--color-card-bg)] border-[var(--color-card-border)] shadow-sm", color.borderTop)
           : "border border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
         `stagger-${Math.min(index + 1, 5)}`
       )}
@@ -95,9 +76,9 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
       <Link href={hasEntries ? cat.href : cat.newHref} className="flex flex-1 items-start gap-4">
         <div className={cn(
           "flex size-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110",
-          hasEntries ? theme.accentBg : "bg-[var(--color-body-bg)]"
+          hasEntries ? color.accentBg : "bg-[var(--color-body-bg)]"
         )}>
-          <Icon className={cn("size-6", hasEntries ? theme.accentText : "text-[var(--color-text-secondary)]")} />
+          <CategoryIcon name={config.icon} className={cn("size-6", hasEntries ? color.text : "text-[var(--color-text-secondary)]")} />
         </div>
 
         <div className="min-w-0 flex-1">
@@ -167,7 +148,7 @@ function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) 
             </Link>
             <Link
               href={cat.newHref}
-              className={`inline-flex h-8 items-center gap-1 rounded-lg ${theme.buttonBg} px-3 text-sm font-medium text-white transition-all ${theme.buttonHover} active:scale-[0.97]`}
+              className={`inline-flex h-8 items-center gap-1 rounded-lg ${color.buttonBg} px-3 text-sm font-medium text-white transition-all ${color.buttonHover} active:scale-[0.97]`}
             >
               <Plus className="size-3.5" />
               {t('entry.newEntry')}

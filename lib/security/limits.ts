@@ -53,15 +53,23 @@ function walkAndAssertStringLengths(
 function countAttachmentArrayLength(entry: unknown) {
   if (!isObjectRecord(entry)) return 0;
 
-  const rootAttachments = Array.isArray(entry.attachments) ? entry.attachments.length : 0;
-  const rootPhotos = Array.isArray(entry.geotaggedPhotos) ? entry.geotaggedPhotos.length : 0;
-  const uploadsRecord = isObjectRecord(entry.uploads) ? entry.uploads : null;
-  const uploadPhotos =
-    uploadsRecord && Array.isArray(uploadsRecord.geotaggedPhotos)
-      ? uploadsRecord.geotaggedPhotos.length
-      : 0;
+  let maxLength = 0;
+  for (const value of Object.values(entry)) {
+    if (Array.isArray(value) && value.length > maxLength) {
+      maxLength = value.length;
+    }
+  }
 
-  return Math.max(rootAttachments, rootPhotos, uploadPhotos);
+  const uploadsRecord = isObjectRecord(entry.uploads) ? entry.uploads : null;
+  if (uploadsRecord) {
+    for (const value of Object.values(uploadsRecord)) {
+      if (Array.isArray(value) && value.length > maxLength) {
+        maxLength = value.length;
+      }
+    }
+  }
+
+  return maxLength;
 }
 
 export function assertPayloadSize(payload: unknown, maxBytes: number, contextName = "payload") {

@@ -16,36 +16,31 @@ export type EntryPdfData = {
   fields: PrintablePdfField[];
 };
 
-const OMIT_FROM_PDF = new Set([
-  "id",
-  "status",
-  "confirmationStatus",
-  "confirmationRejectedReason",
-  "sentForConfirmationAtISO",
-  "confirmedAtISO",
-  "confirmedBy",
-  "createdAt",
-  "updatedAt",
-  "attachments",
-  "uploads",
-  "permissionLetter",
-  "completionCertificate",
-  "travelPlan",
-  "geotaggedPhotos",
-  "brochure",
-  "attendance",
-  "speakerProfile",
-  "organiserProfile",
-  "attendanceSheet",
-  "officialPoster",
-  "report",
-  "feedback",
-  "advanceClosure",
-  "pdfMeta",
-  "pdfSourceHash",
-  "pdfStale",
-  "streak",
+/** System/lifecycle fields that never appear in the PDF (universal, not per-schema) */
+const SYSTEM_OMIT_FROM_PDF = new Set([
+  "id", "status", "confirmationStatus", "confirmationRejectedReason",
+  "sentForConfirmationAtISO", "confirmedAtISO", "confirmedBy",
+  "createdAt", "updatedAt", "attachments", "uploads",
+  "pdfMeta", "pdfSourceHash", "pdfStale", "streak",
 ]);
+
+/** Cache of per-category omit sets (system fields + schema upload fields) */
+const omitFromPdfCache = new Map<string, Set<string>>();
+
+function getOmitFromPdfSet(category: CategoryKey): Set<string> {
+  let cached = omitFromPdfCache.get(category);
+  if (cached) return cached;
+
+  const schema = getCategorySchema(category);
+  cached = new Set(SYSTEM_OMIT_FROM_PDF);
+  for (const field of schema.fields) {
+    if (field.upload === true || field.exportable === false) {
+      cached.add(field.key);
+    }
+  }
+  omitFromPdfCache.set(category, cached);
+  return cached;
+}
 
 function trimText(value: unknown) {
   return String(value ?? "").trim();
@@ -104,9 +99,15 @@ function formatObjectText(fieldKey: string, value: unknown) {
   return "";
 }
 
-function formatArrayText(fieldKey: string, value: unknown) {
+function isFacultyRowArray(value: unknown[]): boolean {
+  const first = value[0];
+  return !!first && typeof first === "object" && !Array.isArray(first) &&
+    ("id" in (first as Record<string, unknown>) || "email" in (first as Record<string, unknown>));
+}
+
+function formatArrayText(value: unknown) {
   if (!Array.isArray(value) || value.length === 0) return "";
-  if (fieldKey === "coCoordinators" || fieldKey === "staffAccompanying") {
+  if (isFacultyRowArray(value)) {
     const formatted = value
       .map((item) => (item && typeof item === "object" ? formatFacultyRecord(item as Record<string, unknown>) : ""))
       .map((item) => item.trim())
@@ -129,7 +130,7 @@ function formatFieldValue(field: SchemaFieldDefinition, entry: Record<string, un
   if (field.kind === "number") {
     const numericText = formatNumberText(value);
     if (!numericText) return "";
-    if (field.key === "supportAmount" || field.key === "amountSupport" || field.key === "fundingAmount") {
+    if (field.format === "currency") {
       const num = Number(numericText);
       return Number.isFinite(num) ? `Rs. ${num.toLocaleString("en-IN")}` : numericText;
     }
@@ -137,7 +138,7 @@ function formatFieldValue(field: SchemaFieldDefinition, entry: Record<string, un
   }
   if (field.kind === "boolean") return formatBooleanText(value);
   if (field.kind === "object") return formatObjectText(field.key, value);
-  if (field.kind === "array") return formatArrayText(field.key, value);
+  if (field.kind === "array") return formatArrayText(value);
   return trimText(value);
 }
 
@@ -165,9 +166,10 @@ export function buildEntryPdfData(category: CategoryKey, entryLike: Entry): Entr
   const title = getCategoryTitle(entry, category);
   const inclusiveDays = computeInclusiveDays(entry);
 
+  const omitKeys = getOmitFromPdfSet(category);
   const fields: PrintablePdfField[] = [];
   for (const field of schema.fields) {
-    if (OMIT_FROM_PDF.has(field.key)) continue;
+    if (omitKeys.has(field.key)) continue;
     const value = formatFieldValue(field, entry);
     if (!value) continue;
     fields.push({ label: field.label, value });

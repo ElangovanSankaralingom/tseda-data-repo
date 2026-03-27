@@ -2,22 +2,19 @@
 // Notification generation helpers — fire-and-forget, never blocks primary ops
 // ---------------------------------------------------------------------------
 
+import { getCategoryTitle } from "@/data/categoryRegistry";
 import { addNotification } from "./notificationStore";
 import type { PersistentNotificationType } from "./types";
 
 /**
  * Extract a human-readable title from an entry record.
- * Entries use different field names depending on category.
+ * Uses the registry's `entryTitleField` for the given category.
  */
-export function extractEntryTitle(entry: Record<string, unknown>): string {
-  const title =
-    (entry.programName as string) ??
-    (entry.eventName as string) ??
-    (entry.topicTitle as string) ??
-    (entry.caseTitle as string) ??
-    (entry.id as string) ??
-    "Untitled";
-  return String(title).slice(0, 100);
+export function extractEntryTitle(entry: Record<string, unknown>, category?: string): string {
+  if (category) {
+    return getCategoryTitle(entry, category).slice(0, 100);
+  }
+  return String(entry.id ?? "Untitled").slice(0, 100);
 }
 
 /**

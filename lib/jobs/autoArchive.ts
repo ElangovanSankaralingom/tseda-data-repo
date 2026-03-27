@@ -99,7 +99,7 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
                 actionType: "auto_finalised",
                 entryId: String(entry.id ?? ""),
                 category,
-                entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+                entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>, category),
                 userEmail,
                 userName: userEmail.split("@")[0],
               });
@@ -120,7 +120,7 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
                 actionType: "auto_deleted",
                 entryId: String(entry.id ?? ""),
                 category,
-                entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>),
+                entryTitle: extractEntryTitle(entry as unknown as Record<string, unknown>, category),
                 userEmail,
                 userName: userEmail.split("@")[0],
               });
@@ -132,7 +132,7 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
             await permanentlyDeleteEntry(userEmail, category as CategoryKey, entry as Record<string, unknown>);
             deleted++;
 
-            const title = extractEntryTitle(entry as unknown as Record<string, unknown>);
+            const title = extractEntryTitle(entry as unknown as Record<string, unknown>, category);
             notifyAutoArchived(userEmail, title, category).catch((err) => {
               logger.warn({ event: "jobs.autoArchive.notifyFailed", userEmail, category }, err instanceof Error ? err.message : String(err));
             });
@@ -153,7 +153,7 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
               await upsertCategoryEntry(userEmail, category, transitioned);
               archived++;
 
-              const title = extractEntryTitle(entry as unknown as Record<string, unknown>);
+              const title = extractEntryTitle(entry as unknown as Record<string, unknown>, category);
               notifyAutoArchived(userEmail, title, category).catch((err) => {
                 logger.warn({ event: "jobs.autoArchive.notifyFailed", userEmail, category }, err instanceof Error ? err.message : String(err));
               });

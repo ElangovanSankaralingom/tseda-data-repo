@@ -8,6 +8,8 @@ import { getProfileByEmail, upsertProfile, StoredFile, type OutsideAcademic, typ
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { apiUnauthorized, apiForbidden } from "@/lib/api/apiResponse";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 const ACCEPT = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const MAX_MB = 20;
@@ -30,6 +32,21 @@ export async function POST(req: Request) {
   const email = session?.user?.email;
   if (!email) return apiUnauthorized();
   if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return apiForbidden();
+
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "me.certificate.post",
+      options: RATE_LIMIT_PRESETS.fileDownloads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
 
   const form = await req.formData();
   const categoryRaw = String(form.get("category") ?? "");
@@ -105,6 +122,21 @@ export async function DELETE(req: Request) {
   const email = session?.user?.email;
   if (!email) return apiUnauthorized();
   if (!email.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX)) return apiForbidden();
+
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "me.certificate.delete",
+      options: RATE_LIMIT_PRESETS.fileDownloads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
 
   const body = await req.json().catch(() => null);
   const categoryRaw = String(body?.category ?? "");

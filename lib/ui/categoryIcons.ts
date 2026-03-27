@@ -4,6 +4,7 @@
  * Import this in client components that need to render category icons.
  * The icon names match the `icon` field in CategoryConfig.
  */
+import { createElement } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpen,
@@ -26,4 +27,12 @@ const DEFAULT_ICON: LucideIcon = FileText;
 
 export function getCategoryIcon(iconName: string): LucideIcon {
   return ICON_MAP[iconName] ?? DEFAULT_ICON;
+}
+
+/**
+ * Renders a category icon by name. Use this instead of calling getCategoryIcon()
+ * directly in render to satisfy the React Compiler's static-components rule.
+ */
+export function CategoryIcon({ name, className }: { name: string; className?: string }) {
+  return createElement(ICON_MAP[name] ?? DEFAULT_ICON, { className });
 }

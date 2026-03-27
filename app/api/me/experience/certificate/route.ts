@@ -6,6 +6,8 @@ import crypto from "crypto";
 import { authOptions } from "@/lib/auth";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError } from "@/lib/errors";
 
 type Category = "academic_outside" | "industry";
 type ExperienceCertificate = {
@@ -93,6 +95,21 @@ export async function POST(req: Request) {
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
 
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "me.experience.certificate.post",
+      options: RATE_LIMIT_PRESETS.fileDownloads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
+
   let category = "";
   let entryId = "";
   try {
@@ -175,6 +192,21 @@ export async function DELETE(req: Request) {
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
 
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "me.experience.certificate.delete",
+      options: RATE_LIMIT_PRESETS.fileDownloads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
+
   let category = "";
   let entryId = "";
   try {
@@ -212,6 +244,21 @@ export async function GET(req: Request) {
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) return NextResponse.json({ error: "AccessDenied" }, { status: 403 });
+
+  try {
+    enforceRateLimitForRequest({
+      request: req,
+      userEmail: email,
+      action: "me.experience.certificate.get",
+      options: RATE_LIMIT_PRESETS.fileDownloads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    if (appError.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    }
+    throw error;
+  }
 
   let category = "";
   let entryId = "";
