@@ -32,6 +32,7 @@ import {
   pct,
   catColor,
 } from "./analytics/AnalyticsCharts";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -70,6 +71,7 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 // ---------------------------------------------------------------------------
 
 export default function AnalyticsDashboard({ snapshot: initial }: Props) {
+  const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState(initial);
   const [range, setRange] = useState<RangeKey>("30d");
   const [refreshing, setRefreshing] = useState(false);
@@ -254,7 +256,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-[var(--color-text-muted)]">
-            Updated {formatAge(cacheAge)}
+            {t("adminAnalytics.updated")} {formatAge(cacheAge)}
           </span>
           <button
             onClick={handleRefresh}
@@ -262,7 +264,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             className="flex items-center gap-1.5 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-50"
           >
             <RefreshCw className={`size-3 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
+            {t("adminAnalytics.refresh")}
           </button>
         </div>
       </div>
@@ -271,7 +273,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           icon={ClipboardList}
-          label="Entries"
+          label={t("adminAnalytics.entries")}
           value={totalEntries}
           accent="border-t-2 border-t-blue-400"
           iconBg="bg-blue-100"
@@ -283,7 +285,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         />
         <MetricCard
           icon={Users}
-          label="Active Users"
+          label={t("adminAnalytics.activeUsers")}
           value={activeUsers}
           accent="border-t-2 border-t-emerald-400"
           iconBg="bg-emerald-100"
@@ -295,7 +297,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         />
         <MetricCard
           icon={Target}
-          label="Completion"
+          label={t("adminAnalytics.completion")}
           value={completionRate}
           suffix="%"
           accent="border-t-2 border-t-amber-400"
@@ -308,7 +310,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         />
         <MetricCard
           icon={Trophy}
-          label="Streak Wins"
+          label={t("adminAnalytics.streakWins")}
           value={snapshot.streaks.totalWins}
           accent="border-t-2 border-t-yellow-400"
           iconBg="bg-yellow-100"
@@ -320,7 +322,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         />
         <MetricCard
           icon={BarChart3}
-          label="Avg / User"
+          label={t("adminAnalytics.avgPerUser")}
           value={avgPerUser}
           accent="border-t-2 border-t-purple-400"
           iconBg="bg-purple-100"
@@ -332,7 +334,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         />
         <MetricCard
           icon={Clock}
-          label="Pending Edits"
+          label={t("adminAnalytics.pendingEdits")}
           value={pendingRequests}
           accent="border-t-2 border-t-rose-400"
           iconBg="bg-rose-100"
@@ -346,7 +348,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
       {/* Entry Trends */}
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-2">
-        <SH title="Entry Activity" description="How entries are being created over time" />
+        <SH title={t("adminAnalytics.entryActivity")} description={t("adminAnalytics.entryActivityDesc")} />
         <AreaChart data={trendData} previousData={prevTrendData} />
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-[var(--color-text-secondary)]">
           <span>
@@ -363,7 +365,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       {/* Category Breakdown */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-3">
-          <SH title="By Category" description="Entry distribution" />
+          <SH title={t("adminAnalytics.byCategoryChart")} description={t("adminAnalytics.entryDistribution")} />
           <DonutChart
             segments={categoryData.map((c) => ({
               label: c.name,
@@ -374,7 +376,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           />
         </div>
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-4">
-          <SH title="Category Comparison" description="Performance by category" />
+          <SH title={t("adminAnalytics.categoryComparison")} description={t("adminAnalytics.performanceByCategory")} />
           <div className="rounded-lg border border-[var(--color-divider)]">
             {categoryData
               .slice()
@@ -396,13 +398,13 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
       {/* Leaderboard */}
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-5">
-        <SH title="Top Contributors" description="Faculty making the most impact" />
+        <SH title={t("adminAnalytics.topContributors")} description={t("adminAnalytics.topContributorsDesc")} />
         <Leaderboard users={snapshot.users} />
       </div>
 
       {/* Heatmap */}
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-6">
-        <SH title="When People Work" description="Activity patterns over the last 12 weeks" />
+        <SH title={t("adminAnalytics.whenPeopleWork")} description={t("adminAnalytics.whenPeopleWorkDesc")} />
         <Heatmap entries={snapshot.entries} />
       </div>
 
@@ -410,7 +412,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Streak funnel */}
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-7">
-          <SH title="Streak Insights" description="How the gamification is working" />
+          <SH title={t("adminAnalytics.streakInsights")} description={t("adminAnalytics.streakInsightsDesc")} />
           <div className="grid gap-6 sm:grid-cols-2">
             <StreakFunnel
               total={snapshot.streaks.totalActivated + snapshot.streaks.totalWins}
@@ -440,7 +442,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
         {/* Edit request metrics */}
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
-          <SH title="Edit Requests" description="How often entries need unlocking" />
+          <SH title={t("adminAnalytics.editRequests")} description={t("adminAnalytics.editRequestsDesc")} />
           <div className="grid gap-4 grid-cols-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-[var(--color-text-primary)]">{editRequestMetrics.total}</div>
@@ -459,7 +461,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           </div>
           {snapshot.editRequests.length > 0 && (
             <div className="mt-4">
-              <div className="text-xs font-medium text-[var(--color-text-secondary)] mb-2">By Category</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)] mb-2">{t("adminAudit.byCategory")}</div>
               {snapshot.categories.map((cat) => {
                 const count = snapshot.editRequests.filter(
                   (r) => r.category === cat.slug,
@@ -479,7 +481,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
       {/* Data Health Summary */}
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
-        <SH title="System Health" description="Quick pulse check" />
+        <SH title={t("adminAnalytics.systemHealth")} description={t("adminAnalytics.systemHealthDesc")} />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Link
             href={adminIntegrity()}
@@ -489,8 +491,8 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               <Target className="size-4 text-emerald-500" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-[var(--color-text-secondary)]">Integrity</div>
-              <div className="text-[10px] text-[var(--color-text-secondary)]">View scan results</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)]">{t("adminConsole.integrity")}</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">{t("adminConsole.viewScanResults")}</div>
             </div>
           </Link>
           <a
@@ -501,8 +503,8 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               <ClipboardList className="size-4 text-blue-500" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-[var(--color-text-secondary)]">Backups</div>
-              <div className="text-[10px] text-[var(--color-text-secondary)]">Manage backups</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)]">{t("adminConsole.backup")}</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">{t("adminConsole.manageBackups")}</div>
             </div>
           </a>
           <a
@@ -513,8 +515,8 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               <Clock className="size-4 text-amber-500" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-[var(--color-text-secondary)]">Maintenance</div>
-              <div className="text-[10px] text-[var(--color-text-secondary)]">View job status</div>
+              <div className="text-xs font-medium text-[var(--color-text-secondary)]">{t("adminConsole.maintenance")}</div>
+              <div className="text-[10px] text-[var(--color-text-secondary)]">{t("adminConsole.viewJobStatus")}</div>
             </div>
           </a>
         </div>

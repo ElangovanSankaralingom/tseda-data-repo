@@ -1,10 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
 import { type Pill } from "./adminLocalTypes";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import type { TranslationKey } from "@/lib/i18n";
 
 type AdminPageShellProps = {
-  title: string;
-  subtitle: string;
+  title?: string;
+  titleKey?: TranslationKey;
+  subtitle?: string;
+  subtitleKey?: TranslationKey;
   backHref: string;
   backLabel?: string;
   icon?: LucideIcon;
@@ -18,7 +24,9 @@ type AdminPageShellProps = {
 
 export default function AdminPageShell({
   title,
+  titleKey,
   subtitle,
+  subtitleKey,
   backHref,
   backLabel = "Admin Console",
   icon: Icon,
@@ -28,6 +36,10 @@ export default function AdminPageShell({
   children,
   maxWidthClassName = "max-w-7xl",
 }: AdminPageShellProps) {
+  const { t } = useTranslation();
+  const displayTitle = titleKey ? t(titleKey) : title;
+  const displaySubtitle = subtitleKey ? t(subtitleKey) : subtitle;
+
   return (
     <div className={`mx-auto w-full ${maxWidthClassName} px-4 py-8`}>
       <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-6">
@@ -47,8 +59,8 @@ export default function AdminPageShell({
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold text-white">{title}</h1>
-                <p className="mt-0.5 text-sm text-white/60">{subtitle}</p>
+                <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
+                <p className="mt-0.5 text-sm text-white/60">{displaySubtitle}</p>
               </div>
             </div>
             {pills && pills.length > 0 && (

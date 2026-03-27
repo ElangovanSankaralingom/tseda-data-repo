@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   HardDrive,
   Layers,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { IntegrityReport, CheckCategoryStatus } from "@/lib/integrity/report";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type Props = {
   initialReport: IntegrityReport | null;
@@ -26,21 +27,7 @@ type Props = {
 };
 
 // ---------- Personality text ----------
-
-function getHealthMessage(status: IntegrityReport["status"] | null, hasReport: boolean) {
-  if (!hasReport) return "Run your first scan to check data health.";
-  if (status === "healthy") return "Your data is in perfect shape. Nothing to see here.";
-  if (status === "warnings") return "A few things need attention, but nothing scary.";
-  return "Some issues need your attention ASAP.";
-}
-
-function getRepairMessage() {
-  return "All patched up. Your data thanks you.";
-}
-
-function getCleanScanMessage() {
-  return "Spotless. Not a single issue found.";
-}
+// These are now resolved via t() in components that use them
 
 // ---------- Health Ring SVG ----------
 
@@ -100,54 +87,6 @@ function HealthRing({ percentage, status }: { percentage: number; status: Integr
 
 import { type CategoryCardDef } from "./adminLocalTypes";
 
-const CATEGORIES: CategoryCardDef[] = [
-  {
-    key: "filesystem",
-    label: "File System",
-    icon: <HardDrive className="size-5" />,
-    accentRing: "hover:ring-blue-200",
-    iconBg: "bg-blue-50 text-blue-600",
-    passText: "All files healthy",
-    failText: "corrupt files",
-  },
-  {
-    key: "structure",
-    label: "Data Structure",
-    icon: <Layers className="size-5" />,
-    accentRing: "hover:ring-violet-200",
-    iconBg: "bg-violet-50 text-violet-600",
-    passText: "All structures valid",
-    failText: "structural issues",
-  },
-  {
-    key: "businessRules",
-    label: "Business Rules",
-    icon: <Scale className="size-5" />,
-    accentRing: "hover:ring-amber-200",
-    iconBg: "bg-amber-50 text-amber-600",
-    passText: "All rules satisfied",
-    failText: "rule violations",
-  },
-  {
-    key: "referential",
-    label: "References",
-    icon: <Link2 className="size-5" />,
-    accentRing: "hover:ring-emerald-200",
-    iconBg: "bg-emerald-50 text-emerald-600",
-    passText: "All references intact",
-    failText: "broken references",
-  },
-  {
-    key: "dataQuality",
-    label: "Data Quality",
-    icon: <Sparkles className="size-5" />,
-    accentRing: "hover:ring-rose-200",
-    iconBg: "bg-rose-50 text-rose-600",
-    passText: "Data quality excellent",
-    failText: "quality concerns",
-  },
-];
-
 function statusBorderColor(status: CheckCategoryStatus) {
   if (status === "pass") return "border-l-emerald-500";
   if (status === "warn") return "border-l-amber-500";
@@ -201,6 +140,7 @@ function CategoryCard({
 // ---------- Scan Progress ----------
 
 function ScanProgress() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-4 py-8">
       <div className="relative flex items-center justify-center">
@@ -217,10 +157,10 @@ function ScanProgress() {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <RefreshCw className="size-6 text-blue-500 animate-spin" style={{ animationDuration: "2s" }} />
-          <span className="mt-1 text-xs font-medium text-[var(--color-text-secondary)]">Scanning...</span>
+          <span className="mt-1 text-xs font-medium text-[var(--color-text-secondary)]">{t("adminIntegrity.scanning")}</span>
         </div>
       </div>
-      <div className="text-sm text-[var(--color-text-secondary)]">Checking all users and categories...</div>
+      <div className="text-sm text-[var(--color-text-secondary)]">{t("adminIntegrity.checkingAllUsers")}</div>
     </div>
   );
 }
@@ -291,22 +231,23 @@ function HistoryRow({ report }: { report: IntegrityReport }) {
 // ---------- Repair Summary ----------
 
 function RepairSummary({ data, onClose }: { data: Record<string, unknown>; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 animate-scale-in">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
           <Wrench className="size-4 text-emerald-600" />
-          <span className="text-sm font-semibold text-emerald-800">Repair Complete</span>
+          <span className="text-sm font-semibold text-emerald-800">{t("adminIntegrity.repairComplete")}</span>
         </div>
         <button onClick={onClose} className="text-xs text-emerald-600 hover:text-emerald-800">
-          Dismiss
+          {t("adminIntegrity.dismiss")}
         </button>
       </div>
-      <div className="text-sm text-emerald-700">{getRepairMessage()}</div>
+      <div className="text-sm text-emerald-700">{t("adminIntegrity.repairMsg")}</div>
       <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-emerald-600">
-        <div>Fixes: {String(data.totalFixes ?? 0)}</div>
-        <div>Files: {String(data.totalFiles ?? 0)}</div>
-        <div>Backups: {String(data.totalBackups ?? 0)}</div>
+        <div>{t("adminIntegrity.fixes")}: {String(data.totalFixes ?? 0)}</div>
+        <div>{t("adminIntegrity.files")}: {String(data.totalFiles ?? 0)}</div>
+        <div>{t("adminIntegrity.backups")}: {String(data.totalBackups ?? 0)}</div>
       </div>
     </div>
   );
@@ -315,6 +256,7 @@ function RepairSummary({ data, onClose }: { data: Record<string, unknown>; onClo
 // ---------- Main Dashboard ----------
 
 export default function IntegrityDashboard({ initialReport, initialHistory }: Props) {
+  const { t } = useTranslation();
   const [report, setReport] = useState(initialReport);
   const [history, setHistory] = useState(initialHistory);
   const [scanning, setScanning] = useState(false);
@@ -322,6 +264,54 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
   const [repairResult, setRepairResult] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usersExpanded, setUsersExpanded] = useState(false);
+
+  const CATEGORIES: CategoryCardDef[] = useMemo(() => [
+    {
+      key: "filesystem",
+      label: t("adminIntegrity.fileSystem"),
+      icon: <HardDrive className="size-5" />,
+      accentRing: "hover:ring-blue-200",
+      iconBg: "bg-blue-50 text-blue-600",
+      passText: t("adminIntegrity.allFilesHealthy"),
+      failText: t("adminIntegrity.corruptFiles"),
+    },
+    {
+      key: "structure",
+      label: t("adminIntegrity.dataStructure"),
+      icon: <Layers className="size-5" />,
+      accentRing: "hover:ring-violet-200",
+      iconBg: "bg-violet-50 text-violet-600",
+      passText: t("adminIntegrity.allStructuresValid"),
+      failText: t("adminIntegrity.structuralIssues"),
+    },
+    {
+      key: "businessRules",
+      label: t("adminIntegrity.businessRules"),
+      icon: <Scale className="size-5" />,
+      accentRing: "hover:ring-amber-200",
+      iconBg: "bg-amber-50 text-amber-600",
+      passText: t("adminIntegrity.allRulesSatisfied"),
+      failText: t("adminIntegrity.ruleViolations"),
+    },
+    {
+      key: "referential",
+      label: t("adminIntegrity.references"),
+      icon: <Link2 className="size-5" />,
+      accentRing: "hover:ring-emerald-200",
+      iconBg: "bg-emerald-50 text-emerald-600",
+      passText: t("adminIntegrity.allReferencesIntact"),
+      failText: t("adminIntegrity.brokenReferences"),
+    },
+    {
+      key: "dataQuality",
+      label: t("adminIntegrity.dataQuality"),
+      icon: <Sparkles className="size-5" />,
+      accentRing: "hover:ring-rose-200",
+      iconBg: "bg-rose-50 text-rose-600",
+      passText: t("adminIntegrity.dataQualityExcellent"),
+      failText: t("adminIntegrity.qualityConcerns"),
+    },
+  ], [t]);
 
   const hasReport = report !== null;
   const totalIssues = report
@@ -345,14 +335,14 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
         const histBody = await histRes.json() as { data?: IntegrityReport[] };
         if (histBody.data) setHistory(histBody.data);
       } else {
-        setError(body.error ?? "Scan failed");
+        setError(body.error ?? t("adminIntegrity.scanFailed"));
       }
     } catch {
-      setError("Network error during scan");
+      setError(t("adminIntegrity.networkErrorScan"));
     } finally {
       setScanning(false);
     }
-  }, []);
+  }, [t]);
 
   const runRepair = useCallback(async () => {
     setRepairing(true);
@@ -365,14 +355,14 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
         // Auto-rescan after repair
         void runScan();
       } else {
-        setError(body.error ?? "Repair failed");
+        setError(body.error ?? t("adminIntegrity.repairFailed"));
       }
     } catch {
-      setError("Network error during repair");
+      setError(t("adminIntegrity.networkErrorRepair"));
     } finally {
       setRepairing(false);
     }
-  }, [runScan]);
+  }, [runScan, t]);
 
   return (
     <div className="space-y-6">
@@ -410,15 +400,15 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
               <div className="mb-2">
                 {report.status === "healthy" ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                    <ShieldCheck className="size-3.5" /> All Clear
+                    <ShieldCheck className="size-3.5" /> {t("adminIntegrity.allClear")}
                   </span>
                 ) : report.status === "warnings" ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900">
-                    <ShieldAlert className="size-3.5" /> {totalIssues} Warning{totalIssues !== 1 ? "s" : ""}
+                    <ShieldAlert className="size-3.5" /> {totalIssues} {totalIssues !== 1 ? t("adminIntegrity.warnings") : t("adminIntegrity.warning")}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-medium text-red-700 animate-subtle-pulse">
-                    <ShieldX className="size-3.5" /> Critical Issues
+                    <ShieldX className="size-3.5" /> {t("adminIntegrity.criticalIssues")}
                   </span>
                 )}
               </div>
@@ -427,18 +417,24 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
             {/* Health message */}
             <div className="text-sm text-[var(--color-text-secondary)] mb-1">
               {scanning
-                ? "Running full integrity scan..."
-                : getHealthMessage(report?.status ?? null, hasReport)}
+                ? t("adminIntegrity.runningFullScan")
+                : !hasReport
+                  ? t("adminIntegrity.noReportMsg")
+                  : report?.status === "healthy"
+                    ? t("adminIntegrity.healthyMsg")
+                    : report?.status === "warnings"
+                      ? t("adminIntegrity.warningsMsg")
+                      : t("adminIntegrity.criticalMsg")}
             </div>
 
             {/* Sub stats */}
             {hasReport && !scanning ? (
               <div className="text-xs text-[var(--color-text-secondary)] mb-4">
-                {report.summary.passed} of {report.summary.totalChecks} checks passed &middot;{" "}
-                Scanned {formatTimeAgo(report.runAt)} &middot; {report.durationMs}ms
+                {report.summary.passed} {t("adminIntegrity.scannedXOfY")} {report.summary.totalChecks} {t("adminIntegrity.checksPassed")} &middot;{" "}
+                {t("adminIntegrity.scannedTimeAgo")} {formatTimeAgo(report.runAt)} &middot; {report.durationMs}ms
               </div>
             ) : !hasReport && !scanning ? (
-              <div className="text-xs text-[var(--color-text-secondary)] mb-4">Never scanned</div>
+              <div className="text-xs text-[var(--color-text-secondary)] mb-4">{t("adminIntegrity.neverScanned")}</div>
             ) : null}
 
             {/* Action buttons */}
@@ -451,10 +447,10 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
               >
                 {scanning ? (
                   <span className="flex items-center gap-1.5">
-                    <RefreshCw className="size-3.5 animate-spin" /> Scanning...
+                    <RefreshCw className="size-3.5 animate-spin" /> {t("adminIntegrity.scanning")}
                   </span>
                 ) : (
-                  "Run Full Scan"
+                  t("adminIntegrity.runFullScan")
                 )}
               </button>
               {report && report.summary.autoFixable > 0 ? (
@@ -466,11 +462,11 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
                 >
                   {repairing ? (
                     <span className="flex items-center gap-1.5">
-                      <Wrench className="size-3.5 animate-spin" /> Repairing...
+                      <Wrench className="size-3.5 animate-spin" /> {t("adminIntegrity.repairing")}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1.5">
-                      <Wrench className="size-3.5" /> Auto-Fix All
+                      <Wrench className="size-3.5" /> {t("adminIntegrity.autoFixAll")}
                       <span className="rounded-full bg-emerald-200 px-1.5 py-0.5 text-xs">{report.summary.autoFixable}</span>
                     </span>
                   )}
@@ -504,7 +500,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
             className="flex w-full items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]"
           >
             {usersExpanded ? <ChevronDown className="size-4 text-[var(--color-text-secondary)]" /> : <ChevronRight className="size-4 text-[var(--color-text-secondary)]" />}
-            Per-User Results ({report.userSummaries.length} users)
+            {t("adminIntegrity.perUserResults")} ({report.userSummaries.length} {t("adminIntegrity.users")})
           </button>
           {usersExpanded ? (
             <div className="mt-3">
@@ -520,7 +516,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       {hasReport && !scanning && totalIssues === 0 ? (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center animate-scale-in">
           <ShieldCheck className="mx-auto size-8 text-emerald-500 mb-2" />
-          <div className="text-sm font-medium text-emerald-700">{getCleanScanMessage()}</div>
+          <div className="text-sm font-medium text-emerald-700">{t("adminIntegrity.cleanScanMsg")}</div>
         </div>
       ) : null}
 
@@ -529,7 +525,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
         <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
-            Scan History
+            {t("adminIntegrity.scanHistory")}
           </div>
           {history.map((h) => (
             <HistoryRow key={h.id} report={h} />

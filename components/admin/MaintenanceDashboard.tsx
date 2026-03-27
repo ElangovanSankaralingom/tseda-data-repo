@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Database,
   HardDrive,
@@ -21,6 +21,7 @@ import type { SystemStats } from "@/lib/maintenance/stats";
 import type { MaintenanceAction } from "@/lib/maintenance/log";
 import { useCountUp } from "@/hooks/useCountUp";
 import { formatNumber } from "@/lib/i18n/locale";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type Props = {
   lastRun: NightlyMaintenanceSummary | null;
@@ -29,69 +30,6 @@ type Props = {
 };
 
 import { type JobDef } from "./adminLocalTypes";
-
-const JOBS: JobDef[] = [
-  {
-    id: "backup",
-    label: "Backup",
-    description: "Create a full .data backup zip",
-    icon: <FileArchive className="size-5" />,
-    endpoint: "/api/admin/maintenance/backup",
-    method: "POST",
-    accent: "hover:ring-blue-200",
-    iconBg: "bg-blue-50 text-blue-600",
-  },
-  {
-    id: "integrity-check",
-    label: "Integrity Check",
-    description: "Scan all users for data issues",
-    icon: <Shield className="size-5" />,
-    endpoint: "/api/admin/maintenance/integrity-check",
-    method: "POST",
-    accent: "hover:ring-emerald-200",
-    iconBg: "bg-emerald-50 text-emerald-600",
-  },
-  {
-    id: "wal-compact",
-    label: "WAL Compact",
-    description: "Trim old event log entries",
-    icon: <Database className="size-5" />,
-    endpoint: "/api/admin/maintenance/wal-compact",
-    method: "POST",
-    accent: "hover:ring-amber-200",
-    iconBg: "bg-amber-50 text-amber-600",
-  },
-  {
-    id: "cleanup",
-    label: "Cleanup",
-    description: "Remove temp files and empty dirs",
-    icon: <Trash2 className="size-5" />,
-    endpoint: "/api/admin/maintenance/cleanup",
-    method: "POST",
-    accent: "hover:ring-red-200",
-    iconBg: "bg-red-50 text-red-600",
-  },
-  {
-    id: "rebuild-indexes",
-    label: "Rebuild Indexes",
-    description: "Rebuild user index files from stores",
-    icon: <RefreshCw className="size-5" />,
-    endpoint: "/api/admin/maintenance/rebuild-indexes",
-    method: "POST",
-    accent: "hover:ring-violet-200",
-    iconBg: "bg-violet-50 text-violet-600",
-  },
-  {
-    id: "migrate",
-    label: "Run Migrations",
-    description: "Apply data migrations to all users",
-    icon: <ArrowUpDown className="size-5" />,
-    endpoint: "/api/admin/maintenance/migrate",
-    method: "POST",
-    accent: "hover:ring-indigo-200",
-    iconBg: "bg-indigo-50 text-indigo-600",
-  },
-];
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 B";
@@ -130,10 +68,11 @@ function AnimatedStatTile({ icon, label, value, sub }: { icon: React.ReactNode; 
 }
 
 function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }) {
+  const { t } = useTranslation();
   if (!lastRun) {
     return (
       <span className="rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-primary)]">
-        No runs yet
+        {t("adminMaintenance.noRunsYet")}
       </span>
     );
   }
@@ -147,7 +86,7 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
           : "border-amber-200 bg-amber-50 text-amber-900"
       }`}
     >
-      {isOk ? "All systems healthy" : "Partial failure"} &middot; {formatTimeAgo(lastRun.finishedAt)}
+      {isOk ? t("adminMaintenance.allSystemsHealthy") : t("adminMaintenance.partialFailure")} &middot; {formatTimeAgo(lastRun.finishedAt)}
     </span>
   );
 }
@@ -186,8 +125,72 @@ function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
 }
 
 export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Props) {
+  const { t } = useTranslation();
   const [running, setRunning] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, { ok: boolean; message: string }>>({});
+
+  const JOBS: JobDef[] = useMemo(() => [
+    {
+      id: "backup",
+      label: t("adminMaintenance.jobBackup"),
+      description: t("adminMaintenance.jobBackupDesc"),
+      icon: <FileArchive className="size-5" />,
+      endpoint: "/api/admin/maintenance/backup",
+      method: "POST",
+      accent: "hover:ring-blue-200",
+      iconBg: "bg-blue-50 text-blue-600",
+    },
+    {
+      id: "integrity-check",
+      label: t("adminMaintenance.jobIntegrityCheck"),
+      description: t("adminMaintenance.jobIntegrityCheckDesc"),
+      icon: <Shield className="size-5" />,
+      endpoint: "/api/admin/maintenance/integrity-check",
+      method: "POST",
+      accent: "hover:ring-emerald-200",
+      iconBg: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      id: "wal-compact",
+      label: t("adminMaintenance.jobWalCompact"),
+      description: t("adminMaintenance.jobWalCompactDesc"),
+      icon: <Database className="size-5" />,
+      endpoint: "/api/admin/maintenance/wal-compact",
+      method: "POST",
+      accent: "hover:ring-amber-200",
+      iconBg: "bg-amber-50 text-amber-600",
+    },
+    {
+      id: "cleanup",
+      label: t("adminMaintenance.jobCleanup"),
+      description: t("adminMaintenance.jobCleanupDesc"),
+      icon: <Trash2 className="size-5" />,
+      endpoint: "/api/admin/maintenance/cleanup",
+      method: "POST",
+      accent: "hover:ring-red-200",
+      iconBg: "bg-red-50 text-red-600",
+    },
+    {
+      id: "rebuild-indexes",
+      label: t("adminMaintenance.jobRebuildIndexes"),
+      description: t("adminMaintenance.jobRebuildIndexesDesc"),
+      icon: <RefreshCw className="size-5" />,
+      endpoint: "/api/admin/maintenance/rebuild-indexes",
+      method: "POST",
+      accent: "hover:ring-violet-200",
+      iconBg: "bg-violet-50 text-violet-600",
+    },
+    {
+      id: "migrate",
+      label: t("adminMaintenance.jobRunMigrations"),
+      description: t("adminMaintenance.jobRunMigrationsDesc"),
+      icon: <ArrowUpDown className="size-5" />,
+      endpoint: "/api/admin/maintenance/migrate",
+      method: "POST",
+      accent: "hover:ring-indigo-200",
+      iconBg: "bg-indigo-50 text-indigo-600",
+    },
+  ], [t]);
 
   const runJob = useCallback(async (job: JobDef) => {
     setRunning((prev) => ({ ...prev, [job.id]: true }));
@@ -201,16 +204,16 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       const res = await fetch(job.endpoint, { method: job.method });
       const body = await res.json() as { data?: unknown; error?: string };
       if (res.ok) {
-        setResults((prev) => ({ ...prev, [job.id]: { ok: true, message: "Completed successfully" } }));
+        setResults((prev) => ({ ...prev, [job.id]: { ok: true, message: t("adminMaintenance.completedSuccessfully") } }));
       } else {
-        setResults((prev) => ({ ...prev, [job.id]: { ok: false, message: body.error ?? "Unknown error" } }));
+        setResults((prev) => ({ ...prev, [job.id]: { ok: false, message: body.error ?? t("adminMaintenance.unknownError") } }));
       }
     } catch {
-      setResults((prev) => ({ ...prev, [job.id]: { ok: false, message: "Network error" } }));
+      setResults((prev) => ({ ...prev, [job.id]: { ok: false, message: t("adminMaintenance.networkError") } }));
     } finally {
       setRunning((prev) => ({ ...prev, [job.id]: false }));
     }
-  }, []);
+  }, [t]);
 
   return (
     <div className="space-y-6">
@@ -229,26 +232,26 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <AnimatedStatTile
             icon={<Users className="size-5" />}
-            label="Users"
+            label={t("adminMaintenance.statsUsers")}
             value={stats.users.total}
           />
           <AnimatedStatTile
             icon={<HardDrive className="size-5" />}
-            label="Data Store"
+            label={t("adminMaintenance.statsDataStore")}
             value={stats.storage.dataBytes}
             sub={formatBytes(stats.storage.dataBytes)}
           />
           <AnimatedStatTile
             icon={<Server className="size-5" />}
-            label="WAL Files"
+            label={t("adminMaintenance.statsWalFiles")}
             value={stats.wal.totalFiles}
             sub={formatBytes(stats.wal.totalBytes)}
           />
           <StatTile
             icon={<FileArchive className="size-5" />}
-            label="Backups"
+            label={t("adminMaintenance.statsBackups")}
             value={String(stats.backups.total)}
-            sub={stats.backups.latestAt ? `Latest: ${formatTimeAgo(stats.backups.latestAt)}` : "None yet"}
+            sub={stats.backups.latestAt ? `${t("adminMaintenance.statsLatest")} ${formatTimeAgo(stats.backups.latestAt)}` : t("adminMaintenance.statsNoneYet")}
           />
         </div>
       ) : null}
@@ -258,16 +261,16 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
         <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Activity className="size-4 text-[var(--color-text-secondary)]" />
-            Last Nightly Run
+            {t("adminMaintenance.lastNightlyRun")}
           </div>
           <div className="space-y-2">
-            <NightlyStepRow label="Backup" step={lastRun.backup} />
-            <NightlyStepRow label="Integrity Check" step={lastRun.integrity} />
-            <NightlyStepRow label="Export Housekeeping" step={lastRun.housekeeping} />
-            {lastRun.autoArchive ? <NightlyStepRow label="Auto-Archive" step={lastRun.autoArchive} /> : null}
-            {lastRun.editGrantExpiry ? <NightlyStepRow label="Edit Grant Expiry" step={lastRun.editGrantExpiry} /> : null}
-            {lastRun.timerWarnings ? <NightlyStepRow label="Timer Warnings" step={lastRun.timerWarnings} /> : null}
-            {lastRun.walCompaction ? <NightlyStepRow label="WAL Compaction" step={lastRun.walCompaction} /> : null}
+            <NightlyStepRow label={t("adminMaintenance.nightlyBackup")} step={lastRun.backup} />
+            <NightlyStepRow label={t("adminMaintenance.nightlyIntegrityCheck")} step={lastRun.integrity} />
+            <NightlyStepRow label={t("adminMaintenance.nightlyExportHousekeeping")} step={lastRun.housekeeping} />
+            {lastRun.autoArchive ? <NightlyStepRow label={t("adminMaintenance.nightlyAutoArchive")} step={lastRun.autoArchive} /> : null}
+            {lastRun.editGrantExpiry ? <NightlyStepRow label={t("adminMaintenance.nightlyEditGrantExpiry")} step={lastRun.editGrantExpiry} /> : null}
+            {lastRun.timerWarnings ? <NightlyStepRow label={t("adminMaintenance.nightlyTimerWarnings")} step={lastRun.timerWarnings} /> : null}
+            {lastRun.walCompaction ? <NightlyStepRow label={t("adminMaintenance.nightlyWalCompaction")} step={lastRun.walCompaction} /> : null}
           </div>
         </div>
       ) : null}
@@ -276,7 +279,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
           <Server className="size-4 text-[var(--color-text-secondary)]" />
-          Maintenance Jobs
+          {t("adminMaintenance.maintenanceJobs")}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {JOBS.map((job, index) => (
@@ -313,10 +316,10 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
                 {running[job.id] ? (
                   <span className="flex items-center justify-center gap-1.5">
                     <RefreshCw className="size-3 animate-spin" />
-                    Running...
+                    {t("adminMaintenance.running")}
                   </span>
                 ) : (
-                  "Run Now"
+                  t("adminMaintenance.runNow")
                 )}
               </button>
             </div>
@@ -332,11 +335,11 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
               type="submit"
               className="rounded-xl border border-[var(--color-primary)] bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
             >
-              Run Full Nightly Maintenance
+              {t("adminMaintenance.runFullNightly")}
             </button>
           </form>
           <span className="text-xs text-[var(--color-text-secondary)]">
-            Runs backup + integrity check + housekeeping + auto-archive + edit grant expiry in sequence. Rate limited to 2/hour.
+            {t("adminMaintenance.runFullNightlyDesc")}
           </span>
         </div>
       </div>
@@ -346,7 +349,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
         <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
-            Recent Actions
+            {t("adminMaintenance.recentActions")}
           </div>
           <div className="divide-y-0">
             {actionLog.map((entry, i) => (

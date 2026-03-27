@@ -20,6 +20,7 @@ import {
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import type { SettingCategory, SettingWithMeta, ChangeLogEntry } from "./settings/SettingsTypes";
 import { SettingRow } from "./settings/SettingsControls";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Types (local)
@@ -44,15 +45,7 @@ const CATEGORY_ICONS: Record<SettingCategory, typeof Globe> = {
   advanced: Terminal,
 };
 
-const CATEGORY_META: Record<SettingCategory, { label: string; description: string }> = {
-  general: { label: "General", description: "The basics — name, branding, and identity" },
-  auth: { label: "Authentication", description: "Who gets in and who doesn't" },
-  entries: { label: "Entries & Edit Windows", description: "Control the flow of data entry" },
-  streaks: { label: "Streaks", description: "Tweak the gamification engine" },
-  maintenance: { label: "Maintenance", description: "Keep the engine room running smooth" },
-  appearance: { label: "Appearance", description: "Make it look the way you want" },
-  advanced: { label: "Advanced", description: "Here be dragons. Change with caution." },
-};
+// CATEGORY_META is now defined inside the component to support i18n
 
 const CATEGORY_ORDER: SettingCategory[] = ["general", "auth", "entries", "streaks", "maintenance", "appearance", "advanced"];
 
@@ -80,6 +73,7 @@ function emailName(email: string): string {
 // ---------------------------------------------------------------------------
 
 export default function SettingsDashboard({ initialSettings, initialCounts }: Props) {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState(initialSettings);
   const [counts, setCounts] = useState(initialCounts);
   const [activeCategory, setActiveCategory] = useState<SettingCategory>("general");
@@ -87,6 +81,16 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
   const [changelog, setChangelog] = useState<ChangeLogEntry[]>([]);
   const [showChangelog, setShowChangelog] = useState(false);
   const [resetAllOpen, setResetAllOpen] = useState(false);
+
+  const CATEGORY_META: Record<SettingCategory, { label: string; description: string }> = useMemo(() => ({
+    general: { label: t("adminSettingsPage.general"), description: t("adminSettingsPage.generalDesc") },
+    auth: { label: t("adminSettingsPage.authentication"), description: t("adminSettingsPage.authDesc") },
+    entries: { label: t("adminSettingsPage.entriesWindows"), description: t("adminSettingsPage.entriesWindowsDesc") },
+    streaks: { label: t("adminSettingsPage.streaks"), description: t("adminSettingsPage.streaksDesc") },
+    maintenance: { label: t("adminSettingsPage.maintenance"), description: t("adminSettingsPage.maintenanceDesc") },
+    appearance: { label: t("adminSettingsPage.appearance"), description: t("adminSettingsPage.appearanceDesc") },
+    advanced: { label: t("adminSettingsPage.advanced"), description: t("adminSettingsPage.advancedDesc") },
+  }), [t]);
 
   // Group settings by category
   const byCategory = useMemo(() => {
@@ -117,13 +121,13 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
   const grouped = useMemo(() => {
     const groups = new Map<string, SettingWithMeta[]>();
     for (const s of filteredSettings) {
-      const group = s.definition.group ?? "Other";
+      const group = s.definition.group ?? t("adminSettingsPage.other");
       const list = groups.get(group) ?? [];
       list.push(s);
       groups.set(group, list);
     }
     return groups;
-  }, [filteredSettings]);
+  }, [filteredSettings, t]);
 
   // Refresh from server
   const refresh = useCallback(async () => {
@@ -267,7 +271,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search settings..."
+            placeholder={t("adminSettings.searchPlaceholder")}
             aria-label="Search settings"
             className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-input-bg)] pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
@@ -287,21 +291,21 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Download className="size-3.5" />
-            Export
+            {t("adminSettings.export")}
           </button>
           <button
             onClick={handleImport}
             className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Upload className="size-3.5" />
-            Import
+            {t("adminSettings.import")}
           </button>
           <button
             onClick={() => setResetAllOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition-all hover:bg-red-50"
           >
             <RotateCcw className="size-3.5" />
-            Reset All
+            {t("adminSettings.resetAll")}
           </button>
         </div>
       </div>
@@ -384,7 +388,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
 
           {isSearching && (
             <div className="text-sm text-[var(--color-text-secondary)]">
-              {filteredSettings.length} {filteredSettings.length === 1 ? "result" : "results"} for &quot;{search}&quot;
+              {filteredSettings.length} {filteredSettings.length === 1 ? t("adminSettings.result") : t("adminSettings.results")} for &quot;{search}&quot;
             </div>
           )}
 
@@ -409,8 +413,8 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           {filteredSettings.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-16 text-center">
               <Search className="size-8 text-[var(--color-text-muted)] mb-3" />
-              <div className="text-sm font-medium text-[var(--color-text-secondary)]">No settings found</div>
-              <div className="mt-1 text-xs text-[var(--color-text-secondary)]">Try a different search term</div>
+              <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminSettings.noSettingsFound")}</div>
+              <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminSettings.tryDifferentSearch")}</div>
             </div>
           )}
 
@@ -421,13 +425,13 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
               className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               <ChevronRight className={`size-4 transition-transform duration-200 ${showChangelog ? "rotate-90" : ""}`} />
-              Recent Changes
+              {t("adminSettings.recentChanges")}
             </button>
 
             {showChangelog && (
               <div className="mt-4 space-y-2 animate-fade-in">
                 {changelog.length === 0 ? (
-                  <p className="text-sm text-[var(--color-text-secondary)]">No changes yet</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">{t("adminSettings.noChanges")}</p>
                 ) : (
                   changelog.slice(0, 15).map((entry, i) => (
                     <div
@@ -438,7 +442,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                       <div className="min-w-0 flex-1">
                         <div className="text-[var(--color-text-primary)]">
                           <span className="font-medium">{entry.key}</span>
-                          {" changed by "}
+                          {" "}{t("adminSettings.changedBy")}{" "}
                           <span className="font-medium">{emailName(entry.changedBy)}</span>
                         </div>
                         <div className="mt-0.5 flex items-center gap-2 text-[var(--color-text-secondary)]">
@@ -460,9 +464,9 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       {/* Reset All Confirm */}
       <ConfirmDialog
         open={resetAllOpen}
-        title="Reset all settings?"
-        description="This will reset every setting to its default value. This action cannot be undone."
-        confirmLabel="Reset Everything"
+        title={t("adminSettings.resetAllConfirmTitle")}
+        description={t("adminSettings.resetAllConfirmDesc")}
+        confirmLabel={t("adminSettings.resetEverythingBtn")}
         variant="destructive"
         onConfirm={handleResetAll}
         onCancel={() => setResetAllOpen(false)}

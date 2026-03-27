@@ -212,18 +212,20 @@ export default function DataEntryClient({ greeting, userName, categories, totals
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{statusText}</p>
         </div>
 
-        {hasAnyEntries && (
-          <div className="flex items-center gap-3">
+        {hasAnyEntries && (totals.streakActivatedCount > 0 || totals.streakWinsCount > 0) && (
+          <div className="inline-flex items-center gap-0 rounded-full border border-[var(--color-card-border)] overflow-hidden bg-[var(--color-card-bg)]">
             {totals.streakActivatedCount > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 border border-amber-100">
-                <Flame className="size-4" />
-                <span>{totals.streakActivatedCount} {t('dashboard.active')}</span>
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 ${totals.streakWinsCount > 0 ? "border-r border-[var(--color-card-border)]" : ""}`}>
+                <Flame className="size-3.5 text-amber-500" />
+                <span className="text-sm font-medium text-amber-500">{totals.streakActivatedCount}</span>
+                <span className="text-xs text-[var(--color-text-secondary)]">{t('dashboard.active')}</span>
               </div>
             )}
             {totals.streakWinsCount > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-400 border border-emerald-500/20">
-                <Trophy className="size-4" />
-                <span>{totals.streakWinsCount} {t('dashboard.wins')}</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5">
+                <Trophy className="size-3.5 text-emerald-500" />
+                <span className="text-sm font-medium text-emerald-500">{totals.streakWinsCount}</span>
+                <span className="text-xs text-[var(--color-text-secondary)]">{totals.streakWinsCount === 1 ? t('dashboard.win') : t('dashboard.wins')}</span>
               </div>
             )}
           </div>
