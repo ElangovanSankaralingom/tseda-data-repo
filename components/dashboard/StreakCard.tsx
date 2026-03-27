@@ -10,23 +10,28 @@ import { formatNumber } from "@/lib/i18n/locale";
 const STYLE_CONFIG = {
   active: {
     icon: Flame,
-    gradient:
-      "border-orange-400/50 bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-orange-500/20",
-    zeroGradient: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
-    hoverRing: "hover:ring-2 hover:ring-amber-300/50",
+    filled: "border-amber-500/20 bg-amber-500/[0.08] shadow-sm backdrop-blur-sm",
+    zeroFilled: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
+    hoverRing: "hover:ring-2 hover:ring-amber-300/30",
+    iconBg: "bg-amber-500/[0.12]",
+    iconColor: "text-amber-600 opacity-60",
+    labelColor: "text-amber-600/80",
   },
   wins: {
     icon: Trophy,
-    gradient:
-      "border-yellow-400/50 bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg shadow-yellow-500/20",
-    zeroGradient: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
-    hoverRing: "hover:ring-2 hover:ring-yellow-300/50",
+    filled: "border-emerald-500/20 bg-emerald-500/[0.08] shadow-sm backdrop-blur-sm",
+    zeroFilled: "border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]",
+    hoverRing: "hover:ring-2 hover:ring-emerald-300/30",
+    iconBg: "bg-emerald-500/[0.12]",
+    iconColor: "text-emerald-600 opacity-60",
+    labelColor: "text-emerald-600/80",
   },
 } as const;
 
 function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { type: "active" | "wins"; value: number; subtext?: string; hoverDescription?: string; staggerClass?: string }) {
   const { t, language } = useTranslation();
-  const { icon: Icon, gradient, zeroGradient, hoverRing } = STYLE_CONFIG[type];
+  const config = STYLE_CONFIG[type];
+  const Icon = config.icon;
   const hasValue = value > 0;
   const displayValue = useCountUp(value);
 
@@ -36,24 +41,24 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl",
+        "group relative overflow-hidden rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
         "animate-fade-in-up",
         staggerClass,
-        hasValue ? cn(gradient, hoverRing) : zeroGradient
+        hasValue ? cn(config.filled, config.hoverRing) : config.zeroFilled
       )}
     >
       <div className="relative flex items-center gap-3">
         <div
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110",
-            hasValue ? "bg-white/20 text-white" : "bg-[var(--color-skeleton-base)] text-[var(--color-text-secondary)]"
+            hasValue ? config.iconBg : "bg-[var(--color-skeleton-base)]"
           )}
         >
           {type === "active" ? (
-            <Icon className={cn("size-5", hasValue && "animate-flame")} />
+            <Icon className={cn("size-5", hasValue ? config.iconColor : "text-[var(--color-text-secondary)]")} />
           ) : (
             <span className="inline-block transition-transform duration-300 group-hover:rotate-[-5deg]">
-              <Icon className="size-5" />
+              <Icon className={cn("size-5", hasValue ? config.iconColor : "text-[var(--color-text-secondary)]")} />
             </span>
           )}
         </div>
@@ -61,7 +66,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-xs font-medium uppercase tracking-wide",
-              hasValue ? "text-white/80" : "text-[var(--color-text-secondary)]"
+              hasValue ? config.labelColor : "text-[var(--color-text-secondary)]"
             )}
           >
             {label}
@@ -69,17 +74,12 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           <div
             className={cn(
               "text-3xl font-bold tabular-nums",
-              hasValue ? "text-white" : "text-[var(--color-text-secondary)]"
+              hasValue ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
             )}
           >
             {formatNumber(displayValue, language)}
           </div>
-          <div
-            className={cn(
-              "text-xs",
-              hasValue ? "text-white/90" : "text-[var(--color-text-secondary)]"
-            )}
-          >
+          <div className="text-xs text-[var(--color-text-secondary)]">
             {hasValue ? subtext : zeroCta}
           </div>
         </div>
@@ -89,7 +89,7 @@ function StreakCard({ type, value, subtext, hoverDescription, staggerClass }: { 
           className={cn(
             "mt-0 max-h-0 overflow-hidden text-xs italic opacity-0 transition-all duration-200",
             "group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100",
-            hasValue ? "text-white/80" : "text-[var(--color-text-secondary)]"
+            "text-[var(--color-text-secondary)]"
           )}
         >
           {hoverDescription}
