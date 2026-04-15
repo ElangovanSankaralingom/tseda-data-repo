@@ -17,6 +17,7 @@ import {
   type StreakProgressAggregateEntry,
 } from "@/lib/streakProgress";
 import type { Entry } from "@/lib/types/entry";
+import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,6 +70,7 @@ export type AnalyticsSnapshot = {
   durationMs: number;
   totalUsers: number;
   totalEntries: number;
+  stalePdfCount: number;
   users: UserSummary[];
   entries: EntryDataPoint[];
   editRequests: EditRequestDataPoint[];
@@ -129,6 +131,7 @@ export async function computeAnalytics(): Promise<Result<AnalyticsSnapshot>> {
       const allUsers: UserSummary[] = [];
       const allEntries: EntryDataPoint[] = [];
       const allEditRequests: EditRequestDataPoint[] = [];
+      let stalePdfCount = 0;
 
       // Per-category accumulators
       const catEntryCount: Record<string, number> = {};
@@ -204,6 +207,17 @@ export async function computeAnalytics(): Promise<Result<AnalyticsSnapshot>> {
                   category,
                   userEmail: email,
                 });
+              }
+
+              // Check for stale PDF
+              const entryWithMeta = entry as Record<string, unknown>;
+              const hasPdf = !!(entryWithMeta.pdfMeta as Record<string, unknown>)?.url &&
+                             !!(entryWithMeta.pdfMeta as Record<string, unknown>)?.storedPath;
+              if (hasPdf && entryWithMeta.pdfSourceHash) {
+                const currentHash = hashPrePdfFields(entry, category as CategoryKey);
+                if (currentHash !== entryWithMeta.pdfSourceHash) {
+                  stalePdfCount++;
+                }
               }
 
               // Streak input
@@ -289,6 +303,7 @@ export async function computeAnalytics(): Promise<Result<AnalyticsSnapshot>> {
         durationMs,
         totalUsers: emails.length,
         totalEntries: allEntries.length,
+        stalePdfCount,
         users: allUsers,
         entries: allEntries,
         editRequests: allEditRequests,

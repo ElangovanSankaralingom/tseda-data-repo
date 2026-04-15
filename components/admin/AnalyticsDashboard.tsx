@@ -10,6 +10,7 @@ import {
   Clock,
   RefreshCw,
   Flame,
+  FileWarning,
 } from "lucide-react";
 import Link from "next/link";
 import type { AnalyticsSnapshot } from "@/lib/analytics/compute";
@@ -54,17 +55,19 @@ function rangeToDateBounds(key: RangeKey, now: Date) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatAge(ms: number | null) {
-  if (ms === null) return "Never";
+function formatAge(ms: number | null, tr: (key: string) => string) {
+  if (ms === null) return tr("time.never");
   const minutes = Math.floor(ms / 60_000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return tr("time.justNow");
+  if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function getDayNames(tr: (key: string) => string): string[] {
+  return [tr("time.sun"), tr("time.mon"), tr("time.tue"), tr("time.wed"), tr("time.thu"), tr("time.fri"), tr("time.sat")];
+}
 
 // ---------------------------------------------------------------------------
 // Main Dashboard
@@ -208,13 +211,14 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
   // Busiest day
   const busiestDay = useMemo(() => {
-    const byDay = groupAndCount(filtered, (e) => DAY_NAMES[new Date(e.date).getDay()]);
+    const dayNames = getDayNames(t as (key: string) => string);
+    const byDay = groupAndCount(filtered, (e) => dayNames[new Date(e.date).getDay()]);
     let best = { day: "-", count: 0 };
     for (const [day, count] of Object.entries(byDay)) {
       if (count > best.count) best = { day, count };
     }
     return best;
-  }, [filtered]);
+  }, [filtered, t]);
 
   // Edit request metrics
   const editRequestMetrics = useMemo(() => {
@@ -256,7 +260,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-[var(--color-text-muted)]">
-            {t("adminAnalytics.updated")} {formatAge(cacheAge)}
+            {t("adminAnalytics.updated")} {formatAge(cacheAge, t as (key: string) => string)}
           </span>
           <button
             onClick={handleRefresh}
@@ -270,7 +274,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         <MetricCard
           icon={ClipboardList}
           label={t("adminAnalytics.entries")}
@@ -343,6 +347,18 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           current={pendingRequests}
           previous={pendingRequests}
           stagger={6}
+        />
+        <MetricCard
+          icon={FileWarning}
+          label={t("adminAnalytics.stalePdfs")}
+          value={snapshot.stalePdfCount}
+          accent="border-t-2 border-t-orange-400"
+          iconBg="bg-orange-500/15"
+          iconColor="text-orange-500"
+          hoverRing="hover:ring-2 hover:ring-orange-200/50"
+          current={snapshot.stalePdfCount}
+          previous={snapshot.stalePdfCount}
+          stagger={7}
         />
       </div>
 
