@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   Clock,
   ClipboardList,
@@ -75,12 +75,12 @@ function SectionHeader({ group, count, isUrgent }: { group: EntryListGroup; coun
           {count}
         </span>
       </div>
-      <div className="h-px bg-[var(--color-card-border)]" />
+      <div className="h-px bg-[var(--color-glass-border)]" />
     </div>
   );
 }
 
-function Section<TEntry>({
+function SectionBase<TEntry>({
   group,
   items,
   renderEntry,
@@ -100,6 +100,8 @@ function Section<TEntry>({
     </div>
   );
 }
+
+const Section = memo(SectionBase) as typeof SectionBase;
 
 function DefaultEmptyState() {
   const { t } = useTranslation();
@@ -220,7 +222,7 @@ export function SmartGroupedEntrySections<TEntry>({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('entry.searchEntries')}
               aria-label="Search entries"
-              className="h-9 w-full rounded-xl bg-[var(--color-dropdown-hover)] pl-9 pr-8 text-sm text-[var(--color-text-secondary)] outline-none placeholder:text-[var(--color-text-secondary)] focus:bg-[var(--color-card-bg)] focus:ring-2 focus:ring-[var(--color-text-muted)] transition-all"
+              className="h-9 w-full rounded-xl bg-[var(--color-dropdown-hover)] pl-9 pr-8 text-sm text-[var(--color-text-secondary)] outline-none placeholder:text-[var(--color-text-secondary)] focus:bg-[var(--color-glass-bg)] focus:ring-2 focus:ring-[var(--color-text-muted)] transition-all"
             />
             {searchQuery && (
               <button
@@ -319,7 +321,7 @@ export default function GroupedEntrySections<TEntry>({
 export function createGroupedEntryListCard<TEntry>({
   title,
   subtitle,
-  className = "bg-[var(--color-card-bg)]/70 p-5",
+  className = "bg-[var(--color-glass-bg)]/70 p-5",
   groupedEntries,
   renderEntry,
   emptyState,
