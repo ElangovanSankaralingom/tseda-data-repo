@@ -551,7 +551,7 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
           ? `${t('entry.speaker')} ${entry.guestSpeakerName}${entry.guestSpeakerOrganisation ? ` — ${entry.guestSpeakerOrganisation}` : ""}`
           : ""
       }
-      renderListEntryBody={({ entry }) => {
+      renderListEntryBody={({ entry, group }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
         const startStr = formatDisplayDate(entry.startDate);
         const endStr = formatDisplayDate(entry.endDate);
@@ -573,13 +573,13 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
         }
         return (
           <>
-            <MetadataPills parts={parts} />
+            <MetadataPills parts={parts} group={group} />
             <AttachmentBadges attachments={[
               { label: "Permission Letter", files: entry.permissionLetter },
               { label: "Geotagged Photo", files: entry.geotaggedPhotos },
               { label: "Attendance Sheet", files: entry.attendanceSheet },
               { label: "Official Poster", files: entry.officialPoster },
-            ]} />
+            ]} group={group} />
           </>
         );
       }}

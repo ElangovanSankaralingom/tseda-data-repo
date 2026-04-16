@@ -452,7 +452,7 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
       renderFormFields={(ctx) => <CaseStudyFormFields ctx={ctx} />}
       buildListEntryTitle={(entry) => (entry.placeOfVisit || "").trim() || t('entry.untitledEntry')}
       buildListEntrySubtitle={(entry) => entry.purposeOfVisit || ""}
-      renderListEntryBody={({ entry }) => {
+      renderListEntryBody={({ entry, group }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
         const startStr = formatDisplayDate(entry.startDate);
         const endStr = formatDisplayDate(entry.endDate);
@@ -470,7 +470,7 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
         if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} ${t('entry.participants')}`);
         return (
           <>
-            <MetadataPills parts={parts} />
+            <MetadataPills parts={parts} group={group} />
             <AttachmentBadges attachments={[
               { label: "Permission Letter", files: entry.permissionLetter },
               { label: "Travel Plan", files: entry.travelPlan },
@@ -478,7 +478,7 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
               { label: "Report", files: entry.report },
               { label: "Feedback", files: entry.feedback },
               { label: "Advance Closure", files: entry.advanceClosure },
-            ]} />
+            ]} group={group} />
           </>
         );
       }}

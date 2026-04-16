@@ -330,52 +330,6 @@ function SectionContainer<TEntry>({
   const visibleItems = shouldCollapse ? items.slice(0, COLLAPSE_THRESHOLD) : items;
   const hiddenCount = shouldCollapse ? items.length - COLLAPSE_THRESHOLD : 0;
 
-  // LOCKED IN — VAULT ZONE: deeply recessed, different color temperature, zone break
-  if (group === "locked_in" && container.hasContainer) {
-    return (
-      <div className="space-y-0">
-        {/* Zone separator — visual break between active and archived */}
-        <div className="flex items-center gap-3 mb-4 mt-2">
-          <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(34,197,94,0.15), transparent)" }} />
-          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-500/30 select-none">{t(SECTION_CONFIGS.locked_in.title as Parameters<typeof t>[0])}</span>
-          <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(34,197,94,0.15), transparent)" }} />
-        </div>
-      <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{
-          background: container.background,
-          boxShadow: "inset 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.08)",
-        }}
-      >
-        {/* Thick green top accent — vault entry line */}
-        <div
-          style={{
-            height: "3px",
-            background: "linear-gradient(90deg, #22c55e 0%, #16a34a 40%, rgba(34,197,94,0.15) 100%)",
-            boxShadow: "0 1px 12px rgba(34,197,94,0.15)",
-          }}
-        />
-        {/* Subtle diagonal hash pattern overlay for texture */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.02]"
-          style={{
-            backgroundImage: "repeating-linear-gradient(135deg, transparent, transparent 10px, rgba(34,197,94,0.3) 10px, rgba(34,197,94,0.3) 11px)",
-          }}
-        />
-        <div className="relative p-5">
-          <SectionHeader group={group} count={items.length} isUrgent={isUrgent} />
-          <div className="space-y-2.5">
-            {visibleItems.map((entry, index) => renderEntry(entry, group, index))}
-            {shouldCollapse && (
-              <CollapsedStack count={hiddenCount} hex={hex} onExpand={() => setExpanded(true)} />
-            )}
-          </div>
-        </div>
-      </div>
-      </div>
-    );
-  }
-
   // Groups WITH container surface — wrapped in a tinted/bordered panel
   if (container.hasContainer) {
     return (
@@ -397,9 +351,19 @@ function SectionContainer<TEntry>({
     );
   }
 
-  // Groups WITHOUT container — flat, inline (drafts)
+  // Groups WITHOUT container — flat, inline (drafts, locked_in)
   return (
     <div>
+      {/* Zone separator for locked_in — visual break from active sections */}
+      {group === "locked_in" && (
+        <div className="flex items-center gap-3 mb-4 mt-2">
+          <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(34,197,94,0.15), transparent)" }} />
+          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-500/30 select-none">
+            {t(SECTION_CONFIGS.locked_in.title as Parameters<typeof t>[0])}
+          </span>
+          <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(34,197,94,0.15), transparent)" }} />
+        </div>
+      )}
       <SectionHeader group={group} count={items.length} isUrgent={isUrgent} />
       <div className="space-y-2">
         {visibleItems.map((entry, index) => renderEntry(entry, group, index))}

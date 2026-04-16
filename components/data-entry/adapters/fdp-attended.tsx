@@ -336,7 +336,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
       renderFormFields={(ctx) => <FdpAttendedFormFields ctx={ctx} />}
       buildListEntryTitle={(entry) => entry.programName}
       buildListEntrySubtitle={(entry) => entry.organisingBody}
-      renderListEntryBody={({ entry }) => {
+      renderListEntryBody={({ entry, group }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
         const startStr = formatDisplayDate(entry.startDate);
         const endStr = formatDisplayDate(entry.endDate);
@@ -352,11 +352,11 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(formatCurrency(entry.fundingAmount, "en"));
         return (
           <>
-            <MetadataPills parts={parts} />
+            <MetadataPills parts={parts} group={group} />
             <AttachmentBadges attachments={[
               { label: "Permission Letter", files: entry.permissionLetter },
               { label: "Completion Certificate", files: entry.completionCertificate },
-            ]} />
+            ]} group={group} />
           </>
         );
       }}

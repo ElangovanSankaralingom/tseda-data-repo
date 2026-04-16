@@ -246,7 +246,7 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
         permanentlyLocked={entry.permanentlyLocked === true}
         requestActionUsed={(entry as Record<string, unknown>).requestActionUsed === true}
       >
-        {renderBody(entry)}
+        {renderBody(entry, group)}
       </CategoryEntryRecordCard>
     );
   }

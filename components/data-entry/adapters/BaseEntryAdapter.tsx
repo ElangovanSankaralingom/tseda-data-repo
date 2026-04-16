@@ -74,6 +74,7 @@ export type FormFieldsContext<T extends EntryRecord> = {
  */
 export type ListEntryBodyContext<T extends EntryRecord> = {
   entry: T;
+  group?: import("@/lib/entryCategorization").EntryListGroup;
 };
 
 export type BaseEntryAdapterProps<T extends EntryRecord> = CategoryAdapterPageProps & {
@@ -558,7 +559,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     cancelRequestDelete: (entry) => void controller.cancelRequestDelete(entry),
     sendForConfirmation: (entry) => void sendForConfirmation(entry),
     renderBody: renderListEntryBody
-      ? (entry: T) => renderListEntryBody({ entry })
+      ? (entry: T, group?: import("@/lib/entryCategorization").EntryListGroup) => renderListEntryBody({ entry, group })
       : () => null,
   });
 
