@@ -149,31 +149,22 @@ function NavWidget({
         !active && "hover:border-white/[0.15] hover:shadow-[0_6px_24px_rgba(0,0,0,0.5)]"
       )}
       style={{
-        backgroundColor: "#0c0e18",
-        border: `1px solid ${active ? `${accent}40` : "rgba(255,255,255,0.07)"}`,
+        backgroundColor: active ? accent : "#0c0e18",
+        border: `1px solid ${active ? accent : "rgba(255,255,255,0.07)"}`,
         boxShadow: active
-          ? `0 8px 32px ${accent}18, 0 0 0 1px ${accent}10`
+          ? `0 8px 28px ${accent}50, 0 0 0 1px ${accent}`
           : "0 4px 20px rgba(0,0,0,0.4)",
       }}
     >
-      {/* Active accent bar */}
-      {active && (
-        <div
-          className="absolute top-0 left-4 right-4 h-[2px] rounded-b-full"
-          style={{
-            backgroundColor: accent,
-            boxShadow: `0 0 16px ${accent}60`,
-          }}
-        />
-      )}
-
-      {/* Icon box */}
+      {/* Icon box — frosted white when active, dark when inactive */}
       <div
         className="flex size-10 items-center justify-center rounded-xl transition-all duration-300"
         style={{
-          backgroundColor: active ? accent : "#181a26",
+          backgroundColor: active
+            ? "rgba(255,255,255,0.18)"
+            : "#181a26",
           boxShadow: active
-            ? `0 4px 16px ${accent}40`
+            ? "0 2px 8px rgba(0,0,0,0.2)"
             : "0 2px 8px rgba(0,0,0,0.5)",
         }}
       >
@@ -200,32 +191,38 @@ function NavWidget({
         </span>
         {status && (
           <span
-            className="block mt-0.5 text-[11px] font-medium"
-            style={{ color: `${accent}90` }}
+            className={cn(
+              "block mt-0.5 text-[11px] font-medium",
+              active ? "text-white/70" : ""
+            )}
+            style={active ? undefined : { color: `${accent}90` }}
           >
             {status}
           </span>
         )}
       </div>
 
-      {/* Badge */}
+      {/* Badge — inverted when active (white bg, accent text) */}
       {badge != null && badge > 0 && (
         <span
-          className="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full text-[9px] font-black text-black"
+          className="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full text-[9px] font-black"
           style={{
-            backgroundColor: accent,
-            boxShadow: `0 0 12px ${accent}60`,
+            backgroundColor: active ? "#fff" : accent,
+            color: active ? accent : "#000",
+            boxShadow: active
+              ? "0 2px 8px rgba(0,0,0,0.3)"
+              : `0 0 12px ${accent}60`,
           }}
         >
           {badge}
         </span>
       )}
 
-      {/* Signal dot */}
+      {/* Signal dot — white when active */}
       <span
         className="absolute bottom-3 right-3 block size-1.5 rounded-full animate-subtle-pulse"
         style={{
-          backgroundColor: active ? accent : "rgba(255,255,255,0.1)",
+          backgroundColor: active ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.1)",
         }}
       />
     </div>
