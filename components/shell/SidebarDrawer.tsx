@@ -384,8 +384,8 @@ export default function SidebarDrawer({
           Content stops propagation so tiles are clickable. */}
       <div
         className={cn(
-          "fixed inset-0 z-50 flex flex-col items-center overflow-y-auto transition-all duration-500",
-          "pt-[68px] px-4 pb-6 sm:px-6",
+          "fixed inset-0 z-50 flex flex-col items-start overflow-y-auto transition-all duration-500",
+          "pt-[68px] pl-3 pr-4 pb-6 sm:pl-4",
           open
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -398,7 +398,7 @@ export default function SidebarDrawer({
         <div
           className={cn(
             "w-full max-w-[420px] flex flex-col gap-3 transition-all duration-500",
-            open ? "scale-100 translate-y-0" : "scale-[0.97] translate-y-3"
+            open ? "translate-x-0 translate-y-0 opacity-100" : "-translate-x-4 translate-y-2 opacity-0"
           )}
           style={{
             transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -434,19 +434,19 @@ export default function SidebarDrawer({
                   style={{ boxShadow: "0 0 16px rgba(59,130,246,0.5)" }}
                 />
 
-                <div className="relative flex items-center gap-4 px-5 py-4">
+                <div className="relative flex items-center gap-5 px-6 py-5">
                   {/* Avatar + orbit ring */}
                   <div
                     className="relative shrink-0"
-                    style={{ width: 64, height: 64 }}
+                    style={{ width: 80, height: 80 }}
                   >
-                    <OrbitRing progress={streakProgress} size={64} />
+                    <OrbitRing progress={streakProgress} size={80} strokeWidth={3} />
                     <div
-                      className="absolute overflow-hidden rounded-xl"
+                      className="absolute overflow-hidden rounded-2xl"
                       style={{
-                        inset: 5,
+                        inset: 6,
                         border: "2px solid rgba(59,130,246,0.35)",
-                        boxShadow: "0 0 16px rgba(59,130,246,0.15)",
+                        boxShadow: "0 0 20px rgba(59,130,246,0.15)",
                       }}
                     >
                       {profilePhoto ? (
@@ -457,7 +457,7 @@ export default function SidebarDrawer({
                           }}
                         />
                       ) : (
-                        <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-base font-bold text-white">
+                        <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-lg font-bold text-white">
                           {profileInitials}
                         </span>
                       )}
@@ -466,15 +466,15 @@ export default function SidebarDrawer({
 
                   {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-black tracking-tight text-white leading-tight truncate">
+                    <h2 className="text-lg font-black tracking-tight text-white leading-tight truncate">
                       {profileName}
                     </h2>
-                    <span className="block mt-0.5 font-mono text-[10px] text-white/30 truncate">
+                    <span className="block mt-1 font-mono text-[11px] text-white/30 truncate">
                       {profileEmail}
                     </span>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2.5 flex items-center gap-2">
                       <span
-                        className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
+                        className="rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest"
                         style={{
                           backgroundColor: "#1e3a5f",
                           color: "#93c5fd",
@@ -483,16 +483,16 @@ export default function SidebarDrawer({
                         {profileDesignation ?? "Faculty"}
                       </span>
                       <span
-                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold"
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold"
                         style={{
                           backgroundColor: "#78350f",
                           color: "#fbbf24",
                         }}
                       >
-                        <Zap className="size-2.5" />
+                        <Zap className="size-3" />
                         {totals?.streakActivatedCount ?? 0}
                       </span>
-                      <span className="font-mono text-[10px] font-black text-white/40">
+                      <span className="font-mono text-[11px] font-black text-white/40">
                         {totals?.totalEntries ?? 0}
                       </span>
                     </div>
