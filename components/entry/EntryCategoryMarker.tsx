@@ -36,7 +36,7 @@ export default function EntryCategoryMarker({
 }) {
   return (
     <>
-      <span className="text-xs font-mono text-muted-foreground">{getEntryTag(category, index)}</span>
+      <span className="text-xs font-mono text-[var(--color-text-muted)]">{getEntryTag(category, index)}</span>
       {streakState === "activated" ? <FlameStatusIcon tone="gray" /> : null}
       {streakState === "completed" ? <FlameStatusIcon tone="color" /> : null}
     </>

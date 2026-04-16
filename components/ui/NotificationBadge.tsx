@@ -11,7 +11,7 @@ export default function NotificationBadge({
   return (
     <div
       className={cx(
-        "absolute z-20 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-foreground px-2 text-xs font-semibold text-background shadow-sm",
+        "absolute z-20 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--color-text-primary)] px-2 text-xs font-semibold text-background shadow-sm",
         className
       )}
     >

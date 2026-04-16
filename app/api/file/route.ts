@@ -4,7 +4,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { authOptions } from "@/lib/auth";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -20,10 +21,10 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const url = new URL(req.url);
@@ -37,19 +38,29 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const buf = await fs.readFile(resolved);
-  const ext = path.extname(resolved).toLowerCase();
+  try {
+    const buf = await fs.readFile(resolved);
+    const ext = path.extname(resolved).toLowerCase();
 
-  const contentType =
-    ext === ".pdf" ? "application/pdf" :
-    ext === ".png" ? "image/png" :
-    ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" :
-    "application/octet-stream";
+    const contentType =
+      ext === ".pdf" ? "application/pdf" :
+      ext === ".png" ? "image/png" :
+      ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" :
+      "application/octet-stream";
 
-  return new NextResponse(buf, {
-    headers: {
-      "Content-Type": contentType,
-      "Content-Disposition": `inline; filename="${path.basename(resolved)}"`,
-    },
-  });
+    return new NextResponse(buf, {
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": `inline; filename="${path.basename(resolved)}"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch (error) {
+    const nodeErr = error as NodeJS.ErrnoException;
+    if (nodeErr.code === "ENOENT") {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+    logger.error({ event: "file.read.error", path: resolved, error: nodeErr.message });
+    return NextResponse.json({ error: "Failed to read file" }, { status: 500 });
+  }
 }

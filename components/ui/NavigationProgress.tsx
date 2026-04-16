@@ -17,7 +17,7 @@ function NavigationProgressInner() {
       // Navigation detected — show bar
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(true);
-       
+
       setProgress(30);
 
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -43,9 +43,9 @@ function NavigationProgressInner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[100] h-0.5">
+    <div className="fixed top-0 left-0 right-0 z-[100] h-[2px]">
       <div
-        className="h-full bg-[var(--color-button-primary-bg)] transition-all duration-200 ease-out"
+        className="h-full bg-[var(--color-primary)] shadow-[0_0_8px_var(--color-glow-primary)] transition-all duration-200 ease-out"
         style={{ width: `${progress}%` }}
       />
     </div>

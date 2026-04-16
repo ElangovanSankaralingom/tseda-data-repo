@@ -63,20 +63,20 @@ export default function ConfirmDialog({
         type="button"
         aria-label="Close confirmation dialog"
         onClick={confirming ? undefined : onCancel}
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-modal-bg)] backdrop-blur-2xl p-5 shadow-2xl shadow-black/40 animate-scale-in"
       >
-        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-base font-semibold tracking-tight text-[var(--color-text-primary)]">{title}</h2>
         {description ? (
           typeof description === "string" ? (
-            <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">{description}</p>
           ) : (
-            <div className="mt-2 text-sm text-muted-foreground">{description}</div>
+            <div className="mt-2 text-sm text-[var(--color-text-muted)]">{description}</div>
           )
         ) : null}
         <div className="mt-5 flex flex-wrap justify-end gap-2">

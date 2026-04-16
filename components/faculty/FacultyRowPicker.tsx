@@ -237,11 +237,11 @@ export default function FacultyRowPicker({
   const hasUnlockedSelection = normalizedRows.some((row) => row.email.trim() && !row.isLocked);
 
   return (
-    <div className="rounded-xl border border-border p-4">
+    <div className="rounded-xl border border-[var(--color-glass-border)] p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-sm font-semibold">{title}</div>
-          {helperText ? <div className="mt-1 text-xs text-muted-foreground">{helperText}</div> : null}
+          {helperText ? <div className="mt-1 text-xs text-[var(--color-text-muted)]">{helperText}</div> : null}
         </div>
         {!viewOnly ? (
           <RoleButton role="context" onClick={handleAddRow} disabled={parentLocked}>
@@ -250,7 +250,7 @@ export default function FacultyRowPicker({
         ) : null}
       </div>
 
-      {showSectionError && sectionError ? <div className="mt-2 text-xs text-red-600">{sectionError}</div> : null}
+      {showSectionError && sectionError ? <div className="mt-2 text-xs text-red-400">{sectionError}</div> : null}
 
       {normalizedRows.length > 0 ? (
         <div className="mt-4 space-y-3">
@@ -271,7 +271,7 @@ export default function FacultyRowPicker({
                 className={cx(
                   "grid gap-2 rounded-xl px-3 py-2",
                   viewOnly ? "sm:grid-cols-[1fr]" : "sm:grid-cols-[1fr_auto_auto] sm:items-end",
-                  row.isLocked && "bg-muted/30 opacity-70"
+                  row.isLocked && "bg-[var(--color-glass-hover)]/30 opacity-70"
                 )}
               >
                 <div>
@@ -309,18 +309,18 @@ export default function FacultyRowPicker({
                 ) : null}
 
                 {attemptedRowSave[rowId] && rowSaveErrors[rowId] ? (
-                  <div className="sm:col-span-3 text-xs text-red-600">{rowSaveErrors[rowId]}</div>
+                  <div className="sm:col-span-3 text-xs text-red-400">{rowSaveErrors[rowId]}</div>
                 ) : null}
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="mt-4 text-sm text-muted-foreground">{emptyStateText}</div>
+        <div className="mt-4 text-sm text-[var(--color-text-muted)]">{emptyStateText}</div>
       )}
 
       {hasUnlockedSelection ? (
-        <div className="mt-3 text-xs text-muted-foreground">Save selected faculty rows to lock them.</div>
+        <div className="mt-3 text-xs text-[var(--color-text-muted)]">Save selected faculty rows to lock them.</div>
       ) : null}
     </div>
   );

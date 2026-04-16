@@ -177,20 +177,20 @@ export default function FacultySelect({
         placeholder={placeholder ?? "Search or type staff name"}
         readOnly={disabled}
         className={cx(
-          "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-[var(--color-text-secondary)]",
+          "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-primary)] shadow-sm transition-all duration-200 outline-none focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
           error
             ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-            : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
+            : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-primary)] focus-visible:ring-[var(--color-primary)]/20",
           disabled && "pointer-events-none cursor-not-allowed opacity-60"
         )}
       />
 
       {open ? (
-        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-card-border)] bg-[var(--color-dropdown-bg)] p-1 shadow-lg">
+        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl shadow-black/40">
           {fetching ? (
-            <div className="px-3 py-2 text-sm text-muted-foreground">Searching...</div>
+            <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">Searching...</div>
           ) : filteredOptions.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
+            <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">
               {useApi && normalizedQuery.length < 2 ? "Type at least 2 characters to search." : "No matching faculty. Press Save to keep typed text."}
             </div>
           ) : (
@@ -205,11 +205,11 @@ export default function FacultySelect({
                     if (!optionDisabled) chooseOption(option);
                   }}
                   className={cx(
-                    "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm",
-                    index === highlightedIndex && !optionDisabled && "bg-muted",
+                    "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-[var(--color-text-primary)] transition-colors",
+                    index === highlightedIndex && !optionDisabled && "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
                     optionDisabled
-                      ? "pointer-events-none cursor-not-allowed text-muted-foreground opacity-50"
-                      : "hover:bg-muted"
+                      ? "pointer-events-none cursor-not-allowed text-[var(--color-text-muted)] opacity-50"
+                      : "hover:bg-[var(--color-glass-hover)]"
                   )}
                 >
                   {option.name}

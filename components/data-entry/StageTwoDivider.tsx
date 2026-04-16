@@ -9,7 +9,7 @@ export default function StageTwoDivider() {
     <div className="my-6 animate-fade-in-up">
       <div className="flex items-center">
         <div className="flex-1 border-t border-dashed border-[var(--color-input-border)]" />
-        <span className="mx-4 inline-flex shrink-0 items-center gap-2 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 py-1.5 shadow-sm">
+        <span className="mx-4 inline-flex shrink-0 items-center gap-2 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] px-4 py-1.5 shadow-sm">
           <span className="flex size-5 items-center justify-center rounded-full bg-amber-500/15">
             <Unlock className="size-3 text-amber-600" />
           </span>

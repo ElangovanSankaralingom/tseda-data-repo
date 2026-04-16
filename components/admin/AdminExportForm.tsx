@@ -90,7 +90,7 @@ export default function AdminExportForm({
     <form onSubmit={handleDownload} className="space-y-5">
       <div className="grid gap-4 md:grid-cols-4">
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Faculty</span>
+          <span className="text-[var(--color-text-muted)]">Faculty</span>
           <SelectDropdown
             value={userEmail}
             onChange={(value) => setUserEmail(value)}
@@ -100,7 +100,7 @@ export default function AdminExportForm({
         </label>
 
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Category</span>
+          <span className="text-[var(--color-text-muted)]">Category</span>
           <SelectDropdown
             value={category}
             onChange={(value) => handleCategoryChange(value)}
@@ -110,7 +110,7 @@ export default function AdminExportForm({
         </label>
 
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Format</span>
+          <span className="text-[var(--color-text-muted)]">Format</span>
           <SelectDropdown
             value={format}
             onChange={(value) => setFormat(value === "csv" ? "csv" : "xlsx")}
@@ -123,8 +123,8 @@ export default function AdminExportForm({
         </label>
 
         <div className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Statuses (optional)</span>
-            <div className="rounded-lg border border-border bg-background px-3 py-2">
+          <span className="text-[var(--color-text-muted)]">Statuses (optional)</span>
+            <div className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] px-3 py-2">
               <div className="flex flex-wrap gap-2">
                 {statusOptions.map((status) => (
                   <label key={status.key} className="inline-flex items-center gap-1 text-xs">
@@ -143,7 +143,7 @@ export default function AdminExportForm({
 
       <div className="grid gap-4 md:grid-cols-4">
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">From Date (optional)</span>
+          <span className="text-[var(--color-text-muted)]">From Date (optional)</span>
           <input
             type="date"
             value={fromDate}
@@ -152,7 +152,7 @@ export default function AdminExportForm({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">To Date (optional)</span>
+          <span className="text-[var(--color-text-muted)]">To Date (optional)</span>
           <input
             type="date"
             value={toDate}
@@ -162,7 +162,7 @@ export default function AdminExportForm({
         </label>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="text-sm font-medium">
             Fields ({selectedFields.length}/{fieldOptions.length})
@@ -185,7 +185,7 @@ export default function AdminExportForm({
                 onChange={() => toggleField(field.key)}
               />
               <span>{field.label}</span>
-              <span className="text-xs text-muted-foreground">({field.key})</span>
+              <span className="text-xs text-[var(--color-text-muted)]">({field.key})</span>
             </label>
           ))}
         </div>
@@ -195,7 +195,7 @@ export default function AdminExportForm({
         <button type="submit" className={getButtonClass("context")} disabled={!userEmail}>
           Download Export
         </button>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-[var(--color-text-muted)]">
           Uses normalized DataStore values and schema labels.
         </div>
       </div>

@@ -84,7 +84,7 @@ export default function AvatarMenu({ showName = false }: { refreshKey?: number; 
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[var(--color-card-border)] bg-[var(--color-dropdown-hover)] text-sm font-semibold text-[var(--color-text-primary)] transition-transform transition-shadow duration-200 ease-out hover:scale-[1.03] hover:bg-[var(--color-sidebar-hover-bg)] hover:shadow-sm hover:ring-2 hover:ring-[var(--color-card-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)]/20"
+        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[var(--color-glass-border)] bg-[var(--color-dropdown-hover)] text-sm font-semibold text-[var(--color-text-primary)] transition-transform transition-shadow duration-200 ease-out hover:scale-[1.03] hover:bg-[var(--color-sidebar-hover-bg)] hover:shadow-sm hover:ring-2 hover:ring-[var(--color-glass-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)]/20"
       >
         {photoUrl ? (
           <span
@@ -101,7 +101,7 @@ export default function AvatarMenu({ showName = false }: { refreshKey?: number; 
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-1 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-1 shadow-lg"
         >
             <Link
             href={profileRoute()}

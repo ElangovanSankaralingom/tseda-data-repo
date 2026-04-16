@@ -49,16 +49,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center"
         >
           <AlertTriangle className="mx-auto size-8 text-red-400" />
-          <h3 className="mt-3 text-sm font-medium text-red-800">
+          <h3 className="mt-3 text-sm font-medium text-red-400">
             {section} encountered an error
           </h3>
-          <p className="mt-1 text-xs text-red-600">
+          <p className="mt-1 text-xs text-red-400">
             {this.state.error?.message || "An unexpected error occurred."}
           </p>
           <button
             type="button"
             onClick={this.handleReset}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-[var(--color-glass-bg)] px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
           >
             <RefreshCw className="size-3" />
             Try again

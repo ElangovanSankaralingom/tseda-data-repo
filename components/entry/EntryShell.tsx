@@ -67,17 +67,17 @@ export default function EntryShell({
   return (
     <div className="mx-auto w-full max-w-5xl">
       {/* Header card */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 py-4 shadow-sm sm:px-5">
+      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] px-4 py-4 shadow-sm sm:px-5">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {showBack ? (
               <BackTo href={backHref} disabled={backDisabled} onClick={onBack} />
             ) : null}
-            <span className="inline-flex items-center rounded-full border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="inline-flex items-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">
               {config.label}
             </span>
             {mode === "view" ? (
-              <span className="inline-flex items-center rounded-full border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">
+              <span className="inline-flex items-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">
                 {t('entry.viewPdf')}
               </span>
             ) : null}
@@ -87,7 +87,7 @@ export default function EntryShell({
           {resolvedSubtitle ? <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{resolvedSubtitle}</p> : null}
 
           {showStatusRow ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-3 py-2">
               <StatusBadge status={resolvedStatus ?? "DRAFT"} />
               {meta ? <div>{meta}</div> : null}
               {showUnsavedChanges ? (
@@ -108,7 +108,7 @@ export default function EntryShell({
 
       {/* Sticky action bar for editing */}
       {isEditingMode && actions ? (
-        <div className="sticky top-0 z-40 mt-4 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)]/80 px-4 py-3 shadow-sm backdrop-blur-xl sm:px-5">
+        <div className="sticky top-0 z-40 mt-4 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)]/80 px-4 py-3 shadow-sm backdrop-blur-xl sm:px-5">
           {actions}
         </div>
       ) : null}

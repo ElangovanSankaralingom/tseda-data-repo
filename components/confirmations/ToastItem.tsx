@@ -32,7 +32,7 @@ const TYPE_CONFIG: Record<
   error: {
     Icon: XCircle,
     iconBg: "bg-red-500/15",
-    iconColor: "text-red-600",
+    iconColor: "text-red-400",
     border: "border-l-red-500",
     defaultDuration: 8000,
   },
@@ -131,7 +131,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
       } ${
         isUndo
           ? "bg-[var(--color-button-primary-bg)] text-white"
-          : "border border-[var(--color-card-border)] border-l-4 bg-[var(--color-toast-bg)] " + config.border
+          : "border border-[var(--color-glass-border)] border-l-4 bg-[var(--color-toast-bg)] " + config.border
       }`}
       style={{ minWidth: 320, maxWidth: 440 }}
     >
@@ -168,7 +168,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
             onClick={toast.action.onClick}
             className={`shrink-0 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               isUndo
-                ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] hover:bg-[var(--color-dropdown-hover)]"
+                ? "bg-[var(--color-glass-bg)] text-[var(--color-text-primary)] hover:bg-[var(--color-dropdown-hover)]"
                 : "text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
             }`}
           >

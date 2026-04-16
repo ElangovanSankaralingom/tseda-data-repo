@@ -78,8 +78,8 @@ export default async function AdminBackupsPage({
         <div
           className={
             status === "ok"
-              ? "mb-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
-              : "mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700"
+              ? "mb-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400"
+              : "mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400"
           }
         >
           {message || (status === "ok" ? "Backup operation completed." : "Backup operation failed.")}
@@ -87,24 +87,24 @@ export default async function AdminBackupsPage({
       ) : null}
 
       {errors.length > 0 ? (
-        <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           {errors.join(" ")}
         </div>
       ) : null}
 
       <SectionCard>
         <div className="mb-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-border p-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">Retention</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-3">
+            <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Retention</div>
             <div className="mt-1 text-sm font-medium">Keep last {BACKUP_KEEP_LAST_DEFAULT} backups</div>
           </div>
-          <div className="rounded-xl border border-border p-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">Latest Backup</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-3">
+            <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Latest Backup</div>
             <div className="mt-1 text-sm font-medium">{latest ? latest.filename : "None"}</div>
-            <div className="text-xs text-muted-foreground">{latest ? formatTime(latest.createdAt) : "-"}</div>
+            <div className="text-xs text-[var(--color-text-muted)]">{latest ? formatTime(latest.createdAt) : "-"}</div>
           </div>
-          <div className="rounded-xl border border-border p-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">Latest Size</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-3">
+            <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Latest Size</div>
             <div className="mt-1 text-sm font-medium">{latest ? formatBytes(latest.sizeBytes) : "0 B"}</div>
           </div>
         </div>
@@ -124,12 +124,12 @@ export default async function AdminBackupsPage({
       <SectionCard title="Stored Backups">
 
         {backups.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No backups found in <code>.data_backups/</code>.</div>
+          <div className="text-sm text-[var(--color-text-muted)]">No backups found in <code>.data_backups/</code>.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-[var(--color-glass-border)] text-left text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                   <th className="px-2 py-2 font-medium">Filename</th>
                   <th className="px-2 py-2 font-medium">Created</th>
                   <th className="px-2 py-2 font-medium">Size</th>
@@ -138,7 +138,7 @@ export default async function AdminBackupsPage({
               </thead>
               <tbody>
                 {backups.map((backup) => (
-                  <tr key={backup.filename} className="border-b border-border/60 align-top">
+                  <tr key={backup.filename} className="border-b border-[var(--color-glass-border)]/60 align-top">
                     <td className="px-2 py-2">{backup.filename}</td>
                     <td className="px-2 py-2">{formatTime(backup.createdAt)}</td>
                     <td className="px-2 py-2">{formatBytes(backup.sizeBytes)}</td>

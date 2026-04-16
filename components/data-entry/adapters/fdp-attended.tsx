@@ -154,7 +154,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
         </Field>
 
         <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
-          <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
+          <div className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
         </Field>
 
         <Field label={fieldLabel('programName')} error={submitted ? errors.programName : undefined}>
@@ -222,7 +222,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
       </div>
 
       <div className="mt-5 space-y-4">
-        <p className="text-sm text-muted-foreground">{t('entry.streakEligibility')}</p>
+        <p className="text-sm text-[var(--color-text-muted)]">{t('entry.streakEligibility')}</p>
         {uploadsVisible ? (
           <>
             <StageTwoDivider />
@@ -351,7 +351,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(formatCurrency(entry.fundingAmount, "en"));
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-[var(--color-text-muted)]">{parts.join(" • ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {entry.permissionLetter.map((meta, i) => (
                 <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}</a>

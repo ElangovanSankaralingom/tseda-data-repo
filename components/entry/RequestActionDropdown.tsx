@@ -116,7 +116,7 @@ export default function RequestActionDropdown({
         <ChevronDown className={`size-3.5 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? (
-        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-1 shadow-lg">
+        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] py-1 shadow-lg">
           <button
             type="button"
             role="menuitem"
@@ -138,7 +138,7 @@ export default function RequestActionDropdown({
               if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
               if (e.key === "ArrowUp") { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
             }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-500/10"
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10"
           >
             <Trash2 className="size-3.5 text-red-400" />
             {t("entry.requestDelete")}

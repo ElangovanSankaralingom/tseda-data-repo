@@ -42,7 +42,7 @@ export default function InlineConfirm({
   }, [onConfirm]);
 
   const bgClass = variant === "danger" ? "bg-red-500/10" : "bg-amber-500/10";
-  const textClass = variant === "danger" ? "text-red-700" : "text-amber-900";
+  const textClass = variant === "danger" ? "text-red-400" : "text-amber-900";
   const btnClass =
     variant === "danger"
       ? "bg-red-500/15 text-white hover:bg-red-600"

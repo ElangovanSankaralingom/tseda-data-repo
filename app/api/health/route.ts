@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getDataRoot } from "@/lib/userStore";
 import { getRequestIp, enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
 const REQUIRED_ENV_VARS = [
   "GOOGLE_CLIENT_ID",
@@ -27,10 +27,10 @@ export async function GET(request: Request) {
     enforceRateLimitOrThrow(`ip:${ip}:action:health.get`, RATE_LIMIT_PRESETS.health);
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const dataRoot = path.join(process.cwd(), getDataRoot());
@@ -44,11 +44,18 @@ export async function GET(request: Request) {
       checkDirectory(uploadsDir),
     ]);
 
-    // Count users
+    // Count users and verify datastore is readable
     let userCount = 0;
+    let datastoreStatus: "ok" | string = "ok";
     if (dataDirStatus === "ok") {
-      const userDirs = await fs.readdir(usersDir);
-      userCount = userDirs.length;
+      try {
+        const userDirs = await fs.readdir(usersDir);
+        userCount = userDirs.length;
+      } catch {
+        datastoreStatus = "read_error";
+      }
+    } else {
+      datastoreStatus = "inaccessible";
     }
 
     // Check env vars
@@ -87,7 +94,7 @@ export async function GET(request: Request) {
     const memoryUsage = process.memoryUsage();
 
     const isHealthy =
-      dataDirStatus === "ok" && uploadsDirStatus === "ok" && missingEnv.length === 0;
+      dataDirStatus === "ok" && uploadsDirStatus === "ok" && missingEnv.length === 0 && datastoreStatus === "ok";
 
     return NextResponse.json(
       {
@@ -112,6 +119,7 @@ export async function GET(request: Request) {
           dataDir: dataDirStatus,
           uploadsDir: uploadsDirStatus,
           envVars: envStatus,
+          datastore: datastoreStatus,
         },
       },
       { status: isHealthy ? 200 : 503 },

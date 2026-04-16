@@ -96,7 +96,7 @@ const StatCard = memo(function StatCard({
   accent: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className={`flex size-10 items-center justify-center rounded-lg ${accent}`}>
         <Icon className="size-5 text-white" />
       </div>
@@ -122,11 +122,11 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
           alt={user.name}
           width={size === "lg" ? 64 : size === "md" ? 44 : 32}
           height={size === "lg" ? 64 : size === "md" ? 44 : 32}
-          className={`${sizeClasses} rounded-full ring-2 ring-[var(--color-card-bg)] shadow-sm object-cover`}
+          className={`${sizeClasses} rounded-full ring-2 ring-[var(--color-glass-bg)] shadow-sm object-cover`}
           referrerPolicy="no-referrer"
         />
         {user.role === "admin" && (
-          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-card-bg)]">
+          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-glass-bg)]">
             <Shield className="size-2.5 text-white" />
           </div>
         )}
@@ -137,12 +137,12 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
   return (
     <div className="relative">
       <div
-        className={`${sizeClasses} flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] ring-2 ring-[var(--color-card-bg)] shadow-sm`}
+        className={`${sizeClasses} flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] ring-2 ring-[var(--color-glass-bg)] shadow-sm`}
       >
         <span className={`${textSize} font-bold text-white`}>{initials(user.name)}</span>
       </div>
       {user.role === "admin" && (
-        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-card-bg)]">
+        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-glass-bg)]">
           <Shield className="size-2.5 text-white" />
         </div>
       )}
@@ -170,10 +170,10 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
       href={`/admin/users/${encodeURIComponent(user.email)}`}
       className={`group block rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         isTopPerformer
-          ? "border-t-2 border-t-amber-400 border-[var(--color-card-border)] bg-[var(--color-card-bg)]"
+          ? "border-t-2 border-t-amber-400 border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm"
           : user.totalEntries === 0
-          ? "border-[var(--color-card-border)] bg-[var(--color-body-bg)]/50"
-          : "border-[var(--color-card-border)] bg-[var(--color-card-bg)]"
+          ? "border-[var(--color-glass-border)] bg-[var(--color-body-bg)]/50"
+          : "border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm"
       } ${
         rank <= 8
           ? `animate-fade-in-up stagger-${rank}`
@@ -189,18 +189,18 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold text-[var(--color-text-primary)] truncate">{user.name}</span>
             {user.role === "admin" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-400">
                 <Shield className="size-3" />
                 Admin
               </span>
             )}
             {isTopPerformer && (
-              <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+              <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
                 Top {rank}
               </span>
             )}
             {isNew && (
-              <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+              <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-400">
                 New
               </span>
             )}
@@ -268,7 +268,7 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
           </div>
         </>
       ) : (
-        <div className="mt-4 rounded-lg border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-4 py-3 text-center">
+        <div className="mt-4 rounded-lg border border-dashed border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-4 py-3 text-center">
           <p className="text-xs text-[var(--color-text-secondary)]">{t("adminUsers.noEntriesYet")}</p>
         </div>
       )}
@@ -307,7 +307,7 @@ function FilterBar({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="sticky top-20 z-10 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
+    <div className="sticky top-20 z-10 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
@@ -318,19 +318,19 @@ function FilterBar({
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder={t("adminUsers.searchPlaceholder")}
             aria-label="Search users"
-            className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
+            className="h-9 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
         </div>
 
         {/* Role toggle */}
-        <div className="flex rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-0.5">
+        <div className="flex rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] p-0.5">
           {(["all", "user", "admin"] as const).map((r) => (
             <button
               key={r}
               onClick={() => onChange({ ...filters, role: r })}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
                 filters.role === r
-                  ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-sm"
+                  ? "bg-[var(--color-glass-bg)] backdrop-blur-sm text-[var(--color-text-primary)] shadow-sm"
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
@@ -340,14 +340,14 @@ function FilterBar({
         </div>
 
         {/* Activity toggle */}
-        <div className="flex rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-0.5">
+        <div className="flex rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] p-0.5">
           {(["all", "active", "inactive"] as const).map((a) => (
             <button
               key={a}
               onClick={() => onChange({ ...filters, activity: a })}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
                 filters.activity === a
-                  ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-sm"
+                  ? "bg-[var(--color-glass-bg)] backdrop-blur-sm text-[var(--color-text-primary)] shadow-sm"
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
@@ -455,7 +455,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
         <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-[var(--color-text-secondary)]">
           {stats.totalUsers} {t("adminUsers.users")}
         </span>
-        <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-700">
+        <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-400">
           {stats.activeUsers} {t("adminUsers.active")}
         </span>
         {stats.inactiveUsers > 0 && (
@@ -464,7 +464,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
           </span>
         )}
         {stats.adminUsers > 0 && (
-          <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-700">
+          <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-400">
             {stats.adminUsers} {t("adminUsers.admins")}
           </span>
         )}

@@ -48,6 +48,9 @@ export type WorkflowState = {
   autoAction: "none" | "finalise" | "delete";
 };
 
+/**
+ * Compute complete workflow state for an entry including timer, completion, buttons, and auto-actions.
+ */
 export function computeWorkflowState(
   entry: Record<string, unknown>,
   category: CategoryKey,

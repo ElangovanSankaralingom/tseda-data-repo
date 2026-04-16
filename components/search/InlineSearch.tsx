@@ -45,7 +45,7 @@ export default function InlineSearch({
         onChange={handleChange}
         placeholder={placeholder}
         aria-label="Search"
-        className="h-10 w-full rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
+        className="h-10 w-full rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
       />
       {value && (
         <button

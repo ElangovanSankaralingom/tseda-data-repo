@@ -9,8 +9,8 @@ export default function Toast({ toast, position = "inline", className, onDismiss
 
   const isError = toast.type === "err";
   const colors = isError
-    ? "border-red-500/20 bg-red-500/10 text-red-800"
-    : "border-emerald-500/20 bg-emerald-500/10 text-emerald-800";
+    ? "border-red-500/20 bg-red-500/10 text-red-400"
+    : "border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary-light)]";
   const ariaRole = isError ? "alert" : "status";
   const ariaLive = isError ? "assertive" as const : "polite" as const;
 
@@ -27,8 +27,8 @@ export default function Toast({ toast, position = "inline", className, onDismiss
 
   if (position === "fixed") {
     return (
-      <div className="fixed right-4 top-20 z-50" role={ariaRole} aria-live={ariaLive}>
-        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-sm", colors, className)}>
+      <div className="fixed right-4 top-20 z-50 animate-slide-in-right" role={ariaRole} aria-live={ariaLive}>
+        <div className={cn("flex items-center gap-2 rounded-xl border backdrop-blur-xl px-3 py-2 text-sm shadow-lg shadow-black/20", colors, className)}>
           <span className="flex-1">{toast.msg}</span>
           {dismissButton}
         </div>
@@ -40,7 +40,7 @@ export default function Toast({ toast, position = "inline", className, onDismiss
     <div
       role={ariaRole}
       aria-live={ariaLive}
-      className={cn("flex items-center gap-2 rounded-xl border px-4 py-3 text-sm", colors, className)}
+      className={cn("flex items-center gap-2 rounded-xl border backdrop-blur-xl px-4 py-3 text-sm", colors, className)}
     >
       <span className="flex-1">{toast.msg}</span>
       {dismissButton}

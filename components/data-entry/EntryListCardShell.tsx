@@ -3,170 +3,74 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Check,
   Clock,
-  Lock,
   Pencil,
   Unlock,
   Zap,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import type { LucideIcon } from "lucide-react";
-import { getGroupCardClass } from "@/components/entry/entryCardStyles";
+import { formatRelativeTime } from "@/lib/i18n/relativeTime";
+import {
+  getGroupCardClass,
+  GROUP_CARDS,
+  GROUP_HEX,
+  GROUP_LAYOUT,
+  INNER_PANELS,
+  NOTCH_CLIP,
+} from "@/components/entry/entryCardStyles";
 import type { EntryListGroup } from "@/lib/entryCategorization";
 import type { EditTimeRemaining } from "@/lib/entries/workflow";
 
-function formatRelativeTime(value?: string) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return date.toLocaleDateString();
-}
+/*
+  ─────────────────────────────────────────────────────────
+   STRUCTURALLY DIFFERENT CARDS PER GROUP
 
-const GROUP_ICONS: Record<EntryListGroup, LucideIcon> = {
-  streak_runners: Zap,
-  on_the_clock: Clock,
-  unlocked: Unlock,
-  in_the_works: Pencil,
-  under_review: Clock,
-  locked_in: Lock,
-};
+   Not color swaps. Different SHAPES. Different LAYOUTS.
 
-const GROUP_ICON_COLORS: Record<EntryListGroup, string> = {
-  streak_runners: "text-amber-500",
-  on_the_clock: "text-blue-500",
-  unlocked: "text-purple-500",
-  in_the_works: "text-[var(--color-text-secondary)]",
-  under_review: "text-amber-400",
-  locked_in: "text-emerald-500",
-};
+   HERO (streak_runners):
+   ┌═══════════════════════════════════════════════┐╲
+   ┃ ▌ ⚡ Title ──────── [3d 12h countdown badge]  │
+   ┃ ▌   Subtitle                                  │
+   ┃ ▌   ┌─ bright amber panel ──────────────────┐ │
+   ┃ ▌   │ metadata · body · [dark pills]        │ │
+   ┃ ▌   └──────────────────────────────────────┘ │
+   ┃ ▌   time info                    [actions →] │
+   ┃ ▌   ▓▓▓▓▓▓░░░░░ progress bar                │
+   └══════════════════════════════════════════════━┘
 
-const PROGRESS_BAR_COLORS: Record<string, string> = {
-  streak_runners: "bg-amber-400",
-  on_the_clock: "bg-blue-400",
-  unlocked: "bg-purple-400",
-};
+   TIMER (on_the_clock):
+   ┌══════════════════════════════════════════════┐
+   ┃ ▌ ┌──countdown──┐  Title                     │
+   ┃ ▌ │  2d 4h left  │  Subtitle                 │
+   ┃ ▌ └─────────────┘  [metadata]                │
+   ┃ ▌   time info                    [actions →] │
+   ┃ ▌ ▓▓▓▓░░░░░░ progress                        │
+   └══════════════════════════════════════════════┘
 
-function GroupBadge({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
-  const { t } = useTranslation();
+   ROW (drafts — in_the_works):
+   ┊ ✏ Title · "Draft" · Created 2h ago ·····[→]
 
-  if (group === "in_the_works") {
-    return (
-      <span className="rounded-full bg-[var(--color-dropdown-hover)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-primary)]">
-        {t('entry.draft')}
-      </span>
-    );
-  }
+   DASHED (under_review):
+   ┌─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐
+   │ ┃ 🕐● Title  "Edit Requested"  Sent 1h ago  │
+   │ ┃   [metadata in orange panel]               │
+   └─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┘
 
-  if (group === "locked_in") {
-    return (
-      <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
-        {t('entry.finalized')}
-      </span>
-    );
-  }
+   STAMP (locked_in — finalized):
+   ── ✓ Title · Finalized · 3 days ago ──
 
-  if (group === "under_review") {
-    return (
-      <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500">
-        {t('entry.editRequested')}
-      </span>
-    );
-  }
+  ─────────────────────────────────────────────────────────
+*/
 
-  if (group === "streak_runners" && editTime?.hasEditWindow && !editTime.expired) {
-    return (
-      <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500">
-        ⚡ {editTime.remainingLabel}
-      </span>
-    );
-  }
 
-  if (group === "on_the_clock" && editTime?.hasEditWindow && !editTime.expired) {
-    const isUrgent = editTime.remainingMs < 24 * 60 * 60 * 1000;
-    return (
-      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        isUrgent ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
-      }`}>
-        {isUrgent ? "Expires today!" : editTime.remainingLabel}
-      </span>
-    );
-  }
-
-  if (group === "unlocked" && editTime?.hasEditWindow && !editTime.expired) {
-    return (
-      <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-medium text-purple-500">
-        Unlocked · {editTime.remainingLabel}
-      </span>
-    );
-  }
-
-  return null;
-}
-
-function getEditTimeUrgencyClass(remainingMs: number): string {
-  if (remainingMs < 24 * 60 * 60 * 1000) return "text-red-600 font-semibold";
-  if (remainingMs < 3 * 24 * 60 * 60 * 1000) return "text-amber-700";
-  return "text-[var(--color-text-secondary)]";
-}
-
-function TimeInfo({ group, editTime, createdAt, updatedAt }: {
-  group: EntryListGroup;
-  editTime?: EditTimeRemaining;
-  createdAt?: string;
-  updatedAt?: string;
-}) {
-  const showCountdown = group === "streak_runners" || group === "on_the_clock" || group === "unlocked";
-
-  // Editable entries with time remaining
-  if (showCountdown && editTime?.hasEditWindow && !editTime.expired) {
-    const isUrgent = editTime.remainingMs < 24 * 60 * 60 * 1000;
-    const colorClass = getEditTimeUrgencyClass(editTime.remainingMs);
-
-    return (
-      <span className={`inline-flex items-center gap-1 text-xs ${colorClass}`}>
-        <Clock className={`size-3.5 ${isUrgent ? "animate-subtle-pulse" : ""}`} />
-        {isUrgent && editTime.remainingMs < 60 * 60 * 1000 ? "Expires today!" : editTime.remainingLabel}
-      </span>
-    );
-  }
-
-  // Drafts
-  if (group === "in_the_works") {
-    const time = formatRelativeTime(createdAt);
-    return time ? <span className="text-xs text-[var(--color-text-secondary)]">Created {time}</span> : null;
-  }
-
-  // Under review
-  if (group === "under_review") {
-    const time = formatRelativeTime(updatedAt || createdAt);
-    return time ? <span className="text-xs text-amber-700">Requested {time}</span> : null;
-  }
-
-  // Finalized
-  if (group === "locked_in") {
-    const time = formatRelativeTime(updatedAt || createdAt);
-    return time ? <span className="text-xs text-[var(--color-text-secondary)]">Finalized {time}</span> : null;
-  }
-
-  // Fallback
-  const time = formatRelativeTime(updatedAt || createdAt);
-  return time ? <span className="text-xs text-[var(--color-text-secondary)]">Updated {time}</span> : null;
-}
-
+/* ── Progress Bar ── */
 function EditWindowProgressBar({ group, editTime }: { group: EntryListGroup; editTime?: EditTimeRemaining }) {
   if (!editTime?.hasEditWindow || editTime.expired) return null;
+  const layout = GROUP_LAYOUT[group];
+  if (layout === "row" || layout === "stamp") return null;
 
-  const barColor = PROGRESS_BAR_COLORS[group];
-  if (!barColor) return null;
-
+  const hex = GROUP_HEX[group];
   const totalWindowMs = editTime.remainingMs < 3 * 24 * 60 * 60 * 1000
     ? 3 * 24 * 60 * 60 * 1000
     : editTime.remainingMs * 1.5;
@@ -174,20 +78,469 @@ function EditWindowProgressBar({ group, editTime }: { group: EntryListGroup; edi
   const progress = Math.min(100, Math.max(0, (elapsed / totalWindowMs) * 100));
   const isUrgent = progress > 75;
   const isWarning = progress > 50;
+  const color = isUrgent ? "#f87171" : isWarning ? "#fbbf24" : hex;
 
-  const fillColor = isUrgent ? "bg-red-400" : isWarning ? "bg-amber-400" : barColor;
+  // Hero cards get a fat progress bar, others get slim
+  const height = layout === "hero" ? "h-1" : "h-[2px]";
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden rounded-b-xl">
-      <div
-        className={`h-full transition-all duration-700 ${fillColor}`}
-        style={{ width: `${progress}%` }}
-      />
+    <div className={`absolute bottom-0 left-0 right-0 ${height} overflow-hidden`} style={{ background: "rgba(0,0,0,0.3)" }}>
+      <div className="h-full transition-all duration-700" style={{ width: `${progress}%`, background: color }} />
     </div>
   );
 }
 
-type EntryListCardShellProps = {
+/* ═══════════════════════════════════════════
+   HERO CARD — streak_runners
+   Full card. Notch clip. Color bleed.
+   Bright inner panel. Prominent structure.
+   ═══════════════════════════════════════════ */
+function HeroCard({
+  title, href, editTime, badges, subtitle, metadata, createdAt, updatedAt, actions, children, index,
+}: CardInternalProps) {
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const hex = GROUP_HEX.streak_runners;
+  const cardStyle = GROUP_CARDS.streak_runners;
+  const innerPanel = INNER_PANELS.streak_runners;
+  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
+  const hasContent = !!(children || metadata);
+  const time = formatRelativeTime(updatedAt || createdAt, language);
+
+  return (
+    <div
+      data-entry-card
+      tabIndex={0}
+      aria-label={`${title} entry`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      className={`${getGroupCardClass("streak_runners")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30`}
+      style={{
+        background: cardStyle.cardBg,
+        border: `1px solid ${cardStyle.cardBorder}`,
+        clipPath: NOTCH_CLIP,
+      }}
+    >
+      {/* Color bleed gradient — VISIBLE */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `linear-gradient(to right, ${hex}18 0%, ${hex}08 40%, transparent 70%)`,
+          borderRadius: "inherit",
+        }}
+      />
+
+      {/* Corner notch triangle */}
+      <div
+        className="absolute top-0 right-0 size-[20px] opacity-40"
+        style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", backgroundColor: hex }}
+      />
+
+      {/* Left accent ribbon — THICK gradient */}
+      <div
+        className="shrink-0 rounded-l-2xl relative"
+        style={{ width: cardStyle.accentBarWidth, background: cardStyle.accentBarBg, boxShadow: `2px 0 12px ${hex}15` }}
+      />
+
+      <div className="min-w-0 flex-1 py-4 pr-4 pl-3.5 relative">
+        {/* Row 1 — Icon in pill + Title + Countdown badge */}
+        <div className="flex items-start gap-3">
+          <div
+            className="flex size-8 shrink-0 items-center justify-center rounded-full"
+            style={{ background: `${hex}30`, border: `1px solid ${hex}40` }}
+          >
+            <Zap className="size-3.5 text-amber-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={href} className="text-[15px] font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors">
+                {title}
+              </Link>
+              {editTime?.hasEditWindow && !editTime.expired && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold text-amber-300"
+                  style={{ background: `${hex}15`, border: `1px solid ${hex}25` }}
+                >
+                  <span className="size-1.5 rounded-full bg-amber-400 animate-subtle-pulse" />
+                  {editTime.remainingLabel}
+                </span>
+              )}
+              {badges}
+            </div>
+            {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{subtitle}</div> : null}
+          </div>
+        </div>
+
+        {/* Row 2 — BRIGHT INNER PANEL (L2 depth) */}
+        {hasContent && (
+          <div
+            className="mt-3 rounded-xl px-3.5 py-3 ml-11"
+            style={{ background: innerPanel.background, border: innerPanel.border }}
+          >
+            {children}
+            {metadata && !children ? <div className="text-xs text-[var(--color-text-secondary)]">{metadata}</div> : null}
+          </div>
+        )}
+
+        {/* Row 3 — Footer */}
+        <div className="flex flex-wrap items-center justify-between gap-2 ml-11 mt-3">
+          {time ? <span className="text-xs text-white/30">{t('entry.timeUpdated')} {time}</span> : <span />}
+          {actions ? (
+            <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
+              {actions}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <EditWindowProgressBar group="streak_runners" editTime={editTime} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   TIMER CARD — on_the_clock
+   Timer-forward layout. Countdown is DOMINANT.
+   Big timer block on the left side of content.
+   ═══════════════════════════════════════════ */
+function TimerCard({
+  title, href, editTime, badges, subtitle, metadata, createdAt, updatedAt, actions, children, index,
+}: CardInternalProps) {
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const hex = GROUP_HEX.on_the_clock;
+  const cardStyle = GROUP_CARDS.on_the_clock;
+  const innerPanel = INNER_PANELS.on_the_clock;
+  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
+  const hasContent = !!(children || metadata);
+  const time = formatRelativeTime(updatedAt || createdAt, language);
+  const isUrgent = editTime?.hasEditWindow && !editTime.expired && editTime.remainingMs < 24 * 60 * 60 * 1000;
+
+  return (
+    <div
+      data-entry-card
+      tabIndex={0}
+      aria-label={`${title} entry`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      className={`${getGroupCardClass("on_the_clock")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/30`}
+      style={{ background: cardStyle.cardBg, border: `1px solid ${cardStyle.cardBorder}` }}
+    >
+      {/* Left accent bar */}
+      <div className="shrink-0 rounded-l-2xl" style={{ width: cardStyle.accentBarWidth, background: cardStyle.accentBarBg }} />
+
+      <div className="min-w-0 flex-1 py-4 pr-4 pl-3.5">
+        {/* TIMER-FORWARD layout: countdown block + title side by side */}
+        <div className="flex items-start gap-3">
+          {/* COUNTDOWN BLOCK — dominant visual */}
+          {editTime?.hasEditWindow && !editTime.expired ? (
+            <div
+              className="shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-2"
+              style={{
+                background: isUrgent ? "rgba(239,68,68,0.12)" : `${hex}12`,
+                border: `1px solid ${isUrgent ? "rgba(239,68,68,0.20)" : `${hex}20`}`,
+                minWidth: "72px",
+              }}
+            >
+              <Clock className={`size-3.5 ${isUrgent ? "text-red-400 animate-subtle-pulse" : "text-blue-400"}`} />
+              <span className={`mt-0.5 text-xs font-black tabular-nums ${isUrgent ? "text-red-400" : "text-blue-300"}`}>
+                {editTime.remainingLabel}
+              </span>
+            </div>
+          ) : (
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `${hex}12` }}>
+              <Clock className="size-3.5 text-blue-400" />
+            </div>
+          )}
+
+          {/* Title + content */}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={href} className="text-[15px] font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors">
+                {title}
+              </Link>
+              {badges}
+            </div>
+            {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{subtitle}</div> : null}
+
+            {/* Content panel */}
+            {hasContent && (
+              <div
+                className="mt-2.5 rounded-xl px-3 py-2.5"
+                style={{ background: innerPanel.background, border: innerPanel.border }}
+              >
+                {children}
+                {metadata && !children ? <div className="text-xs text-[var(--color-text-secondary)]">{metadata}</div> : null}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+          {time ? (
+            <span className={`inline-flex items-center gap-1.5 text-xs ${
+              isUrgent ? "text-red-400" : "text-white/30"
+            }`}>
+              {isUrgent && <Clock className="size-3 animate-subtle-pulse" />}
+              {isUrgent ? t('entry.expiresToday') : `${t('entry.timeUpdated')} ${time}`}
+            </span>
+          ) : <span />}
+          {actions ? (
+            <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
+              {actions}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <EditWindowProgressBar group="on_the_clock" editTime={editTime} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   STANDARD CARD — unlocked
+   Clean medium card. No notch, no clip.
+   ═══════════════════════════════════════════ */
+function StandardCard({
+  title, href, editTime, badges, subtitle, metadata, createdAt, updatedAt, actions, children, index,
+}: CardInternalProps) {
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const hex = GROUP_HEX.unlocked;
+  const cardStyle = GROUP_CARDS.unlocked;
+  const innerPanel = INNER_PANELS.unlocked;
+  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
+  const hasContent = !!(children || metadata);
+  const time = formatRelativeTime(updatedAt || createdAt, language);
+
+  return (
+    <div
+      data-entry-card
+      tabIndex={0}
+      aria-label={`${title} entry`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/30`}
+      style={{ background: cardStyle.cardBg, border: `1px solid ${cardStyle.cardBorder}` }}
+    >
+      <div className="shrink-0 rounded-l-2xl" style={{ width: cardStyle.accentBarWidth, background: cardStyle.accentBarBg }} />
+
+      <div className="min-w-0 flex-1 py-4 pr-4 pl-3.5">
+        <div className="flex items-start gap-2.5">
+          <Unlock className={`size-3.5 shrink-0 mt-0.5 text-purple-400`} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={href} className="text-[15px] font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors">
+                {title}
+              </Link>
+              {editTime?.hasEditWindow && !editTime.expired && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-purple-300"
+                  style={{ background: `${hex}12`, border: `1px solid ${hex}18` }}
+                >
+                  <span className="size-1.5 rounded-full bg-purple-400" />
+                  {t('entry.unlockedLabel')} · {editTime.remainingLabel}
+                </span>
+              )}
+              {badges}
+            </div>
+            {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{subtitle}</div> : null}
+          </div>
+        </div>
+
+        {hasContent && (
+          <div
+            className="mt-3 rounded-xl px-3 py-2.5 ml-6"
+            style={{ background: innerPanel.background, border: innerPanel.border }}
+          >
+            {children}
+            {metadata && !children ? <div className="text-xs text-[var(--color-text-secondary)]">{metadata}</div> : null}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-2 ml-6 mt-3">
+          {time ? <span className="text-xs text-white/30">{t('entry.timeUpdated')} {time}</span> : <span />}
+          {actions ? (
+            <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
+              {actions}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <EditWindowProgressBar group="unlocked" editTime={editTime} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   ROW — in_the_works (drafts)
+   NOT A CARD. A compact single-line row.
+   Dotted left edge. Minimal. Like a to-do item.
+   ═══════════════════════════════════════════ */
+function DraftRow({
+  title, href, createdAt, actions, index,
+}: CardInternalProps) {
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
+  const time = formatRelativeTime(createdAt, language);
+
+  return (
+    <div
+      data-entry-card
+      tabIndex={0}
+      aria-label={`${title} draft entry`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      className={`group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-white/[0.03] cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/30`}
+      style={{ borderLeft: "2px dotted rgba(100,116,139,0.25)" }}
+    >
+      <Pencil className="size-3 shrink-0 text-[var(--color-text-muted)]" />
+      <Link href={href} className="text-sm font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors flex-1 min-w-0">
+        {title}
+      </Link>
+      <span className="shrink-0 rounded-md bg-white/[0.08] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/40">
+        {t('entry.draft')}
+      </span>
+      {time ? <span className="shrink-0 text-[11px] text-white/30">{time}</span> : null}
+      {actions ? (
+        <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          {actions}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   DASHED CARD — under_review
+   Dashed border. Pulsing orange dot.
+   ═══════════════════════════════════════════ */
+function DashedCard({
+  title, href, badges, subtitle, metadata, createdAt, updatedAt, actions, children, index,
+}: CardInternalProps) {
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const hex = GROUP_HEX.under_review;
+  const cardStyle = GROUP_CARDS.under_review;
+  const innerPanel = INNER_PANELS.under_review;
+  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
+  const hasContent = !!(children || metadata);
+  const time = formatRelativeTime(updatedAt || createdAt, language);
+
+  return (
+    <div
+      data-entry-card
+      tabIndex={0}
+      aria-label={`${title} entry under review`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      className={`${getGroupCardClass("under_review")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/30`}
+      style={{
+        background: cardStyle.cardBg,
+        border: `1px dashed rgba(249,115,22,0.18)`,
+      }}
+    >
+      {/* Striped accent bar — dashes pattern */}
+      <div className="shrink-0 rounded-l-2xl" style={{ width: cardStyle.accentBarWidth, background: cardStyle.accentBarBg }} />
+
+      <div className="min-w-0 flex-1 py-3.5 pr-4 pl-3.5">
+        <div className="flex items-start gap-2.5">
+          <div className="relative mt-0.5">
+            <Clock className="size-3.5 text-orange-400" />
+            <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-orange-400 animate-subtle-pulse" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={href} className="text-sm font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors">
+                {title}
+              </Link>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-400"
+                style={{ background: `${hex}12` }}
+              >
+                {t('entry.editRequested')}
+              </span>
+              {badges}
+            </div>
+            {subtitle ? <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{subtitle}</div> : null}
+          </div>
+        </div>
+
+        {hasContent && (
+          <div
+            className="mt-2.5 rounded-lg px-3 py-2 ml-6"
+            style={{ background: innerPanel.background, border: innerPanel.border }}
+          >
+            {children}
+            {metadata && !children ? <div className="text-xs text-[var(--color-text-secondary)]">{metadata}</div> : null}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-2 ml-6 mt-2.5">
+          {time ? <span className="text-xs text-orange-400/50">{t('entry.timeRequested')} {time}</span> : <span />}
+          {actions ? (
+            <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
+              {actions}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   STAMP ROW — locked_in (finalized)
+   Flat, condensed, checkmark stamp. Done.
+   NOT a card. A quiet completion record.
+   ═══════════════════════════════════════════ */
+function StampRow({
+  title, href, createdAt, updatedAt, actions, index,
+}: CardInternalProps) {
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
+  const time = formatRelativeTime(updatedAt || createdAt, language);
+
+  return (
+    <div
+      data-entry-card
+      tabIndex={0}
+      aria-label={`${title} finalized entry`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      className={`group flex items-center gap-2.5 py-2.5 px-3.5 rounded-lg transition-all duration-200 hover:bg-emerald-500/[0.06] cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/20`}
+      style={{ borderLeft: "2px solid rgba(34,197,94,0.30)", background: "rgba(34,197,94,0.03)" }}
+    >
+      {/* Index number badge — like a record number */}
+      <span
+        className="shrink-0 flex size-5 items-center justify-center rounded font-mono text-[9px] font-bold text-emerald-400/50"
+        style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.15)" }}
+      >
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <div
+        className="flex size-5 shrink-0 items-center justify-center rounded-full"
+        style={{ background: "rgba(34,197,94,0.18)", border: "1px solid rgba(34,197,94,0.30)" }}
+      >
+        <Check className="size-2.5 text-emerald-400" />
+      </div>
+      <Link href={href} className="text-sm font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors flex-1 min-w-0">
+        {title}
+      </Link>
+      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+        {t('entry.finalized')}
+      </span>
+      {time ? <span className="shrink-0 text-[11px] text-white/30">{time}</span> : null}
+      {actions ? (
+        <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          {actions}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* ═══ SHARED PROPS TYPE ═══ */
+type CardInternalProps = {
   group: EntryListGroup;
   index: number;
   title: React.ReactNode;
@@ -202,75 +555,26 @@ type EntryListCardShellProps = {
   children?: React.ReactNode;
 };
 
-export default function EntryListCardShell({
-  group,
-  index,
-  title,
-  href,
-  editTime,
-  badges,
-  subtitle,
-  metadata,
-  createdAt,
-  updatedAt,
-  actions,
-  children,
-}: EntryListCardShellProps) {
-  const router = useRouter();
-  const Icon = GROUP_ICONS[group];
-  const iconColor = GROUP_ICON_COLORS[group];
-  const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
+/* ═══ MAIN SHELL — dispatches to the right structure ═══ */
+type EntryListCardShellProps = CardInternalProps;
 
-  return (
-    <div
-      data-entry-card
-      tabIndex={0}
-      aria-label={`${title} entry`}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          router.push(href);
-        }
-      }}
-      className={`${getGroupCardClass(group)} group relative animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)]/30 focus-visible:ring-offset-1`}
-    >
-      {/* Row 1 — Identity */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Icon className={`size-3.5 shrink-0 ${iconColor}`} />
-            <Link href={href} className="text-base font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] truncate transition-colors">
-              {title}
-            </Link>
-            <GroupBadge group={group} editTime={editTime} />
-            {badges}
-          </div>
-          {subtitle ? <div className="mt-0.5 pl-5.5 text-sm text-[var(--color-text-secondary)]">{subtitle}</div> : null}
-        </div>
-      </div>
+export default function EntryListCardShell(props: EntryListCardShellProps) {
+  const layout = GROUP_LAYOUT[props.group];
 
-      {/* Row 2 — Details */}
-      {(children || metadata) && (
-        <div className="mt-2 pl-5.5">
-          {children}
-          {metadata && !children ? (
-            <div className="text-xs text-[var(--color-text-secondary)]">{metadata}</div>
-          ) : null}
-        </div>
-      )}
-
-      {/* Row 3 — Footer: time info + actions */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-card-border)] pt-2.5">
-        <TimeInfo group={group} editTime={editTime} createdAt={createdAt} updatedAt={updatedAt} />
-        {actions ? (
-          <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 sm:group-focus-within:opacity-100 sm:group-focus-within:translate-x-0 transition-all duration-200">
-            {actions}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Time progress bar — flush bottom */}
-      <EditWindowProgressBar group={group} editTime={editTime} />
-    </div>
-  );
+  switch (layout) {
+    case "hero":
+      return <HeroCard {...props} />;
+    case "timer":
+      return <TimerCard {...props} />;
+    case "standard":
+      return <StandardCard {...props} />;
+    case "row":
+      return <DraftRow {...props} />;
+    case "dashed":
+      return <DashedCard {...props} />;
+    case "stamp":
+      return <StampRow {...props} />;
+    default:
+      return <StandardCard {...props} />;
+  }
 }

@@ -117,7 +117,7 @@ export function NumberInput({
           disabled={disabled || (min !== undefined && value <= min)}
           onClick={() => onChange(Math.max(min ?? -Infinity, value - 1))}
           aria-label="Decrease value"
-          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-card-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
+          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           -
         </button>
@@ -131,7 +131,7 @@ export function NumberInput({
           onBlur={commit}
           onKeyDown={(e) => e.key === "Enter" && commit()}
           className={`h-8 w-16 rounded-lg border px-2 text-center text-sm outline-none transition-colors ${
-            error ? "border-red-400 text-red-600" : "border-[var(--color-card-border)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
+            error ? "border-red-400 text-red-400" : "border-[var(--color-glass-border)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           }`}
         />
         <button
@@ -139,7 +139,7 @@ export function NumberInput({
           disabled={disabled || (max !== undefined && value >= max)}
           onClick={() => onChange(Math.min(max ?? Infinity, value + 1))}
           aria-label="Increase value"
-          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-card-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
+          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           +
         </button>
@@ -190,7 +190,7 @@ export function StringInput({
       onChange={(e) => setLocal(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => e.key === "Enter" && commit()}
-      className="h-9 w-full rounded-lg border border-[var(--color-card-border)] px-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10 disabled:bg-[var(--color-dropdown-hover)]"
+      className="h-9 w-full rounded-lg border border-[var(--color-glass-border)] px-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10 disabled:bg-[var(--color-dropdown-hover)]"
     />
   );
 }
@@ -274,13 +274,13 @@ export const SettingRow = memo(function SettingRow({
     <>
       <div
         className={`group relative rounded-xl border p-4 transition-all duration-300 ${
-          def.dangerous ? "border-l-4 border-l-red-400 border-[var(--color-card-border)]" : "border-[var(--color-card-border)]"
+          def.dangerous ? "border-l-4 border-l-red-400 border-[var(--color-glass-border)]" : "border-[var(--color-glass-border)]"
         } ${
           status === "saved"
             ? "bg-emerald-500/10"
             : status === "error"
             ? "bg-red-500/10"
-            : "bg-[var(--color-card-bg)] hover:border-[var(--color-text-muted)]"
+            : "bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
         }`}
       >
         <div className={`flex ${isInline ? "items-center justify-between gap-4" : "flex-col gap-3"}`}>
@@ -292,7 +292,7 @@ export const SettingRow = memo(function SettingRow({
               )}
               <span className="text-sm font-medium text-[var(--color-text-primary)]">{def.label}</span>
               {def.requiresRestart && (
-                <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
+                <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-400">
                   Restart required
                 </span>
               )}
@@ -355,7 +355,7 @@ export const SettingRow = memo(function SettingRow({
                   aria-label="Color picker"
                   value={value as string}
                   onChange={(e) => handleSave(e.target.value)}
-                  className="size-8 cursor-pointer rounded border border-[var(--color-card-border)]"
+                  className="size-8 cursor-pointer rounded border border-[var(--color-glass-border)]"
                 />
                 <span className="font-mono text-xs text-[var(--color-text-secondary)]">{value as string}</span>
               </div>

@@ -70,23 +70,25 @@ export default function SignInPage() {
   }, []);
 
   return (
-    <div className="min-h-[calc(100vh-0px)] w-full bg-gradient-to-br from-[var(--color-body-bg)] to-[var(--color-dropdown-hover)]">
-      {/* Subtle neutral background */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[var(--color-body-bg)]">
+      {/* Ambient glow orbs */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 opacity-60"
+        className="pointer-events-none fixed inset-0"
         style={{
           background:
-            "radial-gradient(900px 500px at 50% 20%, rgba(0,0,0,0.06), transparent 60%), radial-gradient(700px 420px at 20% 80%, rgba(0,0,0,0.05), transparent 60%)",
+            "radial-gradient(600px at 50% 30%, rgba(132, 204, 22, 0.06), transparent), radial-gradient(400px at 70% 70%, rgba(59, 130, 246, 0.04), transparent)",
         }}
       />
-      {/* Ambient glow — drifts slowly */}
-      <div aria-hidden="true" className="pointer-events-none fixed left-1/2 top-1/3 -z-10 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/15/5 blur-3xl animate-glow-drift" />
+      {/* Drifting lime orb */}
+      <div aria-hidden="true" className="pointer-events-none fixed left-1/2 top-1/4 -z-10 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-primary)]/5 blur-3xl animate-glow-drift" />
+      {/* Secondary blue orb */}
+      <div aria-hidden="true" className="pointer-events-none fixed right-1/4 bottom-1/4 -z-10 h-72 w-72 rounded-full bg-blue-500/3 blur-3xl animate-glow-drift" style={{ animationDelay: "-3s" }} />
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-5 py-10">
-        <div className="w-full max-w-lg">
-          {/* Card — subtle float */}
-          <div className="rounded-3xl border border-border bg-white/70 p-6 shadow-sm backdrop-blur-md sm:p-7 animate-float">
+        <div className="w-full max-w-lg animate-page-enter">
+          {/* Card — glass treatment */}
+          <div className="rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8 animate-float">
             {/* Logos row */}
             <div className="flex items-center justify-center">
               <div className="flex items-center justify-center gap-3">
@@ -96,13 +98,13 @@ export default function SignInPage() {
                     alt="TCE"
                     fill
                     sizes="(min-width: 768px) 208px, (min-width: 640px) 176px, 144px"
-                    className="object-contain"
+                    className="object-contain drop-shadow-[0_0_12px_rgba(132,204,22,0.15)]"
                     priority
                   />
                 </div>
 
                 {/* divider */}
-                <div className="h-10 w-px bg-border" />
+                <div className="h-10 w-px bg-[var(--color-glass-border)]" />
 
                 <div className="relative h-16 w-36 sm:h-20 sm:w-44 md:h-24 md:w-52">
                   <Image
@@ -110,34 +112,34 @@ export default function SignInPage() {
                     alt="T'SEDA"
                     fill
                     sizes="(min-width: 768px) 208px, (min-width: 640px) 176px, 144px"
-                    className="object-contain"
+                    className="object-contain drop-shadow-[0_0_12px_rgba(132,204,22,0.15)]"
                     priority
                   />
                 </div>
               </div>
             </div>
 
-            {/* Title — fade in */}
-            <div className="mt-5 text-center animate-fade-in-up">
-              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            {/* Title */}
+            <div className="mt-6 text-center animate-fade-in-up">
+              <h1 className="text-xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-2xl">
                 T&apos;SEDA Data Repository
               </h1>
-              {/* Accent line */}
-              <div className="mx-auto mt-2 h-0.5 w-16 rounded-full bg-amber-400 animate-grow-width" />
-              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              {/* Accent line — lime gradient */}
+              <div className="mx-auto mt-2.5 h-0.5 w-16 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-light)] animate-grow-width" />
+              <p className="mt-2.5 text-sm text-[var(--color-text-secondary)]">
                 Sign in with your tce.edu ID only.
               </p>
             </div>
 
             {/* Error */}
             {errorText ? (
-              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-800 animate-fade-in-up">
+              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400 backdrop-blur-sm animate-fade-in-up">
                 {errorText}
               </div>
             ) : null}
 
             {/* CTA */}
-            <div className={cx("mt-5", errorText ? "mt-4" : "")}>
+            <div className={cx("mt-6", errorText ? "mt-4" : "")}>
               <button
                 type="button"
                 onClick={async () => {
@@ -150,37 +152,37 @@ export default function SignInPage() {
                 }}
                 disabled={busy || status === "loading"}
                 className={cx(
-                  "group flex w-full items-center justify-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium",
-                  "bg-foreground text-background shadow-sm cursor-pointer transition-all duration-200 ease-out",
-                  "hover:opacity-95 hover:shadow-md hover:-translate-y-[2px]",
+                  "group flex w-full items-center justify-center gap-3 rounded-2xl border border-[var(--color-glass-border)] px-4 py-3.5 text-sm font-semibold",
+                  "bg-[var(--color-glass-hover)] text-[var(--color-text-primary)] shadow-lg shadow-black/20 cursor-pointer transition-all duration-300 ease-out",
+                  "hover:bg-[var(--color-button-primary-bg)] hover:text-[var(--color-button-primary-text)] hover:border-[var(--color-primary)]/30 hover:shadow-[0_0_24px_var(--color-glow-primary)]",
                   "active:translate-y-0 active:scale-[0.97]",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40",
                   "disabled:cursor-not-allowed disabled:opacity-60 disabled:pointer-events-none",
                   "disabled:hover:shadow-none disabled:hover:translate-y-0 disabled:active:scale-100",
                   "animate-fade-in-up stagger-2"
                 )}
               >
-                <span className="inline-flex items-center justify-center rounded-full bg-background/90 p-1 transition-transform duration-200 group-hover:rotate-[5deg]">
+                <span className="inline-flex items-center justify-center rounded-full bg-white/90 p-1 transition-transform duration-200 group-hover:rotate-[5deg] group-hover:scale-110">
                   <GoogleIcon className="h-5 w-5" />
                 </span>
-                <span>{busy ? "Signing in…" : "Sign in with Google"}</span>
+                <span>{busy ? "Signing in\u2026" : "Sign in with Google"}</span>
               </button>
 
-              <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-[var(--color-text-secondary)] animate-fade-in-up stagger-3">
+              <div className="mt-3.5 flex items-center justify-center gap-1.5 text-center text-xs text-[var(--color-text-muted)] animate-fade-in-up stagger-3">
                 <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-2" aria-hidden="true">
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
-                Access is restricted to <span className="font-medium">@tce.edu</span> accounts only
+                Access is restricted to <span className="font-medium text-[var(--color-text-secondary)]">@tce.edu</span> accounts only
               </div>
             </div>
           </div>
 
           {/* footer hint */}
-          <div className="mt-4 text-center text-xs text-[var(--color-text-secondary)] animate-fade-in-up stagger-4">
+          <div className="mt-5 text-center text-xs text-[var(--color-text-muted)] animate-fade-in-up stagger-4">
             If you face issues, sign out of other Google accounts and try again.
           </div>
-          <div className="mt-6 text-center text-xs text-[var(--color-text-muted)] animate-fade-in-up stagger-5">
+          <div className="mt-6 text-center text-xs text-[var(--color-text-muted)]/60 animate-fade-in-up stagger-5">
             T&apos;SEDA &mdash; Thiagarajar College of Engineering
           </div>
         </div>

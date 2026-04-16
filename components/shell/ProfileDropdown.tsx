@@ -49,20 +49,20 @@ export default function ProfileDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors hover:bg-[var(--color-dropdown-hover)] cursor-pointer"
+        className="flex items-center gap-2 rounded-xl px-2 py-1 transition-all duration-200 hover:bg-[var(--color-dropdown-hover)] cursor-pointer"
         aria-label="Account menu"
         aria-haspopup="menu"
         aria-expanded={open}
       >
         {/* Avatar */}
-        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--color-card-border)]">
+        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--color-glass-border)] transition-all duration-200 hover:ring-[var(--color-primary)]">
           {photoUrl ? (
             <span
               className="h-full w-full bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: `url("${photoUrl}")` }}
             />
           ) : (
-            <span className="flex size-full items-center justify-center bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] text-xs font-bold text-white">
+            <span className="flex size-full items-center justify-center bg-[var(--color-button-primary-bg)] text-xs font-bold text-[var(--color-button-primary-text)]">
               {initials}
             </span>
           )}
@@ -81,14 +81,14 @@ export default function ProfileDropdown({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-2 shadow-2xl animate-scale-in"
+          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl py-2 shadow-2xl shadow-black/40 animate-scale-in"
         >
           {/* User info */}
-          <div className="border-b border-[var(--color-card-border)] px-4 py-3">
+          <div className="border-b border-[var(--color-glass-border)] px-4 py-3">
             <div className="text-sm font-semibold text-[var(--color-text-primary)]">{name}</div>
             <div className="truncate font-mono text-xs text-[var(--color-text-secondary)]">{email}</div>
             {isAdmin && (
-              <span className="mt-1 inline-block rounded-full bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              <span className="mt-1 inline-block rounded-full bg-[var(--color-badge-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-badge-text)]">
                 Admin
               </span>
             )}
@@ -105,7 +105,7 @@ export default function ProfileDropdown({
             {t('nav.account')}
           </Link>
 
-          <div className="my-1 h-px bg-[var(--color-card-border)]" />
+          <div className="my-1 h-px bg-[var(--color-glass-border)]" />
 
           {/* Sign out */}
           <button
@@ -115,7 +115,7 @@ export default function ProfileDropdown({
               setOpen(false);
               onSignOut();
             }}
-            className="mx-1 flex w-[calc(100%-0.5rem)] items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-500/10 cursor-pointer"
+            className="mx-1 flex w-[calc(100%-0.5rem)] items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-500/10 cursor-pointer"
           >
             <LogOut className="size-4" />
             {t('nav.signOut')}

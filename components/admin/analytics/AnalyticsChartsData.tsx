@@ -27,13 +27,13 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
               key={user.email}
               className={`flex w-28 flex-col items-center rounded-xl border p-3 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
                 isFirst
-                  ? "border-amber-500/20 bg-gradient-to-b from-amber-50 to-[var(--color-card-bg)] shadow-sm"
-                  : "border-[var(--color-card-border)] bg-gradient-to-b from-[var(--color-body-bg)] to-[var(--color-card-bg)]"
+                  ? "border-amber-500/20 bg-gradient-to-b from-amber-50 to-[var(--color-glass-bg)] shadow-sm"
+                  : "border-[var(--color-glass-border)] bg-gradient-to-b from-[var(--color-body-bg)] to-[var(--color-glass-bg)]"
               } ${isFirst ? "pb-5" : "pb-3"}`}
             >
               <span className="text-xl">{medals[idx]}</span>
               <div
-                className={`mt-1 flex items-center justify-center rounded-full bg-[var(--color-card-border)] text-xs font-bold text-[var(--color-text-secondary)] ${
+                className={`mt-1 flex items-center justify-center rounded-full bg-[var(--color-glass-border)] text-xs font-bold text-[var(--color-text-secondary)] ${
                   isFirst ? "size-14" : "size-10"
                 }`}
               >
@@ -45,7 +45,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
               <div className="text-lg font-bold text-[var(--color-text-primary)]">{user.entryCount}</div>
               <div className="text-[10px] text-[var(--color-text-secondary)]">entries</div>
               {user.streakWins > 0 && (
-                <div className="mt-1 flex items-center gap-0.5 text-[10px] text-amber-600">
+                <div className="mt-1 flex items-center gap-0.5 text-[10px] text-amber-400">
                   <Trophy className="size-3" /> {user.streakWins}
                 </div>
               )}
@@ -54,16 +54,16 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
         })}
       </div>
       {rest.length > 0 && (
-        <div className="rounded-lg border border-[var(--color-card-border)]">
+        <div className="rounded-lg border border-[var(--color-glass-border)]">
           {rest.map((user, i) => (
             <div
               key={user.email}
               className={`flex items-center gap-3 px-4 py-2.5 ${
-                i % 2 === 0 ? "bg-[var(--color-card-bg)]" : "bg-[var(--color-body-bg)]"
+                i % 2 === 0 ? "bg-[var(--color-glass-bg)]" : "bg-[var(--color-body-bg)]"
               } ${i < rest.length - 1 ? "border-b border-[var(--color-divider)]" : ""}`}
             >
               <span className="w-5 text-xs font-bold text-[var(--color-text-secondary)]">#{i + 4}</span>
-              <div className="flex size-7 items-center justify-center rounded-full bg-[var(--color-card-border)] text-[10px] font-bold text-[var(--color-text-secondary)]">
+              <div className="flex size-7 items-center justify-center rounded-full bg-[var(--color-glass-border)] text-[10px] font-bold text-[var(--color-text-secondary)]">
                 {user.name.slice(0, 2).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
@@ -73,7 +73,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
                 {user.entryCount}
               </div>
               {user.streakWins > 0 && (
-                <div className="flex items-center gap-0.5 text-xs text-amber-600">
+                <div className="flex items-center gap-0.5 text-xs text-amber-400">
                   <Trophy className="size-3" /> {user.streakWins}
                 </div>
               )}
@@ -165,7 +165,7 @@ export const CategoryRow = memo(function CategoryRow({
         {c.direction !== "flat" && (
           <span
             className={`text-[10px] font-medium ${
-              c.direction === "up" ? "text-emerald-600" : "text-red-500"
+              c.direction === "up" ? "text-emerald-400" : "text-red-500"
             }`}
           >
             {c.direction === "up" ? "↑" : "↓"} {Math.abs(c.percentChange)}%

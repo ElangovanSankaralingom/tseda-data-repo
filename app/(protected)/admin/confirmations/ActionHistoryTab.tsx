@@ -59,12 +59,12 @@ const CATEGORY_OPTIONS: readonly SelectDropdownOption[] = [
 ];
 
 const BADGE_STYLES: Record<ActionType, string> = {
-  edit_granted: "bg-emerald-500/15 text-emerald-700",
-  edit_rejected: "bg-red-500/15 text-red-700",
-  delete_approved: "bg-red-500/15 text-red-700",
-  delete_rejected: "bg-amber-500/15 text-amber-700",
+  edit_granted: "bg-emerald-500/15 text-emerald-400",
+  edit_rejected: "bg-red-500/15 text-red-400",
+  delete_approved: "bg-red-500/15 text-red-400",
+  delete_rejected: "bg-amber-500/15 text-amber-400",
   user_cancelled: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
-  auto_finalised: "bg-blue-500/15 text-blue-700",
+  auto_finalised: "bg-blue-500/15 text-blue-400",
   auto_deleted: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
 };
 
@@ -188,7 +188,7 @@ export default function ActionHistoryTab() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
             {error}
           </div>
         ) : records.length === 0 ? (
@@ -210,7 +210,7 @@ export default function ActionHistoryTab() {
               {records.map((record) => (
                 <div
                   key={record.id}
-                  className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-colors hover:bg-[var(--color-dropdown-hover)]"
+                  className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-colors hover:bg-[var(--color-dropdown-hover)]"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -256,7 +256,7 @@ export default function ActionHistoryTab() {
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
-                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-card-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-glass-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ChevronLeft className="size-3.5" />
                     Previous
@@ -264,7 +264,7 @@ export default function ActionHistoryTab() {
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-card-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-glass-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Next
                     <ChevronRight className="size-3.5" />

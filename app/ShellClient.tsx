@@ -8,7 +8,6 @@ import { LayoutDashboard, Shield } from "lucide-react";
 import AdminNotificationBell from "@/components/confirmations/AdminNotificationBell";
 import NotificationBell from "@/components/confirmations/NotificationBell";
 import SearchTrigger from "@/components/shell/SearchTrigger";
-import HeaderNavPill from "@/components/shell/HeaderNavPill";
 import ProfileDropdown from "@/components/shell/ProfileDropdown";
 import SidebarDrawer from "@/components/shell/SidebarDrawer";
 import { getInitials, type ProfileSummary } from "@/components/shell/shellTypes";
@@ -23,33 +22,45 @@ import {
   signin,
 } from "@/lib/entryNavigation";
 
-// --- Animated Hamburger Icon ---
-
 /*
-  ── Command Grid Icon ──
-  Cross-fade between 2x2 dot grid (closed) and X (open).
-  No conflicting CSS — each layer only toggles opacity + rotation.
+  ───────────────────────────────────────────────────────
+   GLASS DOCK HEADER
+
+   Not a standard full-width bar. A floating glass capsule
+   with three distinct zones separated by dividers:
+
+   ┌─────────┬──────────────────────┬─────────────┐
+   │ ⠿  T    │  ◉ Dashboard         │  🔍 🔔 👤   │
+   └─────────┴──────────────────────┴─────────────┘
+   ═══════════════ accent line ═══════════════════
+
+   Zone 1: Brand identity (menu + logo)
+   Zone 2: Context strip (current page + indicator)
+   Zone 3: Utility cluster (search, bells, avatar)
+
+   The capsule floats with margins, has glass blur,
+   inner glow borders, and a bottom accent line.
+  ───────────────────────────────────────────────────────
 */
+
+/* ── Command Grid Icon ── */
 function CommandGridIcon({ isOpen }: { isOpen: boolean }) {
   return (
-    <div className="relative size-[18px]">
-      {/* Layer 1: 2x2 dot grid — visible when closed */}
+    <div className="relative size-[16px]">
       <div
         className="absolute inset-0 grid grid-cols-2 place-items-center transition-all duration-300"
         style={{
           opacity: isOpen ? 0 : 1,
           transform: isOpen ? "scale(0.6) rotate(45deg)" : "none",
-          gap: 4,
-          padding: 2,
+          gap: 3,
+          padding: 1,
         }}
       >
-        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
-        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
-        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
-        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
+        <span className="block size-[3px] rounded-full bg-white/50" />
+        <span className="block size-[3px] rounded-full bg-white/50" />
+        <span className="block size-[3px] rounded-full bg-white/50" />
+        <span className="block size-[3px] rounded-full bg-white/50" />
       </div>
-
-      {/* Layer 2: X lines — visible when open */}
       <div
         className="absolute inset-0 flex items-center justify-center transition-all duration-300"
         style={{
@@ -57,37 +68,38 @@ function CommandGridIcon({ isOpen }: { isOpen: boolean }) {
           transform: isOpen ? "none" : "scale(0.6) rotate(-45deg)",
         }}
       >
-        <span
-          className="absolute h-[2px] w-[16px] rounded-full bg-[var(--color-text-secondary)]"
-          style={{ transform: "rotate(45deg)" }}
-        />
-        <span
-          className="absolute h-[2px] w-[16px] rounded-full bg-[var(--color-text-secondary)]"
-          style={{ transform: "rotate(-45deg)" }}
-        />
+        <span className="absolute h-[1.5px] w-[14px] rounded-full bg-white/50" style={{ transform: "rotate(45deg)" }} />
+        <span className="absolute h-[1.5px] w-[14px] rounded-full bg-white/50" style={{ transform: "rotate(-45deg)" }} />
       </div>
     </div>
   );
 }
 
-// --- Scroll state hook ---
+/* ── Context page data — maps pathname to accent + label ── */
+const PAGE_CONTEXT: Record<string, { accent: string; icon: typeof LayoutDashboard }> = {
+  "/dashboard": { accent: "#3b82f6", icon: LayoutDashboard },
+  "/admin": { accent: "#f59e0b", icon: Shield },
+};
 
+function usePageContext(pathname: string | null) {
+  if (!pathname) return { accent: "var(--color-primary)", icon: LayoutDashboard, label: "" };
+  for (const [prefix, ctx] of Object.entries(PAGE_CONTEXT)) {
+    if (pathname === prefix || pathname.startsWith(prefix + "/")) return ctx;
+  }
+  return { accent: "var(--color-primary)", icon: LayoutDashboard };
+}
+
+/* ── Scroll hook ── */
 function useScrolled(threshold = 0) {
   const [scrolled, setScrolled] = useState(false);
-
   useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > threshold);
-    }
+    function onScroll() { setScrolled(window.scrollY > threshold); }
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [threshold]);
-
   return scrolled;
 }
-
-// --- Main Component ---
 
 export default function ShellClient({
   children,
@@ -98,6 +110,8 @@ export default function ShellClient({
   const pathname = usePathname();
   const { data: session } = useSession();
   const { confirm: confirmAction } = useConfirmation();
+  const { t } = useTranslation();
+  const pageCtx = usePageContext(pathname);
 
   const [canAccessAdmin, setCanAccessAdmin] = useState(() =>
     isMasterAdmin(session?.user?.email)
@@ -106,12 +120,11 @@ export default function ShellClient({
   const [toast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [menuProfile, setMenuProfile] = useState<ProfileSummary | null>(null);
   const scrolled = useScrolled(0);
-  const { t } = useTranslation();
 
   const [adminBellOpen, setAdminBellOpen] = useState(false);
   const [userBellOpen, setUserBellOpen] = useState(false);
 
-  // Fetch profile for menu
+  // Fetch profile
   useEffect(() => {
     let ignore = false;
     void fetch("/api/me", { cache: "no-store" })
@@ -130,39 +143,26 @@ export default function ShellClient({
     const masterFallback = isMasterAdmin(email);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCanAccessAdmin(masterFallback);
-
     if (!email) return;
-
     let cancelled = false;
     void fetch("/api/me/admin-capabilities", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
-        const payload = (await response.json()) as {
-          canAccessAdminConsole?: boolean;
-        };
+        const payload = (await response.json()) as { canAccessAdminConsole?: boolean };
         if (cancelled) return;
         setCanAccessAdmin(Boolean(payload.canAccessAdminConsole));
       })
-      .catch(() => {
-        if (cancelled) return;
-        setCanAccessAdmin(masterFallback);
-      });
-
+      .catch(() => { if (cancelled) return; setCanAccessAdmin(masterFallback); });
     return () => { cancelled = true; };
   }, [session?.user?.email]);
 
-  // Escape key + body scroll lock
+  // Escape + body scroll lock
   useEffect(() => {
     if (!open) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
+    function handleKeyDown(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
     document.addEventListener("keydown", handleKeyDown);
     document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
+    return () => { document.removeEventListener("keydown", handleKeyDown); document.body.style.overflow = ""; };
   }, [open]);
 
   const closeMenu = useCallback(() => setOpen(false), []);
@@ -171,7 +171,6 @@ export default function ShellClient({
     return pathname === href || pathname?.startsWith(href + "/");
   }
 
-  // Profile data
   const profileName = useMemo(() => {
     return String(
       menuProfile?.officialName ??
@@ -206,64 +205,170 @@ export default function ShellClient({
       >
         Skip to main content
       </a>
-      {/* ─── Fixed Header ─── */}
-      <header
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 h-14 border-b transition-all duration-300",
-          scrolled
-            ? "bg-[var(--color-header-bg)] backdrop-blur-2xl border-[var(--color-glass-border)] shadow-lg shadow-black/20"
-            : "bg-[var(--color-header-bg)] backdrop-blur-xl border-transparent"
-        )}
-      >
-        <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-6">
-          {/* Left: Hamburger + Brand */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              className={cn(
-                "flex size-9 items-center justify-center rounded-xl transition-colors duration-150",
-                open ? "bg-[var(--color-dropdown-hover)]" : "hover:bg-[var(--color-dropdown-hover)]"
+
+      {/* ═══ FLOATING GLASS DOCK ═══ */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-3 pt-2 pointer-events-none">
+        <div
+          className={cn(
+            "pointer-events-auto mx-auto max-w-screen-2xl transition-all duration-500",
+            scrolled
+              ? "rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)]"
+              : "rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.04)]"
+          )}
+          style={{
+            background: scrolled
+              ? "rgba(8,10,18,0.85)"
+              : "rgba(8,10,18,0.70)",
+            backdropFilter: "blur(24px) saturate(1.2)",
+            WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+          }}
+        >
+          {/* ── Inner layout ── */}
+          <div className="flex h-12 items-center">
+
+            {/* ═══ ZONE 1: Brand Identity ═══ */}
+            <div className="flex items-center gap-2.5 pl-3 pr-4">
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className={cn(
+                  "flex size-8 items-center justify-center rounded-lg transition-all duration-200",
+                  open
+                    ? "bg-white/[0.08]"
+                    : "hover:bg-white/[0.06]"
+                )}
+                aria-label={open ? "Close menu" : "Open menu"}
+              >
+                <CommandGridIcon isOpen={open} />
+              </button>
+
+              <Link href={dashboard()} className="flex items-center gap-2 group">
+                <span
+                  className="flex size-6 items-center justify-center rounded-md text-[11px] font-black text-white transition-all duration-300 group-hover:scale-110"
+                  style={{
+                    backgroundColor: "var(--color-primary)",
+                    boxShadow: scrolled
+                      ? "0 0 12px var(--color-glow-primary)"
+                      : "0 0 8px var(--color-glow-primary)",
+                  }}
+                >
+                  T
+                </span>
+                <span className="hidden text-[13px] font-bold tracking-tight text-white/80 sm:block">
+                  T&apos;SEDA
+                </span>
+              </Link>
+            </div>
+
+            {/* ── Zone divider ── */}
+            <div className="h-5 w-px bg-white/[0.06]" />
+
+            {/* ═══ ZONE 2: Context Strip ═══ */}
+            <nav aria-label="Main navigation" className="flex flex-1 items-center gap-1 px-3">
+              {/* Dashboard pill */}
+              <Link
+                href={dashboard()}
+                className={cn(
+                  "relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-200",
+                  isActive(dashboard())
+                    ? "text-white"
+                    : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
+                )}
+              >
+                {isActive(dashboard()) && (
+                  <span
+                    className="absolute inset-0 rounded-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${PAGE_CONTEXT["/dashboard"].accent}18 0%, transparent 100%)`,
+                      border: `1px solid ${PAGE_CONTEXT["/dashboard"].accent}25`,
+                    }}
+                  />
+                )}
+                <span className="relative flex items-center gap-2">
+                  {isActive(dashboard()) && (
+                    <span
+                      className="size-1.5 rounded-full animate-subtle-pulse"
+                      style={{ backgroundColor: PAGE_CONTEXT["/dashboard"].accent }}
+                    />
+                  )}
+                  <LayoutDashboard className="size-3.5" />
+                  <span className="hidden md:inline">{t('nav.dashboard')}</span>
+                </span>
+              </Link>
+
+              {/* Admin pill */}
+              {canAccessAdmin && (
+                <Link
+                  href={adminHome()}
+                  className={cn(
+                    "relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-200",
+                    isActive(adminHome())
+                      ? "text-white"
+                      : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
+                  )}
+                >
+                  {isActive(adminHome()) && (
+                    <span
+                      className="absolute inset-0 rounded-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${PAGE_CONTEXT["/admin"].accent}18 0%, transparent 100%)`,
+                        border: `1px solid ${PAGE_CONTEXT["/admin"].accent}25`,
+                      }}
+                    />
+                  )}
+                  <span className="relative flex items-center gap-2">
+                    {isActive(adminHome()) && (
+                      <span
+                        className="size-1.5 rounded-full animate-subtle-pulse"
+                        style={{ backgroundColor: PAGE_CONTEXT["/admin"].accent }}
+                      />
+                    )}
+                    <Shield className="size-3.5" />
+                    <span className="hidden md:inline">{t('nav.admin')}</span>
+                  </span>
+                </Link>
               )}
-              aria-label={open ? "Close menu" : "Open menu"}
-            >
-              <CommandGridIcon isOpen={open} />
-            </button>
 
-            <Link href={dashboard()} className="flex items-center gap-2 group">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-[var(--color-button-primary-bg)] text-sm font-bold text-[var(--color-button-primary-text)] shadow-[0_0_16px_var(--color-glow-primary)] transition-all duration-300 group-hover:rotate-3 group-hover:scale-105 group-hover:shadow-[0_0_24px_var(--color-glow-primary)]">
-                T
-              </span>
-              <span className="hidden text-base font-bold tracking-tight text-[var(--color-text-primary)] sm:block">
-                T&apos;SEDA
-              </span>
-            </Link>
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Live status — right side of context strip */}
+              <div className="hidden items-center gap-2 lg:flex">
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
+                <span className="font-mono text-[10px] font-semibold tracking-wider text-white/25">
+                  ONLINE
+                </span>
+              </div>
+            </nav>
+
+            {/* ── Zone divider ── */}
+            <div className="h-5 w-px bg-white/[0.06]" />
+
+            {/* ═══ ZONE 3: Utility Cluster ═══ */}
+            <div className="flex items-center gap-0.5 pl-2 pr-2">
+              <SearchTrigger />
+              {canAccessAdmin && (
+                <AdminNotificationBell onPanelToggle={setAdminBellOpen} forceClose={userBellOpen} />
+              )}
+              <NotificationBell onPanelToggle={setUserBellOpen} forceClose={adminBellOpen} />
+              <ProfileDropdown
+                name={profileName}
+                email={profileEmail}
+                photoUrl={profilePhoto}
+                initials={profileInitials}
+                isAdmin={canAccessAdmin}
+                onSignOut={handleSignOut}
+              />
+            </div>
           </div>
 
-          {/* Center: Navigation Pills */}
-          <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
-            <HeaderNavPill href={dashboard()} icon={LayoutDashboard} label={t('nav.dashboard')} active={isActive(dashboard())} />
-            {canAccessAdmin && (
-              <HeaderNavPill href={adminHome()} icon={Shield} label={t('nav.admin')} active={isActive(adminHome())} />
-            )}
-          </nav>
-
-          {/* Right: Utilities */}
-          <div className="flex items-center gap-1">
-            <SearchTrigger />
-            {canAccessAdmin && (
-              <AdminNotificationBell onPanelToggle={setAdminBellOpen} forceClose={userBellOpen} />
-            )}
-            <NotificationBell onPanelToggle={setUserBellOpen} forceClose={adminBellOpen} />
-            <ProfileDropdown
-              name={profileName}
-              email={profileEmail}
-              photoUrl={profilePhoto}
-              initials={profileInitials}
-              isAdmin={canAccessAdmin}
-              onSignOut={handleSignOut}
-            />
-          </div>
+          {/* ── Bottom accent line — contextual color ── */}
+          <div
+            className="h-[1.5px] rounded-b-2xl transition-colors duration-500"
+            style={{
+              background: `linear-gradient(90deg, transparent 5%, ${pageCtx.accent}50 30%, ${pageCtx.accent}50 70%, transparent 95%)`,
+            }}
+          />
         </div>
       </header>
 

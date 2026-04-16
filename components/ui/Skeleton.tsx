@@ -8,7 +8,7 @@ export default function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-lg bg-[var(--color-card-border)]/60",
+        "animate-pulse rounded-lg bg-[var(--color-glass-border)]",
         className
       )}
     />
@@ -17,7 +17,7 @@ export default function Skeleton({ className }: SkeletonProps) {
 
 export function SkeletonCard({ className }: SkeletonProps) {
   return (
-    <div className={cn("rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 space-y-3", className)}>
+    <div className={cn("rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 space-y-3", className)}>
       <Skeleton className="h-4 w-2/3" />
       <Skeleton className="h-3 w-1/2" />
       <Skeleton className="h-3 w-full" />

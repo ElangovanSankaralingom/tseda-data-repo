@@ -219,8 +219,13 @@ export async function handleCategoryFilePost(request: Request, category: Categor
     const storedPath = buildStoredPath(email, category, recordId, slot, sanitizedName);
     const absPath = path.join(process.cwd(), "public", storedPath);
 
-    await fs.mkdir(path.dirname(absPath), { recursive: true });
-    await fs.writeFile(absPath, Buffer.from(fileBuffer));
+    try {
+      await fs.mkdir(path.dirname(absPath), { recursive: true });
+      await fs.writeFile(absPath, Buffer.from(fileBuffer));
+    } catch (fsError) {
+      logger.error({ event: "upload.fs.error", category, slot, error: (fsError as Error).message });
+      return NextResponse.json({ error: "Failed to save file. Please try again." }, { status: 500 });
+    }
 
     logger.info({
       event: "upload.success",

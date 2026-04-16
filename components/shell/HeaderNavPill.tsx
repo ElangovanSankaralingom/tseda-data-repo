@@ -10,7 +10,7 @@ export default function HeaderNavPill({
   label,
   active,
   hasDot,
-  dotColor = "bg-amber-500/15",
+  dotColor = "bg-[var(--color-badge-bg)]",
 }: {
   href: string;
   icon: LucideIcon;
@@ -23,19 +23,16 @@ export default function HeaderNavPill({
     <Link
       href={href}
       className={cn(
-        "relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200",
+        "relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-200",
         active
-          ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+          ? "bg-[var(--color-badge-bg)] text-[var(--color-badge-text)] shadow-[0_0_12px_var(--color-glow-primary)]"
           : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-dropdown-hover)]"
       )}
     >
       <Icon className="size-4" />
       <span>{label}</span>
       {hasDot && (
-        <span className={cn("size-1.5 rounded-full animate-subtle-pulse", dotColor)} />
-      )}
-      {active && (
-        <span className="absolute -bottom-2.5 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[var(--color-button-primary-bg)]" />
+        <span className={cn("size-1.5 rounded-full animate-subtle-pulse glow-dot", dotColor)} />
       )}
     </Link>
   );

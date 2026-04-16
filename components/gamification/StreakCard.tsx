@@ -9,10 +9,10 @@ function FlameIcon({
   count: string;
 }) {
   const fill = tone === "color" ? "#f97316" : "#9ca3af";
-  const text = tone === "color" ? "#7c2d12" : "#374151";
+  const text = tone === "color" ? "#fb923c" : "#9ca3af";
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2">
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-2">
       <svg
         aria-hidden="true"
         className="h-8 w-8"
@@ -50,14 +50,14 @@ export default function StreakCard({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-muted/20 px-4 py-3">
+    <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]/20 px-4 py-3">
       {currentStatus === "active" ? (
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <FlameIcon tone="gray" count="1" />
             <div>
               <div className="text-sm font-semibold">{label}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-[var(--color-text-muted)]">
                 {remainingDaysFromDueAtISO(state.dueAtISO)} days remaining
               </div>
             </div>

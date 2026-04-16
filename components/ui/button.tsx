@@ -13,9 +13,9 @@ const buttonVariants = cva(
         destructive:
           "bg-red-500/15 text-white hover:bg-red-600 focus-visible:ring-red-500/20",
         outline:
-          "border border-[var(--color-input-border)] bg-[var(--color-card-bg)] shadow-xs hover:bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
+          "border border-[var(--color-input-border)] bg-[var(--color-glass-bg)] shadow-xs hover:bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
         secondary:
-          "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] border border-[var(--color-input-border)] hover:bg-[var(--color-dropdown-hover)]",
+          "bg-[var(--color-glass-bg)] text-[var(--color-text-primary)] border border-[var(--color-input-border)] hover:bg-[var(--color-dropdown-hover)]",
         ghost:
           "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-dropdown-hover)]",
         link: "text-[var(--color-text-primary)] underline-offset-4 hover:underline",

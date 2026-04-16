@@ -13,7 +13,7 @@ export default function ProfileTab({ draft, setDraft, errors, shouldShowError }:
           <input
             value={draft.email || ""}
             readOnly
-            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)] px-3 py-2 text-sm"
           />
         </Field>
 
@@ -21,7 +21,7 @@ export default function ProfileTab({ draft, setDraft, errors, shouldShowError }:
           <input
             value={draft.officialName ?? ""}
             readOnly
-            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)] px-3 py-2 text-sm"
           />
         </Field>
 
@@ -29,7 +29,7 @@ export default function ProfileTab({ draft, setDraft, errors, shouldShowError }:
           <input
             value={draft.userPreferredName ?? ""}
             onChange={(e) => setDraft((d) => ({ ...d, userPreferredName: e.target.value }))}
-            className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-[var(--color-glass-border)] px-3 py-2 text-sm"
           />
         </Field>
       </div>

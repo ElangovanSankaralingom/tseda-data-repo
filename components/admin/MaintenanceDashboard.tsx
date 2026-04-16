@@ -49,7 +49,7 @@ function formatTimeAgo(isoString: string) {
 
 function StatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
   return (
-    <div className="group flex items-center gap-3 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] transition-transform duration-200 group-hover:scale-110">
         {icon}
       </div>
@@ -71,7 +71,7 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
   const { t } = useTranslation();
   if (!lastRun) {
     return (
-      <span className="rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-primary)]">
+      <span className="rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-[var(--color-text-primary)]">
         {t("adminMaintenance.noRunsYet")}
       </span>
     );
@@ -82,8 +82,8 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
     <span
       className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
         isOk
-          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-          : "border-amber-500/20 bg-amber-500/10 text-amber-900"
+          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+          : "border-amber-500/20 bg-amber-500/10 text-amber-400"
       }`}
     >
       {isOk ? t("adminMaintenance.allSystemsHealthy") : t("adminMaintenance.partialFailure")} &middot; {formatTimeAgo(lastRun.finishedAt)}
@@ -93,14 +93,14 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
 
 const NightlyStepRow = memo(function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data: Record<string, unknown> } | { ok: false; errorCode: string; message: string } }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-2">
       <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
       {step.ok ? (
-        <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+        <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
           <CheckCircle2 className="size-3.5" /> OK
         </span>
       ) : (
-        <span className="flex items-center gap-1 text-xs font-medium text-red-600" title={step.message}>
+        <span className="flex items-center gap-1 text-xs font-medium text-red-400" title={step.message}>
           <XCircle className="size-3.5" /> {step.errorCode}
         </span>
       )}
@@ -110,7 +110,7 @@ const NightlyStepRow = memo(function NightlyStepRow({ label, step }: { label: st
 
 const ActionLogRow = memo(function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
   return (
-    <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2.5 last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--color-glass-border)] px-1 py-2.5 last:border-0">
       <div className={`flex size-6 shrink-0 items-center justify-center rounded-full ${entry.success ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
         {entry.success ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
       </div>
@@ -137,8 +137,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <FileArchive className="size-5" />,
       endpoint: "/api/admin/maintenance/backup",
       method: "POST",
-      accent: "hover:ring-blue-200",
-      iconBg: "bg-blue-500/10 text-blue-600",
+      accent: "hover:ring-blue-500/20",
+      iconBg: "bg-blue-500/10 text-blue-400",
     },
     {
       id: "integrity-check",
@@ -147,8 +147,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <Shield className="size-5" />,
       endpoint: "/api/admin/maintenance/integrity-check",
       method: "POST",
-      accent: "hover:ring-emerald-200",
-      iconBg: "bg-emerald-500/10 text-emerald-600",
+      accent: "hover:ring-emerald-500/20",
+      iconBg: "bg-emerald-500/10 text-emerald-400",
     },
     {
       id: "wal-compact",
@@ -157,8 +157,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <Database className="size-5" />,
       endpoint: "/api/admin/maintenance/wal-compact",
       method: "POST",
-      accent: "hover:ring-amber-200",
-      iconBg: "bg-amber-500/10 text-amber-600",
+      accent: "hover:ring-amber-500/20",
+      iconBg: "bg-amber-500/10 text-amber-400",
     },
     {
       id: "cleanup",
@@ -167,8 +167,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <Trash2 className="size-5" />,
       endpoint: "/api/admin/maintenance/cleanup",
       method: "POST",
-      accent: "hover:ring-red-200",
-      iconBg: "bg-red-500/10 text-red-600",
+      accent: "hover:ring-red-500/20",
+      iconBg: "bg-red-500/10 text-red-400",
     },
     {
       id: "rebuild-indexes",
@@ -177,8 +177,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <RefreshCw className="size-5" />,
       endpoint: "/api/admin/maintenance/rebuild-indexes",
       method: "POST",
-      accent: "hover:ring-violet-200",
-      iconBg: "bg-violet-50 text-violet-600",
+      accent: "hover:ring-violet-500/20",
+      iconBg: "bg-violet-500/10 text-violet-400",
     },
     {
       id: "migrate",
@@ -187,8 +187,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <ArrowUpDown className="size-5" />,
       endpoint: "/api/admin/maintenance/migrate",
       method: "POST",
-      accent: "hover:ring-indigo-200",
-      iconBg: "bg-indigo-500/10 text-indigo-600",
+      accent: "hover:ring-indigo-500/20",
+      iconBg: "bg-indigo-500/10 text-indigo-400",
     },
   ], [t]);
 
@@ -258,7 +258,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
 
       {/* Last Nightly Run Summary */}
       {lastRun ? (
-        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Activity className="size-4 text-[var(--color-text-secondary)]" />
             {t("adminMaintenance.lastNightlyRun")}
@@ -285,7 +285,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
           {JOBS.map((job, index) => (
             <div
               key={job.id}
-              className={`group relative rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${job.accent} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+              className={`group relative rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${job.accent} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
             >
               <div className="flex items-start gap-3">
                 <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${job.iconBg} transition-transform duration-200 group-hover:scale-110`}>
@@ -300,8 +300,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
               {results[job.id] ? (
                 <div className={`mt-3 rounded-lg px-3 py-1.5 text-xs font-medium ${
                   results[job.id].ok
-                    ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-                    : "border border-red-500/20 bg-red-500/10 text-red-700"
+                    ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                    : "border border-red-500/20 bg-red-500/10 text-red-400"
                 }`}>
                   {results[job.id].message}
                 </div>
@@ -311,7 +311,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
                 type="button"
                 disabled={running[job.id]}
                 onClick={() => void runJob(job)}
-                className="mt-3 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {running[job.id] ? (
                   <span className="flex items-center justify-center gap-1.5">
@@ -328,7 +328,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       </div>
 
       {/* Run Full Nightly */}
-      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5">
+      <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5">
         <div className="flex flex-wrap items-center gap-3">
           <form action="/admin/maintenance/run" method="post">
             <button
@@ -346,7 +346,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
 
       {/* Action History */}
       {actionLog.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
             {t("adminMaintenance.recentActions")}

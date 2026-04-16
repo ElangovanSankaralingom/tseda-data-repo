@@ -45,7 +45,7 @@ export default function RequestEditAction({
           <button
             type="button"
             onClick={onCancel}
-            className="cursor-pointer text-xs text-muted-foreground underline transition-colors hover:text-foreground"
+            className="cursor-pointer text-xs text-[var(--color-text-muted)] underline transition-colors hover:text-[var(--color-text-primary)]"
           >
             Cancel Request
           </button>
@@ -60,7 +60,7 @@ export default function RequestEditAction({
         Request Edit
       </ActionButton>
       {currentStatus === "rejected" ? (
-        <span className="text-xs text-muted-foreground">Request was rejected</span>
+        <span className="text-xs text-[var(--color-text-muted)]">Request was rejected</span>
       ) : null}
     </div>
   );

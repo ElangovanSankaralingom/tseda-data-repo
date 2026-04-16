@@ -30,28 +30,26 @@ import { useTranslation } from "@/lib/i18n/useTranslation";
 // Quick actions
 // ---------------------------------------------------------------------------
 
-import { CATEGORY_SLUGS, getCategoryConfig } from "@/data/categoryRegistry";
+import { CATEGORY_SLUGS } from "@/data/categoryRegistry";
 import { type QuickAction } from "./searchTypes";
 
-const CATEGORY_QUICK_ACTIONS: QuickAction[] = CATEGORY_SLUGS.map((slug) => {
-  const config = getCategoryConfig(slug);
-  return {
+function buildQuickActions(tr: (key: string) => string, categoryLabel: (slug: string) => string): QuickAction[] {
+  const categoryActions: QuickAction[] = CATEGORY_SLUGS.map((slug) => ({
     id: `qa-${slug}`,
-    title: `New ${config.label} Entry`,
-    subtitle: "Start a new entry",
+    title: `${tr("entry.newEntry")} — ${categoryLabel(slug)}`,
+    subtitle: tr("search.newEntryIn"),
     path: `/data-entry/${slug}/new`,
     icon: "file",
     adminOnly: false,
-  };
-});
-
-const QUICK_ACTIONS: QuickAction[] = [
-  ...CATEGORY_QUICK_ACTIONS,
-  { id: "qa-dash", title: "Go to Dashboard", subtitle: "View your progress", path: "/dashboard", icon: "layout", adminOnly: false },
-  { id: "qa-admin", title: "Admin Console", subtitle: "Administration", path: "/admin", icon: "zap", adminOnly: true },
-  { id: "qa-analytics", title: "View Analytics", subtitle: "Charts and insights", path: "/admin/analytics", icon: "zap", adminOnly: true },
-  { id: "qa-export", title: "Export Data", subtitle: "Download entries", path: "/admin/export", icon: "zap", adminOnly: true },
-];
+  }));
+  return [
+    ...categoryActions,
+    { id: "qa-dash", title: tr("search.goToDashboard"), subtitle: tr("search.viewProgress"), path: "/dashboard", icon: "layout", adminOnly: false },
+    { id: "qa-admin", title: tr("search.adminConsole"), subtitle: tr("search.administration"), path: "/admin", icon: "zap", adminOnly: true },
+    { id: "qa-analytics", title: tr("search.viewAnalytics"), subtitle: tr("search.chartsAndInsights"), path: "/admin/analytics", icon: "zap", adminOnly: true },
+    { id: "qa-export", title: tr("search.exportData"), subtitle: tr("search.downloadEntries"), path: "/admin/export", icon: "zap", adminOnly: true },
+  ];
+}
 
 function ActionIcon({ type }: { type: string }) {
   switch (type) {
@@ -190,12 +188,14 @@ function getResultHref(item: SearchableItem): string {
   }
 }
 
-const TYPE_LABELS: Record<SearchableItem["type"], string> = {
-  entry: "Entries",
-  user: "Users",
-  category: "Categories",
-  page: "Pages",
-};
+function getTypeLabels(tr: (key: string) => string): Record<SearchableItem["type"], string> {
+  return {
+    entry: tr("search.sectionEntries"),
+    user: tr("search.sectionUsers"),
+    category: tr("search.sectionCategories"),
+    page: tr("search.sectionPages"),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -213,7 +213,9 @@ export default function CommandPalette({
   isAdmin,
 }: CommandPaletteProps) {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, categoryLabel } = useTranslation();
+  const QUICK_ACTIONS = useMemo(() => buildQuickActions(t as (key: string) => string, categoryLabel), [t, categoryLabel]);
+  const TYPE_LABELS = useMemo(() => getTypeLabels(t as (key: string) => string), [t]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
@@ -282,7 +284,7 @@ export default function CommandPalette({
       score: 0,
       matches: [],
     })) as SearchResult[];
-  }, [query, grouped, isAdmin]);
+  }, [query, grouped, isAdmin, QUICK_ACTIONS]);
 
   // Reset selection when results change
   useEffect(() => {
@@ -371,11 +373,11 @@ export default function CommandPalette({
         aria-label="Search"
       >
         <div
-          className="overflow-hidden rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-modal-bg)] shadow-2xl"
+          className="overflow-hidden rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-modal-bg)] shadow-2xl"
           onKeyDown={handleKeyDown}
         >
           {/* Search input */}
-          <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-5 h-14">
+          <div className="flex items-center gap-3 border-b border-[var(--color-glass-border)] px-5 h-14">
             <SearchIcon className="size-5 shrink-0 text-[var(--color-text-secondary)]" />
             <input
               ref={inputRef}
@@ -517,7 +519,7 @@ export default function CommandPalette({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-5 py-2">
+          <div className="flex items-center justify-between border-t border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] px-5 py-2">
             <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-secondary)]">
               <span>↑↓ Navigate</span>
               <span>↵ Open</span>

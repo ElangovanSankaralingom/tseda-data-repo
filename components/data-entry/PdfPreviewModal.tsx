@@ -32,7 +32,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
     >
       <div className="flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[var(--color-modal-bg)] shadow-2xl max-h-[85vh] animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-card-border)] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-glass-border)] px-6 py-4">
           <div className="flex items-center gap-2">
             <FileText className="size-5 text-[var(--color-text-secondary)]" />
             <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('entry.entryPreview')}</h2>
@@ -57,7 +57,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-[var(--color-card-border)] px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[var(--color-glass-border)] px-6 py-4">
           <a
             href={pdfUrl}
             download={pdfFileName}
@@ -69,7 +69,7 @@ export default function PdfPreviewModal({ pdfUrl, pdfFileName, onClose }: { pdfU
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-[var(--color-input-border)] bg-[var(--color-card-bg)] px-5 py-2.5 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
+            className="rounded-xl border border-[var(--color-input-border)] bg-[var(--color-glass-bg)] px-5 py-2.5 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
             {t('common.close')}
           </button>

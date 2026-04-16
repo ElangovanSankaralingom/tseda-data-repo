@@ -8,7 +8,7 @@ import { getProfileByEmail, upsertProfile, StoredFile } from "@/lib/profileStore
 import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
 const ACCEPT = new Set(["image/jpeg", "image/png"]);
 const MAX_MB = 20;
@@ -32,10 +32,10 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const form = await req.formData();
@@ -94,10 +94,10 @@ export async function DELETE(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const profile = await getProfileByEmail(email);

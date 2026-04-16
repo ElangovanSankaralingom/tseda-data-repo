@@ -662,7 +662,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       formCard={
         showForm
           ? {
-              className: "bg-[var(--color-card-bg)]/70 p-5",
+              className: "bg-[var(--color-glass-bg)]/70 p-5",
               title: isViewMode ? formTitle : `New ${formTitle}`,
               subtitle: formSubtitle,
               content: (
