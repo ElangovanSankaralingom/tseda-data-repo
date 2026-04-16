@@ -8,7 +8,6 @@ import {
   LogOut,
   Search,
   Shield,
-  User,
   Zap,
   Terminal,
   Settings,
@@ -332,15 +331,6 @@ export default function SidebarDrawer({
       status: isMac ? "\u2318 K" : "Ctrl K",
     },
     {
-      key: "account",
-      href: profile(),
-      icon: User,
-      label: t("nav.account"),
-      accent: "#a855f7",
-      active: isActive(profile()),
-      status: profileDesignation ?? "Faculty",
-    },
-    {
       key: "appear",
       href: settingsAppearance(),
       icon: Settings,
@@ -573,37 +563,45 @@ export default function SidebarDrawer({
             )}
             style={stagger(tiles.length + 1)}
           >
-            <div
-              className="relative overflow-hidden rounded-2xl"
-              style={{
-                backgroundColor: "#071a14",
-                border: "1px solid rgba(16,185,129,0.22)",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-              }}
-            >
-              <div className="animate-scan-sweep" />
-              <div className="relative px-4 py-2.5 flex items-center gap-2">
-                <Terminal className="size-3.5 text-emerald-400/70" />
-                <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/80">
-                  TSEDA
-                </span>
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
-                <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/70">
-                  ONLINE
-                </span>
-                <div className="flex-1" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onSignOut();
-                  }}
-                  className="group/so flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold text-white/30 transition-all hover:text-red-400 hover:bg-red-400/[0.08]"
-                >
-                  <LogOut className="size-3 transition-colors group-hover/so:text-red-400" />
-                  <span>{t("nav.signOut")}</span>
-                </button>
+            <div className="flex items-stretch gap-2.5">
+              {/* Terminal status */}
+              <div
+                className="relative flex-1 overflow-hidden rounded-2xl"
+                style={{
+                  backgroundColor: "#071a14",
+                  border: "1px solid rgba(16,185,129,0.22)",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                }}
+              >
+                <div className="animate-scan-sweep" />
+                <div className="relative px-4 py-2.5 flex items-center gap-2">
+                  <Terminal className="size-3.5 text-emerald-400/70" />
+                  <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/80">
+                    TSEDA
+                  </span>
+                  <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
+                  <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/70">
+                    ONLINE
+                  </span>
+                </div>
               </div>
+
+              {/* Sign out — its own visible card */}
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onSignOut();
+                }}
+                className="group/so flex items-center gap-2 rounded-2xl px-4 transition-all duration-300 hover:-translate-y-0.5"
+                style={{
+                  backgroundColor: "#0c0e18",
+                  border: "1px solid rgba(239,68,68,0.18)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                }}
+              >
+                <LogOut className="size-4 text-red-400/60 transition-colors group-hover/so:text-red-400" />
+              </button>
             </div>
           </div>
         </div>
