@@ -320,7 +320,7 @@ export default function SidebarDrawer({
       label: t("nav.dashboard"),
       accent: "#3b82f6",
       active: isActive(dashboard()),
-      status: totals ? `${totals.totalEntries} entries` : null,
+      status: totals ? `${totals.totalEntries} entries · ${streakTotal} streaks` : null,
     },
     {
       key: "search",
@@ -517,20 +517,26 @@ export default function SidebarDrawer({
                     {profileDesignation ?? "Faculty"}
                   </span>
                   <div className="h-4 w-px bg-white/[0.08]" />
-                  <span
-                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold"
-                    style={{
-                      backgroundColor: "#78350f",
-                      color: "#fbbf24",
-                    }}
-                  >
-                    <Zap className="size-3" />
-                    {totals?.streakActivatedCount ?? 0}
-                  </span>
-                  <div className="h-4 w-px bg-white/[0.08]" />
-                  <span className="font-mono text-[11px] font-black text-white/40">
-                    {totals?.totalEntries ?? 0}
-                  </span>
+                  {totals ? (
+                    <>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: "#78350f",
+                          color: "#fbbf24",
+                        }}
+                      >
+                        <Zap className="size-3" />
+                        {totals.streakActivatedCount}
+                      </span>
+                      <div className="h-4 w-px bg-white/[0.08]" />
+                      <span className="font-mono text-[11px] font-black text-white/40">
+                        {totals.totalEntries}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="inline-block h-3 w-16 animate-pulse rounded bg-white/[0.06]" />
+                  )}
                 </div>
               </Link>
             </div>
