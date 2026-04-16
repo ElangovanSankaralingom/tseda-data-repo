@@ -75,15 +75,15 @@ function LoadingState({ message }: { message: React.ReactNode }) {
   );
 }
 
-/* ── DARK MICRO-STAT PILL (L3 — dark inside bright panel) ── */
+/* ── DARK MICRO-STAT PILL (L3 — dark inset inside bright panel) ── */
 function MicroStat({ count, label, color }: { count: number; label: string; color: string }) {
   if (count === 0) return null;
   return (
     <div
-      className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+      className="flex items-center gap-1.5 rounded-xl px-3 py-2"
       style={{
-        background: "rgba(0,0,0,0.30)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "#0c0e16",
+        border: "1px solid rgba(255,255,255,0.10)",
       }}
     >
       <span className="font-mono text-sm font-black tabular-nums" style={{ color }}>
@@ -120,35 +120,35 @@ function CategoryHero({
 
   return (
     <div className="mb-6 animate-fade-in-up">
-      {/* ═══ OUTER CONTAINER — dark card with bright top accent + holographic tilt ═══ */}
+      {/* ═══ OUTER CONTAINER — dashboard DNA: rich gradient + holographic tilt ═══ */}
       <div
         ref={tiltRef}
-        className="relative overflow-hidden rounded-2xl"
+        className="relative overflow-hidden rounded-3xl"
         style={{
           ...tiltStyle,
-          background: `linear-gradient(165deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%)`,
-          border: `1px solid rgba(255,255,255,0.06)`,
-          boxShadow: `0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)`,
+          background: `linear-gradient(135deg, rgba(0,0,0,0.45) 0%, ${chartHex}12 50%, rgba(0,0,0,0.4) 100%)`,
+          border: `1px solid rgba(255,255,255,0.10)`,
+          boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
         }}
         {...handlers}
       >
         {/* ── Specular light reflection (holographic tilt) ── */}
         <div style={lightStyle} />
 
-        {/* ── Top accent bar — category colored, subtle ── */}
+        {/* ── Top accent bar — category colored, animated like dashboard ── */}
         <div
-          className="h-[3px]"
+          className="h-[3px] animate-bar-draw origin-center"
           style={{
-            background: `linear-gradient(90deg, ${chartHex}90 0%, ${chartHex}40 50%, transparent 100%)`,
-            boxShadow: `0 1px 8px ${chartHex}15`,
+            background: chartHex,
+            boxShadow: `0 1px 8px ${chartHex}25`,
           }}
         />
 
-        {/* Color bleed gradient — very subtle */}
+        {/* Color bleed gradient — category tint */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(135deg, ${chartHex}06 0%, transparent 35%)`,
+            background: `linear-gradient(135deg, ${chartHex}10 0%, transparent 40%)`,
             borderRadius: "inherit",
           }}
         />
@@ -156,7 +156,7 @@ function CategoryHero({
         {/* Category watermark — large faint icon */}
         <div
           className="absolute -right-6 -bottom-6 pointer-events-none select-none"
-          style={{ opacity: 0.03 }}
+          style={{ opacity: 0.05 }}
         >
           {/* eslint-disable-next-line react-hooks/static-components */}
           <Icon className="size-48" style={{ color: chartHex }} />
@@ -182,9 +182,9 @@ function CategoryHero({
             <div
               className="flex size-14 shrink-0 items-center justify-center rounded-2xl"
               style={{
-                background: `${chartHex}15`,
-                border: `1px solid ${chartHex}25`,
-                boxShadow: `0 0 16px ${chartHex}08`,
+                background: `${chartHex}18`,
+                border: `1px solid ${chartHex}30`,
+                boxShadow: `0 0 20px ${chartHex}12`,
               }}
             >
               {/* eslint-disable-next-line react-hooks/static-components */}
@@ -205,8 +205,8 @@ function CategoryHero({
               <div
                 className="rounded-xl px-4 py-3.5"
                 style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "rgba(255,255,255,0.14)",
+                  border: "1px solid rgba(255,255,255,0.18)",
                 }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
@@ -226,8 +226,8 @@ function CategoryHero({
               <div
                 className="rounded-xl px-4 py-3.5 hidden sm:flex items-center justify-center"
                 style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "rgba(255,255,255,0.14)",
+                  border: "1px solid rgba(255,255,255,0.18)",
                 }}
               >
                 <CompletionRing stats={stats} accentHex={chartHex} />
@@ -237,8 +237,8 @@ function CategoryHero({
               <div
                 className="rounded-xl px-4 py-3.5"
                 style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "rgba(255,255,255,0.14)",
+                  border: "1px solid rgba(255,255,255,0.18)",
                 }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
@@ -260,10 +260,10 @@ function CategoryHero({
               <button
                 type="button"
                 onClick={onAdd}
-                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
+                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
                 style={{
                   background: chartHex,
-                  boxShadow: `0 4px 16px ${chartHex}25`,
+                  boxShadow: `0 4px 20px ${chartHex}35`,
                 }}
               >
                 <Plus className="size-4" />
