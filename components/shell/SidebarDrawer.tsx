@@ -143,9 +143,9 @@ function NavWidget({
   const inner = (
     <div
       className={cn(
-        "group relative flex flex-col rounded-2xl p-5 min-h-[120px] transition-all duration-300",
+        "group relative flex flex-col rounded-2xl p-4 h-[100px] transition-all duration-300",
         "outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-        "hover:-translate-y-1"
+        "hover:-translate-y-0.5"
       )}
       style={{
         backgroundColor: "#0c0e18",
@@ -168,16 +168,16 @@ function NavWidget({
 
       {/* Icon box */}
       <div
-        className="flex size-12 items-center justify-center rounded-xl transition-all duration-300"
+        className="flex size-10 items-center justify-center rounded-xl transition-all duration-300"
         style={{
           backgroundColor: active ? accent : "#181a26",
           boxShadow: active
-            ? `0 6px 20px ${accent}40`
-            : "0 2px 10px rgba(0,0,0,0.5)",
+            ? `0 4px 16px ${accent}40`
+            : "0 2px 8px rgba(0,0,0,0.5)",
         }}
       >
         <Icon
-          className="size-5"
+          className="size-[18px]"
           style={{ color: active ? "#fff" : "rgba(255,255,255,0.4)" }}
         />
       </div>
@@ -186,10 +186,10 @@ function NavWidget({
       <div className="flex-1" />
 
       {/* Label + live status */}
-      <div className="mt-3">
+      <div className="mt-2">
         <span
           className={cn(
-            "block text-sm font-bold tracking-tight transition-colors",
+            "block text-[13px] font-bold tracking-tight transition-colors",
             active
               ? "text-white"
               : "text-white/50 group-hover:text-white/80"
@@ -210,7 +210,7 @@ function NavWidget({
       {/* Badge */}
       {badge != null && badge > 0 && (
         <span
-          className="absolute top-4 right-4 flex size-6 items-center justify-center rounded-full text-[10px] font-black text-black"
+          className="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full text-[9px] font-black text-black"
           style={{
             backgroundColor: accent,
             boxShadow: `0 0 12px ${accent}60`,
@@ -222,7 +222,7 @@ function NavWidget({
 
       {/* Signal dot */}
       <span
-        className="absolute bottom-4 right-4 block size-1.5 rounded-full animate-subtle-pulse"
+        className="absolute bottom-3 right-3 block size-1.5 rounded-full animate-subtle-pulse"
         style={{
           backgroundColor: active ? accent : "rgba(255,255,255,0.1)",
         }}
@@ -397,7 +397,7 @@ export default function SidebarDrawer({
       >
         <div
           className={cn(
-            "w-full max-w-[420px] flex flex-col gap-3 transition-all duration-500",
+            "w-full max-w-[340px] flex flex-col gap-2.5 transition-all duration-500",
             open ? "translate-x-0 translate-y-0 opacity-100" : "-translate-x-4 translate-y-2 opacity-0"
           )}
           style={{
@@ -503,7 +503,7 @@ export default function SidebarDrawer({
           </div>
 
           {/* ── Navigation Grid — 2 columns ── */}
-          <nav aria-label="Navigation" className="grid grid-cols-2 gap-3">
+          <nav aria-label="Navigation" className="grid grid-cols-2 gap-2.5">
             {tiles.map((tile, idx) => (
               <div
                 key={tile.key}
