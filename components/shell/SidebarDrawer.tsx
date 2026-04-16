@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   LogOut,
-  Palette,
   Search,
   Shield,
   Trash2,
