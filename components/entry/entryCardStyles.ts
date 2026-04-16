@@ -216,8 +216,8 @@ export const GROUP_CARDS: Record<EntryListGroup, GroupCardStyle> = {
     cardBorder: "transparent",
     accentBarBg: "transparent",
     accentBarWidth: 0,
-    hoverClass: "hover:bg-white/[0.02]",
-    extraClass: "opacity-70",
+    hoverClass: "",
+    extraClass: "",
   },
 };
 
@@ -228,12 +228,16 @@ export function getGroupCardClass(group: EntryListGroup): string {
   const layout = GROUP_LAYOUT[group];
   const s = GROUP_CARDS[group];
 
-  if (layout === "row" || layout === "stamp") {
+  if (layout === "row") {
     return [
       "relative flex items-center rounded-lg transition-all duration-200 cursor-pointer",
       s.hoverClass,
       s.extraClass,
     ].filter(Boolean).join(" ");
+  }
+
+  if (layout === "stamp") {
+    return [s.hoverClass, s.extraClass].filter(Boolean).join(" ");
   }
 
   if (layout === "hero") {

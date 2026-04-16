@@ -489,9 +489,17 @@ function DashedCard({
 }
 
 /* ═══════════════════════════════════════════
-   STAMP ROW — locked_in (finalized)
-   Flat, condensed, checkmark stamp. Done.
-   NOT a card. A quiet completion record.
+   SEALED CARD — locked_in (finalized)
+   Compact achievement card with seal stamp.
+   Feels like a filed record — complete, archived.
+
+   ┌──────────────────────────────────┐
+   │  #01                    19d ago  │
+   │  ── Title ──────────────────     │
+   │                                  │
+   │              ◉ SEALED            │
+   │  ════════════════════════════    │
+   └──────────────────────────────────┘
    ═══════════════════════════════════════════ */
 function StampRow({
   title, href, createdAt, updatedAt, actions, index,
@@ -507,34 +515,60 @@ function StampRow({
       tabIndex={0}
       aria-label={`${title} finalized entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`group flex items-center gap-2.5 py-2.5 px-3.5 rounded-lg transition-all duration-200 hover:bg-emerald-500/[0.06] cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/20`}
-      style={{ borderLeft: "2px solid rgba(34,197,94,0.30)", background: "rgba(34,197,94,0.03)" }}
+      className={`group relative overflow-hidden rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/20`}
+      style={{
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(34,197,94,0.08)",
+      }}
     >
-      {/* Index number badge — like a record number */}
-      <span
-        className="shrink-0 flex size-5 items-center justify-center rounded font-mono text-[9px] font-bold text-emerald-400/50"
-        style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.15)" }}
-      >
-        {String(index + 1).padStart(2, "0")}
-      </span>
+      {/* Bottom accent line — sealed feel */}
       <div
-        className="flex size-5 shrink-0 items-center justify-center rounded-full"
-        style={{ background: "rgba(34,197,94,0.18)", border: "1px solid rgba(34,197,94,0.30)" }}
-      >
-        <Check className="size-2.5 text-emerald-400" />
-      </div>
-      <Link href={href} className="text-sm font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors flex-1 min-w-0">
-        {title}
-      </Link>
-      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-        {t('entry.finalized')}
-      </span>
-      {time ? <span className="shrink-0 text-[11px] text-white/30">{time}</span> : null}
-      {actions ? (
-        <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-          {actions}
+        className="absolute bottom-0 left-0 right-0 h-[2px]"
+        style={{
+          background: "linear-gradient(90deg, rgba(34,197,94,0.30) 0%, rgba(34,197,94,0.08) 60%, transparent 100%)",
+        }}
+      />
+
+      <Link href={href} className="block px-4 py-3.5">
+        {/* Top row: index + time */}
+        <div className="flex items-center justify-between mb-2">
+          <span
+            className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/40"
+          >
+            #{String(index + 1).padStart(2, "0")}
+          </span>
+          {time ? <span className="text-[10px] text-white/25">{time}</span> : null}
         </div>
-      ) : null}
+
+        {/* Title */}
+        <div className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-white truncate transition-colors">
+          {title}
+        </div>
+
+        {/* Seal row */}
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-1.5">
+            <div
+              className="flex size-4 items-center justify-center rounded-full"
+              style={{
+                background: "rgba(34,197,94,0.15)",
+                border: "1px solid rgba(34,197,94,0.25)",
+              }}
+            >
+              <Check className="size-2 text-emerald-400" />
+            </div>
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-400/60">
+              {t('entry.finalized')}
+            </span>
+          </div>
+
+          {actions ? (
+            <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              {actions}
+            </div>
+          ) : null}
+        </div>
+      </Link>
     </div>
   );
 }
