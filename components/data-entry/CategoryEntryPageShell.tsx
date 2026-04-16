@@ -7,6 +7,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { useTiltEffect } from "@/hooks/useTiltEffect";
 import EntryShell from "@/components/entry/EntryShell";
 import SectionCard from "@/components/layout/SectionCard";
 import EditorProgressHeader from "@/components/data-entry/EditorProgressHeader";
@@ -115,18 +116,25 @@ function CategoryHero({
   const config = getCategoryConfig(category);
   const chartHex = config.color.chartHex;
   const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
+  const { ref: tiltRef, style: tiltStyle, lightStyle, handlers } = useTiltEffect();
 
   return (
     <div className="mb-6 animate-fade-in-up">
-      {/* ═══ OUTER CONTAINER — dark card with bright top accent ═══ */}
+      {/* ═══ OUTER CONTAINER — dark card with bright top accent + holographic tilt ═══ */}
       <div
+        ref={tiltRef}
         className="relative overflow-hidden rounded-2xl"
         style={{
+          ...tiltStyle,
           background: `linear-gradient(165deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%)`,
           border: `1px solid rgba(255,255,255,0.06)`,
           boxShadow: `0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)`,
         }}
+        {...handlers}
       >
+        {/* ── Specular light reflection (holographic tilt) ── */}
+        <div style={lightStyle} />
+
         {/* ── Top accent bar — category colored, subtle ── */}
         <div
           className="h-[3px]"

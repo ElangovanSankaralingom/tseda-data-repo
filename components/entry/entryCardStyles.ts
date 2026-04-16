@@ -76,24 +76,24 @@ export type GroupContainerStyle = {
 };
 
 export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
-  /* Warm amber — softer tint */
+  /* Warm amber — alive, glowing */
   streak_runners: {
-    background: `linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(251,191,36,0.02) 100%)`,
-    border: "1px solid rgba(251,191,36,0.10)",
+    background: `linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(251,191,36,0.03) 100%)`,
+    border: "1px solid rgba(251,191,36,0.12)",
     padding: "p-5",
     hasContainer: true,
   },
-  /* Blue — gentle */
+  /* Blue — cool active */
   on_the_clock: {
-    background: `linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.02) 100%)`,
-    border: "1px solid rgba(59,130,246,0.08)",
+    background: `linear-gradient(135deg, rgba(59,130,246,0.07) 0%, rgba(59,130,246,0.025) 100%)`,
+    border: "1px solid rgba(59,130,246,0.10)",
     padding: "p-5",
     hasContainer: true,
   },
-  /* Purple — gentle */
+  /* Purple — rich */
   unlocked: {
-    background: `linear-gradient(135deg, rgba(168,85,247,0.05) 0%, rgba(168,85,247,0.02) 100%)`,
-    border: "1px solid rgba(168,85,247,0.08)",
+    background: `linear-gradient(135deg, rgba(168,85,247,0.07) 0%, rgba(168,85,247,0.025) 100%)`,
+    border: "1px solid rgba(168,85,247,0.10)",
     padding: "p-5",
     hasContainer: true,
   },
@@ -111,11 +111,13 @@ export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
     padding: "p-5",
     hasContainer: true,
   },
-  /* Green recessed — much softer */
+  /* LOCKED IN — VAULT ZONE: deeply recessed, cooler temperature,
+     thick top accent border, inset shadow. This MUST look like
+     a completely different zone from everything above it. */
   locked_in: {
-    background: "rgba(34,197,94,0.025)",
-    border: "1px solid rgba(34,197,94,0.06)",
-    padding: "p-4",
+    background: "linear-gradient(180deg, rgba(16,24,16,0.60) 0%, rgba(10,18,12,0.45) 100%)",
+    border: "none",
+    padding: "p-0",
     hasContainer: true,
   },
 };
@@ -154,9 +156,9 @@ export const INNER_PANELS: Record<EntryListGroup, InnerPanelStyle> = {
     hasPanel: true,
   },
   locked_in: {
-    background: "transparent",
-    border: "none",
-    hasPanel: false,
+    background: "rgba(34,197,94,0.03)",
+    border: "1px solid rgba(34,197,94,0.08)",
+    hasPanel: true,
   },
 };
 
@@ -212,11 +214,11 @@ export const GROUP_CARDS: Record<EntryListGroup, GroupCardStyle> = {
     extraClass: "",
   },
   locked_in: {
-    cardBg: "transparent",
-    cardBorder: "transparent",
-    accentBarBg: "transparent",
-    accentBarWidth: 0,
-    hoverClass: "",
+    cardBg: "rgba(34,197,94,0.04)",
+    cardBorder: "rgba(34,197,94,0.10)",
+    accentBarBg: "linear-gradient(180deg, #22c55e 0%, #16a34a 100%)",
+    accentBarWidth: 3,
+    hoverClass: "hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(34,197,94,0.08)]",
     extraClass: "",
   },
 };

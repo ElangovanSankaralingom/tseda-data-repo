@@ -15,6 +15,7 @@ import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
+import { MetadataPills, AttachmentBadges } from "@/components/data-entry/EntryMetadataDisplay";
 import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import { formatCurrency } from "@/lib/i18n/locale";
 import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureStreak } from "@/lib/entries/hydrateEntry";
@@ -572,29 +573,13 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
         }
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-[var(--color-text-muted)]">{parts.join(" • ")}</div>}
-            <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              {entry.permissionLetter.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-              {entry.geotaggedPhotos.map((meta, photoIndex) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Geotagged Photo {photoIndex + 1}
-                </a>
-              ))}
-              {entry.attendanceSheet.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Attendance Sheet{entry.attendanceSheet.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-              {entry.officialPoster.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Official Poster{entry.officialPoster.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-            </div>
+            <MetadataPills parts={parts} />
+            <AttachmentBadges attachments={[
+              { label: "Permission Letter", files: entry.permissionLetter },
+              { label: "Geotagged Photo", files: entry.geotaggedPhotos },
+              { label: "Attendance Sheet", files: entry.attendanceSheet },
+              { label: "Official Poster", files: entry.officialPoster },
+            ]} />
           </>
         );
       }}

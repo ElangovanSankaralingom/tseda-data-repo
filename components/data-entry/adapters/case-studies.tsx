@@ -15,6 +15,7 @@ import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
+import { MetadataPills, AttachmentBadges } from "@/components/data-entry/EntryMetadataDisplay";
 import { cx, uuid } from "@/lib/utils/idHelpers";
 import { formatCurrency } from "@/lib/i18n/locale";
 import {
@@ -469,39 +470,15 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
         if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} ${t('entry.participants')}`);
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-[var(--color-text-muted)]">{parts.join(" • ")}</div>}
-            <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              {entry.permissionLetter.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Permission Letter{entry.permissionLetter.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-              {entry.travelPlan.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Travel Plan{entry.travelPlan.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-              {entry.geotaggedPhotos.map((meta, photoIndex) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Geotagged Photo {photoIndex + 1}
-                </a>
-              ))}
-              {entry.report.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Report{entry.report.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-              {entry.feedback.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Feedback{entry.feedback.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-              {entry.advanceClosure.map((meta, i) => (
-                <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">
-                  Advance Closure{entry.advanceClosure.length > 1 ? ` ${i + 1}` : ""}
-                </a>
-              ))}
-            </div>
+            <MetadataPills parts={parts} />
+            <AttachmentBadges attachments={[
+              { label: "Permission Letter", files: entry.permissionLetter },
+              { label: "Travel Plan", files: entry.travelPlan },
+              { label: "Geotagged Photo", files: entry.geotaggedPhotos },
+              { label: "Report", files: entry.report },
+              { label: "Feedback", files: entry.feedback },
+              { label: "Advance Closure", files: entry.advanceClosure },
+            ]} />
           </>
         );
       }}
