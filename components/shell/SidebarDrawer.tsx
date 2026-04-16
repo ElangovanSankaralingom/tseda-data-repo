@@ -364,21 +364,13 @@ export default function SidebarDrawer({
         aria-hidden="true"
       />
 
-      {/* ── Floating Panel ──
-           WHAT IF the sidebar didn't dock to the edge?
-           It floats as a rounded card with breathing room.
-           On mobile: still full-screen for usability.
-           On sm+: floats with margin, rounded corners, visible border. */}
+      {/* ── Floating Panel ── */}
       <div
         className={cn(
-          "fixed z-50 flex flex-col transition-all duration-400",
-          // Mobile: full screen
-          "left-0 top-0 h-full w-full",
-          // Desktop: floating card with margin
-          "sm:left-3 sm:top-3 sm:bottom-3 sm:h-auto sm:w-[340px] sm:rounded-3xl",
-          open
-            ? "translate-x-0 opacity-100 scale-100"
-            : "-translate-x-[calc(100%+12px)] sm:opacity-0 sm:scale-[0.97] sm:-translate-x-8"
+          "fixed z-50 flex flex-col overflow-hidden transition-all duration-400",
+          "left-0 top-0 w-full h-full",
+          "sm:left-3 sm:top-3 sm:w-[340px] sm:h-[calc(100dvh-24px)] sm:rounded-3xl",
+          open ? "translate-x-0" : "-translate-x-full sm:-translate-x-[360px]"
         )}
         style={{
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -387,6 +379,8 @@ export default function SidebarDrawer({
           boxShadow: open
             ? `0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05), 0 0 40px ${activeAccent}10`
             : "none",
+          // Desktop: explicit height calc instead of h-auto + bottom
+          maxHeight: "100dvh",
         }}
         role="dialog"
         aria-label="Navigation menu"
