@@ -387,12 +387,14 @@ export default function SidebarDrawer({
         />
 
         {/* ╔═══════════════════════════════════════════╗
-           ║  IDENTITY STRIP                             ║
-           ║  Compact. Confident. Not a "hero section". ║
-           ║  FEATURE ④: Orbit ring around avatar.       ║
+           ║  IDENTITY CARD — Centered command badge     ║
+           ║  WHAT IF the profile wasn't avatar-left,    ║
+           ║  text-right? What if it was a centered      ║
+           ║  identity card like a sci-fi access badge?  ║
+           ║  FEATURE ④: Orbit ring + centered layout.   ║
            ╚═══════════════════════════════════════════╝ */}
         <div
-          className="relative px-5 pt-5 pb-5"
+          className="relative overflow-hidden"
           style={{
             background: "linear-gradient(170deg, #14243e 0%, #0e1828 50%, #070910 100%)",
             borderBottom: "1px solid rgba(59,130,246,0.15)",
@@ -401,15 +403,31 @@ export default function SidebarDrawer({
           {/* Top accent bar */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500/80 animate-bar-draw" />
 
-          <div className="flex items-center gap-4">
-            {/* Avatar + orbit */}
-            <div className="relative shrink-0" style={{ width: 60, height: 60 }}>
-              <OrbitRing progress={streakProgress} size={60} />
+          {/* Radial glow behind avatar */}
+          <div
+            className="absolute left-1/2 top-8 -translate-x-1/2 size-40 rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)",
+            }}
+          />
+
+          {/* Centered layout */}
+          <div className="relative flex flex-col items-center pt-7 pb-5 px-5">
+            {/* Avatar with orbit ring — centered, larger */}
+            <div
+              className={cn(
+                "relative transition-all duration-500",
+                open ? "opacity-100 scale-100" : "opacity-0 scale-90"
+              )}
+              style={{ width: 80, height: 80, transitionDelay: open ? "60ms" : "0ms" }}
+            >
+              <OrbitRing progress={streakProgress} size={80} strokeWidth={2.5} />
               <div
-                className="absolute overflow-hidden rounded-xl"
+                className="absolute overflow-hidden rounded-2xl"
                 style={{
-                  inset: 5,
-                  border: "2px solid rgba(59,130,246,0.3)",
+                  inset: 6,
+                  border: "2px solid rgba(59,130,246,0.35)",
+                  boxShadow: "0 0 24px rgba(59,130,246,0.15)",
                 }}
               >
                 {profilePhoto ? (
@@ -418,45 +436,90 @@ export default function SidebarDrawer({
                     style={{ backgroundImage: `url("${profilePhoto}")` }}
                   />
                 ) : (
-                  <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-lg font-bold text-white">
+                  <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-xl font-bold text-white">
                     {profileInitials}
                   </span>
                 )}
               </div>
+              {/* Streak % badge */}
+              {streakProgress > 0 && (
+                <div
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[9px] font-black"
+                  style={{
+                    backgroundColor: streakProgress >= 1 ? "#fbbf24" : "#3b82f6",
+                    color: streakProgress >= 1 ? "#000" : "#fff",
+                    boxShadow: `0 0 10px ${streakProgress >= 1 ? "#fbbf2480" : "#3b82f680"}`,
+                  }}
+                >
+                  {Math.round(streakProgress * 100)}%
+                </div>
+              )}
             </div>
 
-            <div className="min-w-0 flex-1">
-              <h2
-                className={cn(
-                  "text-xl font-black tracking-tight text-white leading-none transition-all duration-300",
-                  open ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-                )}
-                style={{ transitionDelay: open ? "80ms" : "0ms" }}
-              >
-                {firstName}
-              </h2>
-              <div className="truncate font-mono text-[10px] text-[rgba(255,255,255,0.35)] mt-1.5">
-                {profileEmail}
-              </div>
-              <div className="flex items-center gap-2 mt-1.5">
-                {profileDesignation && (
+            {/* Name — centered, dramatic */}
+            <h2
+              className={cn(
+                "mt-4 text-2xl font-black tracking-tight text-white leading-none text-center transition-all duration-400",
+                open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+              )}
+              style={{ transitionDelay: open ? "120ms" : "0ms" }}
+            >
+              {firstName}
+            </h2>
+
+            {/* Email */}
+            <div
+              className={cn(
+                "mt-1.5 font-mono text-[10px] text-[rgba(255,255,255,0.35)] text-center truncate max-w-full transition-all duration-400",
+                open ? "opacity-100" : "opacity-0"
+              )}
+              style={{ transitionDelay: open ? "160ms" : "0ms" }}
+            >
+              {profileEmail}
+            </div>
+
+            {/* ── Data strip — recessed horizontal stat bar ── */}
+            <div
+              className={cn(
+                "mt-4 w-full rounded-xl flex items-center justify-center gap-3 px-4 py-2.5 transition-all duration-400",
+                open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+              )}
+              style={{
+                transitionDelay: open ? "200ms" : "0ms",
+                backgroundColor: "#0a0f1e",
+                border: "1px solid rgba(59,130,246,0.12)",
+              }}
+            >
+              {profileDesignation && (
+                <>
                   <span
-                    className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
+                    className="rounded-md px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest"
                     style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
                   >
                     {profileDesignation}
                   </span>
-                )}
-                {totals && totals.streakActivatedCount > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold"
-                    style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
-                  >
-                    <Zap className="size-2.5" />
-                    {totals.streakActivatedCount}
+                  {totals && totals.streakActivatedCount > 0 && (
+                    <div className="h-4 w-px bg-white/[0.1]" />
+                  )}
+                </>
+              )}
+              {totals && totals.streakActivatedCount > 0 && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[9px] font-bold"
+                  style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
+                >
+                  <Zap className="size-2.5" />
+                  {totals.streakActivatedCount} streaks
+                </span>
+              )}
+              {totals && (
+                <>
+                  <div className="h-4 w-px bg-white/[0.1]" />
+                  <span className="font-mono text-[10px] font-bold text-[rgba(255,255,255,0.4)]">
+                    {totals.totalEntries}
                   </span>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
