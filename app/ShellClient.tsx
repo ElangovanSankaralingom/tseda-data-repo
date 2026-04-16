@@ -200,6 +200,8 @@ export default function ShellClient({
 
   return (
     <div className="min-h-dvh overflow-x-hidden text-[var(--color-text-primary)]">
+      {/* Static dot grid — fades out after header+hero zone */}
+      <div className="pointer-events-none fixed inset-0 z-0 dot-overlay" />
       <CursorGlow />
       <a
         href="#main-content"
