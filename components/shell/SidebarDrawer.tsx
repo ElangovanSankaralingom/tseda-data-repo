@@ -11,8 +11,8 @@ import {
   Trash2,
   User,
   Zap,
-  Activity,
   Terminal,
+  ArrowRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -28,28 +28,32 @@ import { useApi } from "@/hooks/useApi";
 
 /*
   ───────────────────────────────────────────────────────
-   SIDEBAR DRAWER — Command Panel v2
+   COMMAND HUB — Not a sidebar. A cockpit.
 
-   "WHAT IF" structural features:
-   ① ORBIT RING — SVG progress ring around avatar
-      showing streak completion as animated arc.
-   ② CIRCUIT TOPOLOGY — vertical trunk line + node
-      dots connecting nav items. Active node pulses.
-   ③ EXPANDING ACTIVE — active nav item opens a
-      contextual live-data micro-panel beneath it.
+   STRUCTURAL FEATURES (the "WHAT IF" lens):
+   ① GRID TOPOLOGY — Navigation is a 2-column grid
+      of large cards, not a vertical list. Your eye
+      surveys a field, not scans a list.
+   ② SPATIAL DEPTH — Active card is "pulled forward"
+      with scale, glow, expanded data. Inactive cards
+      recede into the background plane.
+   ③ COCKPIT ASSEMBLY — Elements don't slide in as
+      a flat panel. Each piece assembles individually
+      with staggered scale + fade. Profile drops in,
+      cards expand from center, status rises from below.
+   ④ ORBIT RING — SVG progress ring around avatar.
 
-   Surface depth (4 levels):
-   L0: Panel base #080a12
-   L1: Zone containers — tinted hex (#142030, #1a1506)
-   L2: Interactive elements — accent hex
-   L3: Bright accents — solid glow
+   Surface depth:
+   L0: Panel base #070910
+   L1: Card inactive #0e1019
+   L2: Card active — accent-tinted hex
+   L3: Icon boxes, badges — solid accent
 
-   Color zoning by temperature:
-   PROFILE → cool blue (#1a2c4a)
-   NAV     → neutral dark (#0d0f18)
-   ADMIN   → warm amber (#1a1506)
-   BOTTOM  → recessed black
-   STATUS  → emerald terminal
+   Color zoning:
+   PROFILE → cool blue
+   GRID CARDS → each card has its own accent world
+   BOTTOM → recessed, utility
+   STATUS → emerald terminal
   ───────────────────────────────────────────────────────
 */
 
@@ -68,8 +72,8 @@ type UnreadResponse = { count?: number };
 /* ── SVG Orbit Ring ── */
 function OrbitRing({
   progress,
-  size = 76,
-  strokeWidth = 3,
+  size = 60,
+  strokeWidth = 2.5,
   color = "#3b82f6",
 }: {
   progress: number;
@@ -88,7 +92,6 @@ function OrbitRing({
       className="absolute inset-0"
       style={{ transform: "rotate(-90deg)" }}
     >
-      {/* Track */}
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -97,7 +100,6 @@ function OrbitRing({
         stroke="rgba(59,130,246,0.12)"
         strokeWidth={strokeWidth}
       />
-      {/* Progress arc */}
       {progress > 0 && (
         <circle
           cx={size / 2}
@@ -113,7 +115,6 @@ function OrbitRing({
           style={{ filter: `drop-shadow(0 0 6px ${color}40)` }}
         />
       )}
-      {/* Orbital dot at the arc tip */}
       {progress > 0 && progress < 1 && (
         <circle
           cx={size / 2 + radius * Math.cos(2 * Math.PI * progress)}
@@ -128,24 +129,131 @@ function OrbitRing({
   );
 }
 
-/* ── Circuit Node Dot ── */
-function CircuitNode({ color, active }: { color: string; active: boolean }) {
+/* ── Hub Card ── */
+function HubCard({
+  href,
+  icon: Icon,
+  label,
+  accent,
+  activeBg,
+  active,
+  open,
+  delay,
+  meta,
+  badge,
+  onClose,
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  accent: string;
+  activeBg: string;
+  active: boolean;
+  open: boolean;
+  delay: number;
+  meta?: string | null;
+  badge?: number | null;
+  onClose: () => void;
+}) {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 10, height: 10 }}>
-      <div
-        className={cn("rounded-full transition-all duration-300", active ? "size-3" : "size-1.5")}
-        style={{
-          backgroundColor: active ? color : "rgba(255,255,255,0.2)",
-          boxShadow: active ? `0 0 10px ${color}, 0 0 20px ${color}40` : "none",
-        }}
-      />
+    <Link
+      href={href}
+      onClick={onClose}
+      className={cn(
+        "group relative flex flex-col rounded-2xl p-4 transition-all duration-400 outline-none",
+        "focus-visible:ring-2 focus-visible:ring-white/30",
+        open ? "opacity-100 scale-100" : "opacity-0 scale-[0.85]",
+      )}
+      style={{
+        transitionDelay: open ? `${delay}ms` : "0ms",
+        transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+        backgroundColor: active ? activeBg : "#0e1019",
+        border: active
+          ? `1px solid ${accent}40`
+          : "1px solid rgba(255,255,255,0.08)",
+        boxShadow: active
+          ? `0 8px 24px ${accent}20, inset 0 1px 0 ${accent}15`
+          : "0 2px 8px rgba(0,0,0,0.3)",
+        transform: active && open ? "scale(1.02)" : undefined,
+      }}
+    >
+      {/* Active top accent bar */}
       {active && (
         <div
-          className="absolute inset-0 rounded-full animate-glow-pulse"
-          style={{ backgroundColor: `${color}20`, transform: "scale(2.5)" }}
+          className="absolute top-0 left-3 right-3 h-[2px] rounded-b-full"
+          style={{
+            backgroundColor: accent,
+            boxShadow: `0 0 12px ${accent}60`,
+          }}
         />
       )}
-    </div>
+
+      {/* Icon + Arrow row */}
+      <div className="flex items-start justify-between mb-3">
+        <div
+          className="flex size-11 items-center justify-center rounded-xl transition-all duration-300"
+          style={{
+            backgroundColor: active ? accent : "#181c28",
+            boxShadow: active ? `0 4px 16px ${accent}50` : "none",
+          }}
+        >
+          <Icon
+            className="size-5"
+            style={{ color: active ? "#fff" : "rgba(255,255,255,0.35)" }}
+          />
+        </div>
+        <ArrowRight
+          className={cn(
+            "size-4 transition-all duration-300",
+            active
+              ? "opacity-60 translate-x-0"
+              : "opacity-0 -translate-x-2 group-hover:opacity-40 group-hover:translate-x-0"
+          )}
+          style={{ color: active ? accent : "rgba(255,255,255,0.5)" }}
+        />
+      </div>
+
+      {/* Label */}
+      <span
+        className={cn(
+          "text-sm font-bold tracking-tight transition-colors duration-300",
+          active ? "text-white" : "text-[rgba(255,255,255,0.55)] group-hover:text-white"
+        )}
+      >
+        {label}
+      </span>
+
+      {/* Meta line — live data */}
+      {meta && (
+        <span
+          className="mt-1.5 font-mono text-[11px] font-bold transition-colors duration-300"
+          style={{ color: active ? accent : "rgba(255,255,255,0.3)" }}
+        >
+          {meta}
+        </span>
+      )}
+
+      {/* Badge */}
+      {badge != null && badge > 0 && (
+        <div
+          className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-full text-[10px] font-black text-black"
+          style={{
+            backgroundColor: accent,
+            boxShadow: `0 0 10px ${accent}60`,
+          }}
+        >
+          {badge}
+        </div>
+      )}
+
+      {/* Hover glow — bottom edge */}
+      {!active && (
+        <div
+          className="absolute bottom-0 left-4 right-4 h-[1px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ backgroundColor: accent }}
+        />
+      )}
+    </Link>
   );
 }
 
@@ -182,7 +290,6 @@ export default function SidebarDrawer({
   const adminPendingCount = adminUnread?.count ?? 0;
   const firstName = profileName.split(/\s+/)[0] ?? profileName;
 
-  // Streak progress for orbit ring
   const streakTotal = (totals?.streakActivatedCount ?? 0) + (totals?.streakWonCount ?? 0);
   const streakProgress = totals?.totalEntries
     ? Math.min(streakTotal / totals.totalEntries, 1)
@@ -192,60 +299,59 @@ export default function SidebarDrawer({
     return pathname === href || pathname?.startsWith(href + "/");
   }
 
-  type NavItem = {
+  type HubItem = {
     href: string;
     icon: LucideIcon;
     label: string;
     accent: string;
     activeBg: string;
-    expandedStats?: { label: string; value: string | number; icon: LucideIcon }[];
+    meta?: string | null;
+    badge?: number | null;
   };
 
-  const mainItems: NavItem[] = [
+  const hubItems: HubItem[] = [
     {
       href: dashboard(),
       icon: LayoutDashboard,
       label: t("nav.dashboard"),
       accent: "#3b82f6",
-      activeBg: "#142030",
-      expandedStats: totals ? [
-        { label: "Entries", value: totals.totalEntries, icon: Activity },
-        { label: "Streaks", value: totals.streakActivatedCount, icon: Zap },
-      ] : undefined,
+      activeBg: "#101e30",
+      meta: totals
+        ? `${totals.totalEntries} entries · ${totals.streakActivatedCount} streaks`
+        : null,
     },
     {
       href: dataEntrySearch(),
       icon: Search,
       label: t("nav.search"),
       accent: "#10b981",
-      activeBg: "#0a1f18",
+      activeBg: "#0a1a16",
     },
     {
       href: profile(),
       icon: User,
       label: t("nav.account"),
       accent: "#a855f7",
-      activeBg: "#1a1030",
+      activeBg: "#160e28",
+      meta: profileDesignation ?? null,
     },
+    ...(canAccessAdmin
+      ? [
+          {
+            href: adminHome(),
+            icon: Shield,
+            label: t("nav.admin"),
+            accent: "#f59e0b",
+            activeBg: "#1a1508",
+            meta: adminPendingCount > 0 ? `${adminPendingCount} pending` : null,
+            badge: adminPendingCount > 0 ? adminPendingCount : null,
+          },
+        ]
+      : []),
   ];
 
-  const adminItems: NavItem[] = [
-    {
-      href: adminHome(),
-      icon: Shield,
-      label: t("nav.admin"),
-      accent: "#f59e0b",
-      activeBg: "#1f1a08",
-      expandedStats: adminPendingCount > 0 ? [
-        { label: "Pending", value: adminPendingCount, icon: Activity },
-      ] : undefined,
-    },
-  ];
-
-  let delay = 0;
-
-  // Find the currently active zone color for the floating indicator
-  const activeAccent = [...mainItems, ...adminItems].find(i => isActive(i.href))?.accent ?? "#3b82f6";
+  // Active card color for ambient effects
+  const activeAccent = hubItems.find((i) => isActive(i.href))?.accent ?? "#3b82f6";
 
   return (
     <>
@@ -259,51 +365,51 @@ export default function SidebarDrawer({
         aria-hidden="true"
       />
 
-      {/* Panel */}
+      {/* Panel — wider to accommodate the grid */}
       <div
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-full w-full flex-col transition-transform duration-400 sm:w-[320px]",
+          "fixed left-0 top-0 z-50 flex h-full w-full flex-col transition-transform duration-400 sm:w-[340px]",
           open ? "translate-x-0" : "-translate-x-full"
         )}
         style={{
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-          backgroundColor: "#080a12",
+          backgroundColor: "#070910",
         }}
         role="dialog"
         aria-label="Navigation menu"
       >
-        {/* ── Accent edge — thin gradient strip on the right edge ── */}
+        {/* ── Right edge gradient — shifts with active accent ── */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-[2px]"
+          className="absolute right-0 top-0 bottom-0 w-[2px] transition-all duration-600"
           style={{
-            background: `linear-gradient(180deg, ${activeAccent}60 0%, ${activeAccent}10 50%, transparent 100%)`,
-            transition: "background 0.6s ease",
+            background: `linear-gradient(180deg, ${activeAccent}50 0%, ${activeAccent}08 60%, transparent 100%)`,
           }}
         />
 
         {/* ╔═══════════════════════════════════════════╗
-           ║  ZONE 1: PROFILE HERO                      ║
-           ║  FEATURE ①: Orbit ring around avatar        ║
+           ║  IDENTITY STRIP                             ║
+           ║  Compact. Confident. Not a "hero section". ║
+           ║  FEATURE ④: Orbit ring around avatar.       ║
            ╚═══════════════════════════════════════════╝ */}
         <div
-          className="relative p-6 pb-6"
+          className="relative px-5 pt-5 pb-5"
           style={{
-            background: "linear-gradient(165deg, #1a2c4a 0%, #14203a 40%, #0d1425 100%)",
-            boxShadow: "0 4px 32px rgba(0,0,0,0.5)",
+            background: "linear-gradient(170deg, #14243e 0%, #0e1828 50%, #070910 100%)",
+            borderBottom: "1px solid rgba(59,130,246,0.15)",
           }}
         >
-          {/* Blue accent top bar */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500 animate-bar-draw" />
+          {/* Top accent bar */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500/80 animate-bar-draw" />
 
-          <div className="flex items-start gap-5">
-            {/* Avatar with orbit ring */}
-            <div className="relative shrink-0" style={{ width: 76, height: 76 }}>
-              <OrbitRing progress={streakProgress} />
+          <div className="flex items-center gap-4">
+            {/* Avatar + orbit */}
+            <div className="relative shrink-0" style={{ width: 60, height: 60 }}>
+              <OrbitRing progress={streakProgress} size={60} />
               <div
-                className="absolute overflow-hidden rounded-2xl"
+                className="absolute overflow-hidden rounded-xl"
                 style={{
-                  inset: 6,
-                  border: "2px solid rgba(59,130,246,0.35)",
+                  inset: 5,
+                  border: "2px solid rgba(59,130,246,0.3)",
                 }}
               >
                 {profilePhoto ? (
@@ -312,382 +418,152 @@ export default function SidebarDrawer({
                     style={{ backgroundImage: `url("${profilePhoto}")` }}
                   />
                 ) : (
-                  <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-xl font-bold text-white">
+                  <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-lg font-bold text-white">
                     {profileInitials}
                   </span>
                 )}
               </div>
-              {/* Streak completion micro-badge */}
-              {streakProgress > 0 && (
-                <div
-                  className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full text-[9px] font-black text-black"
-                  style={{
-                    backgroundColor: streakProgress >= 1 ? "#fbbf24" : "#3b82f6",
-                    boxShadow: `0 0 8px ${streakProgress >= 1 ? "#fbbf2480" : "#3b82f680"}`,
-                  }}
-                >
-                  {Math.round(streakProgress * 100)}
-                </div>
-              )}
             </div>
 
-            <div className="min-w-0 flex-1 pt-2">
-              <div className="animate-text-reveal">
-                <h2 className="text-2xl font-black tracking-tight text-white leading-none">
-                  {firstName}
-                </h2>
-              </div>
-              <div className="truncate font-mono text-[11px] text-[rgba(255,255,255,0.45)] mt-2.5">
-                {profileEmail}
-              </div>
-            </div>
-          </div>
-
-          {/* Designation + streak pills */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            {profileDesignation && (
-              <span
-                className="rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest"
-                style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+            <div className="min-w-0 flex-1">
+              <h2
+                className={cn(
+                  "text-xl font-black tracking-tight text-white leading-none transition-all duration-300",
+                  open ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+                )}
+                style={{ transitionDelay: open ? "80ms" : "0ms" }}
               >
-                {profileDesignation}
-              </span>
-            )}
-            {totals && totals.streakActivatedCount > 0 && (
-              <span
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-bold"
-                style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
-              >
-                <Zap className="size-3" />
-                {totals.streakActivatedCount} streaks
-              </span>
-            )}
-          </div>
-
-          {/* Zone bleed gradient — blue fading into dark */}
-          <div
-            className="absolute left-0 right-0 -bottom-4 h-4 pointer-events-none"
-            style={{ background: "linear-gradient(180deg, #0d1425 0%, #080a12 100%)" }}
-          />
-        </div>
-
-        {/* ╔═══════════════════════════════════════════╗
-           ║  ZONE 2: NAVIGATION                        ║
-           ║  FEATURE ②: Circuit connector topology      ║
-           ║  FEATURE ③: Expanding active item           ║
-           ╚═══════════════════════════════════════════╝ */}
-        <div className="flex-1 overflow-y-auto pt-5">
-          <div className="px-4 pb-2">
-            {/* Section header */}
-            <div className="flex items-center gap-3 mb-4 px-2">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[rgba(255,255,255,0.3)]">
-                Navigate
-              </span>
-              <div className="flex-1 h-px bg-white/[0.06]" />
-            </div>
-
-            {/* Nav items with circuit connector */}
-            <nav aria-label="Main navigation" className="relative">
-              {/* ── Circuit trunk line ── */}
-              <div
-                className="absolute left-[33px] top-5 bottom-5 w-px"
-                style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
-              />
-              {/* Active segment glow on the trunk */}
-              {mainItems.map((item, idx) => {
-                if (!isActive(item.href)) return null;
-                const top = idx * 64 + 20;
-                return (
-                  <div
-                    key={`glow-${item.href}`}
-                    className="absolute left-[32px] w-[3px] rounded-full transition-all duration-500"
-                    style={{
-                      top,
-                      height: 24,
-                      backgroundColor: item.accent,
-                      boxShadow: `0 0 12px ${item.accent}80`,
-                    }}
-                  />
-                );
-              })}
-
-              <div className="space-y-1.5">
-                {mainItems.map((item) => {
-                  const active = isActive(item.href);
-                  const Icon = item.icon;
-                  const d = delay;
-                  delay += 60;
-                  return (
-                    <div key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={onClose}
-                        className={cn(
-                          "group relative flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition-all duration-300",
-                          active ? "text-white" : "text-[rgba(255,255,255,0.5)] hover:text-white",
-                          open ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
-                        )}
-                        style={{
-                          transitionDelay: open ? `${d}ms` : "0ms",
-                          backgroundColor: active ? item.activeBg : "transparent",
-                          border: active ? `1px solid ${item.accent}25` : "1px solid transparent",
-                        }}
-                      >
-                        {/* Circuit node dot — left of icon */}
-                        <div className="flex items-center" style={{ width: 24, justifyContent: "center" }}>
-                          <CircuitNode color={item.accent} active={active} />
-                        </div>
-
-                        {/* Icon box */}
-                        <div
-                          className="flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-300"
-                          style={{
-                            backgroundColor: active ? item.accent : "#151820",
-                            boxShadow: active ? `0 4px 12px ${item.accent}40` : "none",
-                          }}
-                        >
-                          <Icon className="size-[18px]" style={{ color: active ? "#fff" : "rgba(255,255,255,0.4)" }} />
-                        </div>
-
-                        <span className="flex-1 truncate">{item.label}</span>
-
-                        {/* Hover strip for inactive */}
-                        {!active && (
-                          <div
-                            className="absolute right-0 top-[20%] bottom-[20%] w-[2px] rounded-l-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ backgroundColor: item.accent }}
-                          />
-                        )}
-                      </Link>
-
-                      {/* FEATURE ③: Expanded contextual data panel */}
-                      {active && item.expandedStats && item.expandedStats.length > 0 && (
-                        <div
-                          className="ml-[57px] mr-3 mt-1 mb-1 flex gap-2 animate-detail-slide"
-                        >
-                          {item.expandedStats.map((stat) => {
-                            const StatIcon = stat.icon;
-                            return (
-                              <div
-                                key={stat.label}
-                                className="flex items-center gap-2 rounded-lg px-3 py-2"
-                                style={{
-                                  backgroundColor: "#0c0e16",
-                                  border: `1px solid ${item.accent}20`,
-                                }}
-                              >
-                                <StatIcon className="size-3.5" style={{ color: item.accent }} />
-                                <span className="font-mono text-sm font-black" style={{ color: item.accent }}>
-                                  {stat.value}
-                                </span>
-                                <span className="text-[10px] font-semibold text-[rgba(255,255,255,0.35)]">
-                                  {stat.label}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </nav>
-          </div>
-
-          {/* ╔═══════════════════════════════════════════╗
-             ║  ZONE 3: ADMIN — warm amber tint            ║
-             ║  Completely different color temperature.     ║
-             ╚═══════════════════════════════════════════╝ */}
-          {canAccessAdmin && (
-            <div
-              className="mx-4 mt-3 rounded-2xl p-4"
-              style={{
-                backgroundColor: "#1a1506",
-                border: "1px solid rgba(245,158,11,0.2)",
-                boxShadow: "inset 0 1px 0 rgba(245,158,11,0.08)",
-              }}
-            >
-              <div className="flex items-center gap-3 mb-3 px-1">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[rgba(245,158,11,0.6)]">
-                  Admin
-                </span>
-                <div className="flex-1 h-px bg-[rgba(245,158,11,0.12)]" />
-                {adminPendingCount > 0 && (
+                {firstName}
+              </h2>
+              <div className="flex items-center gap-2 mt-2">
+                {profileDesignation && (
                   <span
-                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold"
+                    className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
+                    style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+                  >
+                    {profileDesignation}
+                  </span>
+                )}
+                {totals && totals.streakActivatedCount > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold"
                     style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
                   >
-                    <span className="size-1.5 rounded-full bg-amber-400 animate-subtle-pulse" />
-                    {adminPendingCount}
+                    <Zap className="size-2.5" />
+                    {totals.streakActivatedCount}
                   </span>
                 )}
               </div>
-
-              <nav aria-label="Admin navigation">
-                {adminItems.map((item) => {
-                  const active = isActive(item.href);
-                  const Icon = item.icon;
-                  const d = delay;
-                  delay += 60;
-                  return (
-                    <div key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={onClose}
-                        className={cn(
-                          "group flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-[13px] font-semibold transition-all duration-300",
-                          active ? "text-white" : "text-[rgba(255,255,255,0.55)] hover:text-white",
-                          open ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-                        )}
-                        style={{
-                          transitionDelay: open ? `${d}ms` : "0ms",
-                          backgroundColor: active ? "rgba(245,158,11,0.2)" : "transparent",
-                          boxShadow: active ? "inset 3px 0 0 #f59e0b" : "none",
-                        }}
-                      >
-                        <div
-                          className="flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-300"
-                          style={{
-                            backgroundColor: active ? "#f59e0b" : "#2a1f0a",
-                            boxShadow: active ? "0 4px 12px rgba(245,158,11,0.3)" : "none",
-                          }}
-                        >
-                          <Icon className="size-[18px]" style={{ color: active ? "#fff" : "#f59e0b" }} />
-                        </div>
-                        <span className="flex-1">{item.label}</span>
-                        {item.expandedStats?.[0] && active && (
-                          <span
-                            className="flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-black"
-                            style={{ backgroundColor: "#fbbf24", boxShadow: "0 0 12px rgba(251,191,36,0.4)" }}
-                          >
-                            {item.expandedStats[0].value}
-                          </span>
-                        )}
-                        {!active && adminPendingCount > 0 && (
-                          <span
-                            className="flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-black"
-                            style={{ backgroundColor: "#fbbf24", boxShadow: "0 0 12px rgba(251,191,36,0.4)" }}
-                          >
-                            {adminPendingCount}
-                          </span>
-                        )}
-                      </Link>
-
-                      {/* Expanded stats for admin when active */}
-                      {active && item.expandedStats && item.expandedStats.length > 0 && (
-                        <div className="ml-14 mr-2 mt-1 mb-1 animate-detail-slide">
-                          {item.expandedStats.map((stat) => {
-                            const StatIcon = stat.icon;
-                            return (
-                              <div
-                                key={stat.label}
-                                className="flex items-center gap-2 rounded-lg px-3 py-2"
-                                style={{
-                                  backgroundColor: "#140f02",
-                                  border: "1px solid rgba(245,158,11,0.15)",
-                                }}
-                              >
-                                <StatIcon className="size-3.5 text-amber-400" />
-                                <span className="font-mono text-sm font-black text-amber-400">
-                                  {stat.value}
-                                </span>
-                                <span className="text-[10px] font-semibold text-[rgba(255,255,255,0.35)]">
-                                  {stat.label}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </nav>
             </div>
-          )}
+          </div>
         </div>
 
         {/* ╔═══════════════════════════════════════════╗
-           ║  ZONE 4: BOTTOM — recessed utility zone    ║
+           ║  COMMAND HUB GRID                           ║
+           ║  FEATURE ①: 2-col grid, not a list.         ║
+           ║  FEATURE ②: Active card pulled forward.     ║
+           ║  FEATURE ③: Cockpit assembly animation.     ║
+           ╚═══════════════════════════════════════════╝ */}
+        <div className="flex-1 overflow-y-auto px-4 pt-5 pb-4">
+          {/* Section label */}
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[rgba(255,255,255,0.25)]">
+              Command Hub
+            </span>
+            <div className="flex-1 h-px bg-white/[0.06]" />
+          </div>
+
+          {/* The Grid */}
+          <nav
+            aria-label="Main navigation"
+            className="grid grid-cols-2 gap-3"
+          >
+            {hubItems.map((item, idx) => (
+              <HubCard
+                key={item.href}
+                {...item}
+                active={isActive(item.href)}
+                open={open}
+                delay={120 + idx * 70}
+                onClose={onClose}
+              />
+            ))}
+          </nav>
+        </div>
+
+        {/* ╔═══════════════════════════════════════════╗
+           ║  UTILITY DOCK — recessed, minimal           ║
            ╚═══════════════════════════════════════════╝ */}
         <div
           style={{
-            backgroundColor: "rgba(0,0,0,0.45)",
-            boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+            backgroundColor: "rgba(0,0,0,0.4)",
+            boxShadow: "0 -6px 24px rgba(0,0,0,0.5)",
             borderTop: "1px solid rgba(255,255,255,0.04)",
           }}
         >
-          <div className="px-4 pt-4 pb-2 space-y-0.5">
+          {/* Compact utility row — icon buttons, not full-width links */}
+          <div className="px-4 pt-3 pb-2 flex items-center gap-1">
             <Link
               href={settingsAppearance()}
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-semibold transition-all duration-200",
+                "flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-[12px] font-semibold transition-all duration-200",
                 isActive(settingsAppearance())
-                  ? "text-white"
-                  : "text-[rgba(255,255,255,0.4)] hover:text-white hover:bg-white/[0.06]"
+                  ? "text-white bg-[#1a1530]"
+                  : "text-[rgba(255,255,255,0.35)] hover:text-white hover:bg-white/[0.06]"
               )}
-              style={isActive(settingsAppearance()) ? {
-                backgroundColor: "#1a1530",
-                border: "1px solid rgba(129,140,248,0.2)",
-              } : {}}
             >
-              <Palette className="size-[18px]" style={{ color: isActive(settingsAppearance()) ? "#818cf8" : undefined }} />
-              <span className="flex-1">{t("nav.appearance")}</span>
+              <Palette className="size-4" style={{ color: isActive(settingsAppearance()) ? "#818cf8" : undefined }} />
+              <span>{t("nav.appearance")}</span>
             </Link>
+
+            <div className="flex-1" />
+
             {canAccessAdmin && (
               <Link
                 href="/reset"
                 onClick={onClose}
-                className="group flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-semibold text-[rgba(255,255,255,0.3)] hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-200"
+                className="group flex size-9 items-center justify-center rounded-xl text-[rgba(255,255,255,0.25)] hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-200"
+                aria-label="Reset test data"
               >
-                <Trash2 className="size-[18px] group-hover:text-red-400 transition-colors" />
-                <span className="flex-1">Reset Test Data</span>
+                <Trash2 className="size-4 group-hover:text-red-400 transition-colors" />
               </Link>
             )}
+
             <button
               type="button"
               onClick={() => { onClose(); onSignOut(); }}
-              className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-semibold text-[rgba(255,255,255,0.3)] hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-200"
+              className="group flex size-9 items-center justify-center rounded-xl text-[rgba(255,255,255,0.25)] hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-200"
+              aria-label={t("nav.signOut")}
             >
-              <LogOut className="size-[18px] group-hover:text-red-400 transition-colors" />
-              <span className="flex-1 text-left">{t("nav.signOut")}</span>
+              <LogOut className="size-4 group-hover:text-red-400 transition-colors" />
             </button>
           </div>
 
-          {/* ── Terminal Status Bar ── */}
+          {/* ── Terminal Status ── */}
           <div
-            className="relative mx-4 mb-4 mt-1 overflow-hidden rounded-lg"
+            className="relative mx-4 mb-3 mt-1 overflow-hidden rounded-lg"
             style={{
               backgroundColor: "#071a14",
-              border: "1px solid rgba(16,185,129,0.18)",
+              border: "1px solid rgba(16,185,129,0.15)",
             }}
           >
-            {/* Scan sweep animation overlay */}
             <div className="animate-scan-sweep" />
-
-            <div className="relative px-4 py-2.5 flex items-center gap-3">
-              <Terminal className="size-3 text-emerald-400/60" />
-              <span className="font-mono text-[10px] font-bold tracking-wider text-[rgba(16,185,129,0.7)]">
+            <div className="relative px-3.5 py-2 flex items-center gap-2.5">
+              <Terminal className="size-3 text-emerald-400/50" />
+              <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/60">
                 TSEDA
               </span>
               <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
-              <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/70">
+              <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/60">
                 ONLINE
               </span>
               {totals && (
                 <>
                   <div className="flex-1" />
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] font-bold text-emerald-400/40">
-                      {totals.totalEntries} entries
-                    </span>
-                    <div className="h-2.5 w-px bg-emerald-400/20" />
-                    <span className="font-mono text-[10px] font-bold text-emerald-400/40">
-                      {totals.streakActivatedCount} streaks
-                    </span>
-                  </div>
+                  <span className="font-mono text-[10px] font-bold text-emerald-400/35">
+                    {totals.totalEntries}
+                  </span>
                 </>
               )}
             </div>
