@@ -76,43 +76,40 @@ export type GroupContainerStyle = {
 };
 
 export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
-  /* Warm amber — alive, glowing */
+  /* No group containers for active sections — cards carry their own
+     accent bars, borders, and color identity. Only the outer entries
+     container + individual cards = 2 levels, not 3. */
   streak_runners: {
-    background: `linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(251,191,36,0.03) 100%)`,
-    border: "1px solid rgba(251,191,36,0.12)",
-    padding: "p-5",
-    hasContainer: true,
+    background: "transparent",
+    border: "none",
+    padding: "",
+    hasContainer: false,
   },
-  /* Blue — cool active */
   on_the_clock: {
-    background: `linear-gradient(135deg, rgba(59,130,246,0.07) 0%, rgba(59,130,246,0.025) 100%)`,
-    border: "1px solid rgba(59,130,246,0.10)",
-    padding: "p-5",
-    hasContainer: true,
+    background: "transparent",
+    border: "none",
+    padding: "",
+    hasContainer: false,
   },
-  /* Purple — rich */
   unlocked: {
-    background: `linear-gradient(135deg, rgba(168,85,247,0.07) 0%, rgba(168,85,247,0.025) 100%)`,
-    border: "1px solid rgba(168,85,247,0.10)",
-    padding: "p-5",
-    hasContainer: true,
+    background: "transparent",
+    border: "none",
+    padding: "",
+    hasContainer: false,
   },
-  /* Drafts: no container */
   in_the_works: {
     background: "transparent",
     border: "none",
     padding: "",
     hasContainer: false,
   },
-  /* Dashed orange — softer */
+  /* Dashed orange — the dashed border IS the visual identity here */
   under_review: {
     background: "rgba(249,115,22,0.03)",
     border: "1px dashed rgba(249,115,22,0.12)",
     padding: "p-5",
     hasContainer: true,
   },
-  /* LOCKED IN — no section container. Cards themselves carry the
-     green identity. Zone separator handled in GroupedEntrySections. */
   locked_in: {
     background: "transparent",
     border: "none",
