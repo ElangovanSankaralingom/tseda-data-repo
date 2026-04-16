@@ -518,25 +518,35 @@ function StampRow({
       tabIndex={0}
       aria-label={`${title} finalized entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`group relative overflow-hidden flex rounded-2xl transition-all duration-300 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/20`}
+      className={`group relative overflow-hidden flex rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(34,197,94,0.08)] cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/20`}
       style={{
-        background: "rgba(0,0,0,0.25)",
-        border: "1px solid rgba(34,197,94,0.08)",
+        background: "rgba(0,0,0,0.35)",
+        border: "1px solid rgba(34,197,94,0.12)",
         clipPath: NOTCH_CLIP,
       }}
     >
+      {/* Green color bleed — subtle vault glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "linear-gradient(to right, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.02) 30%, transparent 60%)",
+          borderRadius: "inherit",
+        }}
+      />
+
       {/* Corner notch triangle — green */}
       <div
-        className="absolute top-0 right-0 size-[16px] opacity-25"
+        className="absolute top-0 right-0 size-[16px] opacity-30"
         style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", backgroundColor: "#22c55e" }}
       />
 
-      {/* Left accent bar — thin green gradient */}
+      {/* Left accent bar — green gradient */}
       <div
         className="shrink-0 rounded-l-2xl"
         style={{
           width: 3,
-          background: "linear-gradient(180deg, #22c55e 0%, rgba(34,197,94,0.30) 100%)",
+          background: "linear-gradient(180deg, #22c55e 0%, #16a34a 100%)",
+          boxShadow: "2px 0 8px rgba(34,197,94,0.10)",
         }}
       />
 
