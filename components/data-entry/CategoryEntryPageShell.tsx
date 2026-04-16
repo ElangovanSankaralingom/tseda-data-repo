@@ -327,27 +327,7 @@ function CategoryEmptyState({
 function PageBackground({ chartHex, children }: { chartHex: string; children: React.ReactNode }) {
   return (
     <div className="relative min-h-[80vh]">
-      {/* Subtle blue-tinted gradient background — hint, not heavy */}
-      <div
-        className="absolute inset-0 pointer-events-none rounded-3xl"
-        style={{
-          background: `linear-gradient(175deg, rgba(12,18,35,0.60) 0%, rgba(10,14,28,0.40) 40%, transparent 80%)`,
-        }}
-      />
-      {/* Subtle grid pattern overlay — very faint */}
-      <div
-        className="absolute inset-0 pointer-events-none rounded-3xl"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
-          `,
-          backgroundSize: "48px 48px",
-          maskImage: "linear-gradient(to bottom, black 0%, black 40%, transparent 80%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 40%, transparent 80%)",
-        }}
-      />
-      {/* Soft radial accent glow at top */}
+      {/* Soft radial accent glow at top — dots come from global body bg */}
       <div
         className="absolute inset-0 pointer-events-none rounded-3xl"
         style={{

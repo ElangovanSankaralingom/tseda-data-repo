@@ -179,14 +179,16 @@ body {
     color: var(--color-text-primary);
   }
 
-  /* Subtle ambient background for dark mode */
+  /* Dark mode: dot grid + ambient glow */
   .dark body {
     background-image:
+      radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
       radial-gradient(ellipse 80% 50% at 50% -20%, rgba(132, 204, 22, 0.02), transparent),
       radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59, 130, 246, 0.015), transparent);
+    background-size: 28px 28px, 100% 100%, 100% 100%;
   }
 
-  /* Dot pattern for light mode only */
+  /* Light mode: dot grid */
   body:not(.dark body) {
     background-image: radial-gradient(circle, var(--color-card-border) 0.5px, transparent 0.5px);
     background-size: 32px 32px;
