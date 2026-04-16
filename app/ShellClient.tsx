@@ -27,53 +27,45 @@ import {
 
 /*
   ── Command Grid Icon ──
-  WHAT IF the menu icon wasn't a hamburger?
-  4 dots in a 2x2 grid → morph into X when open.
-  The grid pattern mirrors the Command Hub layout.
+  Cross-fade between 2x2 dot grid (closed) and X (open).
+  No conflicting CSS — each layer only toggles opacity + rotation.
 */
 function CommandGridIcon({ isOpen }: { isOpen: boolean }) {
   return (
-    <div className="relative flex size-[18px] items-center justify-center">
-      {/* Dot 1 — top-left → rotates to top-center (X arm) */}
-      <span
-        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+    <div className="relative size-[18px]">
+      {/* Layer 1: 2x2 dot grid — visible when closed */}
+      <div
+        className="absolute inset-0 grid grid-cols-2 place-items-center transition-all duration-300"
         style={{
-          top: isOpen ? "1px" : "1px",
-          left: isOpen ? "7px" : "1px",
-          transform: isOpen ? "rotate(45deg) scaleX(3.5)" : "none",
-          borderRadius: isOpen ? "1px" : undefined,
+          opacity: isOpen ? 0 : 1,
+          transform: isOpen ? "scale(0.6) rotate(45deg)" : "none",
+          gap: 4,
+          padding: 2,
         }}
-      />
-      {/* Dot 2 — top-right → rotates to top-center (X arm) */}
-      <span
-        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+      >
+        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
+        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
+        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
+        <span className="block size-[4px] rounded-full bg-[var(--color-text-secondary)]" />
+      </div>
+
+      {/* Layer 2: X lines — visible when open */}
+      <div
+        className="absolute inset-0 flex items-center justify-center transition-all duration-300"
         style={{
-          top: isOpen ? "1px" : "1px",
-          right: isOpen ? "7px" : "1px",
-          transform: isOpen ? "rotate(-45deg) scaleX(3.5)" : "none",
-          borderRadius: isOpen ? "1px" : undefined,
+          opacity: isOpen ? 1 : 0,
+          transform: isOpen ? "none" : "scale(0.6) rotate(-45deg)",
         }}
-      />
-      {/* Dot 3 — bottom-left → rotates to bottom-center (X arm) */}
-      <span
-        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        style={{
-          bottom: isOpen ? "1px" : "1px",
-          left: isOpen ? "7px" : "1px",
-          transform: isOpen ? "rotate(-45deg) scaleX(3.5)" : "none",
-          borderRadius: isOpen ? "1px" : undefined,
-        }}
-      />
-      {/* Dot 4 — bottom-right → rotates to bottom-center (X arm) */}
-      <span
-        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        style={{
-          bottom: isOpen ? "1px" : "1px",
-          right: isOpen ? "7px" : "1px",
-          transform: isOpen ? "rotate(45deg) scaleX(3.5)" : "none",
-          borderRadius: isOpen ? "1px" : undefined,
-        }}
-      />
+      >
+        <span
+          className="absolute h-[2px] w-[16px] rounded-full bg-[var(--color-text-secondary)]"
+          style={{ transform: "rotate(45deg)" }}
+        />
+        <span
+          className="absolute h-[2px] w-[16px] rounded-full bg-[var(--color-text-secondary)]"
+          style={{ transform: "rotate(-45deg)" }}
+        />
+      </div>
     </div>
   );
 }
