@@ -490,24 +490,27 @@ function DashedCard({
 
 /* ═══════════════════════════════════════════
    SEALED CARD — locked_in (finalized)
-   Compact achievement card with seal stamp.
-   Feels like a filed record — complete, archived.
+   Full card with NOTCH CLIP, left green bar,
+   inner detail panel, and corner seal badge.
+   Feels DIFFERENT from other cards — muted but rich.
 
-   ┌──────────────────────────────────┐
-   │  #01                    19d ago  │
-   │  ── Title ──────────────────     │
-   │                                  │
-   │              ◉ SEALED            │
-   │  ════════════════════════════    │
-   └──────────────────────────────────┘
+   ┌═══════════════════════════════════════╲
+   ┃ ▌ ✓  Title                    #01    ╲
+   ┃ ▌    Subtitle                         │
+   ┃ ▌    ┌─ detail panel ──────────────┐  │
+   ┃ ▌    │ metadata / body content     │  │
+   ┃ ▌    └─────────────────────────────┘  │
+   ┃ ▌    Finalized · 19d ago   [actions]  │
+   ┗═══════════════════════════════════════━┘
    ═══════════════════════════════════════════ */
 function StampRow({
-  title, href, createdAt, updatedAt, actions, index,
+  title, href, badges, subtitle, metadata, createdAt, updatedAt, actions, children, index,
 }: CardInternalProps) {
   const router = useRouter();
   const { t, language } = useTranslation();
   const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
   const time = formatRelativeTime(updatedAt || createdAt, language);
+  const hasContent = !!(children || metadata);
 
   return (
     <div
@@ -515,60 +518,91 @@ function StampRow({
       tabIndex={0}
       aria-label={`${title} finalized entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`group relative overflow-hidden rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/20`}
+      className={`group relative overflow-hidden flex rounded-2xl transition-all duration-300 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/20`}
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "rgba(0,0,0,0.25)",
         border: "1px solid rgba(34,197,94,0.08)",
+        clipPath: NOTCH_CLIP,
       }}
     >
-      {/* Bottom accent line — sealed feel */}
+      {/* Corner notch triangle — green */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-[2px]"
+        className="absolute top-0 right-0 size-[16px] opacity-25"
+        style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", backgroundColor: "#22c55e" }}
+      />
+
+      {/* Left accent bar — thin green gradient */}
+      <div
+        className="shrink-0 rounded-l-2xl"
         style={{
-          background: "linear-gradient(90deg, rgba(34,197,94,0.30) 0%, rgba(34,197,94,0.08) 60%, transparent 100%)",
+          width: 3,
+          background: "linear-gradient(180deg, #22c55e 0%, rgba(34,197,94,0.30) 100%)",
         }}
       />
 
-      <Link href={href} className="block px-4 py-3.5">
-        {/* Top row: index + time */}
-        <div className="flex items-center justify-between mb-2">
-          <span
-            className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/40"
+      <div className="min-w-0 flex-1 py-3.5 pr-4 pl-3.5">
+        {/* Row 1 — checkmark + title + index badge */}
+        <div className="flex items-start gap-2.5">
+          <div
+            className="flex size-6 shrink-0 items-center justify-center rounded-full mt-0.5"
+            style={{
+              background: "rgba(34,197,94,0.12)",
+              border: "1px solid rgba(34,197,94,0.20)",
+            }}
           >
-            #{String(index + 1).padStart(2, "0")}
-          </span>
-          {time ? <span className="text-[10px] text-white/25">{time}</span> : null}
-        </div>
-
-        {/* Title */}
-        <div className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-white truncate transition-colors">
-          {title}
-        </div>
-
-        {/* Seal row */}
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1.5">
-            <div
-              className="flex size-4 items-center justify-center rounded-full"
-              style={{
-                background: "rgba(34,197,94,0.15)",
-                border: "1px solid rgba(34,197,94,0.25)",
-              }}
-            >
-              <Check className="size-2 text-emerald-400" />
+            <Check className="size-3 text-emerald-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={href} className="text-sm font-semibold text-[var(--color-text-primary)] hover:text-white truncate transition-colors">
+                {title}
+              </Link>
+              {/* Index badge */}
+              <span
+                className="font-mono text-[9px] font-bold text-emerald-400/40"
+              >
+                #{String(index + 1).padStart(2, "0")}
+              </span>
+              {badges}
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-400/60">
+            {subtitle ? <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{subtitle}</div> : null}
+          </div>
+        </div>
+
+        {/* Row 2 — detail panel (if available) */}
+        {hasContent && (
+          <div
+            className="mt-2.5 rounded-lg px-3 py-2 ml-[34px]"
+            style={{
+              background: "rgba(34,197,94,0.04)",
+              border: "1px solid rgba(34,197,94,0.08)",
+            }}
+          >
+            {children}
+            {metadata && !children ? <div className="text-xs text-[var(--color-text-secondary)]">{metadata}</div> : null}
+          </div>
+        )}
+
+        {/* Row 3 — footer */}
+        <div className="flex flex-wrap items-center justify-between gap-2 ml-[34px] mt-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-emerald-400/50">
               {t('entry.finalized')}
             </span>
+            {time ? (
+              <>
+                <span className="text-white/10">·</span>
+                <span className="text-[11px] text-white/25">{time}</span>
+              </>
+            ) : null}
           </div>
-
           {actions ? (
-            <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
               {actions}
             </div>
           ) : null}
         </div>
-      </Link>
+      </div>
     </div>
   );
 }
