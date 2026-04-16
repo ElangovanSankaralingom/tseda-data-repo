@@ -237,7 +237,11 @@ export function getGroupCardClass(group: EntryListGroup): string {
   }
 
   if (layout === "stamp") {
-    return [s.hoverClass, s.extraClass].filter(Boolean).join(" ");
+    return [
+      "relative overflow-hidden flex rounded-2xl transition-all duration-300",
+      s.hoverClass,
+      s.extraClass,
+    ].filter(Boolean).join(" ");
   }
 
   if (layout === "hero") {
