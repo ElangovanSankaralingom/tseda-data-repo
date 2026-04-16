@@ -364,26 +364,33 @@ export default function SidebarDrawer({
         aria-hidden="true"
       />
 
-      {/* Panel — wider to accommodate the grid */}
+      {/* ── Floating Panel ──
+           WHAT IF the sidebar didn't dock to the edge?
+           It floats as a rounded card with breathing room.
+           On mobile: still full-screen for usability.
+           On sm+: floats with margin, rounded corners, visible border. */}
       <div
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-full w-full flex-col transition-transform duration-400 sm:w-[340px]",
-          open ? "translate-x-0" : "-translate-x-full"
+          "fixed z-50 flex flex-col transition-all duration-400",
+          // Mobile: full screen
+          "left-0 top-0 h-full w-full",
+          // Desktop: floating card with margin
+          "sm:left-3 sm:top-3 sm:bottom-3 sm:h-auto sm:w-[340px] sm:rounded-3xl",
+          open
+            ? "translate-x-0 opacity-100 scale-100"
+            : "-translate-x-[calc(100%+12px)] sm:opacity-0 sm:scale-[0.97] sm:-translate-x-8"
         )}
         style={{
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
           backgroundColor: "#070910",
+          border: "1px solid rgba(255,255,255,0.10)",
+          boxShadow: open
+            ? `0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05), 0 0 40px ${activeAccent}10`
+            : "none",
         }}
         role="dialog"
         aria-label="Navigation menu"
       >
-        {/* ── Right edge gradient — shifts with active accent ── */}
-        <div
-          className="absolute right-0 top-0 bottom-0 w-[2px] transition-all duration-600"
-          style={{
-            background: `linear-gradient(180deg, ${activeAccent}50 0%, ${activeAccent}08 60%, transparent 100%)`,
-          }}
-        />
 
         {/* ╔═══════════════════════════════════════════╗
            ║  IDENTITY CARD — Centered command badge     ║
@@ -393,14 +400,14 @@ export default function SidebarDrawer({
            ║  FEATURE ④: Orbit ring + centered layout.   ║
            ╚═══════════════════════════════════════════╝ */}
         <div
-          className="relative overflow-hidden"
+          className="relative overflow-hidden sm:rounded-t-3xl"
           style={{
             background: "linear-gradient(170deg, #14243e 0%, #0e1828 50%, #070910 100%)",
             borderBottom: "1px solid rgba(59,130,246,0.15)",
           }}
         >
-          {/* Top accent bar */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500/80 animate-bar-draw" />
+          {/* Top accent bar — follows rounded corners */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500/80 animate-bar-draw sm:rounded-t-3xl" />
 
           {/* Radial glow behind avatar */}
           <div
@@ -558,6 +565,7 @@ export default function SidebarDrawer({
            ║  layer — not merged with the background.    ║
            ╚═══════════════════════════════════════════╝ */}
         <div
+          className="sm:rounded-b-3xl"
           style={{
             backgroundColor: "#0c0e18",
             boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
