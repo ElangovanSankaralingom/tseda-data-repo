@@ -192,7 +192,7 @@ export default function AccountPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{t("account.saveHint")}</p>
+          <p className="text-sm text-[var(--color-text-muted)]">{t("account.saveHint")}</p>
         </div>
 
         {activeTabDirty ? (
@@ -216,7 +216,7 @@ export default function AccountPage() {
             "mt-4 rounded-lg border px-3 py-2 text-sm",
             toast.type === "ok"
               ? "border-green-200 bg-green-500/10 text-green-800"
-              : "border-red-500/20 bg-red-500/10 text-red-800"
+              : "border-red-500/20 bg-red-500/10 text-red-400"
           )}
         >
           {toast.msg}
@@ -252,7 +252,7 @@ export default function AccountPage() {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">Loading...</div>
+          <div className="rounded-2xl border border-[var(--color-glass-border)] p-6 text-sm text-[var(--color-text-muted)]">Loading...</div>
         ) : null}
 
         {!loading && activeTab === "profile" ? (
@@ -288,18 +288,18 @@ export default function AccountPage() {
         ) : null}
 
         {hasBlockingErrors && !loading ? (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 text-red-800 px-4 py-3 text-sm">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 px-4 py-3 text-sm">
             There are validation issues. Fix them before saving.
           </div>
         ) : null}
       </div>
 
       {/* Danger Zone */}
-      <div className="mt-10 rounded-2xl border border-red-500/20 bg-[var(--color-card-bg)] p-5">
+      <div className="mt-10 rounded-2xl border border-red-500/20 bg-[var(--color-glass-bg)] p-5">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-red-800">{t("account.deleteAllMyData")}</h3>
+            <h3 className="text-sm font-semibold text-red-400">{t("account.deleteAllMyData")}</h3>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
               {t("account.deleteAllWarning")}
             </p>
@@ -308,7 +308,7 @@ export default function AccountPage() {
             type="button"
             onClick={() => setShowClearConfirm(true)}
             disabled={clearing || loading}
-            className="shrink-0 rounded-lg border border-red-300 bg-[var(--color-card-bg)] px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-60"
+            className="shrink-0 rounded-lg border border-red-300 bg-[var(--color-glass-bg)] px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-60"
           >
             {clearing ? (
               <span className="flex items-center gap-2">
@@ -330,7 +330,7 @@ export default function AccountPage() {
           <div className="w-full max-w-md rounded-2xl bg-[var(--color-modal-bg)] p-6 shadow-xl">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-full bg-red-500/15">
-                <AlertTriangle className="size-5 text-red-600" />
+                <AlertTriangle className="size-5 text-red-400" />
               </div>
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Clear All Your Data</h3>
             </div>
@@ -339,7 +339,7 @@ export default function AccountPage() {
             </p>
             <div className="mt-4">
               <label className="text-sm text-[var(--color-text-secondary)]">
-                {t("account.typeEmailToConfirm")} <span className="font-mono font-semibold text-red-600">{draft.email}</span>
+                {t("account.typeEmailToConfirm")} <span className="font-mono font-semibold text-red-400">{draft.email}</span>
               </label>
               <input
                 type="text"
@@ -356,7 +356,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={() => { setShowClearConfirm(false); setClearConfirmText(""); }}
                 disabled={clearing}
-                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-card-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
+                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-glass-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
               >
                 Keep My Data
               </button>

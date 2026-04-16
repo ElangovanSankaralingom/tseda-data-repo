@@ -27,7 +27,7 @@ export default function AppShell({
   return (
     <div className="relative min-h-screen bg-[var(--color-body-bg)]">
       {/* Header */}
-      <header className="h-14 border-b border-[var(--color-card-border)] flex items-center justify-between px-4">
+      <header className="h-14 border-b border-[var(--color-glass-border)] flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setDrawerOpen(true)}
@@ -61,11 +61,11 @@ export default function AppShell({
 
       {/* Drawer */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-[var(--color-card-bg)] shadow-lg z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-72 bg-[var(--color-glass-bg)] shadow-lg z-50 transform transition-transform duration-300 ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 border-b border-[var(--color-card-border)]">
+        <div className="p-4 border-b border-[var(--color-glass-border)]">
           <div className="font-semibold">T&apos;SEDA Data Repository</div>
           <div className="text-xs text-[var(--color-text-secondary)] mt-1">{email}</div>
         </div>
@@ -90,7 +90,7 @@ export default function AppShell({
           </div>
 
           {/* Bottom Section */}
-          <div className="p-3 border-t border-[var(--color-card-border)] space-y-1">
+          <div className="p-3 border-t border-[var(--color-glass-border)] space-y-1">
             <Link
               href={profile()}
               onClick={() => setDrawerOpen(false)}
@@ -101,7 +101,7 @@ export default function AppShell({
 
             <button
               onClick={() => signOut({ callbackUrl: signin() })}
-              className="w-full text-left px-3 py-2 rounded text-sm text-red-600 hover:bg-red-500/10"
+              className="w-full text-left px-3 py-2 rounded text-sm text-red-400 hover:bg-red-500/10"
             >
               {t("nav.signOut")}
             </button>

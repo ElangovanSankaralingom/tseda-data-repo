@@ -13,7 +13,7 @@ import { runEditGrantExpiry, type EditGrantExpiryResult } from "@/lib/jobs/editG
 import { runTimerWarnings, type TimerWarningResult } from "@/lib/jobs/timerWarning";
 import { findOrphanUploads, type OrphanScanResult } from "@/lib/jobs/orphanFileCleanup";
 import { runNightlyWalCompaction, type NightlyWalCompactionResult } from "@/lib/jobs/walCompaction";
-import { logger } from "@/lib/logger";
+import { logger, withTimer } from "@/lib/logger";
 import { type Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { getDataRoot } from "@/lib/userStore";
@@ -105,22 +105,17 @@ export async function getLastMaintenanceRun(): Promise<Result<NightlyMaintenance
 
 export async function runNightlyBackup(): Promise<Result<NightlyBackupResult>> {
   return safeAction(async () => {
-    const startedAt = Date.now();
-    const backupResult = await createBackupZip();
-    if (!backupResult.ok) {
-      throw backupResult.error;
-    }
-
-    logger.info({
-      event: "jobs.nightly.backup.success",
-      count: 1,
-      sizeBytes: backupResult.data.sizeBytes,
-      durationMs: Date.now() - startedAt,
+    const result = await withTimer("jobs.nightly.backup", async () => {
+      const backupResult = await createBackupZip();
+      if (!backupResult.ok) {
+        throw backupResult.error;
+      }
+      return {
+        backupFilename: backupResult.data.filename,
+        sizeBytes: backupResult.data.sizeBytes,
+      };
     });
-    return {
-      backupFilename: backupResult.data.filename,
-      sizeBytes: backupResult.data.sizeBytes,
-    };
+    return result;
   }, {
     context: "jobs.nightly.backup",
   });
@@ -128,72 +123,66 @@ export async function runNightlyBackup(): Promise<Result<NightlyBackupResult>> {
 
 export async function runNightlyIntegrityCheck(): Promise<Result<NightlyIntegrityResult>> {
   return safeAction(async () => {
-    const startedAt = Date.now();
-    const usersResult = await listUsers();
-    if (!usersResult.ok) {
-      throw usersResult.error;
-    }
+    const result = await withTimer("jobs.nightly.integrity", async () => {
+      const usersResult = await listUsers();
+      if (!usersResult.ok) {
+        throw usersResult.error;
+      }
 
-    let usersFailed = 0;
-    let issuesFound = 0;
-    let indexRebuildsAttempted = 0;
-    let indexRebuildsSucceeded = 0;
-    let indexRebuildsFailed = 0;
+      let usersFailed = 0;
+      let issuesFound = 0;
+      let indexRebuildsAttempted = 0;
+      let indexRebuildsSucceeded = 0;
+      let indexRebuildsFailed = 0;
 
-    for (const userEmail of usersResult.data) {
-      const integrityResult = await checkUserIntegrity(userEmail);
-      if (!integrityResult.ok) {
-        usersFailed += 1;
+      for (const userEmail of usersResult.data) {
+        const integrityResult = await checkUserIntegrity(userEmail);
+        if (!integrityResult.ok) {
+          usersFailed += 1;
+          logger.warn({
+            event: "jobs.nightly.integrity.user.failed",
+            userEmail,
+            errorCode: integrityResult.error.code,
+          });
+          continue;
+        }
+
+        const report = integrityResult.data;
+        issuesFound += report.issues.length;
+        const shouldRebuildIndex = report.issues.some((issue) =>
+          hasIndexMismatchIssue(issue.code)
+        );
+        if (!shouldRebuildIndex) continue;
+
+        indexRebuildsAttempted += 1;
+        const rebuildResult = await rebuildUserIndex(userEmail);
+        if (rebuildResult.ok) {
+          indexRebuildsSucceeded += 1;
+          continue;
+        }
+
+        indexRebuildsFailed += 1;
         logger.warn({
-          event: "jobs.nightly.integrity.user.failed",
+          event: "jobs.nightly.integrity.rebuild.failed",
           userEmail,
-          errorCode: integrityResult.error.code,
+          errorCode: rebuildResult.error.code,
         });
-        continue;
       }
 
-      const report = integrityResult.data;
-      issuesFound += report.issues.length;
-      const shouldRebuildIndex = report.issues.some((issue) =>
-        hasIndexMismatchIssue(issue.code)
-      );
-      if (!shouldRebuildIndex) continue;
+      const summary: NightlyIntegrityResult = {
+        usersScanned: usersResult.data.length,
+        usersFailed,
+        issuesFound,
+        indexRebuildsAttempted,
+        indexRebuildsSucceeded,
+        indexRebuildsFailed,
+      };
 
-      indexRebuildsAttempted += 1;
-      const rebuildResult = await rebuildUserIndex(userEmail);
-      if (rebuildResult.ok) {
-        indexRebuildsSucceeded += 1;
-        continue;
-      }
-
-      indexRebuildsFailed += 1;
-      logger.warn({
-        event: "jobs.nightly.integrity.rebuild.failed",
-        userEmail,
-        errorCode: rebuildResult.error.code,
-      });
-    }
-
-    const summary: NightlyIntegrityResult = {
-      usersScanned: usersResult.data.length,
-      usersFailed,
-      issuesFound,
-      indexRebuildsAttempted,
-      indexRebuildsSucceeded,
-      indexRebuildsFailed,
-    };
-
-    logger.info({
-      event: "jobs.nightly.integrity.summary",
-      count: summary.usersScanned,
-      issuesFound: summary.issuesFound,
-      indexRebuildsAttempted: summary.indexRebuildsAttempted,
-      indexRebuildsSucceeded: summary.indexRebuildsSucceeded,
-      indexRebuildsFailed: summary.indexRebuildsFailed,
-      durationMs: Date.now() - startedAt,
+      return summary;
+    }, {
+      count: "summary.usersScanned",
     });
-
-    return summary;
+    return result;
   }, {
     context: "jobs.nightly.integrity",
   });
@@ -201,34 +190,31 @@ export async function runNightlyIntegrityCheck(): Promise<Result<NightlyIntegrit
 
 export async function runNightlyExportHousekeeping(): Promise<Result<NightlyHousekeepingResult>> {
   return safeAction(async () => {
-    const startedAt = Date.now();
-    const tempDir = path.join(process.cwd(), getDataRoot(), "exports", "tmp");
+    const result = await withTimer("jobs.nightly.export.housekeeping", async () => {
+      const tempDir = path.join(process.cwd(), getDataRoot(), "exports", "tmp");
 
-    let entries: Dirent[] = [];
-    try {
-      entries = await fs.readdir(tempDir, { withFileTypes: true });
-    } catch (error) {
-      const code = (error as { code?: string } | null)?.code;
-      if (code === "ENOENT") {
-        return { tempFilesDeleted: 0 };
+      let entries: Dirent[] = [];
+      try {
+        entries = await fs.readdir(tempDir, { withFileTypes: true });
+      } catch (error) {
+        const code = (error as { code?: string } | null)?.code;
+        if (code === "ENOENT") {
+          return { tempFilesDeleted: 0 };
+        }
+        throw error;
       }
-      throw error;
-    }
 
-    let deleted = 0;
-    for (const entry of entries) {
-      if (!entry.isFile()) continue;
-      const filePath = path.join(tempDir, entry.name);
-      await fs.unlink(filePath);
-      deleted += 1;
-    }
+      let deleted = 0;
+      for (const entry of entries) {
+        if (!entry.isFile()) continue;
+        const filePath = path.join(tempDir, entry.name);
+        await fs.unlink(filePath);
+        deleted += 1;
+      }
 
-    logger.info({
-      event: "jobs.nightly.export.housekeeping",
-      count: deleted,
-      durationMs: Date.now() - startedAt,
+      return { tempFilesDeleted: deleted };
     });
-    return { tempFilesDeleted: deleted };
+    return result;
   }, {
     context: "jobs.nightly.export.housekeeping",
   });
@@ -239,14 +225,14 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
     const startedAt = new Date().toISOString();
     const startedMs = Date.now();
 
-    const backupResult = await runNightlyBackup();
-    const integrityResult = await runNightlyIntegrityCheck();
-    const housekeepingResult = await runNightlyExportHousekeeping();
-    const autoArchiveResult = await runAutoArchive();
-    const editGrantExpiryResult = await runEditGrantExpiry();
-    const timerWarningsResult = await runTimerWarnings();
-    const walCompactionResult = await runNightlyWalCompaction();
-    const orphanScanResult = await safeAction(() => findOrphanUploads(), { context: "jobs.nightly.orphan_scan" });
+    const backupResult = await withTimer("jobs.nightly.step.backup", () => runNightlyBackup());
+    const integrityResult = await withTimer("jobs.nightly.step.integrity", () => runNightlyIntegrityCheck());
+    const housekeepingResult = await withTimer("jobs.nightly.step.housekeeping", () => runNightlyExportHousekeeping());
+    const autoArchiveResult = await withTimer("jobs.nightly.step.autoArchive", () => runAutoArchive());
+    const editGrantExpiryResult = await withTimer("jobs.nightly.step.editGrantExpiry", () => runEditGrantExpiry());
+    const timerWarningsResult = await withTimer("jobs.nightly.step.timerWarnings", () => runTimerWarnings());
+    const walCompactionResult = await withTimer("jobs.nightly.step.walCompaction", () => runNightlyWalCompaction());
+    const orphanScanResult = await withTimer("jobs.nightly.step.orphanScan", () => safeAction(() => findOrphanUploads(), { context: "jobs.nightly.orphan_scan" }));
 
     const summary: NightlyMaintenanceSummary = {
       startedAt,

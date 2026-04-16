@@ -15,14 +15,14 @@ function getBadgeText(deadlineState: StreakDeadlineState) {
 
 function getBadgeClass(deadlineState: StreakDeadlineState) {
   if (deadlineState.isExpired || deadlineState.color === "red") {
-    return "border-red-500/25 bg-red-500/[0.12] text-red-600 backdrop-blur-sm shadow-[0_1px_3px_rgba(239,68,68,0.08)]";
+    return "border-red-500/25 bg-red-500/[0.12] text-red-400 backdrop-blur-sm shadow-[0_1px_3px_rgba(239,68,68,0.08)]";
   }
 
   if (deadlineState.color === "yellow") {
     return "border-amber-500/25 bg-amber-500/[0.12] text-amber-600 backdrop-blur-sm shadow-[0_1px_3px_rgba(245,158,11,0.08)]";
   }
 
-  return "border-[var(--color-card-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]";
+  return "border-[var(--color-glass-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]";
 }
 
 export default function FinalisationBadge({

@@ -34,7 +34,7 @@ const TYPE_CONFIG: Record<
   danger: {
     Icon: AlertOctagon,
     iconBg: "bg-red-500/15",
-    iconColor: "text-red-600",
+    iconColor: "text-red-400",
     accent: "border-l-4 border-l-red-500",
   },
   success: {
@@ -171,7 +171,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative z-10 w-full max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-modal-bg)] shadow-2xl transition-all duration-200 ${
+        className={`relative z-10 w-full max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-modal-bg)] shadow-2xl transition-all duration-200 ${
           config.accent ?? ""
         } ${animateIn ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
       >
@@ -203,7 +203,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
                 <ChevronDown
                   className={`size-3.5 transition-transform duration-200 ${showDetails ? "rotate-180" : ""}`}
                 />
-                {showDetails ? "Hide details" : "Show details"}
+                {showDetails ? t("confirm2.hideDetails") : t("confirm2.showDetails")}
               </button>
               {showDetails && (
                 <div className="mt-2 rounded-lg bg-[var(--color-body-bg)] p-3 text-xs text-[var(--color-text-primary)] animate-fade-in">
@@ -217,7 +217,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
           {requireTypedConfirmation && (
             <div className="mt-4">
               <label className="block text-xs text-[var(--color-text-secondary)] mb-1.5">
-                Type <span className="font-mono font-semibold text-red-600">{requireTypedConfirmation}</span> to
+                Type <span className="font-mono font-semibold text-red-400">{requireTypedConfirmation}</span> to
                 confirm
               </label>
               <input
@@ -234,7 +234,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 border-t border-[var(--color-card-border)] px-6 py-4">
+        <div className="flex justify-end gap-3 border-t border-[var(--color-glass-border)] px-6 py-4">
           {type !== "success" && (
             <button
               ref={cancelRef}

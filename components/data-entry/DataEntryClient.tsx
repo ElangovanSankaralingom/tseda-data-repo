@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { memo, useMemo } from "react";
 import {
-  Clock,
+  ArrowUpRight,
   FileText,
   Flame,
-  Pencil,
   Plus,
   Trophy,
 } from "lucide-react";
@@ -14,8 +13,43 @@ import { getCategoryConfig } from "@/data/categoryRegistry";
 import { CategoryIcon } from "@/lib/ui/categoryIcons";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import { formatDate } from "@/lib/i18n/locale";
+import { formatRelativeTime } from "@/lib/i18n/relativeTime";
 import { type CategoryOverview, type Totals } from "./dataEntryTypes";
+
+/*
+  ─────────────────────────────────────────────────────────
+   BENTO DASHBOARD — ported from dashboard CategoryCard DNA
+
+   Each category card has:
+   - NOTCH_CLIP (corner notch on top-right)
+   - Color bleed gradient (accent into dark card)
+   - Corner notch triangle (accent colored)
+   - Thick left accent bar
+   - Icon in a PILL (rounded-full with border)
+   - BRIGHT counter panel (accent-tinted via color-mix)
+   - DARK MICRO-PILLS inside bright panel (3 depth levels)
+
+   Hero card gets full-width treatment.
+   Standard cards get a 2-col grid.
+   Empty cards get dashed borders, no clip.
+
+   Surface depth:
+   L0: Page bg
+   L1: Card bg (dark, rgba(0,0,0,0.30))
+   L2: Bright counter panel (color-mix(in srgb, ${hex} 6%, ...))
+   L3: Dark micro-pills inside bright panel (rgba(0,0,0,0.4))
+  ─────────────────────────────────────────────────────────
+*/
+
+const NOTCH_CLIP = "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%)";
+
+const ACCENT_HEX: Record<string, string> = {
+  "fdp-attended": "#3b82f6",
+  "fdp-conducted": "#10b981",
+  "guest-lectures": "#f59e0b",
+  "case-studies": "#a855f7",
+  "workshops": "#f43f5e",
+};
 
 type Props = {
   greeting: string;
@@ -34,120 +68,353 @@ function sortByUrgency(categories: CategoryOverview[]): CategoryOverview[] {
   });
 }
 
-function relativeTime(iso: string, language: "en" | "ta" = "en"): string {
-  const diff = Date.now() - Date.parse(iso);
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return formatDate(new Date(iso), language, { day: "numeric", month: "short" });
-}
+/* ── DARK MICRO-PILLS (L3 — dark inside bright panel = depth) ── */
+function MicroPills({ cat }: { cat: CategoryOverview }) {
+  const pills: { label: string; count: number; className: string }[] = [];
+  if (cat.draftCount > 0) pills.push({ label: "DRF", count: cat.draftCount, className: "text-[rgba(255,255,255,0.5)] bg-[rgba(0,0,0,0.4)]" });
+  if (cat.editRequestedCount > 0) pills.push({ label: "REQ", count: cat.editRequestedCount, className: "text-amber-400 bg-amber-400/10" });
+  if (cat.editGrantedCount > 0) pills.push({ label: "EDT", count: cat.editGrantedCount, className: "text-[var(--color-primary)] bg-[var(--color-primary)]/10" });
 
-// ── Category Card ──────────────────────────────────────────────────
-const CategoryCard = memo(function CategoryCard({ cat, index }: { cat: CategoryOverview; index: number }) {
-  const { t, language, categoryLabel } = useTranslation();
-  const config = getCategoryConfig(cat.slug);
-  const color = config.color;
-  const hasEntries = cat.totalEntries > 0;
-
-  const pills = useMemo(() => {
-    const items: { icon: typeof Pencil; label: string; className: string }[] = [];
-    if (cat.draftCount > 0) items.push({ icon: Pencil, label: `${cat.draftCount} ${cat.draftCount === 1 ? t("dashboard.draft") : t("dashboard.drafts")}`, className: "bg-[var(--color-text-muted)]/[0.08] text-[var(--color-text-secondary)]" });
-    if (cat.streakActivated > 0) items.push({ icon: Flame, label: `${cat.streakActivated} ${t("dashboard.active")}`, className: "bg-amber-500/[0.08] text-amber-600" });
-    if (cat.streakWins > 0) items.push({ icon: Trophy, label: `${cat.streakWins} ${t("dashboard.done")}`, className: "bg-emerald-500/[0.08] text-emerald-600" });
-    if (cat.editRequestedCount > 0) items.push({ icon: Clock, label: `${cat.editRequestedCount} ${t("dashboard.pending")}`, className: "bg-orange-500/[0.08] text-orange-600" });
-    return items;
-  }, [cat.draftCount, cat.streakActivated, cat.streakWins, cat.editRequestedCount, t]);
+  if (pills.length === 0) return null;
 
   return (
-    <div
-      className={cn(
-        "group relative rounded-2xl p-5 transition-all duration-200 animate-fade-in-up",
-        hasEntries
-          ? "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:border-[var(--color-text-muted)]/30"
-          : "border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)]",
-        `stagger-${Math.min(index + 1, 5)}`
-      )}
-    >
-      {/* Top row: Icon + Title + Entry count */}
-      <Link href={hasEntries ? cat.href : cat.newHref} className="flex items-start gap-3.5">
-        <div className={cn(
-          "flex size-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105",
-          hasEntries ? color.accentBg : "bg-[var(--color-dropdown-hover)]"
-        )}>
-          <CategoryIcon name={config.icon} className={cn("size-5", hasEntries ? `${color.text} opacity-80` : "text-[var(--color-text-secondary)]")} />
-        </div>
+    <div className="flex flex-col gap-1 items-end">
+      {pills.map((pill) => (
+        <span
+          key={pill.label}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[9px] font-bold border border-[rgba(255,255,255,0.04)]",
+            pill.className
+          )}
+        >
+          {pill.count}
+          <span className="text-[7px] uppercase tracking-wider opacity-60">{pill.label}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className={cn(
-              "text-base font-semibold",
-              hasEntries ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
-            )}>
-              {categoryLabel(cat.slug)}
-            </h3>
-            {hasEntries && (
-              <span className="shrink-0 text-sm text-[var(--color-text-muted)]">
-                {cat.totalEntries} {cat.totalEntries === 1 ? t("dashboard.entry") : t("dashboard.entries")}
-              </span>
+/* ── Mini Distribution Bar ── */
+function MiniDistributionBar({ cat }: { cat: CategoryOverview }) {
+  const total = cat.totalEntries;
+  if (total === 0) return null;
+
+  const segments = [
+    { count: cat.draftCount, color: "rgba(255,255,255,0.15)" },
+    { count: cat.streakActivated, color: "#fbbf24" },
+    { count: cat.editRequestedCount, color: "#fb923c" },
+    { count: cat.streakWins + cat.completedNonStreak, color: "#84cc16" },
+  ].filter(s => s.count > 0);
+
+  if (segments.length < 2) return null;
+
+  return (
+    <div className="mt-2.5 flex h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,0.40)" }}>
+      {segments.map((seg, i) => (
+        <div
+          key={i}
+          className="h-full transition-all duration-500"
+          style={{
+            width: `${(seg.count / total) * 100}%`,
+            background: seg.color,
+            opacity: 0.85,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ═══ HERO CARD — full width, NOTCH_CLIP, 3-depth surfaces ═══ */
+const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
+  const { t, language, categoryLabel } = useTranslation();
+  const config = getCategoryConfig(cat.slug);
+  const hex = ACCENT_HEX[cat.slug] ?? config.color.chartHex;
+
+  return (
+    <div className="group relative animate-fade-in-up">
+      <Link
+        href={cat.href}
+        className="relative flex overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.06)] transition-all duration-300 hover:-translate-y-1"
+        style={{
+          background: "rgba(0,0,0,0.30)",
+          clipPath: NOTCH_CLIP,
+        }}
+      >
+        {/* Color bleed gradient — VISIBLE */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `linear-gradient(to right, ${hex}20 0%, ${hex}0a 35%, transparent 65%)`,
+            borderRadius: "inherit",
+          }}
+        />
+
+        {/* Corner notch accent triangle */}
+        <div
+          className="absolute top-0 right-0 size-[24px] opacity-40"
+          style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", backgroundColor: hex }}
+        />
+
+        {/* Thick left accent bar */}
+        <div
+          className="w-2.5 shrink-0"
+          style={{
+            background: `linear-gradient(180deg, ${hex} 0%, ${hex}60 100%)`,
+            boxShadow: `4px 0 20px ${hex}30`,
+          }}
+        />
+
+        <div className="flex-1 p-6 relative">
+          {/* Header: Icon pill + Label */}
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1"
+              style={{
+                borderColor: `${hex}30`,
+                border: `1px solid ${hex}30`,
+                backgroundColor: `${hex}15`,
+              }}
+            >
+              <div
+                className="flex size-8 items-center justify-center rounded-full"
+                style={{ background: `${hex}35`, color: hex }}
+              >
+                <CategoryIcon name={config.icon} className="size-4" />
+              </div>
+              <span className="text-sm font-bold text-[var(--color-text-primary)] tracking-tight">{categoryLabel(cat.slug)}</span>
+            </div>
+            <div className="flex-1" />
+            {cat.lastActivity && (
+              <span className="text-[11px] text-white/20">{formatRelativeTime(cat.lastActivity, language)}</span>
             )}
           </div>
 
-          {hasEntries ? (
-            <>
-              {cat.lastActivity && (
-                <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
-                  {relativeTime(cat.lastActivity, language)}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{t("entry.noEntries")}</p>
-          )}
-        </div>
-      </Link>
+          {/* L2: BRIGHT COUNTER PANEL — VISIBLE brightness */}
+          <div
+            className="mt-4 overflow-hidden rounded-xl px-4 py-3.5"
+            style={{
+              backgroundColor: `rgba(255,255,255,0.10)`,
+              border: `1px solid ${hex}25`,
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.06)`,
+            }}
+          >
+            <div className="flex items-end justify-between">
+              <div>
+                <span
+                  className="font-mono text-4xl font-black tracking-tighter leading-none"
+                  style={{ color: hex }}
+                >
+                  {cat.totalEntries}
+                </span>
+                <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.25em] text-[rgba(255,255,255,0.25)]">
+                  {cat.totalEntries === 1 ? t('dashboard.entry') : t('dashboard.entries')}
+                </div>
+              </div>
 
-      {/* Stat pills + action */}
-      <div className="mt-4 flex items-center justify-between gap-3 pl-[3.25rem]">
-        {hasEntries ? (
-          <>
-            <div className="flex flex-wrap gap-1.5">
-              {pills.map((pill) => {
-                const PillIcon = pill.icon;
-                return (
-                  <span key={pill.label} className={cn("inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-medium", pill.className)}>
-                    <PillIcon className="size-2.5" />
-                    {pill.label}
-                  </span>
-                );
-              })}
+              {/* L3: Dark micro-pills INSIDE bright panel = 3 depths */}
+              <MicroPills cat={cat} />
+            </div>
+
+            {/* Distribution bar inside the bright panel */}
+            <MiniDistributionBar cat={cat} />
+          </div>
+
+          {/* Action row */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {cat.streakActivated > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300">
+                  <Flame className="size-3" />
+                  {cat.streakActivated} {t("dashboard.active")}
+                </span>
+              )}
+              {cat.streakWins > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-300">
+                  <Trophy className="size-3" />
+                  {cat.streakWins} {t("dashboard.done")}
+                </span>
+              )}
             </div>
             <Link
               href={cat.newHref}
-              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+              style={{ background: hex, boxShadow: `0 4px 16px ${hex}25` }}
+              onClick={(e) => e.stopPropagation()}
             >
               <Plus className="size-3.5" />
               {t("entry.newEntry")}
             </Link>
-          </>
-        ) : (
-          <Link
-            href={cat.newHref}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-button-primary-bg)] px-3 py-1.5 text-sm font-medium text-white transition-all hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
-          >
-            <Plus className="size-3.5" />
-            {t("dashboard.createFirst")}
-          </Link>
-        )}
-      </div>
+          </div>
+        </div>
+      </Link>
+
+      {/* Hover glow */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{ boxShadow: `0 12px 48px ${hex}12` }}
+      />
     </div>
   );
 });
 
-// ── Main Component ─────────────────────────────────────────────────
+/* ═══ STANDARD CARD — compact, NOTCH_CLIP, 3-depth ═══ */
+const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryOverview; index: number }) {
+  const { t, language, categoryLabel } = useTranslation();
+  const config = getCategoryConfig(cat.slug);
+  const hex = ACCENT_HEX[cat.slug] ?? config.color.chartHex;
+  const hasEntries = cat.totalEntries > 0;
+
+  return (
+    <div
+      className={cn(
+        "group relative animate-fade-in-up",
+        hasEntries && "hover:-translate-y-0.5",
+        `stagger-${Math.min(index + 1, 5)}`
+      )}
+    >
+      <Link
+        href={hasEntries ? cat.href : cat.newHref}
+        className={cn(
+          "relative flex overflow-hidden rounded-2xl border transition-all duration-300",
+          hasEntries
+            ? "border-[rgba(255,255,255,0.06)]"
+            : "border-dashed border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.15)]"
+        )}
+        style={hasEntries ? {
+          background: "rgba(0,0,0,0.30)",
+          clipPath: NOTCH_CLIP,
+        } : undefined}
+      >
+        {/* Color bleed — VISIBLE */}
+        {hasEntries && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(to right, ${hex}18 0%, ${hex}08 35%, transparent 65%)`,
+              borderRadius: "inherit",
+            }}
+          />
+        )}
+
+        {/* Corner notch triangle */}
+        {hasEntries && (
+          <div
+            className="absolute top-0 right-0 size-[20px] opacity-35"
+            style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", backgroundColor: hex }}
+          />
+        )}
+
+        {/* Left accent bar */}
+        <div
+          className={cn("shrink-0", hasEntries ? "w-1.5" : "w-1")}
+          style={{
+            background: hasEntries
+              ? `linear-gradient(180deg, ${hex} 0%, ${hex}40 100%)`
+              : "rgba(255,255,255,0.04)",
+          }}
+        />
+
+        <div className="flex-1 p-4 relative">
+          {/* Header: Icon pill + Label */}
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-full pl-0.5 pr-2.5 py-0.5 border",
+                !hasEntries && "border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]"
+              )}
+              style={hasEntries ? {
+                borderColor: `${hex}30`,
+                backgroundColor: `${hex}12`,
+              } : undefined}
+            >
+              <div
+                className={cn("flex size-6 items-center justify-center rounded-full")}
+                style={{ background: hasEntries ? `${hex}30` : "rgba(255,255,255,0.06)", color: hasEntries ? hex : undefined }}
+              >
+                <CategoryIcon
+                  name={config.icon}
+                  className={cn("size-3", hasEntries ? "" : "text-white/20")}
+                />
+              </div>
+              <span className={cn("text-xs font-bold tracking-tight", hasEntries ? "text-[var(--color-text-primary)]" : "text-white/30")}>
+                {categoryLabel(cat.slug)}
+              </span>
+            </div>
+          </div>
+
+          {/* L2: Bright counter panel */}
+          <div
+            className={cn(
+              "mt-3 overflow-hidden rounded-xl border px-3.5 py-2.5",
+              !hasEntries && "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.04)]"
+            )}
+            style={hasEntries ? {
+              backgroundColor: `rgba(255,255,255,0.08)`,
+              borderColor: `${hex}22`,
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
+            } : undefined}
+          >
+            <div className="flex items-end justify-between">
+              <div>
+                <span
+                  className="font-mono text-3xl font-black tracking-tighter leading-none"
+                  style={{ color: hasEntries ? hex : "rgba(255,255,255,0.15)" }}
+                >
+                  {cat.totalEntries}
+                </span>
+                <div className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.25em] text-[rgba(255,255,255,0.25)]">
+                  {hasEntries ? (cat.totalEntries === 1 ? t('dashboard.entry') : t('dashboard.entries')) : t('dashboard.entries')}
+                </div>
+              </div>
+
+              {/* L3: Dark micro-pills */}
+              {hasEntries && <MicroPills cat={cat} />}
+            </div>
+
+            {/* Distribution bar */}
+            {hasEntries && <MiniDistributionBar cat={cat} />}
+          </div>
+
+          {/* Footer */}
+          <div className="mt-2.5 flex items-center justify-between">
+            {hasEntries ? (
+              <>
+                {cat.lastActivity ? (
+                  <span className="text-[11px] text-white/20">{formatRelativeTime(cat.lastActivity, language)}</span>
+                ) : <span />}
+                <Link
+                  href={cat.newHref}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-white/25 hover:text-white/50 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Plus className="size-3" />
+                  {t("entry.newEntry")}
+                </Link>
+              </>
+            ) : (
+              <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em]", config.color.cta)}>
+                {t('dashboard.createFirst')}
+                <ArrowUpRight className="size-3" />
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+
+      {/* Hover glow */}
+      {hasEntries && (
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+          style={{ boxShadow: `0 8px 32px ${hex}08` }}
+        />
+      )}
+    </div>
+  );
+});
+
+/* ═══ MAIN COMPONENT ═══ */
 export default function DataEntryClient({ greeting, userName, categories, totals }: Props) {
   const { t } = useTranslation();
   const sorted = useMemo(() => sortByUrgency(categories), [categories]);
@@ -161,52 +428,88 @@ export default function DataEntryClient({ greeting, userName, categories, totals
       ? `${actionItems} ${actionItems === 1 ? t("dashboard.itemNeedsAttention") : t("dashboard.itemsNeedAttention")}`
       : t("dashboard.allCaughtUp");
 
+  // Split: first card with entries = hero, rest = grid
+  const heroCategory = sorted.find(c => c.totalEntries > 0);
+  const gridCategories = heroCategory
+    ? sorted.filter(c => c.slug !== heroCategory.slug)
+    : sorted;
+
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="mx-auto w-full max-w-5xl animate-page-enter">
       {/* ─── Header ─── */}
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-divider)] pb-5 mb-6 animate-fade-in-up">
+      <div className="flex flex-wrap items-start justify-between gap-3 pb-5 mb-6 animate-fade-in-up">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text-primary)]">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             {greeting}{firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">{statusText}</p>
+          <p className="mt-1 text-sm text-white/25">{statusText}</p>
         </div>
 
         {hasAnyEntries && (totals.streakActivatedCount > 0 || totals.streakWinsCount > 0) && (
           <div className="inline-flex items-center gap-2">
             {totals.streakActivatedCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/15 bg-amber-500/[0.08] px-3 py-1.5 backdrop-blur-sm">
-                <Flame className="size-3.5 text-amber-500 opacity-70" />
-                <span className="text-sm font-medium text-amber-600">{totals.streakActivatedCount}</span>
-                <span className="text-xs text-[var(--color-text-muted)]">{t("dashboard.active")}</span>
+              <div
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                style={{
+                  background: "rgba(251,191,36,0.06)",
+                  border: "1px solid rgba(251,191,36,0.10)",
+                }}
+              >
+                <Flame className="size-3.5 text-amber-400" />
+                <span className="text-sm font-medium text-amber-300">{totals.streakActivatedCount}</span>
+                <span className="text-xs text-white/25">{t("dashboard.active")}</span>
               </div>
             )}
             {totals.streakWinsCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.08] px-3 py-1.5 backdrop-blur-sm">
-                <Trophy className="size-3.5 text-emerald-500 opacity-70" />
-                <span className="text-sm font-medium text-emerald-600">{totals.streakWinsCount}</span>
-                <span className="text-xs text-[var(--color-text-muted)]">{totals.streakWinsCount === 1 ? t("dashboard.win") : t("dashboard.wins")}</span>
+              <div
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                style={{
+                  background: "rgba(132,204,22,0.06)",
+                  border: "1px solid rgba(132,204,22,0.10)",
+                }}
+              >
+                <Trophy className="size-3.5 text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-300">{totals.streakWinsCount}</span>
+                <span className="text-xs text-white/25">{totals.streakWinsCount === 1 ? t("dashboard.win") : t("dashboard.wins")}</span>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* ─── Category Cards ─── */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        {sorted.map((cat, index) => (
-          <CategoryCard key={cat.slug} cat={cat} index={index} />
-        ))}
-      </div>
+      {/* ─── Hero Category ─── */}
+      {heroCategory && (
+        <div className="mb-4">
+          <HeroCard cat={heroCategory} />
+        </div>
+      )}
+
+      {/* ─── Grid Categories ─── */}
+      {gridCategories.length > 0 && (
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+          {gridCategories.map((cat, index) => (
+            <StandardCard key={cat.slug} cat={cat} index={index} />
+          ))}
+        </div>
+      )}
 
       {/* ─── Empty State ─── */}
       {!hasAnyEntries && (
-        <div className="mt-8 rounded-2xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-10 text-center animate-fade-in-up stagger-3">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-xl bg-[var(--color-dropdown-hover)]">
-            <FileText className="size-7 text-[var(--color-text-secondary)]" />
+        <div
+          className="mt-8 rounded-2xl p-10 text-center animate-fade-in-up stagger-3"
+          style={{
+            background: "rgba(255,255,255,0.015)",
+            border: "1px dashed rgba(255,255,255,0.05)",
+          }}
+        >
+          <div
+            className="mx-auto flex size-14 items-center justify-center rounded-xl"
+            style={{ background: "rgba(255,255,255,0.03)" }}
+          >
+            <FileText className="size-7 text-white/15" />
           </div>
-          <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t("dashboard.chooseCategory")}</p>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t("dashboard.trackActivities")}</p>
+          <p className="mt-4 text-base font-medium text-white/40">{t("dashboard.chooseCategory")}</p>
+          <p className="mt-1 text-sm text-white/20">{t("dashboard.trackActivities")}</p>
         </div>
       )}
     </div>

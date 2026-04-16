@@ -1,11 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { validateCsrf } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isMasterAdmin } from "@/lib/admin";
 import { CATEGORY_SLUGS } from "@/data/categoryRegistry";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
@@ -163,10 +164,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const usersDir = path.join(DATA_ROOT, "users");
@@ -253,6 +254,8 @@ export async function GET(request: Request) {
 
 // Clear endpoint (POST)
 export async function POST(request: Request) {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!isMasterAdmin(email)) {
@@ -268,10 +271,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   let body: { targets?: string[]; confirmCode?: string } = {};

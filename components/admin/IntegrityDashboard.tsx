@@ -51,12 +51,12 @@ function HealthRing({ percentage, status }: { percentage: number; status: Integr
     status === "healthy" ? "stroke-emerald-500" :
     status === "warnings" ? "stroke-amber-500" :
     status === "critical" ? "stroke-red-500" :
-    "stroke-[var(--color-card-border)]";
+    "stroke-[var(--color-glass-border)]";
 
   const textColor =
-    status === "healthy" ? "text-emerald-600" :
-    status === "warnings" ? "text-amber-600" :
-    status === "critical" ? "text-red-600" :
+    status === "healthy" ? "text-emerald-400" :
+    status === "warnings" ? "text-amber-400" :
+    status === "critical" ? "text-red-400" :
     "text-[var(--color-text-secondary)]";
 
   return (
@@ -64,7 +64,7 @@ function HealthRing({ percentage, status }: { percentage: number; status: Integr
       <svg width="180" height="180" className="-rotate-90">
         <circle
           cx="90" cy="90" r={radius}
-          fill="none" stroke="var(--color-card-border)" strokeWidth={stroke}
+          fill="none" stroke="var(--color-glass-border)" strokeWidth={stroke}
         />
         <circle
           cx="90" cy="90" r={radius}
@@ -114,7 +114,7 @@ const CategoryCard = memo(function CategoryCard({
 
   return (
     <div
-      className={`group border-l-2 ${statusBorderColor(status)} rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${def.accentRing} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+      className={`group border-l-2 ${statusBorderColor(status)} rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${def.accentRing} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
     >
       <div className="flex items-start gap-3">
         <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${def.iconBg} transition-transform duration-200 group-hover:scale-110`}>
@@ -145,7 +145,7 @@ function ScanProgress() {
     <div className="flex flex-col items-center gap-4 py-8">
       <div className="relative flex items-center justify-center">
         <svg width="180" height="180" className="animate-spin" style={{ animationDuration: "3s" }}>
-          <circle cx="90" cy="90" r="70" fill="none" stroke="var(--color-card-border)" strokeWidth="8" />
+          <circle cx="90" cy="90" r="70" fill="none" stroke="var(--color-glass-border)" strokeWidth="8" />
           <circle
             cx="90" cy="90" r="70"
             fill="none"
@@ -173,18 +173,18 @@ const UserSummaryRow = memo(function UserSummaryRow({ summary }: { summary: Inte
   const dotColor = hasErrors ? "bg-red-500/15" : hasWarnings ? "bg-amber-500/15" : "bg-emerald-500/15";
 
   return (
-    <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2 last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--color-glass-border)] px-1 py-2 last:border-0">
       <div className={`size-2 shrink-0 rounded-full ${dotColor}`} />
       <div className="min-w-0 flex-1 text-sm text-[var(--color-text-primary)] truncate">
         {summary.userEmail}
       </div>
       <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
-        {summary.errorCount > 0 ? <span className="text-red-600">E:{summary.errorCount}</span> : null}
-        {summary.warnCount > 0 ? <span className="text-amber-600">W:{summary.warnCount}</span> : null}
+        {summary.errorCount > 0 ? <span className="text-red-400">E:{summary.errorCount}</span> : null}
+        {summary.warnCount > 0 ? <span className="text-amber-400">W:{summary.warnCount}</span> : null}
         {summary.infoCount > 0 ? <span>I:{summary.infoCount}</span> : null}
-        {summary.totalIssues === 0 ? <span className="text-emerald-600">Clean</span> : null}
+        {summary.totalIssues === 0 ? <span className="text-emerald-400">Clean</span> : null}
         {summary.fixableCount > 0 ? (
-          <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600">{summary.fixableCount} fixable</span>
+          <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-emerald-400">{summary.fixableCount} fixable</span>
         ) : null}
       </div>
     </div>
@@ -213,7 +213,7 @@ const HistoryRow = memo(function HistoryRow({ report }: { report: IntegrityRepor
     : 100;
 
   return (
-    <div className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-1 py-2.5 last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--color-glass-border)] px-1 py-2.5 last:border-0">
       <div className={`size-2.5 shrink-0 rounded-full ${dotColor}`} />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-[var(--color-text-primary)]">{pct}% healthy</div>
@@ -236,15 +236,15 @@ function RepairSummary({ data, onClose }: { data: Record<string, unknown>; onClo
     <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 animate-scale-in">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <Wrench className="size-4 text-emerald-600" />
-          <span className="text-sm font-semibold text-emerald-800">{t("adminIntegrity.repairComplete")}</span>
+          <Wrench className="size-4 text-emerald-400" />
+          <span className="text-sm font-semibold text-emerald-400">{t("adminIntegrity.repairComplete")}</span>
         </div>
-        <button onClick={onClose} className="text-xs text-emerald-600 hover:text-emerald-800">
+        <button onClick={onClose} className="text-xs text-emerald-400 hover:text-emerald-400">
           {t("adminIntegrity.dismiss")}
         </button>
       </div>
-      <div className="text-sm text-emerald-700">{t("adminIntegrity.repairMsg")}</div>
-      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-emerald-600">
+      <div className="text-sm text-emerald-400">{t("adminIntegrity.repairMsg")}</div>
+      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-emerald-400">
         <div>{t("adminIntegrity.fixes")}: {String(data.totalFixes ?? 0)}</div>
         <div>{t("adminIntegrity.files")}: {String(data.totalFiles ?? 0)}</div>
         <div>{t("adminIntegrity.backups")}: {String(data.totalBackups ?? 0)}</div>
@@ -270,8 +270,8 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       key: "filesystem",
       label: t("adminIntegrity.fileSystem"),
       icon: <HardDrive className="size-5" />,
-      accentRing: "hover:ring-blue-200",
-      iconBg: "bg-blue-500/10 text-blue-600",
+      accentRing: "hover:ring-blue-500/20",
+      iconBg: "bg-blue-500/10 text-blue-400",
       passText: t("adminIntegrity.allFilesHealthy"),
       failText: t("adminIntegrity.corruptFiles"),
     },
@@ -279,8 +279,8 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       key: "structure",
       label: t("adminIntegrity.dataStructure"),
       icon: <Layers className="size-5" />,
-      accentRing: "hover:ring-violet-200",
-      iconBg: "bg-violet-50 text-violet-600",
+      accentRing: "hover:ring-violet-500/20",
+      iconBg: "bg-violet-500/10 text-violet-400",
       passText: t("adminIntegrity.allStructuresValid"),
       failText: t("adminIntegrity.structuralIssues"),
     },
@@ -288,8 +288,8 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       key: "businessRules",
       label: t("adminIntegrity.businessRules"),
       icon: <Scale className="size-5" />,
-      accentRing: "hover:ring-amber-200",
-      iconBg: "bg-amber-500/10 text-amber-600",
+      accentRing: "hover:ring-amber-500/20",
+      iconBg: "bg-amber-500/10 text-amber-400",
       passText: t("adminIntegrity.allRulesSatisfied"),
       failText: t("adminIntegrity.ruleViolations"),
     },
@@ -297,8 +297,8 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       key: "referential",
       label: t("adminIntegrity.references"),
       icon: <Link2 className="size-5" />,
-      accentRing: "hover:ring-emerald-200",
-      iconBg: "bg-emerald-500/10 text-emerald-600",
+      accentRing: "hover:ring-emerald-500/20",
+      iconBg: "bg-emerald-500/10 text-emerald-400",
       passText: t("adminIntegrity.allReferencesIntact"),
       failText: t("adminIntegrity.brokenReferences"),
     },
@@ -306,8 +306,8 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       key: "dataQuality",
       label: t("adminIntegrity.dataQuality"),
       icon: <Sparkles className="size-5" />,
-      accentRing: "hover:ring-rose-200",
-      iconBg: "bg-rose-500/10 text-rose-600",
+      accentRing: "hover:ring-rose-500/20",
+      iconBg: "bg-rose-500/10 text-rose-400",
       passText: t("adminIntegrity.dataQualityExcellent"),
       failText: t("adminIntegrity.qualityConcerns"),
     },
@@ -368,7 +368,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
     <div className="space-y-6">
       {/* Error banner */}
       {error ? (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-700 animate-fade-in-up">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 animate-fade-in-up">
           {error}
         </div>
       ) : null}
@@ -379,7 +379,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       ) : null}
 
       {/* Hero: Health Ring + Actions */}
-      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-6 animate-fade-in-up">
+      <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-6 animate-fade-in-up">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
           {/* Ring */}
           <div className="shrink-0">
@@ -399,15 +399,15 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
             {hasReport && !scanning ? (
               <div className="mb-2">
                 {report.status === "healthy" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
                     <ShieldCheck className="size-3.5" /> {t("adminIntegrity.allClear")}
                   </span>
                 ) : report.status === "warnings" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-900">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400">
                     <ShieldAlert className="size-3.5" /> {totalIssues} {totalIssues !== 1 ? t("adminIntegrity.warnings") : t("adminIntegrity.warning")}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 animate-subtle-pulse">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-400 animate-subtle-pulse">
                     <ShieldX className="size-3.5" /> {t("adminIntegrity.criticalIssues")}
                   </span>
                 )}
@@ -458,7 +458,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
                   type="button"
                   disabled={repairing || scanning}
                   onClick={() => void runRepair()}
-                  className="rounded-xl border border-emerald-300 bg-emerald-500/10 px-5 py-2.5 text-sm font-medium text-emerald-700 transition-all duration-150 hover:bg-emerald-500/15 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-2.5 text-sm font-medium text-emerald-400 transition-all duration-150 hover:bg-emerald-500/15 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {repairing ? (
                     <span className="flex items-center gap-1.5">
@@ -467,7 +467,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
                   ) : (
                     <span className="flex items-center gap-1.5">
                       <Wrench className="size-3.5" /> {t("adminIntegrity.autoFixAll")}
-                      <span className="rounded-full bg-emerald-200 px-1.5 py-0.5 text-xs">{report.summary.autoFixable}</span>
+                      <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-xs">{report.summary.autoFixable}</span>
                     </span>
                   )}
                 </button>
@@ -493,7 +493,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
 
       {/* Per-User Results (collapsible) */}
       {hasReport && !scanning && report.userSummaries.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
           <button
             type="button"
             onClick={() => setUsersExpanded((prev) => !prev)}
@@ -516,13 +516,13 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       {hasReport && !scanning && totalIssues === 0 ? (
         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 text-center animate-scale-in">
           <ShieldCheck className="mx-auto size-8 text-emerald-500 mb-2" />
-          <div className="text-sm font-medium text-emerald-700">{t("adminIntegrity.cleanScanMsg")}</div>
+          <div className="text-sm font-medium text-emerald-400">{t("adminIntegrity.cleanScanMsg")}</div>
         </div>
       ) : null}
 
       {/* Scan History */}
       {history.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
             {t("adminIntegrity.scanHistory")}

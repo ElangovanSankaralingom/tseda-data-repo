@@ -18,8 +18,8 @@ export default function EntryStatusBadge({ status, className }: { status?: Entry
         normalized === "GENERATED" && "border-blue-500/20 bg-blue-500/10 text-blue-700",
         normalized === "EDIT_REQUESTED" && "border-amber-500/20 bg-amber-500/10 text-amber-800",
         normalized === "EDIT_GRANTED" && "border-emerald-500/20 bg-emerald-500/10 text-emerald-700",
-        normalized === "DRAFT" && "border-[var(--color-card-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]",
-        normalized === "DELETE_REQUESTED" && "border-red-500/20 bg-red-500/10 text-red-700",
+        normalized === "DRAFT" && "border-[var(--color-glass-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]",
+        normalized === "DELETE_REQUESTED" && "border-red-500/20 bg-red-500/10 text-red-400",
         normalized === "ARCHIVED" && "border-[var(--color-input-border)] bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
         className
       )}

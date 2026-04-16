@@ -169,10 +169,10 @@ export default function ResetPage() {
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
           <div>
-            <p className="text-sm font-medium text-red-800">
+            <p className="text-sm font-medium text-red-400">
               This permanently deletes data. There is no undo.
             </p>
-            <p className="mt-1 text-sm text-red-600">
+            <p className="mt-1 text-sm text-red-400">
               Make sure you want to do this. {userCount > 0 && `${userCount} user folder${userCount === 1 ? "" : "s"} detected.`}
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function ResetPage() {
       ) : (
         <div className="space-y-6">
           {Object.entries(groups).map(([groupName, options]) => (
-            <div key={groupName} className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5">
+            <div key={groupName} className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-5">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
                 {groupName}
               </h2>
@@ -244,7 +244,7 @@ export default function ResetPage() {
                         checked={isChecked}
                         onChange={() => toggleTarget(opt.key)}
                         disabled={clearing || (selected.has("everything") && opt.key !== "everything")}
-                        className="mt-0.5 size-4 rounded border-[var(--color-card-border)] text-red-600 focus:ring-red-500"
+                        className="mt-0.5 size-4 rounded border-[var(--color-glass-border)] text-red-400 focus:ring-red-500"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
@@ -268,7 +268,7 @@ export default function ResetPage() {
           ))}
 
           {/* Nuclear Option */}
-          <div className="rounded-xl border-2 border-red-500/20 bg-[var(--color-card-bg)] p-5">
+          <div className="rounded-xl border-2 border-red-500/20 bg-[var(--color-glass-bg)] p-5">
             <div className="mb-3 flex items-center gap-2">
               <div className="h-px flex-1 bg-red-200" />
               <span className="text-xs font-semibold uppercase tracking-wider text-red-400">Nuclear Option</span>
@@ -284,10 +284,10 @@ export default function ResetPage() {
                 checked={selected.has("everything")}
                 onChange={() => toggleTarget("everything")}
                 disabled={clearing}
-                className="mt-0.5 size-4 rounded border-red-300 text-red-600 focus:ring-red-500"
+                className="mt-0.5 size-4 rounded border-red-300 text-red-400 focus:ring-red-500"
               />
               <div className="flex-1">
-                <span className="text-sm font-bold text-red-700">CLEAR EVERYTHING</span>
+                <span className="text-sm font-bold text-red-400">CLEAR EVERYTHING</span>
                 <p className="mt-0.5 text-xs text-red-500">
                   Deletes ALL of the above — resets the app to a fresh state
                 </p>
@@ -322,7 +322,7 @@ export default function ResetPage() {
       {/* Confirmation Dialog */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-[var(--color-card-bg)] p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-[var(--color-glass-bg)] p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Clear test data?</h3>
             <div className="mt-3 space-y-1">
               <p className="text-sm text-[var(--color-text-secondary)]">The following will be cleared:</p>
@@ -332,7 +332,7 @@ export default function ResetPage() {
                 ))}
               </ul>
             </div>
-            <p className="mt-3 text-sm font-medium text-red-600">
+            <p className="mt-3 text-sm font-medium text-red-400">
               This action cannot be undone.
             </p>
             <div className="mt-4">
@@ -352,7 +352,7 @@ export default function ResetPage() {
               <button
                 type="button"
                 onClick={() => { setShowConfirm(false); setConfirmText(""); }}
-                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-card-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] transition-colors"
+                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-glass-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] transition-colors"
               >
                 Cancel
               </button>

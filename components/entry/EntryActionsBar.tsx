@@ -298,11 +298,11 @@ function EditModeActionBar({
             className="fixed inset-0 bg-[var(--color-modal-overlay)] backdrop-blur-sm"
             onClick={() => setShowFinaliseConfirm(false)}
           />
-          <div className="relative w-full max-w-sm rounded-2xl bg-[var(--color-modal-bg)] shadow-xl border border-[var(--color-card-border)] animate-scale-in">
+          <div className="relative w-full max-w-sm rounded-2xl bg-[var(--color-modal-bg)] shadow-2xl shadow-black/40 border border-[var(--color-glass-border)] backdrop-blur-2xl animate-scale-in">
             <div className="px-6 pt-6 pb-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10">
-                  <Lock className="size-5 text-emerald-600" />
+                <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
+                  <Lock className="size-5 text-[var(--color-primary)]" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{t('confirm.finaliseTitle')}</h3>
@@ -315,7 +315,7 @@ function EditModeActionBar({
               {(() => {
                 const timeInfo = formatTimeRemaining(finalise?.editWindowExpiresAt, t as (key: string) => string);
                 return timeInfo ? (
-                  <div className="mt-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2">
+                  <div className="mt-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] px-3 py-2">
                     <p className="text-xs text-[var(--color-text-secondary)]">{timeInfo}</p>
                   </div>
                 ) : null;

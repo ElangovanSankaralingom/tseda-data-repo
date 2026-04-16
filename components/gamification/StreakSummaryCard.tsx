@@ -8,10 +8,10 @@ function FlameIcon({
   animated?: boolean;
 }) {
   const fill = tone === "color" ? "#f97316" : "#9ca3af";
-  const text = tone === "color" ? "#7c2d12" : "#374151";
+  const text = tone === "color" ? "#fb923c" : "#9ca3af";
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
+    <div className="flex items-center gap-2 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-2">
       <svg
         aria-hidden="true"
         className={
@@ -77,8 +77,8 @@ export default function StreakSummaryCard({
         <div
           className={
             detailChip
-              ? "whitespace-nowrap rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
-              : "whitespace-nowrap text-sm text-muted-foreground"
+              ? "whitespace-nowrap rounded-full bg-[var(--color-glass-hover)] px-2 py-1 text-xs font-medium text-[var(--color-text-muted)]"
+              : "whitespace-nowrap text-sm text-[var(--color-text-muted)]"
           }
         >
           {detail}

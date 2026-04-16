@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { validateCsrf } from "@/lib/security/csrf";
 import { authOptions } from "@/lib/auth";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { canManageEditRequests } from "@/lib/admin/roles";
@@ -21,6 +22,8 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
 export async function POST(request: Request) {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
   const session = await getServerSession(authOptions);
   const adminEmail = normalizeEmail(session?.user?.email ?? "");
   if (!canManageEditRequests(adminEmail)) {

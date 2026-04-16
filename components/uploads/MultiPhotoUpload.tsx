@@ -37,8 +37,8 @@ function cx(...classes: Array<string | false | null | undefined>) {
 function ProgressBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full border border-border bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-      <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
+    <div className="h-2 w-full overflow-hidden rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+      <div className="h-full bg-[var(--color-text-primary)]" style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -161,7 +161,7 @@ export default function MultiPhotoUpload({
   }
 
   return (
-    <div className="rounded-xl border border-border p-4 space-y-3" aria-busy={busy || undefined}>
+    <div className="rounded-xl border border-[var(--color-glass-border)] p-4 space-y-3" aria-busy={busy || undefined}>
       <div className="text-sm font-semibold">{title}</div>
 
       {value.length > 0 ? (
@@ -169,9 +169,9 @@ export default function MultiPhotoUpload({
           {value.map((meta) => (
             <div
               key={meta.storedPath}
-              className="grid gap-2 rounded-lg border border-border px-3 py-2 sm:grid-cols-[1fr_auto] sm:items-center"
+              className="grid gap-2 rounded-lg border border-[var(--color-glass-border)] px-3 py-2 sm:grid-cols-[1fr_auto] sm:items-center"
             >
-              <div className="min-w-0 text-xs text-muted-foreground">
+              <div className="min-w-0 text-xs text-[var(--color-text-muted)]">
                 <a className="underline" href={meta.url} target="_blank" rel="noreferrer">
                   {meta.fileName}
                 </a>{" "}
@@ -183,7 +183,7 @@ export default function MultiPhotoUpload({
                   href={meta.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-sm transition hover:bg-muted"
+                  className="inline-flex items-center rounded-lg border border-[var(--color-glass-border)] px-3 py-2 text-sm transition hover:bg-[var(--color-glass-hover)]"
                 >
                   {t("entry.preview")}
                 </a>
@@ -204,8 +204,8 @@ export default function MultiPhotoUpload({
                     className={cx(
                       "inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
                       busy || disabled
-                        ? "pointer-events-none cursor-not-allowed border-border bg-transparent text-muted-foreground opacity-60"
-                        : "border-border text-red-600 transition hover:bg-red-500/10"
+                        ? "pointer-events-none cursor-not-allowed border-[var(--color-glass-border)] bg-transparent text-[var(--color-text-muted)] opacity-60"
+                        : "border-[var(--color-glass-border)] text-red-400 transition hover:bg-red-500/10"
                     )}
                   >
                     {t("common.delete")}
@@ -216,7 +216,7 @@ export default function MultiPhotoUpload({
           ))}
         </div>
       ) : (
-        <div className={cx("text-xs", viewOnly ? "text-muted-foreground" : showRequiredError ? "text-red-600" : "text-muted-foreground")}>
+        <div className={cx("text-xs", viewOnly ? "text-[var(--color-text-muted)]" : showRequiredError ? "text-red-400" : "text-[var(--color-text-muted)]")}>
           {viewOnly
             ? t("upload.notUploaded")
             : showRequiredError
@@ -226,7 +226,7 @@ export default function MultiPhotoUpload({
       )}
 
       {!viewOnly ? (
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-[var(--color-text-muted)]">
           {hasPending
             ? `${pendingFiles.length} ${pendingFiles.length === 1 ? t("upload.fileAccepted") : t("upload.filesAccepted")}`
             : value.length > 0
@@ -238,13 +238,13 @@ export default function MultiPhotoUpload({
       {!viewOnly && busy ? (
         <div className="space-y-2">
           <ProgressBar value={overallProgress} />
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-[var(--color-text-muted)]">
             {overallProgress}% {t("upload.uploadingProgress")}
           </div>
         </div>
       ) : null}
 
-      {!viewOnly && error ? <div className="text-xs text-red-600">{error}</div> : null}
+      {!viewOnly && error ? <div className="text-xs text-red-400">{error}</div> : null}
 
       {!viewOnly ? (
         <div className="flex flex-wrap gap-2">

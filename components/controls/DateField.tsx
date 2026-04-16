@@ -30,10 +30,10 @@ export default function DateField({ value, onChange, disabled, error, id }: { va
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         className={cx(
-          "date-modern w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 pr-12 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2",
+          "date-modern w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 pr-12 text-sm text-[var(--color-text-primary)] shadow-sm transition-all duration-200 outline-none focus-visible:ring-2",
           error
             ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-            : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
+            : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-primary)] focus-visible:ring-[var(--color-primary)]/20",
           disabled && "cursor-not-allowed opacity-60"
         )}
       />
@@ -44,10 +44,10 @@ export default function DateField({ value, onChange, disabled, error, id }: { va
         disabled={disabled}
         aria-label="Open calendar"
         className={cx(
-          "absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors",
+          "absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[var(--color-text-muted)] transition-colors",
           disabled
             ? "pointer-events-none cursor-not-allowed opacity-50"
-            : "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+            : "hover:bg-[var(--color-glass-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/20"
         )}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-2">

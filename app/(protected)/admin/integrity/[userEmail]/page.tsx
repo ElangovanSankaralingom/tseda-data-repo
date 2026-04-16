@@ -38,15 +38,15 @@ function getParam(params: SearchParams, key: string) {
 
 function getNoticeClass(level: string) {
   if (level === "success") {
-    return "rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700";
+    return "rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400";
   }
   if (level === "warn") {
-    return "rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-800";
+    return "rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-400";
   }
   if (level === "error") {
-    return "rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700";
+    return "rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400";
   }
-  return "rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground";
+  return "rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]/30 px-3 py-2 text-sm text-[var(--color-text-muted)]";
 }
 
 function encodeNoticeUrl(userEmail: string, level: "success" | "warn" | "error" | "info", message: string) {
@@ -94,7 +94,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
           <BackTo href={adminIntegrity()} label="Integrity" />
           <h1 className="text-2xl font-semibold tracking-tight">Integrity Check</h1>
         </div>
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           Invalid user email route parameter.
         </div>
       </div>
@@ -232,7 +232,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     >
       {notice ? <div className={`mb-4 ${getNoticeClass(level)}`}>{notice}</div> : null}
 
-      <div className="mb-4 rounded-2xl border border-border bg-card p-4">
+      <div className="mb-4 rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
         <div className="flex flex-wrap items-center gap-2">
           <form id="repair-stores-form" action={repairStoresAction}>
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
@@ -290,34 +290,34 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
       </div>
 
       {reportError ? (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">{reportError}</div>
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{reportError}</div>
       ) : report ? (
         <>
           <div className="mb-4 grid gap-3 md:grid-cols-4">
-            <div className="rounded-xl border border-border bg-card p-3">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Total Issues</div>
+            <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3">
+              <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Total Issues</div>
               <div className="mt-1 text-xl font-semibold">{report.issues.length}</div>
             </div>
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3">
-              <div className="text-xs uppercase tracking-wide text-red-700">Errors</div>
-              <div className="mt-1 text-xl font-semibold text-red-800">{severity.error}</div>
+              <div className="text-xs uppercase tracking-wide text-red-400">Errors</div>
+              <div className="mt-1 text-xl font-semibold text-red-400">{severity.error}</div>
             </div>
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-              <div className="text-xs uppercase tracking-wide text-amber-800">Warnings</div>
-              <div className="mt-1 text-xl font-semibold text-amber-900">{severity.warn}</div>
+              <div className="text-xs uppercase tracking-wide text-amber-400">Warnings</div>
+              <div className="mt-1 text-xl font-semibold text-amber-400">{severity.warn}</div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-3">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Info</div>
+            <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3">
+              <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Info</div>
               <div className="mt-1 text-xl font-semibold">{severity.info}</div>
             </div>
           </div>
 
-          <div className="mb-4 rounded-2xl border border-border bg-card p-4">
+          <div className="mb-4 rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
             <h2 className="mb-3 text-lg font-semibold tracking-tight">Category Stores</h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b border-[var(--color-glass-border)] text-left text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                     <th className="px-2 py-2 font-medium">Category</th>
                     <th className="px-2 py-2 font-medium">Exists</th>
                     <th className="px-2 py-2 font-medium">Legacy</th>
@@ -330,7 +330,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
                   {CATEGORY_KEYS.map((category) => {
                     const categoryReport = report.perCategory[category];
                     return (
-                      <tr key={category} className="border-b border-border/60">
+                      <tr key={category} className="border-b border-[var(--color-glass-border)]/60">
                         <td className="px-2 py-2 font-medium">{category}</td>
                         <td className="px-2 py-2">{categoryReport.exists ? "Yes" : "No"}</td>
                         <td className="px-2 py-2">{categoryReport.legacyFormat ? "Yes" : "No"}</td>
@@ -361,33 +361,33 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
           </div>
 
           <div className="mb-4 grid gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
               <h2 className="mb-2 text-lg font-semibold tracking-tight">Index Consistency</h2>
-              <div className="text-xs text-muted-foreground">{report.indexReport.filePath}</div>
+              <div className="text-xs text-[var(--color-text-muted)]">{report.indexReport.filePath}</div>
               <div className="mt-2 text-sm">Issues: {report.indexReport.issues.length}</div>
             </div>
-            <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
               <h2 className="mb-2 text-lg font-semibold tracking-tight">WAL Sanity</h2>
-              <div className="text-xs text-muted-foreground">{report.walReport.filePath}</div>
+              <div className="text-xs text-[var(--color-text-muted)]">{report.walReport.filePath}</div>
               <div className="mt-2 text-sm">
                 Valid lines: {report.walReport.validLines} • Invalid lines: {report.walReport.invalidLines} • Out-of-order: {report.walReport.outOfOrderLines}
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
             <h2 className="mb-3 text-lg font-semibold tracking-tight">Detected Issues</h2>
             {report.issues.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No integrity issues detected.</div>
+              <div className="text-sm text-[var(--color-text-muted)]">No integrity issues detected.</div>
             ) : (
               <div className="space-y-2">
                 {report.issues.map((issue, index) => (
-                  <div key={`${issue.code}:${issue.category ?? ""}:${issue.entryId ?? ""}:${index}`} className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <div key={`${issue.code}:${issue.category ?? ""}:${issue.entryId ?? ""}:${index}`} className="rounded-lg border border-[var(--color-glass-border)] px-3 py-2 text-sm">
                     <div className="font-medium">
                       [{issue.severity.toUpperCase()}] {issue.code}
                     </div>
-                    <div className="mt-1 text-muted-foreground">{issue.message}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
+                    <div className="mt-1 text-[var(--color-text-muted)]">{issue.message}</div>
+                    <div className="mt-1 text-xs text-[var(--color-text-muted)]">
                       {issue.category ? `Category: ${issue.category} ` : ""}
                       {issue.entryId ? `Entry: ${issue.entryId} ` : ""}
                       {issue.fixAvailable ? "• Fix available" : "• Manual review"}

@@ -15,7 +15,7 @@ export default function CurrencyField({
 }: { value?: string; onChange?: (value: string) => void; disabled?: boolean; error?: boolean; placeholder?: string; id?: string }) {
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">
+      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-[var(--color-primary)]">
         ₹
       </span>
       <input
@@ -26,10 +26,10 @@ export default function CurrencyField({
         onChange={(event) => onChange?.(event.target.value.replace(/\D/g, ""))}
         placeholder={placeholder}
         className={cx(
-          "w-full rounded-lg border bg-[var(--color-input-bg)] pl-8 pr-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 placeholder:text-[var(--color-text-secondary)]",
+          "w-full rounded-lg border bg-[var(--color-input-bg)] pl-8 pr-3 py-2 text-sm text-[var(--color-text-primary)] shadow-sm transition-all duration-200 outline-none focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
           error
             ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
-            : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
+            : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-primary)] focus-visible:ring-[var(--color-primary)]/20",
           disabled && "opacity-60 pointer-events-none cursor-not-allowed"
         )}
       />

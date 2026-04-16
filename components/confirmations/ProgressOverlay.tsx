@@ -11,7 +11,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[var(--color-modal-overlay)] backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-modal-bg)] p-6 shadow-2xl animate-scale-in">
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-modal-bg)] p-6 shadow-2xl animate-scale-in">
         {/* Status icon */}
         <div className="flex justify-center mb-4">
           {p.status === "running" && (
@@ -24,7 +24,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
           )}
           {p.status === "error" && (
             <div className="flex size-12 items-center justify-center rounded-full bg-red-500/15">
-              <XCircle className="size-6 text-red-600" />
+              <XCircle className="size-6 text-red-400" />
             </div>
           )}
         </div>
@@ -52,7 +52,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
 
         {/* Result */}
         {isComplete && p.result && (
-          <p className={`mt-3 text-center text-sm ${p.status === "error" ? "text-red-600" : "text-[var(--color-text-secondary)]"}`}>
+          <p className={`mt-3 text-center text-sm ${p.status === "error" ? "text-red-400" : "text-[var(--color-text-secondary)]"}`}>
             {p.result.summary}
           </p>
         )}

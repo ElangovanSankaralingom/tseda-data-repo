@@ -4,11 +4,11 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getUserPreferences, setUserPreferences } from "@/lib/preferences/userPreferences";
 import { apiSuccess, apiUnauthorized, apiError } from "@/lib/api/apiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { NextResponse } from "next/server";
 
 const VALID_THEME_MODES = ["light", "dark", "color"] as const;
-const VALID_PALETTES = ["ocean-blue", "forest-green", "royal-purple", "sunset-warm", "rose-pink"] as const;
+const VALID_PALETTES = ["midnight-lime", "deep-ocean", "carbon-violet", "obsidian-amber"] as const;
 const VALID_LANGUAGES = ["en", "ta"] as const;
 
 export async function GET(request: Request) {
@@ -25,10 +25,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const prefs = getUserPreferences(email);
@@ -49,10 +49,10 @@ export async function PUT(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   let body: Record<string, unknown>;

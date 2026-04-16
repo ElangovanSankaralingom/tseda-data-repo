@@ -19,8 +19,8 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  mode: "light",
-  palette: "ocean-blue",
+  mode: "dark",
+  palette: "midnight-lime",
   language: "en",
   setMode: () => {},
   setPalette: () => {},
@@ -48,9 +48,9 @@ export default function ThemeProvider({
   initialPalette?: ColorPalette;
   initialLanguage?: Language;
 }) {
-  const [mode, setModeState] = useState<ThemeMode>(initialMode ?? "light");
+  const [mode, setModeState] = useState<ThemeMode>(initialMode ?? "dark");
   const [palette, setPaletteState] = useState<ColorPalette>(
-    initialPalette ?? "ocean-blue",
+    initialPalette ?? "midnight-lime",
   );
   const [language, setLanguageState] = useState<Language>(
     initialLanguage ?? "en",

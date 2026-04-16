@@ -6,7 +6,8 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { assertActionPayload } from "@/lib/security/limits";
 import { newId, readJson, writeJson } from "@/lib/storage";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 type FacultyProfile = {
   id: string;
@@ -48,10 +49,13 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    if (appError.code !== "RATE_LIMITED") {
+      logger.error({ event: "faculty.rateLimit.unexpected", code: appError.code, msg: appError.message });
     }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const items = await readJson<FacultyProfile[]>(FILE, []);
@@ -87,10 +91,13 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    if (appError.code !== "RATE_LIMITED") {
+      logger.error({ event: "faculty.rateLimit.unexpected", code: appError.code, msg: appError.message });
     }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const body = (await req.json()) as Partial<FacultyProfile>;
@@ -141,10 +148,13 @@ export async function PUT(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    if (appError.code !== "RATE_LIMITED") {
+      logger.error({ event: "faculty.rateLimit.unexpected", code: appError.code, msg: appError.message });
     }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const body = (await req.json()) as Partial<FacultyProfile>;
@@ -193,10 +203,13 @@ export async function DELETE(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
+    if (appError.code !== "RATE_LIMITED") {
+      logger.error({ event: "faculty.rateLimit.unexpected", code: appError.code, msg: appError.message });
     }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const { searchParams } = new URL(req.url);

@@ -176,11 +176,17 @@ function getHashPayload(entry: Record<string, unknown>, category: PdfSnapshotCat
   return payload;
 }
 
+/**
+ * Compute stable hash of entry's stage 1 fields (excluding lifecycle and stage 2 fields).
+ */
 export function hashPrePdfFields(entry: unknown, category: PdfSnapshotCategory) {
   const record = ((entry ?? {}) as Record<string, unknown>) || {};
   return stableStringify(getHashPayload(record, category));
 }
 
+/**
+ * Determine if PDF is stale and whether generation or preview is allowed.
+ */
 export function computePdfState({
   pdfMeta,
   pdfSourceHash,
@@ -197,6 +203,9 @@ export function computePdfState({
   };
 }
 
+/**
+ * Reconcile entry PDF metadata and staleness on load.
+ */
 export function hydratePdfSnapshot<T extends { pdfMeta?: PdfMetaLike; pdfSourceHash?: string | null; pdfStale?: boolean }>(
   entry: T,
   category: PdfSnapshotCategory

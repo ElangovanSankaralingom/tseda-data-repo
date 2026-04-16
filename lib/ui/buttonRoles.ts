@@ -32,11 +32,11 @@ export function getButtonClass(role: ButtonRole, options: ButtonClassOptions = {
   const base = size === "compact" ? BASE_COMPACT : BASE_DEFAULT;
 
   if (disabled) {
-    return `${base} pointer-events-none cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-60`;
+    return `${base} pointer-events-none cursor-not-allowed border-[var(--color-card-border)] bg-[var(--color-card-bg)] text-[var(--color-text-muted)] opacity-60`;
   }
 
   if (role === "primary") {
-    return `${base} border-[#1E3A5F] bg-[#1E3A5F] text-white shadow-sm hover:bg-[#2D5F8A] hover:shadow`;
+    return `${base} border-[var(--color-button-primary-bg)] bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] shadow-sm hover:bg-[var(--color-button-primary-hover)] hover:shadow`;
   }
 
   if (role === "destructive") {
@@ -44,12 +44,12 @@ export function getButtonClass(role: ButtonRole, options: ButtonClassOptions = {
   }
 
   if (role === "ghost") {
-    return `${base} border-transparent bg-transparent text-slate-700 hover:bg-slate-100`;
+    return `${base} border-transparent bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]`;
   }
 
   if (role === "link") {
-    return `inline-flex items-center justify-center text-sm font-medium text-slate-700 underline-offset-4 hover:underline`;
+    return `inline-flex items-center justify-center text-sm font-medium text-[var(--color-text-secondary)] underline-offset-4 hover:underline`;
   }
 
-  return `${base} border-slate-300 bg-white text-slate-700 hover:bg-slate-50`;
+  return `${base} border-[var(--color-card-border)] bg-[var(--color-card-bg)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]`;
 }

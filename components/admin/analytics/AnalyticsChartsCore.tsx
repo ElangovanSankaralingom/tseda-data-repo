@@ -10,22 +10,17 @@ import {
 import { useCountUp } from "@/hooks/useCountUp";
 import { formatNumber } from "@/lib/i18n/locale";
 import { compare } from "@/lib/analytics/compare";
+import { CATEGORY_REGISTRY, type CategorySlug } from "@/data/categoryRegistry";
 
 export function pct(n: number, total: number) {
   if (total === 0) return 0;
   return Math.round((n / total) * 100);
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  "fdp-attended": "#3B82F6",
-  "fdp-conducted": "#8B5CF6",
-  "case-studies": "#F59E0B",
-  "guest-lectures": "#10B981",
-  workshops: "#EF4444",
-};
-
+/** Derive chart hex color from the category registry — single source of truth. */
 export function catColor(slug: string) {
-  return CATEGORY_COLORS[slug] ?? "#64748B";
+  const config = CATEGORY_REGISTRY[slug as CategorySlug];
+  return config?.color.chartHex ?? "#64748B";
 }
 
 export function AnimatedCount({ value, suffix }: { value: number; suffix?: string }) {
@@ -51,7 +46,7 @@ export function ComparisonBadge({ current, previous }: { current: number; previo
   return (
     <span
       className={`flex items-center gap-0.5 text-xs font-medium ${
-        isUp ? "text-emerald-600" : "text-red-500"
+        isUp ? "text-emerald-400" : "text-red-500"
       }`}
     >
       {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
@@ -89,7 +84,7 @@ export const MetricCard = memo(function MetricCard({
 }: MetricCardProps) {
   return (
     <div
-      className={`group rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up ${accent} ${hoverRing} stagger-${stagger}`}
+      className={`group rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up ${accent} ${hoverRing} stagger-${stagger}`}
     >
       <div
         className={`flex size-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 ${iconBg}`}

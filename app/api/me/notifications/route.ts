@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getNotifications } from "@/lib/confirmations/notificationStore";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -22,12 +22,15 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const notifications = await getNotifications(email);
-  return NextResponse.json({ notifications });
+  return NextResponse.json(
+    { notifications },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }

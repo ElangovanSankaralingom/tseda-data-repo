@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { cachedApiSuccess, apiError, apiForbidden, apiUnauthorized } from "@/lib/api/apiResponse";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getActionHistory } from "@/lib/admin/actionHistory";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
@@ -33,10 +33,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return apiError(appError.message, { status: 429 });
-    }
-    throw error;
+    return apiError(appError.message, { status: httpStatusForCode(appError.code) });
   }
 
   const url = new URL(request.url);

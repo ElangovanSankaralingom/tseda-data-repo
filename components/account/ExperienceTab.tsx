@@ -90,16 +90,16 @@ export default function ExperienceTab({
         subtitle="Calculated from joining date minus LOP. Updates automatically."
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-border p-4">
-            <div className="text-xs text-muted-foreground">TCE Experience (after LOP)</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-4">
+            <div className="text-xs text-[var(--color-text-muted)]">TCE Experience (after LOP)</div>
             <div className="mt-1 text-lg font-semibold">{formatYMD(totals.tce)}</div>
           </div>
-          <div className="rounded-xl border border-border p-4">
-            <div className="text-xs text-muted-foreground">Academic Total</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-4">
+            <div className="text-xs text-[var(--color-text-muted)]">Academic Total</div>
             <div className="mt-1 text-lg font-semibold">{formatYMD(totals.academicTotal)}</div>
           </div>
-          <div className="rounded-xl border border-border p-4">
-            <div className="text-xs text-muted-foreground">Overall Total</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-4">
+            <div className="text-xs text-[var(--color-text-muted)]">Overall Total</div>
             <div className="mt-1 text-lg font-semibold">{formatYMD(totals.overallTotal)}</div>
           </div>
         </div>
@@ -121,14 +121,14 @@ export default function ExperienceTab({
 
         <div className="mt-4 space-y-3">
           {exp.lopPeriods.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No LOP periods added.</div>
+            <div className="text-sm text-[var(--color-text-muted)]">No LOP periods added.</div>
           ) : null}
 
           {exp.lopPeriods.map((lop) => {
             const duration =
               rangeValid(lop.startDate, lop.endDate) ? formatYMD(durationInclusive(lop.startDate, lop.endDate)) : "";
             return (
-              <div key={lop.id} className="rounded-xl border border-border p-3">
+              <div key={lop.id} className="rounded-xl border border-[var(--color-glass-border)] p-3">
                 <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                   <Field
                     label={t("account.startDate")}
@@ -167,7 +167,7 @@ export default function ExperienceTab({
                   </MiniButton>
                 </div>
                 {shouldShowError(`lop.${lop.id}`) && errors[`lop.${lop.id}`] ? (
-                  <div className="mt-2 text-xs text-red-600">{errors[`lop.${lop.id}`]}</div>
+                  <div className="mt-2 text-xs text-red-400">{errors[`lop.${lop.id}`]}</div>
                 ) : null}
                 <div className="mt-3 flex justify-end">
                   {experienceDirty ? (
@@ -210,7 +210,7 @@ export default function ExperienceTab({
 
         <div className="mt-4 space-y-3">
           {exp.academicOutsideTCE.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No entries.</div>
+            <div className="text-sm text-[var(--color-text-muted)]">No entries.</div>
           ) : null}
 
           {exp.academicOutsideTCE.map((a) => {
@@ -218,7 +218,7 @@ export default function ExperienceTab({
               rangeValid(a.startDate, a.endDate) ? formatYMD(durationInclusive(a.startDate, a.endDate)) : "";
 
             return (
-              <div key={a.id} className="rounded-xl border border-border p-3 space-y-3">
+              <div key={a.id} className="rounded-xl border border-[var(--color-glass-border)] p-3 space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field
                     label={t("account.institution")}
@@ -236,7 +236,7 @@ export default function ExperienceTab({
                           ),
                         }))
                       }
-                      className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--color-glass-border)] px-3 py-2 text-sm"
                     />
                   </Field>
 
@@ -315,7 +315,7 @@ export default function ExperienceTab({
                   </MiniButton>
                 </div>
 
-                {shouldShowError(`cross.${a.id}`) && errors[`cross.${a.id}`] ? <div className="text-xs text-red-600">{errors[`cross.${a.id}`]}</div> : null}
+                {shouldShowError(`cross.${a.id}`) && errors[`cross.${a.id}`] ? <div className="text-xs text-red-400">{errors[`cross.${a.id}`]}</div> : null}
               </div>
             );
           })}
@@ -340,14 +340,14 @@ export default function ExperienceTab({
         </div>
 
         <div className="mt-4 space-y-3">
-          {exp.industry.length === 0 ? <div className="text-sm text-muted-foreground">No entries.</div> : null}
+          {exp.industry.length === 0 ? <div className="text-sm text-[var(--color-text-muted)]">No entries.</div> : null}
 
           {exp.industry.map((x) => {
             const duration =
               rangeValid(x.startDate, x.endDate) ? formatYMD(durationInclusive(x.startDate, x.endDate)) : "";
 
             return (
-              <div key={x.id} className="rounded-xl border border-border p-3 space-y-3">
+              <div key={x.id} className="rounded-xl border border-[var(--color-glass-border)] p-3 space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label={t("account.companyOrganisation")} error={shouldShowError(`in.org.${x.id}`) ? errors[`in.org.${x.id}`] : undefined}>
                     <input
@@ -358,7 +358,7 @@ export default function ExperienceTab({
                           industry: e.industry.map((it) => (it.id === x.id ? { ...it, organization: ev.target.value } : it)),
                         }))
                       }
-                      className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--color-glass-border)] px-3 py-2 text-sm"
                     />
                   </Field>
 
@@ -373,7 +373,7 @@ export default function ExperienceTab({
                       }
                       className={cx(
                         "w-full rounded-lg border px-3 py-2 text-sm",
-                        shouldShowError(`in.role.${x.id}`) && errors[`in.role.${x.id}`] ? "border-red-300" : "border-border"
+                        shouldShowError(`in.role.${x.id}`) && errors[`in.role.${x.id}`] ? "border-red-300" : "border-[var(--color-glass-border)]"
                       )}
                     />
                   </Field>
@@ -447,7 +447,7 @@ export default function ExperienceTab({
                   </MiniButton>
                 </div>
 
-                {shouldShowError(`cross.${x.id}`) && errors[`cross.${x.id}`] ? <div className="text-xs text-red-600">{errors[`cross.${x.id}`]}</div> : null}
+                {shouldShowError(`cross.${x.id}`) && errors[`cross.${x.id}`] ? <div className="text-xs text-red-400">{errors[`cross.${x.id}`]}</div> : null}
               </div>
             );
           })}
@@ -456,16 +456,16 @@ export default function ExperienceTab({
 
       <SectionCard title={t("account.totals")} subtitle={t("account.totalsSubtitle")}>
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-border p-4">
-            <div className="text-xs text-muted-foreground">Academic Outside TCE</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-4">
+            <div className="text-xs text-[var(--color-text-muted)]">Academic Outside TCE</div>
             <div className="mt-1 text-lg font-semibold">{formatYMD(totals.academicOutside)}</div>
           </div>
-          <div className="rounded-xl border border-border p-4">
-            <div className="text-xs text-muted-foreground">Industry Total</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-4">
+            <div className="text-xs text-[var(--color-text-muted)]">Industry Total</div>
             <div className="mt-1 text-lg font-semibold">{formatYMD(totals.industryTotal)}</div>
           </div>
-          <div className="rounded-xl border border-border p-4">
-            <div className="text-xs text-muted-foreground">Overall Total</div>
+          <div className="rounded-xl border border-[var(--color-glass-border)] p-4">
+            <div className="text-xs text-[var(--color-text-muted)]">Overall Total</div>
             <div className="mt-1 text-lg font-semibold">{formatYMD(totals.overallTotal)}</div>
           </div>
         </div>

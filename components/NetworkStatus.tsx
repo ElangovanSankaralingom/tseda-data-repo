@@ -23,7 +23,7 @@ export default function NetworkStatus() {
   if (online) return null;
 
   return (
-    <div className="fixed bottom-4 inset-x-4 z-50 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-800 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md">
+    <div className="fixed bottom-4 inset-x-4 z-50 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 backdrop-blur-xl px-4 py-2.5 text-sm font-medium text-red-400 shadow-lg shadow-black/20 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md animate-slide-in-right">
       <WifiOff className="size-4 shrink-0" />
       {SYSTEM.offline}
     </div>

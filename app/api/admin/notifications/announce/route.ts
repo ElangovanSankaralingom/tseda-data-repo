@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { validateCsrf } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canAccessSettings } from "@/lib/admin/roles";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { listUsers } from "@/lib/admin/integrity";
 import { addNotificationForAllUsers } from "@/lib/confirmations/notificationStore";
@@ -10,6 +11,8 @@ import { assertActionPayload } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function POST(request: Request) {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || !canAccessSettings(email)) {
@@ -25,10 +28,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const body = (await request.json()) as { title?: string; message?: string };

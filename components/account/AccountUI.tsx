@@ -13,10 +13,10 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-[var(--color-card-bg)]/70 p-5">
+    <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5">
       <div>
         <h2 className="text-base font-semibold">{title}</h2>
-        {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 text-sm text-[var(--color-text-muted)]">{subtitle}</p> : null}
       </div>
       <div className="mt-4">{children}</div>
     </div>
@@ -40,13 +40,13 @@ export function Field({
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={fieldId} className="text-sm font-medium">{label}</label>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+        <label htmlFor={fieldId} className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</label>
+        {hint ? <span className="text-xs text-[var(--color-text-muted)]">{hint}</span> : null}
       </div>
       {isValidElement(children)
         ? cloneElement(children, { id: fieldId } as Record<string, unknown>)
         : children}
-      {error ? <div className="text-xs text-red-600">{error}</div> : null}
+      {error ? <div className="text-xs text-red-400">{error}</div> : null}
     </div>
   );
 }
@@ -86,8 +86,8 @@ export function MiniButton({
 export function ProgressBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <div className="h-2 w-full rounded-full bg-muted overflow-hidden border border-border">
-      <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
+    <div className="h-2 w-full rounded-full bg-[var(--color-glass-bg)] overflow-hidden border border-[var(--color-glass-border)]">
+      <div className="h-full bg-[var(--color-primary)] transition-all duration-300" style={{ width: `${pct}%` }} />
     </div>
   );
 }

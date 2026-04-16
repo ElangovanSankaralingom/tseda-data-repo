@@ -25,9 +25,9 @@ export default function Field({ label, error, hint, required, children }: FieldP
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={fieldId} className="text-sm font-medium text-[var(--color-text-primary)]">
+        <label htmlFor={fieldId} className="text-sm font-medium text-[var(--color-text-secondary)]">
           {label}
-          {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
+          {required && <span className="ml-0.5 text-[var(--color-primary)]" aria-hidden="true">*</span>}
         </label>
         {hint ? <span id={hintId} className="text-xs text-[var(--color-text-secondary)]">{hint}</span> : null}
       </div>
@@ -36,7 +36,7 @@ export default function Field({ label, error, hint, required, children }: FieldP
         : isValidElement(children)
           ? cloneElement(children, { id: fieldId } as Record<string, unknown>)
           : children}
-      {error ? <div id={errorId} className="text-xs text-red-600" role="alert">{error}</div> : null}
+      {error ? <div id={errorId} className="text-xs text-red-400" role="alert">{error}</div> : null}
     </div>
   );
 }

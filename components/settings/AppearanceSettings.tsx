@@ -9,21 +9,20 @@ import type { Language } from "@/lib/i18n";
 const PALETTE_OPTIONS: readonly {
   id: ColorPalette;
   color: string;
-  short: string;
+  labelKey: string;
 }[] = [
-  { id: "ocean-blue", color: "#1E3A5F", short: "Ocean" },
-  { id: "forest-green", color: "#1B4332", short: "Forest" },
-  { id: "royal-purple", color: "#4A1D6A", short: "Royal" },
-  { id: "sunset-warm", color: "#8B3A14", short: "Sunset" },
-  { id: "rose-pink", color: "#9B1B5E", short: "Rose" },
+  { id: "midnight-lime", color: "#84CC16", labelKey: "appearance.paletteMidnightLime" as const },
+  { id: "deep-ocean", color: "#06B6D4", labelKey: "appearance.paletteDeepOcean" as const },
+  { id: "carbon-violet", color: "#8B5CF6", labelKey: "appearance.paletteCarbonViolet" as const },
+  { id: "obsidian-amber", color: "#F59E0B", labelKey: "appearance.paletteObsidianAmber" as const },
 ];
 
 function ThemePreview() {
   return (
-    <div className="rounded-xl overflow-hidden border border-[var(--color-card-border)]">
+    <div className="rounded-xl overflow-hidden border border-[var(--color-glass-border)]">
       <div
-        className="h-10 flex items-center px-4 border-b border-[var(--color-card-border)]/50"
-        style={{ backgroundColor: `color-mix(in srgb, var(--color-header-tint) 40%, var(--color-card-bg) 60%)` }}
+        className="h-10 flex items-center px-4 border-b border-[var(--color-glass-border)]"
+        style={{ backgroundColor: `color-mix(in srgb, var(--color-header-tint) 40%, var(--color-glass-bg) 60%)` }}
       >
         <div className="flex gap-1.5">
           <div className="size-2 rounded-full bg-[var(--color-text-muted)]/30" />
@@ -33,11 +32,11 @@ function ThemePreview() {
         <span className="text-xs text-[var(--color-text-primary)] ml-3 font-medium opacity-70">T&apos;SEDA</span>
       </div>
       <div className="p-4 flex gap-2.5 bg-[var(--color-body-bg)]">
-        <div className="flex-1 rounded-lg p-3 border border-[var(--color-card-border)] bg-[var(--color-card-bg)]">
+        <div className="flex-1 rounded-lg p-3 border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)]">
           <div className="w-3/5 h-2 rounded bg-[var(--color-text-primary)] opacity-15 mb-2" />
           <div className="w-2/5 h-1.5 rounded bg-[var(--color-text-primary)] opacity-[0.08]" />
         </div>
-        <div className="flex-1 rounded-lg p-3 border border-[var(--color-card-border)] bg-[var(--color-card-bg)]">
+        <div className="flex-1 rounded-lg p-3 border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)]">
           <div className="w-1/2 h-2 rounded bg-[var(--color-text-primary)] opacity-15 mb-2" />
           <div className="w-3/4 h-1.5 rounded bg-[var(--color-text-primary)] opacity-[0.08]" />
         </div>
@@ -61,7 +60,7 @@ export default function AppearanceSettings() {
 
   function handleTheme(target: "light" | "dark") {
     if (target === "light") {
-      setMode(palette === "ocean-blue" ? "light" : "color");
+      setMode(palette === "midnight-lime" ? "light" : "color");
     } else {
       setMode("dark");
     }
@@ -91,11 +90,11 @@ export default function AppearanceSettings() {
             className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
               !isDark
                 ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:border-[var(--color-input-border)]"
+                : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
             }`}
           >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-[#f8fafc]">
-              <Sun className="size-4 text-[#64748b]" />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]">
+              <Sun className="size-4 text-[var(--color-text-muted)]" />
             </div>
             <span className="text-sm font-medium text-[var(--color-text-primary)]">
               {t("appearance.light")}
@@ -107,11 +106,11 @@ export default function AppearanceSettings() {
             className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
               isDark
                 ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:border-[var(--color-input-border)]"
+                : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
             }`}
           >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#334155] bg-[#1e293b]">
-              <Moon className="size-4 text-[#94a3b8]" />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]">
+              <Moon className="size-4 text-[var(--color-text-muted)]" />
             </div>
             <span className="text-sm font-medium text-[var(--color-text-primary)]">
               {t("appearance.dark")}
@@ -139,7 +138,7 @@ export default function AppearanceSettings() {
                 className={`flex items-center gap-2 rounded-full px-4 py-2.5 transition-all duration-200 cursor-pointer ${
                   selected
                     ? "border-2 bg-[var(--color-primary-muted)]"
-                    : "border border-[var(--color-card-border)] hover:border-[var(--color-input-border)]"
+                    : "border border-[var(--color-glass-border)] hover:border-[var(--color-text-muted)]"
                 }`}
                 style={selected ? { borderColor: p.color } : undefined}
               >
@@ -148,7 +147,7 @@ export default function AppearanceSettings() {
                   style={{ backgroundColor: p.color }}
                 />
                 <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                  {p.short}
+                  {t(p.labelKey as "appearance.paletteMidnightLime")}
                 </span>
               </button>
             );
@@ -165,7 +164,7 @@ export default function AppearanceSettings() {
       </section>
 
       {/* Divider */}
-      <div className="border-t border-[var(--color-divider)]" />
+      <div className="h-px bg-gradient-to-r from-transparent via-[var(--color-glass-border)] to-transparent" />
 
       {/* Language */}
       <section>
@@ -177,9 +176,9 @@ export default function AppearanceSettings() {
         </p>
         <div className="flex gap-2.5">
           {([
-            { key: "en" as Language, char: "EN", name: "English", sub: "Default" },
-            { key: "ta" as Language, char: "\u0BA4", name: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD", sub: "Tamil" },
-          ]).map(({ key, char, name, sub }) => {
+            { key: "en" as Language, char: "EN", nameKey: "appearance.english" as const, subKey: "appearance.default" as const },
+            { key: "ta" as Language, char: "\u0BA4", nameKey: "appearance.tamil" as const, subKey: null },
+          ]).map(({ key, char, nameKey, subKey }) => {
             const selected = language === key;
             return (
               <button
@@ -189,15 +188,15 @@ export default function AppearanceSettings() {
                 className={`flex flex-1 items-center gap-3 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
                   selected
                     ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                    : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] hover:border-[var(--color-input-border)]"
+                    : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
                 }`}
               >
                 <div className="flex size-8 shrink-0 items-center justify-center text-lg font-medium text-[var(--color-text-primary)]">
                   {char}
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-medium text-[var(--color-text-primary)]">{name}</div>
-                  <div className="text-xs text-[var(--color-text-secondary)]">{sub}</div>
+                  <div className="text-sm font-medium text-[var(--color-text-primary)]">{t(nameKey)}</div>
+                  {subKey && <div className="text-xs text-[var(--color-text-secondary)]">{t(subKey)}</div>}
                 </div>
               </button>
             );

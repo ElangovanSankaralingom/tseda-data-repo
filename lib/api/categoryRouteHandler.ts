@@ -87,6 +87,9 @@ function finishResponse(
 // GET — list entries for category (with pagination)
 // ---------------------------------------------------------------------------
 
+/**
+ * List entries for a category with pagination support.
+ */
 export async function handleCategoryGet(
   _req: NextRequest | Request,
   categoryKey: string,
@@ -145,6 +148,9 @@ export async function handleCategoryGet(
 // POST — create entry for category
 // ---------------------------------------------------------------------------
 
+/**
+ * Create or update an entry for a category. Persists entry data and fields.
+ */
 export async function handleCategoryPost(
   request: NextRequest | Request,
   categoryKey: string,
@@ -245,14 +251,8 @@ export async function handleCategoryPost(
 // ---------------------------------------------------------------------------
 
 /**
- * Supported patch actions (sent via body.action):
- * - undefined / "save": Regular field update (merge incoming fields into existing)
- * - "generate": Transition DRAFT → GENERATED (commit / generate PDF)
- * - "finalise": Mark entry as finalized (no-op if already finalized)
- * - "request_edit": Request edit on finalized entry
- * - "request_delete": Request deletion on finalized entry
- * - "cancel_request_edit": Cancel a pending edit request
- * - "cancel_request_delete": Cancel a pending delete request
+ * Update entry with action dispatch (save, generate, finalise, request actions, etc).
+ * Supports: save, generate, finalise, request_edit, request_delete, cancel_request_edit, cancel_request_delete, cancel_edit_grant.
  */
 export async function handleCategoryPatch(
   request: NextRequest | Request,
@@ -387,6 +387,9 @@ export async function handleCategoryPatch(
 // DELETE — delete entry for category
 // ---------------------------------------------------------------------------
 
+/**
+ * Delete an entry from a category. Checks editability before removal.
+ */
 export async function handleCategoryDelete(
   request: NextRequest | Request,
   categoryKey: string,

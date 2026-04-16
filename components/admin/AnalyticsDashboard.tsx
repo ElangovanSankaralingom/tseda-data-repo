@@ -251,7 +251,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 range === r.key
                   ? "bg-[var(--color-button-primary-bg)] text-white"
-                  : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-card-border)]"
+                  : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-glass-border)]"
               }`}
             >
               {r.label}
@@ -265,7 +265,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-1.5 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-50"
           >
             <RefreshCw className={`size-3 ${refreshing ? "animate-spin" : ""}`} />
             {t("adminAnalytics.refresh")}
@@ -282,7 +282,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           accent="border-t-2 border-t-blue-400"
           iconBg="bg-blue-500/15"
           iconColor="text-blue-500"
-          hoverRing="hover:ring-2 hover:ring-blue-200/50"
+          hoverRing="hover:ring-2 hover:ring-blue-500/20"
           current={totalEntries}
           previous={prevTotalEntries}
           stagger={1}
@@ -294,7 +294,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           accent="border-t-2 border-t-emerald-400"
           iconBg="bg-emerald-500/15"
           iconColor="text-emerald-500"
-          hoverRing="hover:ring-2 hover:ring-emerald-200/50"
+          hoverRing="hover:ring-2 hover:ring-emerald-500/20"
           current={activeUsers}
           previous={prevActiveUsers}
           stagger={2}
@@ -307,7 +307,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           accent="border-t-2 border-t-amber-400"
           iconBg="bg-amber-500/15"
           iconColor="text-amber-500"
-          hoverRing="hover:ring-2 hover:ring-amber-200/50"
+          hoverRing="hover:ring-2 hover:ring-amber-500/20"
           current={completionRate}
           previous={prevCompletionRate}
           stagger={3}
@@ -319,7 +319,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           accent="border-t-2 border-t-yellow-400"
           iconBg="bg-yellow-500/15"
           iconColor="text-yellow-500"
-          hoverRing="hover:ring-2 hover:ring-yellow-200/50"
+          hoverRing="hover:ring-2 hover:ring-yellow-500/20"
           current={snapshot.streaks.totalWins}
           previous={snapshot.streaks.totalWins}
           stagger={4}
@@ -331,7 +331,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           accent="border-t-2 border-t-purple-400"
           iconBg="bg-purple-500/15"
           iconColor="text-purple-500"
-          hoverRing="hover:ring-2 hover:ring-purple-200/50"
+          hoverRing="hover:ring-2 hover:ring-purple-500/20"
           current={avgPerUser}
           previous={prevAvgPerUser}
           stagger={5}
@@ -343,7 +343,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           accent="border-t-2 border-t-rose-400"
           iconBg="bg-rose-500/15"
           iconColor="text-rose-500"
-          hoverRing="hover:ring-2 hover:ring-rose-200/50"
+          hoverRing="hover:ring-2 hover:ring-rose-500/20"
           current={pendingRequests}
           previous={pendingRequests}
           stagger={6}
@@ -355,7 +355,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           accent="border-t-2 border-t-orange-400"
           iconBg="bg-orange-500/15"
           iconColor="text-orange-500"
-          hoverRing="hover:ring-2 hover:ring-orange-200/50"
+          hoverRing="hover:ring-2 hover:ring-orange-500/20"
           current={snapshot.stalePdfCount}
           previous={snapshot.stalePdfCount}
           stagger={7}
@@ -363,7 +363,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Entry Trends */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-2">
+      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-2">
         <SH title={t("adminAnalytics.entryActivity")} description={t("adminAnalytics.entryActivityDesc")} />
         <AreaChart data={trendData} previousData={prevTrendData} />
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-[var(--color-text-secondary)]">
@@ -380,7 +380,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
       {/* Category Breakdown */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-3">
+        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-3">
           <SH title={t("adminAnalytics.byCategoryChart")} description={t("adminAnalytics.entryDistribution")} />
           <DonutChart
             segments={categoryData.map((c) => ({
@@ -391,7 +391,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             total={totalEntries}
           />
         </div>
-        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-4">
+        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-4">
           <SH title={t("adminAnalytics.categoryComparison")} description={t("adminAnalytics.performanceByCategory")} />
           <div className="rounded-lg border border-[var(--color-divider)]">
             {categoryData
@@ -413,13 +413,13 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Leaderboard */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-5">
+      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-5">
         <SH title={t("adminAnalytics.topContributors")} description={t("adminAnalytics.topContributorsDesc")} />
         <Leaderboard users={snapshot.users} />
       </div>
 
       {/* Heatmap */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-6">
+      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-6">
         <SH title={t("adminAnalytics.whenPeopleWork")} description={t("adminAnalytics.whenPeopleWorkDesc")} />
         <Heatmap entries={snapshot.entries} />
       </div>
@@ -427,7 +427,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       {/* Streak + Edit Requests */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Streak funnel */}
-        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-7">
+        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-7">
           <SH title={t("adminAnalytics.streakInsights")} description={t("adminAnalytics.streakInsightsDesc")} />
           <div className="grid gap-6 sm:grid-cols-2">
             <StreakFunnel
@@ -445,7 +445,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
                   <div key={u.email} className="flex items-center gap-2 text-sm">
                     <span className="w-4 text-xs font-bold text-[var(--color-text-secondary)]">#{i + 1}</span>
                     <span className="flex-1 truncate text-[var(--color-text-secondary)]">{u.name}</span>
-                    <span className="font-semibold text-amber-600">{u.wins}</span>
+                    <span className="font-semibold text-amber-400">{u.wins}</span>
                   </div>
                 ))}
                 {snapshot.streaks.byUser.length === 0 && (
@@ -457,7 +457,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         </div>
 
         {/* Edit request metrics */}
-        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
+        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-8">
           <SH title={t("adminAnalytics.editRequests")} description={t("adminAnalytics.editRequestsDesc")} />
           <div className="grid gap-4 grid-cols-3">
             <div className="text-center">
@@ -496,7 +496,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Data Health Summary */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
+      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-8">
         <SH title={t("adminAnalytics.systemHealth")} description={t("adminAnalytics.systemHealthDesc")} />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Link

@@ -3,21 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-
-function formatRelative(iso?: string): string | null {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return date.toLocaleDateString();
-}
+import { formatRelativeTime } from "@/lib/i18n/relativeTime";
 
 export default function EditorMetadataFooter({
   entryId,
@@ -32,14 +18,14 @@ export default function EditorMetadataFooter({
   streakEligible?: boolean;
   editWindowExpires?: string;
 }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   const items: string[] = [];
   if (entryId) items.push(`ID: ${entryId.slice(0, 8)}`);
-  const created = formatRelative(createdAt);
+  const created = formatRelativeTime(createdAt, language);
   if (created) items.push(`${t('entry.created')}: ${created}`);
-  const updated = formatRelative(updatedAt);
+  const updated = formatRelativeTime(updatedAt, language);
   if (updated) items.push(`${t('entry.lastUpdated')}: ${updated}`);
 
   if (items.length === 0) return null;

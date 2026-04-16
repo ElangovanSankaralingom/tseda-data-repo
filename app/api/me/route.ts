@@ -9,7 +9,7 @@ import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
 import { assertActionPayload } from "@/lib/security/limits";
 import { apiUnauthorized } from "@/lib/api/apiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
 type AnyObj = Record<string, unknown>;
 
@@ -109,10 +109,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const profile = readProfile(email);
@@ -154,10 +154,10 @@ export async function PUT(req: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   let patch: AnyObj;

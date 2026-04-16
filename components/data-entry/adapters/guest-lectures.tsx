@@ -208,7 +208,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
         </Field>
 
         <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
-          <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
+          <div className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
         </Field>
 
         <Field label={fieldLabel('topicOfLecture')} error={submitted ? errors.topicOfLecture : undefined}>
@@ -264,8 +264,8 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
         </Field>
       </div>
 
-      <div className="mt-5 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-4 py-3 text-sm text-muted-foreground">
-        {t('entry.coordinator')} <span className="font-medium text-foreground">{userDisplayName || "-"}</span>
+      <div className="mt-5 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
+        {t('entry.coordinator')} <span className="font-medium text-[var(--color-text-primary)]">{userDisplayName || "-"}</span>
       </div>
 
       <div className="mt-5">
@@ -340,7 +340,7 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
       </div>
 
       <div className="mt-5 space-y-4">
-        <p className="text-sm text-muted-foreground">{t('entry.streakEligibility')}</p>
+        <p className="text-sm text-[var(--color-text-muted)]">{t('entry.streakEligibility')}</p>
 
         {uploadsVisible ? (
           <>
@@ -572,7 +572,7 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
         }
         return (
           <>
-            {parts.length > 0 && <div className="text-xs text-muted-foreground">{parts.join(" • ")}</div>}
+            {parts.length > 0 && <div className="text-xs text-[var(--color-text-muted)]">{parts.join(" • ")}</div>}
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               {entry.permissionLetter.map((meta, i) => (
                 <a key={meta.storedPath} className="underline" href={meta.url} target="_blank" rel="noreferrer">

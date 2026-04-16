@@ -3,10 +3,12 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import {
   ClipboardList,
+  ArrowUpRight,
 } from "lucide-react";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
+import { CATEGORY_KEYS } from "@/lib/categories";
 import { getDashboardSummary } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
@@ -46,8 +48,8 @@ export default async function DashboardPage() {
   const streakActivated = toSafeCount(summary.totals.streakActivatedCount);
   const streakWins = toSafeCount(summary.totals.streakWinsCount);
   const totalEntries = toSafeCount(summary.totals.totalEntries);
-  const generatedCount = toSafeCount(summary.totals.generatedCount);
   const editRequestedCount = toSafeCount(summary.totals.editRequestedCount);
+  const draftCount = toSafeCount(summary.totals.draftCount);
 
   const hasAnyEntries = totalEntries > 0;
   const firstName = userName.split(/\s+/)[0] ?? userName;
@@ -55,9 +57,33 @@ export default async function DashboardPage() {
   const hour = new Date().getHours();
   const greetingKey = hour < 12 ? "greetingMorning" : hour < 17 ? "greetingAfternoon" : "greetingEvening";
 
+  // Build per-category summaries for the bento grid
+  const categories = CATEGORY_KEYS.map((slug) => {
+    const cat = summary.byCategory[slug];
+    return {
+      slug,
+      totalEntries: toSafeCount(cat?.totalEntries ?? 0),
+      draftCount: toSafeCount(cat?.draftCount ?? 0),
+      generatedCount: toSafeCount(cat?.generatedCount ?? 0),
+      editRequestedCount: toSafeCount(cat?.editRequestedCount ?? 0),
+      editGrantedCount: toSafeCount(cat?.editGrantedCount ?? 0),
+    };
+  });
+
+  // Recent entries for the activity sidebar
+  const recentEntries = (summary.recentEntries ?? []).slice(0, 6).map((row) => ({
+    id: row.id,
+    categoryKey: row.categoryKey,
+    categoryLabel: row.categoryLabel,
+    title: row.title,
+    status: String(row.status),
+    updatedAtISO: row.updatedAtISO,
+    route: row.route,
+  }));
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
+    <div className="relative space-y-8 animate-page-enter dot-grid-bg">
+      {/* ── Command Strip — dark hero bar ── */}
       <DashboardWelcome
         greetingKey={greetingKey}
         firstName={firstName}
@@ -65,18 +91,17 @@ export default async function DashboardPage() {
         streakActivated={streakActivated}
         streakWins={streakWins}
         hasAnyEntries={hasAnyEntries}
+        draftCount={draftCount}
+        editRequestedCount={editRequestedCount}
       />
 
-      {/* Empty state */}
+      {/* ── Content: Empty state or Bento grid ── */}
       {!hasAnyEntries ? (
         <DashboardEmptyState />
       ) : (
         <DashboardClient
-          streakActivated={streakActivated}
-          streakWins={streakWins}
-          totalEntries={totalEntries}
-          generatedCount={generatedCount}
-          editRequestedCount={editRequestedCount}
+          categories={categories}
+          recentEntries={recentEntries}
         />
       )}
     </div>
@@ -85,22 +110,35 @@ export default async function DashboardPage() {
 
 function DashboardEmptyState() {
   return (
-    <div className="rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-body-bg)] p-8 text-center animate-fade-in-up stagger-1">
-      <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)]">
-        <ClipboardList className="size-10 text-[var(--color-text-secondary)]" />
+    <div className="flex overflow-hidden rounded-2xl border border-dashed border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.25)] animate-card-lift">
+      {/* ── Thick left accent bar ── */}
+      <div className="w-1.5 shrink-0 bg-[var(--color-primary)] opacity-25" />
+
+      <div className="flex-1 p-8 sm:p-10">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+          {/* ── Left: Bright icon panel (white surface pop) ── */}
+          <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.07)] border border-[rgba(255,255,255,0.1)]">
+            <ClipboardList className="size-9 text-[rgba(255,255,255,0.25)]" />
+          </div>
+
+          {/* ── Right: Text + CTA ── */}
+          <div>
+            <p className="text-base font-bold text-[rgba(255,255,255,0.6)]">
+              No entries yet
+            </p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[rgba(255,255,255,0.2)]">
+              Start collecting data to build your streak
+            </p>
+            <Link
+              href={dataEntryHome()}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-button-primary-bg)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--color-button-primary-text)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+            >
+              Go to Data Entry
+              <ArrowUpRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
       </div>
-      <p className="mt-3 text-base font-medium text-[var(--color-text-secondary)]">
-        No entries yet
-      </p>
-      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-        Start collecting data to build your streak!
-      </p>
-      <Link
-        href={dataEntryHome()}
-        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[var(--color-primary-light)] hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
-      >
-        Go to Data Entry
-      </Link>
     </div>
   );
 }

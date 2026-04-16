@@ -11,7 +11,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isEntryActivated, isEntryWon } from "@/lib/streakProgress";
 import type { StreakProgressEntryLike } from "@/lib/streakProgress";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
 export async function GET(
   _request: Request,
@@ -38,10 +38,10 @@ export async function GET(
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const config = getCategoryConfig(category);

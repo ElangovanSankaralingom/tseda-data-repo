@@ -72,7 +72,7 @@ export default function CategoryEntryRecordCard({
                   <ActionButton role="primary" onClick={onEdit}>{t('entry.continue')}</ActionButton>
                 ) : null}
                 {onDelete ? (
-                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-500/10">
+                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-400 hover:bg-red-500/10">
                     {resolvedDeleteLabel}
                   </ActionButton>
                 ) : null}
@@ -88,7 +88,7 @@ export default function CategoryEntryRecordCard({
                   </ActionButton>
                 ) : null}
                 {onDelete ? (
-                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-700 hover:bg-red-500/10">
+                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-400 hover:bg-red-500/10">
                     {resolvedDeleteLabel}
                   </ActionButton>
                 ) : null}
@@ -142,7 +142,7 @@ export default function CategoryEntryRecordCard({
                   </ActionButton>
                 ) : null}
                 {confirmationStatus === "DELETE_REQUESTED" && requestDelete?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-red-500 hover:text-red-700 hover:bg-red-500/10 disabled:opacity-50">
+                  <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-red-500 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-50">
                     {requestInFlight ? t('entry.cancellingRequest') : t('entry.cancelDeleteRequest')}
                   </ActionButton>
                 ) : null}

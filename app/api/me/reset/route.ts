@@ -9,7 +9,7 @@ import { safeEmailDir } from "@/lib/userStore";
 import { PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
 const LEGACY_DATA_DIR = path.join(process.cwd(), "data");
 const MODERN_USERS_DIR = path.join(process.cwd(), ".data", "users");
@@ -115,10 +115,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   const modernEmailKey = safeEmailDir(email);

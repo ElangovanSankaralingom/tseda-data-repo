@@ -151,7 +151,7 @@ export default function AdminConfirmationsClient() {
   return (
     <div>
       {/* Tab Navigation */}
-      <div className="flex border-b border-[var(--color-card-border)] mb-6">
+      <div className="flex border-b border-[var(--color-glass-border)] mb-6">
         <button
           onClick={() => setActiveTab("pending")}
           className={`px-4 py-2 text-sm transition-colors ${
@@ -179,11 +179,11 @@ export default function AdminConfirmationsClient() {
       ) : (<>
       <SectionCard>
         {loading ? (
-          <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
+          <div className="text-sm text-[var(--color-text-muted)]">{t('common.loading')}</div>
         ) : rows.length === 0 ? (
           <div className="py-8 text-center">
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
-              <CheckCircle2 className="size-8 text-emerald-600" />
+              <CheckCircle2 className="size-8 text-emerald-400" />
             </div>
             <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t('common.noResults')}</p>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('entry.noEntries')}</p>
@@ -199,7 +199,7 @@ export default function AdminConfirmationsClient() {
               return (
                 <div
                   key={rowKey}
-                  className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:shadow-sm"
+                  className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/20"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     {/* Avatar + User Info */}
@@ -212,8 +212,8 @@ export default function AdminConfirmationsClient() {
                           <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{row.title}</span>
                           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                             isDeleteRequest
-                              ? "bg-red-500/15 text-red-700"
-                              : "bg-amber-500/15 text-amber-700"
+                              ? "bg-red-500/15 text-red-400"
+                              : "bg-amber-500/15 text-amber-400"
                           }`}>
                             {isDeleteRequest ? t('entry.requestDelete') : t('entry.requestEdit')}
                           </span>
@@ -321,7 +321,7 @@ export default function AdminConfirmationsClient() {
       </SectionCard>
 
       {error ? (
-        <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
+        <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           {error}
         </div>
       ) : null}

@@ -62,7 +62,7 @@ export function AreaChart({
         const y = padY + chartH - (v / maxVal) * chartH;
         return (
           <g key={i}>
-            <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="var(--color-card-border)" strokeWidth="1" />
+            <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="var(--color-glass-border)" strokeWidth="1" />
             <text x={padX - 6} y={y + 4} textAnchor="end" className="fill-[var(--color-text-muted)] text-[10px]">
               {v}
             </text>
@@ -217,7 +217,7 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
 
   function cellColor(count: number) {
     if (count === 0) return "bg-[var(--color-dropdown-hover)]";
-    if (count <= 2) return "bg-emerald-200";
+    if (count <= 2) return "bg-emerald-500/20";
     if (count <= 5) return "bg-emerald-400";
     if (count <= 10) return "bg-emerald-600";
     return "bg-emerald-800";
@@ -251,7 +251,7 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
       <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-secondary)]">
         <span>Less</span>
         <span className="size-3 rounded-sm bg-[var(--color-dropdown-hover)]" />
-        <span className="size-3 rounded-sm bg-emerald-200" />
+        <span className="size-3 rounded-sm bg-emerald-500/20" />
         <span className="size-3 rounded-sm bg-emerald-400" />
         <span className="size-3 rounded-sm bg-emerald-600" />
         <span className="size-3 rounded-sm bg-emerald-800" />

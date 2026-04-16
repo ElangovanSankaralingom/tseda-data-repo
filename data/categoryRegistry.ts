@@ -44,6 +44,8 @@ export type CategoryColor = {
   buttonBg: string;
   /** Dashboard CTA button hover: "hover:bg-blue-700" */
   buttonHover: string;
+  /** Raw hex for charts/graphs where Tailwind classes cannot be used */
+  chartHex: string;
 };
 
 export type CategoryConfig = {
@@ -82,6 +84,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       borderTop: "border-t-blue-500",
       buttonBg: "bg-blue-600",
       buttonHover: "hover:bg-blue-700",
+      chartHex: "#2563EB",
     },
     subtitle: "Record FDPs you attended with support amount and required supporting documents.",
     entryTitleField: "programName",
@@ -107,6 +110,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       borderTop: "border-t-emerald-500",
       buttonBg: "bg-emerald-600",
       buttonHover: "hover:bg-emerald-700",
+      chartHex: "#059669",
     },
     subtitle: "Capture FDPs conducted with coordinator details, dates, and required supporting documents.",
     entryTitleField: "eventName",
@@ -132,6 +136,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       borderTop: "border-t-amber-500",
       buttonBg: "bg-amber-600",
       buttonHover: "hover:bg-amber-700",
+      chartHex: "#D97706",
     },
     subtitle: "Maintain case study records with academic context, outcomes, and supporting material.",
     entryTitleField: "placeOfVisit",
@@ -157,6 +162,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       borderTop: "border-t-purple-500",
       buttonBg: "bg-purple-600",
       buttonHover: "hover:bg-purple-700",
+      chartHex: "#9333EA",
     },
     subtitle: "Record event details and supporting documents.",
     entryTitleField: "eventName",
@@ -182,6 +188,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       borderTop: "border-t-rose-500",
       buttonBg: "bg-rose-600",
       buttonHover: "hover:bg-rose-700",
+      chartHex: "#E11D48",
     },
     subtitle: "Record workshop details and supporting documents.",
     entryTitleField: "eventName",

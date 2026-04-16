@@ -12,7 +12,7 @@ import { daysAgo } from "@/lib/analytics/compare";
 import type { AnalyticsSnapshot, EntryDataPoint } from "@/lib/analytics/compute";
 import { getLatestBackupFile, listBackups } from "@/lib/backup/backupService";
 import { CATEGORY_LIST, getCategoryConfig } from "@/data/categoryRegistry";
-import { normalizeError } from "@/lib/errors";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getLastReport } from "@/lib/integrity/report";
 import { getScheduleStatus } from "@/lib/integrity/schedule";
@@ -65,10 +65,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const appError = normalizeError(error);
-    if (appError.code === "RATE_LIMITED") {
-      return NextResponse.json({ error: appError.message, code: appError.code }, { status: 429 });
-    }
-    throw error;
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 
   // Fetch everything in parallel — each source is independent

@@ -11,8 +11,8 @@ export interface UserPreferences {
 }
 
 const DEFAULTS: UserPreferences = {
-  themeMode: "light",
-  colorPalette: "ocean-blue",
+  themeMode: "dark",
+  colorPalette: "midnight-lime",
   language: "en",
 };
 

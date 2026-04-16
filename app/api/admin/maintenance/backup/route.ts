@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateCsrf } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canRunMaintenance } from "@/lib/admin/roles";
@@ -8,6 +9,8 @@ import { appendMaintenanceLog } from "@/lib/maintenance/log";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function POST(request: Request) {
+  const csrfError = validateCsrf(request);
+  if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || !canRunMaintenance(email)) {

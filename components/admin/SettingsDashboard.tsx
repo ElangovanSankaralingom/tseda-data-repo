@@ -273,7 +273,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("adminSettings.searchPlaceholder")}
             aria-label="Search settings"
-            className="h-9 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-input-bg)] pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
+            className="h-9 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
           {search && (
             <button
@@ -288,21 +288,21 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
         <div className="flex items-center gap-2">
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Download className="size-3.5" />
             {t("adminSettings.export")}
           </button>
           <button
             onClick={handleImport}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Upload className="size-3.5" />
             {t("adminSettings.import")}
           </button>
           <button
             onClick={() => setResetAllOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition-all hover:bg-red-500/10"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-red-400 shadow-sm transition-all hover:bg-red-500/10"
           >
             <RotateCcw className="size-3.5" />
             {t("adminSettings.resetAll")}
@@ -314,7 +314,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
         {/* Sidebar */}
         <nav aria-label="Settings categories" className="hidden lg:block">
-          <div className="sticky top-24 space-y-1 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-2 shadow-sm">
+          <div className="sticky top-24 space-y-1 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-2 shadow-sm">
             {CATEGORY_ORDER.map((cat) => {
               const Icon = CATEGORY_ICONS[cat];
               const meta = CATEGORY_META[cat];
@@ -337,7 +337,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                       isActive
                         ? "bg-white/20 text-white"
-                        : "bg-amber-500/15 text-amber-700"
+                        : "bg-amber-500/15 text-amber-400"
                     }`}>
                       {count}
                     </span>
@@ -397,7 +397,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             <div key={group} className="space-y-3">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{group}</h3>
-                <div className="h-px flex-1 bg-[var(--color-card-border)]" />
+                <div className="h-px flex-1 bg-[var(--color-glass-border)]" />
               </div>
               {items.map((s) => (
                 <SettingRow
@@ -411,7 +411,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           ))}
 
           {filteredSettings.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] bg-[var(--color-card-bg)] py-16 text-center">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm py-16 text-center">
               <Search className="size-8 text-[var(--color-text-muted)] mb-3" />
               <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminSettings.noSettingsFound")}</div>
               <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminSettings.tryDifferentSearch")}</div>
@@ -419,7 +419,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           )}
 
           {/* Changelog */}
-          <div className="border-t border-[var(--color-card-border)] pt-6">
+          <div className="border-t border-[var(--color-glass-border)] pt-6">
             <button
               onClick={() => { setShowChangelog(!showChangelog); }}
               className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-text-primary)] transition-colors"
@@ -436,7 +436,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                   changelog.slice(0, 15).map((entry, i) => (
                     <div
                       key={`${entry.key}-${entry.changedAt}-${i}`}
-                      className="flex items-start gap-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3 text-xs"
+                      className="flex items-start gap-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3 text-xs"
                     >
                       <Clock className="mt-0.5 size-3.5 shrink-0 text-[var(--color-text-secondary)]" />
                       <div className="min-w-0 flex-1">

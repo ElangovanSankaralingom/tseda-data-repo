@@ -104,34 +104,34 @@ export default function CertificateBlock({
   const canUploadAndSave = !busy && !!pendingFile;
 
   return (
-    <div className="rounded-xl border border-border p-3">
+    <div className="rounded-xl border border-[var(--color-glass-border)] p-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium">Certificate (mandatory)</div>
 
           {certificate ? (
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="mt-1 text-xs text-[var(--color-text-muted)]">
               <a className="underline" href={certificate.url} target="_blank">
                 {certificate.fileName}
               </a>{" "}
               • {new Date(certificate.uploadedAt).toLocaleString()}
             </div>
           ) : shouldShowError(certErrorKey) ? (
-            <div className="mt-1 text-xs text-red-600">{errors[certErrorKey] || "Certificate is mandatory."}</div>
+            <div className="mt-1 text-xs text-red-400">{errors[certErrorKey] || "Certificate is mandatory."}</div>
           ) : null}
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="mt-2 text-xs text-[var(--color-text-muted)]">
             {pendingFile ? `Selected: ${pendingFile.name}` : "Select a file to enable Upload & Save."}
           </div>
 
           {busy ? (
             <div className="mt-2 space-y-2">
               <ProgressBar value={progress} />
-              <div className="text-xs text-muted-foreground">{progress}% uploading…</div>
+              <div className="text-xs text-[var(--color-text-muted)]">{progress}% uploading…</div>
             </div>
           ) : null}
 
-          {localError ? <div className="mt-2 text-xs text-red-600">{localError}</div> : null}
+          {localError ? <div className="mt-2 text-xs text-red-400">{localError}</div> : null}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -143,10 +143,10 @@ export default function CertificateBlock({
 
           <label
             className={cx(
-              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm",
+              "inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-glass-border)] px-3 text-sm",
               busy
                 ? "pointer-events-none cursor-not-allowed opacity-60"
-                : "cursor-pointer transition hover:bg-muted"
+                : "cursor-pointer transition hover:bg-[var(--color-glass-hover)]"
             )}
           >
             Choose file

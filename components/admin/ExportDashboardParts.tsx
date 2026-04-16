@@ -25,15 +25,15 @@ const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const TEMPLATE_ICON_BG: Record<string, string> = {
-  CheckCircle: "bg-emerald-500/10 text-emerald-600",
-  BarChart3: "bg-blue-500/10 text-blue-600",
-  Calendar: "bg-violet-50 text-violet-600",
-  FileWarning: "bg-amber-500/10 text-amber-600",
+  CheckCircle: "bg-emerald-500/10 text-emerald-400",
+  BarChart3: "bg-blue-500/10 text-blue-400",
+  Calendar: "bg-violet-500/10 text-violet-400",
+  FileWarning: "bg-amber-500/10 text-amber-400",
 };
 
 const FORMAT_BADGE: Record<string, { bg: string; label: string }> = {
-  xlsx: { bg: "bg-emerald-500/15 text-emerald-700", label: "XLSX" },
-  csv: { bg: "bg-blue-500/15 text-blue-700", label: "CSV" },
+  xlsx: { bg: "bg-emerald-500/15 text-emerald-400", label: "XLSX" },
+  csv: { bg: "bg-blue-500/15 text-blue-400", label: "CSV" },
   json: { bg: "bg-violet-100 text-violet-700", label: "JSON" },
 };
 
@@ -100,7 +100,7 @@ export const TemplateCard = memo(function TemplateCard({
   const iconBg = TEMPLATE_ICON_BG[template.icon] ?? "bg-[var(--color-body-bg)] text-[var(--color-text-secondary)]";
 
   return (
-    <div className={`group rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}>
+    <div className={`group rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}>
       <div className="flex items-start gap-3">
         <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${iconBg} transition-transform duration-200 group-hover:scale-110`}>
           {icon}
@@ -117,7 +117,7 @@ export const TemplateCard = memo(function TemplateCard({
           type="button"
           disabled={running}
           onClick={() => onExport(template.id)}
-          className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-body-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {running ? (
             <ExportButtonRunning />
@@ -147,7 +147,7 @@ export function FormatSelector({ value, onChange }: { value: string; onChange: (
           className={`rounded-xl border p-4 text-left transition-all duration-200 ${
             value === fmt.key
               ? "border-[var(--color-text-primary)] bg-[var(--color-body-bg)] ring-2 ring-[var(--color-text-primary)]"
-              : "border-[var(--color-card-border)] hover:border-[var(--color-text-muted)]"
+              : "border-[var(--color-glass-border)] hover:border-[var(--color-text-muted)]"
           }`}
         >
           <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">

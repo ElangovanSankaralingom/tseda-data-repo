@@ -19,6 +19,7 @@ type StatCardProps = {
   hoverRing?: string;
   hoverDescription?: string;
   staggerClass?: string;
+  glowColor?: string;
 };
 
 function StatCard({
@@ -30,9 +31,9 @@ function StatCard({
   accent,
   iconColor,
   iconBg,
-  hoverRing,
   hoverDescription,
   staggerClass,
+  glowColor,
 }: StatCardProps) {
   const hasGradient = !!gradient;
   const displayValue = useCountUp(value);
@@ -41,60 +42,81 @@ function StatCard({
   return (
     <div
       className={cn(
-        "group rounded-xl p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg",
-        "animate-fade-in-up",
+        "group relative overflow-hidden rounded-2xl p-5 transition-all duration-500",
+        "animate-metric-reveal",
         staggerClass,
         hasGradient
           ? cn("border border-transparent text-white shadow-lg", gradient)
-          : "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-sm",
+          : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-xl shadow-sm",
         accent,
-        hoverRing
+        /* Hover — lift + glow */
+        !hasGradient && "hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/20 hover:border-[var(--color-primary)]/15"
       )}
     >
-      <div
-        className={cn(
-          "flex size-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110",
-          hasGradient ? "bg-white/20" : iconBg ?? "bg-[var(--color-dropdown-hover)]"
-        )}
-      >
-        <Icon
-          className={cn("size-5", hasGradient ? "text-white/80" : iconColor ?? "text-[var(--color-text-secondary)]")}
-        />
-      </div>
-      <div className="mt-3">
-        <div className="text-3xl font-bold tabular-nums">
-          {formatNumber(displayValue, language)}
-        </div>
+      {/* Ambient glow on hover */}
+      {!hasGradient && (
         <div
           className={cn(
-            "mt-0.5 text-xs font-medium uppercase tracking-wide",
-            hasGradient ? "text-white/80" : "text-[var(--color-text-secondary)]"
+            "pointer-events-none absolute -right-8 -top-8 size-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100",
+            glowColor ?? "bg-[var(--color-primary)]/10"
+          )}
+        />
+      )}
+
+      <div className="relative">
+        {/* Icon */}
+        <div
+          className={cn(
+            "flex size-11 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg",
+            hasGradient ? "bg-white/20" : iconBg ?? "bg-[var(--color-glass-hover)]",
+            !hasGradient && "group-hover:shadow-black/10"
           )}
         >
-          {label}
+          <Icon
+            className={cn("size-5 transition-colors duration-300", hasGradient ? "text-white/80" : iconColor ?? "text-[var(--color-primary)]")}
+          />
         </div>
+
+        {/* Metric */}
+        <div className="mt-4">
+          <div className={cn("text-4xl font-bold tabular-nums tracking-tight", hasGradient ? "" : "text-[var(--color-text-primary)]")}>
+            {formatNumber(displayValue, language)}
+          </div>
+          <div
+            className={cn(
+              "mt-1 text-xs font-semibold uppercase tracking-wider",
+              hasGradient ? "text-white/80" : "text-[var(--color-text-muted)]"
+            )}
+          >
+            {label}
+          </div>
+        </div>
+
+        {/* Description */}
+        {description && (
+          <p
+            className={cn(
+              "mt-3 text-xs leading-relaxed",
+              hasGradient ? "text-white/70" : "text-[var(--color-text-secondary)]"
+            )}
+          >
+            {description}
+          </p>
+        )}
+
+        {/* Hover reveal description */}
+        {hoverDescription && (
+          <p
+            className={cn(
+              "mt-0 max-h-0 overflow-hidden text-xs italic leading-relaxed opacity-0 transition-all duration-300",
+              "group-hover:mt-3 group-hover:max-h-16 group-hover:opacity-100",
+              hasGradient ? "text-white/60" : "text-[var(--color-text-secondary)]"
+            )}
+          >
+            {hoverDescription}
+          </p>
+        )}
       </div>
-      {description && (
-        <p
-          className={cn(
-            "mt-2 text-xs",
-            hasGradient ? "text-white/70" : "text-[var(--color-text-secondary)]"
-          )}
-        >
-          {description}
-        </p>
-      )}
-      {hoverDescription && (
-        <p
-          className={cn(
-            "mt-1 max-h-0 overflow-hidden text-xs italic opacity-0 transition-all duration-200",
-            "group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100",
-            hasGradient ? "text-white/60" : "text-[var(--color-text-secondary)]"
-          )}
-        >
-          {hoverDescription}
-        </p>
-      )}
     </div>
   );
 }

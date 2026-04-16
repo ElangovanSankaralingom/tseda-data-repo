@@ -70,16 +70,16 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
           <form method="GET">
             <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
               <label className="space-y-1">
-                <span className="text-xs font-medium text-muted-foreground">Keyword</span>
+                <span className="text-xs font-medium text-[var(--color-text-muted)]">Keyword</span>
                 <input
                   name="q"
                   defaultValue={query}
                   placeholder="Search by title, category, or field values"
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40"
+                  className="w-full rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-xs font-medium text-muted-foreground">Category</span>
+                <span className="text-xs font-medium text-[var(--color-text-muted)]">Category</span>
                 <SearchCategorySelect
                   name="category"
                   defaultValue={categoryValue}
@@ -96,7 +96,7 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium transition hover:bg-muted/60"
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--color-glass-border)] px-4 text-sm font-medium transition hover:bg-[var(--color-glass-hover)]/60"
                 >
                   Search
                 </button>
@@ -107,7 +107,7 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700">
+        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           {error}
         </div>
       ) : null}
@@ -119,20 +119,20 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
             subtitle={`Results: ${results.length}`}
           >
             {results.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No entries matched this search.</div>
+              <div className="text-sm text-[var(--color-text-muted)]">No entries matched this search.</div>
             ) : (
               <div className="space-y-3">
                 {results.map((result) => (
                   <Link
                     key={`${result.category}:${result.entryId}`}
                     href={result.href}
-                    className="block rounded-xl border border-border p-3 transition hover:bg-muted/40"
+                    className="block rounded-xl border border-[var(--color-glass-border)] p-3 transition hover:bg-[var(--color-glass-hover)]/40"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="text-sm font-medium">{result.title}</div>
-                      <div className="text-xs text-muted-foreground">{result.updatedAt || "-"}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">{result.updatedAt || "-"}</div>
                     </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
+                    <div className="mt-1 text-xs text-[var(--color-text-muted)]">
                       {result.categoryLabel} • {result.status}
                     </div>
                   </Link>
