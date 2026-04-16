@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import {
   LayoutDashboard,
   LogOut,
@@ -145,7 +146,8 @@ function NavWidget({
       className={cn(
         "group relative flex flex-col rounded-2xl p-4 h-[100px] transition-all duration-300",
         "outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-        "hover:-translate-y-0.5"
+        "hover:-translate-y-0.5",
+        !active && "hover:border-white/[0.15] hover:shadow-[0_6px_24px_rgba(0,0,0,0.5)]"
       )}
       style={{
         backgroundColor: "#0c0e18",
@@ -281,6 +283,12 @@ export default function SidebarDrawer({
     handlers: tiltHandlers,
   } = useTiltEffect(2.5);
 
+  const isMac = useSyncExternalStore(
+    () => () => {},
+    () => /Mac|iPhone|iPad/.test(navigator.userAgent),
+    () => false
+  );
+
   const { data: overview } = useApi<OverviewResponse>(
     open ? "/api/me/data-entry-overview" : null
   );
@@ -321,7 +329,7 @@ export default function SidebarDrawer({
       label: t("nav.search"),
       accent: "#10b981",
       active: isActive(dataEntrySearch()),
-      status: "\u2318K",
+      status: isMac ? "\u2318 K" : "Ctrl K",
     },
     {
       key: "account",
@@ -355,13 +363,6 @@ export default function SidebarDrawer({
           } as TileDef,
         ]
       : []),
-    {
-      key: "signout",
-      icon: LogOut,
-      label: t("nav.signOut"),
-      accent: "#ef4444",
-      action: onSignOut,
-    },
   ];
 
   const isOddCount = tiles.length % 2 !== 0;
@@ -416,8 +417,10 @@ export default function SidebarDrawer({
             style={stagger(0)}
           >
             <div ref={tiltRef} style={tiltStyle} {...tiltHandlers}>
-              <div
-                className="relative overflow-hidden rounded-2xl"
+              <Link
+                href={profile()}
+                onClick={onClose}
+                className="group/id relative block overflow-hidden rounded-2xl transition-shadow duration-300 hover:shadow-[0_16px_48px_rgba(0,0,0,0.6),0_0_50px_rgba(59,130,246,0.10)]"
                 style={{
                   background: "#080c1a",
                   border: "1px solid rgba(59,130,246,0.22)",
@@ -529,7 +532,7 @@ export default function SidebarDrawer({
                     {totals?.totalEntries ?? 0}
                   </span>
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
 
@@ -582,14 +585,18 @@ export default function SidebarDrawer({
                 <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/70">
                   ONLINE
                 </span>
-                {totals && (
-                  <>
-                    <div className="flex-1" />
-                    <span className="font-mono text-[10px] font-bold text-emerald-400/40">
-                      {totals.totalEntries} entries
-                    </span>
-                  </>
-                )}
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onSignOut();
+                  }}
+                  className="group/so flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold text-white/30 transition-all hover:text-red-400 hover:bg-red-400/[0.08]"
+                >
+                  <LogOut className="size-3 transition-colors group-hover/so:text-red-400" />
+                  <span>{t("nav.signOut")}</span>
+                </button>
               </div>
             </div>
           </div>
