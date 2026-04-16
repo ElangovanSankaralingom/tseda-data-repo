@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, LayoutDashboard, Shield } from "lucide-react";
+import { LayoutDashboard, Shield } from "lucide-react";
 import AdminNotificationBell from "@/components/confirmations/AdminNotificationBell";
 import NotificationBell from "@/components/confirmations/NotificationBell";
 import SearchTrigger from "@/components/shell/SearchTrigger";
@@ -20,36 +20,59 @@ import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   adminHome,
   dashboard,
-  dataEntryHome,
   signin,
 } from "@/lib/entryNavigation";
 
 // --- Animated Hamburger Icon ---
 
-function HamburgerIcon({ isOpen }: { isOpen: boolean }) {
+/*
+  ── Command Grid Icon ──
+  WHAT IF the menu icon wasn't a hamburger?
+  4 dots in a 2x2 grid → morph into X when open.
+  The grid pattern mirrors the Command Hub layout.
+*/
+function CommandGridIcon({ isOpen }: { isOpen: boolean }) {
   return (
-    <div className="group flex flex-col items-center justify-center gap-[5px]">
+    <div className="relative flex size-[18px] items-center justify-center">
+      {/* Dot 1 — top-left → rotates to top-center (X arm) */}
       <span
-        className={cn(
-          "block h-[2px] w-[18px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-300 ease-in-out",
-          isOpen
-            ? "translate-y-[7px] rotate-45"
-            : "group-hover:translate-x-[1px]"
-        )}
+        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        style={{
+          top: isOpen ? "1px" : "1px",
+          left: isOpen ? "7px" : "1px",
+          transform: isOpen ? "rotate(45deg) scaleX(3.5)" : "none",
+          borderRadius: isOpen ? "1px" : undefined,
+        }}
       />
+      {/* Dot 2 — top-right → rotates to top-center (X arm) */}
       <span
-        className={cn(
-          "block h-[2px] w-[18px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-300 ease-in-out",
-          isOpen && "opacity-0"
-        )}
+        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        style={{
+          top: isOpen ? "1px" : "1px",
+          right: isOpen ? "7px" : "1px",
+          transform: isOpen ? "rotate(-45deg) scaleX(3.5)" : "none",
+          borderRadius: isOpen ? "1px" : undefined,
+        }}
       />
+      {/* Dot 3 — bottom-left → rotates to bottom-center (X arm) */}
       <span
-        className={cn(
-          "block h-[2px] w-[18px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-300 ease-in-out",
-          isOpen
-            ? "-translate-y-[7px] -rotate-45"
-            : "group-hover:-translate-x-[1px]"
-        )}
+        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        style={{
+          bottom: isOpen ? "1px" : "1px",
+          left: isOpen ? "7px" : "1px",
+          transform: isOpen ? "rotate(-45deg) scaleX(3.5)" : "none",
+          borderRadius: isOpen ? "1px" : undefined,
+        }}
+      />
+      {/* Dot 4 — bottom-right → rotates to bottom-center (X arm) */}
+      <span
+        className="absolute size-[4px] rounded-full bg-[var(--color-text-secondary)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        style={{
+          bottom: isOpen ? "1px" : "1px",
+          right: isOpen ? "7px" : "1px",
+          transform: isOpen ? "rotate(45deg) scaleX(3.5)" : "none",
+          borderRadius: isOpen ? "1px" : undefined,
+        }}
       />
     </div>
   );
@@ -194,10 +217,10 @@ export default function ShellClient({
       {/* ─── Fixed Header ─── */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 h-14 border-b bg-[var(--color-header-tint)] transition-shadow duration-200",
+          "fixed top-0 left-0 right-0 z-50 h-14 border-b transition-all duration-300",
           scrolled
-            ? "backdrop-blur-xl border-[var(--color-card-border)]/80 shadow-sm"
-            : "backdrop-blur-md border-[var(--color-card-border)]/50"
+            ? "bg-[var(--color-header-bg)] backdrop-blur-2xl border-[var(--color-glass-border)] shadow-lg shadow-black/20"
+            : "bg-[var(--color-header-bg)] backdrop-blur-xl border-transparent"
         )}
       >
         <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-6">
@@ -212,11 +235,11 @@ export default function ShellClient({
               )}
               aria-label={open ? "Close menu" : "Open menu"}
             >
-              <HamburgerIcon isOpen={open} />
+              <CommandGridIcon isOpen={open} />
             </button>
 
             <Link href={dashboard()} className="flex items-center gap-2 group">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] text-sm font-bold text-white transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-[var(--color-button-primary-bg)] text-sm font-bold text-[var(--color-button-primary-text)] shadow-[0_0_16px_var(--color-glow-primary)] transition-all duration-300 group-hover:rotate-3 group-hover:scale-105 group-hover:shadow-[0_0_24px_var(--color-glow-primary)]">
                 T
               </span>
               <span className="hidden text-base font-bold tracking-tight text-[var(--color-text-primary)] sm:block">
@@ -228,7 +251,6 @@ export default function ShellClient({
           {/* Center: Navigation Pills */}
           <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
             <HeaderNavPill href={dashboard()} icon={LayoutDashboard} label={t('nav.dashboard')} active={isActive(dashboard())} />
-            <HeaderNavPill href={dataEntryHome()} icon={ClipboardList} label={t('nav.dataEntry')} active={isActive(dataEntryHome())} />
             {canAccessAdmin && (
               <HeaderNavPill href={adminHome()} icon={Shield} label={t('nav.admin')} active={isActive(adminHome())} />
             )}
