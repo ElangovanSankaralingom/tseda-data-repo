@@ -13,6 +13,7 @@ import {
   Zap,
   Terminal,
   ArrowRight,
+  Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -28,32 +29,25 @@ import { useApi } from "@/hooks/useApi";
 
 /*
   ───────────────────────────────────────────────────────
-   COMMAND HUB — Not a sidebar. A cockpit.
+   COMMAND HUB — Integrated with dashboard design system.
 
-   STRUCTURAL FEATURES (the "WHAT IF" lens):
-   ① GRID TOPOLOGY — Navigation is a 2-column grid
-      of large cards, not a vertical list. Your eye
-      surveys a field, not scans a list.
-   ② SPATIAL DEPTH — Active card is "pulled forward"
-      with scale, glow, expanded data. Inactive cards
-      recede into the background plane.
-   ③ COCKPIT ASSEMBLY — Elements don't slide in as
-      a flat panel. Each piece assembles individually
-      with staggered scale + fade. Profile drops in,
-      cards expand from center, status rises from below.
-   ④ ORBIT RING — SVG progress ring around avatar.
+   Uses the SAME surface colors and patterns as:
+   - DashboardWelcome (gradient, accent bar, mono fonts)
+   - DashboardClient (card surfaces, accent treatments)
 
-   Surface depth:
-   L0: Panel base #070910
-   L1: Card inactive #0e1019
-   L2: Card active — accent-tinted hex
-   L3: Icon boxes, badges — solid accent
+   Surface staircase (shared with dashboard):
+   L0: Panel base     #070910
+   L1: Container      #0e1019  (border rgba(255,255,255,0.10))
+   L2: Cards inactive #141620  (border rgba(255,255,255,0.14))
+   L3: Cards active   accent-tinted
+   L4: Icon boxes     solid accent
 
-   Color zoning:
-   PROFILE → cool blue
-   GRID CARDS → each card has its own accent world
-   BOTTOM → recessed, utility
-   STATUS → emerald terminal
+   Split into category sections:
+   ① IDENTITY — styled like DashboardWelcome title card
+   ② NAVIGATE — Dashboard + Search (core workflow)
+   ③ PERSONAL — Account + Appearance (user settings)
+   ④ ADMIN    — warm amber zone (if authorized)
+   ⑤ STATUS   — emerald terminal readout
   ───────────────────────────────────────────────────────
 */
 
@@ -72,7 +66,7 @@ type UnreadResponse = { count?: number };
 /* ── SVG Orbit Ring ── */
 function OrbitRing({
   progress,
-  size = 60,
+  size = 72,
   strokeWidth = 2.5,
   color = "#3b82f6",
 }: {
@@ -92,168 +86,101 @@ function OrbitRing({
       className="absolute inset-0"
       style={{ transform: "rotate(-90deg)" }}
     >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="rgba(59,130,246,0.12)"
-        strokeWidth={strokeWidth}
-      />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(59,130,246,0.12)" strokeWidth={strokeWidth} />
       {progress > 0 && (
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color}
+          strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
           className="transition-all duration-1000 ease-out"
           style={{ filter: `drop-shadow(0 0 6px ${color}40)` }}
-        />
-      )}
-      {progress > 0 && progress < 1 && (
-        <circle
-          cx={size / 2 + radius * Math.cos(2 * Math.PI * progress)}
-          cy={size / 2 + radius * Math.sin(2 * Math.PI * progress)}
-          r={strokeWidth}
-          fill={color}
-          className="animate-subtle-pulse"
-          style={{ filter: `drop-shadow(0 0 8px ${color})` }}
         />
       )}
     </svg>
   );
 }
 
-/* ── Hub Card ── */
-function HubCard({
-  href,
-  icon: Icon,
-  label,
-  accent,
-  activeBg,
-  active,
-  open,
-  delay,
-  meta,
-  badge,
-  onClose,
+/* ── Nav Card — matches dashboard category card style ── */
+function NavCard({
+  href, icon: Icon, label, accent, active, meta, badge, onClose,
 }: {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  accent: string;
-  activeBg: string;
-  active: boolean;
-  open: boolean;
-  delay: number;
-  meta?: string | null;
-  badge?: number | null;
+  href: string; icon: LucideIcon; label: string; accent: string;
+  active: boolean; meta?: string | null; badge?: number | null;
   onClose: () => void;
 }) {
   return (
     <Link
       href={href}
       onClick={onClose}
-      className={cn(
-        "group relative flex flex-col rounded-2xl p-4 transition-all duration-400 outline-none",
-        "focus-visible:ring-2 focus-visible:ring-white/30",
-        open ? "opacity-100 scale-100" : "opacity-0 scale-[0.85]",
-      )}
+      className="group relative flex items-center gap-3.5 rounded-xl px-4 py-3.5 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-white/30"
       style={{
-        transitionDelay: open ? `${delay}ms` : "0ms",
-        transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-        backgroundColor: active ? activeBg : "#0e1019",
-        border: active
-          ? `1px solid ${accent}40`
-          : "1px solid rgba(255,255,255,0.08)",
-        boxShadow: active
-          ? `0 8px 24px ${accent}20, inset 0 1px 0 ${accent}15`
-          : "0 2px 8px rgba(0,0,0,0.3)",
-        transform: active && open ? "scale(1.02)" : undefined,
+        backgroundColor: active ? `${accent}20` : "#141620",
+        border: active ? `1px solid ${accent}40` : "1px solid rgba(255,255,255,0.10)",
+        boxShadow: active ? `inset 3px 0 0 ${accent}, 0 4px 16px ${accent}15` : "none",
       }}
     >
-      {/* Active top accent bar */}
-      {active && (
-        <div
-          className="absolute top-0 left-3 right-3 h-[2px] rounded-b-full"
-          style={{
-            backgroundColor: accent,
-            boxShadow: `0 0 12px ${accent}60`,
-          }}
-        />
-      )}
-
-      {/* Icon + Arrow row */}
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className="flex size-11 items-center justify-center rounded-xl transition-all duration-300"
-          style={{
-            backgroundColor: active ? accent : "#181c28",
-            boxShadow: active ? `0 4px 16px ${accent}50` : "none",
-          }}
-        >
-          <Icon
-            className="size-5"
-            style={{ color: active ? "#fff" : "rgba(255,255,255,0.35)" }}
-          />
-        </div>
-        <ArrowRight
-          className={cn(
-            "size-4 transition-all duration-300",
-            active
-              ? "opacity-60 translate-x-0"
-              : "opacity-0 -translate-x-2 group-hover:opacity-40 group-hover:translate-x-0"
-          )}
-          style={{ color: active ? accent : "rgba(255,255,255,0.5)" }}
-        />
+      {/* Icon box — solid accent when active, dark when inactive */}
+      <div
+        className="flex size-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300"
+        style={{
+          backgroundColor: active ? accent : "#1c1e2a",
+          boxShadow: active ? `0 4px 12px ${accent}40` : "none",
+        }}
+      >
+        <Icon className="size-[18px]" style={{ color: active ? "#fff" : "rgba(255,255,255,0.4)" }} />
       </div>
 
-      {/* Label */}
-      <span
-        className={cn(
-          "text-sm font-bold tracking-tight transition-colors duration-300",
+      {/* Label + meta */}
+      <div className="min-w-0 flex-1">
+        <span className={cn(
+          "block text-[13px] font-semibold truncate transition-colors duration-300",
           active ? "text-white" : "text-[rgba(255,255,255,0.55)] group-hover:text-white"
-        )}
-      >
-        {label}
-      </span>
-
-      {/* Meta line — live data */}
-      {meta && (
-        <span
-          className="mt-1.5 font-mono text-[11px] font-bold transition-colors duration-300"
-          style={{ color: active ? accent : "rgba(255,255,255,0.3)" }}
-        >
-          {meta}
+        )}>
+          {label}
         </span>
-      )}
+        {meta && (
+          <span
+            className="block font-mono text-[10px] font-bold mt-0.5 transition-colors duration-300"
+            style={{ color: active ? accent : "rgba(255,255,255,0.3)" }}
+          >
+            {meta}
+          </span>
+        )}
+      </div>
 
-      {/* Badge */}
-      {badge != null && badge > 0 && (
-        <div
-          className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-full text-[10px] font-black text-black"
-          style={{
-            backgroundColor: accent,
-            boxShadow: `0 0 10px ${accent}60`,
-          }}
+      {/* Badge or arrow */}
+      {badge != null && badge > 0 ? (
+        <span
+          className="flex size-6 items-center justify-center rounded-full text-[10px] font-black text-black"
+          style={{ backgroundColor: accent, boxShadow: `0 0 10px ${accent}50` }}
         >
           {badge}
-        </div>
-      )}
-
-      {/* Hover glow — bottom edge */}
-      {!active && (
-        <div
-          className="absolute bottom-0 left-4 right-4 h-[1px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ backgroundColor: accent }}
+        </span>
+      ) : (
+        <ArrowRight
+          className={cn(
+            "size-4 shrink-0 transition-all duration-300",
+            active ? "opacity-50" : "opacity-0 group-hover:opacity-30"
+          )}
+          style={{ color: active ? accent : "#fff" }}
         />
       )}
     </Link>
+  );
+}
+
+/* ── Section Header — mono label with line ── */
+function SectionLabel({ label, accent }: { label: string; accent?: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-2.5 px-1">
+      <span
+        className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]"
+        style={{ color: accent ? `${accent}90` : "rgba(255,255,255,0.3)" }}
+      >
+        {label}
+      </span>
+      <div className="flex-1 h-px" style={{ backgroundColor: accent ? `${accent}20` : "rgba(255,255,255,0.06)" }} />
+    </div>
   );
 }
 
@@ -298,60 +225,6 @@ export default function SidebarDrawer({
     return pathname === href || pathname?.startsWith(href + "/");
   }
 
-  type HubItem = {
-    href: string;
-    icon: LucideIcon;
-    label: string;
-    accent: string;
-    activeBg: string;
-    meta?: string | null;
-    badge?: number | null;
-  };
-
-  const hubItems: HubItem[] = [
-    {
-      href: dashboard(),
-      icon: LayoutDashboard,
-      label: t("nav.dashboard"),
-      accent: "#3b82f6",
-      activeBg: "#101e30",
-      meta: totals
-        ? `${totals.totalEntries} entries · ${totals.streakActivatedCount} streaks`
-        : null,
-    },
-    {
-      href: dataEntrySearch(),
-      icon: Search,
-      label: t("nav.search"),
-      accent: "#10b981",
-      activeBg: "#0a1a16",
-    },
-    {
-      href: profile(),
-      icon: User,
-      label: t("nav.account"),
-      accent: "#a855f7",
-      activeBg: "#160e28",
-      meta: profileDesignation ?? null,
-    },
-    ...(canAccessAdmin
-      ? [
-          {
-            href: adminHome(),
-            icon: Shield,
-            label: t("nav.admin"),
-            accent: "#f59e0b",
-            activeBg: "#1a1508",
-            meta: adminPendingCount > 0 ? `${adminPendingCount} pending` : null,
-            badge: adminPendingCount > 0 ? adminPendingCount : null,
-          },
-        ]
-      : []),
-  ];
-
-  // Active card color for ambient effects
-  const activeAccent = hubItems.find((i) => isActive(i.href))?.accent ?? "#3b82f6";
-
   return (
     <>
       {/* Backdrop */}
@@ -377,57 +250,45 @@ export default function SidebarDrawer({
           backgroundColor: "#070910",
           border: "1px solid rgba(255,255,255,0.10)",
           boxShadow: open
-            ? `0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05), 0 0 40px ${activeAccent}10`
+            ? "0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)"
             : "none",
-          // Desktop: explicit height calc instead of h-auto + bottom
           maxHeight: "100dvh",
         }}
         role="dialog"
         aria-label="Navigation menu"
       >
 
-        {/* ╔═══════════════════════════════════════════╗
-           ║  IDENTITY CARD — Centered command badge     ║
-           ║  WHAT IF the profile wasn't avatar-left,    ║
-           ║  text-right? What if it was a centered      ║
-           ║  identity card like a sci-fi access badge?  ║
-           ║  FEATURE ④: Orbit ring + centered layout.   ║
-           ╚═══════════════════════════════════════════╝ */}
+        {/* ═══════════════════════════════════════════
+            IDENTITY — styled like DashboardWelcome.
+            Same gradient, same accent bar, same
+            surface tokens. They're the same card.
+           ═══════════════════════════════════════════ */}
         <div
           className="relative overflow-hidden sm:rounded-t-3xl"
           style={{
-            background: "linear-gradient(170deg, #14243e 0%, #0e1828 50%, #070910 100%)",
+            background: "linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(30,58,95,0.18) 50%, rgba(0,0,0,0.4) 100%)",
             borderBottom: "1px solid rgba(59,130,246,0.15)",
           }}
         >
-          {/* Top accent bar — follows rounded corners */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500/80 animate-bar-draw sm:rounded-t-3xl" />
+          {/* 3px accent bar — same as DashboardWelcome */}
+          <div className="h-[3px] bg-[var(--color-primary)] animate-bar-draw" />
 
           {/* Radial glow behind avatar */}
           <div
-            className="absolute left-1/2 top-8 -translate-x-1/2 size-40 rounded-full pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)",
-            }}
+            className="absolute left-1/2 top-10 -translate-x-1/2 size-44 rounded-full pointer-events-none"
+            style={{ background: "radial-gradient(circle, rgba(30,58,95,0.25) 0%, transparent 70%)" }}
           />
 
-          {/* Centered layout */}
-          <div className="relative flex flex-col items-center pt-7 pb-5 px-5">
-            {/* Avatar with orbit ring — centered, larger */}
-            <div
-              className={cn(
-                "relative transition-all duration-500",
-                open ? "opacity-100 scale-100" : "opacity-0 scale-90"
-              )}
-              style={{ width: 80, height: 80, transitionDelay: open ? "60ms" : "0ms" }}
-            >
-              <OrbitRing progress={streakProgress} size={80} strokeWidth={2.5} />
+          <div className="relative flex flex-col items-center pt-6 pb-5 px-5">
+            {/* Avatar with orbit ring */}
+            <div className="relative" style={{ width: 72, height: 72 }}>
+              <OrbitRing progress={streakProgress} size={72} />
               <div
                 className="absolute overflow-hidden rounded-2xl"
                 style={{
-                  inset: 6,
-                  border: "2px solid rgba(59,130,246,0.35)",
-                  boxShadow: "0 0 24px rgba(59,130,246,0.15)",
+                  inset: 5,
+                  border: "2px solid rgba(59,130,246,0.3)",
+                  boxShadow: "0 0 20px rgba(59,130,246,0.12)",
                 }}
               >
                 {profilePhoto ? (
@@ -436,196 +297,184 @@ export default function SidebarDrawer({
                     style={{ backgroundImage: `url("${profilePhoto}")` }}
                   />
                 ) : (
-                  <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-xl font-bold text-white">
+                  <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-lg font-bold text-white">
                     {profileInitials}
                   </span>
                 )}
               </div>
-              {/* Streak % badge */}
-              {streakProgress > 0 && (
-                <div
-                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[9px] font-black"
-                  style={{
-                    backgroundColor: streakProgress >= 1 ? "#fbbf24" : "#3b82f6",
-                    color: streakProgress >= 1 ? "#000" : "#fff",
-                    boxShadow: `0 0 10px ${streakProgress >= 1 ? "#fbbf2480" : "#3b82f680"}`,
-                  }}
-                >
-                  {Math.round(streakProgress * 100)}%
-                </div>
-              )}
             </div>
 
-            {/* Name — centered, dramatic */}
-            <h2
-              className={cn(
-                "mt-4 text-2xl font-black tracking-tight text-white leading-none text-center transition-all duration-400",
-                open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-              )}
-              style={{ transitionDelay: open ? "120ms" : "0ms" }}
-            >
+            {/* Name — centered, same font weight as dashboard */}
+            <h2 className="mt-3 text-xl font-black tracking-tight text-white leading-none text-center animate-text-reveal">
               {profileName}
             </h2>
 
-            {/* Email */}
-            <div
-              className={cn(
-                "mt-1.5 font-mono text-[10px] text-[rgba(255,255,255,0.35)] text-center truncate max-w-full transition-all duration-400",
-                open ? "opacity-100" : "opacity-0"
-              )}
-              style={{ transitionDelay: open ? "160ms" : "0ms" }}
-            >
+            {/* Email — mono, like dashboard date display */}
+            <span className="mt-1.5 font-mono text-[10px] text-[rgba(255,255,255,0.35)] text-center truncate max-w-full">
               {profileEmail}
-            </div>
+            </span>
 
-            {/* ── Data strip — recessed stat bar, always visible ── */}
+            {/* Data strip — matches dashboard's inset panels (#0f111c) */}
             <div
-              className={cn(
-                "mt-4 w-full rounded-xl flex items-center justify-center gap-2.5 px-4 py-3 transition-all duration-400",
-                open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-              )}
+              className="mt-4 w-full rounded-2xl flex items-center justify-center gap-3 px-4 py-3"
               style={{
-                transitionDelay: open ? "200ms" : "0ms",
-                backgroundColor: "#0c1224",
-                border: "1px solid rgba(59,130,246,0.18)",
-                boxShadow: "inset 0 1px 0 rgba(59,130,246,0.08)",
+                backgroundColor: "#0f111c",
+                border: "1px solid rgba(255,255,255,0.08)",
               }}
             >
-              {/* Designation pill — always show faculty label if no designation */}
               <span
-                className="rounded-md px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest"
+                className="rounded-lg px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest"
                 style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
               >
                 {profileDesignation ?? "Faculty"}
               </span>
 
-              <div className="h-4 w-px bg-blue-400/20" />
+              <div className="h-4 w-px bg-white/[0.1]" />
 
-              {/* Streaks */}
               <span
-                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[9px] font-bold"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[9px] font-bold"
                 style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
               >
                 <Zap className="size-2.5" />
                 {totals?.streakActivatedCount ?? 0}
               </span>
 
-              <div className="h-4 w-px bg-blue-400/20" />
+              <div className="h-4 w-px bg-white/[0.1]" />
 
-              {/* Entry count */}
-              <span className="font-mono text-[11px] font-black text-blue-300/70">
+              <span className="font-mono text-[11px] font-black text-[rgba(255,255,255,0.5)]">
                 {totals?.totalEntries ?? 0}
               </span>
             </div>
           </div>
         </div>
 
-        {/* ╔═══════════════════════════════════════════╗
-           ║  COMMAND HUB GRID                           ║
-           ║  FEATURE ①: 2-col grid, not a list.         ║
-           ║  FEATURE ②: Active card pulled forward.     ║
-           ║  FEATURE ③: Cockpit assembly animation.     ║
-           ╚═══════════════════════════════════════════╝ */}
-        <div className="flex-1 overflow-y-auto px-4 pt-5 pb-4">
-          {/* Section label */}
-          <div className="flex items-center gap-3 mb-4 px-1">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[rgba(255,255,255,0.25)]">
-              Command Hub
-            </span>
-            <div className="flex-1 h-px bg-white/[0.06]" />
-          </div>
+        {/* ═══════════════════════════════════════════
+            NAVIGATION SECTIONS — split by category.
+            Cards use dashboard surface tokens:
+            #141620 inactive, accent-tinted active,
+            #1c1e2a icon boxes.
+           ═══════════════════════════════════════════ */}
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-3 space-y-4">
 
-          {/* The Grid */}
-          <nav
-            aria-label="Main navigation"
-            className="grid grid-cols-2 gap-3"
-          >
-            {hubItems.map((item, idx) => (
-              <HubCard
-                key={item.href}
-                {...item}
-                active={isActive(item.href)}
-                open={open}
-                delay={120 + idx * 70}
+          {/* ── Section: Navigate ── */}
+          <div>
+            <SectionLabel label="Navigate" />
+            <nav aria-label="Main navigation" className="space-y-2">
+              <NavCard
+                href={dashboard()}
+                icon={LayoutDashboard}
+                label={t("nav.dashboard")}
+                accent="#3b82f6"
+                active={isActive(dashboard())}
+                meta={totals ? `${totals.totalEntries} entries · ${totals.streakActivatedCount} streaks` : null}
                 onClose={onClose}
               />
-            ))}
-          </nav>
+              <NavCard
+                href={dataEntrySearch()}
+                icon={Search}
+                label={t("nav.search")}
+                accent="#10b981"
+                active={isActive(dataEntrySearch())}
+                onClose={onClose}
+              />
+            </nav>
+          </div>
+
+          {/* ── Section: Personal ── */}
+          <div>
+            <SectionLabel label="Personal" accent="#a855f7" />
+            <nav aria-label="Personal" className="space-y-2">
+              <NavCard
+                href={profile()}
+                icon={User}
+                label={t("nav.account")}
+                accent="#a855f7"
+                active={isActive(profile())}
+                meta={profileDesignation ?? null}
+                onClose={onClose}
+              />
+              <NavCard
+                href={settingsAppearance()}
+                icon={Settings}
+                label={t("nav.appearance")}
+                accent="#818cf8"
+                active={isActive(settingsAppearance())}
+                onClose={onClose}
+              />
+            </nav>
+          </div>
+
+          {/* ── Section: Admin (warm amber zone) ── */}
+          {canAccessAdmin && (
+            <div
+              className="rounded-2xl p-3"
+              style={{
+                backgroundColor: "#12100a",
+                border: "1px solid rgba(245,158,11,0.18)",
+              }}
+            >
+              <SectionLabel label="Admin" accent="#f59e0b" />
+              <nav aria-label="Admin navigation" className="space-y-2">
+                <NavCard
+                  href={adminHome()}
+                  icon={Shield}
+                  label={t("nav.admin")}
+                  accent="#f59e0b"
+                  active={isActive(adminHome())}
+                  meta={adminPendingCount > 0 ? `${adminPendingCount} pending` : null}
+                  badge={adminPendingCount > 0 ? adminPendingCount : null}
+                  onClose={onClose}
+                />
+              </nav>
+            </div>
+          )}
         </div>
 
-        {/* ╔═══════════════════════════════════════════╗
-           ║  UTILITY DOCK — SOLID surface, distinct     ║
-           ║  from panel base. Must be clearly its own   ║
-           ║  layer — not merged with the background.    ║
-           ╚═══════════════════════════════════════════╝ */}
+        {/* ═══════════════════════════════════════════
+            BOTTOM DOCK — solid #0e1019 (same as
+            dashboard container surface).
+           ═══════════════════════════════════════════ */}
         <div
           className="sm:rounded-b-3xl"
           style={{
-            backgroundColor: "#0c0e18",
-            boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+            backgroundColor: "#0e1019",
             borderTop: "1px solid rgba(255,255,255,0.10)",
+            boxShadow: "0 -8px 32px rgba(0,0,0,0.5)",
           }}
         >
-          {/* Utility buttons — solid backgrounds, visible */}
-          <div className="px-4 pt-4 pb-2 flex items-center gap-2">
-            <Link
-              href={settingsAppearance()}
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-[12px] font-semibold transition-all duration-200",
-                isActive(settingsAppearance())
-                  ? "text-white"
-                  : "text-[rgba(255,255,255,0.5)] hover:text-white"
-              )}
-              style={{
-                backgroundColor: isActive(settingsAppearance()) ? "#1e1840" : "#141722",
-                border: isActive(settingsAppearance())
-                  ? "1px solid rgba(129,140,248,0.3)"
-                  : "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <Palette className="size-4" style={{ color: isActive(settingsAppearance()) ? "#818cf8" : "rgba(255,255,255,0.5)" }} />
-              <span>{t("nav.appearance")}</span>
-            </Link>
-
-            <div className="flex-1" />
-
+          {/* Utility row */}
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2">
             {canAccessAdmin && (
               <Link
                 href="/reset"
                 onClick={onClose}
-                className="group flex size-9 items-center justify-center rounded-xl transition-all duration-200"
-                style={{
-                  backgroundColor: "#141722",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-                aria-label="Reset test data"
+                className="group flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[rgba(255,255,255,0.4)] hover:text-red-400 transition-all duration-200"
+                style={{ backgroundColor: "#141620", border: "1px solid rgba(255,255,255,0.08)" }}
               >
-                <Trash2 className="size-4 text-[rgba(255,255,255,0.4)] group-hover:text-red-400 transition-colors" />
+                <Trash2 className="size-3.5 group-hover:text-red-400 transition-colors" />
+                <span>Reset</span>
               </Link>
             )}
+
+            <div className="flex-1" />
 
             <button
               type="button"
               onClick={() => { onClose(); onSignOut(); }}
-              className="group flex size-9 items-center justify-center rounded-xl transition-all duration-200"
-              style={{
-                backgroundColor: "#141722",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-              aria-label={t("nav.signOut")}
+              className="group flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[rgba(255,255,255,0.4)] hover:text-red-400 transition-all duration-200"
+              style={{ backgroundColor: "#141620", border: "1px solid rgba(255,255,255,0.08)" }}
             >
-              <LogOut className="size-4 text-[rgba(255,255,255,0.4)] group-hover:text-red-400 transition-colors" />
+              <LogOut className="size-3.5 group-hover:text-red-400 transition-colors" />
+              <span className="text-left">{t("nav.signOut")}</span>
             </button>
           </div>
 
-          {/* ── Terminal Status — brighter emerald, more present ── */}
+          {/* Terminal status — same as dashboard status bar (#080a12) */}
           <div
-            className="relative mx-4 mb-4 mt-1 overflow-hidden rounded-xl"
+            className="relative mx-4 mb-3 mt-1 overflow-hidden rounded-xl"
             style={{
-              backgroundColor: "#0a1f18",
-              border: "1px solid rgba(16,185,129,0.25)",
-              boxShadow: "inset 0 1px 0 rgba(16,185,129,0.1)",
+              backgroundColor: "#080a12",
+              border: "1px solid rgba(16,185,129,0.20)",
             }}
           >
             <div className="animate-scan-sweep" />
@@ -643,11 +492,11 @@ export default function SidebarDrawer({
                   <div className="flex-1" />
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[10px] font-bold text-emerald-400/50">
-                      {totals.totalEntries}
+                      {totals.totalEntries} entries
                     </span>
                     <div className="h-2.5 w-px bg-emerald-400/25" />
                     <span className="font-mono text-[10px] font-bold text-emerald-400/50">
-                      {totals.streakActivatedCount}s
+                      {totals.streakActivatedCount} streaks
                     </span>
                   </div>
                 </>
