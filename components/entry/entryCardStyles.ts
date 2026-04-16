@@ -111,14 +111,13 @@ export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
     padding: "p-5",
     hasContainer: true,
   },
-  /* LOCKED IN — VAULT ZONE: deeply recessed, cooler temperature,
-     thick top accent border, inset shadow. This MUST look like
-     a completely different zone from everything above it. */
+  /* LOCKED IN — no section container. Cards themselves carry the
+     green identity. Zone separator handled in GroupedEntrySections. */
   locked_in: {
-    background: "linear-gradient(180deg, rgba(16,24,16,0.60) 0%, rgba(10,18,12,0.45) 100%)",
+    background: "transparent",
     border: "none",
-    padding: "p-0",
-    hasContainer: true,
+    padding: "",
+    hasContainer: false,
   },
 };
 

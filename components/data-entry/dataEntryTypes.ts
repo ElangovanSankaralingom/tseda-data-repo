@@ -216,7 +216,7 @@ export type CategoryEntryRecordRendererOptions<TEntry extends CategoryEntryRende
   buildHref: (entry: TEntry) => string;
   buildTitle: (entry: TEntry) => React.ReactNode;
   buildSubtitle?: (entry: TEntry) => React.ReactNode;
-  renderBody: (entry: TEntry) => React.ReactNode;
+  renderBody: (entry: TEntry, group?: EntryListGroup) => React.ReactNode;
   onView: (entry: TEntry) => void;
   onEdit?: (entry: TEntry) => void;
   onPreview?: (entry: TEntry) => void;

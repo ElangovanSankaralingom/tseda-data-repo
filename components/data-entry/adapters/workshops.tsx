@@ -468,7 +468,7 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
           ? `${t('entry.resourcePerson')} ${entry.resourcePersonName}${entry.resourcePersonOrganisation ? ` — ${entry.resourcePersonOrganisation}` : ""}`
           : ""
       }
-      renderListEntryBody={({ entry }) => {
+      renderListEntryBody={({ entry, group }) => {
         const days = getInclusiveDays(entry.startDate, entry.endDate);
         const startStr = formatDisplayDate(entry.startDate);
         const endStr = formatDisplayDate(entry.endDate);
@@ -490,13 +490,13 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
         }
         return (
           <>
-            <MetadataPills parts={parts} />
+            <MetadataPills parts={parts} group={group} />
             <AttachmentBadges attachments={[
               { label: "Permission Letter", files: entry.permissionLetter },
               { label: "Geotagged Photo", files: entry.geotaggedPhotos },
               { label: "Attendance Sheet", files: entry.attendanceSheet },
               { label: "Official Poster", files: entry.officialPoster },
-            ]} />
+            ]} group={group} />
           </>
         );
       }}
