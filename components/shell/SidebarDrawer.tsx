@@ -435,7 +435,10 @@ export default function SidebarDrawer({
               >
                 {firstName}
               </h2>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="truncate font-mono text-[10px] text-[rgba(255,255,255,0.35)] mt-1.5">
+                {profileEmail}
+              </div>
+              <div className="flex items-center gap-2 mt-1.5">
                 {profileDesignation && (
                   <span
                     className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
