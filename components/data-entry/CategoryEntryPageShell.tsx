@@ -81,8 +81,8 @@ function MicroStat({ count, label, color }: { count: number; label: string; colo
     <div
       className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
       style={{
-        background: "rgba(0,0,0,0.50)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(0,0,0,0.30)",
+        border: "1px solid rgba(255,255,255,0.05)",
       }}
     >
       <span className="font-mono text-sm font-black tabular-nums" style={{ color }}>
@@ -122,25 +122,25 @@ function CategoryHero({
       <div
         className="relative overflow-hidden rounded-2xl"
         style={{
-          background: `linear-gradient(165deg, rgba(15,22,42,0.95) 0%, rgba(10,15,30,0.90) 100%)`,
-          border: `1px solid ${chartHex}20`,
-          boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)`,
+          background: `linear-gradient(165deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%)`,
+          border: `1px solid rgba(255,255,255,0.06)`,
+          boxShadow: `0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)`,
         }}
       >
-        {/* ── BRIGHT TOP ACCENT BAR (like dashboard) ── */}
+        {/* ── Top accent bar — category colored, subtle ── */}
         <div
-          className="h-1"
+          className="h-[3px]"
           style={{
-            background: `linear-gradient(90deg, ${chartHex} 0%, ${chartHex}60 60%, transparent 100%)`,
-            boxShadow: `0 2px 12px ${chartHex}30`,
+            background: `linear-gradient(90deg, ${chartHex}90 0%, ${chartHex}40 50%, transparent 100%)`,
+            boxShadow: `0 1px 8px ${chartHex}15`,
           }}
         />
 
-        {/* Color bleed gradient */}
+        {/* Color bleed gradient — very subtle */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(135deg, ${chartHex}10 0%, transparent 40%)`,
+            background: `linear-gradient(135deg, ${chartHex}06 0%, transparent 35%)`,
             borderRadius: "inherit",
           }}
         />
@@ -174,9 +174,9 @@ function CategoryHero({
             <div
               className="flex size-14 shrink-0 items-center justify-center rounded-2xl"
               style={{
-                background: `${chartHex}20`,
-                border: `1px solid ${chartHex}35`,
-                boxShadow: `0 0 24px ${chartHex}15`,
+                background: `${chartHex}15`,
+                border: `1px solid ${chartHex}25`,
+                boxShadow: `0 0 16px ${chartHex}08`,
               }}
             >
               {/* eslint-disable-next-line react-hooks/static-components */}
@@ -197,8 +197,8 @@ function CategoryHero({
               <div
                 className="rounded-xl px-4 py-3.5"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
@@ -218,8 +218,8 @@ function CategoryHero({
               <div
                 className="rounded-xl px-4 py-3.5 hidden sm:flex items-center justify-center"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
                 <CompletionRing stats={stats} accentHex={chartHex} />
@@ -229,8 +229,8 @@ function CategoryHero({
               <div
                 className="rounded-xl px-4 py-3.5"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
@@ -327,46 +327,33 @@ function CategoryEmptyState({
 function PageBackground({ chartHex, children }: { chartHex: string; children: React.ReactNode }) {
   return (
     <div className="relative min-h-[80vh]">
-      {/* Deep blue gradient background */}
+      {/* Subtle blue-tinted gradient background — hint, not heavy */}
       <div
         className="absolute inset-0 pointer-events-none rounded-3xl"
         style={{
-          background: `linear-gradient(175deg, rgba(15,25,50,0.95) 0%, rgba(10,18,38,0.90) 35%, rgba(8,12,24,0.85) 70%, transparent 100%)`,
+          background: `linear-gradient(175deg, rgba(12,18,35,0.60) 0%, rgba(10,14,28,0.40) 40%, transparent 80%)`,
         }}
       />
-      {/* Subtle grid pattern overlay */}
+      {/* Subtle grid pattern overlay — very faint */}
       <div
         className="absolute inset-0 pointer-events-none rounded-3xl"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(59,130,246,0.035) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59,130,246,0.035) 1px, transparent 1px)
+            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
           `,
           backgroundSize: "48px 48px",
-          maskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
+          maskImage: "linear-gradient(to bottom, black 0%, black 40%, transparent 80%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 40%, transparent 80%)",
         }}
       />
-      {/* Radial accent glow at top */}
+      {/* Soft radial accent glow at top */}
       <div
         className="absolute inset-0 pointer-events-none rounded-3xl"
         style={{
-          background: `radial-gradient(ellipse 70% 40% at 50% -5%, ${chartHex}12, transparent)`,
+          background: `radial-gradient(ellipse 60% 30% at 50% -5%, ${chartHex}08, transparent)`,
         }}
       />
-      {/* Animated scan line — sweeps slowly down */}
-      <div
-        className="absolute inset-x-0 pointer-events-none rounded-3xl overflow-hidden"
-        style={{ top: 0, bottom: 0 }}
-      >
-        <div
-          className="absolute inset-x-0 h-24"
-          style={{
-            background: `linear-gradient(180deg, ${chartHex}06 0%, transparent 100%)`,
-            animation: "scanline 8s ease-in-out infinite",
-          }}
-        />
-      </div>
       {/* Content */}
       <div className="relative z-10">
         {children}
