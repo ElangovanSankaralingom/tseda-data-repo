@@ -341,6 +341,9 @@ function SectionContainer<TEntry>({
   const visibleItems = shouldCollapse ? items.slice(0, COLLAPSE_THRESHOLD) : items;
   const hiddenCount = shouldCollapse ? items.length - COLLAPSE_THRESHOLD : 0;
 
+  // Locked-in gets a 2-column grid layout for its compact cards
+  const isGrid = group === "locked_in";
+
   // Groups WITH container surface — wrapped in a tinted/bordered panel
   if (container.hasContainer) {
     return (
@@ -352,7 +355,7 @@ function SectionContainer<TEntry>({
         }}
       >
         <SectionHeader group={group} count={items.length} isUrgent={isUrgent} />
-        <div className="space-y-2.5">
+        <div className={isGrid ? "grid grid-cols-1 sm:grid-cols-2 gap-2.5" : "space-y-2.5"}>
           {visibleItems.map((entry, index) => renderEntry(entry, group, index))}
           {shouldCollapse && (
             <CollapsedStack count={hiddenCount} hex={hex} onExpand={() => setExpanded(true)} />
