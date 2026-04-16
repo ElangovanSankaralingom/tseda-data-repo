@@ -76,24 +76,24 @@ export type GroupContainerStyle = {
 };
 
 export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
-  /* Warm amber VISIBLE container */
+  /* Warm amber — softer tint */
   streak_runners: {
-    background: `linear-gradient(135deg, rgba(251,191,36,0.10) 0%, rgba(251,191,36,0.04) 100%)`,
-    border: "1px solid rgba(251,191,36,0.18)",
+    background: `linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(251,191,36,0.02) 100%)`,
+    border: "1px solid rgba(251,191,36,0.10)",
     padding: "p-5",
     hasContainer: true,
   },
-  /* Blue container — VISIBLE */
+  /* Blue — gentle */
   on_the_clock: {
-    background: `linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0.03) 100%)`,
-    border: "1px solid rgba(59,130,246,0.15)",
+    background: `linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.02) 100%)`,
+    border: "1px solid rgba(59,130,246,0.08)",
     padding: "p-5",
     hasContainer: true,
   },
-  /* Purple — VISIBLE */
+  /* Purple — gentle */
   unlocked: {
-    background: `linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(168,85,247,0.03) 100%)`,
-    border: "1px solid rgba(168,85,247,0.15)",
+    background: `linear-gradient(135deg, rgba(168,85,247,0.05) 0%, rgba(168,85,247,0.02) 100%)`,
+    border: "1px solid rgba(168,85,247,0.08)",
     padding: "p-5",
     hasContainer: true,
   },
@@ -104,17 +104,17 @@ export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
     padding: "",
     hasContainer: false,
   },
-  /* Dashed orange — VISIBLE */
+  /* Dashed orange — softer */
   under_review: {
-    background: "rgba(249,115,22,0.04)",
-    border: "2px dashed rgba(249,115,22,0.22)",
+    background: "rgba(249,115,22,0.03)",
+    border: "1px dashed rgba(249,115,22,0.12)",
     padding: "p-5",
     hasContainer: true,
   },
-  /* Green recessed — VISIBLE green tint */
+  /* Green recessed — much softer */
   locked_in: {
-    background: "rgba(34,197,94,0.05)",
-    border: "1px solid rgba(34,197,94,0.10)",
+    background: "rgba(34,197,94,0.025)",
+    border: "1px solid rgba(34,197,94,0.06)",
     padding: "p-4",
     hasContainer: true,
   },

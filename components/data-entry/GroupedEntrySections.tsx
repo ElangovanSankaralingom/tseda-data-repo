@@ -224,17 +224,17 @@ function SectionHeader({ group, count, isUrgent }: {
 
   return (
     <div className="flex items-center gap-2.5 mb-3 relative">
-      {/* Timeline connector dot + line */}
+      {/* Timeline connector dot */}
       <div className="absolute -left-[29px] top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
         <div
-          className="size-2.5 rounded-full"
+          className="size-[7px] rounded-full"
           style={{
-            background: hex,
-            boxShadow: `0 0 8px ${hex}60`,
+            background: `${hex}80`,
+            boxShadow: `0 0 6px ${hex}30`,
+            border: `1px solid ${hex}40`,
           }}
         />
       </div>
-      {/* Vertical connector line (drawn by parent container) */}
 
       <div
         className="flex size-6 items-center justify-center rounded-lg"
@@ -584,23 +584,23 @@ export function SmartGroupedEntrySections<TEntry>({
         <div
           className="rounded-2xl overflow-hidden"
           style={{
-            background: "rgba(10,15,30,0.70)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)",
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.05)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
           }}
         >
-          {/* Bright top accent line */}
+          {/* Subtle top accent line */}
           <div
             className="h-px"
-            style={{ background: "linear-gradient(90deg, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.08) 50%, transparent 100%)" }}
+            style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }}
           />
           {/* Timeline spine container — vertical line on the left */}
           <div className="relative pl-8 pr-5 py-5">
-            {/* Vertical timeline line */}
+            {/* Vertical timeline line — very subtle */}
             <div
               className="absolute left-[18px] top-8 bottom-8 w-px"
               style={{
-                background: "linear-gradient(180deg, rgba(59,130,246,0.20) 0%, rgba(255,255,255,0.06) 50%, transparent 100%)",
+                background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
               }}
             />
             <div className="space-y-4">
