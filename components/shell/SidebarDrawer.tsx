@@ -405,7 +405,7 @@ export default function SidebarDrawer({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* ── Identity Card — full width, opaque ── */}
+          {/* ── Identity Card — taller, centered, unique ── */}
           <div
             className={cn(
               "transition-all duration-500",
@@ -419,84 +419,115 @@ export default function SidebarDrawer({
               <div
                 className="relative overflow-hidden rounded-2xl"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #080c1a 0%, #101a32 50%, #080c1a 100%)",
-                  border: "1px solid rgba(59,130,246,0.25)",
+                  background: "#080c1a",
+                  border: "1px solid rgba(59,130,246,0.22)",
                   boxShadow:
                     "0 16px 48px rgba(0,0,0,0.6), 0 0 40px rgba(59,130,246,0.06)",
                 }}
               >
                 {/* Holographic light */}
                 <div style={{ ...lightStyle, opacity: 0.03 }} />
-                {/* Blue accent bar */}
+
+                {/* ── Top accent zone — gradient header ── */}
                 <div
-                  className="h-[3px] bg-blue-500"
-                  style={{ boxShadow: "0 0 16px rgba(59,130,246,0.5)" }}
-                />
-
-                <div className="relative flex items-center gap-5 px-6 py-5">
-                  {/* Avatar + orbit ring */}
+                  className="relative px-6 pt-6 pb-5"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(59,130,246,0.10) 0%, transparent 100%)",
+                  }}
+                >
+                  {/* Accent bar */}
                   <div
-                    className="relative shrink-0"
-                    style={{ width: 80, height: 80 }}
-                  >
-                    <OrbitRing progress={streakProgress} size={80} strokeWidth={3} />
+                    className="absolute top-0 left-0 right-0 h-[3px] bg-blue-500"
+                    style={{ boxShadow: "0 0 20px rgba(59,130,246,0.5)" }}
+                  />
+
+                  {/* Radial glow behind avatar */}
+                  <div
+                    className="absolute top-4 left-1/2 -translate-x-1/2 size-32 rounded-full"
+                    style={{
+                      background:
+                        "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)",
+                    }}
+                  />
+
+                  {/* Centered avatar + orbit */}
+                  <div className="relative flex justify-center">
                     <div
-                      className="absolute overflow-hidden rounded-2xl"
-                      style={{
-                        inset: 6,
-                        border: "2px solid rgba(59,130,246,0.35)",
-                        boxShadow: "0 0 20px rgba(59,130,246,0.15)",
-                      }}
+                      className="relative"
+                      style={{ width: 88, height: 88 }}
                     >
-                      {profilePhoto ? (
-                        <span
-                          className="block h-full w-full bg-cover bg-center bg-no-repeat"
-                          style={{
-                            backgroundImage: `url("${profilePhoto}")`,
-                          }}
-                        />
-                      ) : (
-                        <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-lg font-bold text-white">
-                          {profileInitials}
-                        </span>
-                      )}
+                      <OrbitRing
+                        progress={streakProgress}
+                        size={88}
+                        strokeWidth={3}
+                      />
+                      <div
+                        className="absolute overflow-hidden rounded-2xl"
+                        style={{
+                          inset: 7,
+                          border: "2px solid rgba(59,130,246,0.35)",
+                          boxShadow:
+                            "0 0 24px rgba(59,130,246,0.18), 0 8px 20px rgba(0,0,0,0.4)",
+                        }}
+                      >
+                        {profilePhoto ? (
+                          <span
+                            className="block h-full w-full bg-cover bg-center bg-no-repeat"
+                            style={{
+                              backgroundImage: `url("${profilePhoto}")`,
+                            }}
+                          />
+                        ) : (
+                          <span className="flex size-full items-center justify-center bg-[#1e3a5f] text-xl font-bold text-white">
+                            {profileInitials}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Info */}
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-lg font-black tracking-tight text-white leading-tight truncate">
-                      {profileName}
-                    </h2>
-                    <span className="block mt-1 font-mono text-[11px] text-white/30 truncate">
-                      {profileEmail}
-                    </span>
-                    <div className="mt-2.5 flex items-center gap-2">
-                      <span
-                        className="rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest"
-                        style={{
-                          backgroundColor: "#1e3a5f",
-                          color: "#93c5fd",
-                        }}
-                      >
-                        {profileDesignation ?? "Faculty"}
-                      </span>
-                      <span
-                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold"
-                        style={{
-                          backgroundColor: "#78350f",
-                          color: "#fbbf24",
-                        }}
-                      >
-                        <Zap className="size-3" />
-                        {totals?.streakActivatedCount ?? 0}
-                      </span>
-                      <span className="font-mono text-[11px] font-black text-white/40">
-                        {totals?.totalEntries ?? 0}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Name + email centered */}
+                  <h2 className="mt-3 text-center text-lg font-black tracking-tight text-white leading-tight truncate">
+                    {profileName}
+                  </h2>
+                  <span className="block mt-1 text-center font-mono text-[11px] text-white/30 truncate">
+                    {profileEmail}
+                  </span>
+                </div>
+
+                {/* ── Bottom stats strip — darker inset ── */}
+                <div
+                  className="mx-3 mb-3 rounded-xl flex items-center justify-center gap-3 px-4 py-2.5"
+                  style={{
+                    backgroundColor: "#0a0e1c",
+                    border: "1px solid rgba(59,130,246,0.12)",
+                  }}
+                >
+                  <span
+                    className="rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest"
+                    style={{
+                      backgroundColor: "#1e3a5f",
+                      color: "#93c5fd",
+                    }}
+                  >
+                    {profileDesignation ?? "Faculty"}
+                  </span>
+                  <div className="h-4 w-px bg-white/[0.08]" />
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold"
+                    style={{
+                      backgroundColor: "#78350f",
+                      color: "#fbbf24",
+                    }}
+                  >
+                    <Zap className="size-3" />
+                    {totals?.streakActivatedCount ?? 0}
+                  </span>
+                  <div className="h-4 w-px bg-white/[0.08]" />
+                  <span className="font-mono text-[11px] font-black text-white/40">
+                    {totals?.totalEntries ?? 0}
+                  </span>
                 </div>
               </div>
             </div>
