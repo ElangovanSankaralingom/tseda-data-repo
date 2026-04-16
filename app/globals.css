@@ -195,6 +195,18 @@ body {
     }
   }
 
+  /* Cursor glow — brighter dots that only show near the cursor */
+  .cursor-glow-dots {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  @media (min-width: 640px) {
+    .cursor-glow-dots {
+      background-size: 32px 32px;
+    }
+  }
+
   /* Light mode: dot grid */
   body:not(.dark body) {
     background-image: radial-gradient(circle, var(--color-card-border) 0.5px, transparent 0.5px);

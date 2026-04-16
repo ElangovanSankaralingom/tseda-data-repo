@@ -10,7 +10,6 @@ import {
   Sparkles,
   ChevronRight,
 } from "lucide-react";
-import CursorGlow from "@/components/dashboard/CursorGlow";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { categoryLabel } from "@/lib/i18n";
@@ -133,7 +132,6 @@ export default function DashboardClient({
 
   return (
     <div className="relative space-y-7">
-      <CursorGlow />
 
       {/* ── Segmented tab bar ── */}
       <div className="flex items-center gap-5">

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LayoutDashboard, Shield } from "lucide-react";
+import CursorGlow from "@/components/dashboard/CursorGlow";
 import AdminNotificationBell from "@/components/confirmations/AdminNotificationBell";
 import NotificationBell from "@/components/confirmations/NotificationBell";
 import SearchTrigger from "@/components/shell/SearchTrigger";
@@ -199,6 +200,7 @@ export default function ShellClient({
 
   return (
     <div className="min-h-dvh overflow-x-hidden text-[var(--color-text-primary)]">
+      <CursorGlow />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--color-button-primary-bg)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg focus:outline-none"
