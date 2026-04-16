@@ -288,7 +288,6 @@ export default function SidebarDrawer({
 
   const totals = overview?.data?.totals;
   const adminPendingCount = adminUnread?.count ?? 0;
-  const firstName = profileName.split(/\s+/)[0] ?? profileName;
 
   const streakTotal = (totals?.streakActivatedCount ?? 0) + (totals?.streakWonCount ?? 0);
   const streakProgress = totals?.totalEntries
@@ -464,7 +463,7 @@ export default function SidebarDrawer({
               )}
               style={{ transitionDelay: open ? "120ms" : "0ms" }}
             >
-              {firstName}
+              {profileName}
             </h2>
 
             {/* Email */}
@@ -478,48 +477,44 @@ export default function SidebarDrawer({
               {profileEmail}
             </div>
 
-            {/* ── Data strip — recessed horizontal stat bar ── */}
+            {/* ── Data strip — recessed stat bar, always visible ── */}
             <div
               className={cn(
-                "mt-4 w-full rounded-xl flex items-center justify-center gap-3 px-4 py-2.5 transition-all duration-400",
+                "mt-4 w-full rounded-xl flex items-center justify-center gap-2.5 px-4 py-3 transition-all duration-400",
                 open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
               )}
               style={{
                 transitionDelay: open ? "200ms" : "0ms",
-                backgroundColor: "#0a0f1e",
-                border: "1px solid rgba(59,130,246,0.12)",
+                backgroundColor: "#0c1224",
+                border: "1px solid rgba(59,130,246,0.18)",
+                boxShadow: "inset 0 1px 0 rgba(59,130,246,0.08)",
               }}
             >
-              {profileDesignation && (
-                <>
-                  <span
-                    className="rounded-md px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest"
-                    style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
-                  >
-                    {profileDesignation}
-                  </span>
-                  {totals && totals.streakActivatedCount > 0 && (
-                    <div className="h-4 w-px bg-white/[0.1]" />
-                  )}
-                </>
-              )}
-              {totals && totals.streakActivatedCount > 0 && (
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[9px] font-bold"
-                  style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
-                >
-                  <Zap className="size-2.5" />
-                  {totals.streakActivatedCount} streaks
-                </span>
-              )}
-              {totals && (
-                <>
-                  <div className="h-4 w-px bg-white/[0.1]" />
-                  <span className="font-mono text-[10px] font-bold text-[rgba(255,255,255,0.4)]">
-                    {totals.totalEntries}
-                  </span>
-                </>
-              )}
+              {/* Designation pill — always show faculty label if no designation */}
+              <span
+                className="rounded-md px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest"
+                style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+              >
+                {profileDesignation ?? "Faculty"}
+              </span>
+
+              <div className="h-4 w-px bg-blue-400/20" />
+
+              {/* Streaks */}
+              <span
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[9px] font-bold"
+                style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
+              >
+                <Zap className="size-2.5" />
+                {totals?.streakActivatedCount ?? 0}
+              </span>
+
+              <div className="h-4 w-px bg-blue-400/20" />
+
+              {/* Entry count */}
+              <span className="font-mono text-[11px] font-black text-blue-300/70">
+                {totals?.totalEntries ?? 0}
+              </span>
             </div>
           </div>
         </div>
@@ -558,28 +553,36 @@ export default function SidebarDrawer({
         </div>
 
         {/* ╔═══════════════════════════════════════════╗
-           ║  UTILITY DOCK — recessed, minimal           ║
+           ║  UTILITY DOCK — SOLID surface, distinct     ║
+           ║  from panel base. Must be clearly its own   ║
+           ║  layer — not merged with the background.    ║
            ╚═══════════════════════════════════════════╝ */}
         <div
           style={{
-            backgroundColor: "rgba(0,0,0,0.4)",
-            boxShadow: "0 -6px 24px rgba(0,0,0,0.5)",
-            borderTop: "1px solid rgba(255,255,255,0.04)",
+            backgroundColor: "#0c0e18",
+            boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+            borderTop: "1px solid rgba(255,255,255,0.10)",
           }}
         >
-          {/* Compact utility row — icon buttons, not full-width links */}
-          <div className="px-4 pt-3 pb-2 flex items-center gap-1">
+          {/* Utility buttons — solid backgrounds, visible */}
+          <div className="px-4 pt-4 pb-2 flex items-center gap-2">
             <Link
               href={settingsAppearance()}
               onClick={onClose}
               className={cn(
                 "flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-[12px] font-semibold transition-all duration-200",
                 isActive(settingsAppearance())
-                  ? "text-white bg-[#1a1530]"
-                  : "text-[rgba(255,255,255,0.35)] hover:text-white hover:bg-white/[0.06]"
+                  ? "text-white"
+                  : "text-[rgba(255,255,255,0.5)] hover:text-white"
               )}
+              style={{
+                backgroundColor: isActive(settingsAppearance()) ? "#1e1840" : "#141722",
+                border: isActive(settingsAppearance())
+                  ? "1px solid rgba(129,140,248,0.3)"
+                  : "1px solid rgba(255,255,255,0.08)",
+              }}
             >
-              <Palette className="size-4" style={{ color: isActive(settingsAppearance()) ? "#818cf8" : undefined }} />
+              <Palette className="size-4" style={{ color: isActive(settingsAppearance()) ? "#818cf8" : "rgba(255,255,255,0.5)" }} />
               <span>{t("nav.appearance")}</span>
             </Link>
 
@@ -589,47 +592,62 @@ export default function SidebarDrawer({
               <Link
                 href="/reset"
                 onClick={onClose}
-                className="group flex size-9 items-center justify-center rounded-xl text-[rgba(255,255,255,0.25)] hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-200"
+                className="group flex size-9 items-center justify-center rounded-xl transition-all duration-200"
+                style={{
+                  backgroundColor: "#141722",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
                 aria-label="Reset test data"
               >
-                <Trash2 className="size-4 group-hover:text-red-400 transition-colors" />
+                <Trash2 className="size-4 text-[rgba(255,255,255,0.4)] group-hover:text-red-400 transition-colors" />
               </Link>
             )}
 
             <button
               type="button"
               onClick={() => { onClose(); onSignOut(); }}
-              className="group flex size-9 items-center justify-center rounded-xl text-[rgba(255,255,255,0.25)] hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-200"
+              className="group flex size-9 items-center justify-center rounded-xl transition-all duration-200"
+              style={{
+                backgroundColor: "#141722",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
               aria-label={t("nav.signOut")}
             >
-              <LogOut className="size-4 group-hover:text-red-400 transition-colors" />
+              <LogOut className="size-4 text-[rgba(255,255,255,0.4)] group-hover:text-red-400 transition-colors" />
             </button>
           </div>
 
-          {/* ── Terminal Status ── */}
+          {/* ── Terminal Status — brighter emerald, more present ── */}
           <div
-            className="relative mx-4 mb-3 mt-1 overflow-hidden rounded-lg"
+            className="relative mx-4 mb-4 mt-1 overflow-hidden rounded-xl"
             style={{
-              backgroundColor: "#071a14",
-              border: "1px solid rgba(16,185,129,0.15)",
+              backgroundColor: "#0a1f18",
+              border: "1px solid rgba(16,185,129,0.25)",
+              boxShadow: "inset 0 1px 0 rgba(16,185,129,0.1)",
             }}
           >
             <div className="animate-scan-sweep" />
-            <div className="relative px-3.5 py-2 flex items-center gap-2.5">
-              <Terminal className="size-3 text-emerald-400/50" />
-              <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/60">
+            <div className="relative px-4 py-2.5 flex items-center gap-2.5">
+              <Terminal className="size-3.5 text-emerald-400/70" />
+              <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/80">
                 TSEDA
               </span>
               <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
-              <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/60">
+              <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-400/80">
                 ONLINE
               </span>
               {totals && (
                 <>
                   <div className="flex-1" />
-                  <span className="font-mono text-[10px] font-bold text-emerald-400/35">
-                    {totals.totalEntries}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold text-emerald-400/50">
+                      {totals.totalEntries}
+                    </span>
+                    <div className="h-2.5 w-px bg-emerald-400/25" />
+                    <span className="font-mono text-[10px] font-bold text-emerald-400/50">
+                      {totals.streakActivatedCount}s
+                    </span>
+                  </div>
                 </>
               )}
             </div>
