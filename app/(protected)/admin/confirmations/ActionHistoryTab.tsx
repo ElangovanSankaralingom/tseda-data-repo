@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import SectionCard from "@/components/layout/SectionCard";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { SelectDropdownOption } from "@/lib/types/ui";
 
 type ActionType =
@@ -38,68 +39,38 @@ type HistoryResponse = {
   };
 };
 
-const ACTION_TYPE_OPTIONS: readonly SelectDropdownOption[] = [
-  { label: "All Actions", value: "" },
-  { label: "Edit Granted", value: "edit_granted" },
-  { label: "Edit Rejected", value: "edit_rejected" },
-  { label: "Delete Approved", value: "delete_approved" },
-  { label: "Delete Rejected", value: "delete_rejected" },
-  { label: "User Cancelled", value: "user_cancelled" },
-  { label: "Auto-Finalised", value: "auto_finalised" },
-  { label: "Auto-Deleted", value: "auto_deleted" },
-];
-
-const CATEGORY_OPTIONS: readonly SelectDropdownOption[] = [
-  { label: "All Categories", value: "" },
-  { label: "FDP \u2014 Attended", value: "fdp-attended" },
-  { label: "FDP \u2014 Conducted", value: "fdp-conducted" },
-  { label: "Guest Lectures", value: "guest-lectures" },
-  { label: "Case Studies", value: "case-studies" },
-  { label: "Workshops", value: "workshops" },
-];
+const ACTION_TYPE_KEYS: Record<ActionType, string> = {
+  edit_granted: "admin.editGranted",
+  edit_rejected: "admin.editRejected",
+  delete_approved: "admin.deleteApproved",
+  delete_rejected: "admin.deleteRejected",
+  user_cancelled: "admin.userCancelled",
+  auto_finalised: "admin.autoFinalised",
+  auto_deleted: "admin.autoDeleted",
+};
 
 const BADGE_STYLES: Record<ActionType, string> = {
-  edit_granted: "bg-emerald-500/15 text-emerald-400",
-  edit_rejected: "bg-red-500/15 text-red-400",
-  delete_approved: "bg-red-500/15 text-red-400",
-  delete_rejected: "bg-amber-500/15 text-amber-400",
+  edit_granted: "bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]",
+  edit_rejected: "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]",
+  delete_approved: "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]",
+  delete_rejected: "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]",
   user_cancelled: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
-  auto_finalised: "bg-blue-500/15 text-blue-400",
+  auto_finalised: "bg-[var(--color-status-info-bg)] text-[var(--color-status-info)]",
   auto_deleted: "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)]",
 };
 
-const BADGE_LABELS: Record<ActionType, string> = {
-  edit_granted: "Edit Granted",
-  edit_rejected: "Edit Rejected",
-  delete_approved: "Delete Approved",
-  delete_rejected: "Delete Rejected",
-  user_cancelled: "User Cancelled",
-  auto_finalised: "Auto-Finalised",
-  auto_deleted: "Auto-Deleted",
-};
-
-function timeAgo(isoString: string): string {
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return isoString;
-  const now = Date.now();
-  const diffMs = now - date.getTime();
-  const seconds = Math.floor(diffMs / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (seconds < 60) return "Just now";
-  if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
-  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+const CATEGORY_SLUGS = [
+  "fdp-attended",
+  "fdp-conducted",
+  "guest-lectures",
+  "case-studies",
+  "workshops",
+] as const;
 
 const PAGE_SIZE = 20;
 
 export default function ActionHistoryTab() {
+  const { t } = useTranslation();
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -107,6 +78,47 @@ export default function ActionHistoryTab() {
   const [error, setError] = useState<string | null>(null);
   const [actionType, setActionType] = useState("");
   const [category, setCategory] = useState("");
+
+  const actionTypeOptions = useMemo<readonly SelectDropdownOption[]>(() => [
+    { label: t("admin.allActions"), value: "" },
+    ...Object.entries(ACTION_TYPE_KEYS).map(([value, key]) => ({
+      label: t(key as Parameters<typeof t>[0]),
+      value,
+    })),
+  ], [t]);
+
+  const categoryOptions = useMemo<readonly SelectDropdownOption[]>(() => [
+    { label: t("admin.allCategories"), value: "" },
+    ...CATEGORY_SLUGS.map((slug) => ({
+      label: t(`category.${slug}` as Parameters<typeof t>[0]),
+      value: slug,
+    })),
+  ], [t]);
+
+  function timeAgo(isoString: string): string {
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return isoString;
+    const now = Date.now();
+    const diffMs = now - date.getTime();
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (seconds < 60) return t("admin.justNow");
+    if (minutes < 60) {
+      const key = minutes === 1 ? "admin.minuteAgo" : "admin.minutesAgo";
+      return t(key).replace("{count}", String(minutes));
+    }
+    if (hours < 24) {
+      const key = hours === 1 ? "admin.hourAgo" : "admin.hoursAgo";
+      return t(key).replace("{count}", String(hours));
+    }
+    if (days === 1) return t("admin.yesterday");
+    if (days < 7) return t("admin.daysAgo").replace("{count}", String(days));
+
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
 
   const fetchHistory = useCallback(async (p: number, at: string, cat: string) => {
     setLoading(true);
@@ -156,16 +168,16 @@ export default function ActionHistoryTab() {
           <SelectDropdown
             value={actionType}
             onChange={handleActionTypeChange}
-            options={ACTION_TYPE_OPTIONS}
-            placeholder="All Actions"
+            options={actionTypeOptions}
+            placeholder={t("admin.allActions")}
           />
         </div>
         <div className="w-full sm:w-52">
           <SelectDropdown
             value={category}
             onChange={handleCategoryChange}
-            options={CATEGORY_OPTIONS}
-            placeholder="All Categories"
+            options={categoryOptions}
+            placeholder={t("admin.allCategories")}
           />
         </div>
       </div>
@@ -188,7 +200,7 @@ export default function ActionHistoryTab() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <div className="rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)]">
             {error}
           </div>
         ) : records.length === 0 ? (
@@ -196,11 +208,11 @@ export default function ActionHistoryTab() {
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-body-bg)]">
               <Clock className="size-8 text-[var(--color-text-muted)]" />
             </div>
-            <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">No history records found</p>
+            <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t("admin.noHistoryFound")}</p>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               {actionType || category
-                ? "Try adjusting your filters."
-                : "Action history will appear here as requests are processed."}
+                ? t("admin.adjustFilters")
+                : t("admin.historyWillAppear")}
             </p>
           </div>
         ) : (
@@ -217,7 +229,7 @@ export default function ActionHistoryTab() {
                       <span
                         className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${BADGE_STYLES[record.actionType]}`}
                       >
-                        {BADGE_LABELS[record.actionType]}
+                        {t(ACTION_TYPE_KEYS[record.actionType] as Parameters<typeof t>[0])}
                       </span>
                       <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
                         {record.entryTitle}
@@ -238,7 +250,7 @@ export default function ActionHistoryTab() {
                     {record.adminEmail ? (
                       <>
                         <span>&middot;</span>
-                        <span>by {record.adminEmail.split("@")[0]}</span>
+                        <span>{t("admin.byAdmin").replace("{name}", record.adminEmail.split("@")[0] ?? "")}</span>
                       </>
                     ) : null}
                   </div>
@@ -250,7 +262,7 @@ export default function ActionHistoryTab() {
             {total > PAGE_SIZE && (
               <div className="mt-4 flex items-center justify-between border-t border-[var(--color-divider)] pt-4">
                 <span className="text-xs text-[var(--color-text-secondary)]">
-                  Showing {showFrom}\u2013{showTo} of {total}
+                  {t("common.showing")} {showFrom}&ndash;{showTo} {t("common.of")} {total}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -259,14 +271,14 @@ export default function ActionHistoryTab() {
                     className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-glass-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ChevronLeft className="size-3.5" />
-                    Previous
+                    {t("common.previous")}
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                     className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-glass-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Next
+                    {t("common.next")}
                     <ChevronRight className="size-3.5" />
                   </button>
                 </div>
