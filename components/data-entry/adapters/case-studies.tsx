@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Banknote, BanknoteX, Calendar, MapPin, Clock, Users, Unlock } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { t as staticT } from "@/lib/i18n";
+import TextInput from "@/components/controls/TextInput";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -18,7 +19,7 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { MetadataPills, AttachmentBadges } from "@/components/data-entry/EntryMetadataDisplay";
-import { cx, uuid } from "@/lib/utils/idHelpers";
+import { uuid } from "@/lib/utils/idHelpers";
 import { formatCurrency } from "@/lib/i18n/locale";
 import {
   allowedSemestersForYear,
@@ -236,7 +237,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
         animationDelay={0}
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined}>
+          <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined} fieldKey="academicYear">
             <SelectDropdown
               value={form.academicYear || ""}
               onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
@@ -247,7 +248,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
             />
           </Field>
 
-          <Field label={fieldLabel('yearOfStudy')} error={submitted ? errors.yearOfStudy : undefined}>
+          <Field label={fieldLabel('yearOfStudy')} error={submitted ? errors.yearOfStudy : undefined} fieldKey="yearOfStudy">
             <SelectDropdown
               value={form.yearOfStudy || ""}
               onChange={(value) =>
@@ -264,7 +265,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
             />
           </Field>
 
-          <Field label={fieldLabel('currentSemester')} error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? t('placeholder.semesterBasedOnYear') : t('placeholder.selectYearFirst')}>
+          <Field label={fieldLabel('currentSemester')} error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? t('placeholder.semesterBasedOnYear') : t('placeholder.selectYearFirst')} fieldKey="currentSemester">
             <SelectDropdown
               value={form.currentSemester === null ? "" : String(form.currentSemester)}
               onChange={(value) => setForm((c) => withAcademicProgressionCompatibility({ ...c, currentSemester: value ? Number(value) : null }) as CaseStudyEntry)}
@@ -289,29 +290,23 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
         animationDelay={60}
       >
         <div className="space-y-4">
-          <Field label={fieldLabel('placeOfVisit')} error={submitted ? errors.placeOfVisit : undefined}>
-            <input
+          <Field label={fieldLabel('placeOfVisit')} error={submitted ? errors.placeOfVisit : undefined} fieldKey="placeOfVisit">
+            <TextInput
               value={form.placeOfVisit || ""}
               onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
               disabled={coreFieldDisabled("placeOfVisit")}
-              className={cx(
-                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                submitted && errors.placeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                coreFieldDisabled("placeOfVisit") && "cursor-not-allowed opacity-60",
-              )}
+              error={submitted && !!errors.placeOfVisit}
+              placeholder={t('placeholder.placeOfVisit')}
             />
           </Field>
 
-          <Field label={fieldLabel('purposeOfVisit')} error={submitted ? errors.purposeOfVisit : undefined}>
-            <input
+          <Field label={fieldLabel('purposeOfVisit')} error={submitted ? errors.purposeOfVisit : undefined} fieldKey="purposeOfVisit">
+            <TextInput
               value={form.purposeOfVisit || ""}
               onChange={(e) => setForm((c) => ({ ...c, purposeOfVisit: e.target.value }))}
               disabled={coreFieldDisabled("purposeOfVisit")}
-              className={cx(
-                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                submitted && errors.purposeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                coreFieldDisabled("purposeOfVisit") && "cursor-not-allowed opacity-60",
-              )}
+              error={submitted && !!errors.purposeOfVisit}
+              placeholder={t('placeholder.visitPurpose')}
             />
           </Field>
         </div>
@@ -331,11 +326,11 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
       >
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined}>
+            <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined} fieldKey="startDate">
               <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
             </Field>
 
-            <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
+            <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined} fieldKey="endDate">
               <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
             </Field>
 
@@ -406,7 +401,7 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
         animationDelay={240}
       >
         <div className="space-y-4">
-          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
+          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined} fieldKey="sponsored">
             <PillSelect
               value={form.sponsored || ""}
               onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
@@ -419,20 +414,17 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
           {form.sponsored === "Yes" && (
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
-                <input
+              <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined} fieldKey="fundingAgency">
+                <TextInput
                   value={form.fundingAgency || ""}
                   onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
                   disabled={coreFieldDisabled("fundingAgency")}
-                  className={cx(
-                    "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                    submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                    coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
-                  )}
+                  error={submitted && !!errors.fundingAgency}
+                  placeholder={t('placeholder.fundingAgency')}
                 />
               </Field>
 
-              <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
+              <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')} fieldKey="fundingAmount">
                 <CurrencyField
                   value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                   onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -537,19 +529,14 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
                 onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
               />
 
-              <Field label={fieldLabel('numberOfParticipants')}>
-                <input
+              <Field label={fieldLabel('numberOfParticipants')} fieldKey="numberOfParticipants">
+                <TextInput
                   type="number"
                   min="0"
                   value={form.numberOfParticipants === null ? "" : String(form.numberOfParticipants)}
                   onChange={(e) => setForm((c) => ({ ...c, numberOfParticipants: e.target.value === "" ? null : Number(e.target.value) }))}
                   disabled={controlsDisabled}
-                  className={cx(
-                    "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                    "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                    controlsDisabled && "cursor-not-allowed opacity-60",
-                  )}
-                  placeholder="e.g. 45"
+                  placeholder={t('placeholder.numberOfParticipants')}
                 />
               </Field>
             </div>

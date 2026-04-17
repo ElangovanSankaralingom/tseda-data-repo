@@ -134,7 +134,7 @@ function HeroCard({
               border: "1px solid rgba(251,191,36,0.25)",
             }}
           >
-            <Zap className="size-4 text-amber-300" />
+            <Zap className="size-4 text-[var(--color-status-warning)]" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -143,7 +143,7 @@ function HeroCard({
               </Link>
               {editTime?.hasEditWindow && !editTime.expired && (
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider text-amber-300 animate-status-glow"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[var(--color-status-warning)] animate-status-glow"
                   style={{
                     background: "rgba(251,191,36,0.12)",
                     border: "1px solid rgba(251,191,36,0.22)",
@@ -238,25 +238,25 @@ function TimerCard({
                 "--glow-color": isUrgent ? "rgba(239,68,68,0.35)" : `${hex}30`,
               } as React.CSSProperties}
             >
-              <Clock className={`size-3.5 ${isUrgent ? "text-red-400 animate-subtle-pulse" : "text-blue-400"}`} />
-              <span className={`mt-0.5 text-xs font-black tabular-nums ${isUrgent ? "text-red-400" : "text-blue-300"}`}>
+              <Clock className={`size-3.5 ${isUrgent ? "text-[var(--color-status-error)] animate-subtle-pulse" : "text-[var(--color-status-info)]"}`} />
+              <span className={`mt-0.5 text-xs font-black tabular-nums ${isUrgent ? "text-[var(--color-status-error)]" : "text-[var(--color-status-info)]"}`}>
                 {editTime.remainingLabel}
               </span>
             </div>
           ) : (
             <div className="flex size-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `${hex}10`, border: `1px solid ${hex}15` }}>
-              <Clock className="size-3.5 text-blue-400" />
+              <Clock className="size-3.5 text-[var(--color-status-info)]" />
             </div>
           )}
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={href} className="text-base font-bold text-blue-50 hover:text-white truncate transition-colors">
+              <Link href={href} className="text-base font-bold text-white/90 hover:text-white truncate transition-colors">
                 {title}
               </Link>
               {badges}
             </div>
-            {subtitle ? <div className="mt-0.5 text-sm text-blue-200/60">{subtitle}</div> : null}
+            {subtitle ? <div className="mt-0.5 text-sm text-white/50">{subtitle}</div> : null}
           </div>
         </div>
       </div>
@@ -272,7 +272,7 @@ function TimerCard({
 
         <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
           {time ? (
-            <span className={`inline-flex items-center gap-1.5 text-sm ${isUrgent ? "text-red-400" : "text-white/35"}`}>
+            <span className={`inline-flex items-center gap-1.5 text-sm ${isUrgent ? "text-[var(--color-status-error)]" : "text-white/35"}`}>
               {isUrgent && <Clock className="size-3 animate-subtle-pulse" />}
               {isUrgent ? t('entry.expiresToday') : `${t('entry.timeUpdated')} ${time}`}
             </span>
@@ -488,26 +488,26 @@ function DashedCard({
       >
         <div className="flex items-start gap-2.5">
           <div className="relative mt-0.5">
-            <Clock className="size-4 text-orange-400" />
+            <Clock className="size-4 text-[var(--color-status-warning)]" />
             <span
-              className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-orange-400 animate-subtle-pulse"
-              style={{ boxShadow: "0 0 6px rgba(249,115,22,0.5)" }}
+              className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-[var(--color-status-warning)] animate-subtle-pulse"
+              style={{ boxShadow: `0 0 6px var(--color-status-warning-bg)` }}
             />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={href} className="text-base font-bold text-orange-50 hover:text-white truncate transition-colors">
+              <Link href={href} className="text-base font-bold text-white/90 hover:text-white truncate transition-colors">
                 {title}
               </Link>
               <span
-                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-300"
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-status-warning)]"
                 style={{ background: `${hex}12`, border: `1px solid ${hex}18` }}
               >
                 {t('entry.editRequested')}
               </span>
               {badges}
             </div>
-            {subtitle ? <div className="mt-0.5 text-sm text-orange-200/60">{subtitle}</div> : null}
+            {subtitle ? <div className="mt-0.5 text-sm text-white/50">{subtitle}</div> : null}
           </div>
         </div>
       </div>
@@ -517,12 +517,12 @@ function DashedCard({
         {hasContent && (
           <div>
             {children}
-            {metadata && !children ? <div className="text-sm text-orange-200/50">{metadata}</div> : null}
+            {metadata && !children ? <div className="text-sm text-white/50">{metadata}</div> : null}
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
-          {time ? <span className="text-sm text-orange-300/60">{t('entry.timeRequested')} {time}</span> : <span />}
+          {time ? <span className="text-sm text-white/50">{t('entry.timeRequested')} {time}</span> : <span />}
           {actions ? (
             <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
               {actions}
@@ -562,18 +562,18 @@ function StampRow({
       tabIndex={0}
       aria-label={`${title} finalized entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`${getGroupCardClass("locked_in")} group animate-fade-in-up ${staggerClass} py-4 px-4 hover:bg-emerald-500/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/20`}
-      style={{ borderBottom: "1px solid rgba(34,197,94,0.10)" }}
+      className={`${getGroupCardClass("locked_in")} group animate-fade-in-up ${staggerClass} py-4 px-4 hover:bg-[var(--color-status-success-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-status-success-border)]`}
+      style={{ borderBottom: `1px solid var(--color-status-success-border)` }}
     >
       {/* Title row */}
       <div className="flex items-center gap-2.5">
-        <Check className="size-4.5 shrink-0 text-emerald-400" />
+        <Check className="size-4.5 shrink-0 text-[var(--color-status-success)]" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Link href={href} className="text-[15px] font-semibold text-white/75 hover:text-white truncate transition-colors">
               {title}
             </Link>
-            <span className="font-mono text-[10px] font-bold text-emerald-400/50">
+            <span className="font-mono text-[10px] font-bold text-[var(--color-status-success)]/50">
               #{String(index + 1).padStart(2, "0")}
             </span>
             {badges}
@@ -593,12 +593,12 @@ function StampRow({
       {/* Footer */}
       <div className="flex flex-wrap items-center justify-between gap-2 ml-[30px] mt-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-400/70">
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-status-success)]/70">
             {t('entry.finalized')}
           </span>
           {time ? (
             <>
-              <span className="text-emerald-400/30">·</span>
+              <span className="text-[var(--color-status-success)]/30">·</span>
               <span className="text-xs text-white/35">{time}</span>
             </>
           ) : null}

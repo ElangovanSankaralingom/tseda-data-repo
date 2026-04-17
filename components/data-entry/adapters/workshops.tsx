@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Calendar, BookOpen, Clock, UserCircle, Users, Unlock, Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { t as staticT } from "@/lib/i18n";
+import TextInput from "@/components/controls/TextInput";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -18,7 +19,7 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { MetadataPills, AttachmentBadges } from "@/components/data-entry/EntryMetadataDisplay";
-import { cx, uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
+import { uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import { formatCurrency } from "@/lib/i18n/locale";
 import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureFaculty, ensureStreak, extractNestedUpload } from "@/lib/entries/hydrateEntry";
 import type { WorkshopEntry } from "@/components/data-entry/adapters/adapterTypes";
@@ -177,7 +178,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
         animationDelay={0}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined}>
+          <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined} fieldKey="academicYear">
             <SelectDropdown
               value={form.academicYear || ""}
               onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
@@ -188,7 +189,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
             />
           </Field>
 
-          <Field label={fieldLabel('semesterType')} error={submitted ? errors.semesterType : undefined}>
+          <Field label={fieldLabel('semesterType')} error={submitted ? errors.semesterType : undefined} fieldKey="semesterType">
             <PillSelect
               value={form.semesterType || ""}
               onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
@@ -213,21 +214,18 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
         animationDelay={60}
       >
         <div className="space-y-4">
-          <Field label={fieldLabel('workshopName')} error={submitted ? errors.workshopName : undefined}>
-            <input
+          <Field label={fieldLabel('workshopName')} error={submitted ? errors.workshopName : undefined} fieldKey="workshopName">
+            <TextInput
               value={form.workshopName || ""}
               onChange={(e) => setForm((c) => ({ ...c, workshopName: e.target.value }))}
               disabled={coreFieldDisabled("workshopName")}
-              className={cx(
-                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                submitted && errors.workshopName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                coreFieldDisabled("workshopName") && "cursor-not-allowed opacity-60",
-              )}
+              error={submitted && !!errors.workshopName}
+              placeholder={t('placeholder.workshopName')}
             />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={fieldLabel('level')} error={submitted ? errors.level : undefined}>
+            <Field label={fieldLabel('level')} error={submitted ? errors.level : undefined} fieldKey="level">
               <PillSelect
                 value={form.level || ""}
                 onChange={(value) => setForm((c) => ({ ...c, level: value }))}
@@ -237,7 +235,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
               />
             </Field>
 
-            <Field label={fieldLabel('mode')} error={submitted ? errors.mode : undefined}>
+            <Field label={fieldLabel('mode')} error={submitted ? errors.mode : undefined} fieldKey="mode">
               <PillSelect
                 value={form.mode || ""}
                 onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
@@ -263,11 +261,11 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
       >
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined}>
+            <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined} fieldKey="startDate">
               <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
             </Field>
 
-            <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
+            <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined} fieldKey="endDate">
               <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
             </Field>
 
@@ -292,43 +290,34 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
         animationDelay={180}
       >
         <div className="space-y-4">
-          <Field label={fieldLabel('resourcePersonName')} error={submitted ? errors.resourcePersonName : undefined}>
-            <input
+          <Field label={fieldLabel('resourcePersonName')} error={submitted ? errors.resourcePersonName : undefined} fieldKey="resourcePersonName">
+            <TextInput
               value={form.resourcePersonName || ""}
               onChange={(e) => setForm((c) => ({ ...c, resourcePersonName: e.target.value }))}
               disabled={coreFieldDisabled("resourcePersonName")}
-              className={cx(
-                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                submitted && errors.resourcePersonName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                coreFieldDisabled("resourcePersonName") && "cursor-not-allowed opacity-60",
-              )}
+              error={submitted && !!errors.resourcePersonName}
+              placeholder={t('placeholder.resourcePersonName')}
             />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={fieldLabel('resourcePersonDesignation')} error={submitted ? errors.resourcePersonDesignation : undefined}>
-              <input
+            <Field label={fieldLabel('resourcePersonDesignation')} error={submitted ? errors.resourcePersonDesignation : undefined} fieldKey="resourcePersonDesignation">
+              <TextInput
                 value={form.resourcePersonDesignation || ""}
                 onChange={(e) => setForm((c) => ({ ...c, resourcePersonDesignation: e.target.value }))}
                 disabled={coreFieldDisabled("resourcePersonDesignation")}
-                className={cx(
-                  "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                  submitted && errors.resourcePersonDesignation ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                  coreFieldDisabled("resourcePersonDesignation") && "cursor-not-allowed opacity-60",
-                )}
+                error={submitted && !!errors.resourcePersonDesignation}
+                placeholder={t('placeholder.resourcePersonDesignation')}
               />
             </Field>
 
-            <Field label={fieldLabel('resourcePersonOrganisation')} error={submitted ? errors.resourcePersonOrganisation : undefined}>
-              <input
+            <Field label={fieldLabel('resourcePersonOrganisation')} error={submitted ? errors.resourcePersonOrganisation : undefined} fieldKey="resourcePersonOrganisation">
+              <TextInput
                 value={form.resourcePersonOrganisation || ""}
                 onChange={(e) => setForm((c) => ({ ...c, resourcePersonOrganisation: e.target.value }))}
                 disabled={coreFieldDisabled("resourcePersonOrganisation")}
-                className={cx(
-                  "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                  submitted && errors.resourcePersonOrganisation ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                  coreFieldDisabled("resourcePersonOrganisation") && "cursor-not-allowed opacity-60",
-                )}
+                error={submitted && !!errors.resourcePersonOrganisation}
+                placeholder={t('placeholder.resourcePersonOrganisation')}
               />
             </Field>
           </div>
@@ -394,7 +383,7 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
         animationDelay={300}
       >
         <div className="space-y-4">
-          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
+          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined} fieldKey="sponsored">
             <PillSelect
               value={form.sponsored || ""}
               onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
@@ -407,20 +396,17 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
 
           {form.sponsored === "Yes" && (
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
-                <input
+              <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined} fieldKey="fundingAgency">
+                <TextInput
                   value={form.fundingAgency || ""}
                   onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
                   disabled={coreFieldDisabled("fundingAgency")}
-                  className={cx(
-                    "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                    submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                    coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
-                  )}
+                  error={submitted && !!errors.fundingAgency}
+                  placeholder={t('placeholder.fundingAgency')}
                 />
               </Field>
 
-              <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
+              <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')} fieldKey="fundingAmount">
                 <CurrencyField
                   value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                   onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
@@ -489,19 +475,14 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
                 onStatusChange={() => {}} disabled={controlsDisabled} viewOnly={isViewMode}
               />
 
-              <Field label={fieldLabel('numberOfParticipants')}>
-                <input
+              <Field label={fieldLabel('numberOfParticipants')} fieldKey="numberOfParticipants">
+                <TextInput
                   type="number"
                   min="0"
                   value={form.numberOfParticipants === null ? "" : String(form.numberOfParticipants)}
                   onChange={(e) => setForm((c) => ({ ...c, numberOfParticipants: e.target.value === "" ? null : Number(e.target.value) }))}
                   disabled={controlsDisabled}
-                  className={cx(
-                    "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                    "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                    controlsDisabled && "cursor-not-allowed opacity-60",
-                  )}
-                  placeholder="e.g. 45"
+                  placeholder={t('placeholder.numberOfParticipants')}
                 />
               </Field>
 

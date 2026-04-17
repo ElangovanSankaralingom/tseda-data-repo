@@ -35,7 +35,7 @@ export default function AutoSaveIndicator({
 
   if (status.phase === "error") {
     return (
-      <p className="text-xs text-amber-700">
+      <p className="text-xs text-[var(--color-status-warning)]">
         {t("entry.autoSaveFailed")}
       </p>
     );

@@ -7,6 +7,7 @@ import {
   Download,
   Eye,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import PdfPreviewModal from "@/components/data-entry/PdfPreviewModal";
 import { type EntryDocumentSectionProps } from "./dataEntryTypes";
 
@@ -31,6 +32,7 @@ export default function EntryDocumentSection({
   permanentlyLocked = false,
 }: EntryDocumentSectionProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const { t } = useTranslation();
   const hasPdf = !!pdfMeta?.url;
   const pdfUrl = pdfMeta?.url ?? "";
   const pdfFileName = pdfMeta?.fileName ?? "entry.pdf";
@@ -39,46 +41,46 @@ export default function EntryDocumentSection({
   // No PDF: don't render anything
   if (!hasPdf) return null;
 
-  // PDF stale: compact amber bar
+  // PDF stale: compact warning bar
   if (pdfStale && !isViewMode && !permanentlyLocked) {
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-2.5">
-        <AlertTriangle className="size-4 shrink-0 text-amber-500" />
-        <span className="flex-1 text-sm text-amber-900">
-          Document outdated — fields changed since last generation
+      <div className="flex items-center gap-3 rounded-lg border border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] px-4 py-2.5">
+        <AlertTriangle className="size-4 shrink-0 text-[var(--color-status-warning)]" />
+        <span className="flex-1 text-sm text-[var(--color-status-warning)]">
+          {t('entry.documentOutdated')}
         </span>
       </div>
     );
   }
 
-  // PDF ready: compact emerald bar
+  // PDF ready: compact success bar
   return (
     <>
-      <div className="flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5">
-        <CheckCircle className="size-4 shrink-0 text-emerald-500" />
-        <span className="flex-1 text-sm text-emerald-700">
-          Document ready{generatedAt ? ` · Generated ${formatRelativeTime(generatedAt)}` : ""}
+      <div className="flex items-center gap-3 rounded-lg border border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] px-4 py-2.5">
+        <CheckCircle className="size-4 shrink-0 text-[var(--color-status-success)]" />
+        <span className="flex-1 text-sm text-[var(--color-status-success)]">
+          {t('entry.documentReady')}{generatedAt ? ` · Generated ${formatRelativeTime(generatedAt)}` : ""}
         </span>
         <button
           type="button"
           onClick={() => setPreviewOpen(true)}
           disabled={!canPreview}
-          className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[var(--color-status-success)] hover:bg-[var(--color-status-success-bg)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Eye className="size-3.5" />
-          Preview
+          {t('entry.preview')}
         </button>
         <a
           href={canDownload ? pdfUrl : undefined}
           download={canDownload ? pdfFileName : undefined}
           className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
             canDownload
-              ? "text-emerald-700 hover:bg-emerald-500/15 cursor-pointer"
-              : "text-emerald-700 opacity-50 cursor-not-allowed pointer-events-none"
+              ? "text-[var(--color-status-success)] hover:bg-[var(--color-status-success-bg)] cursor-pointer"
+              : "text-[var(--color-status-success)] opacity-50 cursor-not-allowed pointer-events-none"
           }`}
         >
           <Download className="size-3.5" />
-          Download
+          {t('entry.download')}
         </a>
       </div>
 

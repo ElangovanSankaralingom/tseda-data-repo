@@ -24,7 +24,7 @@ export default function EditorProgressHeader({
           {isGenerated && progress.completed < progress.total ? ` \u2014 ${t('entry.uploadSupportingDocsShort')}` : ""}
         </span>
         {streakEligible ? (
-          <span className="text-xs font-medium text-amber-600">&#9889; {t('entry.streakEntry')}</span>
+          <span className="text-xs font-medium text-[var(--color-status-warning)]">&#9889; {t('entry.streakEntry')}</span>
         ) : null}
       </div>
       <div className="h-1.5 rounded-full bg-[var(--color-dropdown-hover)] overflow-hidden">

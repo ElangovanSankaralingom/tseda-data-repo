@@ -15,11 +15,11 @@ export default function EntryStatusBadge({ status, className }: { status?: Entry
     <span
       className={cx(
         "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
-        normalized === "GENERATED" && "border-blue-500/20 bg-blue-500/10 text-blue-700",
-        normalized === "EDIT_REQUESTED" && "border-amber-500/20 bg-amber-500/10 text-amber-800",
-        normalized === "EDIT_GRANTED" && "border-emerald-500/20 bg-emerald-500/10 text-emerald-700",
+        normalized === "GENERATED" && "border-[var(--color-status-info-border)] bg-[var(--color-status-info-bg)] text-[var(--color-status-info)]",
+        normalized === "EDIT_REQUESTED" && "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]",
+        normalized === "EDIT_GRANTED" && "border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]",
         normalized === "DRAFT" && "border-[var(--color-glass-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]",
-        normalized === "DELETE_REQUESTED" && "border-red-500/20 bg-red-500/10 text-red-400",
+        normalized === "DELETE_REQUESTED" && "border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]",
         normalized === "ARCHIVED" && "border-[var(--color-input-border)] bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
         className
       )}

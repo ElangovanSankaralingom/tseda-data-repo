@@ -161,7 +161,7 @@ export function getCategoryNavigation(categoryPath: string, viewEntryId?: string
     isPreviewMode,
     dataEntryHref: dashboardHref,
     categoryHref: categoryPath,
-    backHref: isPreviewMode ? categoryPath : dashboardHref,
+    backHref: categoryPath,
     backDisabled: false,
   };
 }

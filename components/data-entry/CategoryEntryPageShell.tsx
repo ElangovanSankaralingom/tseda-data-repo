@@ -1,19 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  Plus,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
+import BackTo from "@/components/nav/BackTo";
 import EntryShell from "@/components/entry/EntryShell";
 import SectionCard from "@/components/layout/SectionCard";
-import EditorProgressHeader from "@/components/data-entry/EditorProgressHeader";
+import PhaseProgressIndicator from "@/components/data-entry/PhaseProgressIndicator";
 import { EditorStatusBanners } from "@/components/data-entry/EditorStatusBanner";
 import EditorMetadataFooter from "@/components/data-entry/EditorMetadataFooter";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
+import { getIncompleteFields } from "@/lib/entries/incompleteFields";
 import type { EditTimeRemaining } from "@/lib/entries/workflow";
 import { getCategoryConfig, type CategorySlug } from "@/data/categoryRegistry";
 import { getCategoryIcon } from "@/lib/ui/categoryIcons";
@@ -169,15 +167,10 @@ function CategoryHero({
         </div>
 
         <div className="relative p-6 sm:p-8">
-          {/* Back link */}
-          <Link
-            href={dashboard()}
-            className="mb-5 inline-flex items-center gap-1.5 text-xs font-medium transition-all group/back"
-            style={{ color: "var(--color-text-tertiary)" }}
-          >
-            <ArrowLeft className="size-3.5 transition-transform group-hover/back:-translate-x-0.5" style={{ color: "var(--color-icon-muted)" }} />
-            {t('nav.dashboard')}
-          </Link>
+          {/* Back link — same BackTo component used in form mode */}
+          <div className="mb-5">
+            <BackTo href={dashboard()} />
+          </div>
 
           {/* ── HUD corner coordinates ── */}
           <div className="absolute top-3 right-4 font-mono text-[9px] tracking-wider select-none pointer-events-none" style={{ color: "var(--color-text-placeholder)" }}>
@@ -417,6 +410,7 @@ export default function CategoryEntryPageShell({
     const category = entryShell.category;
     const isGenerated = !!entry?.committedAtISO;
     const progress = computeFieldProgress(category, entry, isGenerated);
+    const incomplete = getIncompleteFields(category, entry, isGenerated);
     const streakEligible = !!entry?.streakEligible;
     const editable = entry?.isEditable !== false;
     const editTime = (entry?.editTimeRemaining as EditTimeRemaining | undefined) ?? null;
@@ -447,11 +441,14 @@ export default function CategoryEntryPageShell({
           {!loading && formCard ? (
             <SectionCard className={formCard.className} title={formCard.title} subtitle={formCard.subtitle}>
               {editable ? (
-                <EditorProgressHeader
+                <PhaseProgressIndicator
                   category={category}
-                  progress={progress}
+                  stage1={{ filled: progress.preGenerate.completed, total: progress.preGenerate.total }}
+                  stage2={{ filled: progress.postGenerate.completed, total: progress.postGenerate.total }}
                   isGenerated={isGenerated}
                   streakEligible={streakEligible}
+                  missingStage1={incomplete.stage1}
+                  missingStage2={incomplete.stage2}
                 />
               ) : null}
               {formCard.content}

@@ -96,7 +96,7 @@ export type PdfMeta = {
 } | null | undefined;
 
 export type CardContent = {
-  title: string;
+  title?: string;
   subtitle?: string;
   className?: string;
   content: React.ReactNode;
