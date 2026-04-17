@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote, BanknoteX } from "lucide-react";
+import { Banknote, BanknoteX, Calendar, MapPin, Clock, Users, Unlock } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { t as staticT } from "@/lib/i18n";
 import CurrencyField from "@/components/controls/CurrencyField";
@@ -9,8 +9,10 @@ import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
 import UploadFieldMulti from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import PillSelect from "@/components/controls/PillSelect";
 import FacultyRowPicker, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
+import FormFieldGroup from "@/components/data-entry/FormFieldGroup";
 import StageTwoDivider from "@/components/data-entry/StageTwoDivider";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
@@ -163,6 +165,51 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
 
   const requiredUploadsComplete = form.permissionLetter.length > 0 && form.travelPlan.length > 0 && form.geotaggedPhotos.length > 0;
 
+  // Count filled fields per group for completion badges
+  const group1Filled = [
+    form.academicYear,
+    form.yearOfStudy,
+    form.currentSemester !== null,
+  ].filter(Boolean).length;
+  const group1Total = 3;
+
+  const group2Filled = [
+    form.placeOfVisit,
+    form.purposeOfVisit,
+  ].filter(Boolean).length;
+  const group2Total = 2;
+
+  const group3Filled = [
+    form.startDate,
+    form.endDate,
+    inclusiveDays !== null,
+  ].filter(Boolean).length;
+  const group3Total = 3;
+
+  const group4Filled = [
+    form.coordinatorEmail,
+    form.staffAccompanying.length > 0,
+  ].filter(Boolean).length;
+  const group4Total = 2;
+
+  const group5Filled = [
+    form.sponsored,
+    form.sponsored === "Yes" ? form.fundingAgency : true,
+    form.sponsored === "Yes" ? form.fundingAmount !== null : true,
+  ].filter(Boolean).length;
+  const group5Total = form.sponsored === "Yes" ? 3 : 1;
+
+  const group6Filled = [
+    form.permissionLetter.length > 0,
+    form.travelPlan.length > 0,
+    form.geotaggedPhotos.length > 0,
+    form.report.length > 0,
+    form.feedback.length > 0,
+    form.advanceClosure.length > 0,
+    form.numberOfParticipants !== null,
+  ].filter(Boolean).length;
+  const group6Total = 7;
+
   async function persistStaffRows(nextRows: FacultyRowValue[]) {
     return persistCurrentMutation({
       buildNextEntry: (current) => ({
@@ -176,168 +223,245 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
   }
 
   return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined}>
-          <SelectDropdown
-            value={form.academicYear || ""}
-            onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
-            options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
-            placeholder={t('placeholder.selectAcademicYear')}
-            disabled={coreFieldDisabled("academicYear")}
-            error={submitted && !!errors.academicYear}
-          />
-        </Field>
+    <div className="space-y-4">
+      {/* Group 1: Academic Period */}
+      <FormFieldGroup
+        step={1}
+        title={t('entry.groupAcademicPeriod')}
+        icon={Calendar}
+        accent="#60a5fa"
+        filled={group1Filled}
+        total={group1Total}
+        disabled={coreFieldDisabled("academicYear")}
+        animationDelay={0}
+      >
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined}>
+            <SelectDropdown
+              value={form.academicYear || ""}
+              onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
+              options={ACADEMIC_YEAR_DROPDOWN_OPTIONS}
+              placeholder={t('placeholder.selectAcademicYear')}
+              disabled={coreFieldDisabled("academicYear")}
+              error={submitted && !!errors.academicYear}
+            />
+          </Field>
 
-        <Field label={fieldLabel('yearOfStudy')} error={submitted ? errors.yearOfStudy : undefined}>
-          <SelectDropdown
-            value={form.yearOfStudy || ""}
-            onChange={(value) =>
-              setForm((c) => {
-                const nextYear = normalizeYearOfStudy(value) ?? "";
-                const nextSemester = isSemesterAllowed(nextYear || undefined, c.currentSemester ?? undefined) ? c.currentSemester : null;
-                return withAcademicProgressionCompatibility({ ...c, yearOfStudy: nextYear, currentSemester: nextSemester }) as CaseStudyEntry;
-              })
-            }
-            options={YEAR_OF_STUDY_OPTIONS}
-            placeholder={t('placeholder.selectYearOfStudy')}
-            disabled={coreFieldDisabled("yearOfStudy")}
-            error={submitted && !!errors.yearOfStudy}
-          />
-        </Field>
+          <Field label={fieldLabel('yearOfStudy')} error={submitted ? errors.yearOfStudy : undefined}>
+            <SelectDropdown
+              value={form.yearOfStudy || ""}
+              onChange={(value) =>
+                setForm((c) => {
+                  const nextYear = normalizeYearOfStudy(value) ?? "";
+                  const nextSemester = isSemesterAllowed(nextYear || undefined, c.currentSemester ?? undefined) ? c.currentSemester : null;
+                  return withAcademicProgressionCompatibility({ ...c, yearOfStudy: nextYear, currentSemester: nextSemester }) as CaseStudyEntry;
+                })
+              }
+              options={YEAR_OF_STUDY_OPTIONS}
+              placeholder={t('placeholder.selectYearOfStudy')}
+              disabled={coreFieldDisabled("yearOfStudy")}
+              error={submitted && !!errors.yearOfStudy}
+            />
+          </Field>
 
-        <Field label={fieldLabel('currentSemester')} error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? t('placeholder.semesterBasedOnYear') : t('placeholder.selectYearFirst')}>
-          <SelectDropdown
-            value={form.currentSemester === null ? "" : String(form.currentSemester)}
-            onChange={(value) => setForm((c) => withAcademicProgressionCompatibility({ ...c, currentSemester: value ? Number(value) : null }) as CaseStudyEntry)}
-            options={semesterOptions.map((o) => ({ label: String(o), value: String(o) }))}
-            placeholder={normalizedStudentYear ? t('placeholder.selectCurrentSemester') : t('placeholder.selectYearFirst')}
-            disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
-            error={submitted && !!errors.currentSemester}
-          />
-        </Field>
+          <Field label={fieldLabel('currentSemester')} error={submitted ? errors.currentSemester : undefined} hint={normalizedStudentYear ? t('placeholder.semesterBasedOnYear') : t('placeholder.selectYearFirst')}>
+            <SelectDropdown
+              value={form.currentSemester === null ? "" : String(form.currentSemester)}
+              onChange={(value) => setForm((c) => withAcademicProgressionCompatibility({ ...c, currentSemester: value ? Number(value) : null }) as CaseStudyEntry)}
+              options={semesterOptions.map((o) => ({ label: String(o), value: String(o) }))}
+              placeholder={normalizedStudentYear ? t('placeholder.selectCurrentSemester') : t('placeholder.selectYearFirst')}
+              disabled={coreFieldDisabled("currentSemester") || !normalizedStudentYear}
+              error={submitted && !!errors.currentSemester}
+            />
+          </Field>
+        </div>
+      </FormFieldGroup>
 
-        <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined}>
-          <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
-        </Field>
+      {/* Group 2: Visit Details */}
+      <FormFieldGroup
+        step={2}
+        title={t('entry.groupVisitDetails')}
+        icon={MapPin}
+        accent="var(--color-primary)"
+        filled={group2Filled}
+        total={group2Total}
+        disabled={coreFieldDisabled("placeOfVisit")}
+        animationDelay={60}
+      >
+        <div className="space-y-4">
+          <Field label={fieldLabel('placeOfVisit')} error={submitted ? errors.placeOfVisit : undefined}>
+            <input
+              value={form.placeOfVisit || ""}
+              onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
+              disabled={coreFieldDisabled("placeOfVisit")}
+              className={cx(
+                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
+                submitted && errors.placeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
+                coreFieldDisabled("placeOfVisit") && "cursor-not-allowed opacity-60",
+              )}
+            />
+          </Field>
 
-        <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
-          <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
-        </Field>
+          <Field label={fieldLabel('purposeOfVisit')} error={submitted ? errors.purposeOfVisit : undefined}>
+            <input
+              value={form.purposeOfVisit || ""}
+              onChange={(e) => setForm((c) => ({ ...c, purposeOfVisit: e.target.value }))}
+              disabled={coreFieldDisabled("purposeOfVisit")}
+              className={cx(
+                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
+                submitted && errors.purposeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
+                coreFieldDisabled("purposeOfVisit") && "cursor-not-allowed opacity-60",
+              )}
+            />
+          </Field>
+        </div>
+      </FormFieldGroup>
 
-        <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
-          <div className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
-        </Field>
-
-        <Field label={fieldLabel('placeOfVisit')} error={submitted ? errors.placeOfVisit : undefined}>
-          <input
-            value={form.placeOfVisit || ""}
-            onChange={(e) => setForm((c) => ({ ...c, placeOfVisit: e.target.value }))}
-            disabled={coreFieldDisabled("placeOfVisit")}
-            className={cx(
-              "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-              submitted && errors.placeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-              coreFieldDisabled("placeOfVisit") && "cursor-not-allowed opacity-60",
-            )}
-          />
-        </Field>
-
-        <Field label={fieldLabel('purposeOfVisit')} error={submitted ? errors.purposeOfVisit : undefined}>
-          <input
-            value={form.purposeOfVisit || ""}
-            onChange={(e) => setForm((c) => ({ ...c, purposeOfVisit: e.target.value }))}
-            disabled={coreFieldDisabled("purposeOfVisit")}
-            className={cx(
-              "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-              submitted && errors.purposeOfVisit ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-              coreFieldDisabled("purposeOfVisit") && "cursor-not-allowed opacity-60",
-            )}
-          />
-        </Field>
-      </div>
-
-      <div className="mt-5 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
-        {t('entry.coordinator')} <span className="font-medium text-[var(--color-text-primary)]">{userDisplayName || "-"}</span>
-      </div>
-
-      <div className="mt-5">
-        <FacultyRowPicker
-          title={t('entry.staffAccompanyingTitle')}
-          helperText={t('entry.staffAccompanyingHint')}
-          addLabel={t('entry.addStaff')}
-          rowLabelPrefix={t('entry.staffLabel')}
-          rows={form.staffAccompanying}
-          onRowsChange={(rows) => setForm((c) => ({ ...c, staffAccompanying: rows }))}
-          onPersistRow={async (rows) => persistStaffRows(rows)}
-          facultyEndpoint="/api/faculty"
-          parentLocked={coreFieldDisabled("staffAccompanying")}
-          viewOnly={isViewMode}
-          disableEmails={[form.coordinatorEmail || email]}
-          sectionError={errors.staffAccompanying}
-          showSectionError={submitted}
-          emptyStateText={t('entry.noStaffAdded')}
-          validateRow={(rows, row, index) => {
-            if (!row.email) return t('entry.selectFaculty');
-            const coordEmail = form.coordinatorEmail || email;
-            if (row.email.trim().toLowerCase() === coordEmail.trim().toLowerCase()) {
-              return t('entry.facultyAlreadySelected');
-            }
-            const duplicates = rows.filter(
-              (item, itemIndex) =>
-                itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
-            ).length;
-            return duplicates > 0 ? t('entry.facultyAlreadySelected') : null;
-          }}
-        />
-      </div>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
-          <SelectDropdown
-            value={form.sponsored || ""}
-            onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
-            options={SPONSORED_OPTIONS}
-            placeholder={t('placeholder.select')}
-            disabled={coreFieldDisabled("sponsored")}
-            error={submitted && !!errors.sponsored}
-          />
-        </Field>
-
-        {form.sponsored === "Yes" && (
-          <>
-            <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
-              <input
-                value={form.fundingAgency || ""}
-                onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
-                disabled={coreFieldDisabled("fundingAgency")}
-                className={cx(
-                  "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                  submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                  coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
-                )}
-              />
+      {/* Group 3: Schedule */}
+      <FormFieldGroup
+        step={3}
+        title={t('entry.groupSchedule')}
+        subtitle={t('entry.groupScheduleHint')}
+        icon={Clock}
+        accent="#f59e0b"
+        filled={group3Filled}
+        total={group3Total}
+        disabled={coreFieldDisabled("startDate")}
+        animationDelay={120}
+      >
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined}>
+              <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
             </Field>
 
-            <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
-              <CurrencyField
-                value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
-                onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
-                disabled={coreFieldDisabled("fundingAmount")}
-                error={submitted && !!errors.fundingAmount}
-                placeholder="50000"
-              />
+            <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} hint={inclusiveDays ? `Days: ${inclusiveDays}` : undefined}>
+              <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
             </Field>
-          </>
-        )}
-      </div>
 
-      <div className="mt-5 space-y-4">
-        <p className="text-sm text-[var(--color-text-muted)]">{t('entry.streakEligibility')}</p>
+            <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
+              <div className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">{inclusiveDays ?? "-"}</div>
+            </Field>
+          </div>
+          <p className="text-xs text-[var(--color-text-tertiary)]">{t('entry.streakEligibility')}</p>
+        </div>
+      </FormFieldGroup>
 
-        {uploadsVisible ? (
-          <>
+      {/* Group 4: Participants & Staff */}
+      <FormFieldGroup
+        step={4}
+        title={t('entry.groupParticipants')}
+        icon={Users}
+        accent="#06b6d4"
+        filled={group4Filled}
+        total={group4Total}
+        disabled={coreFieldDisabled("staffAccompanying")}
+        animationDelay={180}
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-body-bg)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
+            {t('entry.coordinator')} <span className="font-medium text-[var(--color-text-primary)]">{userDisplayName || "-"}</span>
+          </div>
+
+          <FacultyRowPicker
+            title={t('entry.staffAccompanyingTitle')}
+            helperText={t('entry.staffAccompanyingHint')}
+            addLabel={t('entry.addStaff')}
+            rowLabelPrefix={t('entry.staffLabel')}
+            rows={form.staffAccompanying}
+            onRowsChange={(rows) => setForm((c) => ({ ...c, staffAccompanying: rows }))}
+            onPersistRow={async (rows) => persistStaffRows(rows)}
+            facultyEndpoint="/api/faculty"
+            parentLocked={coreFieldDisabled("staffAccompanying")}
+            viewOnly={isViewMode}
+            disableEmails={[form.coordinatorEmail || email]}
+            sectionError={errors.staffAccompanying}
+            showSectionError={submitted}
+            emptyStateText={t('entry.noStaffAdded')}
+            validateRow={(rows, row, index) => {
+              if (!row.email) return t('entry.selectFaculty');
+              const coordEmail = form.coordinatorEmail || email;
+              if (row.email.trim().toLowerCase() === coordEmail.trim().toLowerCase()) {
+                return t('entry.facultyAlreadySelected');
+              }
+              const duplicates = rows.filter(
+                (item, itemIndex) =>
+                  itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
+              ).length;
+              return duplicates > 0 ? t('entry.facultyAlreadySelected') : null;
+            }}
+          />
+        </div>
+      </FormFieldGroup>
+
+      {/* Group 5: Funding */}
+      <FormFieldGroup
+        step={5}
+        title={t('entry.groupFunding')}
+        icon={Banknote}
+        accent="#a78bfa"
+        filled={group5Filled}
+        total={group5Total}
+        disabled={coreFieldDisabled("sponsored")}
+        animationDelay={240}
+      >
+        <div className="space-y-4">
+          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
+            <PillSelect
+              value={form.sponsored || ""}
+              onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value !== "Yes" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
+              options={SPONSORED_OPTIONS}
+              accent="#a78bfa"
+              disabled={coreFieldDisabled("sponsored")}
+              error={submitted && !!errors.sponsored}
+            />
+          </Field>
+
+          {form.sponsored === "Yes" && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
+                <input
+                  value={form.fundingAgency || ""}
+                  onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
+                  disabled={coreFieldDisabled("fundingAgency")}
+                  className={cx(
+                    "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
+                    submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
+                    coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
+                  )}
+                />
+              </Field>
+
+              <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
+                <CurrencyField
+                  value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
+                  onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
+                  disabled={coreFieldDisabled("fundingAmount")}
+                  error={submitted && !!errors.fundingAmount}
+                  placeholder="50000"
+                />
+              </Field>
+            </div>
+          )}
+        </div>
+      </FormFieldGroup>
+
+      {/* Group 6: Stage 2 Documents */}
+      {uploadsVisible ? (
+        <FormFieldGroup
+          step={6}
+          title={t('entry.groupDocuments')}
+          icon={Unlock}
+          accent="#10b981"
+          filled={group6Filled}
+          total={group6Total}
+          disabled={controlsDisabled}
+          animationDelay={300}
+        >
+          <div className="space-y-4">
             <StageTwoDivider />
-            <div className="animate-highlight-new grid gap-4 sm:grid-cols-2">
+
+            <div className="grid gap-4 sm:grid-cols-2">
               <UploadFieldMulti
                 key={`${form.id}-permissionLetter`}
                 title={fieldLabel('permissionLetter')}
@@ -429,10 +553,10 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
                 />
               </Field>
             </div>
-          </>
-        ) : null}
-      </div>
-    </>
+          </div>
+        </FormFieldGroup>
+      ) : null}
+    </div>
   );
 }
 

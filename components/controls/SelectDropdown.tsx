@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 export { type SelectDropdownOption } from "@/lib/types/ui";
 import { type SelectDropdownOption } from "@/lib/types/ui";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -18,6 +19,57 @@ type SelectDropdownProps = {
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+/* ── Portal-positioned listbox ── */
+function DropdownPortal({
+  anchorRef,
+  id,
+  children,
+}: {
+  anchorRef: React.RefObject<HTMLDivElement | null>;
+  id?: string;
+  children: React.ReactNode;
+}) {
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    function update() {
+      const el = anchorRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 6,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [anchorRef]);
+
+  return createPortal(
+    <div
+      id={id}
+      role="listbox"
+      className="max-h-56 overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl shadow-black/40"
+      style={{
+        position: "absolute",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 9999,
+      }}
+    >
+      {children}
+    </div>,
+    document.body
+  );
 }
 
 export default function SelectDropdown({
@@ -211,11 +263,7 @@ export default function SelectDropdown({
       />
 
       {open ? (
-        <div
-          id={id ? `${id}-options` : undefined}
-          role="listbox"
-          className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl shadow-black/40"
-        >
+        <DropdownPortal anchorRef={containerRef} id={id ? `${id}-options` : undefined}>
           {filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">No matching options.</div>
           ) : (
@@ -241,7 +289,7 @@ export default function SelectDropdown({
               </button>
             ))
           )}
-        </div>
+        </DropdownPortal>
       ) : null}
     </div>
   );
