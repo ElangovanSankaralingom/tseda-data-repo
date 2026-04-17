@@ -8,6 +8,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { getCachedAnalytics } from "@/lib/analytics/cache";
 import { trackEvent } from "@/lib/telemetry/telemetry";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,8 @@ export default async function AdminAnalyticsPage() {
         iconName="BarChart3"
         maxWidthClassName="max-w-6xl"
       >
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          Failed to load analytics. Please try again later.
+        <div className="rounded-xl border border-[var(--color-error)]/20 bg-[var(--color-error)]/10 px-4 py-3 text-sm text-[var(--color-error)]">
+          {t("adminPages.analyticsLoadFailed", "en")}
         </div>
       </AdminPageShell>
     );
@@ -45,8 +46,8 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <AdminPageShell
-      title="Analytics"
-      subtitle="Charts, trends, and insights across all faculty data"
+      titleKey="adminPages.analyticsTitle"
+      subtitleKey="adminPages.analyticsSubtitle"
       backHref={adminHome()}
       iconName="BarChart3"
       maxWidthClassName="max-w-6xl"

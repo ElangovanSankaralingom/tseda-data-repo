@@ -27,8 +27,8 @@ export default async function AdminUsersPage() {
 
   return (
     <AdminPageShell
-      title="User Management"
-      subtitle="Every faculty member, their data, their journey"
+      titleKey="adminPages.usersTitle"
+      subtitleKey="adminPages.usersSubtitle"
       backHref={adminHome()}
       iconName="Users"
     >

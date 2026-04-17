@@ -82,8 +82,8 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
     <span
       className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
         isOk
-          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-          : "border-amber-500/20 bg-amber-500/10 text-amber-400"
+          ? "border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]"
+          : "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]"
       }`}
     >
       {isOk ? t("adminMaintenance.allSystemsHealthy") : t("adminMaintenance.partialFailure")} &middot; {formatTimeAgo(lastRun.finishedAt)}
@@ -96,11 +96,11 @@ const NightlyStepRow = memo(function NightlyStepRow({ label, step }: { label: st
     <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-2">
       <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
       {step.ok ? (
-        <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
+        <span className="flex items-center gap-1 text-xs font-medium text-[var(--color-status-success)]">
           <CheckCircle2 className="size-3.5" /> OK
         </span>
       ) : (
-        <span className="flex items-center gap-1 text-xs font-medium text-red-400" title={step.message}>
+        <span className="flex items-center gap-1 text-xs font-medium text-[var(--color-status-error)]" title={step.message}>
           <XCircle className="size-3.5" /> {step.errorCode}
         </span>
       )}
@@ -111,7 +111,7 @@ const NightlyStepRow = memo(function NightlyStepRow({ label, step }: { label: st
 const ActionLogRow = memo(function ActionLogRow({ entry }: { entry: MaintenanceAction }) {
   return (
     <div className="flex items-center gap-3 border-b border-[var(--color-glass-border)] px-1 py-2.5 last:border-0">
-      <div className={`flex size-6 shrink-0 items-center justify-center rounded-full ${entry.success ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
+      <div className={`flex size-6 shrink-0 items-center justify-center rounded-full ${entry.success ? "bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]" : "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]"}`}>
         {entry.success ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
       </div>
       <div className="min-w-0 flex-1">
@@ -137,8 +137,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <FileArchive className="size-5" />,
       endpoint: "/api/admin/maintenance/backup",
       method: "POST",
-      accent: "hover:ring-blue-500/20",
-      iconBg: "bg-blue-500/10 text-blue-400",
+      accent: "hover:ring-[var(--color-status-info-border)]",
+      iconBg: "bg-[var(--color-status-info-bg)] text-[var(--color-status-info)]",
     },
     {
       id: "integrity-check",
@@ -147,8 +147,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <Shield className="size-5" />,
       endpoint: "/api/admin/maintenance/integrity-check",
       method: "POST",
-      accent: "hover:ring-emerald-500/20",
-      iconBg: "bg-emerald-500/10 text-emerald-400",
+      accent: "hover:ring-[var(--color-status-success-border)]",
+      iconBg: "bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]",
     },
     {
       id: "wal-compact",
@@ -157,8 +157,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <Database className="size-5" />,
       endpoint: "/api/admin/maintenance/wal-compact",
       method: "POST",
-      accent: "hover:ring-amber-500/20",
-      iconBg: "bg-amber-500/10 text-amber-400",
+      accent: "hover:ring-[var(--color-status-warning-border)]",
+      iconBg: "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]",
     },
     {
       id: "cleanup",
@@ -167,8 +167,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <Trash2 className="size-5" />,
       endpoint: "/api/admin/maintenance/cleanup",
       method: "POST",
-      accent: "hover:ring-red-500/20",
-      iconBg: "bg-red-500/10 text-red-400",
+      accent: "hover:ring-[var(--color-status-error-border)]",
+      iconBg: "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]",
     },
     {
       id: "rebuild-indexes",
@@ -300,8 +300,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
               {results[job.id] ? (
                 <div className={`mt-3 rounded-lg px-3 py-1.5 text-xs font-medium ${
                   results[job.id].ok
-                    ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                    : "border border-red-500/20 bg-red-500/10 text-red-400"
+                    ? "border border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]"
+                    : "border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]"
                 }`}>
                   {results[job.id].message}
                 </div>

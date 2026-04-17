@@ -47,7 +47,7 @@ export const ADMIN_TOOLS: AdminTool[] = [
     accentText: "text-purple-500",
     accentBg: "bg-purple-500/10",
     badgeType: "count",
-    badgeColor: "bg-amber-500",
+    badgeColor: "bg-[var(--color-status-warning)]",
     metricKey: "pendingRequests",
   },
   {
@@ -89,7 +89,7 @@ export const ADMIN_TOOLS: AdminTool[] = [
     accentText: "text-indigo-500",
     accentBg: "bg-indigo-500/10",
     badgeType: "dot",
-    badgeColor: "bg-red-500",
+    badgeColor: "bg-[var(--color-status-error)]",
     healthKey: "backup",
   },
   {
@@ -101,7 +101,7 @@ export const ADMIN_TOOLS: AdminTool[] = [
     accentText: "text-emerald-500",
     accentBg: "bg-emerald-500/10",
     badgeType: "dot",
-    badgeColor: "bg-red-500",
+    badgeColor: "bg-[var(--color-status-error)]",
     healthKey: "integrity",
   },
   {
@@ -131,7 +131,7 @@ export const ADMIN_TOOLS: AdminTool[] = [
     accentText: "text-[var(--color-text-secondary)]",
     accentBg: "bg-[var(--color-dropdown-hover)]",
     badgeType: "dot",
-    badgeColor: "bg-amber-500",
+    badgeColor: "bg-[var(--color-status-warning)]",
     healthKey: "system",
   },
 ];

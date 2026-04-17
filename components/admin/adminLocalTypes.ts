@@ -45,6 +45,7 @@ export type DashboardData = {
 };
 
 export type FeatureCard = {
+  id: string;
   title: string;
   description: string;
   href: string;

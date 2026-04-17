@@ -50,7 +50,7 @@ export function Toggle({
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-text-primary)]/20 disabled:cursor-not-allowed disabled:opacity-50 ${
         checked
           ? dangerous
-            ? "bg-red-500/15"
+            ? "bg-[var(--color-status-error-bg)]"
             : "bg-[var(--color-button-primary-bg)]"
           : "bg-[var(--color-dropdown-hover)]"
       }`}
@@ -131,7 +131,7 @@ export function NumberInput({
           onBlur={commit}
           onKeyDown={(e) => e.key === "Enter" && commit()}
           className={`h-8 w-16 rounded-lg border px-2 text-center text-sm outline-none transition-colors ${
-            error ? "border-red-400 text-red-400" : "border-[var(--color-glass-border)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
+            error ? "border-[var(--color-status-error)] text-[var(--color-status-error)]" : "border-[var(--color-glass-border)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           }`}
         />
         <button
@@ -145,7 +145,7 @@ export function NumberInput({
         </button>
       </div>
       {(error || (min !== undefined && max !== undefined)) && (
-        <div className={`text-xs ${error ? "text-red-500" : "text-[var(--color-text-secondary)]"}`}>
+        <div className={`text-xs ${error ? "text-[var(--color-status-error)]" : "text-[var(--color-text-secondary)]"}`}>
           {error || `Range: ${min} – ${max}`}
         </div>
       )}
@@ -274,12 +274,12 @@ export const SettingRow = memo(function SettingRow({
     <>
       <div
         className={`group relative rounded-xl border p-4 transition-all duration-300 ${
-          def.dangerous ? "border-l-4 border-l-red-400 border-[var(--color-glass-border)]" : "border-[var(--color-glass-border)]"
+          def.dangerous ? "border-l-4 border-l-[var(--color-status-error)] border-[var(--color-glass-border)]" : "border-[var(--color-glass-border)]"
         } ${
           status === "saved"
-            ? "bg-emerald-500/10"
+            ? "bg-[var(--color-status-success-bg)]"
             : status === "error"
-            ? "bg-red-500/10"
+            ? "bg-[var(--color-status-error-bg)]"
             : "bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
         }`}
       >
@@ -297,12 +297,12 @@ export const SettingRow = memo(function SettingRow({
                 </span>
               )}
               {status === "saved" && (
-                <Check className="size-3.5 text-emerald-500 animate-fade-in" />
+                <Check className="size-3.5 text-[var(--color-status-success)] animate-fade-in" />
               )}
             </div>
             <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{def.description}</p>
             {def.dangerous && (
-              <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+              <p className="mt-1 text-xs text-[var(--color-status-error)] flex items-center gap-1">
                 <AlertTriangle className="size-3" />
                 Sensitive setting — changes take effect immediately
               </p>

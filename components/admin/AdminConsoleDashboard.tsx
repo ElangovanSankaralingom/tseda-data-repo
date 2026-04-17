@@ -17,10 +17,10 @@ function HealthDot({ status, size = "sm" }: { status: HealthStatus; size?: "sm" 
   const sizeClass = size === "md" ? "size-3" : "size-2.5";
   const color =
     status === "green"
-      ? "bg-emerald-500/15"
+      ? "bg-[var(--color-status-success)]"
       : status === "amber"
-        ? "bg-amber-500/15 animate-subtle-pulse"
-        : "bg-red-500/15 animate-subtle-pulse";
+        ? "bg-[var(--color-status-warning)] animate-subtle-pulse"
+        : "bg-[var(--color-status-error)] animate-subtle-pulse";
   return <span className={`${sizeClass} rounded-full ${color} inline-block`} />;
 }
 
@@ -50,12 +50,12 @@ const FeatureCardItem = memo(function FeatureCardItem({ card, index }: { card: F
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold text-[var(--color-text-primary)]">{card.title}</span>
           {card.badge && card.badge > 0 ? (
-            <span className={`flex size-5 items-center justify-center rounded-full text-xs font-bold text-white ${card.badgeColor ?? "bg-amber-500/15"} ${card.badgeColor === "bg-amber-500/15" ? "animate-subtle-pulse" : ""}`}>
+            <span className={`flex size-5 items-center justify-center rounded-full text-xs font-bold text-white ${card.badgeColor ?? "bg-[var(--color-status-warning)]"}`}>
               {card.badge}
             </span>
           ) : null}
           {card.badgeDot ? (
-            <span className={`size-2.5 rounded-full ${card.badgeColor ?? "bg-red-500/15"} animate-subtle-pulse`} />
+            <span className={`size-2.5 rounded-full ${card.badgeColor ?? "bg-[var(--color-status-error)]"} animate-subtle-pulse`} />
           ) : null}
         </div>
         <p className="mt-0.5 text-sm text-[var(--color-text-secondary)] line-clamp-1">{card.description}</p>
@@ -72,7 +72,6 @@ const FeatureCardItem = memo(function FeatureCardItem({ card, index }: { card: F
 export default function AdminConsoleDashboard({
   permissions,
 }: {
-  adminEmail: string;
   permissions: Record<string, boolean>;
 }) {
   const { t } = useTranslation();
@@ -122,6 +121,7 @@ export default function AdminConsoleDashboard({
         }
 
         return {
+          id: tool.id,
           title: t(tool.titleKey),
           description: t(tool.descriptionKey),
           href: tool.href,
@@ -156,7 +156,7 @@ export default function AdminConsoleDashboard({
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8">
           <h1 className="text-2xl font-bold text-white">{t("adminConsole.title")}</h1>
-          <p className="mt-2 text-sm text-red-300">Failed to load dashboard data. Please refresh.</p>
+          <p className="mt-2 text-sm text-[var(--color-error)]">{t("adminConsole.loadFailed")}</p>
         </div>
       </div>
     );
@@ -187,7 +187,7 @@ export default function AdminConsoleDashboard({
                 status={data.health.system.maintenanceMode ? "amber" : "green"}
                 size="md"
               />
-              <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">System</span>
+              <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">{t("adminConsole.system")}</span>
             </Link>
           </div>
         </div>
@@ -198,7 +198,7 @@ export default function AdminConsoleDashboard({
         <SectionHeader title={t("adminConsole.adminTools")} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {featureCards.map((card, i) => (
-            <FeatureCardItem key={card.title} card={card} index={i} />
+            <FeatureCardItem key={card.id} card={card} index={i} />
           ))}
         </div>
       </section>

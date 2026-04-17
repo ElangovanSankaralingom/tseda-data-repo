@@ -27,8 +27,8 @@ export default async function AdminAuditPage() {
 
   return (
     <AdminPageShell
-      title="Audit Trail"
-      subtitle="Complete history of all entry mutations, uploads, and workflow changes across all users."
+      titleKey="adminPages.auditTitle"
+      subtitleKey="adminPages.auditSubtitle"
       backHref={adminHome()}
       iconName="ScrollText"
     >

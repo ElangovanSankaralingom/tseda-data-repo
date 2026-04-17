@@ -18,8 +18,8 @@ export default async function AdminConfirmationsPage() {
 
   return (
     <AdminPageShell
-      title="Entry Confirmations"
-      subtitle="Review entries sent for confirmation. Locked mode activates only after approval."
+      titleKey="adminPages.confirmationsTitle"
+      subtitleKey="adminPages.confirmationsSubtitle"
       backHref={adminHome()}
       iconName="FileEdit"
       maxWidthClassName="max-w-6xl"

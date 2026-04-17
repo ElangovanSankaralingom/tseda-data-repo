@@ -24,8 +24,8 @@ export default async function AdminSettingsPage() {
 
   return (
     <AdminPageShell
-      title="Settings"
-      subtitle="Configure T'SEDA to work exactly how you want"
+      titleKey="adminPages.settingsTitle"
+      subtitleKey="adminPages.settingsSubtitle"
       backHref={adminHome()}
       iconName="Settings"
       maxWidthClassName="max-w-6xl"
