@@ -71,7 +71,7 @@ function sortByUrgency(categories: CategoryOverview[]): CategoryOverview[] {
 /* ── DARK MICRO-PILLS (L3 — dark inside bright panel = depth) ── */
 function MicroPills({ cat }: { cat: CategoryOverview }) {
   const pills: { label: string; count: number; className: string }[] = [];
-  if (cat.draftCount > 0) pills.push({ label: "DRF", count: cat.draftCount, className: "text-[rgba(255,255,255,0.5)] bg-[rgba(0,0,0,0.4)]" });
+  if (cat.draftCount > 0) pills.push({ label: "DRF", count: cat.draftCount, className: "text-[var(--color-text-placeholder)] bg-[rgba(0,0,0,0.4)]" });
   if (cat.editRequestedCount > 0) pills.push({ label: "REQ", count: cat.editRequestedCount, className: "text-amber-400 bg-amber-400/10" });
   if (cat.editGrantedCount > 0) pills.push({ label: "EDT", count: cat.editGrantedCount, className: "text-[var(--color-primary)] bg-[var(--color-primary)]/10" });
 
@@ -83,7 +83,7 @@ function MicroPills({ cat }: { cat: CategoryOverview }) {
         <span
           key={pill.label}
           className={cn(
-            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[9px] font-bold border border-[rgba(255,255,255,0.04)]",
+            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[9px] font-bold border border-[var(--color-border-subtle)]",
             pill.className
           )}
         >
@@ -101,7 +101,7 @@ function MiniDistributionBar({ cat }: { cat: CategoryOverview }) {
   if (total === 0) return null;
 
   const segments = [
-    { count: cat.draftCount, color: "rgba(255,255,255,0.15)" },
+    { count: cat.draftCount, color: "var(--color-divider)" },
     { count: cat.streakActivated, color: "#fbbf24" },
     { count: cat.editRequestedCount, color: "#fb923c" },
     { count: cat.streakWins + cat.completedNonStreak, color: "#84cc16" },
@@ -136,7 +136,7 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
     <div className="group relative animate-fade-in-up">
       <Link
         href={cat.href}
-        className="relative flex overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.06)] transition-all duration-300 hover:-translate-y-1"
+        className="relative flex overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] transition-all duration-300 hover:-translate-y-1"
         style={{
           background: "rgba(0,0,0,0.30)",
           clipPath: NOTCH_CLIP,
@@ -187,7 +187,7 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
             </div>
             <div className="flex-1" />
             {cat.lastActivity && (
-              <span className="text-[11px] text-white/20">{formatRelativeTime(cat.lastActivity, language)}</span>
+              <span className="text-[11px] text-[var(--color-text-tertiary)]">{formatRelativeTime(cat.lastActivity, language)}</span>
             )}
           </div>
 
@@ -195,9 +195,9 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
           <div
             className="mt-4 overflow-hidden rounded-xl px-4 py-3.5"
             style={{
-              backgroundColor: `rgba(255,255,255,0.10)`,
+              backgroundColor: `var(--color-border-default)`,
               border: `1px solid ${hex}25`,
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.06)`,
+              boxShadow: `inset 0 1px 0 var(--color-border-subtle)`,
             }}
           >
             <div className="flex items-end justify-between">
@@ -208,7 +208,7 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
                 >
                   {cat.totalEntries}
                 </span>
-                <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.25em] text-[rgba(255,255,255,0.25)]">
+                <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.25em] text-[var(--color-text-placeholder)]">
                   {cat.totalEntries === 1 ? t('dashboard.entry') : t('dashboard.entries')}
                 </div>
               </div>
@@ -279,8 +279,8 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
         className={cn(
           "relative flex overflow-hidden rounded-2xl border transition-all duration-300",
           hasEntries
-            ? "border-[rgba(255,255,255,0.06)]"
-            : "border-dashed border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.15)]"
+            ? "border-[var(--color-border-subtle)]"
+            : "border-dashed border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.15)]"
         )}
         style={hasEntries ? {
           background: "rgba(0,0,0,0.30)",
@@ -312,7 +312,7 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
           style={{
             background: hasEntries
               ? `linear-gradient(180deg, ${hex} 0%, ${hex}40 100%)`
-              : "rgba(255,255,255,0.04)",
+              : "var(--color-border-subtle)",
           }}
         />
 
@@ -322,7 +322,7 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
             <div
               className={cn(
                 "flex items-center gap-2 rounded-full pl-0.5 pr-2.5 py-0.5 border",
-                !hasEntries && "border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]"
+                !hasEntries && "border-[var(--color-border-subtle)] bg-[var(--color-glass-bg)]"
               )}
               style={hasEntries ? {
                 borderColor: `${hex}30`,
@@ -331,14 +331,14 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
             >
               <div
                 className={cn("flex size-6 items-center justify-center rounded-full")}
-                style={{ background: hasEntries ? `${hex}30` : "rgba(255,255,255,0.06)", color: hasEntries ? hex : undefined }}
+                style={{ background: hasEntries ? `${hex}30` : "var(--color-border-subtle)", color: hasEntries ? hex : undefined }}
               >
                 <CategoryIcon
                   name={config.icon}
-                  className={cn("size-3", hasEntries ? "" : "text-white/20")}
+                  className={cn("size-3", hasEntries ? "" : "text-[var(--color-text-tertiary)]")}
                 />
               </div>
-              <span className={cn("text-xs font-bold tracking-tight", hasEntries ? "text-[var(--color-text-primary)]" : "text-white/30")}>
+              <span className={cn("text-xs font-bold tracking-tight", hasEntries ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-placeholder)]")}>
                 {categoryLabel(cat.slug)}
               </span>
             </div>
@@ -348,23 +348,23 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
           <div
             className={cn(
               "mt-3 overflow-hidden rounded-xl border px-3.5 py-2.5",
-              !hasEntries && "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.04)]"
+              !hasEntries && "bg-[var(--color-glass-bg)] border-[var(--color-border-subtle)]"
             )}
             style={hasEntries ? {
-              backgroundColor: `rgba(255,255,255,0.08)`,
+              backgroundColor: `var(--color-surface-raised)`,
               borderColor: `${hex}22`,
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
+              boxShadow: `inset 0 1px 0 var(--color-border-subtle)`,
             } : undefined}
           >
             <div className="flex items-end justify-between">
               <div>
                 <span
                   className="font-mono text-3xl font-black tracking-tighter leading-none"
-                  style={{ color: hasEntries ? hex : "rgba(255,255,255,0.15)" }}
+                  style={{ color: hasEntries ? hex : "var(--color-text-placeholder)" }}
                 >
                   {cat.totalEntries}
                 </span>
-                <div className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.25em] text-[rgba(255,255,255,0.25)]">
+                <div className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.25em] text-[var(--color-text-placeholder)]">
                   {hasEntries ? (cat.totalEntries === 1 ? t('dashboard.entry') : t('dashboard.entries')) : t('dashboard.entries')}
                 </div>
               </div>
@@ -382,11 +382,11 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
             {hasEntries ? (
               <>
                 {cat.lastActivity ? (
-                  <span className="text-[11px] text-white/20">{formatRelativeTime(cat.lastActivity, language)}</span>
+                  <span className="text-[11px] text-[var(--color-text-tertiary)]">{formatRelativeTime(cat.lastActivity, language)}</span>
                 ) : <span />}
                 <Link
                   href={cat.newHref}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-white/25 hover:text-white/50 transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-text-placeholder)] hover:text-[var(--color-text-secondary)] transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Plus className="size-3" />
@@ -442,7 +442,7 @@ export default function DataEntryClient({ greeting, userName, categories, totals
           <h1 className="text-2xl font-bold tracking-tight text-white">
             {greeting}{firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="mt-1 text-sm text-white/25">{statusText}</p>
+          <p className="mt-1 text-sm text-[var(--color-text-placeholder)]">{statusText}</p>
         </div>
 
         {hasAnyEntries && (totals.streakActivatedCount > 0 || totals.streakWinsCount > 0) && (
@@ -457,7 +457,7 @@ export default function DataEntryClient({ greeting, userName, categories, totals
               >
                 <Flame className="size-3.5 text-amber-400" />
                 <span className="text-sm font-medium text-amber-300">{totals.streakActivatedCount}</span>
-                <span className="text-xs text-white/25">{t("dashboard.active")}</span>
+                <span className="text-xs text-[var(--color-text-placeholder)]">{t("dashboard.active")}</span>
               </div>
             )}
             {totals.streakWinsCount > 0 && (
@@ -470,7 +470,7 @@ export default function DataEntryClient({ greeting, userName, categories, totals
               >
                 <Trophy className="size-3.5 text-emerald-400" />
                 <span className="text-sm font-medium text-emerald-300">{totals.streakWinsCount}</span>
-                <span className="text-xs text-white/25">{totals.streakWinsCount === 1 ? t("dashboard.win") : t("dashboard.wins")}</span>
+                <span className="text-xs text-[var(--color-text-placeholder)]">{totals.streakWinsCount === 1 ? t("dashboard.win") : t("dashboard.wins")}</span>
               </div>
             )}
           </div>
@@ -498,18 +498,18 @@ export default function DataEntryClient({ greeting, userName, categories, totals
         <div
           className="mt-8 rounded-2xl p-10 text-center animate-fade-in-up stagger-3"
           style={{
-            background: "rgba(255,255,255,0.015)",
-            border: "1px dashed rgba(255,255,255,0.05)",
+            background: "var(--color-glass-bg)",
+            border: "1px dashed var(--color-border-default)",
           }}
         >
           <div
             className="mx-auto flex size-14 items-center justify-center rounded-xl"
-            style={{ background: "rgba(255,255,255,0.03)" }}
+            style={{ background: "var(--color-surface-raised)" }}
           >
-            <FileText className="size-7 text-white/15" />
+            <FileText className="size-7 text-[var(--color-text-placeholder)]" />
           </div>
-          <p className="mt-4 text-base font-medium text-white/40">{t("dashboard.chooseCategory")}</p>
-          <p className="mt-1 text-sm text-white/20">{t("dashboard.trackActivities")}</p>
+          <p className="mt-4 text-base font-medium text-[var(--color-text-placeholder)]">{t("dashboard.chooseCategory")}</p>
+          <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">{t("dashboard.trackActivities")}</p>
         </div>
       )}
     </div>

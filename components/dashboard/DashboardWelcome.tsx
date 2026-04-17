@@ -8,6 +8,8 @@ import { useTiltEffect } from "@/hooks/useTiltEffect";
 import type { TranslationKey } from "@/lib/i18n";
 import StreakRing from "./StreakRing";
 
+/* Token migration note: All rgba(255,255,255,X) values now use CSS variable tokens from themeTokens.ts */
+
 /*
   ───────────────────────────────────────────────────────
    COMMAND STRIP — Formal institutional hero bar.
@@ -64,7 +66,7 @@ export default function DashboardWelcome({
     <div className="animate-fade-in-up">
     <div ref={ref} style={tiltStyle} {...handlers}>
     <div
-      className="relative overflow-hidden rounded-3xl border border-white/[0.1]"
+      className="relative overflow-hidden rounded-3xl border border-[var(--color-border-subtle)]"
       style={{
         background: "linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(30,58,95,0.18) 50%, rgba(0,0,0,0.4) 100%)",
       }}
@@ -81,11 +83,11 @@ export default function DashboardWelcome({
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.45)]">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
                   {greeting}
                 </p>
-                <div className="h-px flex-1 bg-white/[0.06]" />
-                <span className="font-mono text-xs font-semibold tracking-wider text-[rgba(255,255,255,0.35)]">
+                <div className="h-px flex-1 bg-[var(--color-surface-raised)]" />
+                <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-text-tertiary)]">
                   {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
                 </span>
               </div>
@@ -94,14 +96,14 @@ export default function DashboardWelcome({
                   {firstName}
                 </h1>
               </div>
-              <p className="mt-3 text-sm text-[rgba(255,255,255,0.55)] font-medium max-w-sm leading-relaxed">
+              <p className="mt-3 text-sm text-[var(--color-text-secondary)] font-medium max-w-sm leading-relaxed">
                 {welcomeSubtext}
               </p>
             </div>
 
             {/* ── Streak ring gauges — raised surface ── */}
             {hasAnyEntries && (streakActivated > 0 || streakWins > 0) && (
-              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "#0f111c", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "#0f111c", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
                 {streakActivated > 0 && (
                   <StreakRing
                     icon={Flame}
@@ -114,7 +116,7 @@ export default function DashboardWelcome({
                   />
                 )}
                 {streakActivated > 0 && streakWins > 0 && (
-                  <div className="h-10 w-px bg-white/[0.1]" />
+                  <div className="h-10 w-px bg-[var(--color-divider)]" />
                 )}
                 {streakWins > 0 && (
                   <StreakRing
@@ -134,12 +136,12 @@ export default function DashboardWelcome({
           {/* ═══ RIGHT: Bright counter panel (L3) ═══ */}
           {hasAnyEntries && (
             <div className="lg:w-72 shrink-0">
-              <div className="h-full overflow-hidden rounded-2xl bg-white/[0.14] border border-white/[0.18] flex flex-col">
+              <div className="h-full overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.14)] border border-[var(--color-border-default)] flex flex-col">
                 <div className="h-[2px] bg-[var(--color-primary)] opacity-50" />
 
                 <div className="flex-1 p-6 flex flex-col justify-between">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.55)]">
+                    <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">
                       {t("dashboard.totalEntries")}
                     </div>
                     <div className="mt-2 font-mono text-5xl font-black tracking-tighter text-white leading-none">
@@ -149,14 +151,14 @@ export default function DashboardWelcome({
 
                   {/* Dark inset micro-stats (L1 inside L3 — creates depth) */}
                   <div className="mt-6 flex gap-3">
-                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "#0c0e16", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "#0c0e16", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
                       <div className="flex items-center gap-2">
-                        <FileText className="size-4 text-[rgba(255,255,255,0.45)]" />
-                        <span className="font-mono text-lg font-black text-[rgba(255,255,255,0.75)]">
+                        <FileText className="size-4 text-[var(--color-text-tertiary)]" />
+                        <span className="font-mono text-lg font-black text-[var(--color-text-primary)]">
                           {formatNumber(draftCount, language)}
                         </span>
                       </div>
-                      <div className="mt-1 text-[11px] font-semibold text-[rgba(255,255,255,0.45)]">
+                      <div className="mt-1 text-[11px] font-semibold text-[var(--color-text-tertiary)]">
                         {t("dashboard.drafts")}
                       </div>
                     </div>
@@ -184,21 +186,21 @@ export default function DashboardWelcome({
         </div>
 
         {/* ── Status bar — own surface ── */}
-        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "#080a12", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "#080a12", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
           <span className="text-[var(--color-primary)] text-xs font-bold">{">"}</span>
-          <span className="font-mono text-[11px] font-semibold tracking-wider text-[rgba(255,255,255,0.35)]">
+          <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-text-tertiary)]">
             TSEDA
           </span>
           <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
           <span className="font-mono text-[11px] font-semibold tracking-wider text-emerald-400/70">
             ONLINE
           </span>
-          <div className="h-3 w-px bg-white/[0.08]" />
-          <span className="font-mono text-[11px] font-medium tracking-wider text-[rgba(255,255,255,0.35)]">
+          <div className="h-3 w-px bg-[var(--color-border-subtle)]" />
+          <span className="font-mono text-[11px] font-medium tracking-wider text-[var(--color-text-tertiary)]">
             {totalEntries} ENTRIES
           </span>
-          <div className="h-3 w-px bg-white/[0.08]" />
-          <span className="font-mono text-[11px] font-medium tracking-wider text-[rgba(255,255,255,0.35)]">
+          <div className="h-3 w-px bg-[var(--color-border-subtle)]" />
+          <span className="font-mono text-[11px] font-medium tracking-wider text-[var(--color-text-tertiary)]">
             {streakActivated + streakWins} STREAKS
           </span>
         </div>

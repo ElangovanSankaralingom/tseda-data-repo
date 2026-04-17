@@ -220,15 +220,10 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 - Lib files: camelCase (`workflowEngine.ts`)
 
 ### UI Style
-- Primary action color: `bg-[var(--color-button-primary-bg)]` (theme-driven, default `#1E3A5F`)
-- Generate/Finalise buttons: `bg-emerald-600`
 - ALL colors use CSS variables from `lib/theme/themeTokens.ts` — NEVER hardcode hex or Tailwind slate colors
-- Cards: `rounded-xl border border-[var(--color-card-border)] shadow-sm` with `hover:-translate-y-0.5 hover:shadow-md`
 - Category accent colors from registry (`data/categoryRegistry.ts` → `color.accentBg`, `color.borderTop`)
-- Empty states: `border-dashed border-[var(--color-input-border)] bg-[var(--color-body-bg)]`
 - No emojis in UI
 - lucide-react icons only
-- Frosted glass modals: `bg-black/20 backdrop-blur-sm` via React portal
 
 ### Testing
 - Test runner: Node.js native test runner
@@ -263,6 +258,110 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 - Commit `.data/` or `public/uploads/`
 - Modify business logic without running `npm test`
 - Use emojis in the UI
+
+---
+
+## TSEDA DESIGN LANGUAGE
+
+**The core problem to avoid:** Everything looking the same. Dark background, white text, repeat. No layers, no drama, no hierarchy. Flat in the boring sense — not flat design, just *empty*. Cards, sections, pages blurring into one dark mass with no personality.
+
+**What the design must achieve:**
+
+**LAYERS are the DNA.** Category inside category. Sections inside sections. Every nesting level must *feel* different — through color, through surface treatment, through spacing, through shape. If a group sits inside another group, the inner one must visually declare "I'm a different thing." Not with a subtle border change. With an actual shift — background color, texture, elevation, something real.
+
+**Things must feel DISTINCT from each other.** If two card types look similar, one of them is wrong. Each state, each group, each section should be recognizable at a glance without reading any text. Structure, color, and shape do this — not just swapping one hex code for another on the same dark rectangle.
+
+**Experiment and take risks.** Try something unexpected. An accent that pulls attention. A color that doesn't "match" but creates energy. A layout choice that breaks the grid for one element. If it's what everyone does, don't do it. Find the thing that makes someone pause and look twice.
+
+**Balance professional and futuristic.** Not a corporate spreadsheet. Not a neon cyberpunk game. Somewhere in between — polished enough for a college system, bold enough to feel like it was designed with ambition.
+
+**Glass is a spice, not the meal.** Use it where it earns its place — a floating modal, a hero element, a single focal card. Never as the default surface for everything. When glass is everywhere, it's nowhere. The moment you reach for `backdrop-blur` as a habit, stop.
+
+**Flat design is for things that are done.** Completed records, archived items, settled states — these get clean, minimal, flat treatment. They've earned their quiet. Active items get the energy, the gradients, the bold surfaces.
+
+**Color is not decoration, it's structure.** Different sections need different color temperatures. Different groups need different palettes. The outermost container, the mid-level grouping, the individual card — each layer should have its own color identity. Dark-on-dark-on-dark with white text everywhere is the failure state.
+
+**Break the pattern on purpose.** If nine things are cards, make the tenth something else. If everything flows vertically, put one thing horizontal. If the whole page is cool-toned, let one element be warm. These "out of context" moments are what create visual memory — the thing someone notices and remembers.
+
+**Don't just redesign colors — redesign structure.** When you hear "redesign," it means rethink the grouping, the hierarchy, the containment, the nesting. How things are clubbed together matters more than what shade of blue the border is.
+
+**VISIBILITY IS NON-NEGOTIABLE.** This is a dark-themed app. Text must be READABLE, not decorative. Every piece of text a user needs to read must meet minimum opacity thresholds — no exceptions, no "it looks subtle and cool." If a user has to squint, it's broken. Icons that convey meaning must be clearly visible, not ghostly hints. Borders and dividers that create structure must be strong enough to actually see. "Subtle" means slightly understated, NOT invisible.
+
+### Legibility System (MANDATORY — USE TOKENS, NOT HARDCODED VALUES)
+
+All legibility values are defined as CSS variables in `lib/theme/themeTokens.ts`. Every component MUST use these tokens. NEVER hardcode `rgba(255,255,255,0.XX)` or `text-white/XX` — use the token instead.
+
+#### Text Hierarchy (5 tiers — use CSS variables via inline style or Tailwind arbitrary values)
+
+| Tier | Purpose | Token | Dark value | Min size |
+|------|---------|-------|------------|----------|
+| **T1** | Headings, names, titles | `--color-text-primary` | `#F1F5F9` (≈white/95) | 15px+ |
+| **T2** | Labels, nav items, descriptions | `--color-text-secondary` | `#94A3B8` (≈white/65) | 13px+ |
+| **T3** | Hints, timestamps, metadata | `--color-text-tertiary` | `rgba(255,255,255,0.50)` | 11px+ |
+| **T4** | Placeholders, empty states | `--color-text-placeholder` | `rgba(255,255,255,0.50)` | 13px+ |
+| **T5** | Disabled, ghost text | `--color-text-muted` | `#4B5563` (≈white/40) | 11px+ |
+
+**Hard floors:** T1 NEVER below white/90. T2 NEVER below white/50. T3/T4 NEVER below white/45. No text NEVER below white/40. Font size NEVER below 10px.
+
+#### Border & Line Hierarchy (4 tiers)
+
+| Tier | Purpose | Token | Dark value | Width |
+|------|---------|-------|------------|-------|
+| **B1** | Subtle surface edges, hover | `--color-border-subtle` | `rgba(255,255,255,0.08)` | 1px |
+| **B2** | Card borders, input borders, containers | `--color-border-default` | `rgba(255,255,255,0.12)` | 1.5px |
+| **B3** | Strong containers, focus rings, emphasis | `--color-border-strong` | `rgba(255,255,255,0.18)` | 1.5px+ |
+| **D1** | Section dividers, separators | `--color-divider` | `rgba(255,255,255,0.10)` | 1.5px |
+| **D2** | Strong dividers, group separators | `--color-divider-strong` | `rgba(255,255,255,0.15)` | 1.5px+ |
+
+**Hard floors:** Borders NEVER below `0.08` opacity. Dividers NEVER below `0.10`. Width NEVER below 1px for borders, 1.5px for structural dividers. Accent lines use `2px`+, accent bars `3px`.
+
+#### Icon Hierarchy (3 tiers)
+
+| Tier | Purpose | Token | Dark value |
+|------|---------|-------|------------|
+| **I1** | Active, selected, interactive | `--color-icon-active` | `rgba(255,255,255,0.90)` |
+| **I2** | Default, clickable, navigational | `--color-icon-default` | `rgba(255,255,255,0.65)` |
+| **I3** | Decorative, muted, background | `--color-icon-muted` | `rgba(255,255,255,0.50)` |
+
+**Hard floor:** Icons NEVER below white/45. If an icon conveys meaning, it must be I2 or above.
+
+#### Surface Hierarchy (existing + new)
+
+| Purpose | Token | Dark value |
+|---------|-------|------------|
+| Page background | `--color-body-bg` | `#0B0F19` |
+| Card / raised surface | `--color-surface-raised` | `rgba(255,255,255,0.04)` |
+| Inset / recessed input | `--color-surface-inset` | `rgba(0,0,0,0.12)` |
+| Glass surface | `--color-glass-bg` | `rgba(255,255,255,0.03)` |
+
+#### Migration rules for existing `rgba()` and `text-white/XX` patterns
+
+When writing or modifying ANY component:
+1. Replace `rgba(255,255,255,0.9X)` text → `var(--color-text-primary)`
+2. Replace `rgba(255,255,255,0.5X-0.7X)` text → `var(--color-text-secondary)` or `var(--color-text-tertiary)`
+3. Replace `rgba(255,255,255,0.3X-0.5X)` placeholder text → `var(--color-text-placeholder)`
+4. Replace `rgba(255,255,255,0.0X)` borders → `var(--color-border-subtle)`, `var(--color-border-default)`, or `var(--color-border-strong)`
+5. Replace `rgba(255,255,255,0.0X)` dividers → `var(--color-divider)` or `var(--color-divider-strong)`
+6. Replace icon opacity → `var(--color-icon-active)`, `var(--color-icon-default)`, or `var(--color-icon-muted)`
+7. Replace Tailwind text-white opacity classes with the matching color-text token via inline style or Tailwind arbitrary value
+
+**The goal: ZERO hardcoded rgba white opacity values in any component.** Every opacity decision must go through a token. This ensures palette changes, legibility bumps, and theme switches affect the ENTIRE app at once.
+
+**NEVER sacrifice readability for aesthetics.** When in doubt, bump UP aggressively. A slightly "too visible" element is infinitely better than one you can't read.
+
+### The Rules
+
+1. **Categorise** — group and nest visually, not just logically
+2. **Make things feel distinct** — every state/group must be recognizable at a glance
+3. **Experiment** — try unexpected layouts, colors, shapes
+4. **Introduce attention-grabbers** — sometimes an out-of-context feature that drags the eye is exactly right
+5. **Don't go all in with glass** — careful, intentional usage only
+6. **Use flats wherever necessary** — completed/settled states earn flat treatment
+7. **Be unique** — if many use that pattern, don't; find the other thing
+8. **Balance professional and futuristic** — polished but ambitious
+9. **Take risks** — safe design is invisible design
+10. **RIGHT BALANCE** between professional and futuristic, flat and glass, always go for unique design, always experiment
+11. **VISIBILITY FIRST** — every text element must be readable, every meaningful icon must be visible, never sacrifice readability for aesthetics
 
 ---
 

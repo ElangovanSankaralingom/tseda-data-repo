@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, User } from "lucide-react";
-import { profile } from "@/lib/entryNavigation";
+import { ChevronDown, LogOut, Settings, User, Shield } from "lucide-react";
+import { profile, settingsAppearance } from "@/lib/entryNavigation";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
@@ -44,18 +44,32 @@ export default function ProfileDropdown({
     };
   }, [open]);
 
+  const menuItems = [
+    { href: profile(), icon: User, label: t('nav.account'), color: "var(--color-primary)" },
+    { href: settingsAppearance(), icon: Settings, label: t('nav.appearance'), color: "#60a5fa" },
+  ];
+
   return (
     <div ref={rootRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-xl px-2 py-1 transition-all duration-200 hover:bg-[var(--color-dropdown-hover)] cursor-pointer"
+        className={cn(
+          "flex items-center gap-2 rounded-xl px-2 py-1 transition-all duration-200 cursor-pointer",
+          open ? "bg-white/[0.08]" : "hover:bg-white/[0.06]"
+        )}
         aria-label="Account menu"
         aria-haspopup="menu"
         aria-expanded={open}
       >
         {/* Avatar */}
-        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--color-glass-border)] transition-all duration-200 hover:ring-[var(--color-primary)]">
+        <span
+          className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all duration-300"
+          style={{
+            border: "2px solid var(--color-border-default)",
+            boxShadow: open ? "0 0 12px var(--color-primary-glow, rgba(132,204,22,0.2))" : "none",
+          }}
+        >
           {photoUrl ? (
             <span
               className="h-full w-full bg-cover bg-center bg-no-repeat"
@@ -69,11 +83,13 @@ export default function ProfileDropdown({
         </span>
         {/* Name + chevron (hidden on mobile) */}
         <span className="hidden items-center gap-1 sm:flex">
-          <span className="max-w-[120px] truncate text-sm font-medium text-[var(--color-text-primary)]">{name}</span>
+          <span className="max-w-[120px] truncate text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+            {name}
+          </span>
           <ChevronDown className={cn(
-            "size-3 text-[var(--color-text-secondary)] transition-transform duration-200",
+            "size-3 transition-transform duration-300",
             open && "rotate-180"
-          )} />
+          )} style={{ color: "var(--color-text-tertiary)" }} />
         </span>
       </button>
 
@@ -81,45 +97,143 @@ export default function ProfileDropdown({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl py-2 shadow-2xl shadow-black/40 animate-scale-in"
+          className="absolute right-0 top-full z-50 mt-2 w-[280px] origin-top-right overflow-hidden rounded-2xl animate-in fade-in slide-in-from-top-2"
+          style={{
+            background: "linear-gradient(175deg, rgba(15,18,30,0.97) 0%, rgba(8,10,18,0.98) 100%)",
+            border: "1px solid var(--color-border-default)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border-subtle), inset 0 1px 0 var(--color-border-subtle)",
+          }}
         >
-          {/* User info */}
-          <div className="border-b border-[var(--color-glass-border)] px-4 py-3">
-            <div className="text-sm font-semibold text-[var(--color-text-primary)]">{name}</div>
-            <div className="truncate font-mono text-xs text-[var(--color-text-secondary)]">{email}</div>
-            {isAdmin && (
-              <span className="mt-1 inline-block rounded-full bg-[var(--color-badge-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-badge-text)]">
-                Admin
+          {/* Top accent bar */}
+          <div
+            className="h-[2px]"
+            style={{ background: "linear-gradient(90deg, var(--color-primary), #3b82f6, var(--color-primary))" }}
+          />
+
+          {/* ── User Identity Card ── */}
+          <div className="px-5 pt-5 pb-4">
+            <div className="flex items-center gap-3.5">
+              {/* Large avatar */}
+              <span
+                className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl"
+                style={{
+                  border: "2px solid var(--color-border-default)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                }}
+              >
+                {photoUrl ? (
+                  <span
+                    className="h-full w-full bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: `url("${photoUrl}")` }}
+                  />
+                ) : (
+                  <span
+                    className="flex size-full items-center justify-center text-sm font-bold text-white"
+                    style={{ background: "var(--color-button-primary-bg)" }}
+                  >
+                    {initials}
+                  </span>
+                )}
               </span>
-            )}
+
+              {/* Name + email + badge */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-[14px] font-bold" style={{ color: "var(--color-text-primary)" }}>
+                    {name}
+                  </span>
+                  {isAdmin && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                      style={{
+                        background: "rgba(132,204,22,0.12)",
+                        color: "var(--color-primary)",
+                        border: "1px solid rgba(132,204,22,0.20)",
+                      }}
+                    >
+                      <Shield className="size-2.5" />
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <span
+                  className="mt-0.5 block truncate font-mono text-[11px]"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  {email}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Navigation items */}
-          <Link
-            href={profile()}
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="mx-1 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)] cursor-pointer"
-          >
-            <User className="size-4" />
-            {t('nav.account')}
-          </Link>
+          {/* Divider */}
+          <div className="mx-4 h-px" style={{ background: "var(--color-divider)" }} />
 
-          <div className="my-1 h-px bg-[var(--color-glass-border)]" />
+          {/* ── Menu Items ── */}
+          <div className="p-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="group/item flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-200 hover:-translate-y-px cursor-pointer"
+                  style={{ color: "var(--color-text-secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--color-surface-raised)";
+                    e.currentTarget.style.color = "var(--color-text-primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--color-text-secondary)";
+                  }}
+                >
+                  <div
+                    className="flex size-8 items-center justify-center rounded-lg transition-all duration-200"
+                    style={{ background: "var(--color-surface-raised)" }}
+                  >
+                    <Icon className="size-4" style={{ color: item.color }} />
+                  </div>
+                  <span className="text-[13px] font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
 
-          {/* Sign out */}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onSignOut();
-            }}
-            className="mx-1 flex w-[calc(100%-0.5rem)] items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-500/10 cursor-pointer"
-          >
-            <LogOut className="size-4" />
-            {t('nav.signOut')}
-          </button>
+          {/* Divider */}
+          <div className="mx-4 h-px" style={{ background: "var(--color-divider)" }} />
+
+          {/* ── Sign Out ── */}
+          <div className="p-2">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onSignOut();
+              }}
+              className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-200 hover:-translate-y-px cursor-pointer"
+              style={{ color: "var(--color-text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(239,68,68,0.08)";
+                e.currentTarget.style.color = "#f87171";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
+            >
+              <div
+                className="flex size-8 items-center justify-center rounded-lg transition-all duration-200"
+                style={{ background: "rgba(239,68,68,0.08)" }}
+              >
+                <LogOut className="size-4 text-red-400" />
+              </div>
+              <span className="text-[13px] font-medium">{t('nav.signOut')}</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

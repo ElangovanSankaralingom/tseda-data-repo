@@ -17,7 +17,7 @@ import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import type { EditTimeRemaining } from "@/lib/entries/workflow";
 import { getCategoryConfig, type CategorySlug } from "@/data/categoryRegistry";
 import { getCategoryIcon } from "@/lib/ui/categoryIcons";
-import { dataEntryHome } from "@/lib/entryNavigation";
+import { dashboard } from "@/lib/entryNavigation";
 import { type CardContent, type ListStats } from "./dataEntryTypes";
 import CompletionRing from "./CompletionRing";
 
@@ -64,10 +64,11 @@ type CategoryEntryPageShellProps = {
 function LoadingState({ message }: { message: React.ReactNode }) {
   return (
     <div
-      className="rounded-2xl p-6 text-sm text-white/30"
+      className="rounded-2xl p-6 text-sm"
       style={{
+        color: "var(--color-text-tertiary)",
         background: "rgba(8,10,18,0.45)",
-        border: "1px solid rgba(255,255,255,0.04)",
+        border: "1px solid var(--color-border-subtle)",
       }}
     >
       {message}
@@ -75,21 +76,26 @@ function LoadingState({ message }: { message: React.ReactNode }) {
   );
 }
 
-/* ── DARK MICRO-STAT PILL (L3 — dark inset inside bright panel) ── */
+/* ── DARK MICRO-STAT PILL — colored left accent + inset feel ── */
 function MicroStat({ count, label, color }: { count: number; label: string; color: string }) {
   if (count === 0) return null;
   return (
     <div
-      className="flex items-center gap-1.5 rounded-xl px-3 py-2"
+      className="relative flex items-center gap-2 overflow-hidden rounded-lg px-3.5 py-2"
       style={{
-        background: "#0c0e16",
-        border: "1px solid rgba(255,255,255,0.10)",
+        background: "linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.35) 100%)",
+        border: "1px solid var(--color-border-subtle)",
       }}
     >
+      {/* Colored left accent bar */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ background: color }}
+      />
       <span className="font-mono text-sm font-black tabular-nums" style={{ color }}>
         {count}
       </span>
-      <span className="text-[9px] font-bold uppercase tracking-widest text-white/35">
+      <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--color-text-placeholder)" }}>
         {label}
       </span>
     </div>
@@ -127,8 +133,8 @@ function CategoryHero({
         style={{
           ...tiltStyle,
           background: `linear-gradient(135deg, rgba(0,0,0,0.45) 0%, ${chartHex}12 50%, rgba(0,0,0,0.4) 100%)`,
-          border: `1px solid rgba(255,255,255,0.10)`,
-          boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+          border: `1px solid var(--color-divider)`,
+          boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 var(--color-border-subtle)`,
         }}
         {...handlers}
       >
@@ -165,15 +171,16 @@ function CategoryHero({
         <div className="relative p-6 sm:p-8">
           {/* Back link */}
           <Link
-            href={dataEntryHome()}
-            className="mb-5 inline-flex items-center gap-1.5 text-xs font-medium text-white/30 hover:text-white/60 transition-all group/back"
+            href={dashboard()}
+            className="mb-5 inline-flex items-center gap-1.5 text-xs font-medium transition-all group/back"
+            style={{ color: "var(--color-text-tertiary)" }}
           >
-            <ArrowLeft className="size-3.5 transition-transform group-hover/back:-translate-x-0.5" />
-            {t('nav.dataEntry')}
+            <ArrowLeft className="size-3.5 transition-transform group-hover/back:-translate-x-0.5" style={{ color: "var(--color-icon-muted)" }} />
+            {t('nav.dashboard')}
           </Link>
 
           {/* ── HUD corner coordinates ── */}
-          <div className="absolute top-3 right-4 font-mono text-[9px] text-white/10 tracking-wider select-none pointer-events-none">
+          <div className="absolute top-3 right-4 font-mono text-[9px] tracking-wider select-none pointer-events-none" style={{ color: "var(--color-text-placeholder)" }}>
             [{category.toUpperCase().replace(/-/g, ".")}]
           </div>
 
@@ -193,41 +200,51 @@ function CategoryHero({
             <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{title || "Entries"}</h1>
               {subtitle ? (
-                <p className="mt-0.5 text-sm text-white/45 max-w-md line-clamp-2">{subtitle}</p>
+                <p className="mt-0.5 text-sm max-w-md line-clamp-2" style={{ color: "var(--color-text-tertiary)" }}>{subtitle}</p>
               ) : null}
             </div>
           </div>
 
-          {/* ═══ L2: SUB-PANELS ROW — cards inside the card ═══ */}
+          {/* ═══ L2: SUB-PANELS ROW — premium inner cards ═══ */}
           {stats && stats.total > 0 && (
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {/* Total entries panel */}
+              {/* Total entries panel — hero number with category glow */}
               <div
-                className="rounded-xl px-4 py-3.5"
+                className="relative overflow-hidden rounded-2xl px-5 py-4"
                 style={{
-                  background: "rgba(255,255,255,0.14)",
-                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "linear-gradient(145deg, var(--color-surface-raised) 0%, var(--color-glass-bg) 100%)",
+                  border: "1px solid var(--color-divider)",
+                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 2px 8px rgba(0,0,0,0.15)",
                 }}
               >
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
+                {/* Subtle category color bleed in corner */}
+                <div
+                  className="absolute -right-4 -bottom-4 size-24 rounded-full pointer-events-none"
+                  style={{ background: `radial-gradient(circle, ${chartHex}12 0%, transparent 70%)` }}
+                />
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--color-text-tertiary)" }}>
                   {t('dashboard.totalEntries')}
                 </span>
-                <div className="mt-1.5 flex items-baseline gap-1.5">
-                  <span className="font-mono text-3xl font-black tracking-tighter" style={{ color: chartHex }}>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span
+                    className="font-mono text-4xl font-black tracking-tighter leading-none"
+                    style={{ color: chartHex, textShadow: `0 0 20px ${chartHex}30` }}
+                  >
                     {stats.total}
                   </span>
-                  <span className="text-[10px] text-white/20">
+                  <span className="text-xs" style={{ color: "var(--color-text-placeholder)" }}>
                     {stats.total === 1 ? t('dashboard.entry') : t('dashboard.entries')}
                   </span>
                 </div>
               </div>
 
-              {/* Completion ring panel */}
+              {/* Completion ring panel — darker to let ring colors pop */}
               <div
-                className="rounded-xl px-4 py-3.5 hidden sm:flex items-center justify-center"
+                className="rounded-2xl px-4 py-3.5 hidden sm:flex items-center justify-center"
                 style={{
-                  background: "rgba(255,255,255,0.14)",
-                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "linear-gradient(145deg, var(--color-surface-inset) 0%, var(--color-surface-raised) 100%)",
+                  border: "1px solid var(--color-border-subtle)",
+                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 2px 8px rgba(0,0,0,0.15)",
                 }}
               >
                 <CompletionRing stats={stats} accentHex={chartHex} />
@@ -235,17 +252,18 @@ function CategoryHero({
 
               {/* Status breakdown panel */}
               <div
-                className="rounded-xl px-4 py-3.5"
+                className="rounded-2xl px-5 py-4"
                 style={{
-                  background: "rgba(255,255,255,0.14)",
-                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "linear-gradient(145deg, var(--color-surface-raised) 0%, var(--color-glass-bg) 100%)",
+                  border: "1px solid var(--color-divider)",
+                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 2px 8px rgba(0,0,0,0.15)",
                 }}
               >
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--color-text-tertiary)" }}>
                   {t('common.status')}
                 </span>
-                <div className="mt-2 space-y-1.5">
-                  <MicroStat count={stats.drafts} label="DRF" color="rgba(255,255,255,0.5)" />
+                <div className="mt-2.5 space-y-1.5">
+                  <MicroStat count={stats.drafts} label="DRF" color="var(--color-icon-muted)" />
                   <MicroStat count={stats.streakActive} label="ACT" color="#fbbf24" />
                   <MicroStat count={stats.pending} label="PND" color="#fb923c" />
                   <MicroStat count={stats.finalized} label="DONE" color="#84cc16" />
@@ -280,8 +298,6 @@ function CategoryHero({
 /* ═══ EMPTY STATE ═══ */
 function CategoryEmptyState({
   category,
-  onAdd,
-  addLabel,
 }: {
   category: CategorySlug;
   onAdd?: () => void;
@@ -293,40 +309,67 @@ function CategoryEmptyState({
   const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
 
   return (
-    <div
-      className="rounded-2xl p-12 text-center max-w-md mx-auto animate-fade-in-up stagger-2"
-      style={{
-        background: "rgba(255,255,255,0.015)",
-        border: "1px dashed rgba(255,255,255,0.05)",
-      }}
-    >
+    <div className="relative mt-2 animate-fade-in-up stagger-2">
+      {/* Ambient glow behind the card */}
       <div
-        className="mx-auto flex size-20 items-center justify-center rounded-2xl"
-        style={{ background: `${chartHex}08` }}
+        className="absolute inset-0 -z-10 rounded-3xl blur-3xl opacity-[0.04]"
+        style={{ background: `radial-gradient(ellipse at center, ${chartHex}, transparent 70%)` }}
+      />
+
+      <div
+        className="relative overflow-hidden rounded-2xl"
+        style={{
+          background: "linear-gradient(165deg, var(--color-surface-raised) 0%, var(--color-body-bg) 100%)",
+          border: "1px solid var(--color-border-subtle)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 var(--color-border-subtle)",
+        }}
       >
-        {/* eslint-disable-next-line react-hooks/static-components */}
-        <Icon className="size-9 text-white/20" />
-      </div>
-      <h2 className="mt-5 text-lg font-semibold text-white/40">
-        {t('entry.noEntries')}
-      </h2>
-      <p className="mt-1.5 text-sm text-white/20">
-        {t('entry.createFirstEntry')}
-      </p>
-      {onAdd && (
-        <button
-          type="button"
-          onClick={onAdd}
-          className="mt-5 inline-flex items-center gap-1.5 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5"
+        {/* Subtle grid pattern overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
           style={{
-            background: chartHex,
-            boxShadow: `0 4px 16px ${chartHex}25`,
+            backgroundImage: `radial-gradient(circle, ${chartHex} 0.5px, transparent 0.5px)`,
+            backgroundSize: "20px 20px",
           }}
-        >
-          <Plus className="size-4" />
-          {addLabel || t('entry.newEntry')}
-        </button>
-      )}
+        />
+
+        {/* Content */}
+        <div className="relative flex flex-col items-center py-16 px-8">
+          {/* Icon with layered glow */}
+          <div className="relative">
+            <div
+              className="absolute inset-0 rounded-2xl blur-xl opacity-20"
+              style={{ background: chartHex }}
+            />
+            <div
+              className="relative flex size-16 items-center justify-center rounded-2xl"
+              style={{
+                background: `linear-gradient(145deg, ${chartHex}15 0%, ${chartHex}08 100%)`,
+                border: `1px solid ${chartHex}20`,
+              }}
+            >
+              {/* eslint-disable-next-line react-hooks/static-components */}
+              <Icon className="size-7" style={{ color: `${chartHex}90` }} />
+            </div>
+          </div>
+
+          {/* Text */}
+          <p className="mt-6 text-[13px] font-semibold" style={{ color: "var(--color-text-secondary)" }}>
+            {t('entry.noEntries')}
+          </p>
+          <p className="mt-1.5 text-[12px] max-w-[260px]" style={{ color: "var(--color-text-tertiary)" }}>
+            {t('entry.createFirstEntry')}
+          </p>
+
+          {/* Decorative accent line */}
+          <div
+            className="mt-8 h-[1.5px] w-16 rounded-full"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${chartHex}40, transparent)`,
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

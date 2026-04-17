@@ -196,7 +196,7 @@ export async function PUT(req: Request) {
     const normalizedEmployeeId =
       typeof rawEmployeeId === "string" ? rawEmployeeId.replace(/\D/g, "").slice(0, 6) : "";
 
-    if (!/^\d{6}$/.test(normalizedEmployeeId)) {
+    if (normalizedEmployeeId && !/^\d{6}$/.test(normalizedEmployeeId)) {
       return NextResponse.json({ error: "Employee ID must be exactly 6 digits." }, { status: 400 });
     }
 

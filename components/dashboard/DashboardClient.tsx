@@ -21,6 +21,7 @@ import { getCategoryIcon } from "@/lib/ui/categoryIcons";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { TranslationKey, Language } from "@/lib/i18n";
 import { entryList } from "@/lib/entryNavigation";
+import "@/lib/theme/themeTokens";
 
 /*
   ───────────────────────────────────────────────────────
@@ -135,7 +136,7 @@ export default function DashboardClient({
 
       {/* ── Segmented tab bar ── */}
       <div className="flex items-center gap-5">
-        <div className="inline-flex items-center gap-1 rounded-2xl bg-[rgba(0,0,0,0.4)] border border-white/[0.08] p-1.5">
+        <div className="inline-flex items-center gap-1 rounded-2xl bg-[rgba(0,0,0,0.4)] border border-[var(--color-border-subtle)] p-1.5">
           {groupTabs.map((tab) => (
             <button
               key={tab.key}
@@ -144,7 +145,7 @@ export default function DashboardClient({
                 "flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-xs font-semibold tracking-wide transition-all duration-300",
                 activeGroup === tab.key
                   ? "bg-white text-[rgba(0,0,0,0.85)] shadow-md"
-                  : "text-[rgba(255,255,255,0.5)] hover:text-[rgba(255,255,255,0.8)] hover:bg-white/[0.06]"
+                  : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-raised)]"
               )}
             >
               {t(tab.labelKey)}
@@ -153,7 +154,7 @@ export default function DashboardClient({
                   "flex size-5 items-center justify-center rounded-full text-[10px] font-bold",
                   activeGroup === tab.key
                     ? "bg-[rgba(0,0,0,0.08)] text-[rgba(0,0,0,0.55)]"
-                    : "bg-white/[0.08] text-[rgba(255,255,255,0.4)]"
+                    : "bg-[var(--color-border-subtle)] text-[var(--color-text-placeholder)]"
                 )}
               >
                 {tab.count}
@@ -161,7 +162,7 @@ export default function DashboardClient({
             </button>
           ))}
         </div>
-        <div className="flex-1 h-px bg-white/[0.06]" />
+        <div className="flex-1 h-px bg-[var(--color-divider)]" />
       </div>
 
       {/* ── Master-Detail Layout ── */}
@@ -170,8 +171,8 @@ export default function DashboardClient({
           className="rounded-3xl p-5 lg:p-6"
           style={{
             backgroundColor: "#0e1019",
-            border: "1px solid rgba(255,255,255,0.10)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
+            border: "1px solid var(--color-border-default)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 var(--color-border-subtle)",
           }}
         >
         <div className="flex flex-col gap-6 lg:flex-row">
@@ -181,7 +182,7 @@ export default function DashboardClient({
             <div className="flex">
               {/* ── Circuit trunk line + nodes ── */}
               <div className="relative flex flex-col items-center mr-4 shrink-0" style={{ width: "20px" }}>
-                <div className="absolute top-5 bottom-5 w-px bg-white/[0.08] animate-spine-draw" />
+                <div className="absolute top-5 bottom-5 w-px bg-[var(--color-border-subtle)] animate-spine-draw" />
                 {filteredCategories.map((cat) => {
                   const isAct = cat.slug === effectiveSlug;
                   const hex = ACCENT_HEX[cat.slug] ?? "#ffffff";
@@ -191,13 +192,13 @@ export default function DashboardClient({
                         className="absolute left-[10px] h-px transition-all duration-300"
                         style={{
                           width: "14px",
-                          backgroundColor: isAct ? hex : "rgba(255,255,255,0.08)",
+                          backgroundColor: isAct ? hex : "var(--color-border-subtle)",
                         }}
                       />
                       <div
                         className={cn(
                           "relative size-[9px] rounded-full border-2 transition-all duration-300 z-10",
-                          isAct ? "scale-125" : "border-[rgba(255,255,255,0.15)] bg-[rgba(0,0,0,0.5)]"
+                          isAct ? "scale-125" : "border-[var(--color-border-default)] bg-[rgba(0,0,0,0.5)]"
                         )}
                         style={isAct ? {
                           backgroundColor: hex,
@@ -226,7 +227,7 @@ export default function DashboardClient({
                         "group relative flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left transition-all duration-300 animate-fade-in-up",
                         isAct
                           ? "text-white"
-                          : "hover:brightness-125"
+                          : "hover:-translate-y-0.5 hover:brightness-110"
                       )}
                       style={{
                         animationDelay: `${idx * 80}ms`,
@@ -237,6 +238,7 @@ export default function DashboardClient({
                         } : {
                           backgroundColor: "#141620",
                           border: "1px solid rgba(255,255,255,0.14)",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                         }),
                       }}
                     >
@@ -249,7 +251,7 @@ export default function DashboardClient({
                       >
                         <Icon
                           className="size-[18px]"
-                          style={{ color: isAct ? "#fff" : "rgba(255,255,255,0.4)" }}
+                          style={{ color: isAct ? "#fff" : "var(--color-icon-muted)" }}
                         />
                       </div>
 
@@ -258,7 +260,7 @@ export default function DashboardClient({
                         <div
                           className={cn(
                             "truncate text-sm font-semibold leading-snug",
-                            isAct ? "text-white" : "text-[rgba(255,255,255,0.65)]"
+                            isAct ? "text-white" : "text-[var(--color-text-secondary)]"
                           )}
                         >
                           {categoryLabel(cat.slug, language)}
@@ -266,7 +268,7 @@ export default function DashboardClient({
                         <div className="flex items-center gap-2.5 mt-1">
                           <span
                             className="font-mono text-xs font-bold"
-                            style={{ color: isAct ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)" }}
+                            style={{ color: isAct ? "var(--color-text-secondary)" : "var(--color-text-tertiary)" }}
                           >
                             {cat.totalEntries} {cat.totalEntries === 1 ? "entry" : "entries"}
                           </span>
@@ -274,8 +276,8 @@ export default function DashboardClient({
                             <span
                               className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
                               style={{
-                                backgroundColor: isAct ? "rgba(255,255,255,0.15)" : "#1c1e2a",
-                                color: isAct ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.45)",
+                                backgroundColor: isAct ? "var(--color-border-default)" : "#1c1e2a",
+                                color: isAct ? "var(--color-text-secondary)" : "var(--color-text-placeholder)",
                               }}
                             >
                               {cat.draftCount} Draft
@@ -289,15 +291,15 @@ export default function DashboardClient({
                         <span className={cn(
                           "flex size-6 items-center justify-center rounded-lg font-mono text-[11px] font-bold border",
                           isAct
-                            ? "text-white/60 border-white/[0.2] bg-white/[0.1]"
-                            : "text-white/30 border-white/[0.08] bg-[#1c1e2a]"
+                            ? "text-[var(--color-text-secondary)] border-[var(--color-border-default)] bg-[var(--color-surface-raised)]"
+                            : "text-[var(--color-text-muted)] border-[var(--color-border-subtle)] bg-[#1c1e2a]"
                         )}>
                           {idx + 1}
                         </span>
                         <ChevronRight
                           className={cn(
                             "size-4 transition-all duration-300",
-                            isAct ? "text-white/50" : "text-white/10 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
+                            isAct ? "text-[var(--color-text-tertiary)]" : "text-[var(--color-icon-muted)] -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
                           )}
                         />
                       </div>
@@ -363,8 +365,8 @@ function CategoryDetailPanel({
         className={cn(
           "relative overflow-hidden rounded-3xl border h-full",
           isEmpty
-            ? "border-dashed border-white/[0.08]"
-            : "border-white/[0.1]"
+            ? "border-dashed border-[var(--color-border-subtle)]"
+            : "border-[var(--color-border-default)]"
         )}
         style={{
           backgroundColor: isEmpty ? "#0c0d14" : "#10121c",
@@ -395,7 +397,7 @@ function CategoryDetailPanel({
                 <h2 className="text-2xl font-black text-white tracking-tight">
                   {categoryLabel(cat.slug, language)}
                 </h2>
-                <p className="text-xs text-[rgba(255,255,255,0.5)] font-medium mt-1">
+                <p className="text-xs text-[var(--color-text-secondary)] font-medium mt-1">
                   {t("dashboard.categoryBreakdown")}
                 </p>
               </div>
@@ -411,17 +413,17 @@ function CategoryDetailPanel({
               className="rounded-2xl p-6"
               style={{
                 backgroundColor: "#161826",
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: "1px solid var(--color-border-default)",
               }}
             >
-              <div className="text-[11px] font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.55)]">
+              <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">
                 {t("dashboard.totalEntries")}
               </div>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="font-mono text-4xl font-black tracking-tighter text-white leading-none">
                   {displayCount}
                 </span>
-                <span className="text-xs font-medium text-[rgba(255,255,255,0.4)]">
+                <span className="text-xs font-medium text-[var(--color-text-placeholder)]">
                   {isEmpty ? "entries" : cat.totalEntries === 1 ? "entry" : "entries"}
                 </span>
               </div>
@@ -433,7 +435,7 @@ function CategoryDetailPanel({
               return (
                 <div
                   key={stat.label}
-                  className="rounded-2xl p-6 transition-all duration-300"
+                  className="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                   style={{
                     backgroundColor: "#161826",
                     border: `1px solid ${stat.color}35`,
@@ -452,7 +454,7 @@ function CategoryDetailPanel({
                       {stat.count}
                     </span>
                   </div>
-                  <div className="mt-1.5 text-[11px] font-semibold text-[rgba(255,255,255,0.5)]">
+                  <div className="mt-1.5 text-[11px] font-semibold text-[var(--color-text-secondary)]">
                     {stat.label}
                   </div>
                 </div>
@@ -467,8 +469,8 @@ function CategoryDetailPanel({
             <div
               className="rounded-2xl overflow-hidden"
               style={{
-                backgroundColor: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                backgroundColor: "var(--color-surface-raised)",
+                border: "1px solid var(--color-border-default)",
               }}
             >
               <div
@@ -477,25 +479,25 @@ function CategoryDetailPanel({
               />
               <div className="p-5">
                 <div className="flex items-center gap-3 mb-4">
-                  <FileCheck className="size-4 text-[rgba(255,255,255,0.4)]" />
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+                  <FileCheck className="size-4 text-[var(--color-icon-muted)]" />
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-placeholder)]">
                     {t("dashboard.recentActivity")}
                   </span>
-                  <div className="flex-1 h-px bg-white/[0.06]" />
+                  <div className="flex-1 h-px bg-[var(--color-divider)]" />
                 </div>
                 <div className="space-y-0.5">
                   {recentEntries.map((entry) => (
                     <Link
                       key={entry.id}
                       href={entry.route}
-                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 -mx-1 transition-colors duration-200 hover:bg-white/[0.06] group"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 -mx-1 transition-colors duration-200 hover:bg-[var(--color-surface-raised)] group"
                     >
                       <div className={cn("size-2.5 rounded-full shrink-0", getStatusColor(entry.status))} />
-                      <span className="truncate text-[13px] font-medium text-[rgba(255,255,255,0.6)] group-hover:text-white transition-colors">
+                      <span className="truncate text-[13px] font-medium text-[var(--color-text-secondary)] group-hover:text-white transition-colors">
                         {entry.title}
                       </span>
                       {entry.updatedAtISO && (
-                        <span className="ml-auto shrink-0 font-mono text-[11px] text-[rgba(255,255,255,0.3)]">
+                        <span className="ml-auto shrink-0 font-mono text-[11px] text-[var(--color-text-tertiary)]">
                           {formatRelativeTime(entry.updatedAtISO)}
                         </span>
                       )}
@@ -509,7 +511,7 @@ function CategoryDetailPanel({
 
         {/* ── Footer ── */}
         <div className="px-7 pb-7 pt-6 sm:px-9 sm:pb-9">
-          <div className="flex items-center justify-between border-t border-white/[0.06] pt-5">
+          <div className="flex items-center justify-between border-t border-[var(--color-divider)] pt-5">
             {!isEmpty && cat.editGrantedCount > 0 ? (
               <div
                 className="flex items-center gap-2 rounded-lg px-3 py-1.5"
@@ -546,12 +548,12 @@ function CategoryDetailPanel({
 
 function getStatusColor(status: string): string {
   switch (status) {
-    case "DRAFT": return "bg-[rgba(255,255,255,0.3)]";
+    case "DRAFT": return "bg-[var(--color-text-tertiary)]";
     case "GENERATED": return "bg-[var(--color-primary)]";
     case "EDIT_REQUESTED": return "bg-amber-400";
     case "EDIT_GRANTED": return "bg-blue-400";
     case "DELETE_REQUESTED": return "bg-rose-400";
-    default: return "bg-[rgba(255,255,255,0.3)]";
+    default: return "bg-[var(--color-text-tertiary)]";
   }
 }
 

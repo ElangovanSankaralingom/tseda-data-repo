@@ -21,6 +21,8 @@ export interface ThemeTokens {
   "--color-text-primary": string;
   "--color-text-secondary": string;
   "--color-text-muted": string;
+  "--color-text-tertiary": string;
+  "--color-text-placeholder": string;
   "--color-input-bg": string;
   "--color-input-border": string;
   "--color-input-focus-ring": string;
@@ -32,6 +34,15 @@ export interface ThemeTokens {
   "--color-generate-bg": string;
   "--color-generate-hover": string;
   "--color-divider": string;
+  "--color-divider-strong": string;
+  "--color-border-subtle": string;
+  "--color-border-default": string;
+  "--color-border-strong": string;
+  "--color-icon-active": string;
+  "--color-icon-default": string;
+  "--color-icon-muted": string;
+  "--color-surface-raised": string;
+  "--color-surface-inset": string;
   "--color-dropdown-bg": string;
   "--color-dropdown-hover": string;
   "--color-toast-bg": string;
@@ -69,6 +80,8 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-text-primary": "#0F172A",
   "--color-text-secondary": "#475569",
   "--color-text-muted": "#94A3B8",
+  "--color-text-tertiary": "#94A3B8",
+  "--color-text-placeholder": "#94A3B8",
   "--color-input-bg": "#FFFFFF",
   "--color-input-border": "#CBD5E1",
   "--color-input-focus-ring": "#84CC16",
@@ -80,6 +93,15 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-generate-bg": "#65A30D",
   "--color-generate-hover": "#4D7C0F",
   "--color-divider": "#E2E8F0",
+  "--color-divider-strong": "#CBD5E1",
+  "--color-border-subtle": "#F1F5F9",
+  "--color-border-default": "#E2E8F0",
+  "--color-border-strong": "#CBD5E1",
+  "--color-icon-active": "#0F172A",
+  "--color-icon-default": "#475569",
+  "--color-icon-muted": "#94A3B8",
+  "--color-surface-raised": "#FFFFFF",
+  "--color-surface-inset": "#F8FAFC",
   "--color-dropdown-bg": "#FFFFFF",
   "--color-dropdown-hover": "#F1F5F9",
   "--color-toast-bg": "#FFFFFF",
@@ -113,12 +135,14 @@ export const DARK_BASE: ThemeTokens = {
   "--color-sidebar-hover-bg": "rgba(255, 255, 255, 0.04)",
   "--color-body-bg": "#0B0F19",
   "--color-card-bg": "rgba(255, 255, 255, 0.03)",
-  "--color-card-border": "rgba(255, 255, 255, 0.06)",
+  "--color-card-border": "rgba(255, 255, 255, 0.10)",
   "--color-text-primary": "#F1F5F9",
   "--color-text-secondary": "#94A3B8",
   "--color-text-muted": "#4B5563",
+  "--color-text-tertiary": "rgba(255, 255, 255, 0.50)",
+  "--color-text-placeholder": "rgba(255, 255, 255, 0.50)",
   "--color-input-bg": "rgba(255, 255, 255, 0.05)",
-  "--color-input-border": "rgba(255, 255, 255, 0.08)",
+  "--color-input-border": "rgba(255, 255, 255, 0.12)",
   "--color-input-focus-ring": "#84CC16",
   "--color-badge-bg": "rgba(132, 204, 22, 0.15)",
   "--color-badge-text": "#A3E635",
@@ -127,9 +151,18 @@ export const DARK_BASE: ThemeTokens = {
   "--color-button-primary-hover": "#65A30D",
   "--color-generate-bg": "#84CC16",
   "--color-generate-hover": "#65A30D",
-  "--color-divider": "rgba(255, 255, 255, 0.06)",
+  "--color-divider": "rgba(255, 255, 255, 0.10)",
+  "--color-divider-strong": "rgba(255, 255, 255, 0.15)",
+  "--color-border-subtle": "rgba(255, 255, 255, 0.08)",
+  "--color-border-default": "rgba(255, 255, 255, 0.12)",
+  "--color-border-strong": "rgba(255, 255, 255, 0.18)",
+  "--color-icon-active": "rgba(255, 255, 255, 0.90)",
+  "--color-icon-default": "rgba(255, 255, 255, 0.65)",
+  "--color-icon-muted": "rgba(255, 255, 255, 0.50)",
+  "--color-surface-raised": "rgba(255, 255, 255, 0.04)",
+  "--color-surface-inset": "rgba(0, 0, 0, 0.12)",
   "--color-dropdown-bg": "rgba(20, 25, 40, 0.95)",
-  "--color-dropdown-hover": "rgba(255, 255, 255, 0.06)",
+  "--color-dropdown-hover": "rgba(255, 255, 255, 0.08)",
   "--color-toast-bg": "rgba(20, 25, 40, 0.95)",
   "--color-modal-overlay": "rgba(0, 0, 0, 0.6)",
   "--color-modal-bg": "rgba(20, 25, 40, 0.95)",
@@ -139,7 +172,7 @@ export const DARK_BASE: ThemeTokens = {
   "--color-gradient-from": "#0B0F19",
   "--color-gradient-to": "#131A2B",
   "--color-glass-bg": "rgba(255, 255, 255, 0.03)",
-  "--color-glass-border": "rgba(255, 255, 255, 0.06)",
+  "--color-glass-border": "rgba(255, 255, 255, 0.10)",
   "--color-glass-hover": "rgba(255, 255, 255, 0.05)",
   "--color-glow-primary": "rgba(132, 204, 22, 0.15)",
 };
