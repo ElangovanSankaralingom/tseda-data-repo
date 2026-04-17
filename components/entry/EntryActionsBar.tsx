@@ -7,7 +7,6 @@ import ConfettiBurst from "@/components/ui/ConfettiBurst";
 import EntryPdfActions from "@/components/data-entry/EntryPdfActions";
 import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { SaveButton } from "@/components/ui/SaveButton";
 import { type GenerateButtonState } from "@/lib/types/ui";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
@@ -40,11 +39,7 @@ export function HeaderEntryActionsBar({
   onAdd,
   addLabel,
   onCancel,
-  cancelDisabled,
   onSave,
-  saveDisabled,
-  onDone,
-  doneDisabled,
   saving,
   saveIntent,
   workflowAction,
@@ -96,15 +91,11 @@ export function HeaderEntryActionsBar({
         workflowAction={workflowAction}
         workflowDisabledHint={resolvedHint}
         finalise={finalise}
-        formHasData={formHasData}
+        onCancel={onCancel}
+        onSave={onSave}
         saving={saving}
         saveIntent={saveIntent}
-        onCancel={onCancel}
-        cancelDisabled={cancelDisabled}
-        onSave={onSave}
-        saveDisabled={saveDisabled}
-        onDone={onDone}
-        doneDisabled={doneDisabled}
+        formHasData={formHasData}
       />
     );
   }
@@ -124,28 +115,20 @@ function EditModeActionBar({
   workflowAction,
   workflowDisabledHint,
   finalise,
-  formHasData,
+  onCancel,
+  onSave,
   saving,
   saveIntent,
-  onCancel,
-  cancelDisabled,
-  onSave,
-  saveDisabled,
-  onDone,
-  doneDisabled,
+  formHasData,
 }: {
   workflowAction?: HeaderEntryActionsBarProps["workflowAction"];
   workflowDisabledHint: string;
   finalise?: FinaliseState;
-  formHasData: boolean;
+  onCancel: () => void;
+  onSave: () => void;
   saving: boolean;
   saveIntent: "save" | "done" | null;
-  onCancel: () => void;
-  cancelDisabled: boolean;
-  onSave: () => void;
-  saveDisabled: boolean;
-  onDone: () => void;
-  doneDisabled: boolean;
+  formHasData: boolean;
 }) {
   const { t } = useTranslation();
   const [genState, setGenState] = useState<GenerateButtonState>("idle");
@@ -280,14 +263,11 @@ function EditModeActionBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <ActionButton role="ghost" onClick={onCancel} disabled={cancelDisabled}>
+        <ActionButton role="ghost" onClick={onCancel}>
           {t('entry.cancel')}
         </ActionButton>
-        <SaveButton onClick={onSave} disabled={saveDisabled || !formHasData}>
-          {saving && saveIntent === "save" ? t('entry.saving') : t('entry.save')}
-        </SaveButton>
-        <ActionButton role="primary" onClick={onDone} disabled={doneDisabled || !formHasData}>
-          {saving && saveIntent === "done" ? t('entry.saving') : t('entry.saved')}
+        <ActionButton role="context" onClick={onSave} disabled={!formHasData}>
+          {saving && saveIntent === "save" ? t('entry.saving') : t('entry.saveDraft')}
         </ActionButton>
       </div>
 

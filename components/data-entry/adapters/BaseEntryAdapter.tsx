@@ -7,6 +7,7 @@ import { SYSTEM } from "@/lib/constants/messages";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { createCategoryEntryRecordRenderer } from "@/components/data-entry/CategoryEntryRecordCard";
 import FormErrorBoundary from "@/components/ErrorBoundaryFallback";
+import CancelConfirmationModal from "@/components/data-entry/CancelConfirmationModal";
 import CategoryEntryRuntime from "@/components/data-entry/CategoryEntryRuntime";
 import EntryListSkeleton from "@/components/data-entry/EntryListSkeleton";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
@@ -139,16 +140,14 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   resetUploadState: resetUploadStateProp,
   title: titleProp,
   subtitle: subtitleProp,
-  formTitle: formTitleProp,
-  formSubtitle: formSubtitleProp,
+  formTitle: _formTitle,
+  formSubtitle: _formSubtitle,
   deleteDescription,
 }: BaseEntryAdapterProps<T>) {
   const { t } = useTranslation();
   const config = getCategoryConfig(category);
   const title = titleProp ?? config.label;
   const subtitle = subtitleProp ?? config.subtitle ?? "";
-  const formTitle = formTitleProp ?? `${config.label} Entry`;
-  const formSubtitle = formSubtitleProp ?? "Add the entry details and upload the required documents.";
   const endpoint = `/api/me/${category}`;
   const categoryPath = entryList(category);
 
@@ -163,6 +162,9 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   const [list, setList] = useState<T[]>([]);
   const [editorSeed, setEditorSeed] = useState<T>(() => createEmptyForm());
   const [uploadPersistingCount, setUploadPersistingCount] = useState(0);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelModalTarget, setCancelModalTarget] = useState(categoryPath);
+  const [cancelSaving, setCancelSaving] = useState(false);
   const activeEntryId = editEntryId?.trim() || viewEntryId?.trim() || "";
 
   useEntryPageModeTelemetry({
@@ -487,12 +489,33 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
 
   function closeForm(targetHref = categoryPath, skipConfirm = false) {
     if (!skipConfirm && hasUnsavedChanges) {
-      const confirmed = window.confirm(t('entry.unsavedChanges'));
-      if (!confirmed) return;
+      setCancelModalTarget(targetHref);
+      setCancelModalOpen(true);
+      return;
     }
     resetForm();
     setFormOpen(false);
-    window.location.href = targetHref;
+    router.push(targetHref);
+  }
+
+  function handleCancelDiscard() {
+    setCancelModalOpen(false);
+    resetForm();
+    setFormOpen(false);
+    router.push(cancelModalTarget);
+  }
+
+  async function handleCancelSaveDraft() {
+    setCancelSaving(true);
+    try {
+      await controller.saveDraftChanges?.();
+    } finally {
+      setCancelSaving(false);
+      setCancelModalOpen(false);
+      resetForm();
+      setFormOpen(false);
+      router.push(cancelModalTarget);
+    }
   }
 
   const seedLoadedEntry = useCallback(
@@ -588,7 +611,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   return (
     <>
     {autoSaveFailed && (
-      <div className="sticky top-0 z-40 mx-[-1rem] flex items-center gap-2 rounded-none border border-amber-300 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-800 shadow-sm sm:mx-0 sm:rounded-lg">
+      <div className="sticky top-0 z-40 mx-[-1rem] flex items-center gap-2 rounded-none border border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] px-4 py-2.5 text-sm text-[var(--color-status-warning)] shadow-sm sm:mx-0 sm:rounded-lg">
         <AlertTriangle className="size-4 shrink-0" />
         <span>{SYSTEM.autoSaveFailed}</span>
       </div>
@@ -664,8 +687,6 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         showForm
           ? {
               className: "bg-[var(--color-glass-bg)]/70 p-5",
-              title: isViewMode ? formTitle : `New ${formTitle}`,
-              subtitle: formSubtitle,
               content: (
                 <>
                   <FormErrorBoundary fallbackMessage="Something went wrong loading the form.">
@@ -717,6 +738,13 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       onCancelRequestDelete={() => void controller.cancelRequestDelete(form).then(() => {
         setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", permanentlyLocked: true } as T));
       })}
+    />
+    <CancelConfirmationModal
+      open={cancelModalOpen}
+      onSaveDraft={() => void handleCancelSaveDraft()}
+      onDiscard={handleCancelDiscard}
+      onClose={() => setCancelModalOpen(false)}
+      saving={cancelSaving}
     />
     </>
   );

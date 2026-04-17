@@ -5,10 +5,12 @@ type FieldProps = {
   error?: string;
   hint?: string;
   required?: boolean;
+  /** Schema field key — used for scroll-to-field navigation */
+  fieldKey?: string;
   children: React.ReactNode | ((props: { id: string; "aria-describedby"?: string; "aria-required"?: boolean; "aria-invalid"?: boolean }) => React.ReactNode);
 };
 
-export default function Field({ label, error, hint, required, children }: FieldProps) {
+export default function Field({ label, error, hint, required, fieldKey, children }: FieldProps) {
   const generatedId = useId();
   const fieldId = `field-${generatedId}`;
   const errorId = error ? `${fieldId}-error` : undefined;
@@ -23,7 +25,7 @@ export default function Field({ label, error, hint, required, children }: FieldP
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5" data-field-key={fieldKey || undefined}>
       <div className="flex items-baseline justify-between gap-3">
         <label htmlFor={fieldId} className="text-sm font-medium text-[var(--color-text-secondary)]">
           {label}
@@ -36,7 +38,7 @@ export default function Field({ label, error, hint, required, children }: FieldP
         : isValidElement(children)
           ? cloneElement(children, { id: fieldId } as Record<string, unknown>)
           : children}
-      {error ? <div id={errorId} className="text-xs text-red-400" role="alert">{error}</div> : null}
+      {error ? <div id={errorId} className="text-xs text-[var(--color-status-error)]" role="alert">{error}</div> : null}
     </div>
   );
 }

@@ -110,9 +110,9 @@ export default function RequestActionDropdown({
         disabled={requesting}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex h-8 items-center gap-1 rounded-lg border border-transparent px-2.5 text-sm font-medium text-purple-600 transition-all duration-150 hover:bg-purple-500/10 active:scale-[0.97] disabled:opacity-50"
+        className="inline-flex h-8 items-center gap-1 rounded-lg border border-transparent px-2.5 text-sm font-medium text-[var(--color-primary)] transition-all duration-150 hover:bg-[var(--color-primary)]/10 active:scale-[0.97] disabled:opacity-50"
       >
-        Request Action
+        {t("entry.requestAction")}
         <ChevronDown className={`size-3.5 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? (
@@ -138,9 +138,9 @@ export default function RequestActionDropdown({
               if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
               if (e.key === "ArrowUp") { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
             }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10"
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--color-status-error)] transition-colors hover:bg-[var(--color-status-error-bg)]"
           >
-            <Trash2 className="size-3.5 text-red-400" />
+            <Trash2 className="size-3.5 text-[var(--color-status-error)]" />
             {t("entry.requestDelete")}
           </button>
         </div>

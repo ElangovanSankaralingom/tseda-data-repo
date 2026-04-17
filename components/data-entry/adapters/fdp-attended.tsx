@@ -3,6 +3,7 @@
 import { Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX, Calendar, BookOpen, Clock, Unlock } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { t as staticT } from "@/lib/i18n";
+import TextInput from "@/components/controls/TextInput";
 import CurrencyField from "@/components/controls/CurrencyField";
 import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
@@ -16,7 +17,7 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { MetadataPills, AttachmentBadges } from "@/components/data-entry/EntryMetadataDisplay";
-import { uuid, cx } from "@/lib/utils/idHelpers";
+import { uuid } from "@/lib/utils/idHelpers";
 import { formatCurrency } from "@/lib/i18n/locale";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
 import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureStreak } from "@/lib/entries/hydrateEntry";
@@ -124,7 +125,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
         animationDelay={0}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined}>
+          <Field label={fieldLabel('academicYear')} error={submitted ? errors.academicYear : undefined} fieldKey="academicYear">
             <SelectDropdown
               value={form.academicYear || ""}
               onChange={(value) => setForm((c) => ({ ...c, academicYear: value }))}
@@ -134,7 +135,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
               error={submitted && !!errors.academicYear}
             />
           </Field>
-          <Field label={fieldLabel('semesterType')} error={submitted ? errors.semesterType : undefined}>
+          <Field label={fieldLabel('semesterType')} error={submitted ? errors.semesterType : undefined} fieldKey="semesterType">
             <PillSelect
               value={form.semesterType || ""}
               onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
@@ -160,32 +161,26 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
       >
         <div className="space-y-4">
           {/* Program name gets full width — it's the hero field */}
-          <Field label={fieldLabel('programName')} error={submitted ? errors.programName : undefined}>
-            <input
+          <Field label={fieldLabel('programName')} error={submitted ? errors.programName : undefined} fieldKey="programName">
+            <TextInput
               value={form.programName || ""}
               onChange={(e) => setForm((c) => ({ ...c, programName: e.target.value }))}
               disabled={coreFieldDisabled("programName")}
-              className={cx(
-                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                submitted && errors.programName ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                coreFieldDisabled("programName") && "cursor-not-allowed opacity-60",
-              )}
+              error={submitted && !!errors.programName}
+              placeholder={t('placeholder.programName')}
             />
           </Field>
-          <Field label={fieldLabel('organisingBody')} error={submitted ? errors.organisingBody : undefined}>
-            <input
+          <Field label={fieldLabel('organisingBody')} error={submitted ? errors.organisingBody : undefined} fieldKey="organisingBody">
+            <TextInput
               value={form.organisingBody || ""}
               onChange={(e) => setForm((c) => ({ ...c, organisingBody: e.target.value }))}
               disabled={coreFieldDisabled("organisingBody")}
-              className={cx(
-                "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                submitted && errors.organisingBody ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                coreFieldDisabled("organisingBody") && "cursor-not-allowed opacity-60",
-              )}
+              error={submitted && !!errors.organisingBody}
+              placeholder={t('placeholder.organisingBody')}
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={fieldLabel('level')} error={submitted ? errors.level : undefined}>
+            <Field label={fieldLabel('level')} error={submitted ? errors.level : undefined} fieldKey="level">
               <PillSelect
                 value={form.level || ""}
                 onChange={(value) => setForm((c) => ({ ...c, level: value }))}
@@ -194,7 +189,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
                 error={submitted && !!errors.level}
               />
             </Field>
-            <Field label={fieldLabel('mode')} error={submitted ? errors.mode : undefined}>
+            <Field label={fieldLabel('mode')} error={submitted ? errors.mode : undefined} fieldKey="mode">
               <PillSelect
                 value={form.mode || ""}
                 onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
@@ -219,10 +214,10 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
         animationDelay={120}
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined}>
+          <Field label={fieldLabel('startDate')} error={submitted ? errors.startDate : undefined} fieldKey="startDate">
             <DateField value={form.startDate} onChange={(v) => setForm((c) => ({ ...c, startDate: v }))} disabled={coreFieldDisabled("startDate")} error={submitted && !!errors.startDate} />
           </Field>
-          <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined}>
+          <Field label={fieldLabel('endDate')} error={submitted ? errors.endDate : undefined} fieldKey="endDate">
             <DateField value={form.endDate} onChange={(v) => setForm((c) => ({ ...c, endDate: v }))} disabled={coreFieldDisabled("endDate")} error={submitted && !!errors.endDate} />
           </Field>
           <Field label={t('entry.numberOfDays')} hint={t('entry.inclusiveDayCount')}>
@@ -244,7 +239,7 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
         animationDelay={180}
       >
         <div className="space-y-4">
-          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
+          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined} fieldKey="sponsored">
             <PillSelect
               value={form.sponsored || ""}
               onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value === "No" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
@@ -256,19 +251,16 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
           </Field>
           {form.sponsored === "Yes" && (
             <div className="grid gap-4 sm:grid-cols-2 animate-fade-in-up">
-              <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
-                <input
+              <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined} fieldKey="fundingAgency">
+                <TextInput
                   value={form.fundingAgency || ""}
                   onChange={(e) => setForm((c) => ({ ...c, fundingAgency: e.target.value }))}
                   disabled={coreFieldDisabled("fundingAgency")}
-                  className={cx(
-                    "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:ring-2 placeholder:text-[var(--color-text-muted)]",
-                    submitted && errors.fundingAgency ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20" : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-input-focus-ring)] focus-visible:ring-[var(--color-input-focus-ring)]/20",
-                    coreFieldDisabled("fundingAgency") && "cursor-not-allowed opacity-60",
-                  )}
+                  error={submitted && !!errors.fundingAgency}
+                  placeholder={t('placeholder.fundingAgency')}
                 />
               </Field>
-              <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')}>
+              <Field label={fieldLabel('fundingAmount')} error={submitted ? errors.fundingAmount : undefined} hint={t('entry.numbersOnly')} fieldKey="fundingAmount">
                 <CurrencyField
                   value={form.fundingAmount === null ? "" : String(form.fundingAmount)}
                   onChange={(value) => setForm((c) => ({ ...c, fundingAmount: value === "" ? null : Number(value) }))}
