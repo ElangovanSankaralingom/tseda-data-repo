@@ -88,7 +88,7 @@ const SEGMENT_COLORS: Record<EntryListGroup, string> = {
   streak_runners: "#fbbf24",
   on_the_clock: "#60a5fa",
   unlocked: "#c084fc",
-  in_the_works: "rgba(255,255,255,0.15)",
+  in_the_works: "var(--color-text-tertiary)",
   under_review: "#fb923c",
   locked_in: "#84cc16",
 };
@@ -142,7 +142,7 @@ function SegmentedStatusBar<TEntry>({
         className="flex h-11 overflow-hidden rounded-2xl"
         style={{
           background: "rgba(0,0,0,0.35)",
-          border: "1px solid rgba(255,255,255,0.04)",
+          border: "1px solid var(--color-border-subtle)",
           boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)",
         }}
       >
@@ -196,7 +196,7 @@ function SegmentedStatusBar<TEntry>({
       {activeGroup === null && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 px-1">
           {activeSegments.map((group) => (
-            <span key={group} className="inline-flex items-center gap-1.5 text-[10px] text-white/25">
+            <span key={group} className="inline-flex items-center gap-1.5 text-[10px] text-white/30">
               <span
                 className="size-1.5 rounded-sm"
                 style={{ background: SEGMENT_COLORS[group] }}
@@ -223,30 +223,31 @@ function SectionHeader({ group, count, isUrgent }: {
   const hex = GROUP_HEX[group];
 
   return (
-    <div className="flex items-center gap-2.5 mb-3">
+    <div className="flex items-center gap-2.5 mb-3 animate-section-header" style={{ animationDelay: "50ms" }}>
       <div
-        className="flex size-6 items-center justify-center rounded-lg"
+        className={`flex size-7 items-center justify-center rounded-lg ${isUrgent ? "animate-status-glow" : ""}`}
         style={{
           background: `${hex}25`,
-          border: `1px solid ${hex}35`,
-        }}
+          border: `1.5px solid ${hex}40`,
+          "--glow-color": `${hex}40`,
+        } as React.CSSProperties}
       >
-        <Icon className={`size-3 ${color} ${isUrgent ? "animate-subtle-pulse" : ""}`} />
+        <Icon className={`size-3.5 ${color} ${isUrgent ? "animate-subtle-pulse" : ""}`} />
       </div>
-      <span className={`text-xs font-bold uppercase tracking-wider ${isUrgent ? color : "text-white/50"}`}>
+      <span className={`text-sm font-bold uppercase tracking-wider ${isUrgent ? color : "text-white/60"}`}>
         {t(config.title as Parameters<typeof t>[0])}
       </span>
       <span
-        className="flex size-5 items-center justify-center rounded-md font-mono text-[10px] font-black"
+        className="flex size-6 items-center justify-center rounded-md font-mono text-xs font-black"
         style={{
           background: `${hex}25`,
           color: `${hex}`,
-          border: `1px solid ${hex}30`,
+          border: `1.5px solid ${hex}35`,
         }}
       >
         {count}
       </span>
-      <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, ${hex}30, transparent)` }} />
+      <div className="flex-1 h-[2px]" style={{ background: `linear-gradient(to right, ${hex}35, transparent)` }} />
     </div>
   );
 }
@@ -298,7 +299,7 @@ function CollapsedStack({ count, hex, onExpand }: { count: number; hex: string; 
         <span className="font-mono text-sm font-bold" style={{ color: hex }}>
           +{count}
         </span>
-        <span className="text-xs text-white/35">
+        <span className="text-xs text-white/50">
           {t('common.more')} {count === 1 ? t('dashboard.entry') : t('dashboard.entries')}
         </span>
       </div>
@@ -318,7 +319,6 @@ function SectionContainer<TEntry>({
   renderEntry: SmartGroupedEntryRender<TEntry>;
   isUrgent?: boolean;
 }) {
-  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   if (items.length === 0) return null;
 
@@ -329,9 +329,14 @@ function SectionContainer<TEntry>({
   const shouldCollapse = (group === "locked_in" || group === "in_the_works") && items.length > COLLAPSE_THRESHOLD && !expanded;
   const visibleItems = shouldCollapse ? items.slice(0, COLLAPSE_THRESHOLD) : items;
   const hiddenCount = shouldCollapse ? items.length - COLLAPSE_THRESHOLD : 0;
+  const expandedItems = expanded ? items.slice(COLLAPSE_THRESHOLD) : [];
 
   // Groups WITH container surface — wrapped in a tinted/bordered panel
+  // This creates the LAYERING — each section has its own visual identity
   if (container.hasContainer) {
+    // locked_in rows have no gap between them (bottom dividers handle spacing)
+    const innerSpacing = group === "locked_in" ? "space-y-0" : "space-y-2.5";
+
     return (
       <div
         className={`rounded-2xl ${container.padding}`}
@@ -341,8 +346,13 @@ function SectionContainer<TEntry>({
         }}
       >
         <SectionHeader group={group} count={items.length} isUrgent={isUrgent} />
-        <div className="space-y-2.5">
+        <div className={innerSpacing}>
           {visibleItems.map((entry, index) => renderEntry(entry, group, index))}
+          {expanded && expandedItems.length > 0 && (
+            <div className={`animate-section-expand ${innerSpacing}`}>
+              {expandedItems.map((entry, index) => renderEntry(entry, group, COLLAPSE_THRESHOLD + index))}
+            </div>
+          )}
           {shouldCollapse && (
             <CollapsedStack count={hiddenCount} hex={hex} onExpand={() => setExpanded(true)} />
           )}
@@ -351,22 +361,17 @@ function SectionContainer<TEntry>({
     );
   }
 
-  // Groups WITHOUT container — flat, inline (drafts, locked_in)
+  // Groups WITHOUT container — flat, inline (drafts)
   return (
     <div>
-      {/* Zone separator for locked_in — visual break from active sections */}
-      {group === "locked_in" && (
-        <div className="flex items-center gap-3 mb-4 mt-2">
-          <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(34,197,94,0.15), transparent)" }} />
-          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-500/30 select-none">
-            {t(SECTION_CONFIGS.locked_in.title as Parameters<typeof t>[0])}
-          </span>
-          <div className="h-px flex-1" style={{ background: "linear-gradient(to right, transparent, rgba(34,197,94,0.15), transparent)" }} />
-        </div>
-      )}
       <SectionHeader group={group} count={items.length} isUrgent={isUrgent} />
       <div className="space-y-2">
         {visibleItems.map((entry, index) => renderEntry(entry, group, index))}
+        {expanded && expandedItems.length > 0 && (
+          <div className="animate-section-expand space-y-2">
+            {expandedItems.map((entry, index) => renderEntry(entry, group, COLLAPSE_THRESHOLD + index))}
+          </div>
+        )}
         {shouldCollapse && (
           <CollapsedStack count={hiddenCount} hex={hex} onExpand={() => setExpanded(true)} />
         )}
@@ -384,18 +389,18 @@ function DefaultEmptyState() {
     <div
       className="rounded-2xl p-10 text-center"
       style={{
-        background: "rgba(255,255,255,0.015)",
-        border: "1px dashed rgba(255,255,255,0.06)",
+        background: "var(--color-surface-raised)",
+        border: "1px dashed var(--color-border-subtle)",
       }}
     >
       <div
         className="mx-auto flex size-16 items-center justify-center rounded-2xl"
-        style={{ background: "rgba(255,255,255,0.03)" }}
+        style={{ background: "var(--color-glass-bg)" }}
       >
-        <ClipboardList className="size-8 text-white/15" />
+        <ClipboardList className="size-8" style={{ color: "var(--color-text-muted)" }} />
       </div>
-      <p className="mt-4 text-base font-medium text-white/40">{t('entry.noEntries')}</p>
-      <p className="mt-1 text-sm text-white/20">{t('entry.createFirstToStart')}</p>
+      <p className="mt-4 text-base font-medium" style={{ color: "var(--color-text-muted)" }}>{t('entry.noEntries')}</p>
+      <p className="mt-1 text-sm" style={{ color: "var(--color-text-muted)" }}>{t('entry.createFirstToStart')}</p>
     </div>
   );
 }
@@ -406,13 +411,13 @@ function FilteredEmptyState({ onClear }: { onClear: () => void }) {
     <div
       className="rounded-2xl p-8 text-center"
       style={{
-        background: "rgba(255,255,255,0.015)",
-        border: "1px dashed rgba(255,255,255,0.06)",
+        background: "var(--color-surface-raised)",
+        border: "1px dashed var(--color-border-subtle)",
       }}
     >
-      <Search className="mx-auto size-8 text-white/15" />
-      <p className="mt-3 text-sm text-white/40">{t('entry.noEntriesMatch')}</p>
-      <p className="mt-1 text-xs text-white/20">{t('entry.tryDifferentFilters')}</p>
+      <Search className="mx-auto size-8" style={{ color: "var(--color-text-muted)" }} />
+      <p className="mt-3 text-sm" style={{ color: "var(--color-text-muted)" }}>{t('entry.noEntriesMatch')}</p>
+      <p className="mt-1 text-xs" style={{ color: "var(--color-text-muted)" }}>{t('entry.tryDifferentFilters')}</p>
       <button
         type="button"
         onClick={onClear}
@@ -576,32 +581,23 @@ export function SmartGroupedEntrySections<TEntry>({
         </div>
       )}
 
-      {/* ═══ ENTRIES CONTAINER — "RECENT ACTIVITY" style panel ═══ */}
+      {/* ═══ ENTRIES — no wrapper container, cards float directly ═══ */}
       {totalFiltered === 0 && isFiltered ? (
         <FilteredEmptyState onClear={() => { setSearchQuery(""); setActiveFilter("all"); setSegmentGroup(null); }} />
       ) : (
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.05)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
-          }}
-        >
-          <div className="p-5 space-y-4">
-            {ENTRY_LIST_GROUP_ORDER.map((group) => {
-              if (allowedGroups && !allowedGroups.has(group)) return null;
-              return (
-                <Section
-                  key={group}
-                  group={group}
-                  items={filteredGroups[group]}
-                  renderEntry={renderEntry}
-                  isUrgent={group === "streak_runners" || group === "on_the_clock"}
-                />
-              );
-            })}
-          </div>
+        <div className="space-y-4">
+          {ENTRY_LIST_GROUP_ORDER.map((group) => {
+            if (allowedGroups && !allowedGroups.has(group)) return null;
+            return (
+              <Section
+                key={group}
+                group={group}
+                items={filteredGroups[group]}
+                renderEntry={renderEntry}
+                isUrgent={group === "streak_runners" || group === "on_the_clock"}
+              />
+            );
+          })}
         </div>
       )}
     </div>

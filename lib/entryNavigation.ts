@@ -155,20 +155,20 @@ export function safeBack(router: RouterLike, fallbackUrl: string) {
 
 export function getCategoryNavigation(categoryPath: string, viewEntryId?: string) {
   const isPreviewMode = Boolean(viewEntryId);
-  const dataEntryHref = dataEntryHome();
+  const dashboardHref = dashboard();
 
   return {
     isPreviewMode,
-    dataEntryHref,
+    dataEntryHref: dashboardHref,
     categoryHref: categoryPath,
-    backHref: isPreviewMode ? categoryPath : dataEntryHref,
+    backHref: isPreviewMode ? categoryPath : dashboardHref,
     backDisabled: false,
   };
 }
 
 export function getDataEntryNavigation() {
   return {
-    backHref: dataEntryHome(),
+    backHref: dashboard(),
     backDisabled: true,
   };
 }

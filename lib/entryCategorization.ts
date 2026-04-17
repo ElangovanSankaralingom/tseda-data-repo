@@ -153,10 +153,10 @@ export type EntryListGroup =
   | "locked_in";
 
 export const ENTRY_LIST_GROUP_ORDER: EntryListGroup[] = [
+  "in_the_works",
   "streak_runners",
   "on_the_clock",
   "unlocked",
-  "in_the_works",
   "under_review",
   "locked_in",
 ];

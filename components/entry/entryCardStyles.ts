@@ -18,24 +18,35 @@ export function getEntryListCardClass(category: EntryDisplayCategory, status?: s
 
 /*
   ─────────────────────────────────────────────────────────
-   VISIBLE LAYERED SURFACE SYSTEM
+   CARD DESIGN v3 — NO GLASS, TOP-STRIPE ARCHITECTURE
 
-   THE RULE: If you can't SEE the difference between two
-   depth levels, they're not different levels. Every layer
-   must be VISIBLY distinct from its parent.
+   THE OLD PROBLEM: every card had rgba(0,0,0,0.40) glass bg
+   + left accent bar + inner panel = identical template.
 
-   L0: Page body — darkest (#0a0c14 range)
-   L1: Section containers — VISIBLY tinted with group color
-       (8-15% opacity, not 3%)
-   L2: Cards inside containers — darker than container
-       (creates the "inset" effect)
-   L3: Bright inner panels inside cards — ACTUALLY BRIGHT
-       (white/0.10+, not 0.04)
-   L4: Dark micro-elements inside bright panels
-       (creating the nesting rhythm)
+   THE NEW DESIGN:
+   - Cards are defined by BORDER, not fill
+   - Interior is transparent — page background shows through
+   - TOP GRADIENT STRIPE replaces left accent bar
+   - Each group has genuinely different SHAPE
+   - Locked_in = flat rows, NOT cards
 
-   The contrast between each level should be OBVIOUS,
-   not something you need to squint to see.
+   Active cards:
+   ┌─ colored border ──────────────────────────┐╲
+   ████ gradient top stripe ████████████████████ ╲
+   │                                             │
+   │  icon  Title          countdown badge       │
+   │        subtitle                             │
+   │        [pill] [pill] [pill] [pill]          │
+   │        [attachment badges]                  │
+   │        time · actions                       │
+   │ ▓▓▓▓░░░░ progress bar                      │
+   └─────────────────────────────────────────────┘
+
+   Locked_in rows:
+   ✓  Title  #01  ·  AY 2025 · EVEN · National
+      FINALIZED · 19d ago
+   ──────────────────────────────────────────────
+
   ─────────────────────────────────────────────────────────
 */
 
@@ -67,7 +78,7 @@ export const GROUP_LAYOUT: Record<EntryListGroup, CardLayout> = {
   locked_in: "stamp",
 };
 
-/** Group container — VISIBLE tinted wrappers */
+/** Group container styles (used by GroupedEntrySections) */
 export type GroupContainerStyle = {
   background: string;
   border: string;
@@ -76,146 +87,83 @@ export type GroupContainerStyle = {
 };
 
 export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
-  /* No group containers for active sections — cards carry their own
-     accent bars, borders, and color identity. Only the outer entries
-     container + individual cards = 2 levels, not 3. */
   streak_runners: {
-    background: "transparent",
-    border: "none",
-    padding: "",
-    hasContainer: false,
-  },
-  on_the_clock: {
-    background: "transparent",
-    border: "none",
-    padding: "",
-    hasContainer: false,
-  },
-  unlocked: {
-    background: "transparent",
-    border: "none",
-    padding: "",
-    hasContainer: false,
-  },
-  in_the_works: {
-    background: "transparent",
-    border: "none",
-    padding: "",
-    hasContainer: false,
-  },
-  /* Dashed orange — the dashed border IS the visual identity here */
-  under_review: {
-    background: "rgba(249,115,22,0.03)",
-    border: "1px dashed rgba(249,115,22,0.12)",
-    padding: "p-5",
+    background: "rgba(251,191,36,0.03)",
+    border: "1px solid rgba(251,191,36,0.08)",
+    padding: "p-4",
     hasContainer: true,
   },
-  locked_in: {
-    background: "transparent",
-    border: "none",
-    padding: "",
-    hasContainer: false,
-  },
-};
-
-/** Bright inner panels — ACTUALLY BRIGHT, visibly lighter than card */
-export type InnerPanelStyle = {
-  background: string;
-  border: string;
-  hasPanel: boolean;
-};
-
-export const INNER_PANELS: Record<EntryListGroup, InnerPanelStyle> = {
-  streak_runners: {
-    background: `rgba(255,255,255,0.08)`,
-    border: "1px solid rgba(251,191,36,0.18)",
-    hasPanel: true,
-  },
   on_the_clock: {
-    background: `rgba(255,255,255,0.07)`,
-    border: "1px solid rgba(59,130,246,0.18)",
-    hasPanel: true,
+    background: "rgba(59,130,246,0.03)",
+    border: "1px solid rgba(59,130,246,0.08)",
+    padding: "p-4",
+    hasContainer: true,
   },
   unlocked: {
-    background: `rgba(255,255,255,0.06)`,
-    border: "1px solid rgba(168,85,247,0.15)",
-    hasPanel: true,
+    background: "rgba(168,85,247,0.02)",
+    border: "1px solid rgba(168,85,247,0.06)",
+    padding: "p-4",
+    hasContainer: true,
   },
-  in_the_works: {
-    background: "transparent",
-    border: "none",
-    hasPanel: false,
-  },
+  in_the_works: { background: "transparent", border: "none", padding: "", hasContainer: false },
   under_review: {
-    background: "rgba(249,115,22,0.06)",
-    border: "1px solid rgba(249,115,22,0.15)",
-    hasPanel: true,
+    background: "rgba(249,115,22,0.02)",
+    border: "1px dashed rgba(249,115,22,0.12)",
+    padding: "p-4",
+    hasContainer: true,
   },
   locked_in: {
     background: "rgba(34,197,94,0.03)",
     border: "1px solid rgba(34,197,94,0.08)",
-    hasPanel: true,
+    padding: "p-4 pt-3",
+    hasContainer: true,
   },
 };
 
-/** Card styles per group */
+/** Card border + top stripe config per group */
 export type GroupCardStyle = {
-  cardBg: string;
   cardBorder: string;
-  accentBarBg: string;
-  accentBarWidth: number;
-  hoverClass: string;
-  extraClass: string;
+  topStripeBg: string;
+  topStripeHeight: number;
+  hoverShadow: string;
 };
 
 export const GROUP_CARDS: Record<EntryListGroup, GroupCardStyle> = {
   streak_runners: {
-    cardBg: "rgba(0,0,0,0.40)",
     cardBorder: "rgba(251,191,36,0.15)",
-    accentBarBg: "linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%)",
-    accentBarWidth: 5,
-    hoverClass: "hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(251,191,36,0.12)]",
-    extraClass: "",
+    topStripeBg: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 60%, transparent 100%)",
+    topStripeHeight: 3,
+    hoverShadow: "0 4px 20px rgba(251,191,36,0.10)",
   },
   on_the_clock: {
-    cardBg: "rgba(0,0,0,0.40)",
-    cardBorder: "rgba(59,130,246,0.12)",
-    accentBarBg: "linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%)",
-    accentBarWidth: 4,
-    hoverClass: "hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(59,130,246,0.12)]",
-    extraClass: "",
+    cardBorder: "rgba(59,130,246,0.15)",
+    topStripeBg: "linear-gradient(90deg, #60a5fa 0%, #3b82f6 60%, transparent 100%)",
+    topStripeHeight: 3,
+    hoverShadow: "0 4px 20px rgba(59,130,246,0.10)",
   },
   unlocked: {
-    cardBg: "rgba(0,0,0,0.35)",
     cardBorder: "rgba(168,85,247,0.12)",
-    accentBarBg: "linear-gradient(180deg, #c084fc 0%, #a855f7 100%)",
-    accentBarWidth: 4,
-    hoverClass: "hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(168,85,247,0.08)]",
-    extraClass: "",
+    topStripeBg: "linear-gradient(90deg, #c084fc 0%, #a855f7 60%, transparent 100%)",
+    topStripeHeight: 2,
+    hoverShadow: "0 4px 20px rgba(168,85,247,0.08)",
   },
   in_the_works: {
-    cardBg: "transparent",
     cardBorder: "transparent",
-    accentBarBg: "transparent",
-    accentBarWidth: 0,
-    hoverClass: "hover:bg-white/[0.03]",
-    extraClass: "",
+    topStripeBg: "transparent",
+    topStripeHeight: 0,
+    hoverShadow: "none",
   },
   under_review: {
-    cardBg: "rgba(0,0,0,0.25)",
-    cardBorder: "rgba(249,115,22,0.12)",
-    accentBarBg: "repeating-linear-gradient(180deg, #fb923c 0px, #fb923c 4px, transparent 4px, transparent 8px)",
-    accentBarWidth: 3,
-    hoverClass: "hover:-translate-y-0.5",
-    extraClass: "",
+    cardBorder: "rgba(249,115,22,0.18)",
+    topStripeBg: "linear-gradient(90deg, #fb923c 0%, #f97316 40%, transparent 100%)",
+    topStripeHeight: 2,
+    hoverShadow: "0 4px 16px rgba(249,115,22,0.08)",
   },
   locked_in: {
-    cardBg: "rgba(34,197,94,0.04)",
-    cardBorder: "rgba(34,197,94,0.10)",
-    accentBarBg: "linear-gradient(180deg, #22c55e 0%, #16a34a 100%)",
-    accentBarWidth: 3,
-    hoverClass: "hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(34,197,94,0.08)]",
-    extraClass: "",
+    cardBorder: "transparent",
+    topStripeBg: "transparent",
+    topStripeHeight: 0,
+    hoverShadow: "none",
   },
 };
 
@@ -224,35 +172,17 @@ export const NOTCH_CLIP = "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100
 
 export function getGroupCardClass(group: EntryListGroup): string {
   const layout = GROUP_LAYOUT[group];
-  const s = GROUP_CARDS[group];
 
+  // Drafts: blueprint card with dashed border
   if (layout === "row") {
-    return [
-      "relative flex items-center rounded-lg transition-all duration-200 cursor-pointer",
-      s.hoverClass,
-      s.extraClass,
-    ].filter(Boolean).join(" ");
+    return "relative transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(100,116,139,0.06)]";
   }
 
+  // Locked_in: flat record row — no card, no rounding, no elevation
   if (layout === "stamp") {
-    return [
-      "relative overflow-hidden flex rounded-2xl transition-all duration-300",
-      s.hoverClass,
-      s.extraClass,
-    ].filter(Boolean).join(" ");
+    return "relative transition-all duration-200 cursor-pointer";
   }
 
-  if (layout === "hero") {
-    return [
-      "relative overflow-hidden flex rounded-2xl transition-all duration-300",
-      s.hoverClass,
-      s.extraClass,
-    ].filter(Boolean).join(" ");
-  }
-
-  return [
-    "relative overflow-hidden flex rounded-2xl transition-all duration-300",
-    s.hoverClass,
-    s.extraClass,
-  ].filter(Boolean).join(" ");
+  // Active card types: two-zone architecture with bold presence
+  return "relative overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-lg";
 }

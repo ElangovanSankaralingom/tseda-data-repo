@@ -2,6 +2,10 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Exclude markdown docs from Tailwind class scanning — code examples
+   in CLAUDE.md can contain wildcard patterns that break CSS parsing. */
+@source not "../**/*.md";
+
 :root {
   --color-primary: #84CC16;
   --color-primary-light: #A3E635;
@@ -189,27 +193,27 @@ body {
 
   /* Static dot overlay — fades out after header+hero zone */
   .dot-overlay {
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-image: radial-gradient(circle, rgba(132, 204, 22, 0.12) 1.5px, transparent 1.5px);
+    background-size: 30px 30px;
     mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
   }
 
   @media (min-width: 640px) {
     .dot-overlay {
-      background-size: 32px 32px;
+      background-size: 36px 36px;
     }
   }
 
   /* Cursor glow — brighter dots near cursor, same vertical fade */
   .cursor-glow-dots {
-    background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-image: radial-gradient(circle, rgba(132, 204, 22, 0.22) 1.5px, transparent 1.5px);
+    background-size: 30px 30px;
   }
 
   @media (min-width: 640px) {
     .cursor-glow-dots {
-      background-size: 32px 32px;
+      background-size: 36px 36px;
     }
   }
 
@@ -626,6 +630,73 @@ select:focus {
   .stagger-dash-6 { animation-delay: 480ms; }
   .stagger-dash-7 { animation-delay: 560ms; }
   .stagger-dash-8 { animation-delay: 640ms; }
+
+  /* ─── ENTRY PAGE ANIMATIONS ─── */
+
+  /* Entry card hover — lift + glow + border brighten */
+  [data-entry-card] {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s ease;
+  }
+  [data-entry-card]:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 24px rgba(0,0,0,0.25),
+      0 0 0 1px rgba(255,255,255,0.06),
+      0 0 20px -4px var(--glow-color, rgba(255,255,255,0.05));
+  }
+
+  /* Section expand — smooth height + fade */
+  @keyframes sectionExpand {
+    from { opacity: 0; max-height: 0; transform: translateY(-8px); }
+    to { opacity: 1; max-height: 2000px; transform: translateY(0); }
+  }
+  .animate-section-expand {
+    animation: sectionExpand 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    overflow: hidden;
+  }
+
+  /* Status glow pulse — ring of light around active badges */
+  @keyframes statusGlow {
+    0%, 100% { box-shadow: 0 0 0 0 var(--glow-color, rgba(251,191,36,0.4)); }
+    50% { box-shadow: 0 0 8px 2px var(--glow-color, rgba(251,191,36,0.2)); }
+  }
+  .animate-status-glow {
+    animation: statusGlow 2.5s ease-in-out infinite;
+  }
+
+  /* Border shimmer — light sweeps across card border on hover */
+  @keyframes borderShimmer {
+    0% { opacity: 0; left: -30%; }
+    50% { opacity: 1; }
+    100% { opacity: 0; left: 130%; }
+  }
+  [data-entry-card]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -30%;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+  }
+  [data-entry-card]:hover::before {
+    animation: borderShimmer 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Section header entrance */
+  @keyframes sectionHeaderSlide {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .animate-section-header {
+    animation: sectionHeaderSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
 
   /* ─── SIGNATURE DASHBOARD ANIMATIONS ─── */
 

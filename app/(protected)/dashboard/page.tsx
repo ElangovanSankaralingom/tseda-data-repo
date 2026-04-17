@@ -12,7 +12,7 @@ import { CATEGORY_KEYS } from "@/lib/categories";
 import { getDashboardSummary } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
-  dataEntryHome,
+  entryList,
   signin,
 } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
@@ -110,30 +110,30 @@ export default async function DashboardPage() {
 
 function DashboardEmptyState() {
   return (
-    <div className="flex overflow-hidden rounded-2xl border border-dashed border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.25)] animate-card-lift">
+    <div className="flex overflow-hidden rounded-2xl border border-dashed border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.25)] animate-card-lift">
       {/* ── Thick left accent bar ── */}
       <div className="w-1.5 shrink-0 bg-[var(--color-primary)] opacity-25" />
 
       <div className="flex-1 p-8 sm:p-10">
         <div className="flex flex-col sm:flex-row sm:items-center gap-6">
           {/* ── Left: Bright icon panel (white surface pop) ── */}
-          <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.07)] border border-[rgba(255,255,255,0.1)]">
-            <ClipboardList className="size-9 text-[rgba(255,255,255,0.25)]" />
+          <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-surface-raised)] border border-[var(--color-border-default)]">
+            <ClipboardList className="size-9 text-white/40" />
           </div>
 
           {/* ── Right: Text + CTA ── */}
           <div>
-            <p className="text-base font-bold text-[rgba(255,255,255,0.6)]">
+            <p className="text-base font-bold text-white/65">
               No entries yet
             </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[rgba(255,255,255,0.2)]">
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
               Start collecting data to build your streak
             </p>
             <Link
-              href={dataEntryHome()}
+              href={entryList("fdp-attended")}
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-button-primary-bg)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--color-button-primary-text)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
             >
-              Go to Data Entry
+              Create First Entry
               <ArrowUpRight className="size-3.5" />
             </Link>
           </div>

@@ -5,11 +5,19 @@
   "isFacultyListed": true,
   "googleName": "Elangovan Sankaralingom",
   "googlePhotoURL": "https://lh3.googleusercontent.com/a/ACg8ocKqKk9m1l0lR7Y_H2rvaYEn_ndQjah913AJ0b7CuEokgc1xkY8o=s96-c",
-  "userPreferredName": "",
+  "userPreferredName": "Elan",
   "customPhotoURL": null,
-  "personal": {},
+  "personal": {
+    "dob": "1993-07-29",
+    "bloodGroup": "O+",
+    "aadharNumber": "9164 1858 9629",
+    "panCardNumber": "ACJPE7178G"
+  },
   "academic": {
-    "employeeId": ""
+    "employeeId": "190060",
+    "dateOfJoiningTCE": "2019-12-02",
+    "designation": "Assistant",
+    "phdStatus": "Not Enrolled"
   },
   "experience": {
     "lopPeriods": [],
@@ -26,5 +34,5 @@
     "theme": "light"
   },
   "createdAt": "2026-03-09T03:56:03.730Z",
-  "updatedAt": "2026-04-16T08:16:04.723Z"
+  "updatedAt": "2026-04-17T09:08:14.055Z"
 }

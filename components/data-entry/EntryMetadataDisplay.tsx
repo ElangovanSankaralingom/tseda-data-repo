@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { Fragment, memo } from "react";
 import {
   Calendar,
   Clock,
@@ -15,19 +15,20 @@ import type { EntryListGroup } from "@/lib/entryCategorization";
 
 /*
   ─────────────────────────────────────────────────────────
-   ENTRY METADATA DISPLAY — ZONE-AWARE visual pills
+   ENTRY METADATA DISPLAY — ZONE-AWARE visual system
 
    Active zones (streak_runners, on_the_clock, unlocked):
-     Rainbow semantic colors — each type gets its own tint.
-     [📅 blue] [🎓 purple] [🌐 green] [📍 orange]
+     BOLD CHIP TAGS — vibrant per-type rainbow colors,
+     generous padding, rounded-lg, font-medium.
+     These float directly on the dark card surface
+     (no inner panel box wrapping them).
 
    Sealed zone (locked_in):
-     Monochrome green — ALL pills use green-family tint.
-     More compact, desaturated, "archived record" feeling.
-     [📅 green] [🎓 green] [🌐 green] [📍 green]
+     FLAT INLINE TEXT — no backgrounds, no borders.
+     Just icon + text in muted green, separated by dots.
+     Compact, archival, ledger-style. Instantly different
+     from the vibrant active pills.
 
-   This makes the two zones INSTANTLY distinguishable —
-   not by the wrapper, but by the actual content inside.
   ─────────────────────────────────────────────────────────
 */
 
@@ -38,28 +39,20 @@ function groupToVariant(group?: EntryListGroup): PillVariant {
   return "active";
 }
 
-/* ── ACTIVE palette — per-type semantic colors ── */
-const ACTIVE_TINTS: Record<string, { tint: string; iconColor: string }> = {
-  year:     { tint: "rgba(59,130,246,0.12)",  iconColor: "text-blue-400/60" },
-  semester: { tint: "rgba(168,85,247,0.12)",  iconColor: "text-purple-400/60" },
-  level:    { tint: "rgba(34,197,94,0.12)",   iconColor: "text-emerald-400/60" },
-  mode:     { tint: "rgba(249,115,22,0.12)",  iconColor: "text-orange-400/60" },
-  date:     { tint: "rgba(255,255,255,0.05)", iconColor: "text-white/40" },
-  duration: { tint: "rgba(251,191,36,0.12)",  iconColor: "text-amber-400/60" },
-  funding:  { tint: "rgba(34,197,94,0.12)",   iconColor: "text-emerald-400/60" },
-  default:  { tint: "rgba(255,255,255,0.05)", iconColor: "text-white/40" },
-};
-
-/* ── SEALED palette — monochrome green family ── */
-const SEALED_TINTS: Record<string, { tint: string; iconColor: string }> = {
-  year:     { tint: "rgba(34,197,94,0.06)",  iconColor: "text-emerald-500/40" },
-  semester: { tint: "rgba(34,197,94,0.06)",  iconColor: "text-emerald-500/40" },
-  level:    { tint: "rgba(34,197,94,0.08)",  iconColor: "text-emerald-500/40" },
-  mode:     { tint: "rgba(34,197,94,0.06)",  iconColor: "text-emerald-500/40" },
-  date:     { tint: "rgba(34,197,94,0.04)",  iconColor: "text-emerald-500/30" },
-  duration: { tint: "rgba(34,197,94,0.06)",  iconColor: "text-emerald-500/40" },
-  funding:  { tint: "rgba(34,197,94,0.08)",  iconColor: "text-emerald-500/40" },
-  default:  { tint: "rgba(34,197,94,0.04)",  iconColor: "text-emerald-500/30" },
+/* ── ACTIVE palette — BOLD per-type semantic colors ──
+   These need to POP against the dark card surface.
+   Stronger tints, vivid icon colors. Each type is
+   instantly recognizable by color alone.
+*/
+const ACTIVE_TINTS: Record<string, { tint: string; iconColor: string; textColor: string }> = {
+  year:     { tint: "rgba(59,130,246,0.18)",  iconColor: "text-blue-400",    textColor: "text-blue-200/70" },
+  semester: { tint: "rgba(168,85,247,0.18)",  iconColor: "text-purple-400",  textColor: "text-purple-200/70" },
+  level:    { tint: "rgba(34,197,94,0.18)",   iconColor: "text-emerald-400", textColor: "text-emerald-200/70" },
+  mode:     { tint: "rgba(249,115,22,0.18)",  iconColor: "text-orange-400",  textColor: "text-orange-200/70" },
+  date:     { tint: "var(--color-border-subtle)",    iconColor: "text-slate-400",   textColor: "text-slate-300/70" },
+  duration: { tint: "rgba(251,191,36,0.18)",         iconColor: "text-amber-400",   textColor: "text-amber-200/70" },
+  funding:  { tint: "rgba(34,197,94,0.18)",          iconColor: "text-emerald-400", textColor: "text-emerald-200/70" },
+  default:  { tint: "var(--color-border-subtle)",    iconColor: "text-slate-400",   textColor: "text-slate-300/70" },
 };
 
 /** Classify a metadata part to assign an icon and semantic type */
@@ -90,7 +83,7 @@ function classifyPart(part: string): { icon: React.ElementType; type: string } {
   return { icon: FileText, type: "default" };
 }
 
-/** A single metadata pill — style changes based on variant */
+/** A single metadata element — COMPLETELY different per variant */
 const MetadataPill = memo(function MetadataPill({
   text,
   variant,
@@ -99,27 +92,34 @@ const MetadataPill = memo(function MetadataPill({
   variant: PillVariant;
 }) {
   const { icon: Icon, type } = classifyPart(text);
-  const palette = variant === "sealed" ? SEALED_TINTS : ACTIVE_TINTS;
-  const { tint, iconColor } = palette[type] || palette.default;
-  const isSealed = variant === "sealed";
 
+  /* ── SEALED: flat inline text, no box, no background ── */
+  if (variant === "sealed") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-white/40">
+        <Icon className="size-3 shrink-0 text-emerald-400/50" />
+        <span className="truncate max-w-[180px]">{text}</span>
+      </span>
+    );
+  }
+
+  /* ── ACTIVE: bold chip tag with vibrant tint — each type has its OWN color ── */
+  const { tint, iconColor, textColor } = ACTIVE_TINTS[type] || ACTIVE_TINTS.default;
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] ${
-        isSealed ? "text-emerald-300/40" : "text-white/50"
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${textColor}`}
       style={{
         background: tint,
-        border: `1px solid ${isSealed ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.04)"}`,
+        border: "1px solid var(--color-border-subtle)",
       }}
     >
-      <Icon className={`size-2.5 shrink-0 ${iconColor}`} />
+      <Icon className={`size-3 shrink-0 ${iconColor}`} />
       <span className="truncate max-w-[180px]">{text}</span>
     </span>
   );
 });
 
-/** Render metadata parts as visual pills — zone-aware */
+/** Render metadata — chips for active, inline text for sealed */
 export const MetadataPills = memo(function MetadataPills({
   parts,
   group,
@@ -130,6 +130,23 @@ export const MetadataPills = memo(function MetadataPills({
   if (parts.length === 0) return null;
   const variant = groupToVariant(group);
 
+  /* ── SEALED: flowing inline text with dot separators ── */
+  if (variant === "sealed") {
+    return (
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        {parts.map((part, i) => (
+          <Fragment key={i}>
+            <MetadataPill text={part} variant="sealed" />
+            {i < parts.length - 1 && (
+              <span className="text-emerald-400/30 text-xs select-none">·</span>
+            )}
+          </Fragment>
+        ))}
+      </div>
+    );
+  }
+
+  /* ── ACTIVE: chip tags in a flex wrap ── */
   return (
     <div className="flex flex-wrap gap-1.5">
       {parts.map((part, i) => (
@@ -155,30 +172,43 @@ const AttachmentBadge = memo(function AttachmentBadge({
   variant: PillVariant;
 }) {
   if (files.length === 0) return null;
-  const isSealed = variant === "sealed";
 
+  /* ── SEALED: flat inline text links, no box ── */
+  if (variant === "sealed") {
+    return (
+      <>
+        {files.map((meta, i) => (
+          <a
+            key={meta.storedPath}
+            className="inline-flex items-center gap-1 text-xs text-white/40 hover:text-white/60 transition-colors"
+            href={meta.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Shield className="size-3 shrink-0 text-emerald-400/40" />
+            {label}{files.length > 1 ? ` ${i + 1}` : ""}
+          </a>
+        ))}
+      </>
+    );
+  }
+
+  /* ── ACTIVE: bold chip badges ── */
   return (
     <>
       {files.map((meta, i) => (
         <a
           key={meta.storedPath}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${
-            isSealed
-              ? "text-emerald-400/50 hover:text-emerald-300/70"
-              : "text-white/60 hover:text-white/80"
-          }`}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium text-white/60 hover:text-white/80 transition-colors"
           style={{
-            background: isSealed ? "rgba(34,197,94,0.05)" : "rgba(255,255,255,0.04)",
-            border: `1px solid ${isSealed ? "rgba(34,197,94,0.10)" : "rgba(255,255,255,0.06)"}`,
+            background: "var(--color-surface-raised)",
+            border: "1px solid var(--color-border-subtle)",
           }}
           href={meta.url}
           target="_blank"
           rel="noreferrer"
         >
-          {isSealed
-            ? <Shield className="size-3 shrink-0 text-emerald-500/40" />
-            : <FileText className="size-3 shrink-0 opacity-50" />
-          }
+          <FileText className="size-3 shrink-0 opacity-50" />
           {label}{files.length > 1 ? ` ${i + 1}` : ""}
         </a>
       ))}
@@ -186,7 +216,7 @@ const AttachmentBadge = memo(function AttachmentBadge({
   );
 });
 
-/** Render attachment links as file badges — zone-aware */
+/** Render attachment links — zone-aware */
 export const AttachmentBadges = memo(function AttachmentBadges({
   attachments,
   group,

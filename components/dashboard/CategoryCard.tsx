@@ -10,6 +10,8 @@ import { getCategoryConfig } from "@/data/categoryRegistry";
 import { getCategoryIcon } from "@/lib/ui/categoryIcons";
 import { type StatusPill } from "./dashboardTypes";
 
+/* Token migration note: All rgba(255,255,255,X) values now use CSS variable tokens from themeTokens.ts */
+
 /*
   ───────────────────────────────────────────────────────
    CATEGORY CARD — Holographic tilt card with color identity.
@@ -85,7 +87,7 @@ function CategoryCard({
   const { ref, style: tiltStyle, lightStyle, handlers } = useTiltEffect();
 
   const pills: StatusPill[] = [
-    { label: "DRF", count: draftCount, className: "text-[rgba(255,255,255,0.5)] bg-[rgba(0,0,0,0.4)]" },
+    { label: "DRF", count: draftCount, className: "text-[var(--color-text-tertiary)] bg-[rgba(0,0,0,0.4)]" },
     { label: "REQ", count: editRequestedCount, className: "text-amber-400 bg-amber-400/10" },
     { label: "EDT", count: editGrantedCount, className: "text-[var(--color-primary)] bg-[var(--color-primary)]/10" },
   ].filter((p) => p.count > 0);
@@ -102,8 +104,8 @@ function CategoryCard({
         className={cn(
           "group relative flex overflow-hidden rounded-2xl border cursor-pointer",
           isEmpty
-            ? "border-dashed border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.2)]"
-            : "border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.3)]"
+            ? "border-dashed border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.2)]"
+            : "border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.3)]"
         )}
         style={{ clipPath: isEmpty ? undefined : NOTCH_CLIP }}
       >
@@ -130,7 +132,7 @@ function CategoryCard({
         )}
 
         {/* ── Thick left accent bar ── */}
-        <div className={cn("w-1.5 shrink-0", isEmpty ? "bg-[rgba(255,255,255,0.04)]" : color.bg)} />
+        <div className={cn("w-1.5 shrink-0", isEmpty ? "bg-[var(--color-surface-raised)]" : color.bg)} />
 
         <div className="flex-1 p-4 relative">
           {/* ── Header: Icon pill + Label + Arrow ── */}
@@ -138,7 +140,7 @@ function CategoryCard({
             <div
               className={cn(
                 "flex items-center gap-2 rounded-full pl-1 pr-3 py-1 border",
-                isEmpty && "border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]"
+                isEmpty && "border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)]"
               )}
               style={isEmpty ? undefined : {
                 borderColor: `${hex}20`,
@@ -153,7 +155,7 @@ function CategoryCard({
             </div>
             <div className="flex-1" />
             {/* ── Keyboard shortcut badge ── */}
-            <span className="flex size-5 items-center justify-center rounded font-mono text-[9px] font-bold text-[rgba(255,255,255,0.15)] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] transition-colors duration-200 group-hover:text-[rgba(255,255,255,0.4)] group-hover:border-[rgba(255,255,255,0.1)]">
+            <span className="flex size-5 items-center justify-center rounded font-mono text-[9px] font-bold border transition-colors duration-200" style={{ color: "var(--color-text-tertiary)", borderColor: "var(--color-border-subtle)", backgroundColor: "var(--color-surface-raised)" }} onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-secondary)"; e.currentTarget.style.borderColor = "var(--color-border-default)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-tertiary)"; e.currentTarget.style.borderColor = "var(--color-border-subtle)"; }}>
               {index + 1}
             </span>
           </div>
@@ -163,8 +165,8 @@ function CategoryCard({
             className={cn(
               "mt-3 overflow-hidden rounded-xl border px-4 py-3",
               isEmpty
-                ? "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.04)]"
-                : "border-[rgba(255,255,255,0.06)]"
+                ? "bg-[var(--color-surface-raised)] border-[var(--color-surface-raised)]"
+                : "border-[var(--color-border-subtle)]"
             )}
             style={isEmpty ? undefined : {
               backgroundColor: `color-mix(in srgb, ${hex} 6%, rgba(255,255,255,0.04))`,
@@ -175,11 +177,11 @@ function CategoryCard({
               <div>
                 <span
                   className="font-mono text-4xl font-black tracking-tighter leading-none"
-                  style={{ color: isEmpty ? "rgba(255,255,255,0.15)" : hex }}
+                  style={{ color: isEmpty ? "var(--color-text-tertiary)" : hex }}
                 >
                   {displayCount}
                 </span>
-                <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.25em] text-[rgba(255,255,255,0.25)]">
+                <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.25em]" style={{ color: "var(--color-text-tertiary)" }}>
                   {isEmpty ? "entries" : total === 1 ? "entry" : "entries"}
                 </div>
               </div>
@@ -191,7 +193,7 @@ function CategoryCard({
                     <span
                       key={pill.label}
                       className={cn(
-                        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[9px] font-bold border border-[rgba(255,255,255,0.04)]",
+                        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[9px] font-bold border border-[var(--color-surface-raised)]",
                         pill.className
                       )}
                     >

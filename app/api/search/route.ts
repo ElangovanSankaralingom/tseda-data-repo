@@ -34,7 +34,6 @@ function toISO(value: unknown): string {
 
 const USER_PAGES: SearchablePage[] = [
   { type: "page", id: "p-dashboard", name: "Dashboard", path: "/dashboard", description: "Your progress overview", adminOnly: false },
-  { type: "page", id: "p-data-entry", name: "Data Entry", path: "/data-entry", description: "Create and manage entries", adminOnly: false },
   { type: "page", id: "p-account", name: "My Account", path: "/account", description: "Profile and settings", adminOnly: false },
 ];
 

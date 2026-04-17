@@ -8,7 +8,7 @@ import { authOptions } from "@/lib/auth";
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { dataEntryHome } from "@/lib/entryNavigation";
+import { dashboard } from "@/lib/entryNavigation";
 import { searchUserEntries, type SearchResult } from "@/lib/search/searchIndex";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
       <PageHeader
         title="Entry Search"
         subtitle="Search your entries across categories using keywords."
-        backHref={dataEntryHome()}
+        backHref={dashboard()}
         showBack
       />
 

@@ -333,7 +333,7 @@ export function buildErrors(profile: Profile) {
   }
 
   const employeeId = (profile.academic?.employeeId ?? "").replace(/\D/g, "");
-  if (!/^\d{6}$/.test(employeeId)) {
+  if (employeeId && !/^\d{6}$/.test(employeeId)) {
     e.employeeId = "Employee ID must be exactly 6 digits.";
   }
 

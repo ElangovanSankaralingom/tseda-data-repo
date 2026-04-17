@@ -63,7 +63,7 @@ export default function CompletionRing({
   const segments = useMemo(() => {
     const result: Segment[] = [];
     if (stats.active > 0) result.push({ count: stats.active, color: "#fbbf24", label: t('common.active') });
-    if (stats.drafts > 0) result.push({ count: stats.drafts, color: "rgba(255,255,255,0.25)", label: t('common.drafts') });
+    if (stats.drafts > 0) result.push({ count: stats.drafts, color: "var(--color-text-tertiary)", label: t('common.drafts') });
     if (stats.pending > 0) result.push({ count: stats.pending, color: "#fb923c", label: t('common.pending') });
     if (stats.finalized > 0) result.push({ count: stats.finalized, color: "#22c55e", label: t('common.finalized') });
     return result;
@@ -81,12 +81,12 @@ export default function CompletionRing({
             cy={RING_SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
+            stroke="var(--color-border-subtle)"
             strokeWidth={STROKE_WIDTH}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black text-white/15 tabular-nums">0</span>
+          <span className="text-2xl font-black tabular-nums" style={{ color: "var(--color-text-muted)" }}>0</span>
         </div>
       </div>
     );
@@ -132,7 +132,7 @@ export default function CompletionRing({
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="rgba(255,255,255,0.04)"
+          stroke="var(--color-border-subtle)"
           strokeWidth={STROKE_WIDTH}
         />
 

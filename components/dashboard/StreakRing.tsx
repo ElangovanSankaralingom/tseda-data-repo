@@ -67,7 +67,7 @@ export default function StreakRing({
   const dashOffset = CIRCUMFERENCE * (1 - animatedProgress);
   const tier = getTier(wins);
   const effectiveRingColor = tier?.fillColor ?? ringColor;
-  const effectiveTrackColor = tier?.trackColor ?? "rgba(255,255,255,0.06)";
+  const effectiveTrackColor = tier?.trackColor ?? "var(--color-border-subtle)";
 
   return (
     <div className="flex items-center gap-3">
@@ -126,7 +126,7 @@ export default function StreakRing({
             </span>
           )}
         </div>
-        <div className="text-[8px] font-bold uppercase tracking-[0.2em] text-[rgba(255,255,255,0.25)]">
+        <div className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/30">
           {label}
         </div>
       </div>

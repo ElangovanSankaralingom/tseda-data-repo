@@ -8,7 +8,6 @@ import PersonalTab from "@/components/account/PersonalTab";
 import AcademicTab from "@/components/account/AcademicTab";
 import ExperienceTab from "@/components/account/ExperienceTab";
 import UploadsTab from "@/components/account/UploadsTab";
-import { MiniButton } from "@/components/account/AccountUI";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { dashboard } from "@/lib/entryNavigation";
@@ -17,7 +16,6 @@ import {
   buildErrors,
   buildPatchForTab,
   getErrorsForTab,
-  getTabErrorMessage,
   getTabForErrorKey,
   getTabSnapshot,
   applySavedTabToDraft,
@@ -75,7 +73,7 @@ export default function AccountPage() {
 
   function shouldShowError(key: string) {
     const tab = getTabForErrorKey(key);
-    return tab ? saveAttemptedTabs[tab] : false;
+    return tab ? (saveAttemptedTabs[tab] || dirtyByTab[tab]) : false;
   }
 
   const dirtyByTab = useMemo(
@@ -92,7 +90,8 @@ export default function AccountPage() {
 
   const activeTabDirty = dirtyByTab[activeTab];
   const activeTabErrors = getErrorsForTab(activeTab, errors);
-  const hasBlockingErrors = saveAttemptedTabs[activeTab] && activeTabErrors.length > 0;
+  const hasBlockingErrors = activeTabErrors.length > 0;
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   async function saveCurrentTab(options: SaveTabOptions) {
     if (saveLockRef.current) return;
@@ -106,10 +105,10 @@ export default function AccountPage() {
       setSaveAttemptedTabs((current) => ({ ...current, [tab]: true }));
 
       if (blockingErrors.length > 0) {
-        setToast({ type: "err", msg: getTabErrorMessage(tab, blockingErrors) });
         return;
       }
       setSaving(true);
+      setAutoSaveStatus("saving");
       const r = await fetch("/api/me", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -134,22 +133,39 @@ export default function AccountPage() {
       setProfile(updated);
       setDraft((current) => applySavedTabToDraft(draftOverride ?? current, updated, tab));
       setSaveAttemptedTabs((current) => ({ ...current, [tab]: false }));
-      setToast({ type: "ok", msg: "Saved." });
+      setAutoSaveStatus("saved");
+      setTimeout(() => setAutoSaveStatus("idle"), 2000);
     } catch (error: unknown) {
       setToast({ type: "err", msg: getErrorMessage(error, "Save failed. Try again.") });
+      setAutoSaveStatus("idle");
     } finally {
       setSaving(false);
       saveLockRef.current = false;
-      setTimeout(() => setToast(null), 2000);
     }
   }
 
-  function cancel() {
-    setDraft((current) => applySavedTabToDraft(current, profile, activeTab));
-    setSaveAttemptedTabs((current) => ({ ...current, [activeTab]: false }));
-    setToast({ type: "ok", msg: "Changes discarded." });
-    setTimeout(() => setToast(null), 1200);
-  }
+  /* ── Auto-save: debounce 1.5s after draft changes ── */
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+
+  useEffect(() => {
+    if (loading) return;
+    if (!activeTabDirty) return;
+    const tabErrors = getErrorsForTab(activeTab, buildErrors(draftRef.current));
+    if (tabErrors.length > 0) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    const tabToSave = activeTab;
+    autoSaveTimerRef.current = setTimeout(() => {
+      void saveCurrentTab({ tab: tabToSave });
+    }, 1500);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTabDirty, activeTab, loading, draft]);
 
   function showToast(type: "ok" | "err", msg: string) {
     setToast({ type, msg });
@@ -190,23 +206,16 @@ export default function AccountPage() {
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <ProfileHeader draft={draft} employeeLabel={employeeLabel} />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm text-[var(--color-text-muted)]">{t("account.saveHint")}</p>
-        </div>
-
-        {activeTabDirty ? (
-          <div className="flex items-center gap-2">
-            <MiniButton variant="ghost" onClick={cancel} disabled={saving || loading}>
-              {t("entry.cancel")}
-            </MiniButton>
-            <MiniButton
-              onClick={() => void saveCurrentTab({ tab: activeTab })}
-              disabled={saving || loading || hasBlockingErrors || !activeTabDirty}
-            >
-              {saving ? t("common.saving") : t("common.save")}
-            </MiniButton>
-          </div>
+      <div className="flex items-center gap-3">
+        <p className="text-sm text-[var(--color-text-muted)]">{t("account.saveHint")}</p>
+        {autoSaveStatus === "saving" ? (
+          <span className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+            <Loader2 className="size-3 animate-spin" />
+            {t("common.saving")}
+          </span>
+        ) : null}
+        {autoSaveStatus === "saved" ? (
+          <span className="text-xs text-green-400">{t("common.saved")}</span>
         ) : null}
       </div>
 
@@ -287,9 +296,9 @@ export default function AccountPage() {
           <UploadsTab draft={draft} setDraft={setDraft} saveCurrentTab={saveCurrentTab} showToast={showToast} />
         ) : null}
 
-        {hasBlockingErrors && !loading ? (
+        {hasBlockingErrors && activeTabDirty && !loading ? (
           <div className="rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 px-4 py-3 text-sm">
-            There are validation issues. Fix them before saving.
+            There are validation issues. Fix them to auto-save.
           </div>
         ) : null}
       </div>
