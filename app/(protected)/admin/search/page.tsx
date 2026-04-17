@@ -12,6 +12,7 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { searchAllUsers, type SearchResult } from "@/lib/search/searchIndex";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -62,10 +63,12 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
     }
   }
 
+  const s = (key: Parameters<typeof t>[0]) => t(key, "en");
+
   return (
     <AdminPageShell
-      title="Admin Search"
-      subtitle="Search entries across all users and categories."
+      titleKey="adminPages.searchTitle"
+      subtitleKey="adminPages.searchSubtitle"
       backHref={adminHome()}
       iconName="Search"
       maxWidthClassName="max-w-6xl"
@@ -74,35 +77,35 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
         <form method="GET">
           <div className="grid gap-3 md:grid-cols-[1fr_220px_240px_auto]">
             <label className="space-y-1">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">Keyword</span>
+              <span className="text-xs font-medium text-[var(--color-text-muted)]">{s("adminPages.keyword")}</span>
               <input
                 name="q"
                 defaultValue={query}
-                placeholder="Search by title, category, or field values"
+                placeholder={s("adminPages.searchPlaceholder")}
                 className="w-full rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
               />
             </label>
             <label className="space-y-1">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">Category</span>
+              <span className="text-xs font-medium text-[var(--color-text-muted)]">{s("adminPages.category")}</span>
               <SearchCategorySelect
                 name="category"
                 defaultValue={selectedCategory}
                 options={[
-                  { label: "All categories", value: "all" },
+                  { label: s("adminPages.allCategories"), value: "all" },
                   ...CATEGORY_LIST.map((category) => ({
                     label: getCategoryConfig(category).label,
                     value: category,
                   })),
                 ]}
-                placeholder="All categories"
+                placeholder={s("adminPages.allCategories")}
               />
             </label>
             <label className="space-y-1">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">Owner Email (optional)</span>
+              <span className="text-xs font-medium text-[var(--color-text-muted)]">{s("adminPages.ownerEmail")}</span>
               <input
                 name="userEmail"
                 defaultValue={userEmail}
-                placeholder="faculty@tce.edu"
+                placeholder={s("adminPages.emailPlaceholder")}
                 className="w-full rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
               />
             </label>
@@ -111,7 +114,7 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
                 type="submit"
                 className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--color-glass-border)] px-4 text-sm font-medium transition hover:bg-[var(--color-glass-hover)]/60"
               >
-                Search
+                {s("adminPages.searchButton")}
               </button>
             </div>
           </div>
@@ -119,18 +122,18 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
       </SectionCard>
 
       {error ? (
-        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <div className="mt-4 rounded-xl border border-[var(--color-error)]/20 bg-[var(--color-error)]/10 px-3 py-2 text-sm text-[var(--color-error)]">
           {error}
         </div>
       ) : null}
 
       {query ? (
         <SectionCard
-          title="Search Results"
-          subtitle={`Results: ${results.length}`}
+          title={s("adminPages.searchResults")}
+          subtitle={`${results.length}`}
         >
           {results.length === 0 ? (
-            <div className="text-sm text-[var(--color-text-muted)]">No entries matched this search.</div>
+            <div className="text-sm text-[var(--color-text-muted)]">{s("adminPages.noEntriesMatched")}</div>
           ) : (
             <div className="space-y-3">
               {results.map((result) => (

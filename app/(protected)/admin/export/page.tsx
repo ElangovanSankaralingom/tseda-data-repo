@@ -50,8 +50,8 @@ export default async function AdminExportPage() {
 
   return (
     <AdminPageShell
-      title="Export Center"
-      subtitle="Quick templates, custom exports, and download history."
+      titleKey="adminPages.exportTitle"
+      subtitleKey="adminPages.exportSubtitle"
       backHref={adminHome()}
       iconName="Download"
     >

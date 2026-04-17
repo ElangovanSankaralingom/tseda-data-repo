@@ -33,8 +33,8 @@ export default async function AdminMaintenancePage() {
 
   return (
     <AdminPageShell
-      title="Mission Control"
-      subtitle="Monitor system health, run maintenance jobs, and review action history."
+      titleKey="adminPages.maintenanceTitle"
+      subtitleKey="adminPages.maintenanceSubtitle"
       backHref={adminHome()}
       iconName="Wrench"
       maxWidthClassName="max-w-7xl"

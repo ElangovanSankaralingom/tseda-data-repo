@@ -49,5 +49,5 @@ export default async function AdminConsolePage() {
     maintenance: canRunMaintenance(email),
   };
 
-  return <AdminConsoleDashboard adminEmail={email} permissions={permissions} />;
+  return <AdminConsoleDashboard permissions={permissions} />;
 }

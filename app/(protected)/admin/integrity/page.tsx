@@ -27,8 +27,8 @@ export default async function AdminIntegrityOverviewPage() {
 
   return (
     <AdminPageShell
-      title="Data Integrity"
-      subtitle="Keep your data healthy, consistent, and corruption-free."
+      titleKey="adminPages.integrityTitle"
+      subtitleKey="adminPages.integritySubtitle"
       backHref={adminHome()}
       iconName="ShieldCheck"
       maxWidthClassName="max-w-7xl"

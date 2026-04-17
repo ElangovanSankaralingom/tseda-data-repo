@@ -27,29 +27,29 @@ export interface NotificationTypeStyle {
 }
 
 export const USER_NOTIFICATION_STYLES: Record<PersistentNotificationType, NotificationTypeStyle> = {
-  edit_request_granted: { Icon: CheckCircle, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-500" },
-  edit_request_rejected: { Icon: XCircle, iconBg: "bg-red-500/10", iconColor: "text-red-500" },
-  delete_approved: { Icon: Trash2, iconBg: "bg-red-500/10", iconColor: "text-red-500" },
-  delete_rejected: { Icon: XCircle, iconBg: "bg-red-500/10", iconColor: "text-red-500" },
-  auto_archived: { Icon: Archive, iconBg: "bg-amber-500/10", iconColor: "text-amber-500" },
-  timer_warning: { Icon: Clock, iconBg: "bg-orange-500/10", iconColor: "text-orange-500" },
+  edit_request_granted: { Icon: CheckCircle, iconBg: "bg-[var(--color-status-success-bg)]", iconColor: "text-[var(--color-status-success)]" },
+  edit_request_rejected: { Icon: XCircle, iconBg: "bg-[var(--color-status-error-bg)]", iconColor: "text-[var(--color-status-error)]" },
+  delete_approved: { Icon: Trash2, iconBg: "bg-[var(--color-status-error-bg)]", iconColor: "text-[var(--color-status-error)]" },
+  delete_rejected: { Icon: XCircle, iconBg: "bg-[var(--color-status-error-bg)]", iconColor: "text-[var(--color-status-error)]" },
+  auto_archived: { Icon: Archive, iconBg: "bg-[var(--color-status-warning-bg)]", iconColor: "text-[var(--color-status-warning)]" },
+  timer_warning: { Icon: Clock, iconBg: "bg-[var(--color-status-warning-bg)]", iconColor: "text-[var(--color-status-warning)]" },
   entry_finalized: { Icon: Lock, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
-  streak_won: { Icon: Trophy, iconBg: "bg-amber-500/10", iconColor: "text-amber-500" },
-  system_announcement: { Icon: Megaphone, iconBg: "bg-blue-500/10", iconColor: "text-blue-500" },
+  streak_won: { Icon: Trophy, iconBg: "bg-[var(--color-status-warning-bg)]", iconColor: "text-[var(--color-status-warning)]" },
+  system_announcement: { Icon: Megaphone, iconBg: "bg-[var(--color-status-info-bg)]", iconColor: "text-[var(--color-status-info)]" },
 };
 
 export const ADMIN_NOTIFICATION_STYLES: Record<AdminNotificationType, NotificationTypeStyle> = {
-  edit_request: { Icon: FileEdit, iconBg: "bg-purple-500/10", iconColor: "text-purple-500" },
-  delete_request: { Icon: Trash2, iconBg: "bg-red-500/10", iconColor: "text-red-500" },
-  pending_requests_reminder: { Icon: FileEdit, iconBg: "bg-purple-500/10", iconColor: "text-purple-500" },
-  backup_overdue: { Icon: ShieldAlert, iconBg: "bg-amber-500/10", iconColor: "text-amber-500" },
-  integrity_issues: { Icon: ShieldCheck, iconBg: "bg-red-500/10", iconColor: "text-red-500" },
-  wal_warning: { Icon: HardDrive, iconBg: "bg-amber-500/10", iconColor: "text-amber-500" },
-  new_user: { Icon: UserPlus, iconBg: "bg-blue-500/10", iconColor: "text-blue-500" },
+  edit_request: { Icon: FileEdit, iconBg: "bg-[var(--color-status-info-bg)]", iconColor: "text-[var(--color-status-info)]" },
+  delete_request: { Icon: Trash2, iconBg: "bg-[var(--color-status-error-bg)]", iconColor: "text-[var(--color-status-error)]" },
+  pending_requests_reminder: { Icon: FileEdit, iconBg: "bg-[var(--color-status-info-bg)]", iconColor: "text-[var(--color-status-info)]" },
+  backup_overdue: { Icon: ShieldAlert, iconBg: "bg-[var(--color-status-warning-bg)]", iconColor: "text-[var(--color-status-warning)]" },
+  integrity_issues: { Icon: ShieldCheck, iconBg: "bg-[var(--color-status-error-bg)]", iconColor: "text-[var(--color-status-error)]" },
+  wal_warning: { Icon: HardDrive, iconBg: "bg-[var(--color-status-warning-bg)]", iconColor: "text-[var(--color-status-warning)]" },
+  new_user: { Icon: UserPlus, iconBg: "bg-[var(--color-status-info-bg)]", iconColor: "text-[var(--color-status-info)]" },
   user_status_change: { Icon: UserPlus, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
   settings_changed: { Icon: Settings, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
-  migration_complete: { Icon: Wrench, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-500" },
-  system_error: { Icon: AlertOctagon, iconBg: "bg-red-500/10", iconColor: "text-red-500" },
+  migration_complete: { Icon: Wrench, iconBg: "bg-[var(--color-status-success-bg)]", iconColor: "text-[var(--color-status-success)]" },
+  system_error: { Icon: AlertOctagon, iconBg: "bg-[var(--color-status-error-bg)]", iconColor: "text-[var(--color-status-error)]" },
 };
 
 /** Default style for unknown notification types */

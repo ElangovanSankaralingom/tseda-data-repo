@@ -54,7 +54,7 @@ export default function AdminPageShell({
   subtitle,
   subtitleKey,
   backHref,
-  backLabel = "Admin Console",
+  backLabel,
   iconName,
   pills,
   actions,
@@ -77,7 +77,7 @@ export default function AdminPageShell({
               className="group mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/70 transition-all duration-200 hover:bg-white/20 hover:text-white active:scale-95"
             >
               <ArrowLeft className="size-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
-              {backLabel}
+              {backLabel ?? t("adminConsole.title")}
             </Link>
             <div className="flex items-center gap-3">
               {Icon && (
