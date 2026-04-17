@@ -22,21 +22,9 @@ type PendingConfirmationRow = {
   editRequestMessage: string | null;
   createdAtISO?: string | null;
   updatedAtISO?: string | null;
-  status: string;
+  status: "EDIT_REQUESTED" | "DELETE_REQUESTED";
   entryHref: string;
 };
-
-function formatRelativeTime(value: string | null) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  const diff = Date.now() - date.getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return "Less than 1 hour ago";
-  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} ${days === 1 ? "day" : "days"} ago`;
-}
 
 function getRowKey(row: Pick<PendingConfirmationRow, "ownerEmail" | "categoryKey" | "entryId">) {
   return `${row.ownerEmail}:${row.categoryKey}:${row.entryId}`;
@@ -62,6 +50,22 @@ export default function AdminConfirmationsClient() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [rows, setRows] = useState<PendingConfirmationRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  function formatRelativeTime(value: string | null) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    const diff = Date.now() - date.getTime();
+    const hours = Math.floor(diff / 3600000);
+    if (hours < 1) return t("admin.lessThanOneHourAgo");
+    if (hours < 24) {
+      const key = hours === 1 ? "admin.hourAgo" : "admin.hoursAgo";
+      return t(key as Parameters<typeof t>[0]).replace("{count}", String(hours));
+    }
+    const days = Math.floor(hours / 24);
+    if (days === 1) return t("admin.dayAgo").replace("{count}", "1");
+    return t("admin.daysAgo").replace("{count}", String(days));
+  }
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
@@ -182,8 +186,8 @@ export default function AdminConfirmationsClient() {
           <div className="text-sm text-[var(--color-text-muted)]">{t('common.loading')}</div>
         ) : rows.length === 0 ? (
           <div className="py-8 text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
-              <CheckCircle2 className="size-8 text-emerald-400" />
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[var(--color-status-success-bg)]">
+              <CheckCircle2 className="size-8 text-[var(--color-status-success)]" />
             </div>
             <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">{t('common.noResults')}</p>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t('entry.noEntries')}</p>
@@ -212,8 +216,8 @@ export default function AdminConfirmationsClient() {
                           <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{row.title}</span>
                           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                             isDeleteRequest
-                              ? "bg-red-500/15 text-red-400"
-                              : "bg-amber-500/15 text-amber-400"
+                              ? "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]"
+                              : "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]"
                           }`}>
                             {isDeleteRequest ? t('entry.requestDelete') : t('entry.requestEdit')}
                           </span>
@@ -224,7 +228,7 @@ export default function AdminConfirmationsClient() {
                           <span className="truncate">{row.ownerEmail}</span>
                         </div>
                         {relative && (
-                          <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">Requested {relative}</div>
+                          <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{t("admin.requested").replace("{time}", relative)}</div>
                         )}
                         {!isDeleteRequest && row.editRequestMessage ? (
                           <div className="mt-1 text-xs text-[var(--color-text-secondary)] italic">&ldquo;{row.editRequestMessage}&rdquo;</div>
@@ -240,7 +244,7 @@ export default function AdminConfirmationsClient() {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        View
+                        {t('common.view')}
                       </Link>
                       {isDeleteRequest ? (
                         <>
@@ -321,7 +325,7 @@ export default function AdminConfirmationsClient() {
       </SectionCard>
 
       {error ? (
-        <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <div className="mt-4 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)]">
           {error}
         </div>
       ) : null}

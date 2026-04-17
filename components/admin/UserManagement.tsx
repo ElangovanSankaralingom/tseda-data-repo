@@ -34,18 +34,18 @@ type Props = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatRelative(ts: string | null): string {
-  if (!ts) return "Never";
+function formatRelative(ts: string | null, t: (key: string) => string): string {
+  if (!ts) return t("adminUsers.never");
   const diff = Date.now() - Date.parse(ts);
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t("adminUsers.justNow");
+  if (mins < 60) return t("adminUsers.minsAgo").replace("{count}", String(mins));
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("adminUsers.hoursAgo").replace("{count}", String(hours));
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t("adminUsers.daysAgo").replace("{count}", String(days));
   const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+  return t("adminUsers.monthsAgo").replace("{count}", String(months));
 }
 
 function initials(name: string): string {
@@ -57,21 +57,21 @@ function initials(name: string): string {
 }
 
 function completionColor(rate: number): string {
-  if (rate >= 80) return "bg-emerald-500/15";
-  if (rate >= 50) return "bg-amber-500/15";
-  return "bg-red-400";
+  if (rate >= 80) return "bg-[var(--color-status-success-bg)]";
+  if (rate >= 50) return "bg-[var(--color-status-warning-bg)]";
+  return "bg-[var(--color-status-error-bg)]";
 }
 
 function trendIcon(trend: ActivityTrend) {
   switch (trend) {
     case "rising":
-      return <TrendingUp className="size-3.5 text-emerald-500" />;
+      return <TrendingUp className="size-3.5 text-[var(--color-status-success)]" />;
     case "declining":
-      return <TrendingDown className="size-3.5 text-amber-500" />;
+      return <TrendingDown className="size-3.5 text-[var(--color-status-warning)]" />;
     case "stable":
       return <Minus className="size-3.5 text-[var(--color-text-secondary)]" />;
     case "inactive":
-      return <X className="size-3.5 text-red-400" />;
+      return <X className="size-3.5 text-[var(--color-status-error)]" />;
   }
 }
 
@@ -126,7 +126,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
           referrerPolicy="no-referrer"
         />
         {user.role === "admin" && (
-          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-glass-bg)]">
+          <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[var(--color-status-info-bg)] ring-2 ring-[var(--color-glass-bg)]">
             <Shield className="size-2.5 text-white" />
           </div>
         )}
@@ -142,7 +142,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
         <span className={`${textSize} font-bold text-white`}>{initials(user.name)}</span>
       </div>
       {user.role === "admin" && (
-        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-indigo-500/15 ring-2 ring-[var(--color-glass-bg)]">
+        <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[var(--color-status-info-bg)] ring-2 ring-[var(--color-glass-bg)]">
           <Shield className="size-2.5 text-white" />
         </div>
       )}
@@ -170,7 +170,7 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
       href={`/admin/users/${encodeURIComponent(user.email)}`}
       className={`group block rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         isTopPerformer
-          ? "border-t-2 border-t-amber-400 border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm"
+          ? "border-t-2 border-t-[var(--color-status-warning)] border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm"
           : user.totalEntries === 0
           ? "border-[var(--color-glass-border)] bg-[var(--color-body-bg)]/50"
           : "border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm"
@@ -189,19 +189,19 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold text-[var(--color-text-primary)] truncate">{user.name}</span>
             {user.role === "admin" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-400">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-status-info-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-status-info)]">
                 <Shield className="size-3" />
-                Admin
+                {t("adminUsers.adminBadge")}
               </span>
             )}
             {isTopPerformer && (
-              <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
-                Top {rank}
+              <span className="rounded-full bg-[var(--color-status-warning-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-status-warning)]">
+                {t("adminUsers.topRank").replace("{rank}", String(rank))}
               </span>
             )}
             {isNew && (
-              <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-400">
-                New
+              <span className="rounded-full bg-[var(--color-status-info-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-status-info)]">
+                {t("adminUsers.newBadge")}
               </span>
             )}
           </div>
@@ -218,9 +218,9 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
           {trendIcon(user.activityTrend)}
           <span
             className={`size-2 rounded-full ${
-              user.isActive ? "bg-emerald-500/15" : "bg-[var(--color-text-muted)]"
+              user.isActive ? "bg-[var(--color-status-success)]" : "bg-[var(--color-text-muted)]"
             }`}
-            title={user.isActive ? "Active" : "Inactive"}
+            title={user.isActive ? t("adminUsers.activeStatus") : t("adminUsers.inactiveStatus")}
           />
           <ChevronRight className="size-4 text-[var(--color-text-muted)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[var(--color-text-secondary)]" />
         </div>
@@ -242,14 +242,14 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
             </div>
             <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
               <div className="flex items-center justify-center gap-1 text-lg font-bold text-[var(--color-text-primary)]">
-                <Flame className="size-3.5 text-amber-500" />
+                <Flame className="size-3.5 text-[var(--color-status-warning)]" />
                 {user.streakActivated}
               </div>
               <div className="text-[10px] text-[var(--color-text-secondary)]">{t("dashboard.active")}</div>
             </div>
             <div className="rounded-lg bg-[var(--color-body-bg)] px-3 py-2 text-center">
               <div className="flex items-center justify-center gap-1 text-lg font-bold text-[var(--color-text-primary)]">
-                <Trophy className="size-3.5 text-amber-500" />
+                <Trophy className="size-3.5 text-[var(--color-status-warning)]" />
                 {user.streakWins}
               </div>
               <div className="text-[10px] text-[var(--color-text-secondary)]">{t("dashboard.wins")}</div>
@@ -275,7 +275,7 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
 
       {/* Last active */}
       <div className="mt-2 text-[10px] text-[var(--color-text-secondary)]">
-        {t("adminUsers.lastActive")}: {formatRelative(user.lastActiveAt)}
+        {t("adminUsers.lastActive")}: {formatRelative(user.lastActiveAt, t as (key: string) => string)}
       </div>
     </Link>
   );
@@ -317,7 +317,7 @@ function FilterBar({
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder={t("adminUsers.searchPlaceholder")}
-            aria-label="Search users"
+            aria-label={t("adminUsers.searchAriaLabel")}
             className="h-9 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
         </div>
@@ -443,11 +443,11 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
     <div className="space-y-6">
       {/* Stats strip */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label={t("adminUsers.totalUsers")} value={stats.totalUsers} icon={Users} accent="bg-blue-500/15" />
-        <StatCard label={t("adminUsers.active90d")} value={stats.activeUsers} icon={UserCheck} accent="bg-emerald-500/15" />
+        <StatCard label={t("adminUsers.totalUsers")} value={stats.totalUsers} icon={Users} accent="bg-[var(--color-status-info-bg)]" />
+        <StatCard label={t("adminUsers.active90d")} value={stats.activeUsers} icon={UserCheck} accent="bg-[var(--color-status-success-bg)]" />
         <StatCard label={t("adminUsers.inactive")} value={stats.inactiveUsers} icon={UserX} accent="bg-[var(--color-text-muted)]" />
-        <StatCard label={t("adminUsers.avgEntries")} value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-amber-500/15" />
-        <StatCard label={t("adminUsers.avgCompletion")} value={stats.averageCompletionRate} icon={Target} accent="bg-purple-500/15" />
+        <StatCard label={t("adminUsers.avgEntries")} value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-[var(--color-status-warning-bg)]" />
+        <StatCard label={t("adminUsers.avgCompletion")} value={stats.averageCompletionRate} icon={Target} accent="bg-[var(--color-primary)]" />
       </div>
 
       {/* Quick summary pills */}
@@ -455,7 +455,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
         <span className="rounded-full bg-[var(--color-dropdown-hover)] px-3 py-1 text-[var(--color-text-secondary)]">
           {stats.totalUsers} {t("adminUsers.users")}
         </span>
-        <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-400">
+        <span className="rounded-full bg-[var(--color-status-success-bg)] px-3 py-1 text-[var(--color-status-success)]">
           {stats.activeUsers} {t("adminUsers.active")}
         </span>
         {stats.inactiveUsers > 0 && (
@@ -464,7 +464,7 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
           </span>
         )}
         {stats.adminUsers > 0 && (
-          <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-400">
+          <span className="rounded-full bg-[var(--color-status-info-bg)] px-3 py-1 text-[var(--color-status-info)]">
             {stats.adminUsers} {t("adminUsers.admins")}
           </span>
         )}

@@ -103,6 +103,7 @@ export async function PATCH(request: Request) {
     revalidatePath(adminAudit());
     revalidatePath(adminAnalytics());
     revalidatePath(adminExport());
+    revalidatePath("/api/admin/action-history");
 
     return NextResponse.json(updatedEntry, { status: 200 });
   } catch (error) {
