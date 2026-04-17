@@ -9,6 +9,7 @@ import Field from "@/components/data-entry/Field";
 import DateField from "@/components/controls/DateField";
 import UploadFieldMulti from "@/components/entry/UploadFieldMulti";
 import SelectDropdown from "@/components/controls/SelectDropdown";
+import PillSelect from "@/components/controls/PillSelect";
 import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import BaseEntryAdapter, { type FormFieldsContext } from "@/components/data-entry/adapters/BaseEntryAdapter";
 import FormFieldGroup from "@/components/data-entry/FormFieldGroup";
@@ -181,11 +182,11 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
             />
           </Field>
           <Field label={fieldLabel('semesterType')} error={submitted ? errors.semesterType : undefined}>
-            <SelectDropdown
+            <PillSelect
               value={form.semesterType || ""}
               onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
               options={SEMESTER_TYPE_OPTIONS}
-              placeholder={t('placeholder.selectSemesterType')}
+              accent="#60a5fa"
               disabled={coreFieldDisabled("semesterType")}
               error={submitted && !!errors.semesterType}
             />
@@ -220,21 +221,19 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={fieldLabel('level')} error={submitted ? errors.level : undefined}>
-              <SelectDropdown
+              <PillSelect
                 value={form.level || ""}
                 onChange={(value) => setForm((c) => ({ ...c, level: value }))}
                 options={LEVEL_OPTIONS}
-                placeholder={t('placeholder.selectLevel')}
                 disabled={coreFieldDisabled("level")}
                 error={submitted && !!errors.level}
               />
             </Field>
             <Field label={fieldLabel('mode')} error={submitted ? errors.mode : undefined}>
-              <SelectDropdown
+              <PillSelect
                 value={form.mode || ""}
                 onChange={(value) => setForm((c) => ({ ...c, mode: value }))}
                 options={MODE_OPTIONS}
-                placeholder={t('placeholder.selectMode')}
                 disabled={coreFieldDisabled("mode")}
                 error={submitted && !!errors.mode}
               />
@@ -327,18 +326,16 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
         animationDelay={240}
       >
         <div className="space-y-4">
-          <div className="max-w-xs">
-            <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
-              <SelectDropdown
-                value={form.sponsored || ""}
-                onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value === "No" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
-                options={SPONSORED_OPTIONS}
-                placeholder={t('placeholder.select')}
-                disabled={coreFieldDisabled("sponsored")}
-                error={submitted && !!errors.sponsored}
-              />
-            </Field>
-          </div>
+          <Field label={fieldLabel('sponsored')} error={submitted ? errors.sponsored : undefined}>
+            <PillSelect
+              value={form.sponsored || ""}
+              onChange={(value) => setForm((c) => ({ ...c, sponsored: value, ...(value === "No" ? { fundingAgency: "", fundingAmount: null } : {}) }))}
+              options={SPONSORED_OPTIONS}
+              accent="#a78bfa"
+              disabled={coreFieldDisabled("sponsored")}
+              error={submitted && !!errors.sponsored}
+            />
+          </Field>
           {form.sponsored === "Yes" && (
             <div className="grid gap-4 sm:grid-cols-2 animate-fade-in-up">
               <Field label={fieldLabel('fundingAgency')} error={submitted ? errors.fundingAgency : undefined}>
