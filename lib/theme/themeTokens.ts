@@ -57,6 +57,18 @@ export interface ThemeTokens {
   "--color-glass-border": string;
   "--color-glass-hover": string;
   "--color-glow-primary": string;
+  "--color-status-success": string;
+  "--color-status-success-bg": string;
+  "--color-status-success-border": string;
+  "--color-status-warning": string;
+  "--color-status-warning-bg": string;
+  "--color-status-warning-border": string;
+  "--color-status-error": string;
+  "--color-status-error-bg": string;
+  "--color-status-error-border": string;
+  "--color-status-info": string;
+  "--color-status-info-bg": string;
+  "--color-status-info-border": string;
 }
 
 /* ─── LIGHT BASE ─── */
@@ -116,6 +128,18 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-glass-border": "rgba(0, 0, 0, 0.06)",
   "--color-glass-hover": "rgba(0, 0, 0, 0.03)",
   "--color-glow-primary": "rgba(132, 204, 22, 0.2)",
+  "--color-status-success": "#16A34A",
+  "--color-status-success-bg": "rgba(22, 163, 74, 0.10)",
+  "--color-status-success-border": "rgba(22, 163, 74, 0.20)",
+  "--color-status-warning": "#D97706",
+  "--color-status-warning-bg": "rgba(217, 119, 6, 0.10)",
+  "--color-status-warning-border": "rgba(217, 119, 6, 0.20)",
+  "--color-status-error": "#DC2626",
+  "--color-status-error-bg": "rgba(220, 38, 38, 0.10)",
+  "--color-status-error-border": "rgba(220, 38, 38, 0.20)",
+  "--color-status-info": "#2563EB",
+  "--color-status-info-bg": "rgba(37, 99, 235, 0.10)",
+  "--color-status-info-border": "rgba(37, 99, 235, 0.20)",
 };
 
 /* ─── DARK BASE — THE PRIMARY EXPERIENCE ─── */
@@ -175,6 +199,18 @@ export const DARK_BASE: ThemeTokens = {
   "--color-glass-border": "rgba(255, 255, 255, 0.10)",
   "--color-glass-hover": "rgba(255, 255, 255, 0.05)",
   "--color-glow-primary": "rgba(132, 204, 22, 0.15)",
+  "--color-status-success": "#34D399",
+  "--color-status-success-bg": "rgba(52, 211, 153, 0.10)",
+  "--color-status-success-border": "rgba(52, 211, 153, 0.20)",
+  "--color-status-warning": "#FBBF24",
+  "--color-status-warning-bg": "rgba(251, 191, 36, 0.10)",
+  "--color-status-warning-border": "rgba(251, 191, 36, 0.20)",
+  "--color-status-error": "#F87171",
+  "--color-status-error-bg": "rgba(248, 113, 113, 0.10)",
+  "--color-status-error-border": "rgba(248, 113, 113, 0.20)",
+  "--color-status-info": "#60A5FA",
+  "--color-status-info-bg": "rgba(96, 165, 250, 0.10)",
+  "--color-status-info-border": "rgba(96, 165, 250, 0.20)",
 };
 
 /* ─── COLOR PALETTES ─── */
