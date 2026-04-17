@@ -58,7 +58,7 @@ function PillSelectInner({
             aria-checked={isSelected}
             disabled={isDisabledOption}
             onClick={() => {
-              if (!isDisabledOption) onChange(option.value);
+              if (!isDisabledOption) onChange(isSelected ? "" : option.value);
             }}
             className="group relative inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/30"
             style={

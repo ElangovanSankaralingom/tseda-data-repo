@@ -4,12 +4,13 @@ import { cn } from "@/lib/utils";
 
 type TextInputProps = Omit<React.ComponentProps<"input">, "type"> & {
   error?: boolean;
+  type?: "text" | "number" | "email" | "tel" | "url";
 };
 
-export default function TextInput({ error, className, disabled, ...props }: TextInputProps) {
+export default function TextInput({ error, className, disabled, type = "text", ...props }: TextInputProps) {
   return (
     <input
-      type="text"
+      type={type}
       className={cn(
         "w-full rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-primary)] shadow-sm transition-all duration-200 outline-none focus-visible:ring-2",
         error
