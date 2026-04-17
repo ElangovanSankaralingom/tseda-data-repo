@@ -177,6 +177,7 @@ export default function DateField({
   id?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const calendarPortalRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const parsed = parseDate(value);
 
@@ -210,7 +211,11 @@ export default function DateField({
   useEffect(() => {
     if (!open) return;
     function handleMouseDown(e: MouseEvent) {
-      if (!containerRef.current?.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        !containerRef.current?.contains(target) &&
+        !calendarPortalRef.current?.contains(target)
+      ) {
         setOpen(false);
       }
     }
@@ -284,6 +289,7 @@ export default function DateField({
       {open
         ? createPortal(
             <div
+              ref={calendarPortalRef}
               style={{
                 position: "absolute",
                 top: portalPos.top,

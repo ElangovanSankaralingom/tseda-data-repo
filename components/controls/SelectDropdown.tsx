@@ -24,10 +24,12 @@ function cx(...classes: Array<string | false | null | undefined>) {
 /* ── Portal-positioned listbox ── */
 function DropdownPortal({
   anchorRef,
+  portalRef,
   id,
   children,
 }: {
   anchorRef: React.RefObject<HTMLDivElement | null>;
+  portalRef: React.RefObject<HTMLDivElement | null>;
   id?: string;
   children: React.ReactNode;
 }) {
@@ -55,6 +57,7 @@ function DropdownPortal({
 
   return createPortal(
     <div
+      ref={portalRef}
       id={id}
       role="listbox"
       className="max-h-56 overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl shadow-black/40"
@@ -90,6 +93,7 @@ export default function SelectDropdown({
   }, [valueLabel]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const portalRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -128,7 +132,11 @@ export default function SelectDropdown({
     if (!open) return;
 
     function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        !containerRef.current?.contains(target) &&
+        !portalRef.current?.contains(target)
+      ) {
         setOpen(false);
       }
     }
@@ -263,7 +271,7 @@ export default function SelectDropdown({
       />
 
       {open ? (
-        <DropdownPortal anchorRef={containerRef} id={id ? `${id}-options` : undefined}>
+        <DropdownPortal anchorRef={containerRef} portalRef={portalRef} id={id ? `${id}-options` : undefined}>
           {filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">No matching options.</div>
           ) : (
