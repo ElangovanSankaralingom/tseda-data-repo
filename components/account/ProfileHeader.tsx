@@ -15,10 +15,10 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
   }, [photo]);
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 animate-fade-in-up">
+    <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 animate-fade-in-up">
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
         <div className="ring-4 ring-[var(--color-surface-on-accent-strong)] rounded-full shadow-lg transition-shadow duration-500">
-          <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)]">
+          <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)]">
             {photo && !avatarLoadFailed ? (
               <Image
                 src={photo}

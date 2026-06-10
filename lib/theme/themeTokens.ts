@@ -63,8 +63,14 @@ export interface ThemeTokens {
   "--color-skeleton-base": string;
   "--color-skeleton-shine": string;
   "--color-header-tint": string;
+  /* Page background gradient (signin, maintenance). Paper in light, deep navy in dark. */
   "--color-gradient-from": string;
   "--color-gradient-to": string;
+  /* Hero band — always-dark banner surface (admin page headers). Pairs with
+     --color-text-on-accent. Deep ink in light (deliberate contrast on paper),
+     near-black navy in dark. */
+  "--color-band-from": string;
+  "--color-band-to": string;
   /* Text + surfaces sitting on top of the gradient header (or any saturated accent surface).
      Stays light in both modes because the gradient is always dark-or-saturated. */
   "--color-text-on-accent": string;
@@ -153,9 +159,9 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-sidebar-active-bg": "#EFF5E0",
   "--color-sidebar-active-text": "#3F6212",
   "--color-sidebar-hover-bg": "#F3F2EF",
-  "--color-body-bg": "#F3F2EF",
+  "--color-body-bg": "#F1F0EC",
   "--color-card-bg": "#FFFFFF",
-  "--color-card-border": "#E2E0DA",
+  "--color-card-border": "#E9E7E1",
   "--color-text-primary": "#1F1D1A",
   "--color-text-secondary": "#57534E",
   "--color-text-muted": "#A8A29E",
@@ -171,11 +177,11 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-button-primary-hover": "#3F6212",
   "--color-generate-bg": "#65A30D",
   "--color-generate-hover": "#4D7C0F",
-  "--color-divider": "#E5E3DD",
-  "--color-divider-strong": "#D6D3CB",
-  "--color-border-subtle": "#ECEAE5",
-  "--color-border-default": "#E0DED7",
-  "--color-border-strong": "#C9C5BC",
+  "--color-divider": "#E8E6E0",
+  "--color-divider-strong": "#DAD7D0",
+  "--color-border-subtle": "#EFEDE8",
+  "--color-border-default": "#E4E2DB",
+  "--color-border-strong": "#CDC9C0",
   "--color-icon-active": "#1F1D1A",
   "--color-icon-default": "#57534E",
   "--color-icon-muted": "#A8A29E",
@@ -195,6 +201,8 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-header-tint": "rgba(77, 124, 15, 0.05)",
   "--color-gradient-from": "#FAFAF8",
   "--color-gradient-to": "#ECEAE4",
+  "--color-band-from": "#2B2825",
+  "--color-band-to": "#1F1D1A",
   "--color-text-on-accent": "#FFFFFF",
   "--color-text-on-accent-muted": "rgba(255, 255, 255, 0.72)",
   "--color-surface-on-accent": "rgba(255, 255, 255, 0.12)",
@@ -312,6 +320,8 @@ export const DARK_BASE: ThemeTokens = {
   "--color-header-tint": "rgba(132, 204, 22, 0.04)",
   "--color-gradient-from": "#0B0F19",
   "--color-gradient-to": "#131A2B",
+  "--color-band-from": "#0B0F19",
+  "--color-band-to": "#131A2B",
   "--color-text-on-accent": "#F1F5F9",
   "--color-text-on-accent-muted": "rgba(255, 255, 255, 0.65)",
   "--color-surface-on-accent": "rgba(255, 255, 255, 0.08)",

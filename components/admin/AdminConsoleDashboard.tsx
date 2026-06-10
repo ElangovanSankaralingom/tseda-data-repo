@@ -138,7 +138,7 @@ export default function AdminConsoleDashboard({
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-8">
+        <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 mb-8">
           <h1 className="text-2xl font-bold text-[var(--color-text-on-accent)]">{t("adminConsole.title")}</h1>
           <p className="mt-1 text-sm text-[var(--color-text-on-accent-muted)]">{t("common.loading")}</p>
         </div>
@@ -154,7 +154,7 @@ export default function AdminConsoleDashboard({
   if (!data) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8">
+        <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8">
           <h1 className="text-2xl font-bold text-[var(--color-text-on-accent)]">{t("adminConsole.title")}</h1>
           <p className="mt-2 text-sm text-[var(--color-status-error)]">{t("adminConsole.loadFailed")}</p>
         </div>
@@ -165,7 +165,7 @@ export default function AdminConsoleDashboard({
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       {/* ── Header ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-8 animate-fade-in-up">
+      <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 mb-8 animate-fade-in-up">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text-on-accent)]">{t("adminConsole.title")}</h1>

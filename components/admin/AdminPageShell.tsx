@@ -69,7 +69,7 @@ export default function AdminPageShell({
 
   return (
     <div className={`mx-auto w-full ${maxWidthClassName} px-4 py-8`}>
-      <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 mb-6">
+      <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 mb-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <Link
