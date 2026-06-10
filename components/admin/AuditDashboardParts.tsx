@@ -104,11 +104,11 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
-function StatMini({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Activity }) {
+function StatMini({ label, value, icon: Icon, accent = "var(--color-primary)" }: { label: string; value: number; icon: typeof Activity; accent?: string }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex size-10 items-center justify-center rounded-lg bg-[var(--color-dropdown-hover)]">
-        <Icon className="size-5 text-[var(--color-text-secondary)]" />
+      <div className="flex size-10 items-center justify-center rounded-lg" style={{ backgroundColor: accent }}>
+        <Icon className="size-5 text-[var(--color-text-on-accent)]" />
       </div>
       <div>
         <div className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">
@@ -475,10 +475,10 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <StatMini label={t("adminAudit.totalEvents")} value={stats.totalEvents} icon={Activity} />
-        <StatMini label={t("adminAudit.activeUsers")} value={uniqueUsers} icon={User} />
-        <StatMini label={t("adminAudit.actors")} value={uniqueActors} icon={Shield} />
-        <StatMini label={t("adminAudit.categories")} value={Object.keys(stats.byCategory).length} icon={FileText} />
+        <StatMini label={t("adminAudit.totalEvents")} value={stats.totalEvents} icon={Activity} accent="var(--color-status-info)" />
+        <StatMini label={t("adminAudit.activeUsers")} value={uniqueUsers} icon={User} accent="var(--color-status-success)" />
+        <StatMini label={t("adminAudit.actors")} value={uniqueActors} icon={Shield} accent="var(--color-palette-purple-fg)" />
+        <StatMini label={t("adminAudit.categories")} value={Object.keys(stats.byCategory).length} icon={FileText} accent="var(--color-palette-amber-fg)" />
       </div>
 
       <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">

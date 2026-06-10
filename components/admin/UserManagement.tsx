@@ -443,10 +443,10 @@ export default function UserManagement({ initialUsers, initialStats }: Props) {
     <div className="space-y-6">
       {/* Stats strip */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label={t("adminUsers.totalUsers")} value={stats.totalUsers} icon={Users} accent="bg-[var(--color-status-info-bg)]" />
-        <StatCard label={t("adminUsers.active90d")} value={stats.activeUsers} icon={UserCheck} accent="bg-[var(--color-status-success-bg)]" />
+        <StatCard label={t("adminUsers.totalUsers")} value={stats.totalUsers} icon={Users} accent="bg-[var(--color-status-info)]" />
+        <StatCard label={t("adminUsers.active90d")} value={stats.activeUsers} icon={UserCheck} accent="bg-[var(--color-status-success)]" />
         <StatCard label={t("adminUsers.inactive")} value={stats.inactiveUsers} icon={UserX} accent="bg-[var(--color-text-muted)]" />
-        <StatCard label={t("adminUsers.avgEntries")} value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-[var(--color-status-warning-bg)]" />
+        <StatCard label={t("adminUsers.avgEntries")} value={stats.averageEntriesPerUser} icon={BarChart3} accent="bg-[var(--color-status-warning)]" />
         <StatCard label={t("adminUsers.avgCompletion")} value={stats.averageCompletionRate} icon={Target} accent="bg-[var(--color-primary)]" />
       </div>
 

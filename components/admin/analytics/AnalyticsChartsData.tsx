@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { ChevronDown, Trophy } from "lucide-react";
+import { ChevronDown, Crown, Medal, Trophy } from "lucide-react";
 import { compare } from "@/lib/analytics/compare";
 import { pct, catColor } from "./AnalyticsChartsCore";
 
@@ -11,7 +11,12 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
     return <div className="text-sm text-[var(--color-text-secondary)]">No users with entries yet</div>;
   }
 
-  const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
+  /* Podium rank marks — lucide icons with tier-metal tokens (no emojis in UI). */
+  const rankMarks = [
+    { Icon: Crown, color: "var(--color-palette-amber-fg)" },
+    { Icon: Medal, color: "var(--color-text-muted)" },
+    { Icon: Medal, color: "var(--color-palette-orange-fg)" },
+  ];
   const podium = top.slice(0, 3);
   const rest = top.slice(3);
 
@@ -31,7 +36,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
                   : "border-[var(--color-glass-border)] bg-gradient-to-b from-[var(--color-body-bg)] to-[var(--color-glass-bg)]"
               } ${isFirst ? "pb-5" : "pb-3"}`}
             >
-              <span className="text-xl">{medals[idx]}</span>
+              {(() => { const { Icon, color } = rankMarks[idx]; return <Icon className="size-5" style={{ color }} strokeWidth={2.2} />; })()}
               <div
                 className={`mt-1 flex items-center justify-center rounded-full bg-[var(--color-glass-border)] text-xs font-bold text-[var(--color-text-secondary)] ${
                   isFirst ? "size-14" : "size-10"
@@ -95,7 +100,7 @@ export function StreakFunnel({
   wins: number;
 }) {
   const bars = [
-    { label: "Total Eligible", value: activated + wins, color: "bg-[var(--color-text-muted)]" },
+    { label: "Total Eligible", value: activated + wins, color: "bg-[var(--color-surface-inset-deep)]" },
     { label: "In Progress", value: activated, color: "bg-[var(--color-status-warning-bg)]" },
     { label: "Completed", value: wins, color: "bg-[var(--color-status-success-bg)]" },
   ];

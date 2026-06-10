@@ -47,10 +47,13 @@ function formatTimeAgo(isoString: string) {
   return `${Math.floor(ms / 86_400_000)}d ago`;
 }
 
-function StatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+function StatTile({ icon, label, value, sub, accent = "var(--color-primary)" }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
     <div className="group flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] transition-transform duration-200 group-hover:scale-110">
+      <div
+        className="flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-on-accent)] transition-transform duration-200 group-hover:scale-110"
+        style={{ backgroundColor: accent }}
+      >
         {icon}
       </div>
       <div className="min-w-0">
@@ -62,9 +65,9 @@ function StatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: s
   );
 }
 
-function AnimatedStatTile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: number; sub?: string }) {
+function AnimatedStatTile({ icon, label, value, sub, accent }: { icon: React.ReactNode; label: string; value: number; sub?: string; accent?: string }) {
   const animated = useCountUp(value);
-  return <StatTile icon={icon} label={label} value={formatNumber(animated, "en")} sub={sub} />;
+  return <StatTile icon={icon} label={label} value={formatNumber(animated, "en")} sub={sub} accent={accent} />;
 }
 
 function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }) {
@@ -234,24 +237,28 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
             icon={<Users className="size-5" />}
             label={t("adminMaintenance.statsUsers")}
             value={stats.users.total}
+            accent="var(--color-status-info)"
           />
           <AnimatedStatTile
             icon={<HardDrive className="size-5" />}
             label={t("adminMaintenance.statsDataStore")}
             value={stats.storage.dataBytes}
             sub={formatBytes(stats.storage.dataBytes)}
+            accent="var(--color-primary)"
           />
           <AnimatedStatTile
             icon={<Server className="size-5" />}
             label={t("adminMaintenance.statsWalFiles")}
             value={stats.wal.totalFiles}
             sub={formatBytes(stats.wal.totalBytes)}
+            accent="var(--color-status-warning)"
           />
           <StatTile
             icon={<FileArchive className="size-5" />}
             label={t("adminMaintenance.statsBackups")}
             value={String(stats.backups.total)}
             sub={stats.backups.latestAt ? `${t("adminMaintenance.statsLatest")} ${formatTimeAgo(stats.backups.latestAt)}` : t("adminMaintenance.statsNoneYet")}
+            accent="var(--color-status-success)"
           />
         </div>
       ) : null}
