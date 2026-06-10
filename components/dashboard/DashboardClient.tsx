@@ -136,7 +136,7 @@ export default function DashboardClient({
 
       {/* ── Segmented tab bar ── */}
       <div className="flex items-center gap-5">
-        <div className="inline-flex items-center gap-1 rounded-2xl bg-[rgba(0,0,0,0.4)] border border-[var(--color-border-subtle)] p-1.5">
+        <div className="inline-flex items-center gap-1 rounded-2xl bg-[var(--color-surface-inset-deep)] border border-[var(--color-border-subtle)] p-1.5">
           {groupTabs.map((tab) => (
             <button
               key={tab.key}
@@ -170,9 +170,9 @@ export default function DashboardClient({
         <div
           className="rounded-3xl p-5 lg:p-6"
           style={{
-            backgroundColor: "#0e1019",
+            backgroundColor: "var(--color-surface-panel)",
             border: "1px solid var(--color-border-default)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 var(--color-border-subtle)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 var(--color-border-subtle)",
           }}
         >
         <div className="flex flex-col gap-6 lg:flex-row">
@@ -198,7 +198,7 @@ export default function DashboardClient({
                       <div
                         className={cn(
                           "relative size-[9px] rounded-full border-2 transition-all duration-300 z-10",
-                          isAct ? "scale-125" : "border-[var(--color-border-default)] bg-[rgba(0,0,0,0.5)]"
+                          isAct ? "scale-125" : "border-[var(--color-border-default)] bg-[var(--color-surface-inset-deep)]"
                         )}
                         style={isAct ? {
                           backgroundColor: hex,
@@ -226,7 +226,7 @@ export default function DashboardClient({
                       className={cn(
                         "group relative flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left transition-all duration-300 animate-fade-in-up",
                         isAct
-                          ? "text-white"
+                          ? "text-[var(--color-text-primary)]"
                           : "hover:-translate-y-0.5 hover:brightness-110"
                       )}
                       style={{
@@ -236,8 +236,8 @@ export default function DashboardClient({
                           border: `1px solid ${hex}60`,
                           boxShadow: `inset 3px 0 0 ${hex}, 0 4px 16px ${hex}20`,
                         } : {
-                          backgroundColor: "#141620",
-                          border: "1px solid rgba(255,255,255,0.14)",
+                          backgroundColor: "var(--color-surface-panel-raised)",
+                          border: "1px solid var(--color-border-default)",
                           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                         }),
                       }}
@@ -246,12 +246,12 @@ export default function DashboardClient({
                       <div
                         className="flex size-10 shrink-0 items-center justify-center rounded-xl"
                         style={{
-                          backgroundColor: isAct ? hex : "#1c1e2a",
+                          backgroundColor: isAct ? hex : "var(--color-surface-panel-tile)",
                         }}
                       >
                         <Icon
                           className="size-[18px]"
-                          style={{ color: isAct ? "#fff" : "var(--color-icon-muted)" }}
+                          style={{ color: isAct ? "var(--color-text-on-accent)" : "var(--color-icon-muted)" }}
                         />
                       </div>
 
@@ -260,7 +260,7 @@ export default function DashboardClient({
                         <div
                           className={cn(
                             "truncate text-sm font-semibold leading-snug",
-                            isAct ? "text-white" : "text-[var(--color-text-secondary)]"
+                            isAct ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
                           )}
                         >
                           {categoryLabel(cat.slug, language)}
@@ -276,7 +276,7 @@ export default function DashboardClient({
                             <span
                               className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
                               style={{
-                                backgroundColor: isAct ? "var(--color-border-default)" : "#1c1e2a",
+                                backgroundColor: isAct ? "var(--color-border-default)" : "var(--color-surface-panel-tile)",
                                 color: isAct ? "var(--color-text-secondary)" : "var(--color-text-placeholder)",
                               }}
                             >
@@ -292,7 +292,7 @@ export default function DashboardClient({
                           "flex size-6 items-center justify-center rounded-lg font-mono text-[11px] font-bold border",
                           isAct
                             ? "text-[var(--color-text-secondary)] border-[var(--color-border-default)] bg-[var(--color-surface-raised)]"
-                            : "text-[var(--color-text-muted)] border-[var(--color-border-subtle)] bg-[#1c1e2a]"
+                            : "text-[var(--color-text-muted)] border-[var(--color-border-subtle)] bg-[var(--color-surface-panel-tile)]"
                         )}>
                           {idx + 1}
                         </span>
@@ -369,7 +369,7 @@ function CategoryDetailPanel({
             : "border-[var(--color-border-default)]"
         )}
         style={{
-          backgroundColor: isEmpty ? "#0c0d14" : "#10121c",
+          backgroundColor: isEmpty ? "var(--color-surface-panel)" : "var(--color-surface-panel-raised)",
         }}
       >
         <div style={lightStyle} />
@@ -391,10 +391,10 @@ function CategoryDetailPanel({
                 }}
               >
                 {/* eslint-disable-next-line react-hooks/static-components */}
-                <Icon className="size-6" style={{ color: "#fff" }} />
+                <Icon className="size-6" style={{ color: "var(--color-text-on-accent)" }} />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-white tracking-tight">
+                <h2 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">
                   {categoryLabel(cat.slug, language)}
                 </h2>
                 <p className="text-xs text-[var(--color-text-secondary)] font-medium mt-1">
@@ -412,7 +412,7 @@ function CategoryDetailPanel({
             <div
               className="rounded-2xl p-6"
               style={{
-                backgroundColor: "#161826",
+                backgroundColor: "var(--color-surface-panel-tile)",
                 border: "1px solid var(--color-border-default)",
               }}
             >
@@ -420,7 +420,7 @@ function CategoryDetailPanel({
                 {t("dashboard.totalEntries")}
               </div>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="font-mono text-4xl font-black tracking-tighter text-white leading-none">
+                <span className="font-mono text-4xl font-black tracking-tighter text-[var(--color-text-primary)] leading-none">
                   {displayCount}
                 </span>
                 <span className="text-xs font-medium text-[var(--color-text-placeholder)]">
@@ -437,7 +437,7 @@ function CategoryDetailPanel({
                   key={stat.label}
                   className="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                   style={{
-                    backgroundColor: "#161826",
+                    backgroundColor: "var(--color-surface-panel-tile)",
                     border: `1px solid ${stat.color}35`,
                   }}
                 >
@@ -447,7 +447,7 @@ function CategoryDetailPanel({
                       backgroundColor: stat.color,
                     }}
                   >
-                    <StatIcon className="size-[18px] text-white" />
+                    <StatIcon className="size-[18px] text-[var(--color-text-on-accent)]" />
                   </div>
                   <div className="mt-4">
                     <span className="font-mono text-2xl font-black tracking-tighter" style={{ color: stat.color }}>
@@ -493,7 +493,7 @@ function CategoryDetailPanel({
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5 -mx-1 transition-colors duration-200 hover:bg-[var(--color-surface-raised)] group"
                     >
                       <div className={cn("size-2.5 rounded-full shrink-0", getStatusColor(entry.status))} />
-                      <span className="truncate text-[13px] font-medium text-[var(--color-text-secondary)] group-hover:text-white transition-colors">
+                      <span className="truncate text-[13px] font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
                         {entry.title}
                       </span>
                       {entry.updatedAtISO && (
@@ -516,18 +516,18 @@ function CategoryDetailPanel({
               <div
                 className="flex items-center gap-2 rounded-lg px-3 py-1.5"
                 style={{
-                  backgroundColor: "rgba(59,130,246,0.18)",
-                  border: "1px solid rgba(59,130,246,0.3)",
+                  backgroundColor: "var(--color-status-info-bg)",
+                  border: "1px solid var(--color-status-info-border)",
                 }}
               >
-                <span className="font-mono text-sm font-black text-blue-400">{cat.editGrantedCount}</span>
-                <span className="text-[11px] font-semibold text-blue-400/60">Edit Granted</span>
+                <span className="font-mono text-sm font-black text-[var(--color-status-info)]">{cat.editGrantedCount}</span>
+                <span className="text-[11px] font-semibold text-[var(--color-status-info)] opacity-70">Edit Granted</span>
               </div>
             ) : <div />}
 
             <Link
               href={entryList(cat.slug as CategoryKey)}
-              className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97]"
+              className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-text-on-accent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97]"
               style={{
                 backgroundColor: hex,
                 boxShadow: `0 4px 20px ${hex}35`,
@@ -550,9 +550,9 @@ function getStatusColor(status: string): string {
   switch (status) {
     case "DRAFT": return "bg-[var(--color-text-tertiary)]";
     case "GENERATED": return "bg-[var(--color-primary)]";
-    case "EDIT_REQUESTED": return "bg-amber-400";
-    case "EDIT_GRANTED": return "bg-blue-400";
-    case "DELETE_REQUESTED": return "bg-rose-400";
+    case "EDIT_REQUESTED": return "bg-[var(--color-status-warning)]";
+    case "EDIT_GRANTED": return "bg-[var(--color-status-info)]";
+    case "DELETE_REQUESTED": return "bg-[var(--color-status-error)]";
     default: return "bg-[var(--color-text-tertiary)]";
   }
 }

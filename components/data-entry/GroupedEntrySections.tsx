@@ -97,7 +97,7 @@ const SEGMENT_TEXT_COLORS: Record<EntryListGroup, string> = {
   streak_runners: "text-amber-300",
   on_the_clock: "text-blue-300",
   unlocked: "text-purple-300",
-  in_the_works: "text-white/50",
+  in_the_works: "text-[var(--color-text-tertiary)]",
   under_review: "text-orange-300",
   locked_in: "text-emerald-300",
 };
@@ -141,7 +141,7 @@ function SegmentedStatusBar<TEntry>({
       <div
         className="flex h-11 overflow-hidden rounded-2xl"
         style={{
-          background: "rgba(0,0,0,0.35)",
+          background: "var(--color-surface-inset-deep)",
           border: "1px solid var(--color-border-subtle)",
           boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)",
         }}
@@ -196,7 +196,7 @@ function SegmentedStatusBar<TEntry>({
       {activeGroup === null && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 px-1">
           {activeSegments.map((group) => (
-            <span key={group} className="inline-flex items-center gap-1.5 text-[10px] text-white/30">
+            <span key={group} className="inline-flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)]">
               <span
                 className="size-1.5 rounded-sm"
                 style={{ background: SEGMENT_COLORS[group] }}
@@ -234,7 +234,7 @@ function SectionHeader({ group, count, isUrgent }: {
       >
         <Icon className={`size-3.5 ${color} ${isUrgent ? "animate-subtle-pulse" : ""}`} />
       </div>
-      <span className={`text-sm font-bold uppercase tracking-wider ${isUrgent ? color : "text-white/60"}`}>
+      <span className={`text-sm font-bold uppercase tracking-wider ${isUrgent ? color : "text-[var(--color-text-secondary)]"}`}>
         {t(config.title as Parameters<typeof t>[0])}
       </span>
       <span
@@ -299,7 +299,7 @@ function CollapsedStack({ count, hex, onExpand }: { count: number; hex: string; 
         <span className="font-mono text-sm font-bold" style={{ color: hex }}>
           +{count}
         </span>
-        <span className="text-xs text-white/50">
+        <span className="text-xs text-[var(--color-text-tertiary)]">
           {t('common.more')} {count === 1 ? t('dashboard.entry') : t('dashboard.entries')}
         </span>
       </div>
@@ -421,7 +421,7 @@ function FilteredEmptyState({ onClear }: { onClear: () => void }) {
       <button
         type="button"
         onClick={onClear}
-        className="mt-3 rounded-lg px-3 py-1.5 text-xs font-medium text-white/30 hover:text-white/50 hover:bg-white/[0.04] transition-colors"
+        className="mt-3 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-glass-hover)] transition-colors"
       >
         {t('entry.clearFilters')}
       </button>
@@ -536,21 +536,21 @@ export function SmartGroupedEntrySections<TEntry>({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {searchable && (
           <div className="relative w-full sm:w-56">
-            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-white/20" />
+            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[var(--color-icon-muted)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('entry.searchEntries')}
               aria-label="Search entries"
-              className="h-8 w-full rounded-xl bg-white/[0.03] pl-9 pr-8 text-xs text-white/50 outline-none placeholder:text-white/15 focus:bg-white/[0.05] focus:ring-1 focus:ring-white/10 transition-all border border-transparent focus:border-white/[0.06]"
+              className="h-8 w-full rounded-xl bg-[var(--color-input-bg)] pl-9 pr-8 text-xs text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-placeholder)] focus:ring-1 focus:ring-[var(--color-input-focus-ring)] transition-all border border-transparent focus:border-[var(--color-input-border)]"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-icon-muted)] hover:text-[var(--color-icon-default)]"
               >
                 <X className="size-3" />
               </button>
@@ -567,13 +567,13 @@ export function SmartGroupedEntrySections<TEntry>({
 
       {/* Showing count */}
       {isFiltered && (
-        <div className="flex items-center gap-2 text-xs text-white/20 px-1">
+        <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] px-1">
           <span>{t('common.showing')} {totalFiltered} {t('common.of')} {totalAll} {t('dashboard.entries')}</span>
           {(searchQuery || segmentGroup) && (
             <button
               type="button"
               onClick={() => { setSearchQuery(""); setActiveFilter("all"); setSegmentGroup(null); }}
-              className="text-white/30 hover:text-white/50 underline"
+              className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] underline"
             >
               {t('common.clear')}
             </button>

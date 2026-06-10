@@ -85,8 +85,8 @@ const NoteCard = memo(function NoteCard({
           padding: isFirst ? "13px 14px 12px 18px" : "11px 14px 10px 18px",
           borderRadius: isFirst ? 12 : 10,
           background: isFirst
-            ? `linear-gradient(135deg, ${accent.tint} 0%, rgba(255,255,255,0.03) 100%)`
-            : "linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.02) 100%)",
+            ? `linear-gradient(135deg, ${accent.tint} 0%, var(--color-card-bg) 100%)`
+            : "var(--color-card-bg)",
           border: isFirst ? "1.5px solid var(--color-border-default)" : "1px solid var(--color-border-subtle)",
           boxShadow: isFirst
             ? `0 4px 16px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.05), -3px 0 12px -4px ${accent.glow}`
@@ -279,7 +279,7 @@ export default function DumpColumn() {
             boxShadow: "0 2px 8px var(--color-glow-primary)",
           }}
         >
-          <Zap className="size-3.5 text-[#0B0F19]" strokeWidth={2.5} />
+          <Zap className="size-3.5 text-[var(--color-button-primary-text)]" strokeWidth={2.5} />
         </div>
         <div className="flex-1">
           <span className="text-[15px] font-bold" style={{ color: "var(--color-text-primary)" }}>
@@ -312,7 +312,7 @@ export default function DumpColumn() {
         className="shrink-0 mb-5 overflow-hidden"
         style={{
           borderRadius: 14,
-          background: "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 100%)",
+          background: "var(--color-surface-raised)",
           boxShadow: "0 4px 20px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.06)",
           border: "1px solid var(--color-border-default)",
         }}
@@ -399,7 +399,7 @@ export default function DumpColumn() {
         <div
           className="relative"
           style={{
-            background: "rgba(0,0,0,0.08)",
+            background: "var(--color-surface-inset)",
           }}
         >
           <textarea
@@ -455,7 +455,7 @@ export default function DumpColumn() {
               }}
               aria-label="Add note"
             >
-              <Plus className="size-3.5 text-[#0B0F19]" strokeWidth={2.5} />
+              <Plus className="size-3.5 text-[var(--color-button-primary-text)]" strokeWidth={2.5} />
             </button>
           </div>
         </div>

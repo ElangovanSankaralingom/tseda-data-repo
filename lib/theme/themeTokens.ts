@@ -8,7 +8,10 @@ export interface ThemeTokens {
   "--color-primary-hover": string;
   "--color-accent": string;
   "--color-accent-light": string;
+  /* Dock (floating glass header) surface — unscrolled and scrolled states.
+     The dock is THE header; these are its only sanctioned backgrounds. */
   "--color-header-bg": string;
+  "--color-header-bg-scrolled": string;
   "--color-header-text": string;
   "--color-sidebar-bg": string;
   "--color-sidebar-text": string;
@@ -43,6 +46,15 @@ export interface ThemeTokens {
   "--color-icon-muted": string;
   "--color-surface-raised": string;
   "--color-surface-inset": string;
+  /* ─── Layered panel family — the dashboard's well → chip → tile nesting.
+     Dark: literal stepped darks (was hardcoded #0e1019/#141620/#1c1e2a).
+     Light: recessed well → white raised → bordered tile.
+     Use these whenever a surface sits INSIDE another panel surface. ─── */
+  "--color-surface-panel": string;
+  "--color-surface-panel-raised": string;
+  "--color-surface-panel-tile": string;
+  /* Deep recess — segmented control tracks, node pits. Stronger than surface-inset. */
+  "--color-surface-inset-deep": string;
   "--color-dropdown-bg": string;
   "--color-dropdown-hover": string;
   "--color-toast-bg": string;
@@ -117,7 +129,8 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-primary-hover": "#3F6212",
   "--color-accent": "#84CC16",
   "--color-accent-light": "#ECFCCB",
-  "--color-header-bg": "#FFFFFF",
+  "--color-header-bg": "rgba(255, 255, 255, 0.70)",
+  "--color-header-bg-scrolled": "rgba(255, 255, 255, 0.85)",
   "--color-header-text": "#0F172A",
   "--color-sidebar-bg": "#FFFFFF",
   "--color-sidebar-text": "#334155",
@@ -152,6 +165,10 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-icon-muted": "#94A3B8",
   "--color-surface-raised": "#FFFFFF",
   "--color-surface-inset": "#F8FAFC",
+  "--color-surface-panel": "#EDF1F7",
+  "--color-surface-panel-raised": "#FFFFFF",
+  "--color-surface-panel-tile": "#F1F5F9",
+  "--color-surface-inset-deep": "#E2E8F0",
   "--color-dropdown-bg": "#FFFFFF",
   "--color-dropdown-hover": "#F1F5F9",
   "--color-toast-bg": "#FFFFFF",
@@ -217,7 +234,8 @@ export const DARK_BASE: ThemeTokens = {
   "--color-primary-hover": "#65A30D",
   "--color-accent": "#84CC16",
   "--color-accent-light": "rgba(132, 204, 22, 0.1)",
-  "--color-header-bg": "rgba(11, 15, 25, 0.8)",
+  "--color-header-bg": "rgba(8, 10, 18, 0.70)",
+  "--color-header-bg-scrolled": "rgba(8, 10, 18, 0.85)",
   "--color-header-text": "#F1F5F9",
   "--color-sidebar-bg": "rgba(15, 20, 35, 0.95)",
   "--color-sidebar-text": "#94A3B8",
@@ -252,6 +270,10 @@ export const DARK_BASE: ThemeTokens = {
   "--color-icon-muted": "rgba(255, 255, 255, 0.50)",
   "--color-surface-raised": "rgba(255, 255, 255, 0.04)",
   "--color-surface-inset": "rgba(0, 0, 0, 0.12)",
+  "--color-surface-panel": "#0E1019",
+  "--color-surface-panel-raised": "#141620",
+  "--color-surface-panel-tile": "#1C1E2A",
+  "--color-surface-inset-deep": "rgba(0, 0, 0, 0.4)",
   "--color-dropdown-bg": "rgba(20, 25, 40, 0.95)",
   "--color-dropdown-hover": "rgba(255, 255, 255, 0.08)",
   "--color-toast-bg": "rgba(20, 25, 40, 0.95)",

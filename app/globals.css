@@ -21,7 +21,8 @@
   --color-primary-hover: #65A30D;
   --color-accent: #84CC16;
   --color-accent-light: rgba(132, 204, 22, 0.1);
-  --color-header-bg: rgba(11, 15, 25, 0.8);
+  --color-header-bg: rgba(8, 10, 18, 0.70);
+  --color-header-bg-scrolled: rgba(8, 10, 18, 0.85);
   --color-header-text: #F1F5F9;
   --color-sidebar-bg: rgba(15, 20, 35, 0.95);
   --color-sidebar-text: #94A3B8;
@@ -56,6 +57,10 @@
   --color-icon-muted: rgba(255, 255, 255, 0.50);
   --color-surface-raised: rgba(255, 255, 255, 0.04);
   --color-surface-inset: rgba(0, 0, 0, 0.12);
+  --color-surface-panel: #0E1019;
+  --color-surface-panel-raised: #141620;
+  --color-surface-panel-tile: #1C1E2A;
+  --color-surface-inset-deep: rgba(0, 0, 0, 0.4);
   --color-dropdown-bg: rgba(20, 25, 40, 0.95);
   --color-dropdown-hover: rgba(255, 255, 255, 0.08);
   --color-toast-bg: rgba(20, 25, 40, 0.95);

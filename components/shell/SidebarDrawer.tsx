@@ -37,7 +37,7 @@ export default function SidebarDrawer({
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         style={{
-          backgroundColor: "rgba(0,0,0,0.55)",
+          backgroundColor: "var(--color-modal-overlay)",
           backdropFilter: "blur(28px) saturate(0.7) brightness(0.85)",
           WebkitBackdropFilter: "blur(28px) saturate(0.7) brightness(0.85)",
         }}
@@ -72,7 +72,7 @@ export default function SidebarDrawer({
           <div
             className="flex-1 min-h-0 rounded-2xl overflow-hidden"
             style={{
-              background: "linear-gradient(175deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.015) 100%)",
+              background: "linear-gradient(175deg, var(--color-border-strong) 0%, var(--color-border-subtle) 100%)",
               padding: "1px",
             }}
           >
@@ -80,11 +80,11 @@ export default function SidebarDrawer({
             <div
               className="flex flex-col h-full rounded-[15px] overflow-hidden"
               style={{
-                background: "linear-gradient(178deg, rgba(16,20,34,0.97) 0%, rgba(10,13,24,0.99) 35%, rgba(13,16,28,0.98) 70%, rgba(11,14,25,0.99) 100%)",
+                background: "var(--color-sidebar-bg)",
                 boxShadow: [
-                  "0 16px 56px rgba(0,0,0,0.55)",
-                  "0 4px 16px rgba(0,0,0,0.4)",
-                  "0 0 0 1px rgba(0,0,0,0.5)",
+                  "0 16px 56px rgba(0,0,0,0.35)",
+                  "0 4px 16px rgba(0,0,0,0.25)",
+                  "0 0 0 1px var(--color-border-subtle)",
                   "inset 0 1px 0 rgba(255,255,255,0.05)",
                   "inset 0 -1px 0 rgba(255,255,255,0.02)",
                 ].join(", "),
@@ -108,7 +108,7 @@ export default function SidebarDrawer({
               <div
                 className="shrink-0 h-px"
                 style={{
-                  background: "linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.04) 50%, transparent 95%)",
+                  background: "linear-gradient(90deg, transparent 5%, var(--color-divider) 50%, transparent 95%)",
                 }}
               />
             </div>

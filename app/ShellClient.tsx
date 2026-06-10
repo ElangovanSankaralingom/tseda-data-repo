@@ -57,10 +57,10 @@ function CommandGridIcon({ isOpen }: { isOpen: boolean }) {
           padding: 1,
         }}
       >
-        <span className="block size-[3.5px] rounded-full bg-white/70" />
-        <span className="block size-[3.5px] rounded-full bg-white/70" />
-        <span className="block size-[3.5px] rounded-full bg-white/70" />
-        <span className="block size-[3.5px] rounded-full bg-white/70" />
+        <span className="block size-[3.5px] rounded-full bg-[var(--color-icon-default)]" />
+        <span className="block size-[3.5px] rounded-full bg-[var(--color-icon-default)]" />
+        <span className="block size-[3.5px] rounded-full bg-[var(--color-icon-default)]" />
+        <span className="block size-[3.5px] rounded-full bg-[var(--color-icon-default)]" />
       </div>
       <div
         className="absolute inset-0 flex items-center justify-center transition-all duration-300"
@@ -69,8 +69,8 @@ function CommandGridIcon({ isOpen }: { isOpen: boolean }) {
           transform: isOpen ? "none" : "scale(0.6) rotate(-45deg)",
         }}
       >
-        <span className="absolute h-[1.5px] w-[14px] rounded-full bg-white/70" style={{ transform: "rotate(45deg)" }} />
-        <span className="absolute h-[1.5px] w-[14px] rounded-full bg-white/70" style={{ transform: "rotate(-45deg)" }} />
+        <span className="absolute h-[1.5px] w-[14px] rounded-full bg-[var(--color-icon-default)]" style={{ transform: "rotate(45deg)" }} />
+        <span className="absolute h-[1.5px] w-[14px] rounded-full bg-[var(--color-icon-default)]" style={{ transform: "rotate(-45deg)" }} />
       </div>
     </div>
   );
@@ -218,7 +218,7 @@ export default function ShellClient({
       <CursorGlow />
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--color-button-primary-bg)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg focus:outline-none"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--color-button-primary-bg)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--color-button-primary-text)] focus:shadow-lg focus:outline-none"
       >
         Skip to main content
       </a>
@@ -234,8 +234,8 @@ export default function ShellClient({
           )}
           style={{
             background: scrolled
-              ? "rgba(8,10,18,0.85)"
-              : "rgba(8,10,18,0.70)",
+              ? "var(--color-header-bg-scrolled)"
+              : "var(--color-header-bg)",
             backdropFilter: "blur(24px) saturate(1.2)",
             WebkitBackdropFilter: "blur(24px) saturate(1.2)",
           }}
@@ -251,8 +251,8 @@ export default function ShellClient({
                 className={cn(
                   "flex size-8 items-center justify-center rounded-lg transition-all duration-200",
                   open
-                    ? "bg-white/[0.08]"
-                    : "hover:bg-white/[0.06] hover:scale-105 active:scale-95"
+                    ? "bg-[var(--color-dropdown-hover)]"
+                    : "hover:bg-[var(--color-glass-hover)] hover:scale-105 active:scale-95"
                 )}
                 aria-label={open ? "Close menu" : "Open menu"}
               >
@@ -261,7 +261,7 @@ export default function ShellClient({
 
               <Link href={dashboard()} className="flex items-center group">
                 <span
-                  className="flex size-6 items-center justify-center rounded-md text-[11px] font-black text-white transition-all duration-300 group-hover:scale-110"
+                  className="flex size-6 items-center justify-center rounded-md text-[11px] font-black text-[var(--color-button-primary-text)] transition-all duration-300 group-hover:scale-110"
                   style={{
                     backgroundColor: "var(--color-primary)",
                     boxShadow: scrolled
@@ -279,11 +279,11 @@ export default function ShellClient({
                   className={cn(
                     "hidden sm:flex items-center gap-1.5 rounded-lg px-2 py-1 transition-all duration-200 cursor-pointer",
                     aboutOpen
-                      ? "bg-white/[0.08]"
-                      : "hover:bg-white/[0.06]"
+                      ? "bg-[var(--color-dropdown-hover)]"
+                      : "hover:bg-[var(--color-glass-hover)]"
                   )}
                 >
-                  <span className="text-[13px] font-bold tracking-tight text-white/80">
+                  <span className="text-[13px] font-bold tracking-tight text-[var(--color-text-primary)]">
                     T&apos;SEDA
                   </span>
                   <Info size={12} style={{ color: "var(--color-icon-muted)" }} />
@@ -294,9 +294,9 @@ export default function ShellClient({
                   <div
                     className="absolute top-[calc(100%+10px)] left-0 z-[60] w-[340px] overflow-hidden rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-top-2"
                     style={{
-                      background: "linear-gradient(175deg, rgba(15,18,30,0.97) 0%, rgba(8,10,18,0.98) 100%)",
+                      background: "var(--color-dropdown-bg)",
                       borderColor: "var(--color-border-default)",
-                      boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px var(--color-border-subtle), inset 0 1px 0 var(--color-border-subtle)",
+                      boxShadow: "0 20px 60px rgba(0,0,0,0.35), 0 0 0 1px var(--color-border-subtle), inset 0 1px 0 var(--color-border-subtle)",
                     }}
                   >
                     {/* Top accent bar */}
@@ -306,7 +306,7 @@ export default function ShellClient({
                     <div className="flex items-start justify-between px-5 pt-4 pb-3">
                       <div className="flex items-center gap-3">
                         <span
-                          className="flex size-9 items-center justify-center rounded-xl text-sm font-black text-white"
+                          className="flex size-9 items-center justify-center rounded-xl text-sm font-black text-[var(--color-button-primary-text)]"
                           style={{
                             backgroundColor: "var(--color-primary)",
                             boxShadow: "0 0 16px var(--color-glow-primary), 0 4px 12px rgba(0,0,0,0.3)",
@@ -326,7 +326,7 @@ export default function ShellClient({
                       <button
                         type="button"
                         onClick={() => setAboutOpen(false)}
-                        className="flex size-6 items-center justify-center rounded-md transition-colors hover:bg-white/[0.08]"
+                        className="flex size-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-dropdown-hover)]"
                         aria-label="Close"
                       >
                         <X size={14} style={{ color: "var(--color-icon-default)" }} />
@@ -398,7 +398,7 @@ export default function ShellClient({
             </div>
 
             {/* ── Zone divider ── */}
-            <div className="h-5 w-px bg-white/[0.12]" />
+            <div className="h-5 w-px bg-[var(--color-divider-strong)]" />
 
             {/* ═══ ZONE 2: Context Strip ═══ */}
             <nav aria-label="Main navigation" className="flex flex-1 items-center gap-1 px-3">
@@ -408,8 +408,8 @@ export default function ShellClient({
                 className={cn(
                   "relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-200",
                   isActive(dashboard())
-                    ? "text-white"
-                    : "text-white/40 hover:text-white/70 hover:bg-white/[0.04] hover:-translate-y-px"
+                    ? "text-[var(--color-text-primary)]"
+                    : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-glass-hover)] hover:-translate-y-px"
                 )}
               >
                 {isActive(dashboard()) && (
@@ -440,8 +440,8 @@ export default function ShellClient({
                   className={cn(
                     "relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-200",
                     isActive(adminHome())
-                      ? "text-white"
-                      : "text-white/40 hover:text-white/70 hover:bg-white/[0.04] hover:-translate-y-px"
+                      ? "text-[var(--color-text-primary)]"
+                      : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-glass-hover)] hover:-translate-y-px"
                   )}
                 >
                   {isActive(adminHome()) && (
@@ -471,15 +471,15 @@ export default function ShellClient({
 
               {/* Live status — right side of context strip */}
               <div className="hidden items-center gap-2 lg:flex">
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
-                <span className="font-mono text-[10px] font-semibold tracking-wider text-white/25">
+                <span className="size-1.5 rounded-full bg-[var(--color-status-success)] animate-subtle-pulse" />
+                <span className="font-mono text-[10px] font-semibold tracking-wider text-[var(--color-text-muted)]">
                   ONLINE
                 </span>
               </div>
             </nav>
 
             {/* ── Zone divider ── */}
-            <div className="h-5 w-px bg-white/[0.12]" />
+            <div className="h-5 w-px bg-[var(--color-divider-strong)]" />
 
             {/* ═══ ZONE 3: Utility Cluster ═══ */}
             <div className="flex items-center gap-0.5 pl-2 pr-2">
