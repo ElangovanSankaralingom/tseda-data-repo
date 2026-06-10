@@ -165,15 +165,15 @@ export default function DashboardWelcome({
                     {editRequestedCount > 0 && (
                       <div
                         className="flex-1 rounded-xl px-4 py-3"
-                        style={{ backgroundColor: "#1c1306", border: "1px solid rgba(217,119,6,0.25)" }}
+                        style={{ backgroundColor: "color-mix(in srgb, var(--color-status-warning) 8%, var(--color-surface-panel-raised))", border: "1px solid var(--color-status-warning-border)" }}
                       >
                         <div className="flex items-center gap-2">
-                          <Clock className="size-4 text-amber-400/80" />
-                          <span className="font-mono text-lg font-black text-amber-400">
+                          <Clock className="size-4 text-[var(--color-status-warning)]/80" />
+                          <span className="font-mono text-lg font-black text-[var(--color-status-warning)]">
                             {formatNumber(editRequestedCount, language)}
                           </span>
                         </div>
-                        <div className="mt-1 text-[11px] font-semibold text-amber-400/50">
+                        <div className="mt-1 text-[11px] font-semibold text-[var(--color-status-warning)]/50">
                           {t("dashboard.editRequested")}
                         </div>
                       </div>
@@ -191,8 +191,8 @@ export default function DashboardWelcome({
           <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-text-tertiary)]">
             TSEDA
           </span>
-          <span className="size-1.5 rounded-full bg-emerald-400 animate-subtle-pulse" />
-          <span className="font-mono text-[11px] font-semibold tracking-wider text-emerald-400/70">
+          <span className="size-1.5 rounded-full bg-[var(--color-status-success)] animate-subtle-pulse" />
+          <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-status-success)]/70">
             ONLINE
           </span>
           <div className="h-3 w-px bg-[var(--color-border-subtle)]" />

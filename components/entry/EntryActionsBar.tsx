@@ -186,7 +186,7 @@ function EditModeActionBar({
   const buttonDisabled = workflowDisabled || isGenerating || isSuccess;
 
   const buttonClass = isSuccess
-    ? "bg-emerald-500/15 text-[var(--color-text-primary)]"
+    ? "bg-[var(--color-status-success-bg)] text-[var(--color-text-primary)]"
     : workflowDisabled || isGenerating
       ? "cursor-not-allowed bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50"
       : "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-generate-hover)]";
@@ -232,7 +232,7 @@ function EditModeActionBar({
                 disabled={!finalise.canFinalise || finaliseState !== "idle"}
                 className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
                   finaliseState === "done"
-                    ? "bg-emerald-500/15 text-[var(--color-text-primary)] animate-finalise-pop"
+                    ? "bg-[var(--color-status-success-bg)] text-[var(--color-text-primary)] animate-finalise-pop"
                     : finaliseState === "finalising"
                       ? "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50 cursor-not-allowed"
                       : finalise.canFinalise

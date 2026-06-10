@@ -10,7 +10,7 @@ export function getEntryListCardClass(category: EntryDisplayCategory, status?: s
   }
 
   if (category === "streak_active") {
-    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-amber-400"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-[0_0_12px_rgba(249,115,22,0.06)] hover:shadow-lg hover:shadow-black/20 transition-all duration-300`;
+    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-palette-amber-fg)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-[0_0_12px_rgba(249,115,22,0.06)] hover:shadow-lg hover:shadow-black/20 transition-all duration-300`;
   }
 
   return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-text-muted)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 hover:shadow-lg hover:shadow-black/20 transition-all duration-300`;
@@ -50,14 +50,16 @@ export function getEntryListCardClass(category: EntryDisplayCategory, status?: s
   ─────────────────────────────────────────────────────────
 */
 
-/** Hex colors for each group */
+/** Group identity colors — CSS variables, mode-aware.
+    Values are var() strings; for alpha tints use
+    `color-mix(in srgb, ${GROUP_HEX[g]} N%, transparent)` — never \`${hex}NN\` suffixes. */
 export const GROUP_HEX: Record<EntryListGroup, string> = {
-  streak_runners: "#fbbf24",
-  on_the_clock: "#3b82f6",
-  unlocked: "#a855f7",
-  in_the_works: "#64748b",
-  under_review: "#f97316",
-  locked_in: "#22c55e",
+  streak_runners: "var(--color-palette-amber-fg)",
+  on_the_clock: "var(--color-palette-blue-fg)",
+  unlocked: "var(--color-palette-purple-fg)",
+  in_the_works: "var(--color-text-muted)",
+  under_review: "var(--color-palette-orange-fg)",
+  locked_in: "var(--color-status-success)",
 };
 
 export type CardLayout =
@@ -88,33 +90,33 @@ export type GroupContainerStyle = {
 
 export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
   streak_runners: {
-    background: "rgba(251,191,36,0.03)",
-    border: "1px solid rgba(251,191,36,0.08)",
+    background: `color-mix(in srgb, ${GROUP_HEX.streak_runners} 3%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.streak_runners} 8%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   on_the_clock: {
-    background: "rgba(59,130,246,0.03)",
-    border: "1px solid rgba(59,130,246,0.08)",
+    background: `color-mix(in srgb, ${GROUP_HEX.on_the_clock} 3%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.on_the_clock} 8%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   unlocked: {
-    background: "rgba(168,85,247,0.02)",
-    border: "1px solid rgba(168,85,247,0.06)",
+    background: `color-mix(in srgb, ${GROUP_HEX.unlocked} 2%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.unlocked} 6%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   in_the_works: { background: "transparent", border: "none", padding: "", hasContainer: false },
   under_review: {
-    background: "rgba(249,115,22,0.02)",
-    border: "1px dashed rgba(249,115,22,0.12)",
+    background: `color-mix(in srgb, ${GROUP_HEX.under_review} 2%, transparent)`,
+    border: `1px dashed color-mix(in srgb, ${GROUP_HEX.under_review} 12%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   locked_in: {
-    background: "rgba(34,197,94,0.03)",
-    border: "1px solid rgba(34,197,94,0.08)",
+    background: `color-mix(in srgb, ${GROUP_HEX.locked_in} 3%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.locked_in} 8%, transparent)`,
     padding: "p-4 pt-3",
     hasContainer: true,
   },
@@ -130,20 +132,20 @@ export type GroupCardStyle = {
 
 export const GROUP_CARDS: Record<EntryListGroup, GroupCardStyle> = {
   streak_runners: {
-    cardBorder: "rgba(251,191,36,0.15)",
-    topStripeBg: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 60%, transparent 100%)",
+    cardBorder: `color-mix(in srgb, ${GROUP_HEX.streak_runners} 15%, transparent)`,
+    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.streak_runners} 0%, color-mix(in srgb, ${GROUP_HEX.streak_runners} 60%, transparent) 60%, transparent 100%)`,
     topStripeHeight: 3,
     hoverShadow: "0 4px 20px rgba(251,191,36,0.10)",
   },
   on_the_clock: {
-    cardBorder: "rgba(59,130,246,0.15)",
-    topStripeBg: "linear-gradient(90deg, #60a5fa 0%, #3b82f6 60%, transparent 100%)",
+    cardBorder: `color-mix(in srgb, ${GROUP_HEX.on_the_clock} 15%, transparent)`,
+    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.on_the_clock} 0%, color-mix(in srgb, ${GROUP_HEX.on_the_clock} 60%, transparent) 60%, transparent 100%)`,
     topStripeHeight: 3,
     hoverShadow: "0 4px 20px rgba(59,130,246,0.10)",
   },
   unlocked: {
-    cardBorder: "rgba(168,85,247,0.12)",
-    topStripeBg: "linear-gradient(90deg, #c084fc 0%, #a855f7 60%, transparent 100%)",
+    cardBorder: `color-mix(in srgb, ${GROUP_HEX.unlocked} 12%, transparent)`,
+    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.unlocked} 0%, color-mix(in srgb, ${GROUP_HEX.unlocked} 60%, transparent) 60%, transparent 100%)`,
     topStripeHeight: 2,
     hoverShadow: "0 4px 20px rgba(168,85,247,0.08)",
   },
@@ -154,8 +156,8 @@ export const GROUP_CARDS: Record<EntryListGroup, GroupCardStyle> = {
     hoverShadow: "none",
   },
   under_review: {
-    cardBorder: "rgba(249,115,22,0.18)",
-    topStripeBg: "linear-gradient(90deg, #fb923c 0%, #f97316 40%, transparent 100%)",
+    cardBorder: `color-mix(in srgb, ${GROUP_HEX.under_review} 18%, transparent)`,
+    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.under_review} 0%, color-mix(in srgb, ${GROUP_HEX.under_review} 60%, transparent) 40%, transparent 100%)`,
     topStripeHeight: 2,
     hoverShadow: "0 4px 16px rgba(249,115,22,0.08)",
   },

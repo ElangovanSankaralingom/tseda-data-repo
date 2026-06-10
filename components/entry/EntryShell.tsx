@@ -190,9 +190,9 @@ export default function EntryShell({
                   <span
                     className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                     style={{
-                      color: "#fbbf24",
-                      background: "rgba(251,191,36,0.1)",
-                      border: "1px solid rgba(251,191,36,0.25)",
+                      color: "var(--color-status-warning)",
+                      background: "var(--color-status-warning-bg)",
+                      border: "1px solid var(--color-status-warning-border)",
                     }}
                   >
                     {unsavedLabel}

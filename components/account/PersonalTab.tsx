@@ -70,7 +70,7 @@ export default function PersonalTab({ draft, setDraft, errors, shouldShowError }
             }
             className={cx(
               "w-full rounded-lg border px-3 py-2 text-sm",
-              shouldShowError("aadharNumber") && errors.aadharNumber ? "border-red-300" : "border-[var(--color-glass-border)]"
+              shouldShowError("aadharNumber") && errors.aadharNumber ? "border-[var(--color-status-error-border)]" : "border-[var(--color-glass-border)]"
             )}
           />
         </Field>
@@ -96,7 +96,7 @@ export default function PersonalTab({ draft, setDraft, errors, shouldShowError }
             }
             className={cx(
               "w-full rounded-lg border px-3 py-2 text-sm",
-              shouldShowError("panCardNumber") && errors.panCardNumber ? "border-red-300" : "border-[var(--color-glass-border)]"
+              shouldShowError("panCardNumber") && errors.panCardNumber ? "border-[var(--color-status-error-border)]" : "border-[var(--color-glass-border)]"
             )}
           />
         </Field>

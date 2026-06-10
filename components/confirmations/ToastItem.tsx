@@ -24,30 +24,30 @@ const TYPE_CONFIG: Record<
 > = {
   success: {
     Icon: CheckCircle,
-    iconBg: "bg-emerald-500/15",
-    iconColor: "text-emerald-600",
-    border: "border-l-emerald-500",
+    iconBg: "bg-[var(--color-status-success-bg)]",
+    iconColor: "text-[var(--color-status-success)]",
+    border: "border-l-[var(--color-status-success)]",
     defaultDuration: 4000,
   },
   error: {
     Icon: XCircle,
-    iconBg: "bg-red-500/15",
-    iconColor: "text-red-400",
-    border: "border-l-red-500",
+    iconBg: "bg-[var(--color-status-error-bg)]",
+    iconColor: "text-[var(--color-status-error)]",
+    border: "border-l-[var(--color-status-error)]",
     defaultDuration: 8000,
   },
   warning: {
     Icon: AlertTriangle,
-    iconBg: "bg-amber-500/15",
-    iconColor: "text-amber-600",
-    border: "border-l-amber-500",
+    iconBg: "bg-[var(--color-status-warning-bg)]",
+    iconColor: "text-[var(--color-status-warning)]",
+    border: "border-l-[var(--color-status-warning)]",
     defaultDuration: 6000,
   },
   info: {
     Icon: Info,
-    iconBg: "bg-blue-500/15",
-    iconColor: "text-blue-600",
-    border: "border-l-blue-500",
+    iconBg: "bg-[var(--color-status-info-bg)]",
+    iconColor: "text-[var(--color-status-info)]",
+    border: "border-l-[var(--color-status-info)]",
     defaultDuration: 4000,
   },
   loading: {
@@ -196,7 +196,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
         <div className="absolute bottom-0 left-0 right-0 h-0.5">
           <div
             className={`h-full transition-none ${
-              isUndo ? "bg-[var(--color-surface-on-accent-strong)]" : toast.type === "success" ? "bg-emerald-500/15" : toast.type === "error" ? "bg-red-500/15" : toast.type === "warning" ? "bg-amber-500/15" : "bg-blue-500/15"
+              isUndo ? "bg-[var(--color-surface-on-accent-strong)]" : toast.type === "success" ? "bg-[var(--color-status-success-bg)]" : toast.type === "error" ? "bg-[var(--color-status-error-bg)]" : toast.type === "warning" ? "bg-[var(--color-status-warning-bg)]" : "bg-[var(--color-status-info-bg)]"
             }`}
             style={{ width: `${progress}%` }}
           />

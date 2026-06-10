@@ -250,7 +250,7 @@ export default function FacultyRowPicker({
         ) : null}
       </div>
 
-      {showSectionError && sectionError ? <div className="mt-2 text-xs text-red-400">{sectionError}</div> : null}
+      {showSectionError && sectionError ? <div className="mt-2 text-xs text-[var(--color-status-error)]">{sectionError}</div> : null}
 
       {normalizedRows.length > 0 ? (
         <div className="mt-4 space-y-3">
@@ -309,7 +309,7 @@ export default function FacultyRowPicker({
                 ) : null}
 
                 {attemptedRowSave[rowId] && rowSaveErrors[rowId] ? (
-                  <div className="sm:col-span-3 text-xs text-red-400">{rowSaveErrors[rowId]}</div>
+                  <div className="sm:col-span-3 text-xs text-[var(--color-status-error)]">{rowSaveErrors[rowId]}</div>
                 ) : null}
               </div>
             );

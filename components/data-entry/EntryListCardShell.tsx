@@ -98,40 +98,40 @@ function HeroCard({
       tabIndex={0}
       aria-label={`${title} entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`${getGroupCardClass("streak_runners")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30`}
+      className={`${getGroupCardClass("streak_runners")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-amber-fg)_30%,transparent)]`}
       style={{
-        border: "1px solid rgba(251,191,36,0.18)",
+        border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 18%, transparent)",
         clipPath: NOTCH_CLIP,
         boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-        "--glow-color": "rgba(251,191,36,0.25)",
+        "--glow-color": "color-mix(in srgb, var(--color-palette-amber-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
       {/* Corner notch — amber accent */}
       <div
         className="absolute top-0 right-0 size-[20px] opacity-70"
-        style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", background: "linear-gradient(135deg, #fbbf24, #f59e0b)" }}
+        style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", background: "linear-gradient(135deg, var(--color-palette-amber-fg), var(--color-status-warning))" }}
       />
 
       {/* Top accent edge — thin solid amber line */}
       <div
         className="absolute top-0 left-0 right-[20px] h-[2px]"
-        style={{ background: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, transparent 100%)" }}
+        style={{ background: "linear-gradient(90deg, var(--color-palette-amber-fg) 0%, color-mix(in srgb, var(--color-palette-amber-fg) 60%, transparent) 50%, transparent 100%)" }}
       />
 
       {/* ── ZONE 1: Header — subtle warm tint, not brown ── */}
       <div
         className="px-5 pt-4 pb-3.5"
         style={{
-          background: "linear-gradient(135deg, rgba(251,191,36,0.08) 0%, transparent 70%)",
-          borderBottom: "1px solid rgba(251,191,36,0.10)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--color-palette-amber-fg) 8%, transparent) 0%, transparent 70%)",
+          borderBottom: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 10%, transparent)",
         }}
       >
         <div className="flex items-start gap-3">
           <div
             className="flex size-9 shrink-0 items-center justify-center rounded-lg"
             style={{
-              background: "rgba(251,191,36,0.15)",
-              border: "1px solid rgba(251,191,36,0.25)",
+              background: "color-mix(in srgb, var(--color-palette-amber-fg) 15%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 25%, transparent)",
             }}
           >
             <Zap className="size-4 text-[var(--color-status-warning)]" />
@@ -145,9 +145,9 @@ function HeroCard({
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[var(--color-status-warning)] animate-status-glow"
                   style={{
-                    background: "rgba(251,191,36,0.12)",
-                    border: "1px solid rgba(251,191,36,0.22)",
-                    "--glow-color": "rgba(251,191,36,0.30)",
+                    background: "color-mix(in srgb, var(--color-palette-amber-fg) 12%, transparent)",
+                    border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 22%, transparent)",
+                    "--glow-color": "color-mix(in srgb, var(--color-palette-amber-fg) 30%, transparent)",
                   } as React.CSSProperties}
                 >
                   <span className="size-1.5 rounded-full bg-[var(--color-status-warning)] animate-subtle-pulse" />
@@ -206,25 +206,25 @@ function TimerCard({
       tabIndex={0}
       aria-label={`${title} entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`${getGroupCardClass("on_the_clock")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/30`}
+      className={`${getGroupCardClass("on_the_clock")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
-        border: "1px solid rgba(59,130,246,0.18)",
+        border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",
         boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-        "--glow-color": "rgba(59,130,246,0.25)",
+        "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
       {/* Top accent edge — thin solid blue line */}
       <div
         className="absolute top-0 left-0 right-0 h-[2px]"
-        style={{ background: "linear-gradient(90deg, #60a5fa 0%, #3b82f6 60%, transparent 100%)" }}
+        style={{ background: "linear-gradient(90deg, var(--color-palette-blue-fg) 0%, color-mix(in srgb, var(--color-palette-blue-fg) 60%, transparent) 60%, transparent 100%)" }}
       />
 
       {/* ── ZONE 1: Blue header — subtle cool tint ── */}
       <div
         className="px-5 pt-4 pb-3.5"
         style={{
-          background: "linear-gradient(135deg, rgba(59,130,246,0.08) 0%, transparent 70%)",
-          borderBottom: "1px solid rgba(59,130,246,0.10)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--color-palette-blue-fg) 8%, transparent) 0%, transparent 70%)",
+          borderBottom: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 10%, transparent)",
         }}
       >
         <div className="flex items-start gap-3">
@@ -232,10 +232,10 @@ function TimerCard({
             <div
               className={`shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-2 ${isUrgent ? "animate-status-glow" : ""}`}
               style={{
-                background: isUrgent ? "rgba(239,68,68,0.10)" : `${hex}10`,
-                border: `1px solid ${isUrgent ? "rgba(239,68,68,0.18)" : `${hex}18`}`,
+                background: isUrgent ? "var(--color-status-error-bg)" : `color-mix(in srgb, ${hex} 6%, transparent)`,
+                border: `1px solid ${isUrgent ? "var(--color-status-error-border)" : `color-mix(in srgb, ${hex} 9%, transparent)`}`,
                 minWidth: "72px",
-                "--glow-color": isUrgent ? "rgba(239,68,68,0.35)" : `${hex}30`,
+                "--glow-color": isUrgent ? "color-mix(in srgb, var(--color-status-error) 35%, transparent)" : `color-mix(in srgb, ${hex} 19%, transparent)`,
               } as React.CSSProperties}
             >
               <Clock className={`size-3.5 ${isUrgent ? "text-[var(--color-status-error)] animate-subtle-pulse" : "text-[var(--color-status-info)]"}`} />
@@ -244,7 +244,7 @@ function TimerCard({
               </span>
             </div>
           ) : (
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `${hex}10`, border: `1px solid ${hex}15` }}>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${hex} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 8%, transparent)` }}>
               <Clock className="size-3.5 text-[var(--color-status-info)]" />
             </div>
           )}
@@ -310,29 +310,29 @@ function StandardCard({
       tabIndex={0}
       aria-label={`${title} entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/30`}
+      className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-purple-fg)_30%,transparent)]`}
       style={{
-        border: "1px solid rgba(168,85,247,0.15)",
+        border: "1px solid color-mix(in srgb, var(--color-palette-purple-fg) 15%, transparent)",
         boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-        "--glow-color": "rgba(168,85,247,0.25)",
+        "--glow-color": "color-mix(in srgb, var(--color-palette-purple-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
       {/* Top accent edge — thin purple line */}
       <div
         className="absolute top-0 left-0 right-0 h-[2px]"
-        style={{ background: "linear-gradient(90deg, #c084fc 0%, #a855f7 60%, transparent 100%)" }}
+        style={{ background: "linear-gradient(90deg, var(--color-palette-purple-fg) 0%, color-mix(in srgb, var(--color-palette-purple-fg) 60%, transparent) 60%, transparent 100%)" }}
       />
 
       {/* ── ZONE 1: Purple header — subtle tint ── */}
       <div
         className="px-5 pt-4 pb-3.5"
         style={{
-          background: "linear-gradient(135deg, rgba(168,85,247,0.07) 0%, transparent 70%)",
-          borderBottom: "1px solid rgba(168,85,247,0.08)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--color-palette-purple-fg) 7%, transparent) 0%, transparent 70%)",
+          borderBottom: "1px solid color-mix(in srgb, var(--color-palette-purple-fg) 8%, transparent)",
         }}
       >
         <div className="flex items-start gap-2.5">
-          <Unlock className="size-4 shrink-0 mt-0.5 text-purple-400" />
+          <Unlock className="size-4 shrink-0 mt-0.5 text-[var(--color-palette-purple-fg)]" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <Link href={href} className="text-base font-bold text-[var(--color-text-primary)] truncate transition-colors">
@@ -340,10 +340,10 @@ function StandardCard({
               </Link>
               {editTime?.hasEditWindow && !editTime.expired && (
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-purple-300"
-                  style={{ background: `${hex}10`, border: `1px solid ${hex}15` }}
+                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-[var(--color-palette-purple-fg)]"
+                  style={{ background: `color-mix(in srgb, ${hex} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 8%, transparent)` }}
                 >
-                  <span className="size-1.5 rounded-full bg-purple-400" />
+                  <span className="size-1.5 rounded-full bg-[var(--color-palette-purple-fg)]" />
                   {t('entry.unlockedLabel')} · {editTime.remainingLabel}
                 </span>
               )}
@@ -403,11 +403,11 @@ function DraftRow({
       tabIndex={0}
       aria-label={`${title} draft entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`${getGroupCardClass("in_the_works")} group rounded-xl animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/20`}
+      className={`${getGroupCardClass("in_the_works")} group rounded-xl animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-strong)]`}
       style={{
-        border: "2px dashed rgba(148,163,184,0.22)",
-        background: "linear-gradient(135deg, rgba(148,163,184,0.04) 0%, rgba(100,116,139,0.02) 100%)",
-        "--glow-color": "rgba(148,163,184,0.15)",
+        border: "2px dashed var(--color-border-strong)",
+        background: "var(--color-surface-raised)",
+        "--glow-color": "color-mix(in srgb, var(--color-text-muted) 15%, transparent)",
       } as React.CSSProperties}
     >
       <div className="px-4 py-3.5 flex items-center gap-3.5">
@@ -415,8 +415,8 @@ function DraftRow({
         <div
           className="flex size-8 shrink-0 items-center justify-center rounded-xl"
           style={{
-            background: "linear-gradient(135deg, rgba(148,163,184,0.12) 0%, rgba(100,116,139,0.06) 100%)",
-            border: "1px dashed rgba(148,163,184,0.15)",
+            background: "var(--color-surface-raised)",
+            border: "1px dashed var(--color-border-default)",
           }}
         >
           <Pencil className="size-3.5 text-[var(--color-icon-default)]" />
@@ -434,8 +434,8 @@ function DraftRow({
         <span
           className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-[var(--color-text-tertiary)]"
           style={{
-            border: "1.5px dashed rgba(148,163,184,0.25)",
-            background: "rgba(148,163,184,0.05)",
+            border: "1.5px dashed var(--color-border-strong)",
+            background: "var(--color-surface-raised)",
           }}
         >
           {t('entry.draft')}
@@ -472,18 +472,18 @@ function DashedCard({
       tabIndex={0}
       aria-label={`${title} entry under review`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className={`${getGroupCardClass("under_review")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/30`}
+      className={`${getGroupCardClass("under_review")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-orange-fg)_30%,transparent)]`}
       style={{
-        border: "1.5px dashed rgba(249,115,22,0.20)",
-        "--glow-color": "rgba(249,115,22,0.25)",
+        border: "1.5px dashed color-mix(in srgb, var(--color-palette-orange-fg) 20%, transparent)",
+        "--glow-color": "color-mix(in srgb, var(--color-palette-orange-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
       {/* ── ZONE 1: Orange header — subtle warm tint ── */}
       <div
         className="px-5 py-3.5"
         style={{
-          background: "linear-gradient(135deg, rgba(249,115,22,0.08) 0%, transparent 70%)",
-          borderBottom: "1px solid rgba(249,115,22,0.10)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--color-palette-orange-fg) 8%, transparent) 0%, transparent 70%)",
+          borderBottom: "1px solid color-mix(in srgb, var(--color-palette-orange-fg) 10%, transparent)",
         }}
       >
         <div className="flex items-start gap-2.5">
@@ -501,7 +501,7 @@ function DashedCard({
               </Link>
               <span
                 className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-status-warning)]"
-                style={{ background: `${hex}12`, border: `1px solid ${hex}18` }}
+                style={{ background: `color-mix(in srgb, ${hex} 7%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 9%, transparent)` }}
               >
                 {t('entry.editRequested')}
               </span>

@@ -46,7 +46,7 @@ export default function AcademicTab({ draft, setDraft, errors, shouldShowError }
             }
             className={cx(
               "w-full rounded-lg border px-3 py-2 text-sm",
-              shouldShowError("employeeId") && errors.employeeId ? "border-red-300" : "border-[var(--color-glass-border)]"
+              shouldShowError("employeeId") && errors.employeeId ? "border-[var(--color-status-error-border)]" : "border-[var(--color-glass-border)]"
             )}
           />
         </Field>

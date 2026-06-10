@@ -9,7 +9,7 @@ export default function Toast({ toast, position = "inline", className, onDismiss
 
   const isError = toast.type === "err";
   const colors = isError
-    ? "border-red-500/20 bg-red-500/10 text-red-400"
+    ? "border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]"
     : "border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary-light)]";
   const ariaRole = isError ? "alert" : "status";
   const ariaLive = isError ? "assertive" as const : "polite" as const;

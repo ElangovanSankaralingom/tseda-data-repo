@@ -167,7 +167,7 @@ export default function ExperienceTab({
                   </MiniButton>
                 </div>
                 {shouldShowError(`lop.${lop.id}`) && errors[`lop.${lop.id}`] ? (
-                  <div className="mt-2 text-xs text-red-400">{errors[`lop.${lop.id}`]}</div>
+                  <div className="mt-2 text-xs text-[var(--color-status-error)]">{errors[`lop.${lop.id}`]}</div>
                 ) : null}
                 <div className="mt-3 flex justify-end">
                   {experienceDirty ? (
@@ -315,7 +315,7 @@ export default function ExperienceTab({
                   </MiniButton>
                 </div>
 
-                {shouldShowError(`cross.${a.id}`) && errors[`cross.${a.id}`] ? <div className="text-xs text-red-400">{errors[`cross.${a.id}`]}</div> : null}
+                {shouldShowError(`cross.${a.id}`) && errors[`cross.${a.id}`] ? <div className="text-xs text-[var(--color-status-error)]">{errors[`cross.${a.id}`]}</div> : null}
               </div>
             );
           })}
@@ -373,7 +373,7 @@ export default function ExperienceTab({
                       }
                       className={cx(
                         "w-full rounded-lg border px-3 py-2 text-sm",
-                        shouldShowError(`in.role.${x.id}`) && errors[`in.role.${x.id}`] ? "border-red-300" : "border-[var(--color-glass-border)]"
+                        shouldShowError(`in.role.${x.id}`) && errors[`in.role.${x.id}`] ? "border-[var(--color-status-error-border)]" : "border-[var(--color-glass-border)]"
                       )}
                     />
                   </Field>
@@ -447,7 +447,7 @@ export default function ExperienceTab({
                   </MiniButton>
                 </div>
 
-                {shouldShowError(`cross.${x.id}`) && errors[`cross.${x.id}`] ? <div className="text-xs text-red-400">{errors[`cross.${x.id}`]}</div> : null}
+                {shouldShowError(`cross.${x.id}`) && errors[`cross.${x.id}`] ? <div className="text-xs text-[var(--color-status-error)]">{errors[`cross.${x.id}`]}</div> : null}
               </div>
             );
           })}

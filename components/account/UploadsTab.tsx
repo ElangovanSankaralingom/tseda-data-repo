@@ -171,7 +171,7 @@ export default function UploadsTab({ draft, setDraft, saveCurrentTab, showToast 
                     </div>
                   ) : null}
 
-                  {err ? <div className="mt-2 text-xs text-red-400">{err}</div> : null}
+                  {err ? <div className="mt-2 text-xs text-[var(--color-status-error)]">{err}</div> : null}
                 </div>
 
                 <div className="flex flex-wrap gap-2">

@@ -271,7 +271,7 @@ export default function DateField({
         className={cx(
           "flex w-full items-center gap-2 rounded-lg border bg-[var(--color-input-bg)] px-3 py-2 text-left text-sm shadow-sm transition-all duration-200 outline-none focus-visible:ring-2",
           error
-            ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+            ? "border-[var(--color-status-error)] focus-visible:border-[var(--color-status-error)] focus-visible:ring-[var(--color-status-error-border)]"
             : "border-[var(--color-input-border)] hover:border-[var(--color-text-muted)] focus-visible:border-[var(--color-primary)] focus-visible:ring-[var(--color-primary)]/20",
           disabled && "cursor-not-allowed opacity-60"
         )}

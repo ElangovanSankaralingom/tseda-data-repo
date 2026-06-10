@@ -102,7 +102,7 @@ export default function UploadField({
               • {(meta.size / (1024 * 1024)).toFixed(2)} MB • {new Date(meta.uploadedAt).toLocaleString()}
             </div>
           ) : (
-            <div className={cx("text-xs", showValidationError ? "text-red-400" : "text-[var(--color-text-muted)]")}>
+            <div className={cx("text-xs", showValidationError ? "text-[var(--color-status-error)]" : "text-[var(--color-text-muted)]")}>
               {showValidationError ? validationMessage || "This upload is mandatory." : "No file uploaded yet."}
             </div>
           )}
@@ -116,7 +116,7 @@ export default function UploadField({
             </div>
           ) : null}
 
-          {error ? <div className="text-xs text-red-400">{error}</div> : null}
+          {error ? <div className="text-xs text-[var(--color-status-error)]">{error}</div> : null}
 
           <div className="flex flex-wrap gap-2">
             {meta ? (

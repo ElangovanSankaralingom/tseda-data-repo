@@ -205,7 +205,7 @@ export default function MultiPhotoUpload({
                       "inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border px-3 text-sm",
                       busy || disabled
                         ? "pointer-events-none cursor-not-allowed border-[var(--color-glass-border)] bg-transparent text-[var(--color-text-muted)] opacity-60"
-                        : "border-[var(--color-glass-border)] text-red-400 transition hover:bg-red-500/10"
+                        : "border-[var(--color-glass-border)] text-[var(--color-status-error)] transition hover:bg-[var(--color-status-error-bg)]"
                     )}
                   >
                     {t("common.delete")}
@@ -216,7 +216,7 @@ export default function MultiPhotoUpload({
           ))}
         </div>
       ) : (
-        <div className={cx("text-xs", viewOnly ? "text-[var(--color-text-muted)]" : showRequiredError ? "text-red-400" : "text-[var(--color-text-muted)]")}>
+        <div className={cx("text-xs", viewOnly ? "text-[var(--color-text-muted)]" : showRequiredError ? "text-[var(--color-status-error)]" : "text-[var(--color-text-muted)]")}>
           {viewOnly
             ? t("upload.notUploaded")
             : showRequiredError
@@ -244,7 +244,7 @@ export default function MultiPhotoUpload({
         </div>
       ) : null}
 
-      {!viewOnly && error ? <div className="text-xs text-red-400">{error}</div> : null}
+      {!viewOnly && error ? <div className="text-xs text-[var(--color-status-error)]">{error}</div> : null}
 
       {!viewOnly ? (
         <div className="flex flex-wrap gap-2">

@@ -22,32 +22,32 @@ const TYPE_CONFIG: Record<
 > = {
   info: {
     Icon: Info,
-    iconBg: "bg-blue-500/15",
-    iconColor: "text-blue-600",
+    iconBg: "bg-[var(--color-status-info-bg)]",
+    iconColor: "text-[var(--color-status-info)]",
   },
   warning: {
     Icon: AlertTriangle,
-    iconBg: "bg-amber-500/15",
-    iconColor: "text-amber-600",
-    accent: "border-l-4 border-l-amber-500",
+    iconBg: "bg-[var(--color-status-warning-bg)]",
+    iconColor: "text-[var(--color-status-warning)]",
+    accent: "border-l-4 border-l-[var(--color-status-warning)]",
   },
   danger: {
     Icon: AlertOctagon,
-    iconBg: "bg-red-500/15",
-    iconColor: "text-red-400",
-    accent: "border-l-4 border-l-red-500",
+    iconBg: "bg-[var(--color-status-error-bg)]",
+    iconColor: "text-[var(--color-status-error)]",
+    accent: "border-l-4 border-l-[var(--color-status-error)]",
   },
   success: {
     Icon: CheckCircle,
-    iconBg: "bg-emerald-500/15",
-    iconColor: "text-emerald-600",
+    iconBg: "bg-[var(--color-status-success-bg)]",
+    iconColor: "text-[var(--color-status-success)]",
   },
 };
 
 const CONFIRM_STYLE: Record<string, string> = {
   primary: "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-button-primary-hover)]",
-  danger: "bg-red-500/15 text-[var(--color-status-error)] hover:bg-red-600 hover:text-[var(--color-text-on-accent)]",
-  warning: "bg-amber-500/15 text-[var(--color-status-warning)] hover:bg-amber-600 hover:text-[var(--color-text-on-accent)]",
+  danger: "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] hover:bg-red-600 hover:text-[var(--color-text-on-accent)]",
+  warning: "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)] hover:bg-amber-600 hover:text-[var(--color-text-on-accent)]",
 };
 
 export default function ConfirmDialog({ options, onResult }: { options: ConfirmationDialogOptions; onResult: (confirmed: boolean) => void }) {
@@ -217,7 +217,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
           {requireTypedConfirmation && (
             <div className="mt-4">
               <label className="block text-xs text-[var(--color-text-secondary)] mb-1.5">
-                Type <span className="font-mono font-semibold text-red-400">{requireTypedConfirmation}</span> to
+                Type <span className="font-mono font-semibold text-[var(--color-status-error)]">{requireTypedConfirmation}</span> to
                 confirm
               </label>
               <input
@@ -225,7 +225,7 @@ export default function ConfirmDialog({ options, onResult }: { options: Confirma
                 value={typedText}
                 onChange={(e) => setTypedText(e.target.value)}
                 placeholder={requireTypedConfirmation}
-                className="w-full rounded-lg border border-red-500/20 bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                className="w-full rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-status-error)] focus:ring-2 focus:ring-[var(--color-status-error-border)]"
                 autoComplete="off"
                 spellCheck={false}
               />

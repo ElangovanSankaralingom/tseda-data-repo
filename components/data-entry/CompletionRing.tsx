@@ -62,10 +62,10 @@ export default function CompletionRing({
 
   const segments = useMemo(() => {
     const result: Segment[] = [];
-    if (stats.active > 0) result.push({ count: stats.active, color: "#fbbf24", label: t('common.active') });
+    if (stats.active > 0) result.push({ count: stats.active, color: "var(--color-palette-amber-fg)", label: t('common.active') });
     if (stats.drafts > 0) result.push({ count: stats.drafts, color: "var(--color-text-tertiary)", label: t('common.drafts') });
-    if (stats.pending > 0) result.push({ count: stats.pending, color: "#fb923c", label: t('common.pending') });
-    if (stats.finalized > 0) result.push({ count: stats.finalized, color: "#22c55e", label: t('common.finalized') });
+    if (stats.pending > 0) result.push({ count: stats.pending, color: "var(--color-palette-orange-fg)", label: t('common.pending') });
+    if (stats.finalized > 0) result.push({ count: stats.finalized, color: "var(--color-status-success)", label: t('common.finalized') });
     return result;
   }, [stats, t]);
 

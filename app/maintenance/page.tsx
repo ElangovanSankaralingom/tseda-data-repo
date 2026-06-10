@@ -8,8 +8,8 @@ export default async function MaintenancePage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[var(--color-glass-bg)] p-10 text-center shadow-2xl animate-fade-in-up">
-        <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-amber-500/10">
-          <Wrench className="size-8 text-amber-500" style={{ animation: "spin 5s linear infinite" }} />
+        <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-[var(--color-status-warning-bg)]">
+          <Wrench className="size-8 text-[var(--color-status-warning)]" style={{ animation: "spin 5s linear infinite" }} />
         </div>
         <h1 className="text-xl font-bold text-[var(--color-text-primary)]">{appName}</h1>
         <p className="mt-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">{message}</p>

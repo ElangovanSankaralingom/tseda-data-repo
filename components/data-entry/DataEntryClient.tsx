@@ -72,7 +72,7 @@ function sortByUrgency(categories: CategoryOverview[]): CategoryOverview[] {
 function MicroPills({ cat }: { cat: CategoryOverview }) {
   const pills: { label: string; count: number; className: string }[] = [];
   if (cat.draftCount > 0) pills.push({ label: "DRF", count: cat.draftCount, className: "text-[var(--color-text-placeholder)] bg-[var(--color-surface-inset-deep)]" });
-  if (cat.editRequestedCount > 0) pills.push({ label: "REQ", count: cat.editRequestedCount, className: "text-amber-400 bg-amber-400/10" });
+  if (cat.editRequestedCount > 0) pills.push({ label: "REQ", count: cat.editRequestedCount, className: "text-[var(--color-status-warning)] bg-[var(--color-status-warning-bg)]" });
   if (cat.editGrantedCount > 0) pills.push({ label: "EDT", count: cat.editGrantedCount, className: "text-[var(--color-primary)] bg-[var(--color-primary)]/10" });
 
   if (pills.length === 0) return null;
@@ -225,13 +225,13 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
           <div className="mt-4 flex items-center justify-between">
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               {cat.streakActivated > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--color-palette-amber-fg)]">
                   <Flame className="size-3" />
                   {cat.streakActivated} {t("dashboard.active")}
                 </span>
               )}
               {cat.streakWins > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-300">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--color-status-success)]">
                   <Trophy className="size-3" />
                   {cat.streakWins} {t("dashboard.done")}
                 </span>
@@ -451,12 +451,12 @@ export default function DataEntryClient({ greeting, userName, categories, totals
               <div
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
                 style={{
-                  background: "rgba(251,191,36,0.06)",
-                  border: "1px solid rgba(251,191,36,0.10)",
+                  background: "color-mix(in srgb, var(--color-palette-amber-fg) 6%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 10%, transparent)",
                 }}
               >
-                <Flame className="size-3.5 text-amber-400" />
-                <span className="text-sm font-medium text-amber-300">{totals.streakActivatedCount}</span>
+                <Flame className="size-3.5 text-[var(--color-palette-amber-fg)]" />
+                <span className="text-sm font-medium text-[var(--color-palette-amber-fg)]">{totals.streakActivatedCount}</span>
                 <span className="text-xs text-[var(--color-text-placeholder)]">{t("dashboard.active")}</span>
               </div>
             )}
@@ -464,12 +464,12 @@ export default function DataEntryClient({ greeting, userName, categories, totals
               <div
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
                 style={{
-                  background: "rgba(132,204,22,0.06)",
-                  border: "1px solid rgba(132,204,22,0.10)",
+                  background: "color-mix(in srgb, var(--color-status-success) 6%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--color-status-success) 10%, transparent)",
                 }}
               >
-                <Trophy className="size-3.5 text-emerald-400" />
-                <span className="text-sm font-medium text-emerald-300">{totals.streakWinsCount}</span>
+                <Trophy className="size-3.5 text-[var(--color-status-success)]" />
+                <span className="text-sm font-medium text-[var(--color-status-success)]">{totals.streakWinsCount}</span>
                 <span className="text-xs text-[var(--color-text-placeholder)]">{totals.streakWinsCount === 1 ? t("dashboard.win") : t("dashboard.wins")}</span>
               </div>
             )}

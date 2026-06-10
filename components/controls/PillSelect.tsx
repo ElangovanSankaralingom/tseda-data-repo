@@ -105,7 +105,7 @@ function PillSelectInner({
             {error && !isSelected ? (
               <span
                 className="pointer-events-none absolute inset-0 rounded-xl"
-                style={{ border: "1.5px solid rgba(239,68,68,0.4)" }}
+                style={{ border: "1.5px solid color-mix(in srgb, var(--color-status-error) 40%, transparent)" }}
               />
             ) : null}
           </button>

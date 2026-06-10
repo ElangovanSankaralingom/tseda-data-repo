@@ -43,10 +43,10 @@ const STRIP_STYLES: Record<string, StripConfig> = {
   },
   edit_granted: {
     icon: Unlock,
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/20",
-    text: "text-purple-700",
-    iconColor: "text-purple-500",
+    bg: "bg-[var(--color-palette-purple-bg)]",
+    border: "border-[var(--color-palette-purple-border)]",
+    text: "text-[var(--color-palette-purple-fg)]",
+    iconColor: "text-[var(--color-palette-purple-fg)]",
   },
   delete_requested: {
     icon: AlertTriangle,

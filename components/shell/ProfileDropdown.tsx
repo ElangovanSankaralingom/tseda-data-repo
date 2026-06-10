@@ -217,8 +217,8 @@ export default function ProfileDropdown({
               className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-200 hover:-translate-y-px cursor-pointer"
               style={{ color: "var(--color-text-secondary)" }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(239,68,68,0.08)";
-                e.currentTarget.style.color = "#f87171";
+                e.currentTarget.style.background = "var(--color-status-error-bg)";
+                e.currentTarget.style.color = "var(--color-status-error)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -227,9 +227,9 @@ export default function ProfileDropdown({
             >
               <div
                 className="flex size-8 items-center justify-center rounded-lg transition-all duration-200"
-                style={{ background: "rgba(239,68,68,0.08)" }}
+                style={{ background: "var(--color-status-error-bg)" }}
               >
-                <LogOut className="size-4 text-red-400" />
+                <LogOut className="size-4 text-[var(--color-status-error)]" />
               </div>
               <span className="text-[13px] font-medium">{t('nav.signOut')}</span>
             </button>

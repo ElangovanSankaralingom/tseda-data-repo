@@ -46,19 +46,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <div
           role="alert"
-          className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center"
+          className="rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] p-6 text-center"
         >
-          <AlertTriangle className="mx-auto size-8 text-red-400" />
-          <h3 className="mt-3 text-sm font-medium text-red-400">
+          <AlertTriangle className="mx-auto size-8 text-[var(--color-status-error)]" />
+          <h3 className="mt-3 text-sm font-medium text-[var(--color-status-error)]">
             {section} encountered an error
           </h3>
-          <p className="mt-1 text-xs text-red-400">
+          <p className="mt-1 text-xs text-[var(--color-status-error)]">
             {this.state.error?.message || "An unexpected error occurred."}
           </p>
           <button
             type="button"
             onClick={this.handleReset}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-[var(--color-glass-bg)] px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-status-error)] transition hover:bg-[var(--color-status-error-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-status-error-border)]"
           >
             <RefreshCw className="size-3" />
             Try again

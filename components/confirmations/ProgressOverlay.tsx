@@ -18,13 +18,13 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
             <Loader2 className="size-10 text-[var(--color-text-secondary)] animate-spin" />
           )}
           {p.status === "success" && (
-            <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/15">
-              <CheckCircle className="size-6 text-emerald-600" />
+            <div className="flex size-12 items-center justify-center rounded-full bg-[var(--color-status-success-bg)]">
+              <CheckCircle className="size-6 text-[var(--color-status-success)]" />
             </div>
           )}
           {p.status === "error" && (
-            <div className="flex size-12 items-center justify-center rounded-full bg-red-500/15">
-              <XCircle className="size-6 text-red-400" />
+            <div className="flex size-12 items-center justify-center rounded-full bg-[var(--color-status-error-bg)]">
+              <XCircle className="size-6 text-[var(--color-status-error)]" />
             </div>
           )}
         </div>
@@ -52,7 +52,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
 
         {/* Result */}
         {isComplete && p.result && (
-          <p className={`mt-3 text-center text-sm ${p.status === "error" ? "text-red-400" : "text-[var(--color-text-secondary)]"}`}>
+          <p className={`mt-3 text-center text-sm ${p.status === "error" ? "text-[var(--color-status-error)]" : "text-[var(--color-text-secondary)]"}`}>
             {p.result.summary}
           </p>
         )}

@@ -117,7 +117,7 @@ export default function CertificateBlock({
               • {new Date(certificate.uploadedAt).toLocaleString()}
             </div>
           ) : shouldShowError(certErrorKey) ? (
-            <div className="mt-1 text-xs text-red-400">{errors[certErrorKey] || "Certificate is mandatory."}</div>
+            <div className="mt-1 text-xs text-[var(--color-status-error)]">{errors[certErrorKey] || "Certificate is mandatory."}</div>
           ) : null}
 
           <div className="mt-2 text-xs text-[var(--color-text-muted)]">
@@ -131,7 +131,7 @@ export default function CertificateBlock({
             </div>
           ) : null}
 
-          {localError ? <div className="mt-2 text-xs text-red-400">{localError}</div> : null}
+          {localError ? <div className="mt-2 text-xs text-[var(--color-status-error)]">{localError}</div> : null}
         </div>
 
         <div className="flex flex-wrap gap-2">

@@ -78,8 +78,8 @@ function CommandGridIcon({ isOpen }: { isOpen: boolean }) {
 
 /* ── Context page data — maps pathname to accent + label ── */
 const PAGE_CONTEXT: Record<string, { accent: string; icon: typeof LayoutDashboard }> = {
-  "/dashboard": { accent: "#3b82f6", icon: LayoutDashboard },
-  "/admin": { accent: "#f59e0b", icon: Shield },
+  "/dashboard": { accent: "var(--color-palette-blue-fg)", icon: LayoutDashboard },
+  "/admin": { accent: "var(--color-palette-amber-fg)", icon: Shield },
 };
 
 function usePageContext(pathname: string | null) {
@@ -300,7 +300,7 @@ export default function ShellClient({
                     }}
                   >
                     {/* Top accent bar */}
-                    <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--color-primary), #3b82f6, var(--color-primary))" }} />
+                    <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--color-primary), var(--color-palette-blue-fg), var(--color-primary))" }} />
 
                     {/* Header */}
                     <div className="flex items-start justify-between px-5 pt-4 pb-3">
@@ -416,8 +416,8 @@ export default function ShellClient({
                   <span
                     className="absolute inset-0 rounded-lg"
                     style={{
-                      background: `linear-gradient(135deg, ${PAGE_CONTEXT["/dashboard"].accent}18 0%, transparent 100%)`,
-                      border: `1px solid ${PAGE_CONTEXT["/dashboard"].accent}25`,
+                      background: `linear-gradient(135deg, color-mix(in srgb, ${PAGE_CONTEXT["/dashboard"].accent} 9%, transparent) 0%, transparent 100%)`,
+                      border: `1px solid color-mix(in srgb, ${PAGE_CONTEXT["/dashboard"].accent} 15%, transparent)`,
                     }}
                   />
                 )}
@@ -448,8 +448,8 @@ export default function ShellClient({
                     <span
                       className="absolute inset-0 rounded-lg"
                       style={{
-                        background: `linear-gradient(135deg, ${PAGE_CONTEXT["/admin"].accent}18 0%, transparent 100%)`,
-                        border: `1px solid ${PAGE_CONTEXT["/admin"].accent}25`,
+                        background: `linear-gradient(135deg, color-mix(in srgb, ${PAGE_CONTEXT["/admin"].accent} 9%, transparent) 0%, transparent 100%)`,
+                        border: `1px solid color-mix(in srgb, ${PAGE_CONTEXT["/admin"].accent} 15%, transparent)`,
                       }}
                     />
                   )}
@@ -503,8 +503,8 @@ export default function ShellClient({
           <div
             className="h-[1.5px] rounded-b-2xl transition-all duration-500"
             style={{
-              background: `linear-gradient(90deg, transparent 5%, ${pageCtx.accent}60 30%, ${pageCtx.accent}60 70%, transparent 95%)`,
-              boxShadow: `0 1px 8px ${pageCtx.accent}25, 0 0 2px ${pageCtx.accent}15`,
+              background: `linear-gradient(90deg, transparent 5%, color-mix(in srgb, ${pageCtx.accent} 38%, transparent) 30%, color-mix(in srgb, ${pageCtx.accent} 38%, transparent) 70%, transparent 95%)`,
+              boxShadow: `0 1px 8px color-mix(in srgb, ${pageCtx.accent} 15%, transparent), 0 0 2px color-mix(in srgb, ${pageCtx.accent} 8%, transparent)`,
             }}
           />
         </div>

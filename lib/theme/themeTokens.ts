@@ -115,6 +115,18 @@ export interface ThemeTokens {
   "--color-palette-yellow-fg": string;
   "--color-palette-yellow-bg": string;
   "--color-palette-yellow-border": string;
+  "--color-palette-blue-fg": string;
+  "--color-palette-blue-bg": string;
+  "--color-palette-blue-border": string;
+  "--color-palette-emerald-fg": string;
+  "--color-palette-emerald-bg": string;
+  "--color-palette-emerald-border": string;
+  "--color-palette-amber-fg": string;
+  "--color-palette-amber-bg": string;
+  "--color-palette-amber-border": string;
+  "--color-palette-pink-fg": string;
+  "--color-palette-pink-bg": string;
+  "--color-palette-pink-border": string;
 }
 
 /** Chart fallback hex for unknown-category coloring in analytics. Charts (Recharts)
@@ -224,6 +236,18 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-palette-yellow-fg": "#EAB308",
   "--color-palette-yellow-bg": "rgba(234, 179, 8, 0.10)",
   "--color-palette-yellow-border": "rgba(234, 179, 8, 0.20)",
+  "--color-palette-blue-fg": "#2563EB",
+  "--color-palette-blue-bg": "rgba(37, 99, 235, 0.10)",
+  "--color-palette-blue-border": "rgba(37, 99, 235, 0.20)",
+  "--color-palette-emerald-fg": "#059669",
+  "--color-palette-emerald-bg": "rgba(5, 150, 105, 0.10)",
+  "--color-palette-emerald-border": "rgba(5, 150, 105, 0.20)",
+  "--color-palette-amber-fg": "#D97706",
+  "--color-palette-amber-bg": "rgba(217, 119, 6, 0.10)",
+  "--color-palette-amber-border": "rgba(217, 119, 6, 0.20)",
+  "--color-palette-pink-fg": "#EC4899",
+  "--color-palette-pink-bg": "rgba(236, 72, 153, 0.10)",
+  "--color-palette-pink-border": "rgba(236, 72, 153, 0.20)",
 };
 
 /* ─── DARK BASE — THE PRIMARY EXPERIENCE ─── */
@@ -329,6 +353,18 @@ export const DARK_BASE: ThemeTokens = {
   "--color-palette-yellow-fg": "#FACC15",
   "--color-palette-yellow-bg": "rgba(250, 204, 21, 0.10)",
   "--color-palette-yellow-border": "rgba(250, 204, 21, 0.20)",
+  "--color-palette-blue-fg": "#60A5FA",
+  "--color-palette-blue-bg": "rgba(96, 165, 250, 0.10)",
+  "--color-palette-blue-border": "rgba(96, 165, 250, 0.20)",
+  "--color-palette-emerald-fg": "#34D399",
+  "--color-palette-emerald-bg": "rgba(52, 211, 153, 0.10)",
+  "--color-palette-emerald-border": "rgba(52, 211, 153, 0.20)",
+  "--color-palette-amber-fg": "#FBBF24",
+  "--color-palette-amber-bg": "rgba(251, 191, 36, 0.10)",
+  "--color-palette-amber-border": "rgba(251, 191, 36, 0.20)",
+  "--color-palette-pink-fg": "#F472B6",
+  "--color-palette-pink-bg": "rgba(244, 114, 182, 0.10)",
+  "--color-palette-pink-border": "rgba(244, 114, 182, 0.20)",
 };
 
 /* ─── COLOR PALETTES ─── */

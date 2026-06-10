@@ -126,17 +126,17 @@ export default function CancelConfirmationModal({
             disabled={saving}
             className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
-              background: "rgba(239,68,68,0.08)",
-              color: "#f87171",
-              border: "1px solid rgba(239,68,68,0.15)",
+              background: "var(--color-status-error-bg)",
+              color: "var(--color-status-error)",
+              border: "1px solid var(--color-status-error-border)",
             }}
             onMouseEnter={(e) => {
               if (!saving) {
-                e.currentTarget.style.background = "rgba(239,68,68,0.15)";
+                e.currentTarget.style.background = "var(--color-status-error-border)";
               }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(239,68,68,0.08)";
+              e.currentTarget.style.background = "var(--color-status-error-bg)";
             }}
           >
             <Trash2 className="size-4" />

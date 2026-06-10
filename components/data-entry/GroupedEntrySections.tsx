@@ -76,30 +76,31 @@ export type { GroupedEntries, GroupedEntryRender, GroupedEntryListCardConfig, Li
 */
 
 const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
-  streak_runners: { title: "entry.streakRunners", icon: Zap, iconColor: "text-amber-400", urgentColor: "text-amber-500" },
-  on_the_clock: { title: "entry.onTheClock", icon: Clock, iconColor: "text-blue-400", urgentColor: "text-blue-500" },
-  unlocked: { title: "entry.unlocked", icon: Unlock, iconColor: "text-purple-400" },
+  streak_runners: { title: "entry.streakRunners", icon: Zap, iconColor: "text-[var(--color-palette-amber-fg)]", urgentColor: "text-[var(--color-status-warning)]" },
+  on_the_clock: { title: "entry.onTheClock", icon: Clock, iconColor: "text-[var(--color-palette-blue-fg)]", urgentColor: "text-[var(--color-status-info)]" },
+  unlocked: { title: "entry.unlocked", icon: Unlock, iconColor: "text-[var(--color-palette-purple-fg)]" },
   in_the_works: { title: "entry.inTheWorks", icon: Pencil, iconColor: "text-[var(--color-text-secondary)]" },
-  under_review: { title: "entry.underReview", icon: Clock, iconColor: "text-orange-400" },
-  locked_in: { title: "entry.lockedIn", icon: Lock, iconColor: "text-emerald-500" },
+  under_review: { title: "entry.underReview", icon: Clock, iconColor: "text-[var(--color-palette-orange-fg)]" },
+  locked_in: { title: "entry.lockedIn", icon: Lock, iconColor: "text-[var(--color-status-success)]" },
 };
 
+/* Segment identity colors — same hue source as GROUP_HEX (entryCardStyles). */
 const SEGMENT_COLORS: Record<EntryListGroup, string> = {
-  streak_runners: "#fbbf24",
-  on_the_clock: "#60a5fa",
-  unlocked: "#c084fc",
+  streak_runners: "var(--color-palette-amber-fg)",
+  on_the_clock: "var(--color-palette-blue-fg)",
+  unlocked: "var(--color-palette-purple-fg)",
   in_the_works: "var(--color-text-tertiary)",
-  under_review: "#fb923c",
-  locked_in: "#84cc16",
+  under_review: "var(--color-palette-orange-fg)",
+  locked_in: "var(--color-status-success)",
 };
 
 const SEGMENT_TEXT_COLORS: Record<EntryListGroup, string> = {
-  streak_runners: "text-amber-300",
-  on_the_clock: "text-blue-300",
-  unlocked: "text-purple-300",
+  streak_runners: "text-[var(--color-palette-amber-fg)]",
+  on_the_clock: "text-[var(--color-palette-blue-fg)]",
+  unlocked: "text-[var(--color-palette-purple-fg)]",
   in_the_works: "text-[var(--color-text-tertiary)]",
-  under_review: "text-orange-300",
-  locked_in: "text-emerald-300",
+  under_review: "text-[var(--color-palette-orange-fg)]",
+  locked_in: "text-[var(--color-status-success)]",
 };
 
 import { type FilterKey } from "@/lib/types/ui";
@@ -166,8 +167,8 @@ function SegmentedStatusBar<TEntry>({
               style={{
                 width: `${Math.max(pct, 10)}%`,
                 background: isActive
-                  ? `linear-gradient(135deg, ${hex}50 0%, ${hex}30 100%)`
-                  : `${hex}25`,
+                  ? `linear-gradient(135deg, color-mix(in srgb, ${hex} 31%, transparent) 0%, color-mix(in srgb, ${hex} 19%, transparent) 100%)`
+                  : `color-mix(in srgb, ${hex} 15%, transparent)`,
                 borderRight: i < activeSegments.length - 1
                   ? "1px solid rgba(0,0,0,0.5)"
                   : "none",
@@ -179,7 +180,7 @@ function SegmentedStatusBar<TEntry>({
                 <div
                   className="absolute inset-0 pointer-events-none"
                   style={{
-                    boxShadow: `inset 0 -3px 0 ${hex}80, inset 0 0 16px ${hex}20`,
+                    boxShadow: `inset 0 -3px 0 color-mix(in srgb, ${hex} 50%, transparent), inset 0 0 16px color-mix(in srgb, ${hex} 13%, transparent)`,
                   }}
                 />
               )}
@@ -227,9 +228,9 @@ function SectionHeader({ group, count, isUrgent }: {
       <div
         className={`flex size-7 items-center justify-center rounded-lg ${isUrgent ? "animate-status-glow" : ""}`}
         style={{
-          background: `${hex}25`,
-          border: `1.5px solid ${hex}40`,
-          "--glow-color": `${hex}40`,
+          background: `color-mix(in srgb, ${hex} 15%, transparent)`,
+          border: `1.5px solid color-mix(in srgb, ${hex} 25%, transparent)`,
+          "--glow-color": `color-mix(in srgb, ${hex} 25%, transparent)`,
         } as React.CSSProperties}
       >
         <Icon className={`size-3.5 ${color} ${isUrgent ? "animate-subtle-pulse" : ""}`} />
@@ -240,14 +241,14 @@ function SectionHeader({ group, count, isUrgent }: {
       <span
         className="flex size-6 items-center justify-center rounded-md font-mono text-xs font-black"
         style={{
-          background: `${hex}25`,
+          background: `color-mix(in srgb, ${hex} 15%, transparent)`,
           color: `${hex}`,
-          border: `1.5px solid ${hex}35`,
+          border: `1.5px solid color-mix(in srgb, ${hex} 21%, transparent)`,
         }}
       >
         {count}
       </span>
-      <div className="flex-1 h-[2px]" style={{ background: `linear-gradient(to right, ${hex}35, transparent)` }} />
+      <div className="flex-1 h-[2px]" style={{ background: `linear-gradient(to right, color-mix(in srgb, ${hex} 21%, transparent), transparent)` }} />
     </div>
   );
 }
@@ -282,18 +283,18 @@ function CollapsedStack({ count, hex, onExpand }: { count: number; hex: string; 
       {/* Stacked card peek — two layers behind */}
       <div
         className="absolute top-2 left-2 right-2 h-8 rounded-lg"
-        style={{ background: `${hex}06`, border: `1px solid ${hex}08` }}
+        style={{ background: `color-mix(in srgb, ${hex} 2%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 3%, transparent)` }}
       />
       <div
         className="absolute top-1 left-1 right-1 h-8 rounded-lg"
-        style={{ background: `${hex}08`, border: `1px solid ${hex}10` }}
+        style={{ background: `color-mix(in srgb, ${hex} 3%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 6%, transparent)` }}
       />
       {/* Front card */}
       <div
         className="relative rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition-all duration-200 group-hover/stack:translate-y-[-1px]"
         style={{
-          background: `${hex}12`,
-          border: `1px solid ${hex}20`,
+          background: `color-mix(in srgb, ${hex} 7%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${hex} 13%, transparent)`,
         }}
       >
         <span className="font-mono text-sm font-bold" style={{ color: hex }}>

@@ -133,7 +133,7 @@ export default function SignInPage() {
 
             {/* Error */}
             {errorText ? (
-              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400 backdrop-blur-sm animate-fade-in-up">
+              <div className="mt-4 rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)] backdrop-blur-sm animate-fade-in-up">
                 {errorText}
               </div>
             ) : null}

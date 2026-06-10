@@ -45,13 +45,13 @@ function groupToVariant(group?: EntryListGroup): PillVariant {
    instantly recognizable by color alone.
 */
 const ACTIVE_TINTS: Record<string, { tint: string; iconColor: string; textColor: string }> = {
-  year:     { tint: "rgba(59,130,246,0.18)",  iconColor: "text-blue-400",    textColor: "text-blue-200/70" },
-  semester: { tint: "rgba(168,85,247,0.18)",  iconColor: "text-purple-400",  textColor: "text-purple-200/70" },
-  level:    { tint: "rgba(34,197,94,0.18)",   iconColor: "text-emerald-400", textColor: "text-emerald-200/70" },
-  mode:     { tint: "rgba(249,115,22,0.18)",  iconColor: "text-orange-400",  textColor: "text-orange-200/70" },
+  year:     { tint: "color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",    iconColor: "text-[var(--color-palette-blue-fg)]",    textColor: "text-[var(--color-palette-blue-fg)]" },
+  semester: { tint: "color-mix(in srgb, var(--color-palette-purple-fg) 18%, transparent)",  iconColor: "text-[var(--color-palette-purple-fg)]",  textColor: "text-[var(--color-palette-purple-fg)]" },
+  level:    { tint: "color-mix(in srgb, var(--color-palette-emerald-fg) 18%, transparent)", iconColor: "text-[var(--color-palette-emerald-fg)]", textColor: "text-[var(--color-palette-emerald-fg)]" },
+  mode:     { tint: "color-mix(in srgb, var(--color-palette-orange-fg) 18%, transparent)",  iconColor: "text-[var(--color-palette-orange-fg)]",  textColor: "text-[var(--color-palette-orange-fg)]" },
   date:     { tint: "var(--color-border-subtle)",    iconColor: "text-[var(--color-icon-default)]",   textColor: "text-[var(--color-text-secondary)]" },
-  duration: { tint: "rgba(251,191,36,0.18)",         iconColor: "text-amber-400",   textColor: "text-amber-200/70" },
-  funding:  { tint: "rgba(34,197,94,0.18)",          iconColor: "text-emerald-400", textColor: "text-emerald-200/70" },
+  duration: { tint: "color-mix(in srgb, var(--color-palette-amber-fg) 18%, transparent)",   iconColor: "text-[var(--color-palette-amber-fg)]",   textColor: "text-[var(--color-palette-amber-fg)]" },
+  funding:  { tint: "color-mix(in srgb, var(--color-palette-emerald-fg) 18%, transparent)", iconColor: "text-[var(--color-palette-emerald-fg)]", textColor: "text-[var(--color-palette-emerald-fg)]" },
   default:  { tint: "var(--color-border-subtle)",    iconColor: "text-[var(--color-icon-default)]",   textColor: "text-[var(--color-text-secondary)]" },
 };
 
@@ -97,7 +97,7 @@ const MetadataPill = memo(function MetadataPill({
   if (variant === "sealed") {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-tertiary)]">
-        <Icon className="size-3 shrink-0 text-emerald-400/50" />
+        <Icon className="size-3 shrink-0 text-[var(--color-status-success)]/50" />
         <span className="truncate max-w-[180px]">{text}</span>
       </span>
     );
@@ -138,7 +138,7 @@ export const MetadataPills = memo(function MetadataPills({
           <Fragment key={i}>
             <MetadataPill text={part} variant="sealed" />
             {i < parts.length - 1 && (
-              <span className="text-emerald-400/30 text-xs select-none">·</span>
+              <span className="text-[var(--color-status-success)]/30 text-xs select-none">·</span>
             )}
           </Fragment>
         ))}
@@ -185,7 +185,7 @@ const AttachmentBadge = memo(function AttachmentBadge({
             target="_blank"
             rel="noreferrer"
           >
-            <Shield className="size-3 shrink-0 text-emerald-400/40" />
+            <Shield className="size-3 shrink-0 text-[var(--color-status-success)]/40" />
             {label}{files.length > 1 ? ` ${i + 1}` : ""}
           </a>
         ))}

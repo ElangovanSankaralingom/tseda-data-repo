@@ -107,7 +107,7 @@ const MissingFieldPill = memo(function MissingFieldPill({
       }}
       title={fieldLabel}
     >
-      <span className="size-1.5 rounded-full bg-amber-400/70 shrink-0" />
+      <span className="size-1.5 rounded-full bg-[var(--color-status-warning)]/70 shrink-0" />
       <span className="truncate max-w-[140px]">{fieldLabel}</span>
     </button>
   );
@@ -146,7 +146,7 @@ const PhaseProgressIndicator = memo(function PhaseProgressIndicator({
         style={{
           background: "var(--color-glass-bg)",
           borderColor: currentMilestone === "done"
-            ? "rgba(34,197,94,0.25)"
+            ? "var(--color-status-success-border)"
             : "var(--color-border-default)",
         }}
       >
@@ -203,7 +203,7 @@ const PhaseProgressIndicator = memo(function PhaseProgressIndicator({
           <div className="flex flex-1 items-center gap-3">
             <ProgressArc
               percent={isGenerated ? phase2Percent : 0}
-              accentColor={isGenerated && stage2Complete ? "var(--color-status-success)" : "rgb(16,185,129)"}
+              accentColor={isGenerated && stage2Complete ? "var(--color-status-success)" : "var(--color-status-success)"}
             >
               {!isGenerated ? (
                 <Lock className="size-3.5" style={{ color: "var(--color-text-muted)" }} />
@@ -212,7 +212,7 @@ const PhaseProgressIndicator = memo(function PhaseProgressIndicator({
               ) : (
                 <span
                   className="text-[10px] font-bold tabular-nums"
-                  style={{ color: "rgb(16,185,129)" }}
+                  style={{ color: "var(--color-status-success)" }}
                 >
                   {phase2Percent}
                 </span>
@@ -223,7 +223,7 @@ const PhaseProgressIndicator = memo(function PhaseProgressIndicator({
                 {!isGenerated ? (
                   <Lock className="size-3.5 shrink-0" style={{ color: "var(--color-text-muted)" }} />
                 ) : (
-                  <Upload className="size-3.5 shrink-0" style={{ color: isGenerated && stage2Complete ? "var(--color-status-success)" : "rgb(16,185,129)" }} />
+                  <Upload className="size-3.5 shrink-0" style={{ color: isGenerated && stage2Complete ? "var(--color-status-success)" : "var(--color-status-success)" }} />
                 )}
                 <span
                   className="text-xs font-semibold"
@@ -312,7 +312,7 @@ const PhaseProgressIndicator = memo(function PhaseProgressIndicator({
             {/* Stage 2 missing */}
             {isGenerated && missingStage2.length > 0 ? (
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgb(16,185,129)" }}>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-status-success)" }}>
                   {t('entry.missingForFinalise')} ({missingStage2.length})
                 </p>
                 <div className="flex flex-wrap gap-1.5">

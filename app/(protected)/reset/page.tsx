@@ -165,14 +165,14 @@ export default function ResetPage() {
       </div>
 
       {/* Warning Banner */}
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5">
+      <div className="rounded-2xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] p-5">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[var(--color-status-error)]" />
           <div>
-            <p className="text-sm font-medium text-red-400">
+            <p className="text-sm font-medium text-[var(--color-status-error)]">
               This permanently deletes data. There is no undo.
             </p>
-            <p className="mt-1 text-sm text-red-400">
+            <p className="mt-1 text-sm text-[var(--color-status-error)]">
               Make sure you want to do this. {userCount > 0 && `${userCount} user folder${userCount === 1 ? "" : "s"} detected.`}
             </p>
           </div>
@@ -181,14 +181,14 @@ export default function ResetPage() {
 
       {/* Success Result */}
       {result && (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5">
+        <div className="rounded-2xl border border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] p-5">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[var(--color-status-success)]" />
             <div>
-              <p className="text-sm font-semibold text-emerald-800">
+              <p className="text-sm font-semibold text-[var(--color-status-success)]">
                 Cleared {result.totalDeleted} file{result.totalDeleted === 1 ? "" : "s"}
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-emerald-700">
+              <ul className="mt-2 space-y-1 text-sm text-[var(--color-status-success)]">
                 {result.results.map((r) => (
                   <li key={r.target}>
                     {r.target}: {r.filesDeleted} file{r.filesDeleted === 1 ? "" : "s"} deleted
@@ -206,7 +206,7 @@ export default function ResetPage() {
                 <button
                   type="button"
                   onClick={() => setResult(null)}
-                  className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-500/15 transition-colors"
+                  className="rounded-lg border border-[var(--color-status-success-border)] px-4 py-2 text-sm font-medium text-[var(--color-status-success)] hover:bg-[var(--color-status-success-bg)] transition-colors"
                 >
                   Clear More
                 </button>
@@ -236,7 +236,7 @@ export default function ResetPage() {
                     <label
                       key={opt.key}
                       className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors ${
-                        isChecked ? "bg-red-500/10 ring-1 ring-red-200" : "hover:bg-[var(--color-dropdown-hover)]"
+                        isChecked ? "bg-[var(--color-status-error-bg)] ring-1 ring-[var(--color-status-error-border)]" : "hover:bg-[var(--color-dropdown-hover)]"
                       }`}
                     >
                       <input
@@ -244,7 +244,7 @@ export default function ResetPage() {
                         checked={isChecked}
                         onChange={() => toggleTarget(opt.key)}
                         disabled={clearing || (selected.has("everything") && opt.key !== "everything")}
-                        className="mt-0.5 size-4 rounded border-[var(--color-glass-border)] text-red-400 focus:ring-red-500"
+                        className="mt-0.5 size-4 rounded border-[var(--color-glass-border)] text-[var(--color-status-error)] focus:ring-[var(--color-status-error)]"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
@@ -268,15 +268,15 @@ export default function ResetPage() {
           ))}
 
           {/* Nuclear Option */}
-          <div className="rounded-xl border-2 border-red-500/20 bg-[var(--color-glass-bg)] p-5">
+          <div className="rounded-xl border-2 border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] p-5">
             <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-red-200" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-red-400">Nuclear Option</span>
-              <div className="h-px flex-1 bg-red-200" />
+              <div className="h-px flex-1 bg-[var(--color-status-error-border)]" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-status-error)]">Nuclear Option</span>
+              <div className="h-px flex-1 bg-[var(--color-status-error-border)]" />
             </div>
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors ${
-                selected.has("everything") ? "bg-red-500/15 ring-1 ring-red-300" : "hover:bg-red-500/10"
+                selected.has("everything") ? "bg-[var(--color-status-error-bg)] ring-1 ring-[var(--color-status-error-border)]" : "hover:bg-[var(--color-status-error-bg)]"
               }`}
             >
               <input
@@ -284,11 +284,11 @@ export default function ResetPage() {
                 checked={selected.has("everything")}
                 onChange={() => toggleTarget("everything")}
                 disabled={clearing}
-                className="mt-0.5 size-4 rounded border-red-300 text-red-400 focus:ring-red-500"
+                className="mt-0.5 size-4 rounded border-[var(--color-status-error-border)] text-[var(--color-status-error)] focus:ring-[var(--color-status-error)]"
               />
               <div className="flex-1">
-                <span className="text-sm font-bold text-red-400">CLEAR EVERYTHING</span>
-                <p className="mt-0.5 text-xs text-red-500">
+                <span className="text-sm font-bold text-[var(--color-status-error)]">CLEAR EVERYTHING</span>
+                <p className="mt-0.5 text-xs text-[var(--color-status-error)]">
                   Deletes ALL of the above — resets the app to a fresh state
                 </p>
               </div>
@@ -332,7 +332,7 @@ export default function ResetPage() {
                 ))}
               </ul>
             </div>
-            <p className="mt-3 text-sm font-medium text-red-400">
+            <p className="mt-3 text-sm font-medium text-[var(--color-status-error)]">
               This action cannot be undone.
             </p>
             <div className="mt-4">
@@ -344,7 +344,7 @@ export default function ResetPage() {
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="CLEAR"
-                className="mt-1.5 w-full rounded-lg border border-[var(--color-input-border)] px-3 py-2 text-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none"
+                className="mt-1.5 w-full rounded-lg border border-[var(--color-input-border)] px-3 py-2 text-sm focus:border-[var(--color-status-error)] focus:ring-2 focus:ring-[var(--color-status-error-border)] focus:outline-none"
                 autoFocus
               />
             </div>

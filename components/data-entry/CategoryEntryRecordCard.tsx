@@ -72,7 +72,7 @@ export default function CategoryEntryRecordCard({
                   <ActionButton role="primary" onClick={onEdit}>{t('entry.continue')}</ActionButton>
                 ) : null}
                 {onDelete ? (
-                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-400 hover:bg-red-500/10">
+                  <ActionButton role="ghost" onClick={onDelete} className="text-[var(--color-status-error)] hover:text-[var(--color-status-error)] hover:bg-[var(--color-status-error-bg)]">
                     {resolvedDeleteLabel}
                   </ActionButton>
                 ) : null}
@@ -88,7 +88,7 @@ export default function CategoryEntryRecordCard({
                   </ActionButton>
                 ) : null}
                 {onDelete ? (
-                  <ActionButton role="ghost" onClick={onDelete} className="text-red-500 hover:text-red-400 hover:bg-red-500/10">
+                  <ActionButton role="ghost" onClick={onDelete} className="text-[var(--color-status-error)] hover:text-[var(--color-status-error)] hover:bg-[var(--color-status-error-bg)]">
                     {resolvedDeleteLabel}
                   </ActionButton>
                 ) : null}
@@ -137,12 +137,12 @@ export default function CategoryEntryRecordCard({
                   {t('entry.view')}
                 </button>
                 {confirmationStatus === "EDIT_REQUESTED" && requestEdit?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestEdit.onCancel} disabled={requestInFlight} className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 disabled:opacity-50">
+                  <ActionButton role="ghost" onClick={requestEdit.onCancel} disabled={requestInFlight} className="text-[var(--color-status-warning)] hover:text-[var(--color-status-warning)] hover:bg-[var(--color-status-warning-bg)] disabled:opacity-50">
                     {requestInFlight ? t('entry.cancellingRequest') : t('entry.cancelEditRequest')}
                   </ActionButton>
                 ) : null}
                 {confirmationStatus === "DELETE_REQUESTED" && requestDelete?.onCancel ? (
-                  <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-red-500 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-50">
+                  <ActionButton role="ghost" onClick={requestDelete.onCancel} disabled={requestInFlight} className="text-[var(--color-status-error)] hover:text-[var(--color-status-error)] hover:bg-[var(--color-status-error-bg)] disabled:opacity-50">
                     {requestInFlight ? t('entry.cancellingRequest') : t('entry.cancelDeleteRequest')}
                   </ActionButton>
                 ) : null}

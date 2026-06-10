@@ -215,7 +215,7 @@ export default function AccountPage() {
           </span>
         ) : null}
         {autoSaveStatus === "saved" ? (
-          <span className="text-xs text-green-400">{t("common.saved")}</span>
+          <span className="text-xs text-[var(--color-status-success)]">{t("common.saved")}</span>
         ) : null}
       </div>
 
@@ -224,8 +224,8 @@ export default function AccountPage() {
           className={cx(
             "mt-4 rounded-lg border px-3 py-2 text-sm",
             toast.type === "ok"
-              ? "border-green-200 bg-green-500/10 text-green-800"
-              : "border-red-500/20 bg-red-500/10 text-red-400"
+              ? "border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]"
+              : "border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]"
           )}
         >
           {toast.msg}
@@ -297,18 +297,18 @@ export default function AccountPage() {
         ) : null}
 
         {hasBlockingErrors && activeTabDirty && !loading ? (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 px-4 py-3 text-sm">
+          <div className="rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] px-4 py-3 text-sm">
             There are validation issues. Fix them to auto-save.
           </div>
         ) : null}
       </div>
 
       {/* Danger Zone */}
-      <div className="mt-10 rounded-2xl border border-red-500/20 bg-[var(--color-glass-bg)] p-5">
+      <div className="mt-10 rounded-2xl border border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] p-5">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-500" />
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[var(--color-status-error)]" />
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-red-400">{t("account.deleteAllMyData")}</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-status-error)]">{t("account.deleteAllMyData")}</h3>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
               {t("account.deleteAllWarning")}
             </p>
@@ -317,7 +317,7 @@ export default function AccountPage() {
             type="button"
             onClick={() => setShowClearConfirm(true)}
             disabled={clearing || loading}
-            className="shrink-0 rounded-lg border border-red-300 bg-[var(--color-glass-bg)] px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-60"
+            className="shrink-0 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] px-4 py-2 text-sm font-medium text-[var(--color-status-error)] transition-colors hover:bg-[var(--color-status-error-bg)] disabled:opacity-60"
           >
             {clearing ? (
               <span className="flex items-center gap-2">
@@ -338,8 +338,8 @@ export default function AccountPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-modal-overlay)] p-4">
           <div className="w-full max-w-md rounded-2xl bg-[var(--color-modal-bg)] p-6 shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-red-500/15">
-                <AlertTriangle className="size-5 text-red-400" />
+              <div className="flex size-10 items-center justify-center rounded-full bg-[var(--color-status-error-bg)]">
+                <AlertTriangle className="size-5 text-[var(--color-status-error)]" />
               </div>
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Clear All Your Data</h3>
             </div>
@@ -348,7 +348,7 @@ export default function AccountPage() {
             </p>
             <div className="mt-4">
               <label className="text-sm text-[var(--color-text-secondary)]">
-                {t("account.typeEmailToConfirm")} <span className="font-mono font-semibold text-red-400">{draft.email}</span>
+                {t("account.typeEmailToConfirm")} <span className="font-mono font-semibold text-[var(--color-status-error)]">{draft.email}</span>
               </label>
               <input
                 type="text"
@@ -356,7 +356,7 @@ export default function AccountPage() {
                 onChange={(e) => setClearConfirmText(e.target.value)}
                 placeholder={draft.email}
                 aria-label="Type your email to confirm"
-                className="mt-1.5 w-full rounded-lg border border-[var(--color-input-border)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                className="mt-1.5 w-full rounded-lg border border-[var(--color-input-border)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-status-error)] focus:ring-2 focus:ring-[var(--color-status-error-border)]"
                 autoFocus
               />
             </div>

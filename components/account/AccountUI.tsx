@@ -46,7 +46,7 @@ export function Field({
       {isValidElement(children)
         ? cloneElement(children, { id: fieldId } as Record<string, unknown>)
         : children}
-      {error ? <div className="text-xs text-red-400">{error}</div> : null}
+      {error ? <div className="text-xs text-[var(--color-status-error)]">{error}</div> : null}
     </div>
   );
 }

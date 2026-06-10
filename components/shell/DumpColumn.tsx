@@ -26,12 +26,12 @@ type DumpItem = {
 };
 
 const NOTE_ACCENTS = [
-  { bar: "#84CC16", glow: "rgba(132,204,22,0.12)", tint: "rgba(132,204,22,0.04)" },
-  { bar: "#818cf8", glow: "rgba(129,140,248,0.12)", tint: "rgba(129,140,248,0.04)" },
-  { bar: "#a78bfa", glow: "rgba(167,139,250,0.12)", tint: "rgba(167,139,250,0.04)" },
-  { bar: "#f59e0b", glow: "rgba(245,158,11,0.12)", tint: "rgba(245,158,11,0.04)" },
-  { bar: "#ec4899", glow: "rgba(236,72,153,0.12)", tint: "rgba(236,72,153,0.04)" },
-  { bar: "#06b6d4", glow: "rgba(6,182,212,0.12)", tint: "rgba(6,182,212,0.04)" },
+  { bar: "var(--color-primary)", glow: "color-mix(in srgb, var(--color-primary) 12%, transparent)", tint: "color-mix(in srgb, var(--color-primary) 4%, transparent)" },
+  { bar: "var(--color-palette-indigo-fg)", glow: "color-mix(in srgb, var(--color-palette-indigo-fg) 12%, transparent)", tint: "color-mix(in srgb, var(--color-palette-indigo-fg) 4%, transparent)" },
+  { bar: "var(--color-palette-violet-fg)", glow: "color-mix(in srgb, var(--color-palette-violet-fg) 12%, transparent)", tint: "color-mix(in srgb, var(--color-palette-violet-fg) 4%, transparent)" },
+  { bar: "var(--color-palette-amber-fg)", glow: "color-mix(in srgb, var(--color-palette-amber-fg) 12%, transparent)", tint: "color-mix(in srgb, var(--color-palette-amber-fg) 4%, transparent)" },
+  { bar: "var(--color-palette-pink-fg)", glow: "color-mix(in srgb, var(--color-palette-pink-fg) 12%, transparent)", tint: "color-mix(in srgb, var(--color-palette-pink-fg) 4%, transparent)" },
+  { bar: "var(--color-palette-cyan-fg)", glow: "color-mix(in srgb, var(--color-palette-cyan-fg) 12%, transparent)", tint: "color-mix(in srgb, var(--color-palette-cyan-fg) 4%, transparent)" },
 ];
 
 function accentForIndex(idx: number) {
@@ -98,7 +98,7 @@ const NoteCard = memo(function NoteCard({
           className="absolute left-0 top-0 bottom-0 transition-all duration-250 group-hover/card:opacity-100"
           style={{
             width: isFirst ? 3.5 : 3,
-            background: `linear-gradient(180deg, ${accent.bar} 0%, ${accent.bar}99 100%)`,
+            background: `linear-gradient(180deg, ${accent.bar} 0%, color-mix(in srgb, ${accent.bar} 60%, transparent) 100%)`,
             opacity: isFirst ? 0.9 : 0.5,
             boxShadow: isFirst ? `0 0 8px ${accent.glow}` : "none",
           }}
