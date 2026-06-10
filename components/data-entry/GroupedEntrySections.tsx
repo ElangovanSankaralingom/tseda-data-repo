@@ -167,8 +167,8 @@ function SegmentedStatusBar<TEntry>({
               style={{
                 width: `${Math.max(pct, 10)}%`,
                 background: isActive
-                  ? `linear-gradient(135deg, color-mix(in srgb, ${hex} 31%, transparent) 0%, color-mix(in srgb, ${hex} 19%, transparent) 100%)`
-                  : `color-mix(in srgb, ${hex} 15%, transparent)`,
+                  ? `linear-gradient(135deg, color-mix(in srgb, ${hex} 38%, transparent) 0%, color-mix(in srgb, ${hex} 24%, transparent) 100%)`
+                  : `color-mix(in srgb, ${hex} 20%, transparent)`,
                 borderRight: i < activeSegments.length - 1
                   ? "1px solid rgba(0,0,0,0.5)"
                   : "none",
@@ -228,12 +228,12 @@ function SectionHeader({ group, count, isUrgent }: {
       <div
         className={`flex size-7 items-center justify-center rounded-lg ${isUrgent ? "animate-status-glow" : ""}`}
         style={{
-          background: `color-mix(in srgb, ${hex} 15%, transparent)`,
-          border: `1.5px solid color-mix(in srgb, ${hex} 25%, transparent)`,
-          "--glow-color": `color-mix(in srgb, ${hex} 25%, transparent)`,
+          background: hex,
+          boxShadow: `0 4px 12px color-mix(in srgb, ${hex} 35%, transparent)`,
+          "--glow-color": `color-mix(in srgb, ${hex} 35%, transparent)`,
         } as React.CSSProperties}
       >
-        <Icon className={`size-3.5 ${color} ${isUrgent ? "animate-subtle-pulse" : ""}`} />
+        <Icon className={`size-3.5 text-[var(--color-text-on-accent)] ${isUrgent ? "animate-subtle-pulse" : ""}`} />
       </div>
       <span className={`text-sm font-bold uppercase tracking-wider ${isUrgent ? color : "text-[var(--color-text-secondary)]"}`}>
         {t(config.title as Parameters<typeof t>[0])}

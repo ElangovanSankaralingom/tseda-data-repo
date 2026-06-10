@@ -325,8 +325,9 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(31, 29, 26, 0.08), 0 
      (Dot grids are dark-only; light separation comes from surface contrast.) */
   body:not(.dark body) {
     background-image:
-      radial-gradient(ellipse 70% 45% at 50% -10%, color-mix(in srgb, var(--color-primary) 5%, transparent), transparent),
-      radial-gradient(ellipse 55% 40% at 92% 100%, color-mix(in srgb, var(--color-palette-blue-fg) 4%, transparent), transparent);
+      radial-gradient(ellipse 75% 50% at 50% -12%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent),
+      radial-gradient(ellipse 60% 45% at 94% 102%, color-mix(in srgb, var(--color-palette-blue-fg) 6%, transparent), transparent),
+      radial-gradient(ellipse 45% 35% at -5% 60%, color-mix(in srgb, var(--color-palette-purple-fg) 4%, transparent), transparent);
     background-attachment: fixed;
   }
 }

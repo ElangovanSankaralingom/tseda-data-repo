@@ -246,12 +246,14 @@ export default function DashboardClient({
                       <div
                         className="flex size-10 shrink-0 items-center justify-center rounded-xl"
                         style={{
-                          backgroundColor: isAct ? hex : "var(--color-surface-panel-tile)",
+                          backgroundColor: hex,
+                          boxShadow: isAct ? `0 4px 12px ${hex}50` : "none",
+                          opacity: isAct ? 1 : 0.85,
                         }}
                       >
                         <Icon
                           className="size-[18px]"
-                          style={{ color: isAct ? "var(--color-text-on-accent)" : "var(--color-icon-muted)" }}
+                          style={{ color: "var(--color-text-on-accent)" }}
                         />
                       </div>
 

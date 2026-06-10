@@ -182,13 +182,12 @@ function CategoryHero({
             <div
               className="flex size-14 shrink-0 items-center justify-center rounded-2xl"
               style={{
-                background: `${chartHex}18`,
-                border: `1px solid ${chartHex}30`,
-                boxShadow: `0 0 20px ${chartHex}12`,
+                background: chartHex,
+                boxShadow: `0 8px 20px ${chartHex}40`,
               }}
             >
               {/* eslint-disable-next-line react-hooks/static-components */}
-              <Icon className="size-7" style={{ color: chartHex }} />
+              <Icon className="size-7" style={{ color: "var(--color-text-on-accent)" }} />
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">{title || "Entries"}</h1>
