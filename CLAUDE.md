@@ -24,10 +24,10 @@ Faculty log professional development activities across categories. The app gamif
 - **NEVER commit** `.data/`, `public/uploads/`, `.env.local` — all gitignored.
 
 ### Code Quality
-- `npm run build && npm run lint` must pass before every commit (husky pre-commit hook runs both)
-- `npm run build` catches TypeScript and compilation errors
-- `npm run lint` catches React Compiler rules (static-components, set-state-in-effect, exhaustive-deps)
-- NEVER use `npm run build` alone as verification — always run both
+- The husky pre-commit hook runs `npm run lint && npx tsc --noEmit` — both must pass before every commit
+- `npm run lint` runs eslint (React Compiler rules: static-components, set-state-in-effect, exhaustive-deps) **plus the theme-token guard** (`scripts/check-theme-tokens.mjs` — see Color Conventions below)
+- `npx tsc --noEmit` catches TypeScript errors; run `npm run build` as well before shipping
+- NEVER use `npm run build` alone as verification — always run lint + typecheck too
 - 0 `any` types. 0 `console.log`. 0 TODO/FIXME.
 - All inputs use `value={field || ""}` to prevent controlled/uncontrolled warnings.
 - All new fields in entry types must be added to `LIFECYCLE_FIELDS` in `lib/pdfSnapshot.ts` if they shouldn't affect the PDF hash.
@@ -346,6 +346,24 @@ When writing or modifying ANY component:
 7. Replace Tailwind text-white opacity classes with the matching color-text token via inline style or Tailwind arbitrary value
 
 **The goal: ZERO hardcoded rgba white opacity values in any component.** Every opacity decision must go through a token. This ensures palette changes, legibility bumps, and theme switches affect the ENTIRE app at once.
+
+#### Color Conventions (post light/dark migration, 2026-06 — ENFORCED BY `scripts/check-theme-tokens.mjs`)
+
+The theme guard runs as part of `npm run lint` (and therefore the pre-commit hook). It hard-fails on: white/black Tailwind utilities (`text-white`, `bg-white/5`, …), raw `rgba(255,255,255,…)` outside box-shadow `inset` highlights, and hex literals inside `className`. Tailwind palette classes (`text-red-400`, …) are baseline-ratcheted: counts may shrink, never grow (`npm run lint:theme -- --update-baseline` after intentional changes).
+
+| Need | Use |
+|------|-----|
+| Status meaning (error/warning/success/info) | `--color-status-{error,warning,success,info}` + `-bg` / `-border` |
+| Identity hue (groups, categories, decorative accents) | `--color-palette-{violet,purple,cyan,orange,indigo,rose,yellow,blue,emerald,amber,pink}-{fg,bg,border}` |
+| Alpha tint of any token | `color-mix(in srgb, var(--color-…) N%, transparent)` — NEVER `${hex}NN` suffix on a var |
+| Text/surface ON a saturated accent or gradient | `--color-text-on-accent`, `-on-accent-muted`, `--color-surface-on-accent`, `-strong` |
+| Nested panel layers (well → chip → tile) | `--color-surface-panel`, `-panel-raised`, `-panel-tile` |
+| Deep recess (segmented tracks, node pits) | `--color-surface-inset-deep` |
+| Dock / floating header | `--color-header-bg`, `--color-header-bg-scrolled` |
+
+**Registry-as-data exception:** category accent hexes (`ACCENT_HEX`, adapter accents, tier metals, chart colors, Google brand, ConfettiBurst) stay as literal hexes — they are saturated mid-tones valid in both modes and live in data registries, not styling. Their `${hex}NN` templates are legal because they operate on real hexes. GROUP_HEX (entry groups) is the opposite: it holds `var()` strings — tints from it MUST use color-mix.
+
+**First-paint contract:** `app/(protected)/layout.tsx` emits `buildThemeCss(mode, palette)` server-side + a parser-blocking `.dark` class script, so the first paint matches the saved mode. The `:root` block in `globals.css` is a dark fallback for unauthenticated pages ONLY and must stay in exact sync with `DARK_BASE` (the P-phase sync script verified 1:1; keep it that way when adding tokens). The shadcn vars (`--background`, `--border`, …) are aliases into the token system — never give them literal colors.
 
 **NEVER sacrifice readability for aesthetics.** When in doubt, bump UP aggressively. A slightly "too visible" element is infinitely better than one you can't read.
 

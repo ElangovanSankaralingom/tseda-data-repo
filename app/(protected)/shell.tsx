@@ -54,7 +54,7 @@ export default function AppShell({
       {/* Drawer Overlay */}
       {drawerOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40"
+          className="fixed inset-0 bg-[var(--color-modal-overlay)] z-40"
           onClick={() => setDrawerOpen(false)}
         />
       )}

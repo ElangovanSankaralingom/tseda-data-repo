@@ -1,0 +1,15 @@
+{
+  "app/(protected)/account/page.tsx": 2,
+  "app/(protected)/reset/page.tsx": 4,
+  "app/signin/page.tsx": 1,
+  "components/ErrorBoundaryFallback.tsx": 2,
+  "components/confirmations/ConfirmDialog.tsx": 2,
+  "components/confirmations/InlineConfirm.tsx": 3,
+  "components/dashboard/CategoryCard.tsx": 2,
+  "components/dashboard/StreakCard.tsx": 6,
+  "components/data-entry/CategoryEntryRecordCard.tsx": 2,
+  "components/search/CommandPalette.tsx": 8,
+  "components/shell/DumpColumn.tsx": 2,
+  "components/ui/button.tsx": 2,
+  "lib/ui/buttonRoles.ts": 3
+}

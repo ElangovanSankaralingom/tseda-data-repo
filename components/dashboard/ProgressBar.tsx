@@ -46,7 +46,7 @@ export default function ProgressBar({
               className="absolute inset-0 overflow-hidden rounded-full"
             >
               <div
-                className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--color-surface-on-accent-strong)] to-transparent"
                 style={{ animation: "progressShimmer 2s ease-in-out infinite", animationDelay: `${index * 200}ms` }}
               />
             </div>

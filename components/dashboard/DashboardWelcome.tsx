@@ -8,7 +8,7 @@ import { useTiltEffect } from "@/hooks/useTiltEffect";
 import type { TranslationKey } from "@/lib/i18n";
 import StreakRing from "./StreakRing";
 
-/* Token migration note: All rgba(255,255,255,X) values now use CSS variable tokens from themeTokens.ts */
+/* Token migration note: all white-alpha literals now use CSS variable tokens from themeTokens.ts */
 
 /*
   ───────────────────────────────────────────────────────

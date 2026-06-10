@@ -7,7 +7,7 @@ export default async function MaintenancePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-4">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[var(--color-glass-bg)] p-10 text-center shadow-2xl animate-fade-in-up">
+      <div className="w-full max-w-md rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-glass-bg)] p-10 text-center shadow-2xl animate-fade-in-up">
         <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-[var(--color-status-warning-bg)]">
           <Wrench className="size-8 text-[var(--color-status-warning)]" style={{ animation: "spin 5s linear infinite" }} />
         </div>

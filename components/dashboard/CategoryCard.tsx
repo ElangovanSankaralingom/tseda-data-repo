@@ -10,7 +10,7 @@ import { getCategoryConfig } from "@/data/categoryRegistry";
 import { getCategoryIcon } from "@/lib/ui/categoryIcons";
 import { type StatusPill } from "./dashboardTypes";
 
-/* Token migration note: All rgba(255,255,255,X) values now use CSS variable tokens from themeTokens.ts */
+/* Token migration note: all white-alpha literals now use CSS variable tokens from themeTokens.ts */
 
 /*
   ───────────────────────────────────────────────────────
