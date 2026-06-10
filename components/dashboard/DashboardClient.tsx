@@ -236,7 +236,7 @@ export default function DashboardClient({
                           border: `1px solid ${hex}60`,
                           boxShadow: `inset 3px 0 0 ${hex}, 0 4px 16px ${hex}20`,
                         } : {
-                          backgroundColor: "var(--color-surface-panel-raised)",
+                          backgroundColor: "var(--color-surface-panel-tile)",
                           border: "1px solid var(--color-border-default)",
                           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                         }),
@@ -278,7 +278,7 @@ export default function DashboardClient({
                             <span
                               className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
                               style={{
-                                backgroundColor: isAct ? "var(--color-border-default)" : "var(--color-surface-panel-tile)",
+                                backgroundColor: isAct ? "var(--color-border-default)" : "var(--color-surface-inset)",
                                 color: isAct ? "var(--color-text-secondary)" : "var(--color-text-placeholder)",
                               }}
                             >
@@ -294,7 +294,7 @@ export default function DashboardClient({
                           "flex size-6 items-center justify-center rounded-lg font-mono text-[11px] font-bold border",
                           isAct
                             ? "text-[var(--color-text-secondary)] border-[var(--color-border-default)] bg-[var(--color-surface-raised)]"
-                            : "text-[var(--color-text-muted)] border-[var(--color-border-subtle)] bg-[var(--color-surface-panel-tile)]"
+                            : "text-[var(--color-text-muted)] border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)]"
                         )}>
                           {idx + 1}
                         </span>
@@ -471,7 +471,7 @@ function CategoryDetailPanel({
             <div
               className="rounded-2xl overflow-hidden"
               style={{
-                backgroundColor: "var(--color-surface-raised)",
+                backgroundColor: "var(--color-surface-panel-tile)",
                 border: "1px solid var(--color-border-default)",
               }}
             >

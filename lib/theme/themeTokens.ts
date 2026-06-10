@@ -187,9 +187,13 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-icon-muted": "#A8A29E",
   "--color-surface-raised": "#FFFFFF",
   "--color-surface-inset": "#EDECE8",
-  "--color-surface-panel": "#EAE8E3",
+  /* Light ladder rule: strict alternation — tinted field → WHITE container →
+     warm-tint sub-card → white/inset pill. No two adjacent layers may be
+     near-identical. panel = white canvas on the field; tile = the visible
+     warm step INSIDE white. */
+  "--color-surface-panel": "#FFFFFF",
   "--color-surface-panel-raised": "#FFFFFF",
-  "--color-surface-panel-tile": "#F7F6F3",
+  "--color-surface-panel-tile": "#F1EFEA",
   "--color-surface-inset-deep": "#DDDAD3",
   "--color-dropdown-bg": "#FFFFFF",
   "--color-dropdown-hover": "#F3F2EE",

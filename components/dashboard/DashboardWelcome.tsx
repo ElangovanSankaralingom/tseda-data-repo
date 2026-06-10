@@ -152,7 +152,7 @@ export default function DashboardWelcome({
 
                   {/* Dark inset micro-stats (L1 inside L3 — creates depth) */}
                   <div className="mt-6 flex gap-3">
-                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "var(--color-surface-inset)", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
+                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "var(--color-surface-panel)", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
                       <div className="flex items-center gap-2">
                         <FileText className="size-4 text-[var(--color-text-tertiary)]" />
                         <span className="font-mono text-lg font-black text-[var(--color-text-primary)]">
