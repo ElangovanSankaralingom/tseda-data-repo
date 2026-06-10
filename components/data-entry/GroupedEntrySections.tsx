@@ -197,7 +197,7 @@ function SegmentedStatusBar<TEntry>({
       {activeGroup === null && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 px-1">
           {activeSegments.map((group) => (
-            <span key={group} className="inline-flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)]">
+            <span key={group} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--color-text-tertiary)]">
               <span
                 className="size-1.5 rounded-sm"
                 style={{ background: SEGMENT_COLORS[group] }}

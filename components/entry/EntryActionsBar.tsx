@@ -187,9 +187,11 @@ function EditModeActionBar({
 
   const buttonClass = isSuccess
     ? "bg-[var(--color-status-success-bg)] text-[var(--color-text-primary)]"
-    : workflowDisabled || isGenerating
-      ? "cursor-not-allowed bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50"
-      : "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-generate-hover)]";
+    : isGenerating
+      ? "cursor-not-allowed bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-75"
+      : workflowDisabled
+        ? "cursor-not-allowed bg-[var(--color-surface-inset-deep)] text-[var(--color-text-muted)]"
+        : "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-generate-hover)]";
 
   // Show only ONE primary workflow button at a time:
   // - If workflowAction exists (Generate/Regenerate): show that
@@ -234,10 +236,10 @@ function EditModeActionBar({
                   finaliseState === "done"
                     ? "bg-[var(--color-status-success-bg)] text-[var(--color-text-primary)] animate-finalise-pop"
                     : finaliseState === "finalising"
-                      ? "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50 cursor-not-allowed"
+                      ? "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-75 cursor-not-allowed"
                       : finalise.canFinalise
                         ? "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-generate-hover)]"
-                        : "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50 cursor-not-allowed"
+                        : "bg-[var(--color-surface-inset-deep)] text-[var(--color-text-muted)] cursor-not-allowed"
                 }`}
                 title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
               >

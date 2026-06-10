@@ -361,6 +361,8 @@ The theme guard runs as part of `npm run lint` (and therefore the pre-commit hoo
 | Deep recess (segmented tracks, node pits) | `--color-surface-inset-deep` |
 | Dock / floating header | `--color-header-bg`, `--color-header-bg-scrolled` |
 
+**Light-mode legibility floor (faculty of all ages):** every content-text token in `LIGHT_BASE` must meet WCAG AA 4.5:1 on BOTH white cards and the ice field (`--color-text-muted` is the lightest text allowed and passes). Disabled controls use `surface-inset-deep` + `text-muted` — never accent-at-low-opacity (washed accent with white text is unreadable). Saturated 400-shade hexes are dark-mode values; on light surfaces always use the palette/status tokens (light = 500/600 shades). No user-facing text below 11px.
+
 **Registry-as-data exception:** category accent hexes (`ACCENT_HEX`, adapter accents, tier metals, chart colors, Google brand, ConfettiBurst) stay as literal hexes — they are saturated mid-tones valid in both modes and live in data registries, not styling. Their `${hex}NN` templates are legal because they operate on real hexes. GROUP_HEX (entry groups) is the opposite: it holds `var()` strings — tints from it MUST use color-mix.
 
 **First-paint contract:** `app/(protected)/layout.tsx` emits `buildThemeCss(mode, palette)` server-side + a parser-blocking `.dark` class script, so the first paint matches the saved mode. The `:root` block in `globals.css` is a dark fallback for unauthenticated pages ONLY and must stay in exact sync with `DARK_BASE` (the P-phase sync script verified 1:1; keep it that way when adding tokens). The shadcn vars (`--background`, `--border`, …) are aliases into the token system — never give them literal colors.

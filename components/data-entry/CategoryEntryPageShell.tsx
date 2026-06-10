@@ -255,10 +255,10 @@ function CategoryHero({
                   {t('common.status')}
                 </span>
                 <div className="mt-2.5 space-y-1.5">
-                  <MicroStat count={stats.drafts} label="DRF" color="var(--color-icon-muted)" />
-                  <MicroStat count={stats.streakActive} label="ACT" color="#fbbf24" />
-                  <MicroStat count={stats.pending} label="PND" color="#fb923c" />
-                  <MicroStat count={stats.finalized} label="DONE" color="#84cc16" />
+                  <MicroStat count={stats.drafts} label="DRF" color="var(--color-text-tertiary)" />
+                  <MicroStat count={stats.streakActive} label="ACT" color="var(--color-palette-amber-fg)" />
+                  <MicroStat count={stats.pending} label="PND" color="var(--color-palette-orange-fg)" />
+                  <MicroStat count={stats.finalized} label="DONE" color="var(--color-status-success)" />
                 </div>
               </div>
             </div>
