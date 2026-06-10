@@ -4,21 +4,23 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, Clock } from "lucide-react";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import type { TranslationKey } from "@/lib/i18n";
 import type { SelectOption, SettingWithMeta, SaveStatus } from "./SettingsTypes";
 
 // ---------------------------------------------------------------------------
 // Helpers (internal to controls)
 // ---------------------------------------------------------------------------
 
-function formatRelative(ts: string): string {
+function formatRelative(ts: string, t: (key: TranslationKey) => string): string {
   const diff = Date.now() - Date.parse(ts);
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t("adminSettings.justNowShort");
+  if (mins < 60) return t("adminSettings.minutesAgo").replace("{n}", String(mins));
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("adminSettings.hoursAgo").replace("{n}", String(hours));
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return t("adminSettings.daysAgo").replace("{n}", String(days));
 }
 
 function emailName(email: string): string {
@@ -56,7 +58,7 @@ export function Toggle({
       }`}
     >
       <span
-        className={`pointer-events-none inline-block size-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+        className={`pointer-events-none inline-block size-5 rounded-full bg-[var(--color-text-primary)] shadow-lg ring-0 transition-transform duration-200 ${
           checked ? "translate-x-5" : "translate-x-0"
         }`}
       />
@@ -81,33 +83,34 @@ export function NumberInput({
   max?: number;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const [local, setLocal] = useState(String(value));
   const [error, setError] = useState("");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocal(String(value));
-     
+
     setError("");
   }, [value]);
 
   const commit = useCallback(() => {
     const num = Number(local);
     if (Number.isNaN(num)) {
-      setError("Must be a number");
+      setError(t("common.error"));
       return;
     }
     if (min !== undefined && num < min) {
-      setError(`Min: ${min}`);
+      setError(t("adminSettings.minHint").replace("{n}", String(min)));
       return;
     }
     if (max !== undefined && num > max) {
-      setError(`Max: ${max}`);
+      setError(t("adminSettings.maxHint").replace("{n}", String(max)));
       return;
     }
     setError("");
     onChange(num);
-  }, [local, min, max, onChange]);
+  }, [local, min, max, onChange, t]);
 
   return (
     <div className="space-y-1">
@@ -116,7 +119,7 @@ export function NumberInput({
           type="button"
           disabled={disabled || (min !== undefined && value <= min)}
           onClick={() => onChange(Math.max(min ?? -Infinity, value - 1))}
-          aria-label="Decrease value"
+          aria-label={t("adminSettings.decreaseValueAriaLabel")}
           className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           -
@@ -124,7 +127,7 @@ export function NumberInput({
         <input
           type="text"
           inputMode="numeric"
-          aria-label="Numeric value"
+          aria-label={t("adminSettings.numericValueAriaLabel")}
           value={local}
           disabled={disabled}
           onChange={(e) => setLocal(e.target.value)}
@@ -138,7 +141,7 @@ export function NumberInput({
           type="button"
           disabled={disabled || (max !== undefined && value >= max)}
           onClick={() => onChange(Math.min(max ?? Infinity, value + 1))}
-          aria-label="Increase value"
+          aria-label={t("adminSettings.increaseValueAriaLabel")}
           className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-40"
         >
           +
@@ -146,7 +149,7 @@ export function NumberInput({
       </div>
       {(error || (min !== undefined && max !== undefined)) && (
         <div className={`text-xs ${error ? "text-[var(--color-status-error)]" : "text-[var(--color-text-secondary)]"}`}>
-          {error || `Range: ${min} – ${max}`}
+          {error || t("adminSettings.rangeHint").replace("{min}", String(min)).replace("{max}", String(max))}
         </div>
       )}
     </div>
@@ -210,13 +213,14 @@ export function SelectInput({
   onChange: (val: string) => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <SelectDropdown
       value={value}
       disabled={disabled}
       onChange={onChange}
       options={options}
-      placeholder="Select value"
+      placeholder={t("adminSettings.selectValuePlaceholder")}
     />
   );
 }
@@ -234,6 +238,7 @@ export const SettingRow = memo(function SettingRow({
   onSave: (key: string, value: unknown, confirmed?: boolean) => Promise<boolean>;
   onReset: (key: string) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const { definition: def, value, isDefault } = setting;
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -288,12 +293,12 @@ export const SettingRow = memo(function SettingRow({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {!isDefault && (
-                <span className="size-1.5 rounded-full bg-amber-400 animate-subtle-pulse" title="Changed from default" />
+                <span className="size-1.5 rounded-full bg-[var(--color-status-warning)] animate-subtle-pulse" title={t("adminSettings.changedFromDefaultTitle")} />
               )}
               <span className="text-sm font-medium text-[var(--color-text-primary)]">{def.label}</span>
               {def.requiresRestart && (
-                <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-400">
-                  Restart required
+                <span className="rounded bg-[var(--color-status-info-bg)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-status-info)]">
+                  {t("adminSettings.restartRequired")}
                 </span>
               )}
               {status === "saved" && (
@@ -304,7 +309,7 @@ export const SettingRow = memo(function SettingRow({
             {def.dangerous && (
               <p className="mt-1 text-xs text-[var(--color-status-error)] flex items-center gap-1">
                 <AlertTriangle className="size-3" />
-                Sensitive setting — changes take effect immediately
+                {t("adminSettings.sensitiveSettingNote")}
               </p>
             )}
             {!isDefault && (
@@ -312,7 +317,7 @@ export const SettingRow = memo(function SettingRow({
                 onClick={handleReset}
                 className="mt-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors opacity-0 group-hover:opacity-100"
               >
-                Reset to default ({JSON.stringify(def.default)})
+                {t("adminSettings.resetToDefault")} ({JSON.stringify(def.default)})
               </button>
             )}
           </div>
@@ -352,7 +357,7 @@ export const SettingRow = memo(function SettingRow({
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  aria-label="Color picker"
+                  aria-label={t("adminSettings.colorPickerAriaLabel")}
                   value={value as string}
                   onChange={(e) => handleSave(e.target.value)}
                   className="size-8 cursor-pointer rounded border border-[var(--color-glass-border)]"
@@ -367,8 +372,8 @@ export const SettingRow = memo(function SettingRow({
         {setting.lastChangedBy && (
           <div className="mt-2 flex items-center gap-1 text-[10px] text-[var(--color-text-secondary)]">
             <Clock className="size-3" />
-            Changed by {emailName(setting.lastChangedBy)}
-            {setting.lastChangedAt && ` — ${formatRelative(setting.lastChangedAt)}`}
+            {t("adminSettings.changedBy")} {emailName(setting.lastChangedBy)}
+            {setting.lastChangedAt && ` — ${formatRelative(setting.lastChangedAt, t)}`}
           </div>
         )}
       </div>
@@ -376,9 +381,9 @@ export const SettingRow = memo(function SettingRow({
       {confirmOpen && (
         <ConfirmDialog
           open
-          title="Change sensitive setting?"
-          description={`You're about to change "${def.label}". This is a sensitive setting that takes effect immediately.`}
-          confirmLabel="Yes, change it"
+          title={t("adminSettings.changeSensitiveSettingTitle")}
+          description={t("adminSettings.changeSensitiveSettingDesc").replace("{label}", def.label)}
+          confirmLabel={t("adminSettings.changeSensitiveSettingConfirm")}
           variant="destructive"
           onConfirm={handleConfirm}
           onCancel={() => setConfirmOpen(false)}

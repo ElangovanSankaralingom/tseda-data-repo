@@ -217,10 +217,10 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
 
   function cellColor(count: number) {
     if (count === 0) return "bg-[var(--color-dropdown-hover)]";
-    if (count <= 2) return "bg-emerald-500/20";
-    if (count <= 5) return "bg-emerald-400";
-    if (count <= 10) return "bg-emerald-600";
-    return "bg-emerald-800";
+    if (count <= 2) return "bg-[var(--color-status-success-soft)]";
+    if (count <= 5) return "bg-[var(--color-status-success)]";
+    if (count <= 10) return "bg-[var(--color-status-success-strong)]";
+    return "bg-[var(--color-status-success-deep)]";
   }
 
   return (
@@ -251,10 +251,10 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
       <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-secondary)]">
         <span>Less</span>
         <span className="size-3 rounded-sm bg-[var(--color-dropdown-hover)]" />
-        <span className="size-3 rounded-sm bg-emerald-500/20" />
-        <span className="size-3 rounded-sm bg-emerald-400" />
-        <span className="size-3 rounded-sm bg-emerald-600" />
-        <span className="size-3 rounded-sm bg-emerald-800" />
+        <span className="size-3 rounded-sm bg-[var(--color-status-success-soft)]" />
+        <span className="size-3 rounded-sm bg-[var(--color-status-success)]" />
+        <span className="size-3 rounded-sm bg-[var(--color-status-success-strong)]" />
+        <span className="size-3 rounded-sm bg-[var(--color-status-success-deep)]" />
         <span>More</span>
       </div>
     </div>

@@ -20,14 +20,14 @@ import type { TranslationKey } from "@/lib/i18n";
 import { CATEGORY_SLUGS } from "@/data/categoryRegistry";
 
 export const ACTION_COLOR: Record<string, { color: string; bg: string }> = {
-  CREATE: { color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20" },
-  UPDATE: { color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20" },
-  DELETE: { color: "text-red-500", bg: "bg-red-500/10 border-red-500/20" },
-  REQUEST_EDIT: { color: "text-amber-500", bg: "bg-amber-500/10 border-amber-500/20" },
-  GRANT_EDIT: { color: "text-purple-500", bg: "bg-purple-500/10 border-purple-500/20" },
-  UPLOAD_ADD: { color: "text-cyan-500", bg: "bg-cyan-500/10 border-cyan-500/20" },
-  UPLOAD_REMOVE: { color: "text-orange-500", bg: "bg-orange-500/10 border-orange-500/20" },
-  UPLOAD_REPLACE: { color: "text-indigo-500", bg: "bg-indigo-500/10 border-indigo-500/20" },
+  CREATE: { color: "text-[var(--color-status-success)]", bg: "bg-[var(--color-status-success-bg)] border-[var(--color-status-success-border)]" },
+  UPDATE: { color: "text-[var(--color-status-info)]", bg: "bg-[var(--color-status-info-bg)] border-[var(--color-status-info-border)]" },
+  DELETE: { color: "text-[var(--color-status-error)]", bg: "bg-[var(--color-status-error-bg)] border-[var(--color-status-error-border)]" },
+  REQUEST_EDIT: { color: "text-[var(--color-status-warning)]", bg: "bg-[var(--color-status-warning-bg)] border-[var(--color-status-warning-border)]" },
+  GRANT_EDIT: { color: "text-[var(--color-palette-purple-fg)]", bg: "bg-[var(--color-palette-purple-bg)] border-[var(--color-palette-purple-border)]" },
+  UPLOAD_ADD: { color: "text-[var(--color-palette-cyan-fg)]", bg: "bg-[var(--color-palette-cyan-bg)] border-[var(--color-palette-cyan-border)]" },
+  UPLOAD_REMOVE: { color: "text-[var(--color-palette-orange-fg)]", bg: "bg-[var(--color-palette-orange-bg)] border-[var(--color-palette-orange-border)]" },
+  UPLOAD_REPLACE: { color: "text-[var(--color-palette-indigo-fg)]", bg: "bg-[var(--color-palette-indigo-bg)] border-[var(--color-palette-indigo-border)]" },
 };
 
 const ACTION_LABEL_KEYS: Record<string, TranslationKey> = {
@@ -222,7 +222,7 @@ export function FilterBar({
             value={filters.search}
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder={t("adminAudit.searchPlaceholder")}
-            aria-label="Search audit logs"
+            aria-label={t("adminAudit.searchAriaLabel")}
             className="h-9 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
         </div>

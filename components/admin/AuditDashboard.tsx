@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { AuditEvent, AuditStats } from "@/lib/types/admin";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   FilterBar,
   StatsSidebar,
@@ -30,6 +31,7 @@ import { type ViewMode } from "./adminLocalTypes";
 const DEFAULT_FILTERS: Filters = { search: "", action: "", category: "", dateRange: "" };
 
 export default function AuditDashboard({ initialEvents, initialStats }: Props) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState(initialEvents);
   const [stats, setStats] = useState(initialStats);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -104,21 +106,21 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
             onClick={() => setView("timeline")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
               view === "timeline"
-                ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+                ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] shadow-sm"
                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
-            Timeline
+            {t("adminAudit.timeline")}
           </button>
           <button
             onClick={() => setView("table")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
               view === "table"
-                ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+                ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] shadow-sm"
                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
-            Table
+            {t("adminAudit.table")}
           </button>
         </div>
 
@@ -128,7 +130,7 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] shadow-sm transition-all duration-200 hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] disabled:opacity-50"
         >
           <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
+          {t("adminAudit.refresh")}
         </button>
       </div>
 
@@ -165,7 +167,7 @@ export default function AuditDashboard({ initialEvents, initialStats }: Props) {
           <details className="group">
             <summary className="flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-4 py-3 text-sm font-medium text-[var(--color-text-primary)] shadow-sm">
               <ChevronRight className="size-4 text-[var(--color-text-secondary)] transition-transform duration-200 group-open:rotate-90" />
-              View Statistics
+              {t("adminAudit.viewStatistics")}
             </summary>
             <div className="mt-3">
               <StatsSidebar stats={stats} />

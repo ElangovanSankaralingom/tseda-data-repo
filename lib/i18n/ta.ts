@@ -454,6 +454,10 @@ export const ta: TranslationDict = {
     allCategories: "அனைத்து வகைகள்",
     searchPlaceholder: "தலைப்பு, வகை அல்லது புல மதிப்புகளால் தேடுங்கள்",
     emailPlaceholder: "faculty@tce.edu",
+    // TODO: translate to Tamil
+    adminActionFailed: "Admin action failed",
+    tryAgain: "Try again",
+    backToAdmin: "Back to Admin",
   },
   adminAnalytics: {
     refresh: "\u0BAA\u0BC1\u0BA4\u0BC1\u0BAA\u0BCD\u0BAA\u0BBF",
@@ -483,6 +487,11 @@ export const ta: TranslationDict = {
     systemHealthDesc: "\u0BB5\u0BBF\u0BB0\u0BC8\u0BB5\u0BC1 \u0BA8\u0BBE\u0B9F\u0BBF\u0BA4\u0BCD\u0BA4\u0BC1\u0B9F\u0BBF\u0BAA\u0BCD\u0BAA\u0BC1 \u0B9A\u0BB0\u0BBF\u0BAA\u0BBE\u0BB0\u0BCD\u0BAA\u0BCD\u0BAA\u0BC1",
     never: "\u0B8E\u0BAA\u0BCD\u0BAA\u0BCB\u0BA4\u0BC1\u0BAE\u0BCD \u0B87\u0BB2\u0BCD\u0BB2\u0BC8",
     justNow: "\u0B87\u0BAA\u0BCD\u0BAA\u0BCB\u0BA4\u0BC1",
+    streakChampions: "Streak Champions", // TODO: translate to Tamil
+    noStreakWinsYet: "No streak wins yet", // TODO: translate to Tamil
+    total: "Total", // TODO: translate to Tamil
+    avgResponse: "Avg Response", // TODO: translate to Tamil
+    grantRate: "Grant Rate", // TODO: translate to Tamil
   },
   adminMaintenance: {
     maintenanceJobs: "\u0BAA\u0BB0\u0BBE\u0BAE\u0BB0\u0BBF\u0BAA\u0BCD\u0BAA\u0BC1 \u0BAA\u0BA3\u0BBF\u0B95\u0BB3\u0BCD",
@@ -584,9 +593,69 @@ export const ta: TranslationDict = {
     warnings: "\u0B8E\u0B9A\u0BCD\u0B9A\u0BB0\u0BBF\u0B95\u0BCD\u0B95\u0BC8\u0B95\u0BB3\u0BCD",
     criticalIssues: "\u0B85\u0BB5\u0B9A\u0BB0 \u0B9A\u0BBF\u0B95\u0BCD\u0B95\u0BB2\u0BCD\u0B95\u0BB3\u0BCD",
     scannedTimeAgo: "\u0BB8\u0BCD\u0B95\u0BC7\u0BA9\u0BCD \u0B9A\u0BC6\u0BAF\u0BCD\u0BAF\u0BAA\u0BCD\u0BAA\u0B9F\u0BCD\u0B9F\u0BA4\u0BC1",
+    // User-detail page (TODO: translate to Tamil)
+    userPageSubtitle: "Category-store, index, WAL, and attachment metadata checks with repair actions.",
+    userTitlePrefix: "Integrity",
+    userInvalidEmail: "Invalid user email route parameter.",
+    userIntegrityCheck: "Integrity Check",
+    userBackLabel: "Integrity",
+    confirmRepairStoresTitle: "Repair all category stores?",
+    confirmRepairStoresDesc: "This will rewrite category files for this user after normalization and create backups.",
+    repairStores: "Repair Stores",
+    rebuildIndex: "Rebuild Index",
+    confirmMigrateTitle: "Run data migrations?",
+    confirmMigrateDesc: "This may rewrite legacy data files to the latest schema version and create backups.",
+    runMigrations: "Run Migrations",
+    confirmBackupRepairTitle: "Run backup + repair all?",
+    confirmBackupRepairDesc: "This creates backups and performs migration plus index rebuild for this user.",
+    backupRepairAll: "Backup + Repair All",
+    refreshReport: "Refresh Report",
+    totalIssues: "Total Issues",
+    errors: "Errors",
+    info: "Info",
+    categoryStores: "Category Stores",
+    colExists: "Exists",
+    colLegacy: "Legacy",
+    colEntries: "Entries",
+    colIssues: "Issues",
+    colActions: "Actions",
+    confirmRepairCategoryTitle: "Repair {category} store?",
+    confirmRepairCategoryDesc: "This rewrites the category file after normalization and creates a backup.",
+    repairCategory: "Repair Category",
+    indexConsistency: "Index Consistency",
+    walSanity: "WAL Sanity",
+    issuesCount: "Issues: {count}",
+    walStats: "Valid lines: {valid} • Invalid lines: {invalid} • Out-of-order: {order}",
+    detectedIssues: "Detected Issues",
+    noIssuesDetected: "No integrity issues detected.",
+    fixAvailable: "• Fix available",
+    manualReview: "• Manual review",
+    categoryPrefix: "Category:",
+    entryPrefix: "Entry:",
   },
   adminSettings: {
     searchPlaceholder: "\u0B85\u0BAE\u0BC8\u0BAA\u0BCD\u0BAA\u0BC1\u0B95\u0BB3\u0BC8 \u0BA4\u0BC7\u0B9F\u0BC1...",
+    searchAriaLabel: "Search settings", // TODO: translate to Tamil
+    categoriesNavAriaLabel: "Settings categories", // TODO: translate to Tamil
+    decreaseValueAriaLabel: "Decrease value", // TODO: translate to Tamil
+    increaseValueAriaLabel: "Increase value", // TODO: translate to Tamil
+    numericValueAriaLabel: "Numeric value", // TODO: translate to Tamil
+    selectValuePlaceholder: "Select value", // TODO: translate to Tamil
+    colorPickerAriaLabel: "Color picker", // TODO: translate to Tamil
+    changedFromDefaultTitle: "Changed from default", // TODO: translate to Tamil
+    restartRequired: "Restart required", // TODO: translate to Tamil
+    sensitiveSettingNote: "Sensitive setting \u2014 changes take effect immediately", // TODO: translate to Tamil
+    resetToDefault: "Reset to default", // TODO: translate to Tamil
+    changeSensitiveSettingTitle: "Change sensitive setting?", // TODO: translate to Tamil
+    changeSensitiveSettingDesc: "You're about to change \"{label}\". This is a sensitive setting that takes effect immediately.", // TODO: translate to Tamil
+    changeSensitiveSettingConfirm: "Yes, change it", // TODO: translate to Tamil
+    justNowShort: "just now", // TODO: translate to Tamil
+    minutesAgo: "{n}m ago", // TODO: translate to Tamil
+    hoursAgo: "{n}h ago", // TODO: translate to Tamil
+    daysAgo: "{n}d ago", // TODO: translate to Tamil
+    rangeHint: "Range: {min} \u2013 {max}", // TODO: translate to Tamil
+    minHint: "Min: {n}", // TODO: translate to Tamil
+    maxHint: "Max: {n}", // TODO: translate to Tamil
     export: "\u0B8F\u0BB1\u0BCD\u0BB1\u0BC1\u0BAE\u0BA4\u0BBF",
     import: "\u0B87\u0BB1\u0B95\u0BCD\u0B95\u0BC1\u0BAE\u0BA4\u0BBF",
     resetAll: "\u0B85\u0BA9\u0BC8\u0BA4\u0BCD\u0BA4\u0BC8\u0BAF\u0BC1\u0BAE\u0BCD \u0BAE\u0BC0\u0B9F\u0BCD\u0B9F\u0BAE\u0BC8",
@@ -703,11 +772,51 @@ export const ta: TranslationDict = {
     sEntry: "\u0B87\u0BA9\u0BCD \u0BAA\u0BA4\u0BBF\u0BB5\u0BC1",
     in: "\u0B87\u0BB2\u0BCD",
     last14Days: "\u0B95\u0B9F\u0BA8\u0BCD\u0BA4 14 \u0BA8\u0BBE\u0B9F\u0BCD\u0B95\u0BB3\u0BCD",
+    // View toggle + actions
+    timeline: "Timeline", // TODO: translate to Tamil
+    table: "Table", // TODO: translate to Tamil
+    refresh: "Refresh", // TODO: translate to Tamil
+    viewStatistics: "View Statistics", // TODO: translate to Tamil
+    searchAriaLabel: "Search audit logs", // TODO: translate to Tamil
   },
   adminExport: {
     generating: "\u0B89\u0BB0\u0BC1\u0BB5\u0BBE\u0B95\u0BCD\u0B95\u0BC1\u0B95\u0BBF\u0BB1\u0BA4\u0BC1...",
     exportButton: "\u0B8F\u0BB1\u0BCD\u0BB1\u0BC1\u0BAE\u0BA4\u0BBF",
     justNow: "\u0B87\u0BAA\u0BCD\u0BAA\u0BCB\u0BA4\u0BC1",
+    // Section headers
+    quickExports: "Quick Exports", // TODO: translate to Tamil
+    quickExportsDesc: "One-click exports for common needs", // TODO: translate to Tamil
+    customExport: "Custom Export", // TODO: translate to Tamil
+    customExportDesc: "Build exactly the export you need", // TODO: translate to Tamil
+    // Form sections
+    format: "Format", // TODO: translate to Tamil
+    scope: "Scope", // TODO: translate to Tamil
+    allUsers: "All Users", // TODO: translate to Tamil
+    specificUser: "Specific User", // TODO: translate to Tamil
+    selectUser: "Select user", // TODO: translate to Tamil
+    selectCategory: "Select category", // TODO: translate to Tamil
+    addFiltersOptional: "Add Filters (optional)", // TODO: translate to Tamil
+    status: "Status", // TODO: translate to Tamil
+    fromDate: "From Date", // TODO: translate to Tamil
+    toDate: "To Date", // TODO: translate to Tamil
+    chooseFields: "Choose Fields", // TODO: translate to Tamil
+    selectAll: "Select All", // TODO: translate to Tamil
+    clear: "Clear", // TODO: translate to Tamil
+    // Preview area
+    loadingPreview: "Loading preview...", // TODO: translate to Tamil
+    previewIntro: "This export will include", // TODO: translate to Tamil
+    entriesWord: "entries", // TODO: translate to Tamil
+    fromWord: "from", // TODO: translate to Tamil
+    userWord: "user", // TODO: translate to Tamil
+    usersWord: "users", // TODO: translate to Tamil
+    previewEmpty: "Select options above to see a preview", // TODO: translate to Tamil
+    // Action button states
+    generatingExport: "Generating export...", // TODO: translate to Tamil
+    downloaded: "Downloaded!", // TODO: translate to Tamil
+    exportEntriesAs: "Export {count} Entries as {format}", // TODO: translate to Tamil
+    // History
+    recentExports: "Recent Exports", // TODO: translate to Tamil
+    noExportsYet: "No exports yet \u2014 create your first one above!", // TODO: translate to Tamil
   },
   adminSettingsPage: {
     general: "\u0BAA\u0BCA\u0BA4\u0BC1\u0BB5\u0BBE\u0BA9\u0BA4\u0BC1",

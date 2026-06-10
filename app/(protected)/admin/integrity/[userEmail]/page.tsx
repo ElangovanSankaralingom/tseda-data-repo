@@ -20,6 +20,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminIntegrity, adminIntegrityUser } from "@/lib/entryNavigation";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -38,13 +39,13 @@ function getParam(params: SearchParams, key: string) {
 
 function getNoticeClass(level: string) {
   if (level === "success") {
-    return "rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400";
+    return "rounded-lg border border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] px-3 py-2 text-sm text-[var(--color-status-success)]";
   }
   if (level === "warn") {
-    return "rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-400";
+    return "rounded-lg border border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] px-3 py-2 text-sm text-[var(--color-status-warning)]";
   }
   if (level === "error") {
-    return "rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400";
+    return "rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)]";
   }
   return "rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]/30 px-3 py-2 text-sm text-[var(--color-text-muted)]";
 }
@@ -91,11 +92,11 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="mb-4 flex items-center gap-3">
-          <BackTo href={adminIntegrity()} label="Integrity" />
-          <h1 className="text-2xl font-semibold tracking-tight">Integrity Check</h1>
+          <BackTo href={adminIntegrity()} label={t("adminIntegrity.userBackLabel", "en")} />
+          <h1 className="text-2xl font-semibold tracking-tight">{t("adminIntegrity.userIntegrityCheck", "en")}</h1>
         </div>
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-          Invalid user email route parameter.
+        <div className="rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)]">
+          {t("adminIntegrity.userInvalidEmail", "en")}
         </div>
       </div>
     );
@@ -224,10 +225,10 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
 
   return (
     <AdminPageShell
-      title={`Integrity: ${normalizedUserEmail}`}
-      subtitle="Category-store, index, WAL, and attachment metadata checks with repair actions."
+      title={`${t("adminIntegrity.userTitlePrefix", "en")}: ${normalizedUserEmail}`}
+      subtitle={t("adminIntegrity.userPageSubtitle", "en")}
       backHref={adminIntegrity()}
-      backLabel="Data Integrity"
+      backLabel={t("adminPages.integrityTitle", "en")}
       iconName="ShieldCheck"
     >
       {notice ? <div className={`mb-4 ${getNoticeClass(level)}`}>{notice}</div> : null}
@@ -238,20 +239,20 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
             <ConfirmSubmitButton
               formId="repair-stores-form"
-              title="Repair all category stores?"
-              description="This will rewrite category files for this user after normalization and create backups."
-              confirmLabel="Repair Stores"
+              title={t("adminIntegrity.confirmRepairStoresTitle", "en")}
+              description={t("adminIntegrity.confirmRepairStoresDesc", "en")}
+              confirmLabel={t("adminIntegrity.repairStores", "en")}
               variant="destructive"
               className={getButtonClass("context")}
             >
-              Repair Stores
+              {t("adminIntegrity.repairStores", "en")}
             </ConfirmSubmitButton>
           </form>
 
           <form action={rebuildIndexAction}>
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
             <button type="submit" className={getButtonClass("context")}>
-              Rebuild Index
+              {t("adminIntegrity.rebuildIndex", "en")}
             </button>
           </form>
 
@@ -259,13 +260,13 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
             <ConfirmSubmitButton
               formId="migrate-data-form"
-              title="Run data migrations?"
-              description="This may rewrite legacy data files to the latest schema version and create backups."
-              confirmLabel="Run Migrations"
+              title={t("adminIntegrity.confirmMigrateTitle", "en")}
+              description={t("adminIntegrity.confirmMigrateDesc", "en")}
+              confirmLabel={t("adminIntegrity.runMigrations", "en")}
               variant="destructive"
               className={getButtonClass("context")}
             >
-              Run Migrations
+              {t("adminIntegrity.runMigrations", "en")}
             </ConfirmSubmitButton>
           </form>
 
@@ -273,57 +274,57 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
             <ConfirmSubmitButton
               formId="backup-repair-all-form"
-              title="Run backup + repair all?"
-              description="This creates backups and performs migration plus index rebuild for this user."
-              confirmLabel="Backup + Repair All"
+              title={t("adminIntegrity.confirmBackupRepairTitle", "en")}
+              description={t("adminIntegrity.confirmBackupRepairDesc", "en")}
+              confirmLabel={t("adminIntegrity.backupRepairAll", "en")}
               variant="destructive"
               className={getButtonClass("primary")}
             >
-              Backup + Repair All
+              {t("adminIntegrity.backupRepairAll", "en")}
             </ConfirmSubmitButton>
           </form>
 
           <Link href={adminIntegrityUser(normalizedUserEmail)} className={getButtonClass("ghost")}>
-            Refresh Report
+            {t("adminIntegrity.refreshReport", "en")}
           </Link>
         </div>
       </div>
 
       {reportError ? (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{reportError}</div>
+        <div className="rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)]">{reportError}</div>
       ) : report ? (
         <>
           <div className="mb-4 grid gap-3 md:grid-cols-4">
             <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3">
-              <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Total Issues</div>
+              <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{t("adminIntegrity.totalIssues", "en")}</div>
               <div className="mt-1 text-xl font-semibold">{report.issues.length}</div>
             </div>
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3">
-              <div className="text-xs uppercase tracking-wide text-red-400">Errors</div>
-              <div className="mt-1 text-xl font-semibold text-red-400">{severity.error}</div>
+            <div className="rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] p-3">
+              <div className="text-xs uppercase tracking-wide text-[var(--color-status-error)]">{t("adminIntegrity.errors", "en")}</div>
+              <div className="mt-1 text-xl font-semibold text-[var(--color-status-error)]">{severity.error}</div>
             </div>
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-              <div className="text-xs uppercase tracking-wide text-amber-400">Warnings</div>
-              <div className="mt-1 text-xl font-semibold text-amber-400">{severity.warn}</div>
+            <div className="rounded-xl border border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] p-3">
+              <div className="text-xs uppercase tracking-wide text-[var(--color-status-warning)]">{t("adminIntegrity.warnings", "en")}</div>
+              <div className="mt-1 text-xl font-semibold text-[var(--color-status-warning)]">{severity.warn}</div>
             </div>
             <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3">
-              <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Info</div>
+              <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{t("adminIntegrity.info", "en")}</div>
               <div className="mt-1 text-xl font-semibold">{severity.info}</div>
             </div>
           </div>
 
           <div className="mb-4 rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
-            <h2 className="mb-3 text-lg font-semibold tracking-tight">Category Stores</h2>
+            <h2 className="mb-3 text-lg font-semibold tracking-tight">{t("adminIntegrity.categoryStores", "en")}</h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-[var(--color-glass-border)] text-left text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                    <th className="px-2 py-2 font-medium">Category</th>
-                    <th className="px-2 py-2 font-medium">Exists</th>
-                    <th className="px-2 py-2 font-medium">Legacy</th>
-                    <th className="px-2 py-2 font-medium">Entries</th>
-                    <th className="px-2 py-2 font-medium">Issues</th>
-                    <th className="px-2 py-2 font-medium">Actions</th>
+                    <th className="px-2 py-2 font-medium">{t("adminPages.category", "en")}</th>
+                    <th className="px-2 py-2 font-medium">{t("adminIntegrity.colExists", "en")}</th>
+                    <th className="px-2 py-2 font-medium">{t("adminIntegrity.colLegacy", "en")}</th>
+                    <th className="px-2 py-2 font-medium">{t("adminIntegrity.colEntries", "en")}</th>
+                    <th className="px-2 py-2 font-medium">{t("adminIntegrity.colIssues", "en")}</th>
+                    <th className="px-2 py-2 font-medium">{t("adminIntegrity.colActions", "en")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -332,8 +333,8 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
                     return (
                       <tr key={category} className="border-b border-[var(--color-glass-border)]/60">
                         <td className="px-2 py-2 font-medium">{category}</td>
-                        <td className="px-2 py-2">{categoryReport.exists ? "Yes" : "No"}</td>
-                        <td className="px-2 py-2">{categoryReport.legacyFormat ? "Yes" : "No"}</td>
+                        <td className="px-2 py-2">{categoryReport.exists ? t("common.yes", "en") : t("common.no", "en")}</td>
+                        <td className="px-2 py-2">{categoryReport.legacyFormat ? t("common.yes", "en") : t("common.no", "en")}</td>
                         <td className="px-2 py-2">{categoryReport.totalEntries}</td>
                         <td className="px-2 py-2">{categoryReport.issues.length}</td>
                         <td className="px-2 py-2">
@@ -342,13 +343,13 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
                             <input type="hidden" name="category" value={category} />
                             <ConfirmSubmitButton
                               formId={`repair-category-${category}`}
-                              title={`Repair ${category} store?`}
-                              description="This rewrites the category file after normalization and creates a backup."
-                              confirmLabel="Repair Category"
+                              title={t("adminIntegrity.confirmRepairCategoryTitle", "en").replace("{category}", category)}
+                              description={t("adminIntegrity.confirmRepairCategoryDesc", "en")}
+                              confirmLabel={t("adminIntegrity.repairCategory", "en")}
                               variant="destructive"
                               className={getButtonClass("context")}
                             >
-                              Repair Category
+                              {t("adminIntegrity.repairCategory", "en")}
                             </ConfirmSubmitButton>
                           </form>
                         </td>
@@ -362,23 +363,26 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
 
           <div className="mb-4 grid gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
-              <h2 className="mb-2 text-lg font-semibold tracking-tight">Index Consistency</h2>
+              <h2 className="mb-2 text-lg font-semibold tracking-tight">{t("adminIntegrity.indexConsistency", "en")}</h2>
               <div className="text-xs text-[var(--color-text-muted)]">{report.indexReport.filePath}</div>
-              <div className="mt-2 text-sm">Issues: {report.indexReport.issues.length}</div>
+              <div className="mt-2 text-sm">{t("adminIntegrity.issuesCount", "en").replace("{count}", String(report.indexReport.issues.length))}</div>
             </div>
             <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
-              <h2 className="mb-2 text-lg font-semibold tracking-tight">WAL Sanity</h2>
+              <h2 className="mb-2 text-lg font-semibold tracking-tight">{t("adminIntegrity.walSanity", "en")}</h2>
               <div className="text-xs text-[var(--color-text-muted)]">{report.walReport.filePath}</div>
               <div className="mt-2 text-sm">
-                Valid lines: {report.walReport.validLines} • Invalid lines: {report.walReport.invalidLines} • Out-of-order: {report.walReport.outOfOrderLines}
+                {t("adminIntegrity.walStats", "en")
+                  .replace("{valid}", String(report.walReport.validLines))
+                  .replace("{invalid}", String(report.walReport.invalidLines))
+                  .replace("{order}", String(report.walReport.outOfOrderLines))}
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
-            <h2 className="mb-3 text-lg font-semibold tracking-tight">Detected Issues</h2>
+            <h2 className="mb-3 text-lg font-semibold tracking-tight">{t("adminIntegrity.detectedIssues", "en")}</h2>
             {report.issues.length === 0 ? (
-              <div className="text-sm text-[var(--color-text-muted)]">No integrity issues detected.</div>
+              <div className="text-sm text-[var(--color-text-muted)]">{t("adminIntegrity.noIssuesDetected", "en")}</div>
             ) : (
               <div className="space-y-2">
                 {report.issues.map((issue, index) => (
@@ -388,9 +392,9 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
                     </div>
                     <div className="mt-1 text-[var(--color-text-muted)]">{issue.message}</div>
                     <div className="mt-1 text-xs text-[var(--color-text-muted)]">
-                      {issue.category ? `Category: ${issue.category} ` : ""}
-                      {issue.entryId ? `Entry: ${issue.entryId} ` : ""}
-                      {issue.fixAvailable ? "• Fix available" : "• Manual review"}
+                      {issue.category ? `${t("adminIntegrity.categoryPrefix", "en")} ${issue.category} ` : ""}
+                      {issue.entryId ? `${t("adminIntegrity.entryPrefix", "en")} ${issue.entryId} ` : ""}
+                      {issue.fixAvailable ? t("adminIntegrity.fixAvailable", "en") : t("adminIntegrity.manualReview", "en")}
                     </div>
                   </div>
                 ))}

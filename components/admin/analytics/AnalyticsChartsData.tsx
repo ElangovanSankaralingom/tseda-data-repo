@@ -27,7 +27,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
               key={user.email}
               className={`flex w-28 flex-col items-center rounded-xl border p-3 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
                 isFirst
-                  ? "border-amber-500/20 bg-gradient-to-b from-amber-50 to-[var(--color-glass-bg)] shadow-sm"
+                  ? "border-[var(--color-status-warning-border)] bg-gradient-to-b from-[var(--color-status-warning-bg)] to-[var(--color-glass-bg)] shadow-sm"
                   : "border-[var(--color-glass-border)] bg-gradient-to-b from-[var(--color-body-bg)] to-[var(--color-glass-bg)]"
               } ${isFirst ? "pb-5" : "pb-3"}`}
             >
@@ -45,7 +45,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
               <div className="text-lg font-bold text-[var(--color-text-primary)]">{user.entryCount}</div>
               <div className="text-[10px] text-[var(--color-text-secondary)]">entries</div>
               {user.streakWins > 0 && (
-                <div className="mt-1 flex items-center gap-0.5 text-[10px] text-amber-400">
+                <div className="mt-1 flex items-center gap-0.5 text-[10px] text-[var(--color-status-warning)]">
                   <Trophy className="size-3" /> {user.streakWins}
                 </div>
               )}
@@ -73,7 +73,7 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
                 {user.entryCount}
               </div>
               {user.streakWins > 0 && (
-                <div className="flex items-center gap-0.5 text-xs text-amber-400">
+                <div className="flex items-center gap-0.5 text-xs text-[var(--color-status-warning)]">
                   <Trophy className="size-3" /> {user.streakWins}
                 </div>
               )}
@@ -96,8 +96,8 @@ export function StreakFunnel({
 }) {
   const bars = [
     { label: "Total Eligible", value: activated + wins, color: "bg-[var(--color-text-muted)]" },
-    { label: "In Progress", value: activated, color: "bg-amber-500/15" },
-    { label: "Completed", value: wins, color: "bg-emerald-500/15" },
+    { label: "In Progress", value: activated, color: "bg-[var(--color-status-warning-bg)]" },
+    { label: "Completed", value: wins, color: "bg-[var(--color-status-success-bg)]" },
   ];
   const maxVal = Math.max(...bars.map((b) => b.value), 1);
 
@@ -165,7 +165,7 @@ export const CategoryRow = memo(function CategoryRow({
         {c.direction !== "flat" && (
           <span
             className={`text-[10px] font-medium ${
-              c.direction === "up" ? "text-emerald-400" : "text-red-500"
+              c.direction === "up" ? "text-[var(--color-status-success)]" : "text-[var(--color-status-error)]"
             }`}
           >
             {c.direction === "up" ? "↑" : "↓"} {Math.abs(c.percentChange)}%

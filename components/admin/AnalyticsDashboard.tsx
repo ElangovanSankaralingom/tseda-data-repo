@@ -250,7 +250,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
               onClick={() => setRange(r.key)}
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 range === r.key
-                  ? "bg-[var(--color-button-primary-bg)] text-white"
+                  ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)]"
                   : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-glass-border)]"
               }`}
             >
@@ -279,10 +279,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           icon={ClipboardList}
           label={t("adminAnalytics.entries")}
           value={totalEntries}
-          accent="border-t-2 border-t-blue-400"
-          iconBg="bg-blue-500/15"
-          iconColor="text-blue-500"
-          hoverRing="hover:ring-2 hover:ring-blue-500/20"
+          accent="border-t-2 border-t-[var(--color-status-info)]"
+          iconBg="bg-[var(--color-status-info-bg)]"
+          iconColor="text-[var(--color-status-info)]"
+          hoverRing="hover:ring-2 hover:ring-[var(--color-status-info-border)]"
           current={totalEntries}
           previous={prevTotalEntries}
           stagger={1}
@@ -291,10 +291,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           icon={Users}
           label={t("adminAnalytics.activeUsers")}
           value={activeUsers}
-          accent="border-t-2 border-t-emerald-400"
-          iconBg="bg-emerald-500/15"
-          iconColor="text-emerald-500"
-          hoverRing="hover:ring-2 hover:ring-emerald-500/20"
+          accent="border-t-2 border-t-[var(--color-status-success)]"
+          iconBg="bg-[var(--color-status-success-bg)]"
+          iconColor="text-[var(--color-status-success)]"
+          hoverRing="hover:ring-2 hover:ring-[var(--color-status-success-border)]"
           current={activeUsers}
           previous={prevActiveUsers}
           stagger={2}
@@ -304,10 +304,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           label={t("adminAnalytics.completion")}
           value={completionRate}
           suffix="%"
-          accent="border-t-2 border-t-amber-400"
-          iconBg="bg-amber-500/15"
-          iconColor="text-amber-500"
-          hoverRing="hover:ring-2 hover:ring-amber-500/20"
+          accent="border-t-2 border-t-[var(--color-status-warning)]"
+          iconBg="bg-[var(--color-status-warning-bg)]"
+          iconColor="text-[var(--color-status-warning)]"
+          hoverRing="hover:ring-2 hover:ring-[var(--color-status-warning-border)]"
           current={completionRate}
           previous={prevCompletionRate}
           stagger={3}
@@ -316,10 +316,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           icon={Trophy}
           label={t("adminAnalytics.streakWins")}
           value={snapshot.streaks.totalWins}
-          accent="border-t-2 border-t-yellow-400"
-          iconBg="bg-yellow-500/15"
-          iconColor="text-yellow-500"
-          hoverRing="hover:ring-2 hover:ring-yellow-500/20"
+          accent="border-t-2 border-t-[var(--color-palette-yellow-fg)]"
+          iconBg="bg-[var(--color-palette-yellow-bg)]"
+          iconColor="text-[var(--color-palette-yellow-fg)]"
+          hoverRing="hover:ring-2 hover:ring-[var(--color-palette-yellow-border)]"
           current={snapshot.streaks.totalWins}
           previous={snapshot.streaks.totalWins}
           stagger={4}
@@ -328,10 +328,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           icon={BarChart3}
           label={t("adminAnalytics.avgPerUser")}
           value={avgPerUser}
-          accent="border-t-2 border-t-purple-400"
-          iconBg="bg-purple-500/15"
-          iconColor="text-purple-500"
-          hoverRing="hover:ring-2 hover:ring-purple-500/20"
+          accent="border-t-2 border-t-[var(--color-palette-purple-fg)]"
+          iconBg="bg-[var(--color-palette-purple-bg)]"
+          iconColor="text-[var(--color-palette-purple-fg)]"
+          hoverRing="hover:ring-2 hover:ring-[var(--color-palette-purple-border)]"
           current={avgPerUser}
           previous={prevAvgPerUser}
           stagger={5}
@@ -340,10 +340,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           icon={Clock}
           label={t("adminAnalytics.pendingEdits")}
           value={pendingRequests}
-          accent="border-t-2 border-t-rose-400"
-          iconBg="bg-rose-500/15"
-          iconColor="text-rose-500"
-          hoverRing="hover:ring-2 hover:ring-rose-500/20"
+          accent="border-t-2 border-t-[var(--color-palette-rose-fg)]"
+          iconBg="bg-[var(--color-palette-rose-bg)]"
+          iconColor="text-[var(--color-palette-rose-fg)]"
+          hoverRing="hover:ring-2 hover:ring-[var(--color-palette-rose-border)]"
           current={pendingRequests}
           previous={pendingRequests}
           stagger={6}
@@ -352,10 +352,10 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           icon={FileWarning}
           label={t("adminAnalytics.stalePdfs")}
           value={snapshot.stalePdfCount}
-          accent="border-t-2 border-t-orange-400"
-          iconBg="bg-orange-500/15"
-          iconColor="text-orange-500"
-          hoverRing="hover:ring-2 hover:ring-orange-500/20"
+          accent="border-t-2 border-t-[var(--color-palette-orange-fg)]"
+          iconBg="bg-[var(--color-palette-orange-bg)]"
+          iconColor="text-[var(--color-palette-orange-fg)]"
+          hoverRing="hover:ring-2 hover:ring-[var(--color-palette-orange-border)]"
           current={snapshot.stalePdfCount}
           previous={snapshot.stalePdfCount}
           stagger={7}
@@ -437,19 +437,19 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             />
             <div>
               <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-text-secondary)]">
-                <Flame className="size-4 text-amber-500 animate-flame" />
-                Streak Champions
+                <Flame className="size-4 text-[var(--color-status-warning)] animate-flame" />
+                {t("adminAnalytics.streakChampions")}
               </h3>
               <div className="space-y-1.5">
                 {snapshot.streaks.byUser.slice(0, 5).map((u, i) => (
                   <div key={u.email} className="flex items-center gap-2 text-sm">
                     <span className="w-4 text-xs font-bold text-[var(--color-text-secondary)]">#{i + 1}</span>
                     <span className="flex-1 truncate text-[var(--color-text-secondary)]">{u.name}</span>
-                    <span className="font-semibold text-amber-400">{u.wins}</span>
+                    <span className="font-semibold text-[var(--color-status-warning)]">{u.wins}</span>
                   </div>
                 ))}
                 {snapshot.streaks.byUser.length === 0 && (
-                  <div className="text-xs text-[var(--color-text-secondary)]">No streak wins yet</div>
+                  <div className="text-xs text-[var(--color-text-secondary)]">{t("adminAnalytics.noStreakWinsYet")}</div>
                 )}
               </div>
             </div>
@@ -462,17 +462,17 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           <div className="grid gap-4 grid-cols-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-[var(--color-text-primary)]">{editRequestMetrics.total}</div>
-              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">Total</div>
+              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">{t("adminAnalytics.total")}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-[var(--color-text-primary)]">
                 {editRequestMetrics.avgResponseHrs}h
               </div>
-              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">Avg Response</div>
+              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">{t("adminAnalytics.avgResponse")}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-[var(--color-text-primary)]">{editRequestMetrics.grantRate}%</div>
-              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">Grant Rate</div>
+              <div className="text-[10px] uppercase text-[var(--color-text-secondary)]">{t("adminAnalytics.grantRate")}</div>
             </div>
           </div>
           {snapshot.editRequests.length > 0 && (
@@ -503,8 +503,8 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             href={adminIntegrity()}
             className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            <div className="flex size-8 items-center justify-center rounded-full bg-emerald-500/10">
-              <Target className="size-4 text-emerald-500" />
+            <div className="flex size-8 items-center justify-center rounded-full bg-[var(--color-status-success-bg)]">
+              <Target className="size-4 text-[var(--color-status-success)]" />
             </div>
             <div className="min-w-0">
               <div className="text-xs font-medium text-[var(--color-text-secondary)]">{t("adminConsole.integrity")}</div>
@@ -515,8 +515,8 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             href={adminBackups()}
             className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            <div className="flex size-8 items-center justify-center rounded-full bg-blue-500/10">
-              <ClipboardList className="size-4 text-blue-500" />
+            <div className="flex size-8 items-center justify-center rounded-full bg-[var(--color-status-info-bg)]">
+              <ClipboardList className="size-4 text-[var(--color-status-info)]" />
             </div>
             <div className="min-w-0">
               <div className="text-xs font-medium text-[var(--color-text-secondary)]">{t("adminConsole.backup")}</div>
@@ -527,8 +527,8 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             href={adminMaintenance()}
             className="flex items-center gap-3 rounded-lg border border-[var(--color-divider)] p-3 transition-colors hover:bg-[var(--color-dropdown-hover)]"
           >
-            <div className="flex size-8 items-center justify-center rounded-full bg-amber-500/10">
-              <Clock className="size-4 text-amber-500" />
+            <div className="flex size-8 items-center justify-center rounded-full bg-[var(--color-status-warning-bg)]">
+              <Clock className="size-4 text-[var(--color-status-warning)]" />
             </div>
             <div className="min-w-0">
               <div className="text-xs font-medium text-[var(--color-text-secondary)]">{t("adminConsole.maintenance")}</div>

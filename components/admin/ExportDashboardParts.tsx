@@ -25,16 +25,16 @@ const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const TEMPLATE_ICON_BG: Record<string, string> = {
-  CheckCircle: "bg-emerald-500/10 text-emerald-400",
-  BarChart3: "bg-blue-500/10 text-blue-400",
-  Calendar: "bg-violet-500/10 text-violet-400",
-  FileWarning: "bg-amber-500/10 text-amber-400",
+  CheckCircle: "bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]",
+  BarChart3: "bg-[var(--color-status-info-bg)] text-[var(--color-status-info)]",
+  Calendar: "bg-[var(--color-palette-violet-bg)] text-[var(--color-palette-violet-fg)]",
+  FileWarning: "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]",
 };
 
 const FORMAT_BADGE: Record<string, { bg: string; label: string }> = {
-  xlsx: { bg: "bg-emerald-500/15 text-emerald-400", label: "XLSX" },
-  csv: { bg: "bg-blue-500/15 text-blue-400", label: "CSV" },
-  json: { bg: "bg-violet-100 text-violet-700", label: "JSON" },
+  xlsx: { bg: "bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]", label: "XLSX" },
+  csv: { bg: "bg-[var(--color-status-info-bg)] text-[var(--color-status-info)]", label: "CSV" },
+  json: { bg: "bg-[var(--color-palette-violet-bg)] text-[var(--color-palette-violet-fg)]", label: "JSON" },
 };
 
 export function formatTimeAgo(isoString: string) {

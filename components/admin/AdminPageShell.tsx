@@ -74,20 +74,20 @@ export default function AdminPageShell({
           <div className="min-w-0">
             <Link
               href={backHref}
-              className="group mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/70 transition-all duration-200 hover:bg-white/20 hover:text-white active:scale-95"
+              className="group mb-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface-on-accent)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-on-accent-muted)] transition-all duration-200 hover:bg-[var(--color-surface-on-accent-strong)] hover:text-[var(--color-text-on-accent)] active:scale-95"
             >
               <ArrowLeft className="size-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
               {backLabel ?? t("adminConsole.title")}
             </Link>
             <div className="flex items-center gap-3">
               {Icon && (
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                  <Icon className="size-5 text-white" />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-on-accent)]">
+                  <Icon className="size-5 text-[var(--color-text-on-accent)]" />
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
-                <p className="mt-0.5 text-sm text-white/60">{displaySubtitle}</p>
+                <h1 className="text-2xl font-bold text-[var(--color-text-on-accent)]">{displayTitle}</h1>
+                <p className="mt-0.5 text-sm text-[var(--color-text-on-accent-muted)]">{displaySubtitle}</p>
               </div>
             </div>
             {pills && pills.length > 0 && (
@@ -95,7 +95,7 @@ export default function AdminPageShell({
                 {pills.map((pill) => (
                   <span
                     key={pill.label}
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${pill.color ?? "bg-white/10 text-[var(--color-text-muted)]"}`}
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${pill.color ?? "bg-[var(--color-surface-on-accent)] text-[var(--color-text-on-accent-muted)]"}`}
                   >
                     {pill.label}
                   </span>

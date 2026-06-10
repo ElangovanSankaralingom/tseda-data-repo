@@ -177,8 +177,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <RefreshCw className="size-5" />,
       endpoint: "/api/admin/maintenance/rebuild-indexes",
       method: "POST",
-      accent: "hover:ring-violet-500/20",
-      iconBg: "bg-violet-500/10 text-violet-400",
+      accent: "hover:ring-[var(--color-palette-violet-border)]",
+      iconBg: "bg-[var(--color-palette-violet-bg)] text-[var(--color-palette-violet-fg)]",
     },
     {
       id: "migrate",
@@ -187,8 +187,8 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       icon: <ArrowUpDown className="size-5" />,
       endpoint: "/api/admin/maintenance/migrate",
       method: "POST",
-      accent: "hover:ring-indigo-500/20",
-      iconBg: "bg-indigo-500/10 text-indigo-400",
+      accent: "hover:ring-[var(--color-palette-indigo-border)]",
+      iconBg: "bg-[var(--color-palette-indigo-bg)] text-[var(--color-palette-indigo-fg)]",
     },
   ], [t]);
 
@@ -333,7 +333,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
           <form action="/admin/maintenance/run" method="post">
             <button
               type="submit"
-              className="rounded-xl border border-[var(--color-primary)] bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
+              className="rounded-xl border border-[var(--color-primary)] bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--color-button-primary-text)] transition-all duration-150 hover:bg-[var(--color-button-primary-hover)] active:scale-[0.97]"
             >
               {t("adminMaintenance.runFullNightly")}
             </button>

@@ -11,6 +11,7 @@ import {
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import type { ExportTemplate } from "@/lib/export/templates";
 import type { ExportHistoryEntry } from "@/lib/export/history";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   AnimatedCount,
   FormatSelector,
@@ -36,6 +37,7 @@ export default function ExportDashboard({
   fieldOptionsByCategory,
   initialHistory,
 }: Props) {
+  const { t } = useTranslation();
   const [runningTemplate, setRunningTemplate] = useState<string | null>(null);
   const [history, setHistory] = useState(initialHistory);
   const [format, setFormat] = useState("xlsx");
@@ -152,17 +154,17 @@ export default function ExportDashboard({
     <div className="space-y-6">
       <div>
         <div className="mb-3">
-          <div className="text-sm font-semibold text-[var(--color-text-primary)]">Quick Exports</div>
-          <div className="text-xs text-[var(--color-text-secondary)]">One-click exports for common needs</div>
+          <div className="text-sm font-semibold text-[var(--color-text-primary)]">{t("adminExport.quickExports")}</div>
+          <div className="text-xs text-[var(--color-text-secondary)]">{t("adminExport.quickExportsDesc")}</div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {templates.map((t, i) => (
+          {templates.map((tpl, i) => (
             <TemplateCard
-              key={t.id}
-              template={t}
+              key={tpl.id}
+              template={tpl}
               index={i}
               onExport={handleTemplateExport}
-              running={runningTemplate === t.id}
+              running={runningTemplate === tpl.id}
             />
           ))}
         </div>
@@ -170,36 +172,36 @@ export default function ExportDashboard({
 
       <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-6 animate-fade-in-up">
         <div className="mb-5">
-          <div className="text-sm font-semibold text-[var(--color-text-primary)]">Custom Export</div>
-          <div className="text-xs text-[var(--color-text-secondary)]">Build exactly the export you need</div>
+          <div className="text-sm font-semibold text-[var(--color-text-primary)]">{t("adminExport.customExport")}</div>
+          <div className="text-xs text-[var(--color-text-secondary)]">{t("adminExport.customExportDesc")}</div>
         </div>
 
         <div className="space-y-5">
           <div>
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">Format</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">{t("adminExport.format")}</div>
             <FormatSelector value={format} onChange={setFormat} />
           </div>
 
           <div>
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">Scope</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">{t("adminExport.scope")}</div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setAllUsers(true)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                  allUsers ? "bg-[var(--color-button-primary-bg)] text-white" : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
+                  allUsers ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)]" : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                 }`}
               >
-                All Users
+                {t("adminExport.allUsers")}
               </button>
               <button
                 type="button"
                 onClick={() => setAllUsers(false)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                  !allUsers ? "bg-[var(--color-button-primary-bg)] text-white" : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
+                  !allUsers ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)]" : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                 }`}
               >
-                Specific User
+                {t("adminExport.specificUser")}
               </button>
             </div>
             {!allUsers ? (
@@ -208,7 +210,7 @@ export default function ExportDashboard({
                   value={selectedUser}
                   onChange={(value) => setSelectedUser(value)}
                   options={users.map((u) => ({ label: u, value: u }))}
-                  placeholder="Select user"
+                  placeholder={t("adminExport.selectUser")}
                 />
               </div>
             ) : null}
@@ -217,7 +219,7 @@ export default function ExportDashboard({
                 value={selectedCategory}
                 onChange={(value) => setSelectedCategory(value)}
                 options={categories.map((c) => ({ label: c.label, value: c.key }))}
-                placeholder="Select category"
+                placeholder={t("adminExport.selectCategory")}
               />
             </div>
           </div>
@@ -229,12 +231,12 @@ export default function ExportDashboard({
               className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               <ChevronDown className={`size-3.5 transition-transform duration-200 ${showFilters ? "rotate-0" : "-rotate-90"}`} />
-              Add Filters (optional)
+              {t("adminExport.addFiltersOptional")}
             </button>
             {showFilters ? (
               <div className="mt-3 space-y-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
                 <div>
-                  <div className="mb-1 text-xs text-[var(--color-text-secondary)]">Status</div>
+                  <div className="mb-1 text-xs text-[var(--color-text-secondary)]">{t("adminExport.status")}</div>
                   <div className="flex flex-wrap gap-1.5">
                     {statusOptions.map((s) => (
                       <button
@@ -243,7 +245,7 @@ export default function ExportDashboard({
                         onClick={() => toggleStatus(s.key)}
                         className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
                           selectedStatuses.includes(s.key)
-                            ? "bg-[var(--color-button-primary-bg)] text-white"
+                            ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)]"
                             : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                         }`}
                       >
@@ -254,7 +256,7 @@ export default function ExportDashboard({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="space-y-1 text-xs">
-                    <span className="text-[var(--color-text-secondary)]">From Date</span>
+                    <span className="text-[var(--color-text-secondary)]">{t("adminExport.fromDate")}</span>
                     <input
                       type="date"
                       value={fromDate}
@@ -263,7 +265,7 @@ export default function ExportDashboard({
                     />
                   </label>
                   <label className="space-y-1 text-xs">
-                    <span className="text-[var(--color-text-secondary)]">To Date</span>
+                    <span className="text-[var(--color-text-secondary)]">{t("adminExport.toDate")}</span>
                     <input
                       type="date"
                       value={toDate}
@@ -283,7 +285,7 @@ export default function ExportDashboard({
               className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               <ChevronDown className={`size-3.5 transition-transform duration-200 ${showFields ? "rotate-0" : "-rotate-90"}`} />
-              Choose Fields ({selectedFields.length}/{fieldOptions.length})
+              {t("adminExport.chooseFields")} ({selectedFields.length}/{fieldOptions.length})
             </button>
             {showFields ? (
               <div className="mt-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
@@ -293,14 +295,14 @@ export default function ExportDashboard({
                     onClick={() => setSelectedFields(fieldOptions.map((f) => f.key))}
                     className="text-xs text-[var(--color-primary)] hover:text-[var(--color-primary-light)]"
                   >
-                    Select All
+                    {t("adminExport.selectAll")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedFields([])}
                     className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                   >
-                    Clear
+                    {t("adminExport.clear")}
                   </button>
                 </div>
                 <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -323,13 +325,13 @@ export default function ExportDashboard({
           <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
             {loadingPreview ? (
               <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                <RefreshCw className="size-3 animate-spin" /> Loading preview...
+                <RefreshCw className="size-3 animate-spin" /> {t("adminExport.loadingPreview")}
               </div>
             ) : preview ? (
               <div className="space-y-2">
                 <div className="text-sm text-[var(--color-text-primary)]">
-                  This export will include <span className="font-semibold"><AnimatedCount value={preview.recordCount} /></span> entries
-                  from <span className="font-semibold">{preview.userCount}</span> user{preview.userCount !== 1 ? "s" : ""}
+                  {t("adminExport.previewIntro")} <span className="font-semibold"><AnimatedCount value={preview.recordCount} /></span> {t("adminExport.entriesWord")}
+                  {" "}{t("adminExport.fromWord")} <span className="font-semibold">{preview.userCount}</span> {preview.userCount !== 1 ? t("adminExport.usersWord") : t("adminExport.userWord")}
                 </div>
                 {Object.keys(preview.statusBreakdown).length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
@@ -342,7 +344,7 @@ export default function ExportDashboard({
                 ) : null}
               </div>
             ) : (
-              <div className="text-xs text-[var(--color-text-secondary)]">Select options above to see a preview</div>
+              <div className="text-xs text-[var(--color-text-secondary)]">{t("adminExport.previewEmpty")}</div>
             )}
           </div>
 
@@ -352,22 +354,22 @@ export default function ExportDashboard({
             onClick={handleCustomExport}
             className={`w-full rounded-xl px-6 py-3 text-sm font-medium shadow-lg transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${
               exportSuccess
-                ? "bg-[var(--color-generate-bg)] text-white"
-                : "bg-[var(--color-button-primary-bg)] text-white hover:bg-[var(--color-button-primary-hover)]"
+                ? "bg-[var(--color-generate-bg)] text-[var(--color-button-primary-text)]"
+                : "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] hover:bg-[var(--color-button-primary-hover)]"
             }`}
           >
             {exporting ? (
               <span className="flex items-center justify-center gap-2">
-                <RefreshCw className="size-4 animate-spin" /> Generating export...
+                <RefreshCw className="size-4 animate-spin" /> {t("adminExport.generatingExport")}
               </span>
             ) : exportSuccess ? (
               <span className="flex items-center justify-center gap-2">
-                <CheckCircle className="size-4" /> Downloaded!
+                <CheckCircle className="size-4" /> {t("adminExport.downloaded")}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
                 <Download className="size-4" />
-                Export {preview?.recordCount ?? 0} Entries as {format.toUpperCase()}
+                {t("adminExport.exportEntriesAs").replace("{count}", String(preview?.recordCount ?? 0)).replace("{format}", format.toUpperCase())}
               </span>
             )}
           </button>
@@ -378,7 +380,7 @@ export default function ExportDashboard({
         <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
-            Recent Exports
+            {t("adminExport.recentExports")}
           </div>
           {history.map((entry, i) => (
             <HistoryRow key={`${entry.id}-${i}`} entry={entry} />
@@ -386,7 +388,7 @@ export default function ExportDashboard({
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-6 text-center animate-fade-in-up">
-          <div className="text-sm text-[var(--color-text-secondary)]">No exports yet — create your first one above!</div>
+          <div className="text-sm text-[var(--color-text-secondary)]">{t("adminExport.noExportsYet")}</div>
         </div>
       )}
     </div>

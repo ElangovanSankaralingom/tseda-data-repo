@@ -11,6 +11,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { formatNumber } from "@/lib/i18n/locale";
 import { compare } from "@/lib/analytics/compare";
 import { CATEGORY_REGISTRY, type CategorySlug } from "@/data/categoryRegistry";
+import { CHART_FALLBACK_HEX } from "@/lib/theme/themeTokens";
 
 export function pct(n: number, total: number) {
   if (total === 0) return 0;
@@ -20,7 +21,7 @@ export function pct(n: number, total: number) {
 /** Derive chart hex color from the category registry — single source of truth. */
 export function catColor(slug: string) {
   const config = CATEGORY_REGISTRY[slug as CategorySlug];
-  return config?.color.chartHex ?? "#64748B";
+  return config?.color.chartHex ?? CHART_FALLBACK_HEX;
 }
 
 export function AnimatedCount({ value, suffix }: { value: number; suffix?: string }) {
@@ -46,7 +47,7 @@ export function ComparisonBadge({ current, previous }: { current: number; previo
   return (
     <span
       className={`flex items-center gap-0.5 text-xs font-medium ${
-        isUp ? "text-emerald-400" : "text-red-500"
+        isUp ? "text-[var(--color-status-success)]" : "text-[var(--color-status-error)]"
       }`}
     >
       {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}

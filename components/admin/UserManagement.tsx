@@ -98,7 +98,7 @@ const StatCard = memo(function StatCard({
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className={`flex size-10 items-center justify-center rounded-lg ${accent}`}>
-        <Icon className="size-5 text-white" />
+        <Icon className="size-5 text-[var(--color-text-on-accent)]" />
       </div>
       <div>
         <div className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">
@@ -127,7 +127,7 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
         />
         {user.role === "admin" && (
           <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[var(--color-status-info-bg)] ring-2 ring-[var(--color-glass-bg)]">
-            <Shield className="size-2.5 text-white" />
+            <Shield className="size-2.5 text-[var(--color-status-info)]" />
           </div>
         )}
       </div>
@@ -139,11 +139,11 @@ function Avatar({ user, size = "md" }: { user: UserProfile; size?: "sm" | "md" |
       <div
         className={`${sizeClasses} flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] ring-2 ring-[var(--color-glass-bg)] shadow-sm`}
       >
-        <span className={`${textSize} font-bold text-white`}>{initials(user.name)}</span>
+        <span className={`${textSize} font-bold text-[var(--color-text-on-accent)]`}>{initials(user.name)}</span>
       </div>
       {user.role === "admin" && (
         <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[var(--color-status-info-bg)] ring-2 ring-[var(--color-glass-bg)]">
-          <Shield className="size-2.5 text-white" />
+          <Shield className="size-2.5 text-[var(--color-status-info)]" />
         </div>
       )}
     </div>

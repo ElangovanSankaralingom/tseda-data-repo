@@ -272,7 +272,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("adminSettings.searchPlaceholder")}
-            aria-label="Search settings"
+            aria-label={t("adminSettings.searchAriaLabel")}
             className="h-9 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
           {search && (
@@ -302,7 +302,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           </button>
           <button
             onClick={() => setResetAllOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-red-400 shadow-sm transition-all hover:bg-red-500/10"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-status-error)] shadow-sm transition-all hover:bg-[var(--color-status-error-bg)]"
           >
             <RotateCcw className="size-3.5" />
             {t("adminSettings.resetAll")}
@@ -313,7 +313,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
         {/* Sidebar */}
-        <nav aria-label="Settings categories" className="hidden lg:block">
+        <nav aria-label={t("adminSettings.categoriesNavAriaLabel")} className="hidden lg:block">
           <div className="sticky top-24 space-y-1 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-2 shadow-sm">
             {CATEGORY_ORDER.map((cat) => {
               const Icon = CATEGORY_ICONS[cat];
@@ -327,7 +327,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                   onClick={() => { setActiveCategory(cat); setSearch(""); }}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm"
+                      ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] shadow-sm"
                       : "text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] hover:text-[var(--color-text-primary)]"
                   }`}
                 >
@@ -336,8 +336,8 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                   {count > 0 && (
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                       isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-amber-500/15 text-amber-400"
+                        ? "bg-[var(--color-border-strong)] text-[var(--color-button-primary-text)]"
+                        : "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]"
                     }`}>
                       {count}
                     </span>
@@ -361,7 +361,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                 onClick={() => { setActiveCategory(cat); setSearch(""); }}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                   isActive
-                    ? "bg-[var(--color-button-primary-bg)] text-white"
+                    ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)]"
                     : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]"
                 }`}
               >

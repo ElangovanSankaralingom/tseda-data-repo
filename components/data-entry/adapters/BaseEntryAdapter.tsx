@@ -140,8 +140,6 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   resetUploadState: resetUploadStateProp,
   title: titleProp,
   subtitle: subtitleProp,
-  formTitle: _formTitle,
-  formSubtitle: _formSubtitle,
   deleteDescription,
 }: BaseEntryAdapterProps<T>) {
   const { t } = useTranslation();
