@@ -61,6 +61,13 @@ export default function ThemeProvider({
   useEffect(() => {
     const tokens = resolveTokens(mode, palette);
     applyTokens(tokens, mode === "dark");
+    /* Mirror theme to cookies so PUBLIC pages (signin, maintenance) can
+       first-paint in the user's last-known theme via the root layout —
+       without this they fall back to the dark :root block and light-mode
+       users get a jarring dark splash. */
+    const year = 60 * 60 * 24 * 365;
+    document.cookie = `tseda-mode=${mode}; path=/; max-age=${year}; samesite=lax`;
+    document.cookie = `tseda-palette=${palette}; path=/; max-age=${year}; samesite=lax`;
   }, [mode, palette]);
 
   const persistPreferences = useCallback(
