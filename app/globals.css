@@ -287,17 +287,16 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.10), 0 
   }
 
   /* Static dot overlay — fades out after header+hero zone.
-     DARK-ONLY: the lime glow texture is designed for the dark surface;
-     in light mode it reads as noise over the paper panels. */
+     Per-mode dot strength: dark keeps its original lime glow; light gets
+     accent dots tuned for the ice field (palette-aware via --color-primary). */
   .dot-overlay {
-    display: none;
-  }
-  .dark .dot-overlay {
-    display: block;
-    background-image: radial-gradient(circle, rgba(132, 204, 22, 0.12) 1.5px, transparent 1.5px);
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 20%, transparent) 1.5px, transparent 1.5px);
     background-size: 30px 30px;
     mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
+  }
+  .dark .dot-overlay {
+    background-image: radial-gradient(circle, rgba(132, 204, 22, 0.12) 1.5px, transparent 1.5px);
   }
 
   @media (min-width: 640px) {
@@ -306,14 +305,14 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.10), 0 
     }
   }
 
-  /* Cursor glow — brighter dots near cursor, same vertical fade. Dark-only. */
+  /* Cursor glow — brighter dots near cursor, same vertical fade.
+     Per-mode strength, palette-aware in light. */
   .cursor-glow-dots {
-    display: none;
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 34%, transparent) 1.5px, transparent 1.5px);
+    background-size: 30px 30px;
   }
   .dark .cursor-glow-dots {
-    display: block;
     background-image: radial-gradient(circle, rgba(132, 204, 22, 0.22) 1.5px, transparent 1.5px);
-    background-size: 30px 30px;
   }
 
   @media (min-width: 640px) {
