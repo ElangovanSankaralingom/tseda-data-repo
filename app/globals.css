@@ -275,8 +275,14 @@ body {
     background-size: 100% 100%, 100% 100%;
   }
 
-  /* Static dot overlay — fades out after header+hero zone */
+  /* Static dot overlay — fades out after header+hero zone.
+     DARK-ONLY: the lime glow texture is designed for the dark surface;
+     in light mode it reads as noise over the paper panels. */
   .dot-overlay {
+    display: none;
+  }
+  .dark .dot-overlay {
+    display: block;
     background-image: radial-gradient(circle, rgba(132, 204, 22, 0.12) 1.5px, transparent 1.5px);
     background-size: 30px 30px;
     mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
@@ -289,8 +295,12 @@ body {
     }
   }
 
-  /* Cursor glow — brighter dots near cursor, same vertical fade */
+  /* Cursor glow — brighter dots near cursor, same vertical fade. Dark-only. */
   .cursor-glow-dots {
+    display: none;
+  }
+  .dark .cursor-glow-dots {
+    display: block;
     background-image: radial-gradient(circle, rgba(132, 204, 22, 0.22) 1.5px, transparent 1.5px);
     background-size: 30px 30px;
   }

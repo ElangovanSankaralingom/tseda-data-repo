@@ -66,9 +66,10 @@ export default function DashboardWelcome({
     <div className="animate-fade-in-up">
     <div ref={ref} style={tiltStyle} {...handlers}>
     <div
-      className="relative overflow-hidden rounded-3xl border border-[var(--color-border-subtle)]"
+      className="relative overflow-hidden rounded-3xl border border-[var(--color-border-default)]"
       style={{
-        background: "linear-gradient(135deg, var(--color-surface-inset-deep) 0%, rgba(30,58,95,0.18) 50%, var(--color-surface-inset-deep) 100%)",
+        background:
+          "linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-panel-raised)) 0%, var(--color-surface-panel-raised) 45%, color-mix(in srgb, var(--color-palette-blue-fg) 5%, var(--color-surface-panel-raised)) 100%)",
       }}
     >
       {/* Holographic light */}
@@ -86,7 +87,7 @@ export default function DashboardWelcome({
                 <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
                   {greeting}
                 </p>
-                <div className="h-px flex-1 bg-[var(--color-surface-raised)]" />
+                <div className="h-px flex-1 bg-[var(--color-divider)]" />
                 <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-text-tertiary)]">
                   {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
                 </span>
@@ -136,7 +137,7 @@ export default function DashboardWelcome({
           {/* ═══ RIGHT: Bright counter panel (L3) ═══ */}
           {hasAnyEntries && (
             <div className="lg:w-72 shrink-0">
-              <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-on-accent-strong)] border border-[var(--color-border-default)] flex flex-col">
+              <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-panel-tile)] border border-[var(--color-border-default)] flex flex-col">
                 <div className="h-[2px] bg-[var(--color-primary)] opacity-50" />
 
                 <div className="flex-1 p-6 flex flex-col justify-between">
@@ -151,7 +152,7 @@ export default function DashboardWelcome({
 
                   {/* Dark inset micro-stats (L1 inside L3 — creates depth) */}
                   <div className="mt-6 flex gap-3">
-                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "var(--color-surface-panel)", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
+                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "var(--color-surface-inset)", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
                       <div className="flex items-center gap-2">
                         <FileText className="size-4 text-[var(--color-text-tertiary)]" />
                         <span className="font-mono text-lg font-black text-[var(--color-text-primary)]">
@@ -186,7 +187,7 @@ export default function DashboardWelcome({
         </div>
 
         {/* ── Status bar — own surface ── */}
-        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "var(--color-surface-panel)", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
+        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "var(--color-surface-inset)", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
           <span className="text-[var(--color-primary)] text-xs font-bold">{">"}</span>
           <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-text-tertiary)]">
             TSEDA
