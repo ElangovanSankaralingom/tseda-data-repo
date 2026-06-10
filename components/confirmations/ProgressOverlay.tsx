@@ -63,7 +63,7 @@ export default function ProgressOverlay({ progress: p, onDismiss }: { progress: 
             <button
               type="button"
               onClick={onDismiss}
-              className="rounded-lg bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-button-primary-hover)]"
+              className="rounded-lg bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-[var(--color-button-primary-hover)]"
             >
               {p.status === "success" ? t("common.confirm") : t("common.close")}
             </button>

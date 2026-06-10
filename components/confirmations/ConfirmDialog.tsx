@@ -45,9 +45,9 @@ const TYPE_CONFIG: Record<
 };
 
 const CONFIRM_STYLE: Record<string, string> = {
-  primary: "bg-[var(--color-button-primary-bg)] text-white hover:bg-[var(--color-button-primary-hover)]",
-  danger: "bg-red-500/15 text-white hover:bg-red-600",
-  warning: "bg-amber-500/15 text-white hover:bg-amber-600",
+  primary: "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-button-primary-hover)]",
+  danger: "bg-red-500/15 text-[var(--color-status-error)] hover:bg-red-600 hover:text-[var(--color-text-on-accent)]",
+  warning: "bg-amber-500/15 text-[var(--color-status-warning)] hover:bg-amber-600 hover:text-[var(--color-text-on-accent)]",
 };
 
 export default function ConfirmDialog({ options, onResult }: { options: ConfirmationDialogOptions; onResult: (confirmed: boolean) => void }) {

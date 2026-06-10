@@ -46,7 +46,7 @@ function StatCard({
         "animate-metric-reveal",
         staggerClass,
         hasGradient
-          ? cn("border border-transparent text-white shadow-lg", gradient)
+          ? cn("border border-transparent text-[var(--color-text-on-accent)] shadow-lg", gradient)
           : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-xl shadow-sm",
         accent,
         /* Hover — lift + glow */
@@ -68,12 +68,12 @@ function StatCard({
         <div
           className={cn(
             "flex size-11 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg",
-            hasGradient ? "bg-white/20" : iconBg ?? "bg-[var(--color-glass-hover)]",
+            hasGradient ? "bg-[var(--color-surface-on-accent-strong)]" : iconBg ?? "bg-[var(--color-glass-hover)]",
             !hasGradient && "group-hover:shadow-black/10"
           )}
         >
           <Icon
-            className={cn("size-5 transition-colors duration-300", hasGradient ? "text-white/80" : iconColor ?? "text-[var(--color-primary)]")}
+            className={cn("size-5 transition-colors duration-300", hasGradient ? "text-[var(--color-text-on-accent-muted)]" : iconColor ?? "text-[var(--color-primary)]")}
           />
         </div>
 
@@ -85,7 +85,7 @@ function StatCard({
           <div
             className={cn(
               "mt-1 text-xs font-semibold uppercase tracking-wider",
-              hasGradient ? "text-white/80" : "text-[var(--color-text-muted)]"
+              hasGradient ? "text-[var(--color-text-on-accent-muted)]" : "text-[var(--color-text-muted)]"
             )}
           >
             {label}
@@ -97,7 +97,7 @@ function StatCard({
           <p
             className={cn(
               "mt-3 text-xs leading-relaxed",
-              hasGradient ? "text-white/70" : "text-[var(--color-text-secondary)]"
+              hasGradient ? "text-[var(--color-text-on-accent-muted)]" : "text-[var(--color-text-secondary)]"
             )}
           >
             {description}
@@ -110,7 +110,7 @@ function StatCard({
             className={cn(
               "mt-0 max-h-0 overflow-hidden text-xs italic leading-relaxed opacity-0 transition-all duration-300",
               "group-hover:mt-3 group-hover:max-h-16 group-hover:opacity-100",
-              hasGradient ? "text-white/60" : "text-[var(--color-text-secondary)]"
+              hasGradient ? "text-[var(--color-text-on-accent-muted)]" : "text-[var(--color-text-secondary)]"
             )}
           >
             {hoverDescription}

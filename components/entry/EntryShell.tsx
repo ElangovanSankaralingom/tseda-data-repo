@@ -79,7 +79,7 @@ export default function EntryShell({
           className="relative overflow-hidden rounded-3xl"
           style={{
             ...tiltStyle,
-            background: `linear-gradient(135deg, rgba(0,0,0,0.45) 0%, ${chartHex}12 50%, rgba(0,0,0,0.4) 100%)`,
+            background: `linear-gradient(135deg, var(--color-surface-inset-deep) 0%, ${chartHex}12 50%, var(--color-surface-inset-deep) 100%)`,
             border: "1px solid var(--color-divider)",
             boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 var(--color-border-subtle)`,
           }}
@@ -179,7 +179,7 @@ export default function EntryShell({
               <div
                 className="mt-4 flex flex-wrap items-center gap-2.5 rounded-xl px-3.5 py-2.5"
                 style={{
-                  background: "linear-gradient(90deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.2) 100%)",
+                  background: "linear-gradient(90deg, var(--color-surface-inset-deep) 0%, var(--color-surface-inset) 100%)",
                   border: "1px solid var(--color-border-subtle)",
                   boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2)",
                 }}

@@ -17,7 +17,7 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
   return (
     <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)] p-8 animate-fade-in-up">
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-        <div className="ring-4 ring-white/20 rounded-full shadow-lg transition-shadow duration-500">
+        <div className="ring-4 ring-[var(--color-surface-on-accent-strong)] rounded-full shadow-lg transition-shadow duration-500">
           <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-[var(--color-gradient-from)] to-[var(--color-gradient-to)]">
             {photo && !avatarLoadFailed ? (
               <Image
@@ -29,18 +29,18 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
                 onError={() => setAvatarLoadFailed(true)}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-xl font-bold text-white">
+              <div className="flex h-full w-full items-center justify-center text-xl font-bold text-[var(--color-text-on-accent)]">
                 {avatarFallback}
               </div>
             )}
           </div>
         </div>
         <div className="text-center sm:text-left">
-          <h1 className="text-2xl font-bold text-white">{employeeLabel}</h1>
-          <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">{draft.email || ""}</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text-on-accent)]">{employeeLabel}</h1>
+          <p className="mt-0.5 text-sm text-[var(--color-text-on-accent-muted)]">{draft.email || ""}</p>
           {draft.academic?.designation && (
             <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
-              <span className="rounded-full bg-white/10 px-3 py-0.5 text-xs text-[var(--color-text-muted)]">
+              <span className="rounded-full bg-[var(--color-surface-on-accent)] px-3 py-0.5 text-xs text-[var(--color-text-on-accent-muted)]">
                 {draft.academic.designation} Professor
               </span>
             </div>

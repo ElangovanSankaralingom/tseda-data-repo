@@ -12,7 +12,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/dashboard"
-          className="mt-6 inline-flex items-center rounded-lg bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[var(--color-primary-light)] hover:shadow"
+          className="mt-6 inline-flex items-center rounded-lg bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] shadow-sm transition hover:bg-[var(--color-primary-light)] hover:shadow"
         >
           Go to Dashboard
         </Link>

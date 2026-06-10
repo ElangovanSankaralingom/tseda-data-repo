@@ -49,10 +49,10 @@ const ACTIVE_TINTS: Record<string, { tint: string; iconColor: string; textColor:
   semester: { tint: "rgba(168,85,247,0.18)",  iconColor: "text-purple-400",  textColor: "text-purple-200/70" },
   level:    { tint: "rgba(34,197,94,0.18)",   iconColor: "text-emerald-400", textColor: "text-emerald-200/70" },
   mode:     { tint: "rgba(249,115,22,0.18)",  iconColor: "text-orange-400",  textColor: "text-orange-200/70" },
-  date:     { tint: "var(--color-border-subtle)",    iconColor: "text-slate-400",   textColor: "text-slate-300/70" },
+  date:     { tint: "var(--color-border-subtle)",    iconColor: "text-[var(--color-icon-default)]",   textColor: "text-[var(--color-text-secondary)]" },
   duration: { tint: "rgba(251,191,36,0.18)",         iconColor: "text-amber-400",   textColor: "text-amber-200/70" },
   funding:  { tint: "rgba(34,197,94,0.18)",          iconColor: "text-emerald-400", textColor: "text-emerald-200/70" },
-  default:  { tint: "var(--color-border-subtle)",    iconColor: "text-slate-400",   textColor: "text-slate-300/70" },
+  default:  { tint: "var(--color-border-subtle)",    iconColor: "text-[var(--color-icon-default)]",   textColor: "text-[var(--color-text-secondary)]" },
 };
 
 /** Classify a metadata part to assign an icon and semantic type */
@@ -96,7 +96,7 @@ const MetadataPill = memo(function MetadataPill({
   /* ── SEALED: flat inline text, no box, no background ── */
   if (variant === "sealed") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-white/40">
+      <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-tertiary)]">
         <Icon className="size-3 shrink-0 text-emerald-400/50" />
         <span className="truncate max-w-[180px]">{text}</span>
       </span>
@@ -180,7 +180,7 @@ const AttachmentBadge = memo(function AttachmentBadge({
         {files.map((meta, i) => (
           <a
             key={meta.storedPath}
-            className="inline-flex items-center gap-1 text-xs text-white/40 hover:text-white/60 transition-colors"
+            className="inline-flex items-center gap-1 text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
             href={meta.url}
             target="_blank"
             rel="noreferrer"
@@ -199,7 +199,7 @@ const AttachmentBadge = memo(function AttachmentBadge({
       {files.map((meta, i) => (
         <a
           key={meta.storedPath}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium text-white/60 hover:text-white/80 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
           style={{
             background: "var(--color-surface-raised)",
             border: "1px solid var(--color-border-subtle)",

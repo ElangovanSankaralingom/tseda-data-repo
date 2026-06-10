@@ -110,7 +110,7 @@ export default async function DashboardPage() {
 
 function DashboardEmptyState() {
   return (
-    <div className="flex overflow-hidden rounded-2xl border border-dashed border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.25)] animate-card-lift">
+    <div className="flex overflow-hidden rounded-2xl border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)] animate-card-lift">
       {/* ── Thick left accent bar ── */}
       <div className="w-1.5 shrink-0 bg-[var(--color-primary)] opacity-25" />
 
@@ -118,15 +118,15 @@ function DashboardEmptyState() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-6">
           {/* ── Left: Bright icon panel (white surface pop) ── */}
           <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-surface-raised)] border border-[var(--color-border-default)]">
-            <ClipboardList className="size-9 text-white/40" />
+            <ClipboardList className="size-9 text-[var(--color-icon-muted)]" />
           </div>
 
           {/* ── Right: Text + CTA ── */}
           <div>
-            <p className="text-base font-bold text-white/65">
+            <p className="text-base font-bold text-[var(--color-text-secondary)]">
               No entries yet
             </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
               Start collecting data to build your streak
             </p>
             <Link

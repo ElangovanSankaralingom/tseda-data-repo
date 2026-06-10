@@ -199,7 +199,7 @@ export default function ResetPage() {
                 <button
                   type="button"
                   onClick={() => { router.push(dashboard()); router.refresh(); }}
-                  className="rounded-lg bg-[var(--color-generate-bg)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-generate-hover)] transition-colors"
+                  className="rounded-lg bg-[var(--color-generate-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] hover:bg-[var(--color-generate-hover)] transition-colors"
                 >
                   Go to Dashboard
                 </button>
@@ -303,7 +303,7 @@ export default function ResetPage() {
           type="button"
           onClick={() => { setShowConfirm(true); setConfirmText(""); }}
           disabled={selected.size === 0 || clearing}
-          className="rounded-xl bg-red-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-red-600 px-6 py-3 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {clearing ? (
             <span className="flex items-center gap-2">
@@ -321,7 +321,7 @@ export default function ResetPage() {
 
       {/* Confirmation Dialog */}
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-modal-overlay)] p-4">
           <div className="w-full max-w-md rounded-2xl bg-[var(--color-glass-bg)] p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Clear test data?</h3>
             <div className="mt-3 space-y-1">
@@ -360,7 +360,7 @@ export default function ResetPage() {
                 type="button"
                 onClick={() => void handleClear()}
                 disabled={confirmText !== "CLEAR"}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Yes, Clear Data
               </button>

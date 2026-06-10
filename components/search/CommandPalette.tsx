@@ -406,7 +406,7 @@ export default function CommandPalette({
                     className={cn(
                       "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                       active
-                        ? "bg-[var(--color-button-primary-bg)] text-white"
+                        ? "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)]"
                         : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)]",
                     )}
                   >

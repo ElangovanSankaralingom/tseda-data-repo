@@ -143,7 +143,7 @@ export default function AdminNotificationBell({
       >
         <ShieldAlert className={`size-[18px] ${unreadCount > 0 ? "text-[var(--color-primary)] fill-[var(--color-primary)]/20" : "text-[var(--color-text-muted)]"}`} />
         {unreadCount > 0 && (
-          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-[var(--color-primary)]/15 font-bold text-white ring-2 ring-[var(--color-glass-bg)] animate-subtle-pulse ${
+          <span className={`absolute -right-0.5 -top-0.5 flex items-center justify-center rounded-full bg-[var(--color-primary)]/15 font-bold text-[var(--color-text-primary)] ring-2 ring-[var(--color-glass-bg)] animate-subtle-pulse ${
             unreadCount >= 10 ? "min-w-5 h-4 px-1 text-[8px]" : "size-4 text-[10px]"
           }`}>
             {unreadCount > 99 ? "99+" : unreadCount}

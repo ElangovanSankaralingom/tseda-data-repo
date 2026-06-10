@@ -63,7 +63,7 @@ export default function ConfirmDialog({
         type="button"
         aria-label="Close confirmation dialog"
         onClick={confirming ? undefined : onCancel}
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--color-modal-overlay)] backdrop-blur-sm"
       />
       <div
         role="dialog"

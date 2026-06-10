@@ -42,7 +42,7 @@ export default function CancelConfirmationModal({
     <div
       ref={backdropRef}
       className="fixed inset-0 z-[9999] flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+      style={{ background: "var(--color-modal-overlay)", backdropFilter: "blur(4px)" }}
       onClick={(e) => {
         if (e.target === backdropRef.current) onClose();
       }}
@@ -50,7 +50,7 @@ export default function CancelConfirmationModal({
       <div
         className="relative w-full max-w-sm mx-4 overflow-hidden rounded-2xl animate-in fade-in zoom-in-95"
         style={{
-          background: "linear-gradient(175deg, rgba(15,18,30,0.98) 0%, rgba(8,10,18,0.99) 100%)",
+          background: "var(--color-modal-bg)",
           border: "1px solid var(--color-border-default)",
           boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border-subtle)",
         }}

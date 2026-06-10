@@ -249,7 +249,7 @@ export default function AccountPage() {
               className={cx(
                 "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
                 activeTab === key
-                  ? "bg-[var(--color-button-primary-bg)] text-white shadow-sm scale-100"
+                  ? "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)] shadow-sm scale-100"
                   : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] scale-[0.97] hover:scale-100"
               )}
             >
@@ -373,7 +373,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={() => void handleClearData()}
                 disabled={clearConfirmText.toLowerCase() !== (draft.email || "").toLowerCase() || clearing}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {clearing ? t("common.processing") : t("common.delete")}
               </button>

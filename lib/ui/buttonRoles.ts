@@ -40,7 +40,7 @@ export function getButtonClass(role: ButtonRole, options: ButtonClassOptions = {
   }
 
   if (role === "destructive") {
-    return `${base} border-red-500 bg-red-500 text-white hover:bg-red-600`;
+    return `${base} border-red-500 bg-red-500 text-[var(--color-text-on-accent)] hover:bg-red-600`;
   }
 
   if (role === "ghost") {

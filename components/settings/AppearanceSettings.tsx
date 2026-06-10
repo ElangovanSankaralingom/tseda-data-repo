@@ -143,7 +143,7 @@ export default function AppearanceSettings() {
                 style={selected ? { borderColor: p.color } : undefined}
               >
                 <span
-                  className="size-5 shrink-0 rounded-full ring-1 ring-black/10"
+                  className="size-5 shrink-0 rounded-full ring-1 ring-[var(--color-glass-border)]"
                   style={{ backgroundColor: p.color }}
                 />
                 <span className="text-sm font-medium text-[var(--color-text-primary)]">

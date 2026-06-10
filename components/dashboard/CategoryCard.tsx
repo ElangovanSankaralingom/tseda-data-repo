@@ -87,7 +87,7 @@ function CategoryCard({
   const { ref, style: tiltStyle, lightStyle, handlers } = useTiltEffect();
 
   const pills: StatusPill[] = [
-    { label: "DRF", count: draftCount, className: "text-[var(--color-text-tertiary)] bg-[rgba(0,0,0,0.4)]" },
+    { label: "DRF", count: draftCount, className: "text-[var(--color-text-tertiary)] bg-[var(--color-surface-inset-deep)]" },
     { label: "REQ", count: editRequestedCount, className: "text-amber-400 bg-amber-400/10" },
     { label: "EDT", count: editGrantedCount, className: "text-[var(--color-primary)] bg-[var(--color-primary)]/10" },
   ].filter((p) => p.count > 0);
@@ -104,8 +104,8 @@ function CategoryCard({
         className={cn(
           "group relative flex overflow-hidden rounded-2xl border cursor-pointer",
           isEmpty
-            ? "border-dashed border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.2)]"
-            : "border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.3)]"
+            ? "border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)]"
+            : "border-[var(--color-border-subtle)] bg-[var(--color-surface-inset-deep)]"
         )}
         style={{ clipPath: isEmpty ? undefined : NOTCH_CLIP }}
       >
@@ -169,7 +169,7 @@ function CategoryCard({
                 : "border-[var(--color-border-subtle)]"
             )}
             style={isEmpty ? undefined : {
-              backgroundColor: `color-mix(in srgb, ${hex} 6%, rgba(255,255,255,0.04))`,
+              backgroundColor: `color-mix(in srgb, ${hex} 6%, var(--color-surface-raised))`,
               borderColor: `${hex}18`,
             }}
           >

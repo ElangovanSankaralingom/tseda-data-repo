@@ -56,7 +56,7 @@ export default function ProfileDropdown({
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "flex items-center gap-2 rounded-xl px-2 py-1 transition-all duration-200 cursor-pointer",
-          open ? "bg-white/[0.08]" : "hover:bg-white/[0.06]"
+          open ? "bg-[var(--color-dropdown-hover)]" : "hover:bg-[var(--color-glass-hover)]"
         )}
         aria-label="Account menu"
         aria-haspopup="menu"
@@ -67,7 +67,7 @@ export default function ProfileDropdown({
           className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all duration-300"
           style={{
             border: "2px solid var(--color-border-default)",
-            boxShadow: open ? "0 0 12px var(--color-primary-glow, rgba(132,204,22,0.2))" : "none",
+            boxShadow: open ? "0 0 12px var(--color-glow-primary)" : "none",
           }}
         >
           {photoUrl ? (
@@ -99,7 +99,7 @@ export default function ProfileDropdown({
           role="menu"
           className="absolute right-0 top-full z-50 mt-2 w-[280px] origin-top-right overflow-hidden rounded-2xl animate-in fade-in slide-in-from-top-2"
           style={{
-            background: "linear-gradient(175deg, rgba(15,18,30,0.97) 0%, rgba(8,10,18,0.98) 100%)",
+            background: "var(--color-dropdown-bg)",
             border: "1px solid var(--color-border-default)",
             boxShadow: "0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border-subtle), inset 0 1px 0 var(--color-border-subtle)",
           }}
@@ -128,7 +128,7 @@ export default function ProfileDropdown({
                   />
                 ) : (
                   <span
-                    className="flex size-full items-center justify-center text-sm font-bold text-white"
+                    className="flex size-full items-center justify-center text-sm font-bold text-[var(--color-text-on-accent)]"
                     style={{ background: "var(--color-button-primary-bg)" }}
                   >
                     {initials}

@@ -62,7 +62,7 @@ function EditWindowProgressBar({ group, editTime }: { group: EntryListGroup; edi
   const progress = Math.min(100, Math.max(0, (elapsed / totalWindowMs) * 100));
   const isUrgent = progress > 75;
   const isWarning = progress > 50;
-  const color = isUrgent ? "#f87171" : isWarning ? "#fbbf24" : hex;
+  const color = isUrgent ? "var(--color-status-error)" : isWarning ? "var(--color-status-warning)" : hex;
   const height = layout === "hero" ? "h-1.5" : "h-1";
 
   return (
@@ -138,7 +138,7 @@ function HeroCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={href} className="text-lg font-bold text-white/90 hover:text-white truncate transition-colors">
+              <Link href={href} className="text-lg font-bold text-[var(--color-text-primary)] truncate transition-colors">
                 {title}
               </Link>
               {editTime?.hasEditWindow && !editTime.expired && (
@@ -150,13 +150,13 @@ function HeroCard({
                     "--glow-color": "rgba(251,191,36,0.30)",
                   } as React.CSSProperties}
                 >
-                  <span className="size-1.5 rounded-full bg-amber-400 animate-subtle-pulse" />
+                  <span className="size-1.5 rounded-full bg-[var(--color-status-warning)] animate-subtle-pulse" />
                   {editTime.remainingLabel}
                 </span>
               )}
               {badges}
             </div>
-            {subtitle ? <div className="mt-1 text-sm text-white/50">{subtitle}</div> : null}
+            {subtitle ? <div className="mt-1 text-sm text-[var(--color-text-tertiary)]">{subtitle}</div> : null}
           </div>
         </div>
       </div>
@@ -166,12 +166,12 @@ function HeroCard({
         {hasContent && (
           <div>
             {children}
-            {metadata && !children ? <div className="text-sm text-white/40">{metadata}</div> : null}
+            {metadata && !children ? <div className="text-sm text-[var(--color-text-tertiary)]">{metadata}</div> : null}
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
-          {time ? <span className="text-sm text-white/35">{t('entry.timeUpdated')} {time}</span> : <span />}
+          {time ? <span className="text-sm text-[var(--color-text-muted)]">{t('entry.timeUpdated')} {time}</span> : <span />}
           {actions ? (
             <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
               {actions}
@@ -251,12 +251,12 @@ function TimerCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={href} className="text-base font-bold text-white/90 hover:text-white truncate transition-colors">
+              <Link href={href} className="text-base font-bold text-[var(--color-text-primary)] truncate transition-colors">
                 {title}
               </Link>
               {badges}
             </div>
-            {subtitle ? <div className="mt-0.5 text-sm text-white/50">{subtitle}</div> : null}
+            {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-tertiary)]">{subtitle}</div> : null}
           </div>
         </div>
       </div>
@@ -266,13 +266,13 @@ function TimerCard({
         {hasContent && (
           <div>
             {children}
-            {metadata && !children ? <div className="text-sm text-white/40">{metadata}</div> : null}
+            {metadata && !children ? <div className="text-sm text-[var(--color-text-tertiary)]">{metadata}</div> : null}
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
           {time ? (
-            <span className={`inline-flex items-center gap-1.5 text-sm ${isUrgent ? "text-[var(--color-status-error)]" : "text-white/35"}`}>
+            <span className={`inline-flex items-center gap-1.5 text-sm ${isUrgent ? "text-[var(--color-status-error)]" : "text-[var(--color-text-muted)]"}`}>
               {isUrgent && <Clock className="size-3 animate-subtle-pulse" />}
               {isUrgent ? t('entry.expiresToday') : `${t('entry.timeUpdated')} ${time}`}
             </span>
@@ -335,7 +335,7 @@ function StandardCard({
           <Unlock className="size-4 shrink-0 mt-0.5 text-purple-400" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={href} className="text-base font-bold text-purple-50 hover:text-white truncate transition-colors">
+              <Link href={href} className="text-base font-bold text-[var(--color-text-primary)] truncate transition-colors">
                 {title}
               </Link>
               {editTime?.hasEditWindow && !editTime.expired && (
@@ -349,7 +349,7 @@ function StandardCard({
               )}
               {badges}
             </div>
-            {subtitle ? <div className="mt-0.5 text-sm text-purple-200/60">{subtitle}</div> : null}
+            {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-tertiary)]">{subtitle}</div> : null}
           </div>
         </div>
       </div>
@@ -359,12 +359,12 @@ function StandardCard({
         {hasContent && (
           <div>
             {children}
-            {metadata && !children ? <div className="text-sm text-white/40">{metadata}</div> : null}
+            {metadata && !children ? <div className="text-sm text-[var(--color-text-tertiary)]">{metadata}</div> : null}
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
-          {time ? <span className="text-sm text-white/35">{t('entry.timeUpdated')} {time}</span> : <span />}
+          {time ? <span className="text-sm text-[var(--color-text-muted)]">{t('entry.timeUpdated')} {time}</span> : <span />}
           {actions ? (
             <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
               {actions}
@@ -419,20 +419,20 @@ function DraftRow({
             border: "1px dashed rgba(148,163,184,0.15)",
           }}
         >
-          <Pencil className="size-3.5 text-slate-300" />
+          <Pencil className="size-3.5 text-[var(--color-icon-default)]" />
         </div>
 
         {/* Title + subtitle */}
         <div className="min-w-0 flex-1">
-          <Link href={href} className="text-sm font-bold text-slate-100 hover:text-white truncate transition-colors block">
+          <Link href={href} className="text-sm font-bold text-[var(--color-text-primary)] truncate transition-colors block">
             {title}
           </Link>
-          {subtitle ? <div className="mt-0.5 text-xs text-slate-300/60 truncate">{subtitle}</div> : null}
+          {subtitle ? <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)] truncate">{subtitle}</div> : null}
         </div>
 
         {/* Right side: DRAFT badge + time + actions */}
         <span
-          className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-slate-200/60"
+          className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-[var(--color-text-tertiary)]"
           style={{
             border: "1.5px dashed rgba(148,163,184,0.25)",
             background: "rgba(148,163,184,0.05)",
@@ -440,7 +440,7 @@ function DraftRow({
         >
           {t('entry.draft')}
         </span>
-        {time ? <span className="shrink-0 text-xs text-slate-300/50">{time}</span> : null}
+        {time ? <span className="shrink-0 text-xs text-[var(--color-text-muted)]">{time}</span> : null}
         {actions ? (
           <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             {actions}
@@ -496,7 +496,7 @@ function DashedCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={href} className="text-base font-bold text-white/90 hover:text-white truncate transition-colors">
+              <Link href={href} className="text-base font-bold text-[var(--color-text-primary)] truncate transition-colors">
                 {title}
               </Link>
               <span
@@ -507,7 +507,7 @@ function DashedCard({
               </span>
               {badges}
             </div>
-            {subtitle ? <div className="mt-0.5 text-sm text-white/50">{subtitle}</div> : null}
+            {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-tertiary)]">{subtitle}</div> : null}
           </div>
         </div>
       </div>
@@ -517,12 +517,12 @@ function DashedCard({
         {hasContent && (
           <div>
             {children}
-            {metadata && !children ? <div className="text-sm text-white/50">{metadata}</div> : null}
+            {metadata && !children ? <div className="text-sm text-[var(--color-text-tertiary)]">{metadata}</div> : null}
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
-          {time ? <span className="text-sm text-white/50">{t('entry.timeRequested')} {time}</span> : <span />}
+          {time ? <span className="text-sm text-[var(--color-text-tertiary)]">{t('entry.timeRequested')} {time}</span> : <span />}
           {actions ? (
             <div className="flex shrink-0 items-center gap-2 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all duration-200">
               {actions}
@@ -570,7 +570,7 @@ function StampRow({
         <Check className="size-4.5 shrink-0 text-[var(--color-status-success)]" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={href} className="text-[15px] font-semibold text-white/75 hover:text-white truncate transition-colors">
+            <Link href={href} className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate transition-colors">
               {title}
             </Link>
             <span className="font-mono text-[10px] font-bold text-[var(--color-status-success)]/50">
@@ -578,7 +578,7 @@ function StampRow({
             </span>
             {badges}
           </div>
-          {subtitle ? <div className="mt-0.5 text-sm text-white/40">{subtitle}</div> : null}
+          {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-tertiary)]">{subtitle}</div> : null}
         </div>
       </div>
 
@@ -586,7 +586,7 @@ function StampRow({
       {hasContent && (
         <div className="mt-2.5 ml-[30px]">
           {children}
-          {metadata && !children ? <div className="text-sm text-white/35">{metadata}</div> : null}
+          {metadata && !children ? <div className="text-sm text-[var(--color-text-muted)]">{metadata}</div> : null}
         </div>
       )}
 
@@ -599,7 +599,7 @@ function StampRow({
           {time ? (
             <>
               <span className="text-[var(--color-status-success)]/30">·</span>
-              <span className="text-xs text-white/35">{time}</span>
+              <span className="text-xs text-[var(--color-text-muted)]">{time}</span>
             </>
           ) : null}
         </div>

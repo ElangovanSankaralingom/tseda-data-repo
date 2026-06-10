@@ -65,7 +65,7 @@ function LoadingState({ message }: { message: React.ReactNode }) {
       className="rounded-2xl p-6 text-sm"
       style={{
         color: "var(--color-text-tertiary)",
-        background: "rgba(8,10,18,0.45)",
+        background: "var(--color-surface-inset-deep)",
         border: "1px solid var(--color-border-subtle)",
       }}
     >
@@ -81,7 +81,7 @@ function MicroStat({ count, label, color }: { count: number; label: string; colo
     <div
       className="relative flex items-center gap-2 overflow-hidden rounded-lg px-3.5 py-2"
       style={{
-        background: "linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.35) 100%)",
+        background: "var(--color-surface-inset-deep)",
         border: "1px solid var(--color-border-subtle)",
       }}
     >
@@ -130,7 +130,7 @@ function CategoryHero({
         className="relative overflow-hidden rounded-3xl"
         style={{
           ...tiltStyle,
-          background: `linear-gradient(135deg, rgba(0,0,0,0.45) 0%, ${chartHex}12 50%, rgba(0,0,0,0.4) 100%)`,
+          background: `linear-gradient(135deg, var(--color-surface-inset-deep) 0%, ${chartHex}12 50%, var(--color-surface-inset-deep) 100%)`,
           border: `1px solid var(--color-divider)`,
           boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 var(--color-border-subtle)`,
         }}
@@ -191,7 +191,7 @@ function CategoryHero({
               <Icon className="size-7" style={{ color: chartHex }} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{title || "Entries"}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">{title || "Entries"}</h1>
               {subtitle ? (
                 <p className="mt-0.5 text-sm max-w-md line-clamp-2" style={{ color: "var(--color-text-tertiary)" }}>{subtitle}</p>
               ) : null}
@@ -271,7 +271,7 @@ function CategoryHero({
               <button
                 type="button"
                 onClick={onAdd}
-                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-[var(--color-text-on-accent)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
                 style={{
                   background: chartHex,
                   boxShadow: `0 4px 20px ${chartHex}35`,

@@ -126,7 +126,7 @@ export default function StreakRing({
             </span>
           )}
         </div>
-        <div className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/30">
+        <div className="text-[8px] font-bold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
           {label}
         </div>
       </div>

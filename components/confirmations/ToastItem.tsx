@@ -60,7 +60,7 @@ const TYPE_CONFIG: Record<
   undo: {
     Icon: RotateCcw,
     iconBg: "",
-    iconColor: "text-white",
+    iconColor: "text-[var(--color-text-on-accent)]",
     border: "",
     defaultDuration: 8000,
   },
@@ -130,7 +130,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
         exiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
       } ${
         isUndo
-          ? "bg-[var(--color-button-primary-bg)] text-white"
+          ? "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)]"
           : "border border-[var(--color-glass-border)] border-l-4 bg-[var(--color-toast-bg)] " + config.border
       }`}
       style={{ minWidth: 320, maxWidth: 440 }}
@@ -151,11 +151,11 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <div className={`text-sm font-semibold ${isUndo ? "text-white" : "text-[var(--color-text-primary)]"}`}>
+          <div className={`text-sm font-semibold ${isUndo ? "text-[var(--color-text-on-accent)]" : "text-[var(--color-text-primary)]"}`}>
             {toast.title}
           </div>
           {toast.message && (
-            <p className={`mt-0.5 text-xs ${isUndo ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-secondary)]"}`}>
+            <p className={`mt-0.5 text-xs ${isUndo ? "text-[var(--color-text-on-accent-muted)]" : "text-[var(--color-text-secondary)]"}`}>
               {toast.message}
             </p>
           )}
@@ -182,7 +182,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
             type="button"
             onClick={dismiss}
             className={`shrink-0 rounded p-0.5 transition-colors ${
-              isUndo ? "text-[var(--color-text-secondary)] hover:text-white" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              isUndo ? "text-[var(--color-text-secondary)] hover:text-[var(--color-text-on-accent)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
             aria-label="Dismiss"
           >
@@ -196,7 +196,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
         <div className="absolute bottom-0 left-0 right-0 h-0.5">
           <div
             className={`h-full transition-none ${
-              isUndo ? "bg-white/30" : toast.type === "success" ? "bg-emerald-500/15" : toast.type === "error" ? "bg-red-500/15" : toast.type === "warning" ? "bg-amber-500/15" : "bg-blue-500/15"
+              isUndo ? "bg-[var(--color-surface-on-accent-strong)]" : toast.type === "success" ? "bg-emerald-500/15" : toast.type === "error" ? "bg-red-500/15" : toast.type === "warning" ? "bg-amber-500/15" : "bg-blue-500/15"
             }`}
             style={{ width: `${progress}%` }}
           />

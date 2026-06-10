@@ -165,7 +165,7 @@ export default function CompletionRing({
         >
           {total}
         </span>
-        <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-white/30">
+        <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
           {total === 1 ? t('dashboard.entry') : t('dashboard.entries')}
         </span>
       </div>

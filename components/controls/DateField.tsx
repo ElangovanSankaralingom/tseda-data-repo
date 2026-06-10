@@ -140,7 +140,7 @@ function CalendarGrid({
               className={cx(
                 "flex size-8 items-center justify-center rounded-lg text-xs font-medium transition-all duration-150",
                 isSelected
-                  ? "bg-[var(--color-primary)] text-white font-bold"
+                  ? "bg-[var(--color-primary)] text-[var(--color-text-on-accent)] font-bold"
                   : isToday
                     ? "font-bold"
                     : "hover:bg-[var(--color-glass-hover)]"

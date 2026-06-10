@@ -186,10 +186,10 @@ function EditModeActionBar({
   const buttonDisabled = workflowDisabled || isGenerating || isSuccess;
 
   const buttonClass = isSuccess
-    ? "bg-emerald-500/15 text-white"
+    ? "bg-emerald-500/15 text-[var(--color-text-primary)]"
     : workflowDisabled || isGenerating
-      ? "cursor-not-allowed bg-[var(--color-generate-bg)] text-white opacity-50"
-      : "bg-[var(--color-generate-bg)] text-white hover:bg-[var(--color-generate-hover)]";
+      ? "cursor-not-allowed bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50"
+      : "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-generate-hover)]";
 
   // Show only ONE primary workflow button at a time:
   // - If workflowAction exists (Generate/Regenerate): show that
@@ -232,12 +232,12 @@ function EditModeActionBar({
                 disabled={!finalise.canFinalise || finaliseState !== "idle"}
                 className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
                   finaliseState === "done"
-                    ? "bg-emerald-500/15 text-white animate-finalise-pop"
+                    ? "bg-emerald-500/15 text-[var(--color-text-primary)] animate-finalise-pop"
                     : finaliseState === "finalising"
-                      ? "bg-[var(--color-generate-bg)] text-white opacity-50 cursor-not-allowed"
+                      ? "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50 cursor-not-allowed"
                       : finalise.canFinalise
-                        ? "bg-[var(--color-generate-bg)] text-white hover:bg-[var(--color-generate-hover)]"
-                        : "bg-[var(--color-generate-bg)] text-white opacity-50 cursor-not-allowed"
+                        ? "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-generate-hover)]"
+                        : "bg-[var(--color-generate-bg)] text-[var(--color-text-on-accent)] opacity-50 cursor-not-allowed"
                 }`}
                 title={finaliseState === "done" ? "Entry finalised" : finalise.canFinalise ? "Lock this entry" : finalise.disabledReason}
               >
@@ -314,7 +314,7 @@ function EditModeActionBar({
                     setShowFinaliseConfirm(false);
                     void handleFinalise();
                   }}
-                  className="rounded-lg bg-[var(--color-generate-bg)] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[var(--color-generate-hover)] active:scale-[0.98]"
+                  className="rounded-lg bg-[var(--color-generate-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-all hover:bg-[var(--color-generate-hover)] active:scale-[0.98]"
                 >
                   {t('confirm.finaliseConfirm')}
                 </button>

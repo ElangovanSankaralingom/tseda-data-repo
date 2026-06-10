@@ -68,7 +68,7 @@ export default function DashboardWelcome({
     <div
       className="relative overflow-hidden rounded-3xl border border-[var(--color-border-subtle)]"
       style={{
-        background: "linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(30,58,95,0.18) 50%, rgba(0,0,0,0.4) 100%)",
+        background: "linear-gradient(135deg, var(--color-surface-inset-deep) 0%, rgba(30,58,95,0.18) 50%, var(--color-surface-inset-deep) 100%)",
       }}
     >
       {/* Holographic light */}
@@ -92,7 +92,7 @@ export default function DashboardWelcome({
                 </span>
               </div>
               <div className="mt-4 animate-text-reveal">
-                <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                <h1 className="text-4xl font-black tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
                   {firstName}
                 </h1>
               </div>
@@ -103,7 +103,7 @@ export default function DashboardWelcome({
 
             {/* ── Streak ring gauges — raised surface ── */}
             {hasAnyEntries && (streakActivated > 0 || streakWins > 0) && (
-              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "#0f111c", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
+              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "var(--color-surface-panel-raised)", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
                 {streakActivated > 0 && (
                   <StreakRing
                     icon={Flame}
@@ -136,7 +136,7 @@ export default function DashboardWelcome({
           {/* ═══ RIGHT: Bright counter panel (L3) ═══ */}
           {hasAnyEntries && (
             <div className="lg:w-72 shrink-0">
-              <div className="h-full overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.14)] border border-[var(--color-border-default)] flex flex-col">
+              <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-on-accent-strong)] border border-[var(--color-border-default)] flex flex-col">
                 <div className="h-[2px] bg-[var(--color-primary)] opacity-50" />
 
                 <div className="flex-1 p-6 flex flex-col justify-between">
@@ -144,14 +144,14 @@ export default function DashboardWelcome({
                     <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">
                       {t("dashboard.totalEntries")}
                     </div>
-                    <div className="mt-2 font-mono text-5xl font-black tracking-tighter text-white leading-none">
+                    <div className="mt-2 font-mono text-5xl font-black tracking-tighter text-[var(--color-text-primary)] leading-none">
                       {formatNumber(totalEntries, language)}
                     </div>
                   </div>
 
                   {/* Dark inset micro-stats (L1 inside L3 — creates depth) */}
                   <div className="mt-6 flex gap-3">
-                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "#0c0e16", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
+                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "var(--color-surface-panel)", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
                       <div className="flex items-center gap-2">
                         <FileText className="size-4 text-[var(--color-text-tertiary)]" />
                         <span className="font-mono text-lg font-black text-[var(--color-text-primary)]">
@@ -186,7 +186,7 @@ export default function DashboardWelcome({
         </div>
 
         {/* ── Status bar — own surface ── */}
-        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "#080a12", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
+        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "var(--color-surface-panel)", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
           <span className="text-[var(--color-primary)] text-xs font-bold">{">"}</span>
           <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-text-tertiary)]">
             TSEDA

@@ -71,7 +71,7 @@ function sortByUrgency(categories: CategoryOverview[]): CategoryOverview[] {
 /* ── DARK MICRO-PILLS (L3 — dark inside bright panel = depth) ── */
 function MicroPills({ cat }: { cat: CategoryOverview }) {
   const pills: { label: string; count: number; className: string }[] = [];
-  if (cat.draftCount > 0) pills.push({ label: "DRF", count: cat.draftCount, className: "text-[var(--color-text-placeholder)] bg-[rgba(0,0,0,0.4)]" });
+  if (cat.draftCount > 0) pills.push({ label: "DRF", count: cat.draftCount, className: "text-[var(--color-text-placeholder)] bg-[var(--color-surface-inset-deep)]" });
   if (cat.editRequestedCount > 0) pills.push({ label: "REQ", count: cat.editRequestedCount, className: "text-amber-400 bg-amber-400/10" });
   if (cat.editGrantedCount > 0) pills.push({ label: "EDT", count: cat.editGrantedCount, className: "text-[var(--color-primary)] bg-[var(--color-primary)]/10" });
 
@@ -110,7 +110,7 @@ function MiniDistributionBar({ cat }: { cat: CategoryOverview }) {
   if (segments.length < 2) return null;
 
   return (
-    <div className="mt-2.5 flex h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,0.40)" }}>
+    <div className="mt-2.5 flex h-1.5 overflow-hidden rounded-full" style={{ background: "var(--color-surface-inset-deep)" }}>
       {segments.map((seg, i) => (
         <div
           key={i}
@@ -138,7 +138,7 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
         href={cat.href}
         className="relative flex overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] transition-all duration-300 hover:-translate-y-1"
         style={{
-          background: "rgba(0,0,0,0.30)",
+          background: "var(--color-card-bg)",
           clipPath: NOTCH_CLIP,
         }}
       >
@@ -239,7 +239,7 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
             </div>
             <Link
               href={cat.newHref}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--color-text-on-accent)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
               style={{ background: hex, boxShadow: `0 4px 16px ${hex}25` }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -280,10 +280,10 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
           "relative flex overflow-hidden rounded-2xl border transition-all duration-300",
           hasEntries
             ? "border-[var(--color-border-subtle)]"
-            : "border-dashed border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.15)]"
+            : "border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)]"
         )}
         style={hasEntries ? {
-          background: "rgba(0,0,0,0.30)",
+          background: "var(--color-card-bg)",
           clipPath: NOTCH_CLIP,
         } : undefined}
       >
@@ -439,7 +439,7 @@ export default function DataEntryClient({ greeting, userName, categories, totals
       {/* ─── Header ─── */}
       <div className="flex flex-wrap items-start justify-between gap-3 pb-5 mb-6 animate-fade-in-up">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
             {greeting}{firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-placeholder)]">{statusText}</p>
