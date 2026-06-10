@@ -6,7 +6,15 @@
    in CLAUDE.md can contain wildcard patterns that break CSS parsing. */
 @source not "../**/*.md";
 
+/* ─────────────────────────────────────────────────────────────────────────
+   FIRST-PAINT FALLBACK — keep in sync with DARK_BASE in lib/theme/themeTokens.ts.
+   These values only matter before hydration and on unauthenticated pages
+   (signin, maintenance). Authenticated pages get the user's resolved tokens
+   emitted server-side in app/(protected)/layout.tsx, and ThemeProvider takes
+   over after hydration. Dark is the product default, so the fallback is dark.
+   ───────────────────────────────────────────────────────────────────────── */
 :root {
+  color-scheme: dark;
   --color-primary: #84CC16;
   --color-primary-light: #A3E635;
   --color-primary-muted: #1A2310;
@@ -22,12 +30,14 @@
   --color-sidebar-hover-bg: rgba(255, 255, 255, 0.04);
   --color-body-bg: #0B0F19;
   --color-card-bg: rgba(255, 255, 255, 0.03);
-  --color-card-border: rgba(255, 255, 255, 0.06);
+  --color-card-border: rgba(255, 255, 255, 0.10);
   --color-text-primary: #F1F5F9;
   --color-text-secondary: #94A3B8;
   --color-text-muted: #4B5563;
+  --color-text-tertiary: rgba(255, 255, 255, 0.50);
+  --color-text-placeholder: rgba(255, 255, 255, 0.50);
   --color-input-bg: rgba(255, 255, 255, 0.05);
-  --color-input-border: rgba(255, 255, 255, 0.08);
+  --color-input-border: rgba(255, 255, 255, 0.12);
   --color-input-focus-ring: #84CC16;
   --color-badge-bg: rgba(132, 204, 22, 0.15);
   --color-badge-text: #A3E635;
@@ -36,9 +46,18 @@
   --color-button-primary-hover: #65A30D;
   --color-generate-bg: #84CC16;
   --color-generate-hover: #65A30D;
-  --color-divider: rgba(255, 255, 255, 0.06);
+  --color-divider: rgba(255, 255, 255, 0.10);
+  --color-divider-strong: rgba(255, 255, 255, 0.15);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-default: rgba(255, 255, 255, 0.12);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+  --color-icon-active: rgba(255, 255, 255, 0.90);
+  --color-icon-default: rgba(255, 255, 255, 0.65);
+  --color-icon-muted: rgba(255, 255, 255, 0.50);
+  --color-surface-raised: rgba(255, 255, 255, 0.04);
+  --color-surface-inset: rgba(0, 0, 0, 0.12);
   --color-dropdown-bg: rgba(20, 25, 40, 0.95);
-  --color-dropdown-hover: rgba(255, 255, 255, 0.06);
+  --color-dropdown-hover: rgba(255, 255, 255, 0.08);
   --color-toast-bg: rgba(20, 25, 40, 0.95);
   --color-modal-overlay: rgba(0, 0, 0, 0.6);
   --color-modal-bg: rgba(20, 25, 40, 0.95);
@@ -47,10 +66,50 @@
   --color-header-tint: rgba(132, 204, 22, 0.04);
   --color-gradient-from: #0B0F19;
   --color-gradient-to: #131A2B;
+  --color-text-on-accent: #F1F5F9;
+  --color-text-on-accent-muted: rgba(255, 255, 255, 0.65);
+  --color-surface-on-accent: rgba(255, 255, 255, 0.08);
+  --color-surface-on-accent-strong: rgba(255, 255, 255, 0.16);
   --color-glass-bg: rgba(255, 255, 255, 0.03);
-  --color-glass-border: rgba(255, 255, 255, 0.06);
+  --color-glass-border: rgba(255, 255, 255, 0.10);
   --color-glass-hover: rgba(255, 255, 255, 0.05);
   --color-glow-primary: rgba(132, 204, 22, 0.15);
+  --color-status-success: #34D399;
+  --color-status-success-bg: rgba(52, 211, 153, 0.10);
+  --color-status-success-border: rgba(52, 211, 153, 0.20);
+  --color-status-success-soft: rgba(52, 211, 153, 0.20);
+  --color-status-success-strong: #059669;
+  --color-status-success-deep: #065F46;
+  --color-status-warning: #FBBF24;
+  --color-status-warning-bg: rgba(251, 191, 36, 0.10);
+  --color-status-warning-border: rgba(251, 191, 36, 0.20);
+  --color-status-error: #F87171;
+  --color-status-error-bg: rgba(248, 113, 113, 0.10);
+  --color-status-error-border: rgba(248, 113, 113, 0.20);
+  --color-status-info: #60A5FA;
+  --color-status-info-bg: rgba(96, 165, 250, 0.10);
+  --color-status-info-border: rgba(96, 165, 250, 0.20);
+  --color-palette-violet-fg: #A78BFA;
+  --color-palette-violet-bg: rgba(167, 139, 250, 0.10);
+  --color-palette-violet-border: rgba(167, 139, 250, 0.20);
+  --color-palette-purple-fg: #C084FC;
+  --color-palette-purple-bg: rgba(192, 132, 252, 0.10);
+  --color-palette-purple-border: rgba(192, 132, 252, 0.20);
+  --color-palette-cyan-fg: #22D3EE;
+  --color-palette-cyan-bg: rgba(34, 211, 238, 0.10);
+  --color-palette-cyan-border: rgba(34, 211, 238, 0.20);
+  --color-palette-orange-fg: #FB923C;
+  --color-palette-orange-bg: rgba(251, 146, 60, 0.10);
+  --color-palette-orange-border: rgba(251, 146, 60, 0.20);
+  --color-palette-indigo-fg: #818CF8;
+  --color-palette-indigo-bg: rgba(129, 140, 248, 0.10);
+  --color-palette-indigo-border: rgba(129, 140, 248, 0.20);
+  --color-palette-rose-fg: #FB7185;
+  --color-palette-rose-bg: rgba(251, 113, 133, 0.10);
+  --color-palette-rose-border: rgba(251, 113, 133, 0.20);
+  --color-palette-yellow-fg: #FACC15;
+  --color-palette-yellow-bg: rgba(250, 204, 21, 0.10);
+  --color-palette-yellow-border: rgba(250, 204, 21, 0.20);
 }
 
 html {
@@ -92,10 +151,12 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Selection */
+/* Selection — accent-tinted highlight that adapts to mode.
+   Was hardcoded rgba(lime)/near-white text, which made selected text
+   unreadable in light mode (white text on pale lime). */
 ::selection {
-  background: rgba(132, 204, 22, 0.25);
-  color: #F1F5F9;
+  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  color: var(--color-text-primary);
 }
 
 @theme inline {
@@ -141,36 +202,42 @@ body {
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   shadcn/ui VARIABLE LAYER — aliased to the TSEDA token system.
+   These were previously frozen dark oklch values with no light override,
+   which made `border-border` (applied to * below), `text-card-foreground`,
+   and every shadcn utility render dark in BOTH modes. Aliasing them to
+   --color-* means they now follow mode/palette switching automatically.
+   Do NOT put literal colors here — point at a --color-* token instead.
+   ───────────────────────────────────────────────────────────────────────── */
 :root {
   --radius: 0.625rem;
-  --color-brand: #84CC16;
-  --color-accent: #84CC16;
-  --background: oklch(0.07 0.015 260);
-  --foreground: oklch(0.97 0.003 247.858);
-  --card: oklch(0.12 0.015 260);
-  --card-foreground: oklch(0.97 0.003 247.858);
-  --popover: oklch(0.12 0.015 260);
-  --popover-foreground: oklch(0.97 0.003 247.858);
-  --primary: oklch(0.77 0.18 130);
-  --primary-foreground: oklch(0.07 0.015 260);
-  --secondary: oklch(0.15 0.01 260);
-  --secondary-foreground: oklch(0.97 0.003 247.858);
-  --muted: oklch(0.15 0.01 260);
-  --muted-foreground: oklch(0.55 0.02 260);
-  --accent: oklch(0.15 0.01 260);
-  --accent-foreground: oklch(0.97 0.003 247.858);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.2 0.01 260);
-  --input: oklch(0.2 0.01 260);
-  --ring: oklch(0.77 0.18 130);
-  --sidebar: oklch(0.1 0.015 260);
-  --sidebar-foreground: oklch(0.97 0.003 247.858);
-  --sidebar-primary: oklch(0.77 0.18 130);
-  --sidebar-primary-foreground: oklch(0.07 0.015 260);
-  --sidebar-accent: oklch(0.15 0.01 260);
-  --sidebar-accent-foreground: oklch(0.97 0.003 247.858);
-  --sidebar-border: oklch(0.2 0.01 260);
-  --sidebar-ring: oklch(0.77 0.18 130);
+  --background: var(--color-body-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-card-bg);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-dropdown-bg);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-button-primary-text);
+  --secondary: var(--color-surface-raised);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-surface-raised);
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-dropdown-hover);
+  --accent-foreground: var(--color-text-primary);
+  --destructive: var(--color-status-error);
+  --border: var(--color-border-default);
+  --input: var(--color-input-border);
+  --ring: var(--color-input-focus-ring);
+  --sidebar: var(--color-sidebar-bg);
+  --sidebar-foreground: var(--color-sidebar-text);
+  --sidebar-primary: var(--color-primary);
+  --sidebar-primary-foreground: var(--color-button-primary-text);
+  --sidebar-accent: var(--color-sidebar-active-bg);
+  --sidebar-accent-foreground: var(--color-sidebar-active-text);
+  --sidebar-border: var(--color-border-default);
+  --sidebar-ring: var(--color-input-focus-ring);
 }
 
 @layer base {

@@ -35,6 +35,8 @@ function applyTokens(tokens: ThemeTokens, isDark: boolean) {
     root.style.setProperty(key, value);
   }
   root.classList.toggle("dark", isDark);
+  /* Native form controls, scrollbars, etc. follow the active mode. */
+  root.style.colorScheme = isDark ? "dark" : "light";
 }
 
 export default function ThemeProvider({

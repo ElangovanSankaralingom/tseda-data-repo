@@ -9,6 +9,7 @@ import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
 import { signin } from "@/lib/entryNavigation";
 import { getUserPreferences } from "@/lib/preferences/userPreferences";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { buildThemeCss } from "@/lib/theme/themeTokens";
 import type { ThemeMode, ColorPalette } from "@/lib/theme/themeTokens";
 import type { Language } from "@/lib/i18n";
 
@@ -27,13 +28,26 @@ export default async function ProtectedLayout({
   }
 
   const prefs = getUserPreferences(normalizeEmail(email));
+  const mode = prefs.themeMode as ThemeMode;
+  const palette = prefs.colorPalette as ColorPalette;
 
   return (
     <ThemeProvider
-      initialMode={prefs.themeMode as ThemeMode}
-      initialPalette={prefs.colorPalette as ColorPalette}
+      initialMode={mode}
+      initialPalette={palette}
       initialLanguage={prefs.language as Language}
     >
+      {/* First-paint theming: resolved tokens + .dark class BEFORE hydration.
+          The <style> overrides the static dark fallback in globals.css (same
+          specificity, later in source order); the inline script is parser-
+          blocking, so the class is correct before anything below it paints.
+          ThemeProvider takes over on the client after hydration. */}
+      <style dangerouslySetInnerHTML={{ __html: buildThemeCss(mode, palette) }} />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.classList.toggle("dark",${mode === "dark"});`,
+        }}
+      />
       <ShellClient>
         <NavigationRefresh />
         <NetworkStatus />

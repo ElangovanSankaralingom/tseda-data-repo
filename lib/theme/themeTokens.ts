@@ -53,6 +53,12 @@ export interface ThemeTokens {
   "--color-header-tint": string;
   "--color-gradient-from": string;
   "--color-gradient-to": string;
+  /* Text + surfaces sitting on top of the gradient header (or any saturated accent surface).
+     Stays light in both modes because the gradient is always dark-or-saturated. */
+  "--color-text-on-accent": string;
+  "--color-text-on-accent-muted": string;
+  "--color-surface-on-accent": string;
+  "--color-surface-on-accent-strong": string;
   "--color-glass-bg": string;
   "--color-glass-border": string;
   "--color-glass-hover": string;
@@ -60,6 +66,11 @@ export interface ThemeTokens {
   "--color-status-success": string;
   "--color-status-success-bg": string;
   "--color-status-success-border": string;
+  /* Success scale — for intensity visualisations (heatmaps, streak calendars).
+     soft → default → strong → deep, used as a 4-step gradient. */
+  "--color-status-success-soft": string;
+  "--color-status-success-strong": string;
+  "--color-status-success-deep": string;
   "--color-status-warning": string;
   "--color-status-warning-bg": string;
   "--color-status-warning-border": string;
@@ -69,7 +80,34 @@ export interface ThemeTokens {
   "--color-status-info": string;
   "--color-status-info-bg": string;
   "--color-status-info-border": string;
+  /* ─── Categorical palette — for items that need distinct, theme-stable colors
+     (audit action types, admin tool tiles, stat cards). NOT remapped by accent palette. ─── */
+  "--color-palette-violet-fg": string;
+  "--color-palette-violet-bg": string;
+  "--color-palette-violet-border": string;
+  "--color-palette-purple-fg": string;
+  "--color-palette-purple-bg": string;
+  "--color-palette-purple-border": string;
+  "--color-palette-cyan-fg": string;
+  "--color-palette-cyan-bg": string;
+  "--color-palette-cyan-border": string;
+  "--color-palette-orange-fg": string;
+  "--color-palette-orange-bg": string;
+  "--color-palette-orange-border": string;
+  "--color-palette-indigo-fg": string;
+  "--color-palette-indigo-bg": string;
+  "--color-palette-indigo-border": string;
+  "--color-palette-rose-fg": string;
+  "--color-palette-rose-bg": string;
+  "--color-palette-rose-border": string;
+  "--color-palette-yellow-fg": string;
+  "--color-palette-yellow-bg": string;
+  "--color-palette-yellow-border": string;
 }
+
+/** Chart fallback hex for unknown-category coloring in analytics. Charts (Recharts)
+ *  consume raw hex, not CSS variables, so this lives outside the token system. */
+export const CHART_FALLBACK_HEX = "#64748B";
 
 /* ─── LIGHT BASE ─── */
 export const LIGHT_BASE: ThemeTokens = {
@@ -124,6 +162,10 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-header-tint": "rgba(77, 124, 15, 0.06)",
   "--color-gradient-from": "#4D7C0F",
   "--color-gradient-to": "#65A30D",
+  "--color-text-on-accent": "#FFFFFF",
+  "--color-text-on-accent-muted": "rgba(255, 255, 255, 0.70)",
+  "--color-surface-on-accent": "rgba(255, 255, 255, 0.10)",
+  "--color-surface-on-accent-strong": "rgba(255, 255, 255, 0.20)",
   "--color-glass-bg": "rgba(255, 255, 255, 0.7)",
   "--color-glass-border": "rgba(0, 0, 0, 0.06)",
   "--color-glass-hover": "rgba(0, 0, 0, 0.03)",
@@ -131,6 +173,9 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-status-success": "#16A34A",
   "--color-status-success-bg": "rgba(22, 163, 74, 0.10)",
   "--color-status-success-border": "rgba(22, 163, 74, 0.20)",
+  "--color-status-success-soft": "rgba(16, 185, 129, 0.20)",
+  "--color-status-success-strong": "#059669",
+  "--color-status-success-deep": "#065F46",
   "--color-status-warning": "#D97706",
   "--color-status-warning-bg": "rgba(217, 119, 6, 0.10)",
   "--color-status-warning-border": "rgba(217, 119, 6, 0.20)",
@@ -140,6 +185,28 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-status-info": "#2563EB",
   "--color-status-info-bg": "rgba(37, 99, 235, 0.10)",
   "--color-status-info-border": "rgba(37, 99, 235, 0.20)",
+  /* Categorical palette — Tailwind 500 shades for light mode */
+  "--color-palette-violet-fg": "#8B5CF6",
+  "--color-palette-violet-bg": "rgba(139, 92, 246, 0.10)",
+  "--color-palette-violet-border": "rgba(139, 92, 246, 0.20)",
+  "--color-palette-purple-fg": "#A855F7",
+  "--color-palette-purple-bg": "rgba(168, 85, 247, 0.10)",
+  "--color-palette-purple-border": "rgba(168, 85, 247, 0.20)",
+  "--color-palette-cyan-fg": "#06B6D4",
+  "--color-palette-cyan-bg": "rgba(6, 182, 212, 0.10)",
+  "--color-palette-cyan-border": "rgba(6, 182, 212, 0.20)",
+  "--color-palette-orange-fg": "#F97316",
+  "--color-palette-orange-bg": "rgba(249, 115, 22, 0.10)",
+  "--color-palette-orange-border": "rgba(249, 115, 22, 0.20)",
+  "--color-palette-indigo-fg": "#6366F1",
+  "--color-palette-indigo-bg": "rgba(99, 102, 241, 0.10)",
+  "--color-palette-indigo-border": "rgba(99, 102, 241, 0.20)",
+  "--color-palette-rose-fg": "#F43F5E",
+  "--color-palette-rose-bg": "rgba(244, 63, 94, 0.10)",
+  "--color-palette-rose-border": "rgba(244, 63, 94, 0.20)",
+  "--color-palette-yellow-fg": "#EAB308",
+  "--color-palette-yellow-bg": "rgba(234, 179, 8, 0.10)",
+  "--color-palette-yellow-border": "rgba(234, 179, 8, 0.20)",
 };
 
 /* ─── DARK BASE — THE PRIMARY EXPERIENCE ─── */
@@ -195,6 +262,10 @@ export const DARK_BASE: ThemeTokens = {
   "--color-header-tint": "rgba(132, 204, 22, 0.04)",
   "--color-gradient-from": "#0B0F19",
   "--color-gradient-to": "#131A2B",
+  "--color-text-on-accent": "#F1F5F9",
+  "--color-text-on-accent-muted": "rgba(255, 255, 255, 0.65)",
+  "--color-surface-on-accent": "rgba(255, 255, 255, 0.08)",
+  "--color-surface-on-accent-strong": "rgba(255, 255, 255, 0.16)",
   "--color-glass-bg": "rgba(255, 255, 255, 0.03)",
   "--color-glass-border": "rgba(255, 255, 255, 0.10)",
   "--color-glass-hover": "rgba(255, 255, 255, 0.05)",
@@ -202,6 +273,9 @@ export const DARK_BASE: ThemeTokens = {
   "--color-status-success": "#34D399",
   "--color-status-success-bg": "rgba(52, 211, 153, 0.10)",
   "--color-status-success-border": "rgba(52, 211, 153, 0.20)",
+  "--color-status-success-soft": "rgba(52, 211, 153, 0.20)",
+  "--color-status-success-strong": "#059669",
+  "--color-status-success-deep": "#065F46",
   "--color-status-warning": "#FBBF24",
   "--color-status-warning-bg": "rgba(251, 191, 36, 0.10)",
   "--color-status-warning-border": "rgba(251, 191, 36, 0.20)",
@@ -211,6 +285,28 @@ export const DARK_BASE: ThemeTokens = {
   "--color-status-info": "#60A5FA",
   "--color-status-info-bg": "rgba(96, 165, 250, 0.10)",
   "--color-status-info-border": "rgba(96, 165, 250, 0.20)",
+  /* Categorical palette — Tailwind 400 shades for dark mode (alphas held stable) */
+  "--color-palette-violet-fg": "#A78BFA",
+  "--color-palette-violet-bg": "rgba(167, 139, 250, 0.10)",
+  "--color-palette-violet-border": "rgba(167, 139, 250, 0.20)",
+  "--color-palette-purple-fg": "#C084FC",
+  "--color-palette-purple-bg": "rgba(192, 132, 252, 0.10)",
+  "--color-palette-purple-border": "rgba(192, 132, 252, 0.20)",
+  "--color-palette-cyan-fg": "#22D3EE",
+  "--color-palette-cyan-bg": "rgba(34, 211, 238, 0.10)",
+  "--color-palette-cyan-border": "rgba(34, 211, 238, 0.20)",
+  "--color-palette-orange-fg": "#FB923C",
+  "--color-palette-orange-bg": "rgba(251, 146, 60, 0.10)",
+  "--color-palette-orange-border": "rgba(251, 146, 60, 0.20)",
+  "--color-palette-indigo-fg": "#818CF8",
+  "--color-palette-indigo-bg": "rgba(129, 140, 248, 0.10)",
+  "--color-palette-indigo-border": "rgba(129, 140, 248, 0.20)",
+  "--color-palette-rose-fg": "#FB7185",
+  "--color-palette-rose-bg": "rgba(251, 113, 133, 0.10)",
+  "--color-palette-rose-border": "rgba(251, 113, 133, 0.20)",
+  "--color-palette-yellow-fg": "#FACC15",
+  "--color-palette-yellow-bg": "rgba(250, 204, 21, 0.10)",
+  "--color-palette-yellow-border": "rgba(250, 204, 21, 0.20)",
 };
 
 /* ─── COLOR PALETTES ─── */
@@ -309,4 +405,19 @@ export function resolveTokens(mode: ThemeMode, palette: ColorPalette): ThemeToke
   }
   if (mode === "color") return { ...LIGHT_BASE, ...safePalette };
   return { ...LIGHT_BASE };
+}
+
+/**
+ * Serialize resolved tokens to a single `:root` CSS rule for server-side
+ * emission (app/(protected)/layout.tsx). Rendered as an inline <style> so the
+ * FIRST paint already matches the user's saved mode/palette — without this,
+ * light-mode users flash the dark fallback from globals.css until
+ * ThemeProvider's useEffect runs.
+ */
+export function buildThemeCss(mode: ThemeMode, palette: ColorPalette): string {
+  const tokens = resolveTokens(mode, palette);
+  const vars = Object.entries(tokens)
+    .map(([key, value]) => `${key}:${value}`)
+    .join(";");
+  return `:root{color-scheme:${mode === "dark" ? "dark" : "light"};${vars}}`;
 }
