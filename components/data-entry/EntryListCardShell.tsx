@@ -98,6 +98,7 @@ function HeroCard({
       tabIndex={0}
       aria-label={`${title} entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("streak_runners")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-amber-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 18%, transparent)",
@@ -206,6 +207,7 @@ function TimerCard({
       tabIndex={0}
       aria-label={`${title} entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("on_the_clock")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",
@@ -310,6 +312,7 @@ function StandardCard({
       tabIndex={0}
       aria-label={`${title} entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-purple-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-purple-fg) 15%, transparent)",
@@ -403,6 +406,7 @@ function DraftRow({
       tabIndex={0}
       aria-label={`${title} draft entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("in_the_works")} group rounded-xl animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-strong)]`}
       style={{
         border: "2px dashed var(--color-border-strong)",
@@ -472,6 +476,7 @@ function DashedCard({
       tabIndex={0}
       aria-label={`${title} entry under review`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("under_review")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-orange-fg)_30%,transparent)]`}
       style={{
         border: "1.5px dashed color-mix(in srgb, var(--color-palette-orange-fg) 20%, transparent)",
@@ -562,6 +567,7 @@ function StampRow({
       tabIndex={0}
       aria-label={`${title} finalized entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("locked_in")} group animate-fade-in-up ${staggerClass} py-4 px-4 hover:bg-[var(--color-status-success-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-status-success-border)]`}
       style={{ borderBottom: `1px solid var(--color-status-success-border)` }}
     >
