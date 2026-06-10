@@ -153,12 +153,13 @@ body {
 .dark .shadow-2xl { box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6); }
 
 /* Light mode elevation — soft diffuse "floating card" shadows.
-   In light, depth comes from layered low-alpha warm shadows, not borders. */
-html:not(.dark) .shadow-sm { box-shadow: 0 1px 2px rgba(31, 29, 26, 0.04), 0 4px 12px -2px rgba(31, 29, 26, 0.05); }
-html:not(.dark) .shadow-md { box-shadow: 0 2px 6px rgba(31, 29, 26, 0.04), 0 10px 24px -6px rgba(31, 29, 26, 0.08); }
-html:not(.dark) .shadow-lg { box-shadow: 0 4px 12px rgba(31, 29, 26, 0.05), 0 20px 44px -12px rgba(31, 29, 26, 0.12); }
-html:not(.dark) .shadow-xl { box-shadow: 0 6px 16px rgba(31, 29, 26, 0.06), 0 28px 60px -16px rgba(31, 29, 26, 0.16); }
-html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(31, 29, 26, 0.08), 0 36px 80px -20px rgba(31, 29, 26, 0.20); }
+   In light, depth comes from layered low-alpha COOL (navy-hue) shadows,
+   matching the daylight-navy neutral ramp. */
+html:not(.dark) .shadow-sm { box-shadow: 0 1px 2px rgba(22, 27, 40, 0.04), 0 4px 12px -2px rgba(22, 27, 40, 0.05); }
+html:not(.dark) .shadow-md { box-shadow: 0 2px 6px rgba(22, 27, 40, 0.04), 0 10px 24px -6px rgba(22, 27, 40, 0.08); }
+html:not(.dark) .shadow-lg { box-shadow: 0 4px 12px rgba(22, 27, 40, 0.05), 0 20px 44px -12px rgba(22, 27, 40, 0.12); }
+html:not(.dark) .shadow-xl { box-shadow: 0 6px 16px rgba(22, 27, 40, 0.06), 0 28px 60px -16px rgba(22, 27, 40, 0.16); }
+html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.08), 0 36px 80px -20px rgba(22, 27, 40, 0.20); }
 
 /* Premium scrollbar */
 .dark ::-webkit-scrollbar {
