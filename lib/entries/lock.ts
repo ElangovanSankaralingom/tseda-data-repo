@@ -25,6 +25,10 @@ export function getEditLockState(entry: unknown, mode?: "streak" | "generic") {
 }
 
 export function isEntryEditable(entry: unknown) {
+  /* S1: a permanently locked entry is never editable, regardless of status. */
+  if ((entry as Record<string, unknown> | null | undefined)?.permanentlyLocked === true) {
+    return false;
+  }
   return !isEntryLockedFromStatus(entry as LockableEntryLike);
 }
 

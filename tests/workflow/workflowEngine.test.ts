@@ -24,12 +24,14 @@ function makeGeneratedEntry(overrides: Record<string, unknown> = {}): Record<str
     academicYear: "2025-26",
     semesterType: "ODD",
     level: "National",
+    mode: "Online",
     startDate: "2025-01-01",
     endDate: "2025-01-05",
     programName: "Test FDP",
     organisingBody: "AICTE",
-    permissionLetter: { url: "https://example.com/pl.pdf", storedPath: "/path" },
-    completionCertificate: { url: "https://example.com/cc.pdf", storedPath: "/path" },
+    sponsored: "No",
+    permissionLetter: [{ url: "https://example.com/pl.pdf", storedPath: "/path" }],
+    completionCertificate: [{ url: "https://example.com/cc.pdf", storedPath: "/path" }],
     ...overrides,
   });
 }
@@ -48,11 +50,13 @@ describe("computeWorkflowState", () => {
     const entry = makeEntry({
       academicYear: "2025-26",
       semesterType: "ODD",
-    level: "National",
+      level: "National",
+      mode: "Online",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",
       organisingBody: "AICTE",
+      sponsored: "No",
     });
     const state = computeWorkflowState(entry, "fdp-attended", config);
     assert.equal(state.buttons.generate.enabled, true);

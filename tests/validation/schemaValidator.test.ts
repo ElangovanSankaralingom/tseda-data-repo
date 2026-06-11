@@ -232,23 +232,26 @@ describe("workshopsSchema.validate", () => {
       {
         id: "w1",
         academicYear: "2025-26",
+        semesterType: "ODD",
+        level: "National",
+        mode: "Offline",
         startDate: "2026-03-01",
         endDate: "2026-03-05",
-        eventName: "Workshop",
-        speakerName: "Dr. Test",
-        organisationName: "TCE",
+        workshopName: "Workshop",
+        resourcePersonName: "Dr. Test",
+        resourcePersonOrganisation: "TCE",
       },
       "create",
     );
     assert.equal(errors.length, 0);
   });
 
-  it("rejects invalid semester value", () => {
+  it("rejects invalid level value", () => {
     const errors = workshopsSchema.validate(
-      { currentSemester: 11 },
+      { level: "District" },
       "update",
     );
-    assert.ok(errors.some((e) => e.field === "currentSemester"));
+    assert.ok(errors.some((e) => e.field === "level"));
   });
 
   it("rejects invalid date format on update", () => {

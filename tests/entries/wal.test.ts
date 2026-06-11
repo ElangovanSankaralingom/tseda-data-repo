@@ -32,20 +32,19 @@ function buildUploadedFile(seed: string) {
 function buildCompleteWorkshopPayload() {
   return {
     academicYear: "Academic Year 2025-2026",
-    yearOfStudy: "2nd year",
-    currentSemester: 3,
+    semesterType: "ODD",
+    level: "National",
+    mode: "Offline",
     startDate: "2025-08-10",
     endDate: "2025-08-12",
-    eventName: "WAL Workshop",
-    speakerName: "Speaker",
-    organisationName: "TCE",
-    uploads: {
-      permissionLetter: buildUploadedFile("permission"),
-      brochure: buildUploadedFile("brochure"),
-      attendance: buildUploadedFile("attendance"),
-      organiserProfile: buildUploadedFile("organiser-profile"),
-      geotaggedPhotos: [buildUploadedFile("photo-1")],
-    },
+    workshopName: "WAL Workshop",
+    resourcePersonName: "Speaker",
+    resourcePersonDesignation: "Professor",
+    resourcePersonOrganisation: "TCE",
+    permissionLetter: [buildUploadedFile("permission")],
+    geotaggedPhotos: [buildUploadedFile("photo-1")],
+    attendanceSheet: [buildUploadedFile("attendance")],
+    officialPoster: [buildUploadedFile("official-poster")],
   };
 }
 
@@ -64,7 +63,7 @@ test("entry mutations append WAL events with action and actor metadata", async (
     const created = await createEntry(ownerEmail, "workshops", buildCompleteWorkshopPayload());
 
     await updateEntry(ownerEmail, "workshops", String(created.id), {
-      eventName: "WAL Workshop Updated",
+      workshopName: "WAL Workshop Updated",
     });
     await commitDraft(ownerEmail, "workshops", String(created.id));
     // Simulate PDF generation before finalise
@@ -97,7 +96,7 @@ test("rebuildUserIndexFromWal restores index snapshot without category scan", as
   await withSandbox("wal-recovery", async () => {
     const created = await createEntry(ownerEmail, "workshops", {
       ...buildCompleteWorkshopPayload(),
-      eventName: "Recovery Workshop",
+      workshopName: "Recovery Workshop",
     });
     await commitDraft(ownerEmail, "workshops", String(created.id));
 

@@ -34,8 +34,8 @@ test("buildExportRows uses schema labels and normalized values", async () => {
       {
         id: "entry-1",
         category: "workshops",
-        eventName: "  Export Workshop  ",
-        speakerName: "   ",
+        workshopName: "  Export Workshop  ",
+        resourcePersonName: "   ",
         startDate: "2026-05-10T11:30:00.000Z",
         confirmationStatus: "GENERATED",
         createdAt: "2026-05-10T00:00:00.000Z",
@@ -46,15 +46,15 @@ test("buildExportRows uses schema labels and normalized values", async () => {
     const built = await buildExportRows(
       email,
       "workshops",
-      ["id", "eventName", "speakerName", "startDate", "confirmationStatus"]
+      ["id", "workshopName", "resourcePersonName", "startDate", "confirmationStatus"]
     );
     assert.equal(built.ok, true);
     if (!built.ok) return;
 
     assert.deepEqual(built.data.headers, [
       "Entry ID",
-      "Event Name",
-      "Speaker Name",
+      "Name of the Workshop",
+      "Resource Person Name",
       "Start Date",
       "Confirmation Status",
     ]);
@@ -75,7 +75,7 @@ test("getExportableFields resolves schema-driven fields and excludes internal-on
   assert.equal(keys.has("category"), true);
   assert.equal(keys.has("id"), true);
   assert.equal(keys.has("confirmationStatus"), true);
-  assert.equal(keys.has("eventName"), true);
+  assert.equal(keys.has("workshopName"), true);
 
   assert.equal(keys.has("pdfMeta"), false);
   assert.equal(keys.has("streak"), false);
@@ -108,7 +108,7 @@ test("buildExportRows filters by status/date and generates csv/xlsx", async () =
       {
         id: "generated-1",
         category: "workshops",
-        eventName: "Generated Entry",
+        workshopName: "Generated Entry",
         confirmationStatus: "GENERATED",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-05T10:00:00.000Z",
@@ -116,7 +116,7 @@ test("buildExportRows filters by status/date and generates csv/xlsx", async () =
       {
         id: "draft-1",
         category: "workshops",
-        eventName: "Draft Entry",
+        workshopName: "Draft Entry",
         confirmationStatus: "DRAFT",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-06T10:00:00.000Z",
@@ -163,7 +163,7 @@ test("buildExportRows applies canonical status filtering to normalized entries",
       {
         id: "generated-canonical-source",
         category: "workshops",
-        eventName: "Generated Entry",
+        workshopName: "Generated Entry",
         confirmationStatus: "GENERATED",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-02T10:00:00.000Z",
@@ -171,7 +171,7 @@ test("buildExportRows applies canonical status filtering to normalized entries",
       {
         id: "draft-canonical-source",
         category: "workshops",
-        eventName: "Draft Entry",
+        workshopName: "Draft Entry",
         confirmationStatus: "DRAFT",
         createdAt: "2026-03-01T10:00:00.000Z",
         updatedAt: "2026-03-02T10:00:00.000Z",

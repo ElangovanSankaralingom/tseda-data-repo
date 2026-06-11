@@ -25,8 +25,8 @@ test("buildSearchText normalizes text for token matching", () => {
   const text = buildSearchText(
     {
       id: "w-1",
-      eventName: "  AI/ML Workshop: 2026!  ",
-      speakerName: "Dr. Jane Doe",
+      workshopName: "  AI/ML Workshop: 2026!  ",
+      resourcePersonName: "Dr. Jane Doe",
       yearOfStudy: "2nd year",
       currentSemester: 3,
     },
@@ -41,12 +41,12 @@ test("buildSearchText normalizes text for token matching", () => {
 test("searchUserEntries finds indexed entries and supports category filter", async () => {
   await withSandbox("search-user-entries", async () => {
     const workshop = await createEntry(ownerEmail, "workshops", {
-      eventName: "AI Foundations Workshop",
-      speakerName: "Dr Ada",
+      workshopName: "AI Foundations Workshop",
+      resourcePersonName: "Dr Ada",
     });
     const guest = await createEntry(ownerEmail, "guest-lectures", {
-      eventName: "AI Ethics Lecture",
-      speakerName: "Dr Turing",
+      topicOfLecture: "AI Ethics Lecture",
+      guestSpeakerName: "Dr Turing",
     });
 
     const all = await searchUserEntries(ownerEmail, "ai");
@@ -71,7 +71,7 @@ test("search index removes deleted entries", async () => {
   await withSandbox("search-delete-update", async () => {
     const category: CategoryKey = "workshops";
     const created = await createEntry(ownerEmail, category, {
-      eventName: "Quantum Search Target",
+      workshopName: "Quantum Search Target",
     });
 
     const beforeDelete = await searchUserEntries(ownerEmail, "quantum search target");
@@ -90,7 +90,7 @@ test("search index removes deleted entries", async () => {
 test("searchAllUsers returns owner metadata for admin use", async () => {
   await withSandbox("search-all-users", async () => {
     await createEntry("faculty.one@tce.edu", "workshops", {
-      eventName: "Distributed Systems Workshop",
+      workshopName: "Distributed Systems Workshop",
     });
     await createEntry("faculty.two@tce.edu", "fdp-attended", {
       programName: "Distributed AI FDP",

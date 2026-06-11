@@ -212,6 +212,19 @@ export function buildEvent(params: BuildEventParams): WalEvent {
   };
 }
 
+/** S1 durability: append + fsync so an acknowledged WAL line survives a
+ *  crash. The WAL is the audit trail of every mutation — an unsynced append
+ *  is a recovery log in name only. */
+async function appendDurably(filePath: string, data: string): Promise<void> {
+  const handle = await fs.open(filePath, "a");
+  try {
+    await handle.writeFile(data, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+}
+
 export async function ensureWalFile(userEmail: string): Promise<Result<void>> {
   return safeAction(async () => {
     const walFilePath = getWalFilePath(userEmail);
@@ -246,7 +259,7 @@ export async function appendEvent(userEmail: string, event: WalEvent): Promise<R
 
     const walFilePath = getWalFilePath(userEmail);
     const line = `${JSON.stringify(migrated.data)}\n`;
-    await fs.appendFile(walFilePath, line, "utf8");
+    await appendDurably(walFilePath, line);
     logger.info({
       event: "wal.append",
       userEmail,
@@ -279,7 +292,7 @@ export async function appendEvents(userEmail: string, events: WalEvent[]): Promi
 
     const walFilePath = getWalFilePath(userEmail);
     const payload = migratedEvents.map((event) => JSON.stringify(event)).join("\n");
-    await fs.appendFile(walFilePath, `${payload}\n`, "utf8");
+    await appendDurably(walFilePath, `${payload}\n`);
     logger.info({
       event: "wal.append.batch",
       userEmail,

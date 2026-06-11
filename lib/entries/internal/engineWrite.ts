@@ -311,6 +311,16 @@ export async function updateEntry<T extends EntryEngineRecord = EntryEngineRecor
         });
       }
 
+      /* S1: permanentlyLocked is a terminal state (cancel/reject/auto- or
+         re-finalise). The engine — not just the UI — must refuse writes.
+         Admin flows (grant/reject/approve) use transition paths, never this. */
+      if ((existingEntry as Record<string, unknown>).permanentlyLocked === true) {
+        throw new AppError({
+          code: "FORBIDDEN",
+          message: "This entry is permanently locked and can no longer be modified.",
+        });
+      }
+
       const nowISO = new Date().toISOString();
       const existing = existingEntry as EntryLike;
       const next: EntryLike = {
@@ -454,6 +464,15 @@ export async function deleteEntry(
       const existing = await readEntryRaw(normalizedOwner, category, id);
       if (!existing) {
         return null;
+      }
+      /* S1: terminal lock — user-initiated deletion must go through the
+         request/approval workflow, never direct deletion of a locked entry.
+         (Admin approveDelete uses deleteEntryRaw and is unaffected.) */
+      if ((existing as Record<string, unknown>).permanentlyLocked === true) {
+        throw new AppError({
+          code: "FORBIDDEN",
+          message: "This entry is permanently locked and cannot be deleted directly.",
+        });
       }
       trackedFromStatus = String(normalizeEntryStatus(existing));
 

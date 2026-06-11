@@ -27,20 +27,19 @@ function buildUploadedFile(seed: string) {
 function buildCompleteWorkshopPayload() {
   return {
     academicYear: "Academic Year 2025-2026",
-    yearOfStudy: "2nd year",
-    currentSemester: 3,
+    semesterType: "ODD",
+    level: "National",
+    mode: "Offline",
     startDate: "2025-08-10",
     endDate: "2025-08-12",
-    eventName: "Index Workshop",
-    speakerName: "Speaker",
-    organisationName: "TCE",
-    uploads: {
-      permissionLetter: buildUploadedFile("permission"),
-      brochure: buildUploadedFile("brochure"),
-      attendance: buildUploadedFile("attendance"),
-      organiserProfile: buildUploadedFile("organiser-profile"),
-      geotaggedPhotos: [buildUploadedFile("photo-1")],
-    },
+    workshopName: "Index Workshop",
+    resourcePersonName: "Speaker",
+    resourcePersonDesignation: "Professor",
+    resourcePersonOrganisation: "TCE",
+    permissionLetter: [buildUploadedFile("permission")],
+    geotaggedPhotos: [buildUploadedFile("photo-1")],
+    attendanceSheet: [buildUploadedFile("attendance")],
+    officialPoster: [buildUploadedFile("official-poster")],
   };
 }
 
@@ -57,7 +56,7 @@ async function withSandbox<T>(label: string, run: () => Promise<T>): Promise<T> 
 test("ensureUserIndex creates index.json from category files when missing", async () => {
   await withSandbox("index-store-create", async () => {
     await createEntry(ownerEmail, "workshops", {
-      eventName: "Index Seed Entry",
+      workshopName: "Index Seed Entry",
     });
 
     const ensured = await ensureUserIndex(ownerEmail);
@@ -92,7 +91,7 @@ test("entry generation updates index counts", async () => {
 test("deleteEntry updates index totals without rebuilding manually", async () => {
   await withSandbox("index-store-delete", async () => {
     const created = await createEntry(ownerEmail, "workshops", {
-      eventName: "Index Delete Entry",
+      workshopName: "Index Delete Entry",
     });
 
     let ensured = await ensureUserIndex(ownerEmail);

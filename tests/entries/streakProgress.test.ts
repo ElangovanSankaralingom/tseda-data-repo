@@ -150,7 +150,7 @@ test("non-exportable fields are skipped for win check", () => {
 
 // --- Aggregate computation ---
 
-// Helper: create a complete workshops entry (all exportable fields filled, finalized = win)
+// Helper: create a complete workshops entry (all mandatory data fields filled, finalized = win)
 function completeWorkshopEntry(id: string, committedAt: string) {
   return {
     categoryKey: "workshops" as const,
@@ -161,17 +161,20 @@ function completeWorkshopEntry(id: string, committedAt: string) {
     editWindowExpiresAt: "2020-01-01T00:00:00.000Z", // expired = finalized → eligible for win
     committedAtISO: committedAt,
     academicYear: "2025-26",
-    yearOfStudy: "I",
-    currentSemester: 1,
+    semesterType: "ODD",
+    level: "National",
+    mode: "Offline",
     startDate: "2026-03-01",
     endDate: "2026-03-05",
-    eventName: "Test Workshop",
-    speakerName: "Dr. Test",
-    organisationName: "TCE",
-    coordinator: { name: "Coord", designation: "Prof" },
+    workshopName: "Test Workshop",
+    resourcePersonName: "Dr. Test",
+    resourcePersonDesignation: "Professor",
+    resourcePersonOrganisation: "TCE",
     coCoordinators: [{ name: "Co" }],
-    participants: 50,
-    uploads: { photo: "file.jpg" },
+    permissionLetter: [{ storedPath: "uploads/workshops/pl.pdf" }],
+    geotaggedPhotos: [{ storedPath: "uploads/workshops/photo.jpg" }],
+    attendanceSheet: [{ storedPath: "uploads/workshops/attendance.pdf" }],
+    officialPoster: [{ storedPath: "uploads/workshops/poster.pdf" }],
   };
 }
 
@@ -185,8 +188,8 @@ function incompleteWorkshopEntry(id: string, committedAt: string) {
     pdfGenerated: true,
     editWindowExpiresAt: "2099-12-31T23:59:59.999Z", // not expired = not finalized → activated
     committedAtISO: committedAt,
-    eventName: "Workshop " + id,
-    // other exportable fields missing
+    workshopName: "Workshop " + id,
+    // other mandatory fields missing
   };
 }
 

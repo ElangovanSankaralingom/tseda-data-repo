@@ -5,9 +5,10 @@ import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
 
 const config = DEFAULT_WORKFLOW_CONFIG;
 
-// fdp-attended has stage 1 fields: academicYear, semesterType, startDate, endDate, programName, organisingBody
-// (supportAmount has required:false so it's excluded from completion)
-// and stage 2 fields: permissionLetter, completionCertificate
+// fdp-attended has stage 1 fields: academicYear, semesterType, level, mode, startDate, endDate,
+// programName, organisingBody, sponsored
+// (fundingAgency/fundingAmount have required:false so they're excluded from completion)
+// and stage 2 fields: permissionLetter, completionCertificate (multi-file arrays)
 // (id is required but exportable:false, pdfMeta and streak are exportable:false)
 
 describe("computeCompletionState", () => {
@@ -23,10 +24,12 @@ describe("computeCompletionState", () => {
       academicYear: "2025-26",
       semesterType: "ODD",
       level: "National",
+      mode: "Online",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",
       organisingBody: "AICTE",
+      sponsored: "No",
     };
     const state = computeCompletionState(entry, "fdp-attended", config, false);
     assert.equal(state.stage1Complete, true);
@@ -38,12 +41,14 @@ describe("computeCompletionState", () => {
       academicYear: "2025-26",
       semesterType: "ODD",
       level: "National",
+      mode: "Online",
       startDate: "2025-01-01",
       endDate: "2025-01-05",
       programName: "Test FDP",
       organisingBody: "AICTE",
-      permissionLetter: { url: "https://example.com/pl.pdf", storedPath: "/some/path" },
-      completionCertificate: { url: "https://example.com/cc.pdf", storedPath: "/some/path" },
+      sponsored: "No",
+      permissionLetter: [{ url: "https://example.com/pl.pdf", storedPath: "/some/path" }],
+      completionCertificate: [{ url: "https://example.com/cc.pdf", storedPath: "/some/path" }],
     };
     const state = computeCompletionState(entry, "fdp-attended", config, true);
     assert.equal(state.stage2Complete, true);

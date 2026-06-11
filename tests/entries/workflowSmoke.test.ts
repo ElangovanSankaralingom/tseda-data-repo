@@ -29,20 +29,19 @@ function buildUploadedFile(seed: string) {
 function buildCompleteWorkshopPayload() {
   return {
     academicYear: "Academic Year 2025-2026",
-    yearOfStudy: "2nd year",
-    currentSemester: 3,
+    semesterType: "ODD",
+    level: "National",
+    mode: "Offline",
     startDate: "2025-08-10",
     endDate: "2025-08-12",
-    eventName: "Workflow Workshop",
-    speakerName: "Initial Speaker",
-    organisationName: "TCE",
-    uploads: {
-      permissionLetter: buildUploadedFile("permission"),
-      brochure: buildUploadedFile("brochure"),
-      attendance: buildUploadedFile("attendance"),
-      organiserProfile: buildUploadedFile("organiser-profile"),
-      geotaggedPhotos: [buildUploadedFile("photo-1")],
-    },
+    workshopName: "Workflow Workshop",
+    resourcePersonName: "Initial Speaker",
+    resourcePersonDesignation: "Professor",
+    resourcePersonOrganisation: "TCE",
+    permissionLetter: [buildUploadedFile("permission")],
+    geotaggedPhotos: [buildUploadedFile("photo-1")],
+    attendanceSheet: [buildUploadedFile("attendance")],
+    officialPoster: [buildUploadedFile("official-poster")],
   };
 }
 
@@ -66,10 +65,10 @@ test("workflow smoke: draft, generate, edit request, grant, and export", async (
     assert.equal(isEntryEditable(created), true);
 
     const savedDraft = await updateEntry(ownerEmail, "workshops", entryId, {
-      eventName: "Workflow Workshop Draft Saved",
+      workshopName: "Workflow Workshop Draft Saved",
     });
     assert.equal(String(savedDraft.confirmationStatus ?? ""), "DRAFT");
-    assert.equal(String(savedDraft.eventName ?? ""), "Workflow Workshop Draft Saved");
+    assert.equal(String(savedDraft.workshopName ?? ""), "Workflow Workshop Draft Saved");
     assert.equal(Boolean(savedDraft.committedAtISO), false);
     assert.equal(isEntryEditable(savedDraft), true);
 
@@ -86,11 +85,11 @@ test("workflow smoke: draft, generate, edit request, grant, and export", async (
     } as Record<string, unknown>);
 
     const reopened = await updateEntry(ownerEmail, "workshops", entryId, {
-      speakerName: "Reopened Speaker",
+      resourcePersonName: "Reopened Speaker",
     });
     assert.equal(String(reopened.confirmationStatus ?? ""), "GENERATED");
     assert.equal(Boolean(reopened.committedAtISO), true);
-    assert.equal(String(reopened.speakerName ?? ""), "Reopened Speaker");
+    assert.equal(String(reopened.resourcePersonName ?? ""), "Reopened Speaker");
     assert.equal(isEntryEditable(reopened), true);
 
     // Finalise the entry (required before requesting edit — only finalized entries)
@@ -112,8 +111,8 @@ test("workflow smoke: draft, generate, edit request, grant, and export", async (
 
     const built = await buildExportRows(ownerEmail, "workshops", [
       "id",
-      "eventName",
-      "speakerName",
+      "workshopName",
+      "resourcePersonName",
       "confirmationStatus",
     ]);
     assert.equal(built.ok, true);
