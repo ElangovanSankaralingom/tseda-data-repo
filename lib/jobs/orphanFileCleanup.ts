@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { listUsers } from "@/lib/admin/integrity";
 import { CATEGORY_LIST } from "@/data/categoryRegistry";
 import { readCategoryEntries } from "@/lib/dataStore";
+import { ENTRY_UPLOADS_ROOT } from "@/lib/config/storagePaths";
 
 export type OrphanScanResult = {
   orphanPaths: string[];
@@ -15,12 +16,12 @@ export type OrphanScanResult = {
 };
 
 /**
- * Scans public/uploads/ for files that are not referenced by any entry.
+ * Scans the private entry-uploads root for files not referenced by any entry.
  * Returns a list of orphan file paths (does NOT delete — just reports).
  * Files younger than 24 hours are excluded (may be mid-upload).
  */
 export async function findOrphanUploads(): Promise<OrphanScanResult> {
-  const uploadsRoot = path.join(process.cwd(), "public", "uploads");
+  const uploadsRoot = ENTRY_UPLOADS_ROOT;
   const now = Date.now();
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -59,8 +60,8 @@ export async function findOrphanUploads(): Promise<OrphanScanResult> {
         await walkDir(fullPath);
       } else if (dirEntry.isFile()) {
         scannedFiles++;
-        const relativePath = path.relative(path.join(process.cwd(), "public"), fullPath).replace(/\\/g, "/");
-        const uploadsRelative = relativePath.replace(/^uploads\//, "");
+        const uploadsRelative = path.relative(uploadsRoot, fullPath).replace(/\\/g, "/");
+        const relativePath = `uploads/${uploadsRelative}`;
         const isReferenced = referencedPaths.has(relativePath) ||
           referencedPaths.has(uploadsRelative) ||
           referencedPaths.has(`/${relativePath}`) ||

@@ -82,7 +82,7 @@ export async function computeSystemStats(): Promise<Result<SystemStats>> {
     const dataBytes = await dirSize(path.join(dataRoot, "users"));
     const backupDir = path.join(process.cwd(), ".data_backups");
     const backupDirBytes = await dirSize(backupDir);
-    const uploadBytes = await dirSize(path.join(process.cwd(), "public", "uploads"));
+    const uploadBytes = await dirSize(path.join(process.cwd(), ".data", "entry-uploads"));
 
     const backupsResult = await listBackups();
     const backupList = backupsResult.ok ? backupsResult.data : [];

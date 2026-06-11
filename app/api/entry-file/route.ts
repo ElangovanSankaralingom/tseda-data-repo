@@ -5,18 +5,29 @@ import path from "node:path";
 import { authOptions } from "@/lib/auth";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
-import { logger } from "@/lib/logger";
+import { isMasterAdmin } from "@/lib/admin";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import {
+  ownerOfStoredPath,
+  resolveEntryUploadPath,
+} from "@/lib/config/storagePaths";
 
+/**
+ * Authenticated serving route for entry attachments and generated PDFs.
+ * Replaces the former static `public/uploads/` exposure (S0 audit fix):
+ * files are only readable by their owner (or the master admin), never by URL
+ * possession alone.
+ */
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  const email = session?.user?.email;
+  const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     enforceRateLimitForRequest({
       request: req,
       userEmail: email,
-      action: "file.get",
+      action: "entryFile.get",
       options: RATE_LIMIT_PRESETS.fileDownloads,
     });
   } catch (error) {
@@ -28,20 +39,24 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
-  const filePath = url.searchParams.get("path");
-  if (!filePath) return NextResponse.json({ error: "Missing path" }, { status: 400 });
+  const storedPath = url.searchParams.get("path") ?? "";
+  const owner = ownerOfStoredPath(storedPath);
+  if (!owner) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
-  // Allow only within this user's upload dir (S0: private .data root)
-  const base = path.join(process.cwd(), ".data", "uploads", email.toLowerCase());
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(base))) {
+  if (owner !== email && !isMasterAdmin(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let resolved: string;
+  try {
+    resolved = resolveEntryUploadPath(storedPath);
+  } catch {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
   try {
     const buf = await fs.readFile(resolved);
     const ext = path.extname(resolved).toLowerCase();
-
     const contentType =
       ext === ".pdf" ? "application/pdf" :
       ext === ".png" ? "image/png" :
@@ -53,14 +68,18 @@ export async function GET(req: Request) {
         "Content-Type": contentType,
         "Content-Disposition": `inline; filename="${path.basename(resolved)}"`,
         "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (error) {
     const nodeErr = error as NodeJS.ErrnoException;
     if (nodeErr.code === "ENOENT") {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    logger.error({ event: "file.read.error", path: resolved, error: nodeErr.message });
-    return NextResponse.json({ error: "Failed to read file" }, { status: 500 });
+    const appError = normalizeError(error);
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
   }
 }

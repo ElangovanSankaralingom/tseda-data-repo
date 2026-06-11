@@ -9,8 +9,10 @@ import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
+/* S0: identity documents (aadhaar/PAN/letters) must never live under
+   public/ — moved to the gitignored private root, served via authed routes. */
 const MAX_BYTES = 20 * 1024 * 1024;
-const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
+const UPLOADS_ROOT = path.join(process.cwd(), ".data", "entry-uploads");
 const LEGACY_UPLOADS_ROOT = path.join(process.cwd(), "storage");
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
@@ -107,7 +109,9 @@ async function getAuthorizedEmail() {
 }
 
 function buildPreviewUrl(storedPath: string) {
-  return `/uploads/${storedPath}`;
+  /* Authed serving route — storedPath here is relative to the uploads root,
+     so prefix with the canonical "uploads/" segment for /api/entry-file. */
+  return `/api/entry-file?path=${encodeURIComponent(`uploads/${storedPath}`)}`;
 }
 
 async function removeEmptyParentDirs(startDir: string, stopDir: string) {

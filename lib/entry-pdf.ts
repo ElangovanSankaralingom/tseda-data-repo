@@ -4,6 +4,7 @@ import path from "node:path";
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
 import { safeEmailDir } from "@/lib/userStore";
 import { APP_CONFIG } from "@/lib/config/appConfig";
+import { resolveEntryUploadPath, entryFileUrl } from "@/lib/config/storagePaths";
 
 export type PdfMeta = {
   storedPath: string;
@@ -480,14 +481,16 @@ export async function storeEntryPdf(args: {
     "pdf",
     logicalFileName,
   );
-  const absolutePath = path.join(process.cwd(), "public", storedPath);
+  /* S0: PDFs live under the gitignored private root and are served only
+     through the authed /api/entry-file route — never statically. */
+  const absolutePath = resolveEntryUploadPath(storedPath);
 
   await fs.mkdir(path.dirname(absolutePath), { recursive: true });
   await fs.writeFile(absolutePath, args.bytes);
 
   return {
     storedPath,
-    url: `/${storedPath}`,
+    url: entryFileUrl(storedPath),
     fileName: path.basename(storedPath),
     generatedAtISO,
   } satisfies PdfMeta;

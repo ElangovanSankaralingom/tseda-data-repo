@@ -10,10 +10,11 @@ import { PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
+import { ENTRY_UPLOADS_ROOT } from "@/lib/config/storagePaths";
 
 const LEGACY_DATA_DIR = path.join(process.cwd(), "data");
 const MODERN_USERS_DIR = path.join(process.cwd(), ".data", "users");
-const PUBLIC_UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
+const PUBLIC_UPLOADS_DIR = ENTRY_UPLOADS_ROOT;
 const LEGACY_STORAGE_DIR = path.join(process.cwd(), "storage");
 const LEGACY_CATEGORY_DIRS = CATEGORY_KEYS;
 

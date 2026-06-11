@@ -37,3 +37,9 @@ coverage/
 
 # User uploads (NEVER commit)
 public/uploads/
+
+# PII — never tracked (S0 audit, 2026-06)
+/data/profiles/
+/data/profiles.json
+/data/uploads/
+/prompts/

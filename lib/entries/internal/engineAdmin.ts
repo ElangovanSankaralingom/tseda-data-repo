@@ -266,7 +266,8 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
       (async () => {
         const fs = await import("node:fs/promises");
         const path = await import("node:path");
-        const uploadDir = path.join(process.cwd(), "public", "uploads", normalizedOwner, category, id);
+        const { ENTRY_UPLOADS_ROOT } = await import("@/lib/config/storagePaths");
+        const uploadDir = path.join(ENTRY_UPLOADS_ROOT, normalizedOwner, category, id);
         await fs.rm(uploadDir, { recursive: true, force: true });
       })(),
       "deleteUploadFiles",

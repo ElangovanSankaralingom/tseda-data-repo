@@ -62,15 +62,29 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const query = url.searchParams.get("q")?.toLowerCase().trim();
+  const isAdmin = requireAdmin(email);
 
-  if (query && query.length >= 2) {
-    const filtered = items.filter(
-      (f) => f.fullName.toLowerCase().includes(query) || f.email.toLowerCase().includes(query)
-    );
-    return NextResponse.json(filtered.slice(0, 20));
+  /* S0: the full faculty directory (emails, employee IDs, phones) is admin-only.
+     Non-admin callers must supply a search query (min 2 chars) and receive
+     name + email only — enough for pickers, useless for bulk enumeration. */
+  if (isAdmin && !query) {
+    return NextResponse.json(items);
   }
 
-  return NextResponse.json(items);
+  if (!query || query.length < 2) {
+    return NextResponse.json(
+      { error: "Provide a search query of at least 2 characters." },
+      { status: 400 },
+    );
+  }
+
+  const filtered = items.filter(
+    (f) => f.fullName.toLowerCase().includes(query) || f.email.toLowerCase().includes(query)
+  );
+  const limited = filtered.slice(0, 20);
+  return NextResponse.json(
+    isAdmin ? limited : limited.map((f) => ({ fullName: f.fullName, email: f.email })),
+  );
 }
 
 export async function POST(req: Request) {

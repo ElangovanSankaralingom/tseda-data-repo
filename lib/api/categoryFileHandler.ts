@@ -33,13 +33,12 @@ import { safeEmailDir } from "@/lib/userStore";
 import { validateCsrf } from "@/lib/security/csrf";
 import { validateUploadedFile, sanitizeFilename } from "@/lib/security/fileValidation";
 import { ALLOWED_EMAIL_SUFFIX, APP_CONFIG } from "@/lib/config/appConfig";
+import { resolveEntryUploadPath, entryFileUrl } from "@/lib/config/storagePaths";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MAX_BYTES = APP_CONFIG.upload.maxFileSizeBytes;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ALLOWED_MIME_TYPES = new Set([...APP_CONFIG.upload.allowedDocMimeTypes, ...APP_CONFIG.upload.allowedImageMimeTypes]);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -217,7 +216,9 @@ export async function handleCategoryFilePost(request: Request, category: Categor
 
     const sanitizedName = sanitizeFilename(file.name);
     const storedPath = buildStoredPath(email, category, recordId, slot, sanitizedName);
-    const absPath = path.join(process.cwd(), "public", storedPath);
+    /* S0: attachments live under the gitignored private root, served only
+       via the authed /api/entry-file route. */
+    const absPath = resolveEntryUploadPath(storedPath);
 
     try {
       await fs.mkdir(path.dirname(absPath), { recursive: true });
@@ -241,7 +242,7 @@ export async function handleCategoryFilePost(request: Request, category: Categor
       mimeType: file.type,
       size: file.size,
       uploadedAt: new Date().toISOString(),
-      url: `/${storedPath}`,
+      url: entryFileUrl(storedPath),
       storedPath,
     });
   } catch (error) {
@@ -296,8 +297,12 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
       }
     }
 
-    // Delete the file
-    await fs.unlink(path.join(process.cwd(), "public", storedPath)).catch(() => null);
+    // Delete the file (from the private entry-uploads root)
+    try {
+      await fs.unlink(resolveEntryUploadPath(storedPath));
+    } catch {
+      /* missing file or invalid legacy path — slot reset below still applies */
+    }
 
     logger.info({
       event: "upload.delete",

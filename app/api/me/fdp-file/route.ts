@@ -17,8 +17,9 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 import { safeEmailDir } from "@/lib/userStore";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
+/* S0: relocated off public/ — statically-served user files were unauthenticated. */
 const MAX_BYTES = 20 * 1024 * 1024;
-const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
+const UPLOADS_ROOT = path.join(process.cwd(), ".data", "entry-uploads");
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg"]);
 const ALLOWED_SLOTS = new Set(["permissionLetter", "completionCertificate"]);
@@ -197,7 +198,7 @@ export async function POST(request: Request) {
       mimeType: file.type,
       size: file.size,
       uploadedAt: new Date().toISOString(),
-      url: `/uploads/${storedPath}`,
+      url: `/api/entry-file?path=${encodeURIComponent(`uploads/${storedPath}`)}`,
       storedPath,
     });
   } catch (error) {

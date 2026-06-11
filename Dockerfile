@@ -35,17 +35,19 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Create data and uploads directories
-RUN mkdir -p .data public/uploads && \
-    chown -R nextjs:nodejs .data public/uploads
+# Private data root (entries, uploads, profiles — all PII lives here, mount a volume)
+RUN mkdir -p .data && \
+    chown -R nextjs:nodejs .data
 
 # Copy standalone output
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy data files needed at runtime
-COPY --from=builder /app/data ./data
+# Operational data needed at runtime (roster + admin list ONLY — never
+# profiles/uploads; those are runtime-generated under .data/)
+COPY --from=builder /app/data/faculty.json ./data/faculty.json
+COPY --from=builder /app/data/admins.json ./data/admins.json
 
 USER nextjs
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getDataRoot } from "@/lib/userStore";
+import { ENTRY_UPLOADS_ROOT } from "@/lib/config/storagePaths";
 import { getRequestIp, enforceRateLimitOrThrow, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
 
   const dataRoot = path.join(process.cwd(), getDataRoot());
   const usersDir = path.join(dataRoot, "users");
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  const uploadsDir = ENTRY_UPLOADS_ROOT;
 
   try {
     // Check directories

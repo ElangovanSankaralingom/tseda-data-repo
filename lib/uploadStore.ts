@@ -4,7 +4,9 @@ import fs from "fs";
 import path from "path";
 import { APP_CONFIG } from "@/lib/config/appConfig";
 
-export const DATA_DIR = path.join(process.cwd(), "data");
+/* S0: profile documents and uploads contain PII — they live under the
+   gitignored .data/ root, never under the git-tracked data/ tree. */
+export const DATA_DIR = path.join(process.cwd(), ".data");
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 export const PROFILES_DIR = path.join(DATA_DIR, "profiles");
 

@@ -33,7 +33,7 @@ const TARGET_OPTIONS: TargetOption[] = [
   // User Accounts
   { key: "user-profiles", label: "Clear ALL user profiles and indexes", description: "Deletes index.json from every user folder — users get fresh profiles on next login", group: "User Accounts" },
   // Uploaded Files
-  { key: "uploads", label: "Clear ALL uploaded files", description: "Deletes everything inside public/uploads/ (PDFs, permission letters, certificates)", group: "Uploaded Files" },
+  { key: "uploads", label: "Clear ALL uploaded files", description: "Deletes everything inside .data/entry-uploads/ (PDFs, permission letters, certificates)", group: "Uploaded Files" },
   // Admin Data
   { key: "admin-notifications", label: "Clear admin notifications", description: "Deletes .data/admin/notifications.json", group: "Admin Data" },
   { key: "admin-users", label: "Clear admin user list", description: "Deletes .data/admin/admin-users.json — recreated on next admin login", group: "Admin Data" },

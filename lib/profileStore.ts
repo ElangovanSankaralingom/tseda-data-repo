@@ -1,5 +1,5 @@
 import "server-only";
-import { readJson, writeJson, newId } from "@/lib/storage";
+import { readJson, writeJson, newId, PRIVATE_DIR } from "@/lib/storage";
 
 export type BloodGroup = "A+"|"A-"|"B+"|"B-"|"O+"|"O-"|"AB+"|"AB-";
 export type Designation =
@@ -82,7 +82,8 @@ export type Profile = {
 const FILE = "profiles.json";
 
 export async function getAllProfiles(): Promise<Record<string, Profile>> {
-  return await readJson<Record<string, Profile>>(FILE, {});
+  /* S0: profiles contain PII — stored under the gitignored private root. */
+  return await readJson<Record<string, Profile>>(FILE, {}, PRIVATE_DIR);
 }
 
 export async function getProfileByEmail(email: string): Promise<Profile | null> {
@@ -125,7 +126,7 @@ export async function upsertProfile(email: string, patch: Partial<Profile>): Pro
   };
 
   all[key] = next;
-  await writeJson(FILE, all);
+  await writeJson(FILE, all, PRIVATE_DIR);
   return next;
 }
 

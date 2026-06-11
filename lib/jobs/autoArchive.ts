@@ -47,15 +47,16 @@ async function permanentlyDeleteEntry(email: string, category: CategoryKey, entr
   // Delete files
   const fs = await import("node:fs/promises");
   const path = await import("node:path");
+  const { ENTRY_UPLOADS_ROOT, resolveEntryUploadPath } = await import("@/lib/config/storagePaths");
   for (const storedPath of filePaths) {
     try {
-      await fs.rm(path.join(process.cwd(), "public", storedPath), { force: true });
-    } catch { /* ignore */ }
+      await fs.rm(resolveEntryUploadPath(storedPath), { force: true });
+    } catch { /* ignore — invalid legacy path or already gone */ }
   }
 
   // Delete upload directory
   try {
-    await fs.rm(path.join(process.cwd(), "public", "uploads", email, category, entryId), { recursive: true, force: true });
+    await fs.rm(path.join(ENTRY_UPLOADS_ROOT, email, category, entryId), { recursive: true, force: true });
   } catch { /* ignore */ }
 
   // Invalidate analytics cache

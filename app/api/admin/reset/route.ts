@@ -11,7 +11,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
-const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
+const UPLOADS_ROOT = path.join(DATA_ROOT, "entry-uploads");
 const BACKUPS_ROOT = path.join(process.cwd(), ".data_backups");
 
 const CATEGORY_FILES = CATEGORY_SLUGS.map((slug) => `${slug}.json`);
