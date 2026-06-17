@@ -6,8 +6,12 @@ import { canRunMaintenance } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { appendMaintenanceLog } from "@/lib/maintenance/log";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { csrfGuard } from "@/lib/security/csrf";
 
 export async function POST(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || !canRunMaintenance(email)) {

@@ -13,6 +13,7 @@ import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import type { RequestEditStatus } from "@/lib/types/requestEdit";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { csrfGuard } from "@/lib/security/csrf";
 
 type FdpAttendedRecord = {
   id: string;
@@ -56,6 +57,9 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const email = await getAuthorizedEmail();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

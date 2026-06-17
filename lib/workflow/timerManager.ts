@@ -81,9 +81,18 @@ export function resumeTimer(entry: TimerEntry, nowMs: number = Date.now()): {
   timerPausedAt: null;
   timerRemainingMs: null;
 } {
-  const remainingMs = typeof entry.timerRemainingMs === "number"
-    ? entry.timerRemainingMs
-    : 3 * 24 * 60 * 60 * 1000; // fallback 3 days
+  // S2: if a pause snapshot exists, honor it. If it's MISSING (data drift), do
+  // NOT grant a fresh 3-day window — fall back to whatever the original
+  // editWindowExpiresAt still leaves, and 0 (expire now) if that's gone too.
+  // Granting fresh time on missing state was an unintended extension vector.
+  let remainingMs: number;
+  if (typeof entry.timerRemainingMs === "number") {
+    remainingMs = Math.max(0, entry.timerRemainingMs);
+  } else if (entry.editWindowExpiresAt) {
+    remainingMs = Math.max(0, new Date(entry.editWindowExpiresAt).getTime() - nowMs);
+  } else {
+    remainingMs = 0;
+  }
 
   return {
     editWindowExpiresAt: new Date(nowMs + remainingMs).toISOString(),

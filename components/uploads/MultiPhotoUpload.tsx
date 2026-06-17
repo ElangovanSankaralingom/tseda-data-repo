@@ -8,6 +8,7 @@ import { safeAction } from "@/lib/safeAction";
 import { getButtonClass } from "@/lib/ui/buttonRoles";
 import { deleteFile, uploadFile } from "@/lib/upload/uploadService";
 import { type FileMeta } from "@/lib/types/entry";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export type { FileMeta };
@@ -116,7 +117,7 @@ export default function MultiPhotoUpload({
           return;
         }
 
-        if (file.size > 20 * 1024 * 1024) {
+        if (file.size > APP_CONFIG.upload.maxFileSizeBytes) {
           setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: t("upload.maxFileSize") })));
           return;
         }

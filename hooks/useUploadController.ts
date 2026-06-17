@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { safeAction } from "@/lib/safeAction";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 
 type UploadFileMeta = {
   fileName?: string;
@@ -17,7 +18,9 @@ type UseUploadControllerOptions<TMeta extends UploadFileMeta> = {
   remove: (meta: TMeta) => Promise<void>;
 };
 
-const MAX_BYTES = 20 * 1024 * 1024;
+// S2: single source of truth — must match server enforcement (was 20MB; the
+// server rejects above APP_CONFIG.upload.maxFileSizeBytes = 10MB).
+const MAX_BYTES = APP_CONFIG.upload.maxFileSizeBytes;
 const ALLOWED_MIME_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 
 export function useUploadController<TMeta extends UploadFileMeta>({
@@ -55,7 +58,7 @@ export function useUploadController<TMeta extends UploadFileMeta>({
     }
 
     if (pendingFile.size > MAX_BYTES) {
-      setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: "Max file size is 20MB." })));
+      setError(toUserMessage(new AppError({ code: "VALIDATION_ERROR", message: `Max file size is ${APP_CONFIG.upload.maxFileSizeMB}MB.` })));
       return null;
     }
 

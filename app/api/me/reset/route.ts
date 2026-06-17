@@ -11,6 +11,7 @@ import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { ENTRY_UPLOADS_ROOT } from "@/lib/config/storagePaths";
+import { csrfGuard } from "@/lib/security/csrf";
 
 const LEGACY_DATA_DIR = path.join(process.cwd(), "data");
 const MODERN_USERS_DIR = path.join(process.cwd(), ".data", "users");
@@ -99,6 +100,15 @@ async function clearLegacyProfilesIndex(email: string) {
 }
 
 export async function POST(request: Request) {
+  // S2: the Reset Center is a development-only data wipe (the UI says it's
+  // removed before production). Hard-fail in production regardless of auth.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not available in production." }, { status: 404 });
+  }
+
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";

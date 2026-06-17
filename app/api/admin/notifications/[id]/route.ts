@@ -6,11 +6,15 @@ import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dismissAdminNotification } from "@/lib/confirmations/adminNotificationStore";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { csrfGuard } from "@/lib/security/csrf";
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || !canAccessAdminConsole(email)) {

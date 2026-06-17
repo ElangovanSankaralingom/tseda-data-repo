@@ -16,8 +16,12 @@ import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { apiUnauthorized } from "@/lib/api/apiResponse";
+import { csrfGuard } from "@/lib/security/csrf";
 
 export async function POST(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
 

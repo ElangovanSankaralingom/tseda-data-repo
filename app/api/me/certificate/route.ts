@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { csrfGuard } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -28,6 +29,9 @@ function cloneProfile<T>(value: T): T {
 }
 
 export async function POST(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return apiUnauthorized();
@@ -118,6 +122,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return apiUnauthorized();

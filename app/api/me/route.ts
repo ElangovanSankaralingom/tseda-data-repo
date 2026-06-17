@@ -1,5 +1,6 @@
 // app/api/me/route.ts
 import { NextResponse } from "next/server";
+import { csrfGuard } from "@/lib/security/csrf";
 import fs from "fs";
 import path from "path";
 import { getServerSession } from "next-auth";
@@ -140,6 +141,9 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";

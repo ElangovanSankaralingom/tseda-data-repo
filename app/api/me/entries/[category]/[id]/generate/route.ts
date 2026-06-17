@@ -5,8 +5,12 @@ import { runGeneratePdfRequest } from "@/lib/pdf/pdfService";
 import { NextResponse } from "next/server";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
+import { csrfGuard } from "@/lib/security/csrf";
 
 export async function POST(request: Request, context: { params: Promise<{ category: string; id: string }> }) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

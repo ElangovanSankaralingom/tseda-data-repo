@@ -254,6 +254,10 @@ export async function GET(request: Request) {
 
 // Clear endpoint (POST)
 export async function POST(request: Request) {
+  // S2: destructive dev-only reset — never reachable in production.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not available in production." }, { status: 404 });
+  }
   const csrfError = validateCsrf(request);
   if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
   const session = await getServerSession(authOptions);

@@ -5,12 +5,16 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { markAsRead } from "@/lib/confirmations/notificationStore";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
+import { csrfGuard } from "@/lib/security/csrf";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function PUT(_request: Request, context: RouteContext) {
+export async function PUT(request: Request, context: RouteContext) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) {
@@ -19,7 +23,7 @@ export async function PUT(_request: Request, context: RouteContext) {
 
   try {
     enforceRateLimitForRequest({
-      request: _request,
+      request,
       userEmail: email,
       action: "me.notifications.id.read.put",
       options: RATE_LIMIT_PRESETS.entryMutations,

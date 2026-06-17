@@ -8,6 +8,7 @@ import { assertUploadMetadataInput } from "@/lib/security/limits";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
+import { csrfGuard } from "@/lib/security/csrf";
 
 type Category = "academic_outside" | "industry";
 type ExperienceCertificate = {
@@ -90,6 +91,9 @@ function requireQuery(req: Request, key: string) {
 }
 
 export async function POST(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -187,6 +191,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 import { SectionCard, MiniButton, ProgressBar } from "./AccountUI";
 import { uploadDocXHR } from "./uploadHelpers";
 import {
@@ -40,7 +41,7 @@ export default function UploadsTab({ draft, setDraft, saveCurrentTab, showToast 
       return;
     }
 
-    const max = 20 * 1024 * 1024;
+    const max = APP_CONFIG.upload.maxFileSizeBytes;
     const allowed =
       file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg";
 

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { normalizeError, toUserMessage } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
+import { csrfGuard } from "@/lib/security/csrf";
 import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { trackEvent } from "@/lib/telemetry/telemetry";
@@ -41,6 +42,9 @@ function asOptionalNumber(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const actorEmail = normalizeEmail(session?.user?.email ?? "");
   if (!actorEmail) {

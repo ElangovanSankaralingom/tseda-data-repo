@@ -6,6 +6,7 @@ import { apiSuccess, apiUnauthorized, apiError } from "@/lib/api/apiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { NextResponse } from "next/server";
+import { csrfGuard } from "@/lib/security/csrf";
 
 const VALID_THEME_MODES = ["light", "dark", "color"] as const;
 const VALID_PALETTES = ["midnight-lime", "deep-ocean", "carbon-violet", "obsidian-amber"] as const;
@@ -36,6 +37,9 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) return apiUnauthorized();

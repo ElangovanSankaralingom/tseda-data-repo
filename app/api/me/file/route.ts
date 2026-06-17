@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { csrfGuard } from "@/lib/security/csrf";
 import { authOptions } from "@/lib/auth";
 import { normalizeError } from "@/lib/errors";
 import { assertUploadMetadataInput } from "@/lib/security/limits";
@@ -183,6 +184,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const email = await getAuthorizedEmail();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -282,6 +286,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const email = await getAuthorizedEmail();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

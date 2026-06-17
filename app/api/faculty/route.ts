@@ -8,6 +8,7 @@ import { newId, readJson, writeJson } from "@/lib/storage";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { csrfGuard } from "@/lib/security/csrf";
 
 type FacultyProfile = {
   id: string;
@@ -88,6 +89,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const email = await requireSession();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -145,6 +149,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const email = await requireSession();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -200,6 +207,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const csrfBlocked = csrfGuard(req);
+  if (csrfBlocked) return csrfBlocked;
+
   const email = await requireSession();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

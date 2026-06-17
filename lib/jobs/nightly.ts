@@ -3,6 +3,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
+import { timingSafeEqual } from "node:crypto";
 import { createBackupZip } from "@/lib/backup/backupService";
 import { checkUserIntegrity, listUsers } from "@/lib/admin/integrity";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
@@ -301,7 +302,10 @@ export function assertCronSecret(secretFromRequest: string | null): string {
     });
   }
 
-  if ((secretFromRequest ?? "").trim() !== cronSecret) {
+  // S2: constant-time comparison to avoid leaking the secret via timing.
+  const provided = Buffer.from((secretFromRequest ?? "").trim());
+  const expected = Buffer.from(cronSecret);
+  if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
     throw new AppError({
       code: "UNAUTHORIZED",
       message: "Invalid cron secret.",

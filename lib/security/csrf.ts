@@ -1,4 +1,5 @@
 import "server-only";
+import { NextResponse } from "next/server";
 
 /**
  * CSRF protection via Origin header validation.
@@ -46,4 +47,17 @@ export function validateCsrf(request: Request): string | null {
   if (allowed.has(origin)) return null;
 
   return `Cross-origin request from ${origin} is not allowed.`;
+}
+
+/**
+ * One-line CSRF guard for route handlers: returns a 403 NextResponse when the
+ * request fails CSRF validation, or null when it's safe to proceed.
+ *
+ *   const blocked = csrfGuard(request);
+ *   if (blocked) return blocked;
+ */
+export function csrfGuard(request: Request): NextResponse | null {
+  const error = validateCsrf(request);
+  if (error) return NextResponse.json({ error }, { status: 403 });
+  return null;
 }

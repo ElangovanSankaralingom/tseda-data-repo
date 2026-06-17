@@ -7,8 +7,12 @@ import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { runGenerateEntryRequest } from "@/lib/server/generateEntry";
 import { apiUnauthorized } from "@/lib/api/apiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { csrfGuard } from "@/lib/security/csrf";
 
 export async function POST(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return apiUnauthorized();

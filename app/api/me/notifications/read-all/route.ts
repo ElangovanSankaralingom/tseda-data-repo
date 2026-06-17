@@ -5,8 +5,12 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { markAllAsRead } from "@/lib/confirmations/notificationStore";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
+import { csrfGuard } from "@/lib/security/csrf";
 
 export async function PUT(request: Request) {
+  const csrfBlocked = csrfGuard(request);
+  if (csrfBlocked) return csrfBlocked;
+
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) {

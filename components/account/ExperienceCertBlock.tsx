@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MiniButton, ProgressBar } from "./AccountUI";
+import { APP_CONFIG } from "@/lib/config/appConfig";
 import { uploadCertificateXHR } from "./uploadHelpers";
 import {
   cx,
@@ -65,7 +66,7 @@ export default function CertificateBlock({
       return;
     }
 
-    const max = 20 * 1024 * 1024;
+    const max = APP_CONFIG.upload.maxFileSizeBytes;
     const allowed =
       pendingFile.type === "application/pdf" || pendingFile.type === "image/png" || pendingFile.type === "image/jpeg";
 
