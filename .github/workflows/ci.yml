@@ -29,7 +29,9 @@ jobs:
         env:
           NODE_ENV: test
       - name: Security audit
-        run: npm audit --audit-level=high || true
+        # S1 (TECH-AUDIT-2026-06 H4): blocking — a high/critical advisory now
+        # fails CI instead of being swallowed by `|| true`.
+        run: npm audit --audit-level=high
 
   docker:
     runs-on: ubuntu-latest

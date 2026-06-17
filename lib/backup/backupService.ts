@@ -268,17 +268,114 @@ export async function listBackups(): Promise<Result<BackupListItem[]>> {
   }
 }
 
+/**
+ * Parse our STORED (uncompressed, method 0) zip and CRC-verify every entry.
+ * Throws on a truncated archive or any CRC mismatch — the gate that makes a
+ * backup trustworthy before we overwrite live data with it.
+ */
+function parseAndVerifyStoredZip(buffer: Buffer): BackupEntry[] {
+  const entries: BackupEntry[] = [];
+  let offset = 0;
+  while (offset + 4 <= buffer.length && buffer.readUInt32LE(offset) === 0x04034b50) {
+    if (offset + 30 > buffer.length) throw new AppError({ code: "VALIDATION_ERROR", message: "Corrupt backup: truncated local header." });
+    const method = buffer.readUInt16LE(offset + 8);
+    const storedCrc = buffer.readUInt32LE(offset + 14);
+    const compressedSize = buffer.readUInt32LE(offset + 18);
+    const uncompressedSize = buffer.readUInt32LE(offset + 22);
+    const nameLen = buffer.readUInt16LE(offset + 26);
+    const extraLen = buffer.readUInt16LE(offset + 28);
+    const nameStart = offset + 30;
+    const dataStart = nameStart + nameLen + extraLen;
+    const dataEnd = dataStart + compressedSize;
+    if (method !== 0) throw new AppError({ code: "VALIDATION_ERROR", message: "Unsupported backup: only stored entries are restorable." });
+    if (dataEnd > buffer.length) throw new AppError({ code: "VALIDATION_ERROR", message: "Corrupt backup: truncated entry data." });
+    const zipPath = buffer.toString("utf8", nameStart, nameStart + nameLen);
+    const data = buffer.subarray(dataStart, dataEnd);
+    if (data.length !== uncompressedSize || crc32(data) !== storedCrc) {
+      throw new AppError({ code: "VALIDATION_ERROR", message: `Corrupt backup: CRC mismatch for ${zipPath}.` });
+    }
+    entries.push({ zipPath, data: Buffer.from(data) });
+    offset = dataEnd;
+  }
+  if (entries.length === 0) {
+    throw new AppError({ code: "VALIDATION_ERROR", message: "Corrupt or empty backup: no valid entries." });
+  }
+  return entries;
+}
+
 async function verifyBackupZip(filePath: string): Promise<boolean> {
   try {
-    const stats = await fs.stat(filePath);
-    if (stats.size < 22) return false;
-    const fd = await fs.open(filePath, "r");
-    const buffer = Buffer.alloc(4);
-    await fd.read(buffer, 0, 4, 0);
-    await fd.close();
-    return buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04;
+    const buffer = await fs.readFile(filePath);
+    parseAndVerifyStoredZip(buffer);
+    return true;
   } catch {
     return false;
+  }
+}
+
+export type BackupRestoreResult = {
+  filename: string;
+  filesRestored: number;
+  previousDataMovedTo: string;
+};
+
+/**
+ * S1 (TECH-AUDIT-2026-06): the restore counterpart to createBackupZip, which
+ * previously did not exist anywhere. CRC-verifies the archive, extracts to a
+ * fresh temp dir, then atomically swaps it in — the current data root is moved
+ * aside (not deleted) so a failed restore is itself recoverable.
+ *
+ * Zip paths are stored as ".data/<relative>"; we restore them under the live
+ * data root regardless of its configured name.
+ */
+export async function restoreBackup(filename: string): Promise<Result<BackupRestoreResult>> {
+  try {
+    const safeName = sanitizeBackupFilename(filename);
+    const filePath = path.join(getBackupRoot(), safeName);
+    const buffer = await fs.readFile(filePath);
+    const entries = parseAndVerifyStoredZip(buffer); // throws on corruption/CRC
+
+    const dataRoot = path.resolve(getDataRoot());
+    const parent = path.dirname(dataRoot);
+    const baseName = path.basename(dataRoot);
+    const stagingDir = path.join(parent, `${baseName}.restore-${Date.now()}`);
+    await fs.rm(stagingDir, { recursive: true, force: true });
+    await fs.mkdir(stagingDir, { recursive: true });
+
+    for (const entry of entries) {
+      // Strip the leading ".data/" namespace; guard against traversal.
+      const rel = entry.zipPath.replace(/^\.data\//, "");
+      if (!rel || rel.includes("..") || path.isAbsolute(rel)) {
+        throw new AppError({ code: "VALIDATION_ERROR", message: `Unsafe path in backup: ${entry.zipPath}` });
+      }
+      const dest = path.join(stagingDir, rel);
+      if (!path.resolve(dest).startsWith(path.resolve(stagingDir) + path.sep)) {
+        throw new AppError({ code: "VALIDATION_ERROR", message: `Unsafe path in backup: ${entry.zipPath}` });
+      }
+      await fs.mkdir(path.dirname(dest), { recursive: true });
+      await fs.writeFile(dest, entry.data);
+    }
+
+    // Atomic-ish swap: move current data aside, move staging in.
+    const movedAside = path.join(parent, `${baseName}.pre-restore-${Date.now()}`);
+    try {
+      await fs.rename(dataRoot, movedAside);
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      if (code !== "ENOENT") throw error; // ENOENT: no existing data root, fine
+    }
+    try {
+      await fs.rename(stagingDir, dataRoot);
+    } catch (error) {
+      // Roll back the move-aside so we never leave the app dataless.
+      await fs.rename(movedAside, dataRoot).catch(() => {});
+      throw error;
+    }
+
+    logger.info({ event: "backup.restore", filename: safeName, filesRestored: entries.length, previousDataMovedTo: movedAside });
+    return ok({ filename: safeName, filesRestored: entries.length, previousDataMovedTo: movedAside });
+  } catch (error) {
+    return err(normalizeError(error));
   }
 }
 
