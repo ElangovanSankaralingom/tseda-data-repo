@@ -46,7 +46,22 @@ export function computeCompletionState(
 ): CompletionState {
   const schema = getCategorySchema(category);
 
-  const stage1Fields = schema.fields.filter(f => f.stage !== 2 && f.exportable !== false && f.required !== false);
+  /* S1 (TECH-AUDIT-2026-06 C4): stage-1 completeness — which drives the
+     nightly auto-DELETE verdict — must use the schema's EXPLICIT
+     `requiredForCommit` allowlist, the same gate generation uses. The old
+     `required !== false` default treated every newly-added field as
+     required, so adding a stage-1 field would retroactively mark every
+     existing (already-generated) entry incomplete → auto-deleted. Anchoring
+     to the explicit list makes the delete criterion drift-proof: if an entry
+     could be generated, a later schema addition can never make it deletable
+     on stage-1 grounds. */
+  const commitKeys = schema.requiredForCommit;
+  const stage1Fields = (commitKeys && commitKeys.length > 0)
+    // Intersect the explicit allowlist with `required !== false` so
+    // conditionally-required fields (e.g. funding, gated on sponsored=Yes and
+    // enforced by validate()) stay excluded from the unconditional check.
+    ? schema.fields.filter(f => f.stage !== 2 && commitKeys.includes(f.key) && f.required !== false)
+    : schema.fields.filter(f => f.stage !== 2 && f.exportable !== false && f.required !== false);
   const stage2Fields = schema.fields.filter(f => f.stage === 2 && f.exportable !== false && f.required !== false);
 
   const stage1Filled = stage1Fields.filter(f => isFieldFilled(entry, f.key, f.kind, f.upload)).length;

@@ -23,44 +23,51 @@ export type AutoArchiveResult = {
   deleted: number;
 };
 
-async function permanentlyDeleteEntry(email: string, category: CategoryKey, entry: Record<string, unknown>) {
+/**
+ * S1: the nightly "delete" verdict now QUARANTINES rather than destroys.
+ * The entry JSON + its upload files are moved to recoverable trash with a
+ * 30-day retention window; the entry is removed from the live store. This
+ * makes an erroneous heuristic (or a schema change that reclassifies valid
+ * entries as incomplete) recoverable instead of a silent data-loss event.
+ */
+async function quarantineDeletedEntry(email: string, category: CategoryKey, entry: Record<string, unknown>) {
   const entryId = String(entry.id ?? "");
 
-  // Collect file paths
+  // Collect file paths (PDF + schema upload fields, single or multi-file)
   const filePaths: string[] = [];
-  if (entry.pdfMeta && typeof entry.pdfMeta === "object") {
-    const storedPath = (entry.pdfMeta as Record<string, unknown>).storedPath;
-    if (typeof storedPath === "string") filePaths.push(storedPath);
-  }
+  const pushStored = (v: unknown) => {
+    const sp = (v as Record<string, unknown> | null | undefined)?.storedPath;
+    if (typeof sp === "string" && sp) filePaths.push(sp);
+  };
+  if (entry.pdfMeta && typeof entry.pdfMeta === "object") pushStored(entry.pdfMeta);
 
   const schema = getCategorySchema(category);
   for (const field of schema.fields) {
-    if (field.upload && entry[field.key]) {
-      const val = entry[field.key] as Record<string, unknown>;
-      if (typeof val?.storedPath === "string") filePaths.push(val.storedPath);
-    }
+    if (!field.upload || !entry[field.key]) continue;
+    const val = entry[field.key];
+    if (Array.isArray(val)) val.forEach(pushStored);
+    else pushStored(val);
   }
 
-  // Delete entry from store
+  const { quarantineEntry, removeEmptyUploadDir } = await import("@/lib/jobs/quarantine");
+  const title = extractEntryTitle(entry, category);
+
+  // Quarantine moves the files; then remove the entry from the live store.
+  await quarantineEntry({
+    ownerEmail: email,
+    category,
+    entry,
+    filePaths,
+    reason: "nightly_auto_delete",
+    entryTitle: title,
+  });
   await deleteCategoryEntry(email, category, entryId);
-
-  // Delete files
-  const fs = await import("node:fs/promises");
-  const path = await import("node:path");
-  const { ENTRY_UPLOADS_ROOT, resolveEntryUploadPath } = await import("@/lib/config/storagePaths");
-  for (const storedPath of filePaths) {
-    try {
-      await fs.rm(resolveEntryUploadPath(storedPath), { force: true });
-    } catch { /* ignore — invalid legacy path or already gone */ }
-  }
-
-  // Delete upload directory
-  try {
-    await fs.rm(path.join(ENTRY_UPLOADS_ROOT, email, category, entryId), { recursive: true, force: true });
-  } catch { /* ignore */ }
+  await removeEmptyUploadDir(email, category, entryId);
 
   // Invalidate analytics cache
   try {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
     await fs.rm(path.join(process.cwd(), ".data", "maintenance", "analytics-cache.json"), { force: true });
   } catch { /* ignore */ }
 }
@@ -129,8 +136,8 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
               logger.warn({ event: "action_history.append_failed", actionType: "auto_deleted", entryId: String(entry.id ?? "") }, err instanceof Error ? err.message : String(err));
             }
 
-            // Auto-delete: permanently remove entry + files
-            await permanentlyDeleteEntry(userEmail, category as CategoryKey, entry as Record<string, unknown>);
+            // Auto-delete: quarantine entry + files (recoverable, 30-day retention)
+            await quarantineDeletedEntry(userEmail, category as CategoryKey, entry as Record<string, unknown>);
             deleted++;
 
             const title = extractEntryTitle(entry as unknown as Record<string, unknown>, category);

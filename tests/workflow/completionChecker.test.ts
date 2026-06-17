@@ -74,4 +74,31 @@ describe("computeCompletionState", () => {
     const state = computeCompletionState({}, "fdp-attended", config, true);
     assert.equal(state.total, state.stage1Total + state.stage2Total);
   });
+
+  // S1 (TECH-AUDIT-2026-06 C4): stage-1 completeness is anchored to the
+  // schema's explicit requiredForCommit allowlist (intersected with
+  // required!==false), NOT a "required !== false over all fields" default.
+  // This is the schema-drift guard: a future stage-1 field that isn't added
+  // to requiredForCommit must not retroactively mark existing entries
+  // incomplete (which would make the nightly job auto-delete them).
+  it("stage1 required set equals requiredForCommit ∩ (required!==false), drift-proof", async () => {
+    const { getCategorySchema } = await import("@/data/categoryRegistry");
+    const schema = getCategorySchema("fdp-attended");
+    const commit = new Set(schema.requiredForCommit ?? []);
+    const expected = schema.fields.filter(
+      (f) => f.stage !== 2 && commit.has(f.key) && f.required !== false,
+    ).length;
+    const state = computeCompletionState({}, "fdp-attended", config, false);
+    assert.equal(state.stage1Total, expected);
+    // Conditional funding fields are NOT in requiredForCommit, so they never
+    // count toward stage-1 completeness — a sponsored=No entry with all core
+    // fields is complete without them.
+    assert.equal(commit.has("fundingAgency"), false);
+    const sponsoredNo = {
+      academicYear: "2025-26", semesterType: "ODD", level: "National", mode: "Online",
+      startDate: "2025-01-01", endDate: "2025-01-05", programName: "X", organisingBody: "Y",
+      sponsored: "No",
+    };
+    assert.equal(computeCompletionState(sponsoredNo, "fdp-attended", config, false).stage1Complete, true);
+  });
 });

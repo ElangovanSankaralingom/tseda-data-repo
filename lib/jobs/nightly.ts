@@ -233,6 +233,14 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
     const timerWarningsResult = await withTimer("jobs.nightly.step.timerWarnings", () => runTimerWarnings());
     const walCompactionResult = await withTimer("jobs.nightly.step.walCompaction", () => runNightlyWalCompaction());
     const orphanScanResult = await withTimer("jobs.nightly.step.orphanScan", () => safeAction(() => findOrphanUploads(), { context: "jobs.nightly.orphan_scan" }));
+    // S1: purge quarantine bundles past the 30-day retention window. Best-effort
+    // — a purge failure must never fail the nightly run or block other steps.
+    await withTimer("jobs.nightly.step.quarantinePurge", () =>
+      safeAction(async () => {
+        const { purgeExpiredQuarantine } = await import("@/lib/jobs/quarantine");
+        return purgeExpiredQuarantine();
+      }, { context: "jobs.nightly.quarantine_purge" }),
+    );
 
     const summary: NightlyMaintenanceSummary = {
       startedAt,
