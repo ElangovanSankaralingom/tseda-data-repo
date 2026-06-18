@@ -198,7 +198,7 @@ function CategoryHero({
                   >
                     <div
                       className="absolute inset-[6px] flex items-center justify-center rounded-full"
-                      style={{ background: `color-mix(in srgb, ${chartHex} 82%, black)` }}
+                      style={{ background: `color-mix(in srgb, ${chartHex} 88%, white)` }}
                     >
                       <span className="font-mono text-[13px] font-extrabold" style={{ color: "var(--color-text-on-accent)" }}>{completionPct}%</span>
                     </div>
@@ -213,33 +213,39 @@ function CategoryHero({
               )}
             </div>
 
-            {/* Counter panel */}
+            {/* Counter panel — grey card, white/amber mini-stats */}
             {stats && stats.total > 0 && (
-              <div
-                className="w-full shrink-0 overflow-hidden rounded-2xl p-5 sm:w-[280px]"
-                style={{ background: "var(--color-card-bg)", border: "1px solid var(--color-card-border)", boxShadow: "0 12px 30px -14px rgba(10,16,42,0.45)" }}
-              >
-                <div className="-mx-5 -mt-5 mb-4 h-[2px]" style={{ background: chartHex, opacity: 0.5 }} />
-                <span className="text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--color-text-tertiary)" }}>
-                  {t('dashboard.totalEntries')}
-                </span>
-                <div className="mt-1 font-mono text-[38px] font-extrabold leading-none tracking-tighter tabular-nums" style={{ color: "var(--color-text-primary)" }}>
-                  {stats.total}
-                </div>
-                <div className="mt-4 flex gap-3">
-                  <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-subtle)" }}>
-                    <div className="flex items-center gap-1.5">
-                      <FileText className="size-4" style={{ color: "var(--color-text-tertiary)" }} />
-                      <span className="font-mono text-lg font-black tabular-nums" style={{ color: "var(--color-text-primary)" }}>{stats.drafts}</span>
+              <div className="flex w-full shrink-0 sm:w-[280px]">
+                <div
+                  className="flex flex-1 flex-col overflow-hidden rounded-[18px]"
+                  style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-default)", boxShadow: "0 12px 30px -14px rgba(10,16,42,0.45)" }}
+                >
+                  <div className="h-[2px]" style={{ background: chartHex, opacity: 0.5 }} />
+                  <div className="flex flex-1 flex-col gap-4 p-5">
+                    <div>
+                      <div className="text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--color-text-secondary)" }}>
+                        {t('dashboard.totalEntries')}
+                      </div>
+                      <div className="mt-1 font-mono text-[38px] font-extrabold leading-none tracking-tight tabular-nums" style={{ color: "var(--color-text-primary)" }}>
+                        {stats.total}
+                      </div>
                     </div>
-                    <div className="mt-0.5 text-[11px] font-semibold" style={{ color: "var(--color-text-tertiary)" }}>{t('common.drafts')}</div>
-                  </div>
-                  <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "color-mix(in srgb, var(--color-status-warning) 10%, var(--color-card-bg))", border: "1px solid var(--color-status-warning-border)" }}>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="size-4" style={{ color: "var(--color-status-warning)" }} />
-                      <span className="font-mono text-lg font-black tabular-nums" style={{ color: "var(--color-status-warning)" }}>{stats.pending}</span>
+                    <div className="flex gap-2.5">
+                      <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "var(--color-card-bg)", border: "1px solid var(--color-border-subtle)" }}>
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="size-[15px]" style={{ color: "var(--color-text-placeholder)" }} />
+                          <span className="font-mono text-[17px] font-extrabold tabular-nums" style={{ color: "var(--color-text-primary)" }}>{stats.drafts}</span>
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-semibold" style={{ color: "var(--color-text-muted)" }}>{t('common.drafts')}</div>
+                      </div>
+                      <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "var(--color-status-warning-bg)", border: "1px solid var(--color-status-warning-border)" }}>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="size-[15px]" style={{ color: "var(--color-palette-orange-fg)" }} />
+                          <span className="font-mono text-[17px] font-extrabold tabular-nums" style={{ color: "var(--color-palette-orange-fg)" }}>{stats.pending}</span>
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-semibold" style={{ color: "var(--color-palette-orange-fg)" }}>{t('common.pending')}</div>
+                      </div>
                     </div>
-                    <div className="mt-0.5 text-[11px] font-semibold" style={{ color: "var(--color-status-warning)" }}>{t('common.pending')}</div>
                   </div>
                 </div>
               </div>
@@ -248,17 +254,38 @@ function CategoryHero({
 
           {/* Console strip */}
           {stats && stats.total > 0 && (
-            <div className="mt-6 flex items-center gap-3 rounded-xl px-5 py-3" style={{ background: "var(--color-surface-on-accent)" }}>
-              <span className="size-2 shrink-0 rounded-full" style={{ background: "var(--color-status-success)" }} />
-              <span className="truncate font-mono text-[11px] font-semibold tracking-wider" style={{ color: "var(--color-text-on-accent-muted)" }}>
-                {`> ${category.toUpperCase().replace(/-/g, ".")} · ${stats.total} ${t('dashboard.entries').toUpperCase()} · ${stats.finalized} ${t('common.finalized').toUpperCase()} · ${stats.streakActive} ${t('entry.streaks').toUpperCase()}`}
+            <div className="mt-5 flex flex-wrap items-center gap-3.5 rounded-xl px-4 py-2.5" style={{ background: "var(--color-surface-on-accent)", border: "1px solid var(--color-surface-on-accent-strong)" }}>
+              <span className="font-mono text-[11px] font-semibold tracking-wide" style={{ color: "var(--color-text-on-accent-muted)" }}>
+                {`> ${category.toUpperCase().replace(/-/g, ".")}`}
               </span>
+              <span className="size-1.5 rounded-full" style={{ background: "var(--color-status-success)", boxShadow: "0 0 8px color-mix(in srgb, var(--color-status-success) 60%, transparent)" }} />
+              <ConsoleStat value={stats.total} label={t('dashboard.entries')} />
+              <ConsoleDivider />
+              <ConsoleStat value={stats.finalized} label={t('common.finalized')} />
+              {stats.streakActive > 0 && (
+                <>
+                  <ConsoleDivider />
+                  <ConsoleStat value={stats.streakActive} label={t('entry.streaks')} />
+                </>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>
   );
+}
+
+function ConsoleStat({ value, label }: { value: number; label: string }) {
+  return (
+    <span className="font-mono text-[11px] font-medium uppercase tracking-wide tabular-nums" style={{ color: "var(--color-text-on-accent-muted)" }}>
+      {value} {label}
+    </span>
+  );
+}
+
+function ConsoleDivider() {
+  return <span className="h-3 w-px" style={{ background: "var(--color-surface-on-accent-strong)" }} />;
 }
 
 /* ═══ EMPTY STATE ═══ */

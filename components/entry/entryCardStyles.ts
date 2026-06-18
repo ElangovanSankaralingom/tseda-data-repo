@@ -109,8 +109,8 @@ export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
   },
   in_the_works: { background: "transparent", border: "none", padding: "", hasContainer: false },
   under_review: {
-    background: `color-mix(in srgb, ${GROUP_HEX.under_review} 2%, transparent)`,
-    border: `1px solid color-mix(in srgb, ${GROUP_HEX.under_review} 12%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.under_review} 3%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.under_review} 16%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },

@@ -84,7 +84,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       borderTop: "border-t-blue-500",
       buttonBg: "bg-blue-600",
       buttonHover: "hover:bg-blue-700",
-      chartHex: "#2563EB",
+      chartHex: "#2A48CE",
     },
     subtitle: "Record FDPs you attended with support amount and required supporting documents.",
     entryTitleField: "programName",
