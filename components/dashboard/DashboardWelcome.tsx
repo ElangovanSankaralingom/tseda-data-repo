@@ -66,16 +66,18 @@ export default function DashboardWelcome({
     <div className="animate-fade-in-up">
     <div ref={ref} style={tiltStyle} {...handlers}>
     <div
-      className="relative overflow-hidden rounded-3xl border border-[var(--color-border-default)]"
+      className="relative overflow-hidden rounded-3xl border border-[var(--color-surface-on-accent)]"
       style={{
         background:
-          "linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-panel-raised)) 0%, var(--color-surface-panel-raised) 45%, color-mix(in srgb, var(--color-palette-blue-fg) 5%, var(--color-surface-panel-raised)) 100%)",
+          "linear-gradient(135deg, var(--color-band-from) 0%, var(--color-band-to) 100%)",
+        boxShadow:
+          "0 1px 2px rgba(20,30,70,0.06), 0 22px 50px -24px rgba(42,72,206,0.42)",
       }}
     >
       {/* Holographic light */}
       <div style={boostedLightStyle} />
-      {/* ── Accent top bar ── */}
-      <div className="h-[3px] bg-[var(--color-primary)] animate-bar-draw" />
+      {/* ── Accent top bar (brass on the lapis band) ── */}
+      <div className="h-[3px] bg-[var(--color-status-warning)] animate-bar-draw" />
 
       <div className="p-8 sm:p-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-10">
@@ -84,27 +86,27 @@ export default function DashboardWelcome({
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-on-accent-muted)]">
                   {greeting}
                 </p>
-                <div className="h-px flex-1 bg-[var(--color-divider)]" />
-                <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-text-tertiary)]">
+                <div className="h-px flex-1 bg-[var(--color-surface-on-accent)]" />
+                <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-text-on-accent-muted)]">
                   {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
                 </span>
               </div>
               <div className="mt-4 animate-text-reveal">
-                <h1 className="text-4xl font-black tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
+                <h1 className="text-4xl font-black tracking-tight text-[var(--color-text-on-accent)] sm:text-5xl">
                   {firstName}
                 </h1>
               </div>
-              <p className="mt-3 text-sm text-[var(--color-text-secondary)] font-medium max-w-sm leading-relaxed">
+              <p className="mt-3 text-sm text-[var(--color-text-on-accent-muted)] font-medium max-w-sm leading-relaxed">
                 {welcomeSubtext}
               </p>
             </div>
 
             {/* ── Streak ring gauges — raised surface ── */}
             {hasAnyEntries && (streakActivated > 0 || streakWins > 0) && (
-              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "var(--color-surface-panel-raised)", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
+              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "var(--color-surface-panel-raised)", borderColor: "var(--color-border-subtle)", borderWidth: "1px", boxShadow: "0 8px 22px -10px rgba(10,16,42,0.35)" }}>
                 {streakActivated > 0 && (
                   <StreakRing
                     icon={Flame}
@@ -137,7 +139,7 @@ export default function DashboardWelcome({
           {/* ═══ RIGHT: Bright counter panel (L3) ═══ */}
           {hasAnyEntries && (
             <div className="lg:w-72 shrink-0">
-              <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-panel-tile)] border border-[var(--color-border-default)] flex flex-col">
+              <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-panel-tile)] border border-[var(--color-border-default)] flex flex-col" style={{ boxShadow: "0 10px 28px -10px rgba(10,16,42,0.40)" }}>
                 <div className="h-[2px] bg-[var(--color-primary)] opacity-50" />
 
                 <div className="flex-1 p-6 flex flex-col justify-between">
@@ -187,7 +189,7 @@ export default function DashboardWelcome({
         </div>
 
         {/* ── Status bar — own surface ── */}
-        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "var(--color-surface-inset)", borderColor: "var(--color-border-subtle)", borderWidth: "1px" }}>
+        <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "var(--color-surface-inset)", borderColor: "var(--color-border-subtle)", borderWidth: "1px", boxShadow: "0 6px 18px -10px rgba(10,16,42,0.30)" }}>
           <span className="text-[var(--color-primary)] text-xs font-bold">{">"}</span>
           <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-text-tertiary)]">
             TSEDA

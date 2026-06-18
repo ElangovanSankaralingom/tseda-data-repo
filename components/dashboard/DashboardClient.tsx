@@ -136,13 +136,13 @@ export default function DashboardClient({
 
       {/* ── Segmented tab bar ── */}
       <div className="flex items-center gap-5">
-        <div className="inline-flex items-center gap-1 rounded-2xl bg-[var(--color-surface-inset-deep)] border border-[var(--color-border-subtle)] p-1.5">
+        <div className="inline-flex items-center gap-1.5 rounded-[15px] bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-border-subtle)] p-1.5">
           {groupTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveGroup(tab.key)}
               className={cn(
-                "flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-xs font-semibold tracking-wide transition-all duration-300",
+                "flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-[13px] font-semibold tracking-wide transition-all duration-300",
                 activeGroup === tab.key
                   ? "bg-white text-[rgba(0,0,0,0.85)] shadow-md"
                   : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-raised)]"
@@ -168,149 +168,60 @@ export default function DashboardClient({
       {/* ── Master-Detail Layout ── */}
       <ErrorBoundary section="Dashboard navigator">
         <div
-          className="rounded-3xl p-5 lg:p-6"
+          className="rounded-3xl p-5 lg:p-6 backdrop-blur-xl"
           style={{
-            backgroundColor: "var(--color-surface-panel)",
+            backgroundColor: "var(--color-glass-bg)",
             border: "1px solid var(--color-border-default)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 var(--color-border-subtle)",
+            boxShadow: "0 1px 2px rgba(30,40,90,0.05), 0 18px 40px -24px rgba(30,40,90,0.22), inset 0 1px 0 rgba(255,255,255,0.7)",
           }}
         >
         <div className="flex flex-col gap-6 lg:flex-row">
 
           {/* ═══ LEFT: Category list ═══ */}
           <div className="lg:w-80 xl:w-[360px] shrink-0 animate-card-lift">
-            <div className="flex">
-              {/* ── Circuit trunk line + nodes ── */}
-              <div className="relative flex flex-col items-center mr-4 shrink-0" style={{ width: "20px" }}>
-                <div className="absolute top-5 bottom-5 w-px bg-[var(--color-border-subtle)] animate-spine-draw" />
-                {filteredCategories.map((cat) => {
-                  const isAct = cat.slug === effectiveSlug;
-                  const hex = ACCENT_HEX[cat.slug] ?? "#ffffff";
-                  return (
-                    <div key={cat.slug} className="flex-1 flex items-center justify-center relative">
-                      <div
-                        className="absolute left-[10px] h-px transition-all duration-300"
-                        style={{
-                          width: "14px",
-                          backgroundColor: isAct ? hex : "var(--color-border-subtle)",
-                        }}
-                      />
-                      <div
-                        className={cn(
-                          "relative size-[9px] rounded-full border-2 transition-all duration-300 z-10",
-                          isAct ? "scale-125" : "border-[var(--color-border-default)] bg-[var(--color-surface-inset-deep)]"
-                        )}
-                        style={isAct ? {
-                          backgroundColor: hex,
-                          borderColor: hex,
-                          boxShadow: `0 0 10px ${hex}60`,
-                        } : undefined}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* ── Category rows ── */}
-              <div className="flex-1 space-y-2">
-                {filteredCategories.map((cat, idx) => {
-                  const isAct = cat.slug === effectiveSlug;
-                  const hex = ACCENT_HEX[cat.slug] ?? "#ffffff";
-                  const config = getCategoryConfig(cat.slug);
-                  const Icon = getCategoryIcon(config.icon);
-
-                  return (
-                    <button
-                      key={cat.slug}
-                      onClick={() => setActiveSlug(cat.slug)}
-                      className={cn(
-                        "group relative flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left transition-all duration-300 animate-fade-in-up",
-                        isAct
-                          ? "text-[var(--color-text-primary)]"
-                          : "hover:-translate-y-0.5 hover:brightness-110"
-                      )}
-                      style={{
-                        animationDelay: `${idx * 80}ms`,
-                        ...(isAct ? {
-                          backgroundColor: `${hex}35`,
-                          border: `1px solid ${hex}60`,
-                          boxShadow: `inset 3px 0 0 ${hex}, 0 4px 16px ${hex}20`,
-                        } : {
-                          backgroundColor: "var(--color-surface-panel-tile)",
-                          border: "1px solid var(--color-border-default)",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        }),
-                      }}
-                    >
-                      {/* Icon */}
-                      <div
-                        className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-                        style={{
-                          backgroundColor: hex,
-                          boxShadow: isAct ? `0 4px 12px ${hex}50` : "none",
-                          opacity: isAct ? 1 : 0.85,
-                        }}
-                      >
-                        <Icon
-                          className="size-[18px]"
-                          style={{ color: "var(--color-text-on-accent)" }}
-                        />
+            <div className="flex flex-col gap-2.5">
+              {filteredCategories.map((cat, idx) => {
+                const isAct = cat.slug === effectiveSlug;
+                const hex = ACCENT_HEX[cat.slug] ?? "#94a3b8";
+                const config = getCategoryConfig(cat.slug);
+                const Icon = getCategoryIcon(config.icon);
+                const total = cat.totalEntries;
+                const gen = cat.generatedCount;
+                const dr = cat.draftCount;
+                const done = Math.max(total - gen - dr, 0);
+                const pct = (n: number) => (total > 0 ? (n / total) * 100 + "%" : "0%");
+                return (
+                  <button
+                    key={cat.slug}
+                    onClick={() => setActiveSlug(cat.slug)}
+                    className={cn("group w-full rounded-2xl px-4 py-3.5 text-left transition-colors duration-300", !isAct && "hover:bg-[var(--color-surface-inset)]")}
+                    style={isAct ? { backgroundColor: hex + "12", border: "1px solid " + hex + "33" } : { backgroundColor: "var(--color-surface-panel-tile)", border: "1px solid var(--color-border-default)" }}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: hex, opacity: isAct ? 1 : 0.92 }}>
+                        <Icon className="size-[19px]" style={{ color: "var(--color-text-on-accent)" }} />
                       </div>
-
-                      {/* Label + meta */}
                       <div className="min-w-0 flex-1">
-                        <div
-                          className={cn(
-                            "truncate text-sm font-semibold leading-snug",
-                            isAct ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
-                          )}
-                        >
-                          {categoryLabel(cat.slug, language)}
-                        </div>
-                        <div className="flex items-center gap-2.5 mt-1">
-                          <span
-                            className="font-mono text-xs font-bold"
-                            style={{ color: isAct ? "var(--color-text-secondary)" : "var(--color-text-tertiary)" }}
-                          >
-                            {cat.totalEntries} {cat.totalEntries === 1 ? "entry" : "entries"}
-                          </span>
-                          {cat.draftCount > 0 && (
-                            <span
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                              style={{
-                                backgroundColor: isAct ? "var(--color-border-default)" : "var(--color-surface-inset)",
-                                color: isAct ? "var(--color-text-secondary)" : "var(--color-text-placeholder)",
-                              }}
-                            >
-                              {cat.draftCount} Draft
-                            </span>
-                          )}
-                        </div>
+                        <div className={cn("truncate text-[15px] font-bold tracking-[-0.01em]", isAct ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]")}>{categoryLabel(cat.slug, language)}</div>
+                        <div className="mt-0.5 font-mono text-xs font-semibold tabular-nums" style={{ color: isAct ? "var(--color-text-secondary)" : "var(--color-text-tertiary)" }}>{total} {total === 1 ? "entry" : "entries"}</div>
                       </div>
-
-                      {/* Keyboard badge + chevron */}
-                      <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "flex size-6 items-center justify-center rounded-lg font-mono text-[11px] font-bold border",
-                          isAct
-                            ? "text-[var(--color-text-secondary)] border-[var(--color-border-default)] bg-[var(--color-surface-raised)]"
-                            : "text-[var(--color-text-muted)] border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)]"
-                        )}>
-                          {idx + 1}
-                        </span>
-                        <ChevronRight
-                          className={cn(
-                            "size-4 transition-all duration-300",
-                            isAct ? "text-[var(--color-text-tertiary)]" : "text-[var(--color-icon-muted)] -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
-                          )}
-                        />
+                      {isAct ? (
+                        <ChevronRight className="size-4 shrink-0" style={{ color: hex }} />
+                      ) : (
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)] font-mono text-[11px] font-bold text-[var(--color-text-muted)]">{idx + 1}</span>
+                      )}
+                    </div>
+                    {isAct && total > 0 && (
+                      <div className="mt-3 flex h-1 overflow-hidden rounded-full" style={{ background: "var(--color-surface-inset-deep)" }}>
+                        <div style={{ width: pct(gen), background: hex }} />
+                        <div style={{ width: pct(dr), background: "var(--color-status-warning)" }} />
+                        <div style={{ width: pct(done), background: "var(--color-status-success)" }} />
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-
           </div>
 
           {/* ═══ RIGHT: Detail panel ═══ */}
@@ -365,13 +276,13 @@ function CategoryDetailPanel({
     <div ref={ref} style={tiltStyle} {...handlers} className="h-full">
       <div
         className={cn(
-          "relative overflow-hidden rounded-3xl border h-full",
+          "relative overflow-hidden rounded-3xl border h-full backdrop-blur-xl",
           isEmpty
             ? "border-dashed border-[var(--color-border-subtle)]"
             : "border-[var(--color-border-default)]"
         )}
         style={{
-          backgroundColor: isEmpty ? "var(--color-surface-panel)" : "var(--color-surface-panel-raised)",
+          backgroundColor: "var(--color-glass-bg)",
         }}
       >
         <div style={lightStyle} />
@@ -396,7 +307,7 @@ function CategoryDetailPanel({
                 <Icon className="size-6" style={{ color: "var(--color-text-on-accent)" }} />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">
+                <h2 className="text-[26px] font-black text-[var(--color-text-primary)] tracking-[-0.025em]">
                   {categoryLabel(cat.slug, language)}
                 </h2>
                 <p className="text-xs text-[var(--color-text-secondary)] font-medium mt-1">
@@ -422,7 +333,7 @@ function CategoryDetailPanel({
                 {t("dashboard.totalEntries")}
               </div>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="font-mono text-4xl font-black tracking-tighter text-[var(--color-text-primary)] leading-none">
+                <span className="font-mono text-[38px] font-black tracking-tighter text-[var(--color-text-primary)] leading-none">
                   {displayCount}
                 </span>
                 <span className="text-xs font-medium text-[var(--color-text-placeholder)]">

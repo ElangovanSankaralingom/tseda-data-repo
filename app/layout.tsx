@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Hanken_Grotesk } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -10,9 +10,9 @@ import { buildThemeCss, type ThemeMode, type ColorPalette } from "@/lib/theme/th
 const COOKIE_MODES: readonly ThemeMode[] = ["light", "dark", "color"];
 const COOKIE_PALETTES: readonly ColorPalette[] = ["midnight-lime", "deep-ocean", "carbon-violet", "obsidian-amber"];
 
-const plusJakarta = Plus_Jakarta_Sans({
+const hanken = Hanken_Grotesk({
   subsets: ["latin"],
-  variable: "--font-plus-jakarta",
+  variable: "--font-hanken",
   display: "swap",
   weight: ["400", "500", "600", "700", "800"],
 });
@@ -45,7 +45,7 @@ export default async function RootLayout({
   const palette: ColorPalette = rawPalette && COOKIE_PALETTES.includes(rawPalette) ? rawPalette : "midnight-lime";
 
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`${hanken.variable} ${GeistMono.variable}`}>
       <body className="antialiased">
         <style dangerouslySetInnerHTML={{ __html: buildThemeCss(mode, palette) }} />
         <script

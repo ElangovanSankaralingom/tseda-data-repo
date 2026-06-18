@@ -155,11 +155,13 @@ body {
 /* Light mode elevation — soft diffuse "floating card" shadows.
    In light, depth comes from layered low-alpha COOL (navy-hue) shadows,
    matching the daylight-navy neutral ramp. */
-html:not(.dark) .shadow-sm { box-shadow: 0 1px 2px rgba(22, 27, 40, 0.05), 0 4px 12px -2px rgba(22, 27, 40, 0.07); }
-html:not(.dark) .shadow-md { box-shadow: 0 2px 6px rgba(22, 27, 40, 0.06), 0 10px 24px -6px rgba(22, 27, 40, 0.10); }
-html:not(.dark) .shadow-lg { box-shadow: 0 4px 12px rgba(22, 27, 40, 0.07), 0 20px 44px -12px rgba(22, 27, 40, 0.15); }
-html:not(.dark) .shadow-xl { box-shadow: 0 6px 16px rgba(22, 27, 40, 0.08), 0 28px 60px -16px rgba(22, 27, 40, 0.18); }
-html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.10), 0 36px 80px -20px rgba(22, 27, 40, 0.22); }
+/* Soft-pastel light elevation: cool periwinkle-tinted shadows, slightly larger
+   and softer so white cards float off the tinted field (Outstaff idiom). */
+html:not(.dark) .shadow-sm { box-shadow: 0 1px 2px rgba(46, 52, 92, 0.05), 0 5px 14px -3px rgba(46, 52, 92, 0.08); }
+html:not(.dark) .shadow-md { box-shadow: 0 2px 6px rgba(46, 52, 92, 0.06), 0 12px 28px -8px rgba(46, 52, 92, 0.12); }
+html:not(.dark) .shadow-lg { box-shadow: 0 4px 12px rgba(46, 52, 92, 0.07), 0 24px 50px -14px rgba(46, 52, 92, 0.16); }
+html:not(.dark) .shadow-xl { box-shadow: 0 6px 18px rgba(46, 52, 92, 0.09), 0 32px 68px -18px rgba(46, 52, 92, 0.20); }
+html:not(.dark) .shadow-2xl { box-shadow: 0 12px 28px rgba(46, 52, 92, 0.11), 0 40px 88px -22px rgba(46, 52, 92, 0.24); }
 
 /* Premium scrollbar */
 .dark ::-webkit-scrollbar {
@@ -190,7 +192,7 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.10), 0 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-plus-jakarta);
+  --font-sans: var(--font-hanken);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -239,7 +241,7 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.10), 0 
    Do NOT put literal colors here — point at a --color-* token instead.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
-  --radius: 0.625rem;
+  --radius: 0.875rem;
   --background: var(--color-body-bg);
   --foreground: var(--color-text-primary);
   --card: var(--color-card-bg);
@@ -281,8 +283,8 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.10), 0 
   /* Dark mode: ambient glows only (dots handled by overlay divs) */
   .dark body {
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(132, 204, 22, 0.025), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59, 130, 246, 0.02), transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(138, 162, 248, 0.035), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(99, 102, 241, 0.02), transparent);
     background-size: 100% 100%, 100% 100%;
   }
 
@@ -290,44 +292,45 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 10px 24px rgba(22, 27, 40, 0.10), 0 
      Per-mode dot strength: dark keeps its original lime glow; light gets
      accent dots tuned for the ice field (palette-aware via --color-primary). */
   .dot-overlay {
-    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 20%, transparent) 1.5px, transparent 1.5px);
-    background-size: 30px 30px;
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 36%, transparent) 1.6px, transparent 1.6px);
+    background-size: 20px 20px;
     mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
   }
   .dark .dot-overlay {
-    background-image: radial-gradient(circle, rgba(132, 204, 22, 0.12) 1.5px, transparent 1.5px);
+    background-image: radial-gradient(circle, rgba(138, 162, 248, 0.22) 1.6px, transparent 1.6px);
   }
 
   @media (min-width: 640px) {
     .dot-overlay {
-      background-size: 36px 36px;
+      background-size: 24px 24px;
     }
   }
 
   /* Cursor glow — brighter dots near cursor, same vertical fade.
      Per-mode strength, palette-aware in light. */
   .cursor-glow-dots {
-    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 34%, transparent) 1.5px, transparent 1.5px);
-    background-size: 30px 30px;
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 55%, transparent) 1.6px, transparent 1.6px);
+    background-size: 20px 20px;
   }
   .dark .cursor-glow-dots {
-    background-image: radial-gradient(circle, rgba(132, 204, 22, 0.22) 1.5px, transparent 1.5px);
+    background-image: radial-gradient(circle, rgba(138, 162, 248, 0.38) 1.6px, transparent 1.6px);
   }
 
   @media (min-width: 640px) {
     .cursor-glow-dots {
-      background-size: 36px 36px;
+      background-size: 24px 24px;
     }
   }
 
   /* Light mode: ambient accent washes — airy field, no texture noise.
      (Dot grids are dark-only; light separation comes from surface contrast.) */
+  /* Light mode: very subtle ambient washes — the field stays clean porcelain;
+     the one bold colour moment per page is the lapis hero band, not the field. */
   body:not(.dark body) {
     background-image:
-      radial-gradient(ellipse 75% 50% at 50% -12%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent),
-      radial-gradient(ellipse 60% 45% at 94% 102%, color-mix(in srgb, var(--color-palette-blue-fg) 6%, transparent), transparent),
-      radial-gradient(ellipse 45% 35% at -5% 60%, color-mix(in srgb, var(--color-palette-purple-fg) 4%, transparent), transparent);
+      radial-gradient(ellipse 75% 50% at 50% -12%, color-mix(in srgb, var(--color-primary) 6%, transparent), transparent),
+      radial-gradient(ellipse 55% 42% at 102% 106%, color-mix(in srgb, var(--color-palette-amber-fg) 4%, transparent), transparent);
     background-attachment: fixed;
   }
 }
@@ -398,12 +401,41 @@ select:focus {
     text-align: left;
   }
 
-  /* ─── GLASSMORPHISM UTILITIES ─── */
+  /* ─────────────────────────────────────────────────────────────────────
+     LIQUID-GLASS MATERIAL
+     Glass here is a *material*, not just a translucent fill: a bright specular
+     sheen across the top, a lit 1px rim, backdrop saturation so colour blooms
+     through, and a soft inner depth. Sheen/edge are mode-aware. Apply the full
+     material with .glass-card / .glass-surface / .lg-pill; add just the sheen
+     to an existing translucent surface with .lg-surface. Every shadcn <Card>
+     ([data-slot="card"]) gets the subtle sheen automatically.
+     ───────────────────────────────────────────────────────────────────────── */
+  :root { --lg-sheen: rgba(255, 255, 255, 0.07); --lg-edge: rgba(255, 255, 255, 0.13); }
+  html:not(.dark) { --lg-sheen: rgba(255, 255, 255, 0.85); --lg-edge: rgba(255, 255, 255, 0.95); }
+
+  .lg-surface,
+  .glass-card,
+  .lg-pill,
+  [data-slot="card"] { position: relative; isolation: isolate; }
+
+  .lg-surface::before,
+  .glass-card::before,
+  .lg-pill::before,
+  [data-slot="card"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+    background: linear-gradient(180deg, var(--lg-sheen) 0%, transparent 40%);
+    box-shadow: inset 0 1px 0 0 var(--lg-edge);
+  }
 
   .glass-card {
     background: var(--color-glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
     border: 1px solid var(--color-glass-border);
     border-radius: 1rem;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -411,28 +443,93 @@ select:focus {
 
   .glass-card-hover:hover {
     background: var(--color-glass-hover);
-    border-color: rgba(132, 204, 22, 0.12);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(132, 204, 22, 0.06);
+    border-color: rgba(138, 162, 248, 0.20);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(138, 162, 248, 0.08);
     transform: translateY(-2px);
   }
 
   .glass-surface {
-    background: rgba(15, 20, 35, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    isolation: isolate;
+    background: var(--color-header-bg);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
     border-bottom: 1px solid var(--color-glass-border);
+  }
+  .glass-surface::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: var(--lg-edge);
+    pointer-events: none;
   }
 
   .glass-input {
     background: var(--color-input-bg);
     border: 1px solid var(--color-input-border);
     border-radius: 0.75rem;
+    box-shadow: inset 0 1px 0 0 var(--lg-edge);
     transition: all 0.2s ease;
   }
 
   .glass-input:focus {
-    border-color: rgba(132, 204, 22, 0.4);
-    box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.1);
+    border-color: rgba(138, 162, 248, 0.45);
+    box-shadow: 0 0 0 3px rgba(138, 162, 248, 0.12);
+  }
+
+  /* ─── BADGE MATERIAL — neutral frosted pill; semantic colour lives only in
+     the leading .lg-dot, never as the text fill or a flat colour wash. ─── */
+  .lg-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--color-glass-bg);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    border: 1px solid var(--color-card-border);
+    border-radius: 9999px;
+    color: var(--color-text-primary);
+  }
+  .lg-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent),
+                0 0 7px color-mix(in srgb, currentColor 55%, transparent);
+    flex: none;
+  }
+
+  /* ─── CATEGORY TAG — quiet, dot-led. One ink text colour for every tag; the
+     category hue is carried by .lg-dot only, so a row of tags reads calm. ─── */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.26rem 0.62rem;
+    border-radius: 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: var(--color-surface-inset);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  /* Colour-accent top edge for emphasis cards (stat / metric / section). Lapis
+     by default; set --lg-accent inline for a brass or status-coloured edge. */
+  .lg-accent-top { position: relative; }
+  .lg-accent-top::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+    background: linear-gradient(90deg, var(--lg-accent, var(--color-primary)), transparent 85%);
+    pointer-events: none;
   }
 
   .glass-pill {
@@ -442,7 +539,7 @@ select:focus {
   }
 
   .glow-lime {
-    box-shadow: 0 0 20px rgba(132, 204, 22, 0.15), 0 0 60px rgba(132, 204, 22, 0.05);
+    box-shadow: 0 0 20px rgba(138, 162, 248, 0.18), 0 0 60px rgba(138, 162, 248, 0.06);
   }
 
   .glow-dot {
@@ -963,7 +1060,7 @@ select:focus {
 
   /* Highlight glow for newly revealed fields */
   @keyframes highlight-new {
-    0% { background-color: rgba(132, 204, 22, 0.1); }
+    0% { background-color: rgba(138, 162, 248, 0.12); }
     100% { background-color: transparent; }
   }
   .animate-highlight-new {
