@@ -229,8 +229,8 @@ export default function ShellClient({
           className={cn(
             "pointer-events-auto mx-auto max-w-screen-2xl transition-all duration-500",
             scrolled
-              ? "rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_0_1.5px_var(--color-border-default)]"
-              : "rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3),0_0_0_1.5px_var(--color-border-default)]"
+              ? "rounded-2xl shadow-[0_0_0_1px_var(--color-border-default),0_2px_4px_rgba(20,30,70,0.06),0_18px_44px_-20px_rgba(20,30,70,0.30)]"
+              : "rounded-2xl shadow-[0_0_0_1px_var(--color-border-default),0_1px_2px_rgba(20,30,70,0.05),0_12px_30px_-16px_rgba(20,30,70,0.22)]"
           )}
           style={{
             background: scrolled
@@ -468,14 +468,6 @@ export default function ShellClient({
 
               {/* Spacer */}
               <div className="flex-1" />
-
-              {/* Live status — right side of context strip */}
-              <div className="hidden items-center gap-2 lg:flex">
-                <span className="size-1.5 rounded-full bg-[var(--color-status-success)] animate-subtle-pulse" />
-                <span className="font-mono text-[10px] font-semibold tracking-wider text-[var(--color-text-muted)]">
-                  ONLINE
-                </span>
-              </div>
             </nav>
 
             {/* ── Zone divider ── */}
