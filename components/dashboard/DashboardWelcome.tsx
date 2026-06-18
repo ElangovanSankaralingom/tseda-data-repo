@@ -5,6 +5,7 @@ import { Flame, Trophy, FileText, Clock } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { formatNumber } from "@/lib/i18n/locale";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
+import { useCountUp } from "@/hooks/useCountUp";
 import type { TranslationKey } from "@/lib/i18n";
 import StreakRing from "./StreakRing";
 
@@ -45,6 +46,7 @@ export default function DashboardWelcome({
   editRequestedCount: number;
 }) {
   const { t, language } = useTranslation();
+  const animatedTotal = useCountUp(totalEntries);
   const greeting = t(`dashboard.${greetingKey}` as TranslationKey);
 
   const welcomeSubtext = !hasAnyEntries
@@ -147,8 +149,8 @@ export default function DashboardWelcome({
                     <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-secondary)]">
                       {t("dashboard.totalEntries")}
                     </div>
-                    <div className="mt-2 font-mono text-[38px] font-extrabold tracking-tighter text-[var(--color-text-primary)] leading-none">
-                      {formatNumber(totalEntries, language)}
+                    <div className="mt-2 font-mono text-[38px] font-extrabold tracking-tighter text-[var(--color-text-primary)] leading-none tabular-nums">
+                      {formatNumber(animatedTotal, language)}
                     </div>
                   </div>
 

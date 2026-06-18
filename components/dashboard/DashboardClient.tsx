@@ -194,8 +194,8 @@ export default function DashboardClient({
                   <button
                     key={cat.slug}
                     onClick={() => setActiveSlug(cat.slug)}
-                    className={cn("group w-full rounded-2xl px-4 py-3.5 text-left transition-all duration-300 will-change-transform active:scale-[0.98]", !isAct && "hover:-translate-y-0.5 hover:bg-[var(--color-surface-inset)]")}
-                    style={isAct ? { backgroundColor: hex + "12", border: "1px solid " + hex + "33" } : { backgroundColor: "var(--color-surface-panel-tile)", border: "1px solid var(--color-border-default)" }}
+                    className={cn("group w-full rounded-2xl px-4 py-3.5 text-left transition-all duration-300 will-change-transform active:scale-[0.98] animate-fade-in-up", !isAct && "hover:-translate-y-0.5 hover:bg-[var(--color-surface-inset)]")}
+                    style={{ animationDelay: `${idx * 55}ms`, ...(isAct ? { backgroundColor: hex + "12", border: "1px solid " + hex + "33" } : { backgroundColor: "var(--color-surface-panel-tile)", border: "1px solid var(--color-border-default)" }) }}
                   >
                     <div className="flex items-center gap-3.5">
                       <div className="flex size-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 group-active:scale-95" style={{ backgroundColor: hex, opacity: isAct ? 1 : 0.92 }}>
