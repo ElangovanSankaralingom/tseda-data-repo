@@ -56,7 +56,7 @@ export function getEntryListCardClass(category: EntryDisplayCategory, status?: s
 export const GROUP_HEX: Record<EntryListGroup, string> = {
   streak_runners: "var(--color-palette-amber-fg)",
   on_the_clock: "var(--color-palette-blue-fg)",
-  unlocked: "var(--color-palette-purple-fg)",
+  unlocked: "var(--color-palette-blue-fg)",
   in_the_works: "var(--color-text-muted)",
   under_review: "var(--color-palette-orange-fg)",
   locked_in: "var(--color-status-success)",
@@ -110,7 +110,7 @@ export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
   in_the_works: { background: "transparent", border: "none", padding: "", hasContainer: false },
   under_review: {
     background: `color-mix(in srgb, ${GROUP_HEX.under_review} 2%, transparent)`,
-    border: `1px dashed color-mix(in srgb, ${GROUP_HEX.under_review} 12%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.under_review} 12%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },

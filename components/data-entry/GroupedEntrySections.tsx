@@ -78,7 +78,7 @@ export type { GroupedEntries, GroupedEntryRender, GroupedEntryListCardConfig, Li
 const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
   streak_runners: { title: "entry.streakRunners", icon: Zap, iconColor: "text-[var(--color-palette-amber-fg)]", urgentColor: "text-[var(--color-status-warning)]" },
   on_the_clock: { title: "entry.onTheClock", icon: Clock, iconColor: "text-[var(--color-palette-blue-fg)]", urgentColor: "text-[var(--color-status-info)]" },
-  unlocked: { title: "entry.unlocked", icon: Unlock, iconColor: "text-[var(--color-palette-purple-fg)]" },
+  unlocked: { title: "entry.unlocked", icon: Unlock, iconColor: "text-[var(--color-palette-blue-fg)]" },
   in_the_works: { title: "entry.inTheWorks", icon: Pencil, iconColor: "text-[var(--color-text-secondary)]" },
   under_review: { title: "entry.underReview", icon: Clock, iconColor: "text-[var(--color-palette-orange-fg)]" },
   locked_in: { title: "entry.lockedIn", icon: Lock, iconColor: "text-[var(--color-status-success)]" },
@@ -88,7 +88,7 @@ const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
 const SEGMENT_COLORS: Record<EntryListGroup, string> = {
   streak_runners: "var(--color-palette-amber-fg)",
   on_the_clock: "var(--color-palette-blue-fg)",
-  unlocked: "var(--color-palette-purple-fg)",
+  unlocked: "var(--color-palette-blue-fg)",
   in_the_works: "var(--color-text-tertiary)",
   under_review: "var(--color-palette-orange-fg)",
   locked_in: "var(--color-status-success)",
@@ -97,7 +97,7 @@ const SEGMENT_COLORS: Record<EntryListGroup, string> = {
 const SEGMENT_TEXT_COLORS: Record<EntryListGroup, string> = {
   streak_runners: "text-[var(--color-palette-amber-fg)]",
   on_the_clock: "text-[var(--color-palette-blue-fg)]",
-  unlocked: "text-[var(--color-palette-purple-fg)]",
+  unlocked: "text-[var(--color-palette-blue-fg)]",
   in_the_works: "text-[var(--color-text-tertiary)]",
   under_review: "text-[var(--color-palette-orange-fg)]",
   locked_in: "text-[var(--color-status-success)]",
@@ -142,9 +142,9 @@ function SegmentedStatusBar<TEntry>({
       <div
         className="flex h-11 overflow-hidden rounded-2xl"
         style={{
-          background: "var(--color-surface-inset-deep)",
+          background: "var(--color-card-bg)",
           border: "1px solid var(--color-border-subtle)",
-          boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.9), inset 0 1px 2px rgba(20,30,70,0.04), 0 1px 2px rgba(20,30,70,0.04)",
         }}
       >
         {activeSegments.map((group, i) => {
@@ -162,15 +162,15 @@ function SegmentedStatusBar<TEntry>({
               type="button"
               onClick={() => onSelect(isActive ? null : group)}
               className={`relative flex items-center justify-center gap-1.5 transition-all duration-400 ${
-                isFiltered ? "opacity-25 saturate-50" : "opacity-100"
+                isFiltered ? "opacity-40" : "opacity-100"
               }`}
               style={{
                 width: `${Math.max(pct, 10)}%`,
                 background: isActive
-                  ? `linear-gradient(135deg, color-mix(in srgb, ${hex} 38%, transparent) 0%, color-mix(in srgb, ${hex} 24%, transparent) 100%)`
-                  : `color-mix(in srgb, ${hex} 20%, transparent)`,
+                  ? `linear-gradient(135deg, color-mix(in srgb, ${hex} 26%, transparent) 0%, color-mix(in srgb, ${hex} 18%, transparent) 100%)`
+                  : `color-mix(in srgb, ${hex} 12%, transparent)`,
                 borderRight: i < activeSegments.length - 1
-                  ? "1px solid rgba(0,0,0,0.5)"
+                  ? "1px solid var(--color-card-border)"
                   : "none",
               }}
               aria-label={`${t(config.title as Parameters<typeof t>[0])}: ${count}`}

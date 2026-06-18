@@ -103,7 +103,7 @@ function HeroCard({
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 18%, transparent)",
         clipPath: NOTCH_CLIP,
-        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-amber-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
@@ -211,7 +211,7 @@ function TimerCard({
       className={`${getGroupCardClass("on_the_clock")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
@@ -316,7 +316,7 @@ function StandardCard({
       className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-purple-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-purple-fg) 15%, transparent)",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-purple-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
@@ -409,8 +409,8 @@ function DraftRow({
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("in_the_works")} group rounded-xl animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-strong)]`}
       style={{
-        border: "2px dashed var(--color-border-strong)",
-        background: "var(--color-surface-raised)",
+        border: "1px solid var(--color-border-default)",
+        background: "var(--color-card-bg)",
         "--glow-color": "color-mix(in srgb, var(--color-text-muted) 15%, transparent)",
       } as React.CSSProperties}
     >
@@ -419,8 +419,8 @@ function DraftRow({
         <div
           className="flex size-8 shrink-0 items-center justify-center rounded-xl"
           style={{
-            background: "var(--color-surface-raised)",
-            border: "1px dashed var(--color-border-default)",
+            background: "var(--color-surface-inset)",
+            border: "1px solid var(--color-border-subtle)",
           }}
         >
           <Pencil className="size-3.5 text-[var(--color-icon-default)]" />
@@ -438,8 +438,8 @@ function DraftRow({
         <span
           className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-[var(--color-text-tertiary)]"
           style={{
-            border: "1.5px dashed var(--color-border-strong)",
-            background: "var(--color-surface-raised)",
+            border: "1px solid var(--color-border-default)",
+            background: "var(--color-surface-inset)",
           }}
         >
           {t('entry.draft')}
@@ -479,7 +479,9 @@ function DashedCard({
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("under_review")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-orange-fg)_30%,transparent)]`}
       style={{
-        border: "1.5px dashed color-mix(in srgb, var(--color-palette-orange-fg) 20%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--color-palette-orange-fg) 22%, transparent)",
+        background: "var(--color-card-bg)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-orange-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
