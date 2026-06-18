@@ -88,7 +88,7 @@ export default function SignInPage() {
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-5 py-10">
         <div className="w-full max-w-lg animate-page-enter">
           {/* Card — glass treatment */}
-          <div className="rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8 animate-float">
+          <div className="rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-6 shadow-[0_2px_8px_rgba(20,30,70,0.06),0_30px_60px_-28px_rgba(20,30,70,0.35)] backdrop-blur-xl sm:p-8 animate-float">
             {/* Logos row */}
             <div className="flex items-center justify-center">
               <div className="flex items-center justify-center gap-3">
@@ -121,7 +121,7 @@ export default function SignInPage() {
 
             {/* Title */}
             <div className="mt-6 text-center animate-fade-in-up">
-              <h1 className="text-xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-2xl">
+              <h1 className="text-[24px] font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-[28px]">
                 T&apos;SEDA Data Repository
               </h1>
               {/* Accent line — lime gradient */}
@@ -153,7 +153,7 @@ export default function SignInPage() {
                 disabled={busy || status === "loading"}
                 className={cx(
                   "group flex w-full items-center justify-center gap-3 rounded-2xl border border-[var(--color-glass-border)] px-4 py-3.5 text-sm font-semibold",
-                  "bg-[var(--color-glass-hover)] text-[var(--color-text-primary)] shadow-lg shadow-black/20 cursor-pointer transition-all duration-300 ease-out",
+                  "bg-[var(--color-glass-hover)] text-[var(--color-text-primary)] shadow-[0_8px_24px_-10px_rgba(20,30,70,0.25)] cursor-pointer transition-all duration-300 ease-out",
                   "hover:bg-[var(--color-button-primary-bg)] hover:text-[var(--color-button-primary-text)] hover:border-[var(--color-primary)]/30 hover:shadow-[0_0_24px_var(--color-glow-primary)]",
                   "active:translate-y-0 active:scale-[0.97]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40",

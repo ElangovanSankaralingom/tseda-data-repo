@@ -69,7 +69,7 @@ export default function AdminPageShell({
 
   return (
     <div className={`mx-auto w-full ${maxWidthClassName} px-4 py-8`}>
-      <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 mb-6">
+      <div className="rounded-3xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 mb-6 shadow-[0_1px_2px_rgba(20,30,70,0.06),0_22px_50px_-24px_rgba(42,72,206,0.42)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <Link
@@ -86,7 +86,7 @@ export default function AdminPageShell({
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold text-[var(--color-text-on-accent)]">{displayTitle}</h1>
+                <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--color-text-on-accent)]">{displayTitle}</h1>
                 <p className="mt-0.5 text-sm text-[var(--color-text-on-accent-muted)]">{displaySubtitle}</p>
               </div>
             </div>
