@@ -86,7 +86,7 @@ export default function DashboardWelcome({
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-on-accent-muted)]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
                   {greeting}
                 </p>
                 <div className="h-px flex-1 bg-[var(--color-surface-on-accent)]" />
@@ -95,7 +95,7 @@ export default function DashboardWelcome({
                 </span>
               </div>
               <div className="mt-4 animate-text-reveal">
-                <h1 className="text-4xl font-black tracking-tight text-[var(--color-text-on-accent)] sm:text-5xl">
+                <h1 className="text-[36px] font-extrabold tracking-[-0.03em] text-[var(--color-text-on-accent)] sm:text-[42px]">
                   {firstName}
                 </h1>
               </div>
@@ -144,10 +144,10 @@ export default function DashboardWelcome({
 
                 <div className="flex-1 p-6 flex flex-col justify-between">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-secondary)]">
                       {t("dashboard.totalEntries")}
                     </div>
-                    <div className="mt-2 font-mono text-5xl font-black tracking-tighter text-[var(--color-text-primary)] leading-none">
+                    <div className="mt-2 font-mono text-[38px] font-extrabold tracking-tighter text-[var(--color-text-primary)] leading-none">
                       {formatNumber(totalEntries, language)}
                     </div>
                   </div>

@@ -142,7 +142,7 @@ export default function DashboardClient({
               key={tab.key}
               onClick={() => setActiveGroup(tab.key)}
               className={cn(
-                "flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-[13px] font-semibold tracking-wide transition-all duration-300",
+                "flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-[13px] font-semibold tracking-wide transition-all duration-200 active:scale-95",
                 activeGroup === tab.key
                   ? "bg-white text-[rgba(0,0,0,0.85)] shadow-md"
                   : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-raised)]"
@@ -194,11 +194,11 @@ export default function DashboardClient({
                   <button
                     key={cat.slug}
                     onClick={() => setActiveSlug(cat.slug)}
-                    className={cn("group w-full rounded-2xl px-4 py-3.5 text-left transition-colors duration-300", !isAct && "hover:bg-[var(--color-surface-inset)]")}
+                    className={cn("group w-full rounded-2xl px-4 py-3.5 text-left transition-all duration-300 will-change-transform active:scale-[0.98]", !isAct && "hover:-translate-y-0.5 hover:bg-[var(--color-surface-inset)]")}
                     style={isAct ? { backgroundColor: hex + "12", border: "1px solid " + hex + "33" } : { backgroundColor: "var(--color-surface-panel-tile)", border: "1px solid var(--color-border-default)" }}
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: hex, opacity: isAct ? 1 : 0.92 }}>
+                      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 group-active:scale-95" style={{ backgroundColor: hex, opacity: isAct ? 1 : 0.92 }}>
                         <Icon className="size-[19px]" style={{ color: "var(--color-text-on-accent)" }} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -206,7 +206,7 @@ export default function DashboardClient({
                         <div className="mt-0.5 font-mono text-xs font-semibold tabular-nums" style={{ color: isAct ? "var(--color-text-secondary)" : "var(--color-text-tertiary)" }}>{total} {total === 1 ? "entry" : "entries"}</div>
                       </div>
                       {isAct ? (
-                        <ChevronRight className="size-4 shrink-0" style={{ color: hex }} />
+                        <ChevronRight className="size-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" style={{ color: hex }} />
                       ) : (
                         <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)] font-mono text-[11px] font-bold text-[var(--color-text-muted)]">{idx + 1}</span>
                       )}
@@ -323,7 +323,7 @@ function CategoryDetailPanel({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Hero total — BRIGHTEST card */}
             <div
-              className="rounded-2xl p-6"
+              className="rounded-2xl p-6 transition-transform duration-300 hover:-translate-y-0.5"
               style={{
                 backgroundColor: "var(--color-surface-panel-tile)",
                 border: "1px solid var(--color-border-default)",
@@ -403,7 +403,7 @@ function CategoryDetailPanel({
                     <Link
                       key={entry.id}
                       href={entry.route}
-                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 -mx-1 transition-colors duration-200 hover:bg-[var(--color-surface-raised)] group"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 -mx-1 transition-all duration-200 hover:translate-x-1 hover:bg-[var(--color-surface-raised)] active:scale-[0.99] group"
                     >
                       <div className={cn("size-2.5 rounded-full shrink-0", getStatusColor(entry.status))} />
                       <span className="truncate text-[13px] font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
