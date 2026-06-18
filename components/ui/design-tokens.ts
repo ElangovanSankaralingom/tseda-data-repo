@@ -2,35 +2,35 @@ import { ENTRY_STATUSES, type EntryStatus } from "@/lib/types/entry";
 
 export const STATUS_COLORS: Record<
   EntryStatus,
-  { badge: string; border: string; icon: string }
+  { dot: string; border: string; icon: string }
 > = {
   DRAFT: {
-    badge: "border-[var(--color-card-border)] bg-[var(--color-body-bg)] text-[var(--color-text-primary)]",
+    dot: "text-[var(--color-text-muted)]",
     border: "border-l-[var(--color-text-muted)]",
     icon: "text-[var(--color-text-secondary)]",
   },
   GENERATED: {
-    badge: "border-[var(--color-status-info-border)] bg-[var(--color-status-info-bg)] text-[var(--color-status-info)]",
+    dot: "text-[var(--color-status-info)]",
     border: "border-l-[var(--color-status-info)]",
     icon: "text-[var(--color-status-info)]",
   },
   EDIT_REQUESTED: {
-    badge: "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)]",
+    dot: "text-[var(--color-status-warning)]",
     border: "border-l-[var(--color-status-warning)]",
     icon: "text-[var(--color-status-warning)]",
   },
   DELETE_REQUESTED: {
-    badge: "border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)]",
+    dot: "text-[var(--color-status-error)]",
     border: "border-l-[var(--color-status-error)]",
     icon: "text-[var(--color-status-error)]",
   },
   EDIT_GRANTED: {
-    badge: "border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] text-[var(--color-status-success)]",
+    dot: "text-[var(--color-status-success)]",
     border: "border-l-[var(--color-status-success)]",
     icon: "text-[var(--color-status-success)]",
   },
   ARCHIVED: {
-    badge: "border-[var(--color-input-border)] bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
+    dot: "text-[var(--color-text-muted)]",
     border: "border-l-[var(--color-text-muted)]",
     icon: "text-[var(--color-text-secondary)]",
   },
@@ -61,8 +61,15 @@ function resolveStatus(status: string): EntryStatus {
   return FALLBACK_STATUS;
 }
 
-export function statusBadgeClasses(status: string): string {
-  return STATUS_COLORS[resolveStatus(status)].badge;
+/** Neutral frosted-pill classes shared by every status badge. The semantic
+ *  colour is carried by the leading dot (see statusDotClass), not the pill. */
+export function statusBadgeClasses(_status?: string): string {
+  return "lg-pill px-2.5 py-1 text-xs font-medium";
+}
+
+/** Tailwind text-colour class for the badge's leading .lg-dot (drives currentColor). */
+export function statusDotClass(status: string): string {
+  return STATUS_COLORS[resolveStatus(status)].dot;
 }
 
 export function statusBorderClasses(status: string): string {

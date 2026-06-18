@@ -1,6 +1,6 @@
 import { ENTRY_STATUS_LABELS, type EntryStatus } from "@/lib/types/entry";
 import { cn } from "@/lib/utils";
-import { statusBadgeClasses } from "@/components/ui/design-tokens";
+import { statusBadgeClasses, statusDotClass } from "@/components/ui/design-tokens";
 
 export default function StatusBadge({ status, className }: { status: EntryStatus | string; className?: string }) {
   const label =
@@ -11,12 +11,9 @@ export default function StatusBadge({ status, className }: { status: EntryStatus
     <span
       role="status"
       aria-label={`Status: ${label}`}
-      className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        statusBadgeClasses(status),
-        className
-      )}
+      className={cn(statusBadgeClasses(status), className)}
     >
+      <span className={cn("lg-dot", statusDotClass(status))} aria-hidden="true" />
       {label}
     </span>
   );

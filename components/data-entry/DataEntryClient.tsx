@@ -195,7 +195,7 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
           <div
             className="mt-4 overflow-hidden rounded-xl px-4 py-3.5"
             style={{
-              backgroundColor: `var(--color-border-default)`,
+              backgroundColor: `var(--color-surface-panel-tile)`,
               border: `1px solid ${hex}25`,
               boxShadow: `inset 0 1px 0 var(--color-border-subtle)`,
             }}
@@ -351,7 +351,7 @@ const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryO
               !hasEntries && "bg-[var(--color-glass-bg)] border-[var(--color-border-subtle)]"
             )}
             style={hasEntries ? {
-              backgroundColor: `var(--color-surface-raised)`,
+              backgroundColor: `var(--color-surface-panel-tile)`,
               borderColor: `${hex}22`,
               boxShadow: `inset 0 1px 0 var(--color-border-subtle)`,
             } : undefined}
@@ -439,7 +439,7 @@ export default function DataEntryClient({ greeting, userName, categories, totals
       {/* ─── Header ─── */}
       <div className="flex flex-wrap items-start justify-between gap-3 pb-5 mb-6 animate-fade-in-up">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
+          <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)]">
             {greeting}{firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-placeholder)]">{statusText}</p>

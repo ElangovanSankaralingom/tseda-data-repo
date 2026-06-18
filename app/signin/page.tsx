@@ -80,7 +80,7 @@ export default function SignInPage() {
             "radial-gradient(600px at 50% 30%, rgba(138, 162, 248, 0.07), transparent), radial-gradient(400px at 70% 70%, rgba(59, 130, 246, 0.04), transparent)",
         }}
       />
-      {/* Drifting lime orb */}
+      {/* Drifting blue orb */}
       <div aria-hidden="true" className="pointer-events-none fixed left-1/2 top-1/4 -z-10 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-primary)]/5 blur-3xl animate-glow-drift" />
       {/* Secondary blue orb */}
       <div aria-hidden="true" className="pointer-events-none fixed right-1/4 bottom-1/4 -z-10 h-72 w-72 rounded-full bg-blue-500/3 blur-3xl animate-glow-drift" style={{ animationDelay: "-3s" }} />

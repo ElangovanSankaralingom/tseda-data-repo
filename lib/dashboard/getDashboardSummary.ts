@@ -14,7 +14,7 @@ import { entryDetail } from "@/lib/entryNavigation";
 import { getEntryTitle } from "@/lib/search/getEntryTitle";
 import { logger } from "@/lib/logger";
 import { computeCanonicalStreakSnapshot, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
-import { incrementStatusCount, ENTRY_STATUSES, type Entry } from "@/lib/types/entry";
+import { incrementStatusCount, isEntryStatus, ENTRY_STATUSES, type Entry } from "@/lib/types/entry";
 
 type DashboardEntry = Entry;
 
@@ -210,6 +210,19 @@ function computeDashboardFromIndex(index: UserIndex): DashboardSummary {
     categorySummary.streakActivatedCount = streakCat?.activated ?? 0;
     categorySummary.streakWinsCount = streakCat?.wins ?? 0;
     // completedNonStreakCount is not tracked in the index — leave as 0
+  }
+
+  // Per-category status counts. The index stores only GLOBAL countsByStatus,
+  // so derive per-category draft/generated/editRequested/editGranted from the
+  // search-index snapshots, which carry {categoryKey, status} for every entry.
+  // Without this the fast path left every category's draftCount/generatedCount
+  // at 0 (while totalEntries was correct), so the dashboard disagreed with the
+  // entry list and the navigator progress bar rendered as all-"done".
+  for (const snap of Object.values(index.searchIndexByEntryId ?? {})) {
+    const categorySummary = summary.byCategory[snap.categoryKey as CategoryKey];
+    if (categorySummary && isEntryStatus(snap.status)) {
+      incrementStatusCount(categorySummary, snap.status);
+    }
   }
 
   // Global status counts from index

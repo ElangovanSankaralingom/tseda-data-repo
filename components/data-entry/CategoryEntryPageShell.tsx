@@ -127,12 +127,12 @@ function CategoryHero({
       {/* ═══ OUTER CONTAINER — dashboard DNA: rich gradient + holographic tilt ═══ */}
       <div
         ref={tiltRef}
-        className="relative overflow-hidden rounded-3xl"
+        className="relative overflow-hidden rounded-3xl backdrop-blur-xl"
         style={{
           ...tiltStyle,
-          background: `linear-gradient(135deg, var(--color-surface-inset-deep) 0%, ${chartHex}12 50%, var(--color-surface-inset-deep) 100%)`,
+          background: `linear-gradient(135deg, var(--color-glass-bg) 0%, ${chartHex}10 60%, var(--color-glass-bg) 100%)`,
           border: `1px solid var(--color-divider)`,
-          boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 var(--color-border-subtle)`,
+          boxShadow: `0 1px 2px rgba(20,30,70,0.05), 0 18px 40px -24px rgba(30,40,90,0.22), inset 0 1px 0 rgba(255,255,255,0.7)`,
         }}
         {...handlers}
       >
@@ -190,7 +190,7 @@ function CategoryHero({
               <Icon className="size-7" style={{ color: "var(--color-text-on-accent)" }} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">{title || "Entries"}</h1>
+              <h1 className="text-[28px] font-extrabold tracking-[-0.025em] text-[var(--color-text-primary)] sm:text-[30px]">{title || "Entries"}</h1>
               {subtitle ? (
                 <p className="mt-0.5 text-sm max-w-md line-clamp-2" style={{ color: "var(--color-text-tertiary)" }}>{subtitle}</p>
               ) : null}
@@ -206,7 +206,7 @@ function CategoryHero({
                 style={{
                   background: "linear-gradient(145deg, var(--color-surface-raised) 0%, var(--color-glass-bg) 100%)",
                   border: "1px solid var(--color-divider)",
-                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 2px 8px rgba(0,0,0,0.15)",
+                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 1px 3px rgba(30,40,90,0.05)",
                 }}
               >
                 {/* Subtle category color bleed in corner */}
@@ -236,7 +236,7 @@ function CategoryHero({
                 style={{
                   background: "linear-gradient(145deg, var(--color-surface-inset) 0%, var(--color-surface-raised) 100%)",
                   border: "1px solid var(--color-border-subtle)",
-                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 2px 8px rgba(0,0,0,0.15)",
+                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 1px 3px rgba(30,40,90,0.05)",
                 }}
               >
                 <CompletionRing stats={stats} accentHex={chartHex} />
@@ -248,7 +248,7 @@ function CategoryHero({
                 style={{
                   background: "linear-gradient(145deg, var(--color-surface-raised) 0%, var(--color-glass-bg) 100%)",
                   border: "1px solid var(--color-divider)",
-                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 2px 8px rgba(0,0,0,0.15)",
+                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 1px 3px rgba(30,40,90,0.05)",
                 }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--color-text-tertiary)" }}>
@@ -313,7 +313,7 @@ function CategoryEmptyState({
         style={{
           background: "linear-gradient(165deg, var(--color-surface-raised) 0%, var(--color-body-bg) 100%)",
           border: "1px solid var(--color-border-subtle)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 var(--color-border-subtle)",
+          boxShadow: "0 1px 3px rgba(30,40,90,0.05), inset 0 1px 0 var(--color-border-subtle)",
         }}
       >
         {/* Subtle grid pattern overlay */}
