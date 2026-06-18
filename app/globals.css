@@ -292,13 +292,13 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 12px 28px rgba(46, 52, 92, 0.11), 0 
      Per-mode dot strength: dark keeps its original lime glow; light gets
      accent dots tuned for the ice field (palette-aware via --color-primary). */
   .dot-overlay {
-    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 36%, transparent) 1.6px, transparent 1.6px);
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 11%, transparent) 1.6px, transparent 1.6px);
     background-size: 20px 20px;
     mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 65%);
   }
   .dark .dot-overlay {
-    background-image: radial-gradient(circle, rgba(138, 162, 248, 0.22) 1.6px, transparent 1.6px);
+    background-image: radial-gradient(circle, rgba(138, 162, 248, 0.07) 1.6px, transparent 1.6px);
   }
 
   @media (min-width: 640px) {
