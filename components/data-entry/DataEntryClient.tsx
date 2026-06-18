@@ -43,13 +43,6 @@ import { type CategoryOverview, type Totals } from "./dataEntryTypes";
 
 const NOTCH_CLIP = "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%)";
 
-const ACCENT_HEX: Record<string, string> = {
-  "fdp-attended": "#3b82f6",
-  "fdp-conducted": "#10b981",
-  "guest-lectures": "#f59e0b",
-  "case-studies": "#a855f7",
-  "workshops": "#f43f5e",
-};
 
 type Props = {
   greeting: string;
@@ -130,7 +123,7 @@ function MiniDistributionBar({ cat }: { cat: CategoryOverview }) {
 const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
   const { t, language, categoryLabel } = useTranslation();
   const config = getCategoryConfig(cat.slug);
-  const hex = ACCENT_HEX[cat.slug] ?? config.color.chartHex;
+  const hex = config.color.chartHex;
 
   return (
     <div className="group relative animate-fade-in-up">
@@ -263,7 +256,7 @@ const HeroCard = memo(function HeroCard({ cat }: { cat: CategoryOverview }) {
 const StandardCard = memo(function StandardCard({ cat, index }: { cat: CategoryOverview; index: number }) {
   const { t, language, categoryLabel } = useTranslation();
   const config = getCategoryConfig(cat.slug);
-  const hex = ACCENT_HEX[cat.slug] ?? config.color.chartHex;
+  const hex = config.color.chartHex;
   const hasEntries = cat.totalEntries > 0;
 
   return (

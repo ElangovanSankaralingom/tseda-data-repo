@@ -33,14 +33,6 @@ const NOTCH_CLIP = "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 10
   Tailwind classes can't be used in CSS gradient strings,
   so we map slug → hex for the color bleed effect.
 */
-const ACCENT_HEX: Record<string, string> = {
-  "fdp-attended": "#3b82f6",
-  "fdp-conducted": "#10b981",
-  "guest-lectures": "#f59e0b",
-  "case-studies": "#a855f7",
-  "workshops": "#f43f5e",
-};
-
 export type CategoryCardData = {
   slug: string;
   label: string;
@@ -81,7 +73,7 @@ function CategoryCard({
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
   const accent = { bg: color.bg, iconColor: color.text, cta: color.cta };
-  const hex = ACCENT_HEX[slug] ?? "#ffffff";
+  const hex = color.chartHex;
   const displayCount = useCountUp(total);
   const isEmpty = total === 0;
   const { ref, style: tiltStyle, lightStyle, handlers } = useTiltEffect();

@@ -66,14 +66,6 @@ const GROUPS: Record<GroupKey, string[]> = {
   academic: ["case-studies", "guest-lectures", "workshops"],
 };
 
-const ACCENT_HEX: Record<string, string> = {
-  "fdp-attended": "#3b82f6",
-  "fdp-conducted": "#10b981",
-  "guest-lectures": "#f59e0b",
-  "case-studies": "#a855f7",
-  "workshops": "#f43f5e",
-};
-
 export default function DashboardClient({
   categories,
   recentEntries,
@@ -182,8 +174,8 @@ export default function DashboardClient({
             <div className="flex flex-col gap-2.5">
               {filteredCategories.map((cat, idx) => {
                 const isAct = cat.slug === effectiveSlug;
-                const hex = ACCENT_HEX[cat.slug] ?? "#94a3b8";
                 const config = getCategoryConfig(cat.slug);
+                const hex = config.color.chartHex;
                 const Icon = getCategoryIcon(config.icon);
                 const total = cat.totalEntries;
                 const gen = cat.generatedCount;
@@ -261,7 +253,7 @@ function CategoryDetailPanel({
   const { t } = useTranslation();
   const config = getCategoryConfig(cat.slug);
   const Icon = getCategoryIcon(config.icon);
-  const hex = ACCENT_HEX[cat.slug] ?? "#ffffff";
+  const hex = config.color.chartHex;
   const displayCount = useCountUp(cat.totalEntries);
   const isEmpty = cat.totalEntries === 0;
   const { ref, style: tiltStyle, lightStyle, handlers } = useTiltEffect();
