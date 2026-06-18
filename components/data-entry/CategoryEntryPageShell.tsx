@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Plus, ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
-import BackTo from "@/components/nav/BackTo";
 import EntryShell from "@/components/entry/EntryShell";
 import SectionCard from "@/components/layout/SectionCard";
 import PhaseProgressIndicator from "@/components/data-entry/PhaseProgressIndicator";
@@ -127,72 +127,76 @@ function CategoryHero({
       {/* ═══ OUTER CONTAINER — dashboard DNA: rich gradient + holographic tilt ═══ */}
       <div
         ref={tiltRef}
-        className="relative overflow-hidden rounded-3xl backdrop-blur-xl"
+        className="relative overflow-hidden rounded-3xl"
         style={{
           ...tiltStyle,
-          background: `linear-gradient(135deg, var(--color-glass-bg) 0%, ${chartHex}10 60%, var(--color-glass-bg) 100%)`,
-          border: `1px solid var(--color-divider)`,
-          boxShadow: `0 1px 2px rgba(20,30,70,0.05), 0 18px 40px -24px rgba(30,40,90,0.22), inset 0 1px 0 rgba(255,255,255,0.7)`,
+          background: `linear-gradient(135deg, ${chartHex} 0%, color-mix(in srgb, white 14%, ${chartHex}) 100%)`,
+          border: `1px solid var(--color-surface-on-accent)`,
+          boxShadow: `0 1px 2px rgba(20,30,70,0.06), 0 22px 50px -24px ${chartHex}6B`,
         }}
         {...handlers}
       >
         {/* ── Specular light reflection (holographic tilt) ── */}
         <div style={lightStyle} />
 
-        {/* ── Top accent bar — category colored, animated like dashboard ── */}
+        {/* ── Brass top rule — matches the dashboard hero band ── */}
         <div
           className="h-[3px] animate-bar-draw origin-center"
-          style={{
-            background: chartHex,
-            boxShadow: `0 1px 8px ${chartHex}25`,
-          }}
+          style={{ background: "var(--color-status-warning)" }}
         />
 
-        {/* Color bleed gradient — category tint */}
+        {/* Specular sheen — top-left highlight on the band */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(135deg, ${chartHex}10 0%, transparent 40%)`,
+            background: `radial-gradient(120% 80% at 6% -12%, var(--color-surface-on-accent), transparent 55%)`,
             borderRadius: "inherit",
           }}
         />
 
-        {/* Category watermark — large faint icon */}
+        {/* Category watermark — large faint white icon */}
         <div
           className="absolute -right-6 -bottom-6 pointer-events-none select-none"
-          style={{ opacity: 0.05 }}
+          style={{ opacity: 0.1 }}
         >
           {/* eslint-disable-next-line react-hooks/static-components */}
-          <Icon className="size-48" style={{ color: chartHex }} />
+          <Icon className="size-48" style={{ color: "var(--color-text-on-accent)" }} />
         </div>
 
         <div className="relative p-6 sm:p-8">
-          {/* Back link — same BackTo component used in form mode */}
-          <div className="mb-5">
-            <BackTo href={dashboard()} />
+          {/* Back link + divider — white on the band */}
+          <div className="mb-5 flex items-center gap-3.5">
+            <Link
+              href={dashboard()}
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--color-text-on-accent-muted)] transition-colors hover:text-[var(--color-text-on-accent)]"
+            >
+              <ArrowLeft className="size-[15px]" />
+              {t("nav.dashboard")}
+            </Link>
+            <div className="h-px flex-1" style={{ background: "var(--color-surface-on-accent)" }} />
           </div>
 
           {/* ── HUD corner coordinates ── */}
-          <div className="absolute top-3 right-4 font-mono text-[9px] tracking-wider select-none pointer-events-none" style={{ color: "var(--color-text-placeholder)" }}>
+          <div className="absolute top-3 right-4 font-mono text-[9px] tracking-wider select-none pointer-events-none" style={{ color: "var(--color-text-on-accent-muted)" }}>
             [{category.toUpperCase().replace(/-/g, ".")}]
           </div>
 
-          {/* Identity row — icon pill + title */}
+          {/* Identity row — translucent icon pill + title (white on band) */}
           <div className="flex items-center gap-3.5">
             <div
               className="flex size-14 shrink-0 items-center justify-center rounded-2xl"
               style={{
-                background: chartHex,
-                boxShadow: `0 8px 20px ${chartHex}40`,
+                background: "var(--color-surface-on-accent)",
+                border: "1px solid var(--color-surface-on-accent-strong)",
               }}
             >
               {/* eslint-disable-next-line react-hooks/static-components */}
               <Icon className="size-7" style={{ color: "var(--color-text-on-accent)" }} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-[28px] font-extrabold tracking-[-0.025em] text-[var(--color-text-primary)] sm:text-[30px]">{title || "Entries"}</h1>
+              <h1 className="text-[28px] font-extrabold tracking-[-0.025em] text-[var(--color-text-on-accent)] sm:text-[30px]">{title || "Entries"}</h1>
               {subtitle ? (
-                <p className="mt-0.5 text-sm max-w-md line-clamp-2" style={{ color: "var(--color-text-tertiary)" }}>{subtitle}</p>
+                <p className="mt-0.5 text-sm max-w-md line-clamp-2" style={{ color: "var(--color-text-on-accent-muted)" }}>{subtitle}</p>
               ) : null}
             </div>
           </div>
@@ -204,9 +208,9 @@ function CategoryHero({
               <div
                 className="relative overflow-hidden rounded-2xl px-5 py-4"
                 style={{
-                  background: "linear-gradient(145deg, var(--color-surface-raised) 0%, var(--color-glass-bg) 100%)",
-                  border: "1px solid var(--color-divider)",
-                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 1px 3px rgba(30,40,90,0.05)",
+                  background: "var(--color-card-bg)",
+                  border: "1px solid var(--color-card-border)",
+                  boxShadow: "0 10px 28px -12px rgba(10,16,42,0.40)",
                 }}
               >
                 {/* Subtle category color bleed in corner */}
@@ -234,9 +238,9 @@ function CategoryHero({
               <div
                 className="rounded-2xl px-4 py-3.5 hidden sm:flex items-center justify-center"
                 style={{
-                  background: "linear-gradient(145deg, var(--color-surface-inset) 0%, var(--color-surface-raised) 100%)",
-                  border: "1px solid var(--color-border-subtle)",
-                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 1px 3px rgba(30,40,90,0.05)",
+                  background: "var(--color-card-bg)",
+                  border: "1px solid var(--color-card-border)",
+                  boxShadow: "0 10px 28px -12px rgba(10,16,42,0.40)",
                 }}
               >
                 <CompletionRing stats={stats} accentHex={chartHex} />
@@ -246,9 +250,9 @@ function CategoryHero({
               <div
                 className="rounded-2xl px-5 py-4"
                 style={{
-                  background: "linear-gradient(145deg, var(--color-surface-raised) 0%, var(--color-glass-bg) 100%)",
-                  border: "1px solid var(--color-divider)",
-                  boxShadow: "inset 0 1px 0 var(--color-border-subtle), 0 1px 3px rgba(30,40,90,0.05)",
+                  background: "var(--color-card-bg)",
+                  border: "1px solid var(--color-card-border)",
+                  boxShadow: "0 10px 28px -12px rgba(10,16,42,0.40)",
                 }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--color-text-tertiary)" }}>
@@ -270,10 +274,11 @@ function CategoryHero({
               <button
                 type="button"
                 onClick={onAdd}
-                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-[var(--color-text-on-accent)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5"
                 style={{
-                  background: chartHex,
-                  boxShadow: `0 4px 20px ${chartHex}35`,
+                  background: "var(--color-card-bg)",
+                  color: chartHex,
+                  boxShadow: "0 6px 18px -8px rgba(10,16,42,0.30)",
                 }}
               >
                 <Plus className="size-4" />
