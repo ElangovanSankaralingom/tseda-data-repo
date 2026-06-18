@@ -11,7 +11,7 @@ const PALETTE_OPTIONS: readonly {
   color: string;
   labelKey: string;
 }[] = [
-  { id: "midnight-lime", color: "#84CC16", labelKey: "appearance.paletteMidnightLime" as const },
+  { id: "midnight-lime", color: "#2A48CE", labelKey: "appearance.paletteMidnightLime" as const },
   { id: "deep-ocean", color: "#06B6D4", labelKey: "appearance.paletteDeepOcean" as const },
   { id: "carbon-violet", color: "#8B5CF6", labelKey: "appearance.paletteCarbonViolet" as const },
   { id: "obsidian-amber", color: "#F59E0B", labelKey: "appearance.paletteObsidianAmber" as const },

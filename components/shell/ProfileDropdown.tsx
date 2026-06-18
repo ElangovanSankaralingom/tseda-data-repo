@@ -146,9 +146,9 @@ export default function ProfileDropdown({
                     <span
                       className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                       style={{
-                        background: "rgba(132,204,22,0.12)",
+                        background: "rgba(138,162,248,0.12)",
                         color: "var(--color-primary)",
-                        border: "1px solid rgba(132,204,22,0.20)",
+                        border: "1px solid rgba(138,162,248,0.20)",
                       }}
                     >
                       <Shield className="size-2.5" />

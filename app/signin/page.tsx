@@ -77,7 +77,7 @@ export default function SignInPage() {
         className="pointer-events-none fixed inset-0"
         style={{
           background:
-            "radial-gradient(600px at 50% 30%, rgba(132, 204, 22, 0.06), transparent), radial-gradient(400px at 70% 70%, rgba(59, 130, 246, 0.04), transparent)",
+            "radial-gradient(600px at 50% 30%, rgba(138, 162, 248, 0.07), transparent), radial-gradient(400px at 70% 70%, rgba(59, 130, 246, 0.04), transparent)",
         }}
       />
       {/* Drifting lime orb */}
@@ -98,7 +98,7 @@ export default function SignInPage() {
                     alt="TCE"
                     fill
                     sizes="(min-width: 768px) 208px, (min-width: 640px) 176px, 144px"
-                    className="object-contain drop-shadow-[0_0_12px_rgba(132,204,22,0.15)]"
+                    className="object-contain drop-shadow-[0_0_12px_rgba(138,162,248,0.18)]"
                     priority
                   />
                 </div>
@@ -112,7 +112,7 @@ export default function SignInPage() {
                     alt="T'SEDA"
                     fill
                     sizes="(min-width: 768px) 208px, (min-width: 640px) 176px, 144px"
-                    className="object-contain drop-shadow-[0_0_12px_rgba(132,204,22,0.15)]"
+                    className="object-contain drop-shadow-[0_0_12px_rgba(138,162,248,0.18)]"
                     priority
                   />
                 </div>

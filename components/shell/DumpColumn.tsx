@@ -290,10 +290,10 @@ export default function DumpColumn() {
           <span
             className="flex items-center justify-center rounded-full px-2.5 py-0.5 text-[11px] font-bold tabular-nums"
             style={{
-              background: "rgba(132,204,22,0.12)",
+              background: "rgba(138,162,248,0.12)",
               color: "var(--color-primary)",
               minWidth: 22,
-              border: "1px solid rgba(132,204,22,0.18)",
+              border: "1px solid rgba(138,162,248,0.18)",
             }}
           >
             {dumps.length}

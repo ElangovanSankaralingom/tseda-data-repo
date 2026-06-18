@@ -104,7 +104,7 @@ function MiniDistributionBar({ cat }: { cat: CategoryOverview }) {
     { count: cat.draftCount, color: "var(--color-divider)" },
     { count: cat.streakActivated, color: "#fbbf24" },
     { count: cat.editRequestedCount, color: "#fb923c" },
-    { count: cat.streakWins + cat.completedNonStreak, color: "#84cc16" },
+    { count: cat.streakWins + cat.completedNonStreak, color: "#3D5BDE" },
   ].filter(s => s.count > 0);
 
   if (segments.length < 2) return null;
