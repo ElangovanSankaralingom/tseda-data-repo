@@ -103,7 +103,7 @@ function HeroCard({
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 20%, transparent)",
         background: "var(--color-card-bg)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(20,30,70,0.04), 0 5px 12px -10px rgba(30,40,90,0.10)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-amber-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
@@ -208,7 +208,7 @@ function TimerCard({
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 20%, transparent)",
         background: "var(--color-card-bg)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(20,30,70,0.04), 0 5px 12px -10px rgba(30,40,90,0.10)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
@@ -314,7 +314,7 @@ function StandardCard({
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",
         background: "var(--color-card-bg)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(20,30,70,0.04), 0 5px 12px -10px rgba(30,40,90,0.10)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
@@ -496,7 +496,7 @@ function DashedCard({
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-orange-fg) 22%, transparent)",
         background: "var(--color-card-bg)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(20,30,70,0.04), 0 5px 12px -10px rgba(30,40,90,0.10)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-orange-fg) 25%, transparent)",
       } as React.CSSProperties}
     >

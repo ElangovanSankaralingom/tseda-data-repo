@@ -81,7 +81,7 @@ export default function EntryShell({
             ...tiltStyle,
             background: `linear-gradient(135deg, var(--color-surface-inset-deep) 0%, ${chartHex}12 50%, var(--color-surface-inset-deep) 100%)`,
             border: "1px solid var(--color-divider)",
-            boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 var(--color-border-subtle)`,
+            boxShadow: `0 1px 2px rgba(20,30,70,0.04), 0 6px 16px -12px rgba(30,40,90,0.10), inset 0 1px 0 var(--color-border-subtle)`,
           }}
           {...handlers}
         >

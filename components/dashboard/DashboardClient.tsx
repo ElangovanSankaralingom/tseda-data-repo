@@ -164,7 +164,7 @@ export default function DashboardClient({
           style={{
             backgroundColor: "var(--color-glass-bg)",
             border: "1px solid var(--color-border-default)",
-            boxShadow: "0 1px 2px rgba(30,40,90,0.05), 0 18px 40px -24px rgba(30,40,90,0.22), inset 0 1px 0 rgba(255,255,255,0.7)",
+            boxShadow: "0 1px 2px rgba(30,40,90,0.04), 0 10px 22px -18px rgba(30,40,90,0.12), inset 0 1px 0 rgba(255,255,255,0.6)",
           }}
         >
         <div className="flex flex-col gap-6 lg:flex-row">

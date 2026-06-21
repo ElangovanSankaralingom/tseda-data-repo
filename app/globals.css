@@ -157,11 +157,11 @@ body {
    matching the daylight-navy neutral ramp. */
 /* Soft-pastel light elevation: cool periwinkle-tinted shadows, slightly larger
    and softer so white cards float off the tinted field (Outstaff idiom). */
-html:not(.dark) .shadow-sm { box-shadow: 0 1px 2px rgba(46, 52, 92, 0.05), 0 5px 14px -3px rgba(46, 52, 92, 0.08); }
-html:not(.dark) .shadow-md { box-shadow: 0 2px 6px rgba(46, 52, 92, 0.06), 0 12px 28px -8px rgba(46, 52, 92, 0.12); }
-html:not(.dark) .shadow-lg { box-shadow: 0 4px 12px rgba(46, 52, 92, 0.07), 0 24px 50px -14px rgba(46, 52, 92, 0.16); }
-html:not(.dark) .shadow-xl { box-shadow: 0 6px 18px rgba(46, 52, 92, 0.09), 0 32px 68px -18px rgba(46, 52, 92, 0.20); }
-html:not(.dark) .shadow-2xl { box-shadow: 0 12px 28px rgba(46, 52, 92, 0.11), 0 40px 88px -22px rgba(46, 52, 92, 0.24); }
+html:not(.dark) .shadow-sm { box-shadow: 0 1px 2px rgba(46, 52, 92, 0.04), 0 3px 8px -5px rgba(46, 52, 92, 0.06); }
+html:not(.dark) .shadow-md { box-shadow: 0 1px 3px rgba(46, 52, 92, 0.05), 0 6px 14px -10px rgba(46, 52, 92, 0.08); }
+html:not(.dark) .shadow-lg { box-shadow: 0 2px 6px rgba(46, 52, 92, 0.05), 0 10px 22px -14px rgba(46, 52, 92, 0.10); }
+html:not(.dark) .shadow-xl { box-shadow: 0 3px 10px rgba(46, 52, 92, 0.06), 0 16px 32px -18px rgba(46, 52, 92, 0.12); }
+html:not(.dark) .shadow-2xl { box-shadow: 0 5px 14px rgba(46, 52, 92, 0.07), 0 22px 44px -24px rgba(46, 52, 92, 0.14); }
 
 /* Premium scrollbar */
 .dark ::-webkit-scrollbar {

@@ -73,7 +73,7 @@ export default function DashboardWelcome({
         background:
           "linear-gradient(135deg, var(--color-band-from) 0%, var(--color-band-to) 100%)",
         boxShadow:
-          "0 1px 2px rgba(20,30,70,0.06), 0 22px 50px -24px rgba(42,72,206,0.42)",
+          "0 1px 2px rgba(20,30,70,0.05), 0 12px 28px -22px rgba(42,72,206,0.22)",
       }}
     >
       {/* Holographic light */}
@@ -108,7 +108,7 @@ export default function DashboardWelcome({
 
             {/* ── Streak ring gauges — raised surface ── */}
             {hasAnyEntries && (streakActivated > 0 || streakWins > 0) && (
-              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "var(--color-surface-panel-raised)", borderColor: "var(--color-border-subtle)", borderWidth: "1px", boxShadow: "0 8px 22px -10px rgba(10,16,42,0.35)" }}>
+              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "var(--color-surface-panel-raised)", borderColor: "var(--color-border-subtle)", borderWidth: "1px", boxShadow: "0 6px 14px -12px rgba(10,16,42,0.16)" }}>
                 {streakActivated > 0 && (
                   <StreakRing
                     icon={Flame}
@@ -141,7 +141,7 @@ export default function DashboardWelcome({
           {/* ═══ RIGHT: Bright counter panel (L3) ═══ */}
           {hasAnyEntries && (
             <div className="lg:w-72 shrink-0">
-              <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-panel-tile)] border border-[var(--color-border-default)] flex flex-col" style={{ boxShadow: "0 10px 28px -10px rgba(10,16,42,0.40)" }}>
+              <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-panel-tile)] border border-[var(--color-border-default)] flex flex-col" style={{ boxShadow: "0 7px 16px -12px rgba(10,16,42,0.16)" }}>
                 <div className="h-[2px] bg-[var(--color-primary)] opacity-50" />
 
                 <div className="flex-1 p-6 flex flex-col justify-between">

@@ -106,7 +106,7 @@ function CategoryHero({
           ...tiltStyle,
           background: `linear-gradient(135deg, ${chartHex} 0%, color-mix(in srgb, white 14%, ${chartHex}) 100%)`,
           border: `1px solid var(--color-surface-on-accent)`,
-          boxShadow: `0 1px 2px rgba(20,30,70,0.06), 0 22px 50px -24px ${chartHex}6B`,
+          boxShadow: `0 1px 2px rgba(20,30,70,0.05), 0 12px 28px -22px ${chartHex}33`,
         }}
         {...handlers}
       >
@@ -154,7 +154,7 @@ function CategoryHero({
                 type="button"
                 onClick={onAdd}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 hover:-translate-y-0.5"
-                style={{ background: "var(--color-card-bg)", color: chartHex, boxShadow: "0 4px 14px -6px rgba(10,16,42,0.30)" }}
+                style={{ background: "var(--color-card-bg)", color: chartHex, boxShadow: "0 3px 10px -8px rgba(10,16,42,0.18)" }}
               >
                 <Plus className="size-4" />
                 {addLabel || t('entry.newEntry')}
@@ -218,7 +218,7 @@ function CategoryHero({
               <div className="flex w-full shrink-0 sm:w-[280px]">
                 <div
                   className="flex flex-1 flex-col overflow-hidden rounded-[18px]"
-                  style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-default)", boxShadow: "0 12px 30px -14px rgba(10,16,42,0.45)" }}
+                  style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-default)", boxShadow: "0 8px 18px -14px rgba(10,16,42,0.20)" }}
                 >
                   <div className="h-[2px]" style={{ background: chartHex, opacity: 0.5 }} />
                   <div className="flex flex-1 flex-col gap-4 p-5">

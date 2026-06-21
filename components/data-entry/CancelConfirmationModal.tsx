@@ -52,7 +52,7 @@ export default function CancelConfirmationModal({
         style={{
           background: "var(--color-modal-bg)",
           border: "1px solid var(--color-border-default)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border-subtle)",
+          boxShadow: "0 12px 32px -12px rgba(20,30,70,0.20), 0 0 0 1px var(--color-border-subtle)",
         }}
       >
         {/* Top accent */}
