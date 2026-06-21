@@ -229,7 +229,7 @@ function SectionHeader({ group, count, isUrgent }: {
         className={`flex size-7 items-center justify-center rounded-lg ${isUrgent ? "animate-status-glow" : ""}`}
         style={{
           background: hex,
-          boxShadow: `0 2px 6px color-mix(in srgb, ${hex} 20%, transparent)`,
+          boxShadow: group === "locked_in" ? "none" : `0 2px 6px color-mix(in srgb, ${hex} 20%, transparent)`,
           "--glow-color": `color-mix(in srgb, ${hex} 20%, transparent)`,
         } as React.CSSProperties}
       >
