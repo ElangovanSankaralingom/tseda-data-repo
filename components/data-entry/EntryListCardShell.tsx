@@ -583,6 +583,7 @@ function StampRow({
   return (
     <div
       data-entry-card
+      data-group="locked_in"
       tabIndex={0}
       aria-label={`${title} finalized entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
