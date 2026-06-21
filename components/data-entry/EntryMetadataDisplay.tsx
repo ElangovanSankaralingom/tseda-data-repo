@@ -44,17 +44,6 @@ function groupToVariant(group?: EntryListGroup): PillVariant {
    Stronger tints, vivid icon colors. Each type is
    instantly recognizable by color alone.
 */
-const ACTIVE_TINTS: Record<string, { tint: string; iconColor: string; textColor: string }> = {
-  year:     { tint: "color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",    iconColor: "text-[var(--color-palette-blue-fg)]",    textColor: "text-[var(--color-palette-blue-fg)]" },
-  semester: { tint: "color-mix(in srgb, var(--color-palette-purple-fg) 18%, transparent)",  iconColor: "text-[var(--color-palette-purple-fg)]",  textColor: "text-[var(--color-palette-purple-fg)]" },
-  level:    { tint: "color-mix(in srgb, var(--color-palette-emerald-fg) 18%, transparent)", iconColor: "text-[var(--color-palette-emerald-fg)]", textColor: "text-[var(--color-palette-emerald-fg)]" },
-  mode:     { tint: "color-mix(in srgb, var(--color-palette-orange-fg) 18%, transparent)",  iconColor: "text-[var(--color-palette-orange-fg)]",  textColor: "text-[var(--color-palette-orange-fg)]" },
-  date:     { tint: "var(--color-border-subtle)",    iconColor: "text-[var(--color-icon-default)]",   textColor: "text-[var(--color-text-secondary)]" },
-  duration: { tint: "color-mix(in srgb, var(--color-palette-amber-fg) 18%, transparent)",   iconColor: "text-[var(--color-palette-amber-fg)]",   textColor: "text-[var(--color-palette-amber-fg)]" },
-  funding:  { tint: "color-mix(in srgb, var(--color-palette-emerald-fg) 18%, transparent)", iconColor: "text-[var(--color-palette-emerald-fg)]", textColor: "text-[var(--color-palette-emerald-fg)]" },
-  default:  { tint: "var(--color-border-subtle)",    iconColor: "text-[var(--color-icon-default)]",   textColor: "text-[var(--color-text-secondary)]" },
-};
-
 /** Classify a metadata part to assign an icon and semantic type */
 function classifyPart(part: string): { icon: React.ElementType; type: string } {
   const lower = part.toLowerCase();
@@ -91,7 +80,7 @@ const MetadataPill = memo(function MetadataPill({
   text: string;
   variant: PillVariant;
 }) {
-  const { icon: Icon, type } = classifyPart(text);
+  const { icon: Icon } = classifyPart(text);
 
   /* ── SEALED: flat inline text, no box, no background ── */
   if (variant === "sealed") {
@@ -103,17 +92,16 @@ const MetadataPill = memo(function MetadataPill({
     );
   }
 
-  /* ── ACTIVE: bold chip tag with vibrant tint — each type has its OWN color ── */
-  const { tint, iconColor, textColor } = ACTIVE_TINTS[type] || ACTIVE_TINTS.default;
+  /* ── ACTIVE: neutral grey chip with a dot — matches the prototype tags ── */
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${textColor}`}
+      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium text-[var(--color-text-secondary)]"
       style={{
-        background: tint,
+        background: "var(--color-surface-panel-tile)",
         border: "1px solid var(--color-border-subtle)",
       }}
     >
-      <Icon className={`size-3 shrink-0 ${iconColor}`} />
+      <span className="size-1.5 shrink-0 rounded-full" style={{ background: "var(--color-text-placeholder)" }} />
       <span className="truncate max-w-[180px]">{text}</span>
     </span>
   );

@@ -307,29 +307,29 @@ function StandardCard({
       aria-label={`${title} entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
-      className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-purple-fg)_30%,transparent)]`}
+      className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
-        border: "1px solid color-mix(in srgb, var(--color-palette-purple-fg) 15%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 15%, transparent)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
-        "--glow-color": "color-mix(in srgb, var(--color-palette-purple-fg) 25%, transparent)",
+        "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
       {/* Top accent edge — thin purple line */}
       <div
         className="absolute top-0 left-0 right-0 h-[2px]"
-        style={{ background: "linear-gradient(90deg, var(--color-palette-purple-fg) 0%, color-mix(in srgb, var(--color-palette-purple-fg) 60%, transparent) 60%, transparent 100%)" }}
+        style={{ background: "linear-gradient(90deg, var(--color-palette-blue-fg) 0%, color-mix(in srgb, var(--color-palette-blue-fg) 60%, transparent) 60%, transparent 100%)" }}
       />
 
       {/* ── ZONE 1: Purple header — subtle tint ── */}
       <div
         className="px-5 pt-4 pb-3.5"
         style={{
-          background: "linear-gradient(135deg, color-mix(in srgb, var(--color-palette-purple-fg) 7%, transparent) 0%, transparent 70%)",
-          borderBottom: "1px solid color-mix(in srgb, var(--color-palette-purple-fg) 8%, transparent)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--color-palette-blue-fg) 7%, transparent) 0%, transparent 70%)",
+          borderBottom: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 8%, transparent)",
         }}
       >
         <div className="flex items-start gap-2.5">
-          <Unlock className="size-4 shrink-0 mt-0.5 text-[var(--color-palette-purple-fg)]" />
+          <Unlock className="size-4 shrink-0 mt-0.5 text-[var(--color-palette-blue-fg)]" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <Link href={href} className="text-base font-bold text-[var(--color-text-primary)] truncate transition-colors">
@@ -337,10 +337,10 @@ function StandardCard({
               </Link>
               {editTime?.hasEditWindow && !editTime.expired && (
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-[var(--color-palette-purple-fg)]"
+                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-[var(--color-palette-blue-fg)]"
                   style={{ background: `color-mix(in srgb, ${hex} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 8%, transparent)` }}
                 >
-                  <span className="size-1.5 rounded-full bg-[var(--color-palette-purple-fg)]" />
+                  <span className="size-1.5 rounded-full bg-[var(--color-palette-blue-fg)]" />
                   {t('entry.unlockedLabel')} · {editTime.remainingLabel}
                 </span>
               )}
