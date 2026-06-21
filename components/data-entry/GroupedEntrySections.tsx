@@ -10,6 +10,7 @@ import {
   Search,
   Unlock,
   X,
+  ChevronDown,
 } from "lucide-react";
 import FilterTabs, { type FilterTab } from "@/components/ui/FilterTabs";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -254,56 +255,42 @@ function SectionHeader({ group, count, isUrgent }: {
 }
 
 /*
-  ── COLLAPSED STACK ──
-  For groups with many entries (finalized), show the first
-  COLLAPSE_THRESHOLD items normally, then collapse the rest
-  into a physical "stacked cards" peek view with a count.
-  Click to expand.
-
-  ┌─ entry 1 ─────────────────────┐
-  ├─ entry 2 ─────────────────────┤
-  ├─ entry 3 ─────────────────────┤
-  │  ┌─────────────────────────┐  │
-  │  │   + 5 more entries      │  │
-  │  │  ┌───────────────────┐  │  │
-  │  │  │                   │  │  │
-  │  └──┴───────────────────┘──┘  │
+  ── EXPAND TOGGLE ──
+  For groups with many entries (finalized / drafts), show the first
+  COLLAPSE_THRESHOLD items, then a single clean toggle button reveals
+  the rest. The same control flips to "Show less" when expanded.
+  One control, one border — no stacked peek layers.
 */
 const COLLAPSE_THRESHOLD = 3;
 
-function CollapsedStack({ count, hex, onExpand }: { count: number; hex: string; onExpand: () => void }) {
+function ExpandToggle({ expanded, count, hex, onToggle }: { expanded: boolean; count: number; hex: string; onToggle: () => void }) {
   const { t } = useTranslation();
   return (
     <button
       type="button"
-      onClick={onExpand}
-      className="relative w-full group/stack"
-      aria-label={`Show ${count} more entries`}
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-label={expanded ? t('common.showLess') : `Show ${count} more entries`}
+      className="group/exp mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 transition-all duration-200 hover:-translate-y-px active:scale-[0.99]"
+      style={{
+        background: `color-mix(in srgb, ${hex} 6%, var(--color-card-bg))`,
+        border: `1px solid color-mix(in srgb, ${hex} 16%, transparent)`,
+      }}
     >
-      {/* Stacked card peek — two layers behind */}
-      <div
-        className="absolute top-2 left-2 right-2 h-8 rounded-lg"
-        style={{ background: `color-mix(in srgb, ${hex} 2%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 3%, transparent)` }}
+      <ChevronDown
+        className={`size-4 transition-transform duration-200 ${expanded ? "rotate-180" : "group-hover/exp:translate-y-0.5"}`}
+        style={{ color: hex }}
       />
-      <div
-        className="absolute top-1 left-1 right-1 h-8 rounded-lg"
-        style={{ background: `color-mix(in srgb, ${hex} 3%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 6%, transparent)` }}
-      />
-      {/* Front card */}
-      <div
-        className="relative rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition-all duration-200 group-hover/stack:translate-y-[-1px]"
-        style={{
-          background: `color-mix(in srgb, ${hex} 7%, transparent)`,
-          border: `1px solid color-mix(in srgb, ${hex} 13%, transparent)`,
-        }}
-      >
-        <span className="font-mono text-sm font-bold" style={{ color: hex }}>
-          +{count}
+      {expanded ? (
+        <span className="text-xs font-semibold" style={{ color: hex }}>{t('common.showLess')}</span>
+      ) : (
+        <span className="flex items-baseline gap-1">
+          <span className="font-mono text-sm font-bold" style={{ color: hex }}>+{count}</span>
+          <span className="text-xs font-medium" style={{ color: "var(--color-text-tertiary)" }}>
+            {t('common.more')} {count === 1 ? t('dashboard.entry') : t('dashboard.entries')}
+          </span>
         </span>
-        <span className="text-xs text-[var(--color-text-tertiary)]">
-          {t('common.more')} {count === 1 ? t('dashboard.entry') : t('dashboard.entries')}
-        </span>
-      </div>
+      )}
     </button>
   );
 }
@@ -328,12 +315,10 @@ function SectionContainer<TEntry>({
 
   // Determine if this section should collapse
   const collapsible = (group === "locked_in" || group === "in_the_works") && items.length > COLLAPSE_THRESHOLD;
-  const shouldCollapse = collapsible && !expanded;
   // For collapsible groups the first THRESHOLD always render in the main list; the
   // rest live in expandedItems (shown only when expanded). Don't let visibleItems
   // fall back to the full list on expand — that double-renders the tail rows.
   const visibleItems = collapsible ? items.slice(0, COLLAPSE_THRESHOLD) : items;
-  const hiddenCount = shouldCollapse ? items.length - COLLAPSE_THRESHOLD : 0;
   const expandedItems = collapsible && expanded ? items.slice(COLLAPSE_THRESHOLD) : [];
 
   // Groups WITH container surface — wrapped in a tinted/bordered panel
@@ -358,8 +343,13 @@ function SectionContainer<TEntry>({
               {expandedItems.map((entry, index) => renderEntry(entry, group, COLLAPSE_THRESHOLD + index))}
             </div>
           )}
-          {shouldCollapse && (
-            <CollapsedStack count={hiddenCount} hex={hex} onExpand={() => setExpanded(true)} />
+          {collapsible && (
+            <ExpandToggle
+              expanded={expanded}
+              count={items.length - COLLAPSE_THRESHOLD}
+              hex={hex}
+              onToggle={() => setExpanded((v) => !v)}
+            />
           )}
         </div>
       </div>
@@ -377,8 +367,13 @@ function SectionContainer<TEntry>({
             {expandedItems.map((entry, index) => renderEntry(entry, group, COLLAPSE_THRESHOLD + index))}
           </div>
         )}
-        {shouldCollapse && (
-          <CollapsedStack count={hiddenCount} hex={hex} onExpand={() => setExpanded(true)} />
+        {collapsible && (
+          <ExpandToggle
+            expanded={expanded}
+            count={items.length - COLLAPSE_THRESHOLD}
+            hex={hex}
+            onToggle={() => setExpanded((v) => !v)}
+          />
         )}
       </div>
     </div>

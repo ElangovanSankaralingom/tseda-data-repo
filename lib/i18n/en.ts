@@ -967,6 +967,7 @@ export const en = {
     continue: "Continue",
     edit: "Edit",
     more: "more",
+    showLess: "Show less",
     noResults: "No results found",
     offline: "You are offline",
     online: "Back online",
