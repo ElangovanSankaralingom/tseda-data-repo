@@ -213,7 +213,7 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-text-on-accent-muted": "rgba(255, 255, 255, 0.74)",
   "--color-surface-on-accent": "rgba(255, 255, 255, 0.12)",
   "--color-surface-on-accent-strong": "rgba(255, 255, 255, 0.22)",
-  "--color-glass-bg": "rgba(255, 255, 255, 0.64)",
+  "--color-glass-bg": "#FFFFFF",
   "--color-glass-border": "rgba(20, 26, 42, 0.10)",
   "--color-glass-hover": "rgba(22, 26, 38, 0.04)",
   "--color-glow-primary": "rgba(42, 72, 206, 0.15)",

@@ -102,6 +102,7 @@ function HeroCard({
       className={`${getGroupCardClass("streak_runners")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-amber-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 20%, transparent)",
+        background: "var(--color-card-bg)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-amber-fg) 25%, transparent)",
       } as React.CSSProperties}
@@ -206,6 +207,7 @@ function TimerCard({
       className={`${getGroupCardClass("on_the_clock")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 20%, transparent)",
+        background: "var(--color-card-bg)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
@@ -311,6 +313,7 @@ function StandardCard({
       className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
         border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",
+        background: "var(--color-card-bg)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
@@ -342,7 +345,6 @@ function StandardCard({
                   style={{
                     background: "var(--color-glass-bg)",
                     border: "1px solid var(--color-divider-strong)",
-                    backdropFilter: "blur(10px) saturate(150%)",
                   }}
                 >
                   <span
