@@ -90,32 +90,32 @@ export type GroupContainerStyle = {
 
 export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
   streak_runners: {
-    background: `color-mix(in srgb, ${GROUP_HEX.streak_runners} 4.5%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.streak_runners} 7%, var(--color-card-bg))`,
     border: `1px solid color-mix(in srgb, ${GROUP_HEX.streak_runners} 16%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   on_the_clock: {
-    background: `color-mix(in srgb, ${GROUP_HEX.on_the_clock} 3.5%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.on_the_clock} 6%, var(--color-card-bg))`,
     border: `1px solid color-mix(in srgb, ${GROUP_HEX.on_the_clock} 12%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   unlocked: {
-    background: `color-mix(in srgb, ${GROUP_HEX.unlocked} 3%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.unlocked} 5%, var(--color-card-bg))`,
     border: `1px solid color-mix(in srgb, ${GROUP_HEX.unlocked} 10%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   in_the_works: { background: "transparent", border: "none", padding: "", hasContainer: false },
   under_review: {
-    background: `color-mix(in srgb, ${GROUP_HEX.under_review} 3%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.under_review} 6%, var(--color-card-bg))`,
     border: `1px solid color-mix(in srgb, ${GROUP_HEX.under_review} 16%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
   locked_in: {
-    background: `color-mix(in srgb, ${GROUP_HEX.locked_in} 4%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.locked_in} 6%, var(--color-card-bg))`,
     border: `1px solid color-mix(in srgb, ${GROUP_HEX.locked_in} 13%, transparent)`,
     padding: "p-4 pt-3",
     hasContainer: true,
