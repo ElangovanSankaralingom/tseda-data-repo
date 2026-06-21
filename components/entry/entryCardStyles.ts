@@ -90,8 +90,8 @@ export type GroupContainerStyle = {
 
 export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
   streak_runners: {
-    background: `color-mix(in srgb, ${GROUP_HEX.streak_runners} 3%, transparent)`,
-    border: `1px solid color-mix(in srgb, ${GROUP_HEX.streak_runners} 8%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.streak_runners} 4.5%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.streak_runners} 16%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },

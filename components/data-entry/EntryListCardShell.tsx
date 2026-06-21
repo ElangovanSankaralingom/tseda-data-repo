@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   Clock,
+  Flame,
   Pencil,
   Unlock,
-  Zap,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { formatRelativeTime } from "@/lib/i18n/relativeTime";
@@ -15,7 +15,6 @@ import {
   getGroupCardClass,
   GROUP_HEX,
   GROUP_LAYOUT,
-  NOTCH_CLIP,
 } from "@/components/entry/entryCardStyles";
 import type { EntryListGroup } from "@/lib/entryCategorization";
 import type { EditTimeRemaining } from "@/lib/entries/workflow";
@@ -101,22 +100,16 @@ function HeroCard({
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("streak_runners")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-amber-fg)_30%,transparent)]`}
       style={{
-        border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 18%, transparent)",
-        clipPath: NOTCH_CLIP,
+        border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 20%, transparent)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-amber-fg) 25%, transparent)",
       } as React.CSSProperties}
     >
-      {/* Corner notch — amber accent */}
-      <div
-        className="absolute top-0 right-0 size-[20px] opacity-70"
-        style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)", background: "linear-gradient(135deg, var(--color-palette-amber-fg), var(--color-status-warning))" }}
-      />
 
       {/* Top accent edge — thin solid amber line */}
       <div
-        className="absolute top-0 left-0 right-[20px] h-[2px]"
-        style={{ background: "linear-gradient(90deg, var(--color-palette-amber-fg) 0%, color-mix(in srgb, var(--color-palette-amber-fg) 60%, transparent) 50%, transparent 100%)" }}
+        className="absolute top-0 left-0 right-0 h-[2px]"
+        style={{ background: "linear-gradient(90deg, var(--color-palette-amber-fg) 0%, color-mix(in srgb, var(--color-palette-amber-fg) 35%, transparent) 55%, transparent 100%)" }}
       />
 
       {/* ── ZONE 1: Header — subtle warm tint, not brown ── */}
@@ -135,7 +128,7 @@ function HeroCard({
               border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 25%, transparent)",
             }}
           >
-            <Zap className="size-4 text-[var(--color-status-warning)]" />
+            <Flame className="size-4 text-[var(--color-palette-amber-fg)]" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -144,14 +137,15 @@ function HeroCard({
               </Link>
               {editTime?.hasEditWindow && !editTime.expired && (
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[var(--color-status-warning)] animate-status-glow"
+                  data-streak-pill
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[var(--color-palette-amber-fg)] animate-status-glow"
                   style={{
                     background: "color-mix(in srgb, var(--color-palette-amber-fg) 12%, transparent)",
                     border: "1px solid color-mix(in srgb, var(--color-palette-amber-fg) 22%, transparent)",
                     "--glow-color": "color-mix(in srgb, var(--color-palette-amber-fg) 30%, transparent)",
                   } as React.CSSProperties}
                 >
-                  <span className="size-1.5 rounded-full bg-[var(--color-status-warning)] animate-subtle-pulse" />
+                  <span data-streak-dot className="size-1.5 rounded-full bg-[var(--color-palette-amber-fg)] animate-subtle-pulse" />
                   {editTime.remainingLabel}
                 </span>
               )}

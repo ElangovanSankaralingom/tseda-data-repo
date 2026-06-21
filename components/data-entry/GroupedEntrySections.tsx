@@ -5,11 +5,11 @@ import {
   Clock,
   ClipboardList,
   Lock,
+  Flame,
   Pencil,
   Search,
   Unlock,
   X,
-  Zap,
 } from "lucide-react";
 import FilterTabs, { type FilterTab } from "@/components/ui/FilterTabs";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -76,7 +76,7 @@ export type { GroupedEntries, GroupedEntryRender, GroupedEntryListCardConfig, Li
 */
 
 const SECTION_CONFIGS: Record<EntryListGroup, SectionConfig> = {
-  streak_runners: { title: "entry.streakRunners", icon: Zap, iconColor: "text-[var(--color-palette-amber-fg)]", urgentColor: "text-[var(--color-status-warning)]" },
+  streak_runners: { title: "entry.streakRunners", icon: Flame, iconColor: "text-[var(--color-palette-amber-fg)]", urgentColor: "text-[var(--color-status-warning)]" },
   on_the_clock: { title: "entry.onTheClock", icon: Clock, iconColor: "text-[var(--color-palette-blue-fg)]", urgentColor: "text-[var(--color-status-info)]" },
   unlocked: { title: "entry.unlocked", icon: Unlock, iconColor: "text-[var(--color-palette-blue-fg)]" },
   in_the_works: { title: "entry.inTheWorks", icon: Pencil, iconColor: "text-[var(--color-text-secondary)]" },
