@@ -859,8 +859,10 @@ select:focus {
       0 1px 2px rgba(20,30,70,0.04),
       0 8px 18px -14px rgba(30,40,90,0.16);
   }
-  /* Locked-in (finalized) rows stay flat — no lift, no shadow */
-  [data-entry-card][data-group="locked_in"]:hover {
+  /* Locked-in (finalized) rows stay flat — no lift, no shadow.
+     Scoped per-mode so these outrank the mode-scoped hover rules above. */
+  html:not(.dark) [data-entry-card][data-group="locked_in"]:hover,
+  .dark [data-entry-card][data-group="locked_in"]:hover {
     transform: none;
     box-shadow: none;
   }
