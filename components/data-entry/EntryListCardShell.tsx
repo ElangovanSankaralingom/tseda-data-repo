@@ -204,7 +204,7 @@ function TimerCard({
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("on_the_clock")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
-        border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 20%, transparent)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
@@ -226,11 +226,11 @@ function TimerCard({
         <div className="flex items-start gap-3">
           {editTime?.hasEditWindow && !editTime.expired ? (
             <div
-              className={`shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-2 ${isUrgent ? "animate-status-glow" : ""}`}
+              className={`shrink-0 flex flex-col items-center justify-center rounded-xl px-2.5 py-2 ${isUrgent ? "animate-status-glow" : ""}`}
               style={{
-                background: isUrgent ? "var(--color-status-error-bg)" : `color-mix(in srgb, ${hex} 6%, transparent)`,
-                border: `1px solid ${isUrgent ? "var(--color-status-error-border)" : `color-mix(in srgb, ${hex} 9%, transparent)`}`,
-                minWidth: "72px",
+                background: isUrgent ? "var(--color-status-error-bg)" : "var(--color-surface-panel-tile)",
+                border: `1px solid ${isUrgent ? "var(--color-status-error-border)" : "var(--color-border-subtle)"}`,
+                minWidth: "66px",
                 "--glow-color": isUrgent ? "color-mix(in srgb, var(--color-status-error) 35%, transparent)" : `color-mix(in srgb, ${hex} 19%, transparent)`,
               } as React.CSSProperties}
             >
@@ -240,7 +240,7 @@ function TimerCard({
               </span>
             </div>
           ) : (
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${hex} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 8%, transparent)` }}>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--color-surface-panel-tile)", border: "1px solid var(--color-border-subtle)" }}>
               <Clock className="size-3.5 text-[var(--color-status-info)]" />
             </div>
           )}

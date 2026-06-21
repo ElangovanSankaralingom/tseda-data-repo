@@ -96,8 +96,8 @@ export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
     hasContainer: true,
   },
   on_the_clock: {
-    background: `color-mix(in srgb, ${GROUP_HEX.on_the_clock} 3%, transparent)`,
-    border: `1px solid color-mix(in srgb, ${GROUP_HEX.on_the_clock} 8%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.on_the_clock} 3.5%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.on_the_clock} 12%, transparent)`,
     padding: "p-4",
     hasContainer: true,
   },
