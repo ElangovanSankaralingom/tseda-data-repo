@@ -202,6 +202,8 @@ export const en = {
     timeFinalized: "Finalized",
     timeUpdated: "Updated",
     unlockedLabel: "Unlocked",
+    untitledDraft: "Untitled draft",
+    untitledDraftHint: "Add a programme name to continue",
     coordinator: "Coordinator:",
     coCoordinatorTitle: "Co-coordinator(s)",
     coCoordinatorHint: "Add co-coordinators only when applicable",

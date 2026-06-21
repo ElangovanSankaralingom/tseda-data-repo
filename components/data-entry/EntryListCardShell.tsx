@@ -6,6 +6,7 @@ import {
   Check,
   Clock,
   Flame,
+  FilePenLine,
   Pencil,
   Unlock,
 } from "lucide-react";
@@ -309,7 +310,7 @@ function StandardCard({
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
       className={`${getGroupCardClass("unlocked")} group animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-palette-blue-fg)_30%,transparent)]`}
       style={{
-        border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 15%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--color-palette-blue-fg) 18%, transparent)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75), 0 1px 2px rgba(20,30,70,0.05), 0 10px 26px -20px rgba(30,40,90,0.22)",
         "--glow-color": "color-mix(in srgb, var(--color-palette-blue-fg) 25%, transparent)",
       } as React.CSSProperties}
@@ -337,10 +338,17 @@ function StandardCard({
               </Link>
               {editTime?.hasEditWindow && !editTime.expired && (
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-[var(--color-palette-blue-fg)]"
-                  style={{ background: `color-mix(in srgb, ${hex} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 8%, transparent)` }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--color-text-primary)]"
+                  style={{
+                    background: "var(--color-glass-bg)",
+                    border: "1px solid var(--color-divider-strong)",
+                    backdropFilter: "blur(10px) saturate(150%)",
+                  }}
                 >
-                  <span className="size-1.5 rounded-full bg-[var(--color-palette-blue-fg)]" />
+                  <span
+                    className="size-1.5 rounded-full bg-[var(--color-palette-blue-fg)]"
+                    style={{ boxShadow: `0 0 0 3px color-mix(in srgb, ${hex} 18%, transparent), 0 0 7px color-mix(in srgb, ${hex} 55%, transparent)` }}
+                  />
                   {t('entry.unlockedLabel')} · {editTime.remainingLabel}
                 </span>
               )}
@@ -393,15 +401,19 @@ function DraftRow({
   const { t, language } = useTranslation();
   const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
   const time = formatRelativeTime(createdAt, language);
+  const isUntitled = !title || (typeof title === "string" && !title.trim());
+  const displayTitle = isUntitled ? t('entry.untitledDraft') : title;
+  const helper = isUntitled ? t('entry.untitledDraftHint') : subtitle;
+  const DraftIcon = isUntitled ? FilePenLine : Pencil;
 
   return (
     <div
       data-entry-card
       tabIndex={0}
-      aria-label={`${title} draft entry`}
+      aria-label={`${displayTitle} draft entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
-      className={`${getGroupCardClass("in_the_works")} group rounded-xl animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-strong)]`}
+      className={`${getGroupCardClass("in_the_works")} group rounded-[13px] animate-fade-in-up ${staggerClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-strong)]`}
       style={{
         border: "1px solid var(--color-border-default)",
         background: "var(--color-card-bg)",
@@ -409,33 +421,40 @@ function DraftRow({
       } as React.CSSProperties}
     >
       <div className="px-4 py-3.5 flex items-center gap-3.5">
-        {/* Pencil icon — construction feel */}
+        {/* Draft icon — construction feel (FilePenLine for untitled) */}
         <div
-          className="flex size-8 shrink-0 items-center justify-center rounded-xl"
+          className="flex size-8 shrink-0 items-center justify-center rounded-[10px]"
           style={{
-            background: "var(--color-surface-inset)",
+            background: "var(--color-surface-panel-tile)",
             border: "1px solid var(--color-border-subtle)",
           }}
         >
-          <Pencil className="size-3.5 text-[var(--color-icon-default)]" />
+          <DraftIcon className="size-3.5 text-[var(--color-icon-muted)]" />
         </div>
 
-        {/* Title + subtitle */}
+        {/* Title + helper */}
         <div className="min-w-0 flex-1">
-          <Link href={href} className="text-sm font-bold text-[var(--color-text-primary)] truncate transition-colors block">
-            {title}
+          <Link
+            href={href}
+            className={`text-sm font-bold truncate transition-colors block ${isUntitled ? "italic text-[var(--color-text-placeholder)]" : "text-[var(--color-text-primary)]"}`}
+          >
+            {displayTitle}
           </Link>
-          {subtitle ? <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)] truncate">{subtitle}</div> : null}
+          {helper ? <div className="mt-0.5 text-xs text-[var(--color-text-placeholder)] truncate">{helper}</div> : null}
         </div>
 
-        {/* Right side: DRAFT badge + time + actions */}
+        {/* Right side: DRAFT capsule + time + actions */}
         <span
-          className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-[var(--color-text-tertiary)]"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-text-muted)]"
           style={{
-            border: "1px solid var(--color-border-default)",
-            background: "var(--color-surface-inset)",
+            border: "1px solid var(--color-divider-strong)",
+            background: "var(--color-glass-bg)",
           }}
         >
+          <span
+            className="size-1.5 rounded-full bg-[var(--color-icon-muted)]"
+            style={{ boxShadow: "0 0 0 3px color-mix(in srgb, var(--color-text-muted) 16%, transparent)" }}
+          />
           {t('entry.draft')}
         </span>
         {time ? <span className="shrink-0 text-xs text-[var(--color-text-muted)]">{time}</span> : null}
@@ -488,22 +507,24 @@ function DashedCard({
         }}
       >
         <div className="flex items-start gap-2.5">
-          <div className="relative mt-0.5">
-            <Clock className="size-4 text-[var(--color-status-warning)]" />
-            <span
-              className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-[var(--color-status-warning)] animate-subtle-pulse"
-              style={{ boxShadow: `0 0 6px var(--color-status-warning-bg)` }}
-            />
-          </div>
+          <Clock className="size-4 shrink-0 mt-0.5 text-[var(--color-palette-orange-fg)]" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <Link href={href} className="text-base font-bold text-[var(--color-text-primary)] truncate transition-colors">
                 {title}
               </Link>
               <span
-                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-status-warning)]"
-                style={{ background: `color-mix(in srgb, ${hex} 7%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 9%, transparent)` }}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-primary)]"
+                style={{
+                  background: "var(--color-glass-bg)",
+                  border: "1px solid var(--color-divider-strong)",
+                  backdropFilter: "blur(10px) saturate(150%)",
+                }}
               >
+                <span
+                  className="size-1.5 rounded-full bg-[var(--color-palette-orange-fg)]"
+                  style={{ boxShadow: `0 0 0 3px color-mix(in srgb, ${hex} 18%, transparent), 0 0 7px color-mix(in srgb, ${hex} 55%, transparent)` }}
+                />
                 {t('entry.editRequested')}
               </span>
               {badges}

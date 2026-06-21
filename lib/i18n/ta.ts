@@ -204,6 +204,8 @@ export const ta: TranslationDict = {
     timeFinalized: "இறுதி செய்யப்பட்டது",
     timeUpdated: "புதுப்பிக்கப்பட்டது",
     unlockedLabel: "திறக்கப்பட்டது",
+    untitledDraft: "தலைப்பிடப்படாத வரைவு",
+    untitledDraftHint: "தொடர நிகழ்ச்சிப் பெயரைச் சேர்க்கவும்",
     coordinator: "ஒருங்கிணைப்பாளர்:",
     coCoordinatorTitle: "இணை ஒருங்கிணைப்பாளர்(கள்)",
     coCoordinatorHint: "பொருந்தும் போது மட்டும் இணை ஒருங்கிணைப்பாளர்களைச் சேர்க்கவும்",
