@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState, useCallback } from "react";
+import { memo, useMemo, useState, useCallback, useEffect, useRef } from "react";
 import {
   Clock,
   ClipboardList,
@@ -329,7 +329,8 @@ function SectionContainer<TEntry>({
 
     return (
       <div
-        className={`rounded-2xl ${group === "locked_in" ? "overflow-hidden" : ""} ${container.padding}`}
+        id={`group-${group}`}
+        className={`scroll-mt-20 rounded-2xl ${group === "locked_in" ? "overflow-hidden" : ""} ${container.padding}`}
         style={{
           background: container.background,
           border: container.border,
@@ -358,7 +359,7 @@ function SectionContainer<TEntry>({
 
   // Groups WITHOUT container — flat, inline (drafts)
   return (
-    <div>
+    <div id={`group-${group}`} className="scroll-mt-20">
       <SectionHeader group={group} count={items.length} isUrgent={isUrgent} />
       <div className="space-y-2">
         {visibleItems.map((entry, index) => renderEntry(entry, group, index))}
@@ -505,6 +506,28 @@ export function SmartGroupedEntrySections<TEntry>({
     setSegmentGroup(group);
     setActiveFilter(groupToFilterKey(group));
   }, []);
+
+  // Deep-link: a `?focus=<group>` param (from the dashboard breakdown tiles)
+  // smooth-scrolls to that section. Re-runs as entries load so it lands once the
+  // section actually mounts; the ref guarantees a single scroll. "generated"
+  // resolves to the first present generated-family section.
+  const focusHandledRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || focusHandledRef.current) return;
+    const focus = new URLSearchParams(window.location.search).get("focus");
+    if (!focus) return;
+    const targets = focus === "generated"
+      ? ["streak_runners", "on_the_clock", "locked_in"]
+      : [focus];
+    for (const g of targets) {
+      const el = document.getElementById(`group-${g}`);
+      if (el) {
+        focusHandledRef.current = true;
+        requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+        return;
+      }
+    }
+  }, [hasEntries, filteredGroups]);
 
   if (!hasEntries) {
     return <>{emptyState ?? <DefaultEmptyState />}</>;

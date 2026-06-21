@@ -41,6 +41,7 @@ export const en = {
     acrossAllCategories: "Across all categories",
     generated: "Generated",
     editRequested: "Edit Requested",
+    editGranted: "Edit Granted",
     allEntriesComplete: "All entries complete!",
     entriesToComplete: "entries to complete",
     entryToComplete: "entry to complete",

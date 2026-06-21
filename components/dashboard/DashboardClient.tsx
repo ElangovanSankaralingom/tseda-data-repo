@@ -9,6 +9,7 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
+  Unlock,
 } from "lucide-react";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -258,11 +259,15 @@ function CategoryDetailPanel({
   const isEmpty = cat.totalEntries === 0;
   const { ref, style: tiltStyle, lightStyle, handlers } = useTiltEffect();
 
+  // Tiles map to the entry-list sections; clicking deep-links + scrolls there.
+  // Only tiles with entries are shown (Total is always rendered separately).
   const statCards = [
-    { label: t("dashboard.generated"), count: cat.generatedCount, color: hex, icon: Sparkles },
-    { label: t("dashboard.drafts"), count: cat.draftCount, color: "#94a3b8", icon: FileText },
-    { label: t("dashboard.editRequested"), count: cat.editRequestedCount, color: "#f59e0b", icon: Clock },
-  ].filter((s) => s.count > 0 || s.label === t("dashboard.generated"));
+    { label: t("dashboard.generated"), count: cat.generatedCount, color: hex, icon: Sparkles, focus: "generated" },
+    { label: t("dashboard.drafts"), count: cat.draftCount, color: "#94a3b8", icon: FileText, focus: "in_the_works" },
+    { label: t("dashboard.editRequested"), count: cat.editRequestedCount, color: "#f59e0b", icon: Clock, focus: "under_review" },
+    { label: t("dashboard.editGranted"), count: cat.editGrantedCount, color: "#3b82f6", icon: Unlock, focus: "unlocked" },
+  ].filter((s) => s.count > 0);
+  const listHref = entryList(cat.slug as CategoryKey);
 
   return (
     <div ref={ref} style={tiltStyle} {...handlers} className="h-full">
@@ -313,16 +318,21 @@ function CategoryDetailPanel({
         {/* ── ZONE 2: Stat cards — bright white surfaces ── */}
         <div className="px-7 pt-2 sm:px-9">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Hero total — BRIGHTEST card */}
-            <div
-              className="rounded-2xl p-6 transition-transform duration-300 hover:-translate-y-0.5"
+            {/* Hero total — BRIGHTEST card · clicks to the top of the entry list */}
+            <Link
+              href={listHref}
+              aria-label={`${t("dashboard.totalEntries")} — view all entries`}
+              className="group/tile block rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-[0.98]"
               style={{
                 backgroundColor: "var(--color-surface-panel-tile)",
                 border: "1px solid var(--color-border-default)",
               }}
             >
-              <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">
-                {t("dashboard.totalEntries")}
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">
+                  {t("dashboard.totalEntries")}
+                </div>
+                <ArrowUpRight className="size-4 text-[var(--color-text-placeholder)] opacity-0 -translate-x-1 transition-all duration-300 group-hover/tile:opacity-100 group-hover/tile:translate-x-0" />
               </div>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="font-mono text-[38px] font-black tracking-tighter text-[var(--color-text-primary)] leading-none">
@@ -332,27 +342,30 @@ function CategoryDetailPanel({
                   {isEmpty ? "entries" : cat.totalEntries === 1 ? "entry" : "entries"}
                 </span>
               </div>
-            </div>
+            </Link>
 
-            {/* Stat cards — each tinted with its own color */}
+            {/* Stat tiles — each links to its matching entry-list section */}
             {statCards.map((stat) => {
               const StatIcon = stat.icon;
               return (
-                <div
+                <Link
                   key={stat.label}
-                  className="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                  href={`${listHref}?focus=${stat.focus}`}
+                  aria-label={`${stat.count} ${stat.label} — jump to section`}
+                  className="group/tile block rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-[0.98]"
                   style={{
                     backgroundColor: "var(--color-surface-panel-tile)",
                     border: `1px solid ${stat.color}35`,
                   }}
                 >
-                  <div
-                    className="flex size-10 items-center justify-center rounded-xl"
-                    style={{
-                      backgroundColor: stat.color,
-                    }}
-                  >
-                    <StatIcon className="size-[18px] text-[var(--color-text-on-accent)]" />
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="flex size-10 items-center justify-center rounded-xl transition-transform duration-300 group-hover/tile:scale-110 group-hover/tile:-rotate-3"
+                      style={{ backgroundColor: stat.color }}
+                    >
+                      <StatIcon className="size-[18px] text-[var(--color-text-on-accent)]" />
+                    </div>
+                    <ArrowUpRight className="size-4 opacity-0 -translate-x-1 transition-all duration-300 group-hover/tile:opacity-100 group-hover/tile:translate-x-0" style={{ color: stat.color }} />
                   </div>
                   <div className="mt-4">
                     <span className="font-mono text-2xl font-black tracking-tighter" style={{ color: stat.color }}>
@@ -362,7 +375,7 @@ function CategoryDetailPanel({
                   <div className="mt-1.5 text-[11px] font-semibold text-[var(--color-text-secondary)]">
                     {stat.label}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -416,22 +429,9 @@ function CategoryDetailPanel({
 
         {/* ── Footer ── */}
         <div className="px-7 pb-7 pt-6 sm:px-9 sm:pb-9">
-          <div className="flex items-center justify-between border-t border-[var(--color-divider)] pt-5">
-            {!isEmpty && cat.editGrantedCount > 0 ? (
-              <div
-                className="flex items-center gap-2 rounded-lg px-3 py-1.5"
-                style={{
-                  backgroundColor: "var(--color-status-info-bg)",
-                  border: "1px solid var(--color-status-info-border)",
-                }}
-              >
-                <span className="font-mono text-sm font-black text-[var(--color-status-info)]">{cat.editGrantedCount}</span>
-                <span className="text-[11px] font-semibold text-[var(--color-status-info)] opacity-70">Edit Granted</span>
-              </div>
-            ) : <div />}
-
+          <div className="flex items-center justify-end border-t border-[var(--color-divider)] pt-5">
             <Link
-              href={entryList(cat.slug as CategoryKey)}
+              href={listHref}
               className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-text-on-accent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97]"
               style={{
                 backgroundColor: hex,
