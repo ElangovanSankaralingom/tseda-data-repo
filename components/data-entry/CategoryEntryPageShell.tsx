@@ -115,10 +115,10 @@ function CategoryHero({
         {/* ── Specular light reflection (holographic tilt) ── */}
         <div style={lightStyle} />
 
-        {/* ── Brass top rule — matches the dashboard hero band ── */}
+        {/* ── Universal white top rule — reads on every category accent ── */}
         <div
           className="h-[3px] animate-bar-draw origin-center"
-          style={{ background: "var(--color-status-warning)" }}
+          style={{ background: "var(--color-text-on-accent)" }}
         />
 
         {/* Specular sheen — top-left highlight on the band */}
@@ -196,7 +196,7 @@ function CategoryHero({
                 >
                   <div
                     className="relative shrink-0 rounded-full"
-                    style={{ width: "52px", height: "52px", background: `conic-gradient(var(--color-status-warning) 0% ${completionPct}%, var(--color-surface-on-accent-strong) ${completionPct}% 100%)` }}
+                    style={{ width: "52px", height: "52px", background: `conic-gradient(var(--color-text-on-accent) 0% ${completionPct}%, var(--color-surface-on-accent-strong) ${completionPct}% 100%)` }}
                   >
                     <div
                       className="absolute inset-[6px] flex items-center justify-center rounded-full"
@@ -260,7 +260,7 @@ function CategoryHero({
               <span className="font-mono text-[11px] font-semibold tracking-wide" style={{ color: "var(--color-text-on-accent-muted)" }}>
                 {`> ${category.toUpperCase().replace(/-/g, ".")}`}
               </span>
-              <span className="size-1.5 rounded-full" style={{ background: "var(--color-status-success)", boxShadow: "0 0 8px color-mix(in srgb, var(--color-status-success) 60%, transparent)" }} />
+              <span className="size-1.5 rounded-full" style={{ background: "var(--color-text-on-accent)", boxShadow: "0 0 8px color-mix(in srgb, var(--color-text-on-accent) 50%, transparent)" }} />
               <ConsoleStat value={stats.total} label={t('dashboard.entries')} />
               <ConsoleDivider />
               <ConsoleStat value={stats.finalized} label={t('common.finalized')} />

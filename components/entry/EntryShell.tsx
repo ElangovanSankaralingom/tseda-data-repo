@@ -88,10 +88,10 @@ export default function EntryShell({
           {/* Specular light reflection */}
           <div style={lightStyle} />
 
-          {/* Brass top rule — matches the list hero band */}
+          {/* Universal white top rule — reads on every category accent */}
           <div
             className="h-[3px] animate-bar-draw origin-center"
-            style={{ background: "var(--color-status-warning)" }}
+            style={{ background: "var(--color-text-on-accent)" }}
           />
 
           {/* Specular sheen — top-left highlight on the band */}
