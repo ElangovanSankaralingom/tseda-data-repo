@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, ArrowLeft, FileText, Clock } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
+import { useCountUp } from "@/hooks/useCountUp";
 import EntryShell from "@/components/entry/EntryShell";
 import SectionCard from "@/components/layout/SectionCard";
 import PhaseProgressIndicator from "@/components/data-entry/PhaseProgressIndicator";
@@ -95,6 +96,7 @@ function CategoryHero({
   const Icon = useMemo(() => getCategoryIcon(config.icon), [config.icon]);
   const { ref: tiltRef, style: tiltStyle, lightStyle, handlers } = useTiltEffect();
   const completionPct = stats && stats.total > 0 ? Math.round((stats.finalized / stats.total) * 100) : 0;
+  const animatedTotal = useCountUp(stats?.total ?? 0);
 
   return (
     <div className="mb-6 animate-fade-in-up">
@@ -227,7 +229,7 @@ function CategoryHero({
                         {t('dashboard.totalEntries')}
                       </div>
                       <div className="mt-1 font-mono text-[38px] font-extrabold leading-none tracking-tight tabular-nums" style={{ color: "var(--color-text-primary)" }}>
-                        {stats.total}
+                        {animatedTotal}
                       </div>
                     </div>
                     <div className="flex gap-2.5">

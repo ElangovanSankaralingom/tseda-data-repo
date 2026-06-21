@@ -229,8 +229,8 @@ function SectionHeader({ group, count, isUrgent }: {
         className={`flex size-7 items-center justify-center rounded-lg ${isUrgent ? "animate-status-glow" : ""}`}
         style={{
           background: hex,
-          boxShadow: `0 4px 12px color-mix(in srgb, ${hex} 35%, transparent)`,
-          "--glow-color": `color-mix(in srgb, ${hex} 35%, transparent)`,
+          boxShadow: `0 2px 6px color-mix(in srgb, ${hex} 20%, transparent)`,
+          "--glow-color": `color-mix(in srgb, ${hex} 20%, transparent)`,
         } as React.CSSProperties}
       >
         <Icon className={`size-3.5 text-[var(--color-text-on-accent)] ${isUrgent ? "animate-subtle-pulse" : ""}`} />
@@ -327,10 +327,14 @@ function SectionContainer<TEntry>({
   const hex = GROUP_HEX[group];
 
   // Determine if this section should collapse
-  const shouldCollapse = (group === "locked_in" || group === "in_the_works") && items.length > COLLAPSE_THRESHOLD && !expanded;
-  const visibleItems = shouldCollapse ? items.slice(0, COLLAPSE_THRESHOLD) : items;
+  const collapsible = (group === "locked_in" || group === "in_the_works") && items.length > COLLAPSE_THRESHOLD;
+  const shouldCollapse = collapsible && !expanded;
+  // For collapsible groups the first THRESHOLD always render in the main list; the
+  // rest live in expandedItems (shown only when expanded). Don't let visibleItems
+  // fall back to the full list on expand — that double-renders the tail rows.
+  const visibleItems = collapsible ? items.slice(0, COLLAPSE_THRESHOLD) : items;
   const hiddenCount = shouldCollapse ? items.length - COLLAPSE_THRESHOLD : 0;
-  const expandedItems = expanded ? items.slice(COLLAPSE_THRESHOLD) : [];
+  const expandedItems = collapsible && expanded ? items.slice(COLLAPSE_THRESHOLD) : [];
 
   // Groups WITH container surface — wrapped in a tinted/bordered panel
   // This creates the LAYERING — each section has its own visual identity

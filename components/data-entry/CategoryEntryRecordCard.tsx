@@ -99,7 +99,7 @@ export default function CategoryEntryRecordCard({
             {isUnlocked ? (
               <>
                 {onEdit ? (
-                  <ActionButton role="primary" onClick={onEdit} className="!bg-purple-600 hover:!bg-purple-700">
+                  <ActionButton role="primary" onClick={onEdit}>
                     {t('entry.continue')}
                   </ActionButton>
                 ) : null}
@@ -112,7 +112,7 @@ export default function CategoryEntryRecordCard({
                 <button
                   type="button"
                   onClick={onView}
-                  className="rounded-xl bg-[var(--color-dropdown-hover)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
+                  className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-surface-panel-tile)] hover:-translate-y-px active:scale-[0.97]"
                 >
                   {t('entry.view')}
                 </button>
@@ -132,7 +132,7 @@ export default function CategoryEntryRecordCard({
                 <button
                   type="button"
                   onClick={onView}
-                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-dropdown-hover)] px-3 text-sm font-medium text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97]"
+                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-panel-tile)] px-3 text-sm font-medium text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-badge-bg)] hover:-translate-y-px active:scale-[0.97]"
                 >
                   {t('entry.view')}
                 </button>
