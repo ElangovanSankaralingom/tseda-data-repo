@@ -340,7 +340,7 @@ function SectionContainer<TEntry>({
 
     return (
       <div
-        className={`rounded-2xl ${container.padding}`}
+        className={`rounded-2xl ${group === "locked_in" ? "overflow-hidden" : ""} ${container.padding}`}
         style={{
           background: container.background,
           border: container.border,

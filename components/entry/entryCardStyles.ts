@@ -186,5 +186,5 @@ export function getGroupCardClass(group: EntryListGroup): string {
   }
 
   // Active card types: two-zone architecture with bold presence
-  return "relative overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-lg";
+  return "relative overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg";
 }
