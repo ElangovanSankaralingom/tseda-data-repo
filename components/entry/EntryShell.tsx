@@ -79,46 +79,43 @@ export default function EntryShell({
           className="relative overflow-hidden rounded-3xl"
           style={{
             ...tiltStyle,
-            background: `linear-gradient(135deg, var(--color-surface-inset-deep) 0%, ${chartHex}12 50%, var(--color-surface-inset-deep) 100%)`,
-            border: "1px solid var(--color-divider)",
-            boxShadow: `0 1px 2px rgba(20,30,70,0.04), 0 6px 16px -12px rgba(30,40,90,0.10), inset 0 1px 0 var(--color-border-subtle)`,
+            background: `linear-gradient(135deg, ${chartHex} 0%, color-mix(in srgb, white 14%, ${chartHex}) 100%)`,
+            border: "1px solid var(--color-surface-on-accent)",
+            boxShadow: `0 1px 2px rgba(20,30,70,0.05), 0 12px 28px -22px ${chartHex}33`,
           }}
           {...handlers}
         >
           {/* Specular light reflection */}
           <div style={lightStyle} />
 
-          {/* Top accent bar — category colored, animated */}
+          {/* Brass top rule — matches the list hero band */}
           <div
             className="h-[3px] animate-bar-draw origin-center"
-            style={{
-              background: chartHex,
-              boxShadow: `0 1px 8px ${chartHex}25`,
-            }}
+            style={{ background: "var(--color-status-warning)" }}
           />
 
-          {/* Color bleed gradient */}
+          {/* Specular sheen — top-left highlight on the band */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: `linear-gradient(135deg, ${chartHex}10 0%, transparent 40%)`,
+              background: `radial-gradient(120% 80% at 6% -12%, var(--color-surface-on-accent), transparent 55%)`,
               borderRadius: "inherit",
             }}
           />
 
-          {/* Category watermark — large faint icon */}
+          {/* Category watermark — large faint white icon */}
           <div
-            className="absolute -right-4 -bottom-4 pointer-events-none select-none"
-            style={{ opacity: 0.04 }}
+            className="absolute -right-5 -bottom-5 pointer-events-none select-none"
+            style={{ opacity: 0.1 }}
           >
             {/* eslint-disable-next-line react-hooks/static-components */}
-            <Icon className="size-36" style={{ color: chartHex }} />
+            <Icon className="size-40" style={{ color: "var(--color-text-on-accent)" }} />
           </div>
 
           {/* HUD corner coordinates */}
           <div
             className="absolute top-3 right-4 font-mono text-[9px] tracking-wider select-none pointer-events-none"
-            style={{ color: "var(--color-text-placeholder)" }}
+            style={{ color: "var(--color-text-on-accent-muted)" }}
           >
             [{category.toUpperCase().replace(/-/g, ".")}]
           </div>
@@ -133,9 +130,9 @@ export default function EntryShell({
                 <span
                   className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
                   style={{
-                    color: chartHex,
-                    background: `${chartHex}15`,
-                    border: `1px solid ${chartHex}25`,
+                    color: "var(--color-text-on-accent)",
+                    background: "var(--color-surface-on-accent)",
+                    border: "1px solid var(--color-surface-on-accent-strong)",
                   }}
                 >
                   {t('entry.viewPdf')}
@@ -148,25 +145,24 @@ export default function EntryShell({
               <div
                 className="flex size-12 shrink-0 items-center justify-center rounded-xl sm:size-14 sm:rounded-2xl"
                 style={{
-                  background: `${chartHex}18`,
-                  border: `1px solid ${chartHex}30`,
-                  boxShadow: `0 0 20px ${chartHex}12`,
+                  background: "var(--color-surface-on-accent)",
+                  border: "1px solid var(--color-surface-on-accent-strong)",
                 }}
               >
                 {/* eslint-disable-next-line react-hooks/static-components */}
-                <Icon className="size-6 sm:size-7" style={{ color: chartHex }} />
+                <Icon className="size-6 sm:size-7" style={{ color: "var(--color-text-on-accent)" }} />
               </div>
               <div className="min-w-0">
                 <h1
                   className="text-xl font-bold tracking-tight sm:text-2xl"
-                  style={{ color: "var(--color-text-primary)" }}
+                  style={{ color: "var(--color-text-on-accent)" }}
                 >
                   {resolvedTitle}
                 </h1>
                 {resolvedSubtitle ? (
                   <p
                     className="mt-0.5 max-w-md text-sm line-clamp-2"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    style={{ color: "var(--color-text-on-accent-muted)" }}
                   >
                     {resolvedSubtitle}
                   </p>
@@ -174,14 +170,14 @@ export default function EntryShell({
               </div>
             </div>
 
-            {/* Status row — inset panel */}
+            {/* Status row — light inset card sitting on the band */}
             {showStatusRow ? (
               <div
                 className="mt-4 flex flex-wrap items-center gap-2.5 rounded-xl px-3.5 py-2.5"
                 style={{
-                  background: "linear-gradient(90deg, var(--color-surface-inset-deep) 0%, var(--color-surface-inset) 100%)",
-                  border: "1px solid var(--color-border-subtle)",
-                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2)",
+                  background: "var(--color-surface-inset)",
+                  border: "1px solid var(--color-border-default)",
+                  boxShadow: "0 8px 18px -14px rgba(10,16,42,0.20)",
                 }}
               >
                 <StatusBadge status={resolvedStatus ?? "DRAFT"} />
@@ -206,7 +202,10 @@ export default function EntryShell({
 
       {/* Sticky action bar for editing */}
       {isEditingMode && actions ? (
-        <div className="sticky top-0 z-40 mb-4 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)]/80 px-4 py-3 shadow-sm backdrop-blur-xl sm:px-5">
+        <div
+          className="sticky top-0 z-40 mb-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] px-4 py-3 sm:px-5"
+          style={{ boxShadow: "0 1px 2px rgba(20,30,70,0.04), 0 6px 16px -12px rgba(30,40,90,0.10)" }}
+        >
           {actions}
         </div>
       ) : null}

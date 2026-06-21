@@ -209,7 +209,7 @@ function EditModeActionBar({
               type="button"
               onClick={handleGenerate}
               disabled={buttonDisabled}
-              className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${buttonClass}`}
+              className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 enabled:hover:-translate-y-0.5 active:scale-[0.97] ${buttonClass}`}
             >
               {isGenerating ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -232,7 +232,7 @@ function EditModeActionBar({
                 type="button"
                 onClick={finaliseState === "idle" && finalise.canFinalise ? () => setShowFinaliseConfirm(true) : undefined}
                 disabled={!finalise.canFinalise || finaliseState !== "idle"}
-                className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 active:scale-[0.97] ${
+                className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-medium shadow-sm transition-all duration-300 enabled:hover:-translate-y-0.5 active:scale-[0.97] ${
                   finaliseState === "done"
                     ? "bg-[var(--color-status-success-bg)] text-[var(--color-text-primary)] animate-finalise-pop"
                     : finaliseState === "finalising"
