@@ -403,7 +403,12 @@ function getCachedSummary(normalizedEmail: string) {
   return unstable_cache(
     async () => computeDashboardSummary(normalizedEmail),
     ["dashboard-summary", normalizedEmail],
-    { tags: [dashboardTag] }
+    // Tag-based invalidation (revalidateTag on every entry mutation) keeps the
+    // dashboard instant for normal in-app edits. The time-based revalidate is a
+    // safety net: any out-of-band data change — seed scripts, manual file edits,
+    // a restored backup, the nightly job — self-heals within 30s instead of
+    // staying frozen until the next mutation fires a tag invalidation.
+    { tags: [dashboardTag], revalidate: 30 }
   )();
 }
 
