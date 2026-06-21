@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Check,
+  CircleCheckBig,
   Clock,
   Flame,
   FilePenLine,
@@ -576,7 +576,7 @@ function StampRow({
   const { t, language } = useTranslation();
   const staggerClass = index < 8 ? `stagger-${index + 1}` : "";
   const time = formatRelativeTime(updatedAt || createdAt, language);
-  const hasContent = !!(children || metadata);
+  const metaText = metadata ?? subtitle ?? children;
 
   return (
     <div
@@ -585,52 +585,41 @@ function StampRow({
       aria-label={`${title} finalized entry`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
       onClick={(e) => { if ((e.target as HTMLElement).closest("a,button,input")) return; router.push(href); }}
-      className={`${getGroupCardClass("locked_in")} group animate-fade-in-up ${staggerClass} py-4 px-4 hover:bg-[var(--color-status-success-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-status-success-border)]`}
-      style={{ borderBottom: `1px solid var(--color-status-success-border)` }}
+      className={`${getGroupCardClass("locked_in")} group animate-fade-in-up ${staggerClass} rounded-lg px-1.5 py-3.5 transition-colors hover:bg-[var(--color-status-success-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-status-success-border)]`}
+      style={{ borderBottom: "1px solid var(--color-status-success-border)" }}
     >
-      {/* Title row */}
       <div className="flex items-center gap-2.5">
-        <Check className="size-4.5 shrink-0 text-[var(--color-status-success)]" />
+        <CircleCheckBig className="size-[18px] shrink-0 text-[var(--color-status-success)]" />
+
+        {/* Left: title · #index · meta (inline, wraps) */}
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <Link href={href} className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate transition-colors">
               {title}
             </Link>
-            <span className="font-mono text-[10px] font-bold text-[var(--color-status-success)]/50">
+            <span className="font-mono text-[11px] font-bold text-[var(--color-status-success)]/60">
               #{String(index + 1).padStart(2, "0")}
             </span>
+            {metaText ? <span className="text-xs text-[var(--color-text-placeholder)] truncate">{metaText}</span> : null}
             {badges}
           </div>
-          {subtitle ? <div className="mt-0.5 text-sm text-[var(--color-text-tertiary)]">{subtitle}</div> : null}
         </div>
-      </div>
 
-      {/* Metadata — compact inline */}
-      {hasContent && (
-        <div className="mt-2.5 ml-[30px]">
-          {children}
-          {metadata && !children ? <div className="text-sm text-[var(--color-text-muted)]">{metadata}</div> : null}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-2 ml-[30px] mt-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-status-success)]/70">
-            {t('entry.finalized')}
+        {/* Right: Finalized · time + actions */}
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-status-success)] sm:flex">
+            <span
+              className="size-1.5 rounded-full bg-[var(--color-status-success)]"
+              style={{ boxShadow: "0 0 0 3px color-mix(in srgb, var(--color-status-success) 16%, transparent)" }}
+            />
+            {t('entry.finalized')}{time ? ` · ${time}` : ""}
           </span>
-          {time ? (
-            <>
-              <span className="text-[var(--color-status-success)]/30">·</span>
-              <span className="text-xs text-[var(--color-text-muted)]">{time}</span>
-            </>
+          {actions ? (
+            <div className="flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+              {actions}
+            </div>
           ) : null}
         </div>
-        {actions ? (
-          <div className="flex shrink-0 items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
-            {actions}
-          </div>
-        ) : null}
       </div>
     </div>
   );

@@ -115,8 +115,8 @@ export const GROUP_CONTAINERS: Record<EntryListGroup, GroupContainerStyle> = {
     hasContainer: true,
   },
   locked_in: {
-    background: `color-mix(in srgb, ${GROUP_HEX.locked_in} 3%, transparent)`,
-    border: `1px solid color-mix(in srgb, ${GROUP_HEX.locked_in} 8%, transparent)`,
+    background: `color-mix(in srgb, ${GROUP_HEX.locked_in} 4%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${GROUP_HEX.locked_in} 13%, transparent)`,
     padding: "p-4 pt-3",
     hasContainer: true,
   },
