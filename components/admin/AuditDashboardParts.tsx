@@ -106,7 +106,7 @@ function ActionBadge({ action }: { action: string }) {
 
 function StatMini({ label, value, icon: Icon, accent = "var(--color-primary)" }: { label: string; value: number; icon: typeof Activity; accent?: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex size-10 items-center justify-center rounded-lg" style={{ backgroundColor: accent }}>
         <Icon className="size-5 text-[var(--color-text-on-accent)]" />
       </div>
@@ -213,7 +213,7 @@ export function FilterBar({
   ], [t]);
 
   return (
-    <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">
+    <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
@@ -289,7 +289,7 @@ function TimelineEvent({ event, isLast }: { event: AuditEvent; isLast: boolean }
       <div className={`flex-1 pb-6 ${isLast ? "" : ""}`}>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="group w-full rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3 text-left shadow-sm transition-all duration-200 hover:border-[var(--color-text-muted)] hover:shadow-md"
+          className="group w-full rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-3 text-left shadow-sm transition-all duration-200 hover:border-[var(--color-text-muted)] hover:shadow-md"
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -369,7 +369,7 @@ export function TimelineView({ events }: { events: AuditEvent[] }) {
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm py-16 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-inset)] py-16 text-center">
         <Activity className="size-8 text-[var(--color-text-muted)] mb-3" />
         <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminAudit.noEventsFound")}</div>
         <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminAudit.tryAdjustingFilters")}</div>
@@ -408,7 +408,7 @@ export function TableView({ events }: { events: AuditEvent[] }) {
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm py-16 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-inset)] py-16 text-center">
         <Activity className="size-8 text-[var(--color-text-muted)] mb-3" />
         <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminAudit.noEventsFound")}</div>
         <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminAudit.tryAdjustingFilters")}</div>
@@ -417,7 +417,7 @@ export function TableView({ events }: { events: AuditEvent[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] shadow-sm">
       <table className="w-full min-w-[900px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-[var(--color-glass-border)] bg-[var(--color-dropdown-hover)] text-left text-xs uppercase tracking-wide text-[var(--color-text-primary)]">
@@ -481,7 +481,7 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
         <StatMini label={t("adminAudit.categories")} value={Object.keys(stats.byCategory).length} icon={FileText} accent="var(--color-palette-amber-fg)" />
       </div>
 
-      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.recentActivity")}</h4>
           <span className="text-xs text-[var(--color-text-secondary)]">{t("adminAudit.last14Days")}</span>
@@ -489,12 +489,12 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
         <ActivitySparkline data={stats.recentDays} />
       </div>
 
-      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 shadow-sm">
         <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.actionBreakdown")}</h4>
         <ActionBreakdownBar stats={stats} />
       </div>
 
-      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 shadow-sm">
         <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.byCategory")}</h4>
         <div className="space-y-2">
           {Object.entries(stats.byCategory)
@@ -509,7 +509,7 @@ export function StatsSidebar({ stats }: { stats: AuditStats }) {
       </div>
 
       {stats.topEntries.length > 0 && (
-        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 shadow-sm">
           <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{t("adminAudit.mostActiveEntries")}</h4>
           <div className="space-y-2">
             {stats.topEntries.slice(0, 5).map((entry, i) => (
