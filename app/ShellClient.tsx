@@ -511,7 +511,7 @@ export default function ShellClient({
       />
 
       {/* ─── Page Content ─── */}
-      <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 pb-6 pt-20 outline-none">{children}</main>
+      <main id="main-content" tabIndex={-1} className="relative z-10 mx-auto max-w-6xl px-4 pb-6 pt-20 outline-none">{children}</main>
     </div>
   );
 }
