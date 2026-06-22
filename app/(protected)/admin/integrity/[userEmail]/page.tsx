@@ -233,7 +233,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
     >
       {notice ? <div className={`mb-4 ${getNoticeClass(level)}`}>{notice}</div> : null}
 
-      <div className="mb-4 rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+      <div className="mb-4 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
         <div className="flex flex-wrap items-center gap-2">
           <form id="repair-stores-form" action={repairStoresAction}>
             <input type="hidden" name="userEmail" value={normalizedUserEmail} />
@@ -295,7 +295,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
       ) : report ? (
         <>
           <div className="mb-4 grid gap-3 md:grid-cols-4">
-            <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3">
+            <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-3">
               <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{t("adminIntegrity.totalIssues", "en")}</div>
               <div className="mt-1 text-xl font-semibold">{report.issues.length}</div>
             </div>
@@ -307,13 +307,13 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
               <div className="text-xs uppercase tracking-wide text-[var(--color-status-warning)]">{t("adminIntegrity.warnings", "en")}</div>
               <div className="mt-1 text-xl font-semibold text-[var(--color-status-warning)]">{severity.warn}</div>
             </div>
-            <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3">
+            <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-3">
               <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{t("adminIntegrity.info", "en")}</div>
               <div className="mt-1 text-xl font-semibold">{severity.info}</div>
             </div>
           </div>
 
-          <div className="mb-4 rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+          <div className="mb-4 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
             <h2 className="mb-3 text-lg font-semibold tracking-tight">{t("adminIntegrity.categoryStores", "en")}</h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] border-collapse text-sm">
@@ -362,12 +362,12 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
           </div>
 
           <div className="mb-4 grid gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+            <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
               <h2 className="mb-2 text-lg font-semibold tracking-tight">{t("adminIntegrity.indexConsistency", "en")}</h2>
               <div className="text-xs text-[var(--color-text-muted)]">{report.indexReport.filePath}</div>
               <div className="mt-2 text-sm">{t("adminIntegrity.issuesCount", "en").replace("{count}", String(report.indexReport.issues.length))}</div>
             </div>
-            <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+            <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
               <h2 className="mb-2 text-lg font-semibold tracking-tight">{t("adminIntegrity.walSanity", "en")}</h2>
               <div className="text-xs text-[var(--color-text-muted)]">{report.walReport.filePath}</div>
               <div className="mt-2 text-sm">
@@ -379,7 +379,7 @@ export default async function AdminIntegrityUserPage({ params, searchParams }: A
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+          <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
             <h2 className="mb-3 text-lg font-semibold tracking-tight">{t("adminIntegrity.detectedIssues", "en")}</h2>
             {report.issues.length === 0 ? (
               <div className="text-sm text-[var(--color-text-muted)]">{t("adminIntegrity.noIssuesDetected", "en")}</div>

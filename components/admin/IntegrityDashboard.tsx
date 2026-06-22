@@ -114,7 +114,7 @@ const CategoryCard = memo(function CategoryCard({
 
   return (
     <div
-      className={`group border-l-2 ${statusBorderColor(status)} rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${def.accentRing} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+      className={`group border-l-2 ${statusBorderColor(status)} rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${def.accentRing} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
     >
       <div className="flex items-start gap-3">
         <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${def.iconBg} transition-transform duration-200 group-hover:scale-110`}>
@@ -380,7 +380,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
       ) : null}
 
       {/* Hero: Health Ring + Actions */}
-      <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-6 animate-fade-in-up">
+      <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-6 animate-fade-in-up">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
           {/* Ring */}
           <div className="shrink-0">
@@ -494,7 +494,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
 
       {/* Per-User Results (collapsible) */}
       {hasReport && !scanning && report.userSummaries.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <button
             type="button"
             onClick={() => setUsersExpanded((prev) => !prev)}
@@ -523,7 +523,7 @@ export default function IntegrityDashboard({ initialReport, initialHistory }: Pr
 
       {/* Scan History */}
       {history.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
             {t("adminIntegrity.scanHistory")}
