@@ -96,7 +96,7 @@ const StatCard = memo(function StatCard({
   accent: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-card-bg)] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className={`flex size-10 items-center justify-center rounded-lg ${accent}`}>
         <Icon className="size-5 text-[var(--color-text-on-accent)]" />
       </div>
@@ -170,10 +170,10 @@ const UserCard = memo(function UserCard({ user, rank }: { user: UserProfile; ran
       href={`/admin/users/${encodeURIComponent(user.email)}`}
       className={`group block rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         isTopPerformer
-          ? "border-t-2 border-t-[var(--color-status-warning)] border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm"
+          ? "border-t-2 border-t-[var(--color-status-warning)] border-[var(--color-glass-border)] bg-[var(--color-card-bg)]"
           : user.totalEntries === 0
           ? "border-[var(--color-glass-border)] bg-[var(--color-body-bg)]/50"
-          : "border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm"
+          : "border-[var(--color-glass-border)] bg-[var(--color-card-bg)]"
       } ${
         rank <= 8
           ? `animate-fade-in-up stagger-${rank}`
@@ -307,7 +307,7 @@ function FilterBar({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="sticky top-20 z-10 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-sm">
+    <div className="sticky top-20 z-10 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
@@ -318,7 +318,7 @@ function FilterBar({
             onChange={(e) => onChange({ ...filters, search: e.target.value })}
             placeholder={t("adminUsers.searchPlaceholder")}
             aria-label={t("adminUsers.searchAriaLabel")}
-            className="h-9 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
+            className="h-9 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-text-primary)]/10"
           />
         </div>
 
@@ -330,7 +330,7 @@ function FilterBar({
               onClick={() => onChange({ ...filters, role: r })}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
                 filters.role === r
-                  ? "bg-[var(--color-glass-bg)] backdrop-blur-sm text-[var(--color-text-primary)] shadow-sm"
+                  ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-sm"
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
@@ -347,7 +347,7 @@ function FilterBar({
               onClick={() => onChange({ ...filters, activity: a })}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
                 filters.activity === a
-                  ? "bg-[var(--color-glass-bg)] backdrop-blur-sm text-[var(--color-text-primary)] shadow-sm"
+                  ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-sm"
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
