@@ -222,7 +222,7 @@ export default function ActionHistoryTab() {
               {records.map((record) => (
                 <div
                   key={record.id}
-                  className="rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-colors hover:bg-[var(--color-dropdown-hover)]"
+                  className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 transition-colors hover:bg-[var(--color-dropdown-hover)]"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2 min-w-0">

@@ -203,7 +203,7 @@ export default function AdminConfirmationsClient() {
               return (
                 <div
                   key={rowKey}
-                  className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/20"
+                  className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgba(20,30,70,0.25)]"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     {/* Avatar + User Info */}
