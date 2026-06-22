@@ -304,7 +304,7 @@ export default function AccountPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="mt-10 rounded-2xl border border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] p-5">
+      <div className="mt-10 rounded-2xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] p-5">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[var(--color-status-error)]" />
           <div className="flex-1">
@@ -317,7 +317,7 @@ export default function AccountPage() {
             type="button"
             onClick={() => setShowClearConfirm(true)}
             disabled={clearing || loading}
-            className="shrink-0 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] px-4 py-2 text-sm font-medium text-[var(--color-status-error)] transition-colors hover:bg-[var(--color-status-error-bg)] disabled:opacity-60"
+            className="shrink-0 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-card-bg)] px-4 py-2 text-sm font-medium text-[var(--color-status-error)] transition-colors hover:bg-[var(--color-status-error-bg)] disabled:opacity-60"
           >
             {clearing ? (
               <span className="flex items-center gap-2">
@@ -365,7 +365,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={() => { setShowClearConfirm(false); setClearConfirmText(""); }}
                 disabled={clearing}
-                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-glass-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
+                className="rounded-lg border border-[var(--color-input-border)] bg-[var(--color-surface-inset)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-dropdown-hover)]"
               >
                 Keep My Data
               </button>
