@@ -1,4 +1,7 @@
+import { deriveAccentTokens, ACCENT_TOKEN_KEYS, normaliseAccent } from "./accent";
+
 export type ThemeMode = "light" | "dark" | "color";
+/** Retained only for migrating old saved preferences → an accent hex. */
 export type ColorPalette = "midnight-lime" | "deep-ocean" | "carbon-violet" | "obsidian-amber";
 
 export interface ThemeTokens {
@@ -462,41 +465,26 @@ export const COLOR_PALETTES: Record<ColorPalette, Partial<ThemeTokens>> = {
   },
 };
 
-/** Extract only accent/primary tokens from a palette for dark mode merging. */
-function darkPaletteOverrides(palette: Partial<ThemeTokens> | undefined): Partial<ThemeTokens> {
-  if (!palette) return {};
-  const accentKeys: (keyof ThemeTokens)[] = [
-    "--color-primary",
-    "--color-primary-light",
-    "--color-primary-hover",
-    "--color-accent",
-    "--color-accent-light",
-    "--color-input-focus-ring",
-    "--color-badge-bg",
-    "--color-badge-text",
-    "--color-button-primary-bg",
-    "--color-button-primary-hover",
-    "--color-generate-bg",
-    "--color-generate-hover",
-    "--color-header-tint",
-    "--color-glow-primary",
-    "--color-sidebar-active-bg",
-    "--color-sidebar-active-text",
-  ];
-  const overrides: Partial<ThemeTokens> = {};
-  for (const key of accentKeys) {
-    if (palette[key]) overrides[key] = palette[key];
-  }
-  return overrides;
-}
-
-export function resolveTokens(mode: ThemeMode, palette: ColorPalette): ThemeTokens {
-  const safePalette = COLOR_PALETTES[palette] ?? COLOR_PALETTES["midnight-lime"];
+/**
+ * Resolve the full token set for a mode + custom accent.
+ *
+ * `accent` is any saved accent value (hex, "h,s,l", or a legacy preset name) —
+ * normalised + clamped to a readable hex, then expanded into the accent family.
+ * Dark mode merges only the accent keys onto DARK_BASE (band-from/to stay
+ * near-black, as before); light/color merge the whole family incl. the band.
+ */
+export function resolveTokens(mode: ThemeMode, accent: string): ThemeTokens {
+  const accentHex = normaliseAccent(accent);
+  const family = deriveAccentTokens(accentHex);
   if (mode === "dark") {
-    return { ...DARK_BASE, ...darkPaletteOverrides(safePalette) };
+    const darkAccent: Partial<ThemeTokens> = {};
+    for (const key of ACCENT_TOKEN_KEYS) {
+      const v = family[key];
+      if (v !== undefined) darkAccent[key] = v;
+    }
+    return { ...DARK_BASE, ...darkAccent };
   }
-  if (mode === "color") return { ...LIGHT_BASE, ...safePalette };
-  return { ...LIGHT_BASE };
+  return { ...LIGHT_BASE, ...family };
 }
 
 /**
@@ -506,8 +494,8 @@ export function resolveTokens(mode: ThemeMode, palette: ColorPalette): ThemeToke
  * light-mode users flash the dark fallback from globals.css until
  * ThemeProvider's useEffect runs.
  */
-export function buildThemeCss(mode: ThemeMode, palette: ColorPalette): string {
-  const tokens = resolveTokens(mode, palette);
+export function buildThemeCss(mode: ThemeMode, accent: string): string {
+  const tokens = resolveTokens(mode, accent);
   const vars = Object.entries(tokens)
     .map(([key, value]) => `${key}:${value}`)
     .join(";");
