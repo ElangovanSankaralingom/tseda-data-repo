@@ -45,7 +45,7 @@ export default function InlineConfirm({
   const textClass = variant === "danger" ? "text-[var(--color-status-error)]" : "text-amber-900";
   const btnClass =
     variant === "danger"
-      ? "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] hover:bg-red-600 hover:text-[var(--color-text-on-accent)]"
+      ? "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] hover:bg-[var(--color-status-error)] hover:text-[var(--color-text-on-accent)]"
       : "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)] hover:bg-amber-600 hover:text-[var(--color-text-on-accent)]";
 
   return (

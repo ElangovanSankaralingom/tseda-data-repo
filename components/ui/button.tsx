@@ -11,7 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)] shadow-sm hover:bg-[var(--color-button-primary-hover)]",
         destructive:
-          "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] hover:bg-red-600 hover:text-[var(--color-text-on-accent)] focus-visible:ring-red-500/20",
+          "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] hover:bg-[var(--color-status-error)] hover:text-[var(--color-text-on-accent)] focus-visible:ring-[var(--color-status-error-border)]",
         outline:
           "border border-[var(--color-input-border)] bg-[var(--color-glass-bg)] shadow-xs hover:bg-[var(--color-dropdown-hover)] text-[var(--color-text-primary)]",
         secondary:

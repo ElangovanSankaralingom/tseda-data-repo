@@ -303,7 +303,7 @@ export default function ResetPage() {
           type="button"
           onClick={() => { setShowConfirm(true); setConfirmText(""); }}
           disabled={selected.size === 0 || clearing}
-          className="rounded-xl bg-red-600 px-6 py-3 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-[var(--color-status-error)] px-6 py-3 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-[var(--color-status-error-strong)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {clearing ? (
             <span className="flex items-center gap-2">
@@ -360,7 +360,7 @@ export default function ResetPage() {
                 type="button"
                 onClick={() => void handleClear()}
                 disabled={confirmText !== "CLEAR"}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-[var(--color-status-error)] px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-[var(--color-status-error-strong)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Yes, Clear Data
               </button>

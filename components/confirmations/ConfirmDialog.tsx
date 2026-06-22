@@ -46,7 +46,7 @@ const TYPE_CONFIG: Record<
 
 const CONFIRM_STYLE: Record<string, string> = {
   primary: "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)] hover:bg-[var(--color-button-primary-hover)]",
-  danger: "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] hover:bg-red-600 hover:text-[var(--color-text-on-accent)]",
+  danger: "bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] hover:bg-[var(--color-status-error)] hover:text-[var(--color-text-on-accent)]",
   warning: "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)] hover:bg-amber-600 hover:text-[var(--color-text-on-accent)]",
 };
 

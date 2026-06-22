@@ -373,7 +373,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={() => void handleClearData()}
                 disabled={clearConfirmText.toLowerCase() !== (draft.email || "").toLowerCase() || clearing}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-[var(--color-status-error)] px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] transition-colors hover:bg-[var(--color-status-error-strong)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {clearing ? t("common.processing") : t("common.delete")}
               </button>

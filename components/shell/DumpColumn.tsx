@@ -153,7 +153,7 @@ const NoteCard = memo(function NoteCard({
                 <button type="button" onClick={() => onStartEdit(dump)} className="flex size-6 items-center justify-center rounded transition-colors hover:bg-[var(--color-border-subtle)]" aria-label="Edit note">
                   <Pencil className="size-3" style={{ color: "var(--color-icon-muted)" }} />
                 </button>
-                <button type="button" onClick={() => onDelete(dump.id)} className="flex size-6 items-center justify-center rounded transition-colors hover:bg-red-500/[0.08]" aria-label="Delete note">
+                <button type="button" onClick={() => onDelete(dump.id)} className="flex size-6 items-center justify-center rounded transition-colors hover:bg-[var(--color-status-error-bg)]" aria-label="Delete note">
                   <Trash2 className="size-3" style={{ color: "var(--color-icon-muted)" }} />
                 </button>
               </div>
