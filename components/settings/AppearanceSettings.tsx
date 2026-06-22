@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { Moon, Sun, RotateCcw, AlertTriangle } from "lucide-react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   hexToHsl,
   hslToHex,
@@ -121,8 +122,30 @@ export default function AppearanceSettings() {
   const satTrack = `linear-gradient(to right, hsl(${hsl.h}, ${SAT_MIN_PCT}%, ${lPct}%), hsl(${hsl.h}, 100%, ${lPct}%))`;
   const lightTrack = `linear-gradient(to right, hsl(${hsl.h}, ${sPct}%, ${LIGHT_MIN_PCT}%), hsl(${hsl.h}, ${sPct}%, ${LIGHT_MAX_PCT}%))`;
 
+  // Beta acknowledgment popup: shown when switching INTO a beta option
+  // (dark mode / Tamil). The switch is applied only after the user clicks Okay.
+  const [pendingBeta, setPendingBeta] = useState<null | "dark" | "tamil">(null);
+
   function handleTheme(target: "light" | "dark") {
-    setMode(target === "light" ? "light" : "dark");
+    if (target === "dark" && !isDark) {
+      setPendingBeta("dark");
+      return;
+    }
+    setMode(target);
+  }
+
+  function handleLanguage(target: Language) {
+    if (target === "ta" && language !== "ta") {
+      setPendingBeta("tamil");
+      return;
+    }
+    setLanguage(target);
+  }
+
+  function confirmBeta() {
+    if (pendingBeta === "dark") setMode("dark");
+    else if (pendingBeta === "tamil") setLanguage("ta");
+    setPendingBeta(null);
   }
 
   const cardStyle = {
@@ -253,7 +276,7 @@ export default function AppearanceSettings() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setLanguage(key)}
+                onClick={() => handleLanguage(key)}
                 className={`flex flex-1 items-center gap-3 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
                   selected
                     ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
@@ -277,6 +300,16 @@ export default function AppearanceSettings() {
         {language === "ta" && <BetaNotice>{t("appearance.tamilBetaNotice")}</BetaNotice>}
       </section>
       </div>
+
+      <ConfirmDialog
+        open={pendingBeta !== null}
+        title={pendingBeta === "tamil" ? t("appearance.tamilBetaTitle") : t("appearance.darkBetaTitle")}
+        description={pendingBeta === "tamil" ? t("appearance.tamilBetaNotice") : t("appearance.darkBetaNotice")}
+        confirmLabel={t("common.okay")}
+        cancelLabel={t("confirm.cancel")}
+        onConfirm={confirmBeta}
+        onCancel={() => setPendingBeta(null)}
+      />
     </div>
   );
 }
