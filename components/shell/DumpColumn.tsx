@@ -89,8 +89,8 @@ const NoteCard = memo(function NoteCard({
             : "var(--color-card-bg)",
           border: isFirst ? "1.5px solid var(--color-border-default)" : "1px solid var(--color-border-subtle)",
           boxShadow: isFirst
-            ? `0 4px 16px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.05), -3px 0 12px -4px ${accent.glow}`
-            : "0 1px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.03)",
+            ? `0 4px 16px -8px rgba(20,30,70,0.12), 0 1px 3px rgba(20,30,70,0.06), -3px 0 12px -4px ${accent.glow}`
+            : "0 1px 4px rgba(20,30,70,0.05)",
         }}
       >
         {/* Left accent bar — full height, with glow */}
@@ -313,7 +313,7 @@ export default function DumpColumn() {
         style={{
           borderRadius: 14,
           background: "var(--color-surface-raised)",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.06)",
+          boxShadow: "0 4px 20px -10px rgba(20,30,70,0.12), 0 1px 3px rgba(20,30,70,0.06)",
           border: "1px solid var(--color-border-default)",
         }}
       >
