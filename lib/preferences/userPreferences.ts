@@ -6,13 +6,17 @@ import { getDataRoot, safeEmailDir } from "@/lib/userStore";
 
 export interface UserPreferences {
   themeMode: "light" | "dark" | "color";
+  /** Legacy preset name — retained for migration to accentHex. */
   colorPalette: string;
+  /** Custom accent as a clamped hex (e.g. "#2A48CE"). */
+  accentHex: string;
   language: "en" | "ta";
 }
 
 const DEFAULTS: UserPreferences = {
   themeMode: "dark",
   colorPalette: "midnight-lime",
+  accentHex: "#2A48CE",
   language: "en",
 };
 

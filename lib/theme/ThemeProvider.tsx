@@ -7,23 +7,29 @@ import {
   type ColorPalette,
   type ThemeTokens,
 } from "./themeTokens";
+import { normaliseAccent, DEFAULT_ACCENT_HEX } from "./accent";
 import type { Language } from "@/lib/i18n";
 
 interface ThemeContextValue {
   mode: ThemeMode;
-  palette: ColorPalette;
+  /** Current accent as a clamped hex (e.g. "#2A48CE"). */
+  accent: string;
   language: Language;
   setMode: (mode: ThemeMode) => void;
-  setPalette: (palette: ColorPalette) => void;
+  /** Apply an accent live WITHOUT persisting — for slider drags. */
+  previewAccent: (accent: string) => void;
+  /** Set the accent from any value (hex / "h,s,l"); it is clamped + persisted. */
+  setAccent: (accent: string) => void;
   setLanguage: (language: Language) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   mode: "dark",
-  palette: "midnight-lime",
+  accent: DEFAULT_ACCENT_HEX,
   language: "en",
   setMode: () => {},
-  setPalette: () => {},
+  previewAccent: () => {},
+  setAccent: () => {},
   setLanguage: () => {},
 });
 
@@ -42,33 +48,34 @@ function applyTokens(tokens: ThemeTokens, isDark: boolean) {
 export default function ThemeProvider({
   children,
   initialMode,
+  initialAccent,
   initialPalette,
   initialLanguage,
 }: {
   children: React.ReactNode;
   initialMode?: ThemeMode;
+  initialAccent?: string;
+  /** Legacy preset name — used only to migrate users with no saved accent yet. */
   initialPalette?: ColorPalette;
   initialLanguage?: Language;
 }) {
   const [mode, setModeState] = useState<ThemeMode>(initialMode ?? "dark");
-  const [palette, setPaletteState] = useState<ColorPalette>(
-    initialPalette ?? "midnight-lime",
+  const [accent, setAccentState] = useState<string>(() =>
+    normaliseAccent(initialAccent ?? initialPalette),
   );
   const [language, setLanguageState] = useState<Language>(
     initialLanguage ?? "en",
   );
 
   useEffect(() => {
-    const tokens = resolveTokens(mode, palette);
+    const tokens = resolveTokens(mode, accent);
     applyTokens(tokens, mode === "dark");
     /* Mirror theme to cookies so PUBLIC pages (signin, maintenance) can
-       first-paint in the user's last-known theme via the root layout —
-       without this they fall back to the dark :root block and light-mode
-       users get a jarring dark splash. */
+       first-paint in the user's last-known theme via the root layout. */
     const year = 60 * 60 * 24 * 365;
     document.cookie = `tseda-mode=${mode}; path=/; max-age=${year}; samesite=lax`;
-    document.cookie = `tseda-palette=${palette}; path=/; max-age=${year}; samesite=lax`;
-  }, [mode, palette]);
+    document.cookie = `tseda-accent=${encodeURIComponent(accent)}; path=/; max-age=${year}; samesite=lax`;
+  }, [mode, accent]);
 
   const persistPreferences = useCallback(
     (update: Record<string, string>) => {
@@ -89,10 +96,15 @@ export default function ThemeProvider({
     [persistPreferences],
   );
 
-  const setPalette = useCallback(
-    (newPalette: ColorPalette) => {
-      setPaletteState(newPalette);
-      persistPreferences({ colorPalette: newPalette });
+  const previewAccent = useCallback((value: string) => {
+    setAccentState(normaliseAccent(value));
+  }, []);
+
+  const setAccent = useCallback(
+    (value: string) => {
+      const hex = normaliseAccent(value);
+      setAccentState(hex);
+      persistPreferences({ accentHex: hex });
     },
     [persistPreferences],
   );
@@ -107,7 +119,7 @@ export default function ThemeProvider({
 
   return (
     <ThemeContext.Provider
-      value={{ mode, palette, language, setMode, setPalette, setLanguage }}
+      value={{ mode, accent, language, setMode, previewAccent, setAccent, setLanguage }}
     >
       {children}
     </ThemeContext.Provider>

@@ -5,10 +5,10 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import Providers from "./providers";
 import NavigationProgress from "@/components/ui/NavigationProgress";
-import { buildThemeCss, type ThemeMode, type ColorPalette } from "@/lib/theme/themeTokens";
+import { buildThemeCss, type ThemeMode } from "@/lib/theme/themeTokens";
+import { normaliseAccent } from "@/lib/theme/accent";
 
 const COOKIE_MODES: readonly ThemeMode[] = ["light", "dark", "color"];
-const COOKIE_PALETTES: readonly ColorPalette[] = ["midnight-lime", "deep-ocean", "carbon-violet", "obsidian-amber"];
 
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],
@@ -40,14 +40,15 @@ export default async function RootLayout({
      this with server-stored prefs in app/(protected)/layout.tsx. */
   const jar = await cookies();
   const rawMode = jar.get("tseda-mode")?.value as ThemeMode | undefined;
-  const rawPalette = jar.get("tseda-palette")?.value as ColorPalette | undefined;
+  const rawAccent = jar.get("tseda-accent")?.value;
+  const rawPalette = jar.get("tseda-palette")?.value; // legacy cookie (migration)
   const mode: ThemeMode = rawMode && COOKIE_MODES.includes(rawMode) ? rawMode : "dark";
-  const palette: ColorPalette = rawPalette && COOKIE_PALETTES.includes(rawPalette) ? rawPalette : "midnight-lime";
+  const accent = normaliseAccent(rawAccent ? decodeURIComponent(rawAccent) : rawPalette);
 
   return (
     <html lang="en" className={`${hanken.variable} ${GeistMono.variable}`}>
       <body className="antialiased">
-        <style dangerouslySetInnerHTML={{ __html: buildThemeCss(mode, palette) }} />
+        <style dangerouslySetInnerHTML={{ __html: buildThemeCss(mode, accent) }} />
         <script
           dangerouslySetInnerHTML={{
             __html: `document.documentElement.classList.toggle("dark",${mode === "dark"});`,

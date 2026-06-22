@@ -7,6 +7,7 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { NextResponse } from "next/server";
 import { csrfGuard } from "@/lib/security/csrf";
+import { normaliseAccent } from "@/lib/theme/accent";
 
 const VALID_THEME_MODES = ["light", "dark", "color"] as const;
 const VALID_PALETTES = ["midnight-lime", "deep-ocean", "carbon-violet", "obsidian-amber"] as const;
@@ -80,6 +81,15 @@ export async function PUT(request: Request) {
       return apiError("Invalid colorPalette", { status: 400 });
     }
     update.colorPalette = body.colorPalette;
+  }
+
+  if (body.accentHex !== undefined) {
+    // Accept a 6-digit hex (with/without #) or an "h,s,l" triple; store normalised.
+    const v = typeof body.accentHex === "string" ? body.accentHex.trim() : "";
+    if (!/^#?[0-9a-fA-F]{6}$/.test(v) && !/^\d+(?:\.\d+)?,\d+(?:\.\d+)?,\d+(?:\.\d+)?$/.test(v)) {
+      return apiError("Invalid accentHex", { status: 400 });
+    }
+    update.accentHex = normaliseAccent(v);
   }
 
   if (body.language !== undefined) {

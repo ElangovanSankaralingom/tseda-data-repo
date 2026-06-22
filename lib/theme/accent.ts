@@ -17,18 +17,44 @@ export type Hsl = { h: number; s: number; l: number };
 /** Readable window: hue is free; sat/lightness stay where white text reads on the band. */
 export const ACCENT_SAT_MIN = 0.42;
 export const ACCENT_SAT_MAX = 1;
-export const ACCENT_LIGHT_MIN = 0.38;
-export const ACCENT_LIGHT_MAX = 0.58;
-
-export function clampAccentHsl({ h, s, l }: Hsl): Hsl {
-  return {
-    h: ((Math.round(h) % 360) + 360) % 360,
-    s: Math.min(ACCENT_SAT_MAX, Math.max(ACCENT_SAT_MIN, s)),
-    l: Math.min(ACCENT_LIGHT_MAX, Math.max(ACCENT_LIGHT_MIN, l)),
-  };
-}
+export const ACCENT_LIGHT_MIN = 0.24;
+export const ACCENT_LIGHT_MAX = 0.6;
+/** Minimum white-text-on-accent contrast the hero bands must keep. */
+const WHITE_CONTRAST_TARGET = 3.5;
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+
+function relLuminance([r, g, b]: [number, number, number]): number {
+  const f = (c: number) => {
+    const x = c / 255;
+    return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+function whiteContrast(rgb: [number, number, number]): number {
+  return 1.05 / (relLuminance(rgb) + 0.05);
+}
+
+/**
+ * Clamp to the readable window, THEN — because HSL lightness is not perceptual
+ * luminance (a green at L49 is far brighter than a blue at L49) — darken just
+ * enough that white text on the accent keeps a legible contrast on the bands.
+ */
+export function clampAccentHsl({ h, s, l }: Hsl): Hsl {
+  const hh = ((Math.round(h) % 360) + 360) % 360;
+  const ss = Math.min(ACCENT_SAT_MAX, Math.max(ACCENT_SAT_MIN, s));
+  let ll = Math.min(ACCENT_LIGHT_MAX, Math.max(ACCENT_LIGHT_MIN, l));
+  let guard = 0;
+  while (
+    whiteContrast(hslToRgb({ h: hh, s: ss, l: ll })) < WHITE_CONTRAST_TARGET &&
+    ll > ACCENT_LIGHT_MIN &&
+    guard++ < 80
+  ) {
+    ll = Math.max(ACCENT_LIGHT_MIN, ll - 0.01);
+  }
+  return { h: hh, s: ss, l: ll };
+}
 
 function hslToRgb({ h, s, l }: Hsl): [number, number, number] {
   const c = (1 - Math.abs(2 * l - 1)) * s;

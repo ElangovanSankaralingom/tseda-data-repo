@@ -10,7 +10,8 @@ import { signin } from "@/lib/entryNavigation";
 import { getUserPreferences } from "@/lib/preferences/userPreferences";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { buildThemeCss } from "@/lib/theme/themeTokens";
-import type { ThemeMode, ColorPalette } from "@/lib/theme/themeTokens";
+import type { ThemeMode } from "@/lib/theme/themeTokens";
+import { normaliseAccent } from "@/lib/theme/accent";
 import type { Language } from "@/lib/i18n";
 
 export default async function ProtectedLayout({
@@ -29,12 +30,13 @@ export default async function ProtectedLayout({
 
   const prefs = getUserPreferences(normalizeEmail(email));
   const mode = prefs.themeMode as ThemeMode;
-  const palette = prefs.colorPalette as ColorPalette;
+  // Prefer the saved custom accent; fall back to a legacy preset name (migration).
+  const accent = normaliseAccent(prefs.accentHex || prefs.colorPalette);
 
   return (
     <ThemeProvider
       initialMode={mode}
-      initialPalette={palette}
+      initialAccent={accent}
       initialLanguage={prefs.language as Language}
     >
       {/* First-paint theming: resolved tokens + .dark class BEFORE hydration.
@@ -42,7 +44,7 @@ export default async function ProtectedLayout({
           specificity, later in source order); the inline script is parser-
           blocking, so the class is correct before anything below it paints.
           ThemeProvider takes over on the client after hydration. */}
-      <style dangerouslySetInnerHTML={{ __html: buildThemeCss(mode, palette) }} />
+      <style dangerouslySetInnerHTML={{ __html: buildThemeCss(mode, accent) }} />
       <script
         dangerouslySetInnerHTML={{
           __html: `document.documentElement.classList.toggle("dark",${mode === "dark"});`,
