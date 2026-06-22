@@ -296,7 +296,7 @@ export default function ShellClient({
                     style={{
                       background: "var(--color-dropdown-bg)",
                       borderColor: "var(--color-border-default)",
-                      boxShadow: "0 20px 60px rgba(0,0,0,0.35), 0 0 0 1px var(--color-border-subtle), inset 0 1px 0 var(--color-border-subtle)",
+                      boxShadow: "0 1px 2px rgba(20,30,70,0.06), 0 20px 60px -28px rgba(20,30,70,0.35), 0 0 0 1px var(--color-border-subtle)",
                     }}
                   >
                     {/* Top accent bar */}
@@ -309,7 +309,7 @@ export default function ShellClient({
                           className="flex size-9 items-center justify-center rounded-xl text-sm font-black text-[var(--color-button-primary-text)]"
                           style={{
                             backgroundColor: "var(--color-primary)",
-                            boxShadow: "0 0 16px var(--color-glow-primary), 0 4px 12px rgba(0,0,0,0.3)",
+                            boxShadow: "0 0 16px var(--color-glow-primary), 0 4px 12px -4px rgba(20,30,70,0.20)",
                           }}
                         >
                           T
