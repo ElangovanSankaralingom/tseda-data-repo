@@ -232,7 +232,7 @@ export default function AccountPage() {
         </div>
       ) : null}
 
-      <div>
+      <div className="inline-flex max-w-full rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] p-1.5">
         <div className="flex flex-wrap gap-2">
           {(
             [
@@ -250,7 +250,7 @@ export default function AccountPage() {
                 "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
                 activeTab === key
                   ? "bg-[var(--color-button-primary-bg)] text-[var(--color-text-on-accent)] shadow-sm scale-100"
-                  : "bg-[var(--color-dropdown-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-dropdown-hover)] scale-[0.97] hover:scale-100"
+                  : "bg-[var(--color-card-bg)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] hover:bg-[var(--color-badge-bg)] hover:text-[var(--color-text-primary)] scale-[0.97] hover:scale-100"
               )}
             >
               {label}
