@@ -122,7 +122,7 @@ export default async function AdminSearchPage({ searchParams }: AdminSearchPageP
       </SectionCard>
 
       {error ? (
-        <div className="mt-4 rounded-xl border border-[var(--color-error)]/20 bg-[var(--color-error)]/10 px-3 py-2 text-sm text-[var(--color-error)]">
+        <div className="mt-4 rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)]">
           {error}
         </div>
       ) : null}
