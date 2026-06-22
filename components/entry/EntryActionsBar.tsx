@@ -280,7 +280,7 @@ function EditModeActionBar({
             className="fixed inset-0 bg-[var(--color-modal-overlay)] backdrop-blur-sm"
             onClick={() => setShowFinaliseConfirm(false)}
           />
-          <div className="relative w-full max-w-sm rounded-2xl bg-[var(--color-modal-bg)] shadow-2xl shadow-black/40 border border-[var(--color-glass-border)] backdrop-blur-2xl animate-scale-in">
+          <div className="relative w-full max-w-sm rounded-2xl bg-[var(--color-modal-bg)] shadow-2xl border border-[var(--color-glass-border)] backdrop-blur-2xl animate-scale-in">
             <div className="px-6 pt-6 pb-5">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">

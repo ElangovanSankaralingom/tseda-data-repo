@@ -6,14 +6,14 @@ export function getEntryListCardClass(category: EntryDisplayCategory, status?: s
   const borderLeft = status ? statusBorderClasses(status) : "";
 
   if (category === "completed") {
-    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-primary)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 hover:shadow-lg hover:shadow-black/20 transition-all duration-300`;
+    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-primary)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 hover:shadow-lg transition-all duration-300`;
   }
 
   if (category === "streak_active") {
-    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-palette-amber-fg)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-[0_0_12px_rgba(249,115,22,0.06)] hover:shadow-lg hover:shadow-black/20 transition-all duration-300`;
+    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-palette-amber-fg)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-[0_0_12px_rgba(249,115,22,0.06)] hover:shadow-lg transition-all duration-300`;
   }
 
-  return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-text-muted)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 hover:shadow-lg hover:shadow-black/20 transition-all duration-300`;
+  return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-text-muted)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 hover:shadow-lg transition-all duration-300`;
 }
 
 /*

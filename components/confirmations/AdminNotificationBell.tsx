@@ -153,7 +153,7 @@ export default function AdminNotificationBell({
 
       {/* Panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[420px] max-h-[70vh] overflow-hidden rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl shadow-2xl shadow-black/40 animate-scale-in max-sm:fixed max-sm:inset-x-4 max-sm:right-auto max-sm:w-auto">
+        <div className="absolute right-0 top-full mt-2 w-[420px] max-h-[70vh] overflow-hidden rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl shadow-2xl animate-scale-in max-sm:fixed max-sm:inset-x-4 max-sm:right-auto max-sm:w-auto">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--color-glass-border)] bg-[var(--color-primary)]/5 px-4 py-3">
             <div className="flex items-center gap-2">

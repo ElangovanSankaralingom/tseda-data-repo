@@ -50,7 +50,7 @@ function StatCard({
           : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-xl shadow-sm",
         accent,
         /* Hover — lift + glow */
-        !hasGradient && "hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/20 hover:border-[var(--color-primary)]/15"
+        !hasGradient && "hover:-translate-y-1.5 hover:shadow-xl hover:border-[var(--color-primary)]/15"
       )}
     >
       {/* Ambient glow on hover */}
@@ -68,8 +68,7 @@ function StatCard({
         <div
           className={cn(
             "flex size-11 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg",
-            hasGradient ? "bg-[var(--color-surface-on-accent-strong)]" : iconBg ?? "bg-[var(--color-glass-hover)]",
-            !hasGradient && "group-hover:shadow-black/10"
+            hasGradient ? "bg-[var(--color-surface-on-accent-strong)]" : iconBg ?? "bg-[var(--color-glass-hover)]"
           )}
         >
           <Icon

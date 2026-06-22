@@ -28,7 +28,7 @@ export default function Toast({ toast, position = "inline", className, onDismiss
   if (position === "fixed") {
     return (
       <div className="fixed right-4 top-20 z-50 animate-slide-in-right" role={ariaRole} aria-live={ariaLive}>
-        <div className={cn("flex items-center gap-2 rounded-xl border backdrop-blur-xl px-3 py-2 text-sm shadow-lg shadow-black/20", colors, className)}>
+        <div className={cn("flex items-center gap-2 rounded-xl border backdrop-blur-xl px-3 py-2 text-sm shadow-lg", colors, className)}>
           <span className="flex-1">{toast.msg}</span>
           {dismissButton}
         </div>

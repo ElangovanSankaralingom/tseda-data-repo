@@ -52,6 +52,11 @@ const HARD_BANS = [
     hint: "use --color-text-* / surface / border tokens (text on saturated accents: --color-text-on-accent)",
   },
   {
+    name: "shadow-black/white utility",
+    re: /\b(?:hover:|group-hover:|focus:|focus-visible:)?shadow-(?:black|white)(?:\/[0-9.]+)?\b/g,
+    hint: "shadow color is overridden by the globals light/dark .shadow-* elevation — drop shadow-black/white; the soft-ink shadow-{sm..2xl} is already styled by globals.css",
+  },
+  {
     name: "raw white rgba surface",
     re: /rgba\(\s*255\s*,\s*255\s*,\s*255/g,
     lineExempt: (line) => line.includes("inset"), // kept glass-edge highlights inside box-shadows

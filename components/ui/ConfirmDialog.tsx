@@ -69,7 +69,7 @@ export default function ConfirmDialog({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 w-full max-w-md rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-modal-bg)] backdrop-blur-2xl p-5 shadow-2xl shadow-black/40 animate-scale-in"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-modal-bg)] backdrop-blur-2xl p-5 shadow-2xl animate-scale-in"
       >
         <h2 className="text-base font-semibold tracking-tight text-[var(--color-text-primary)]">{title}</h2>
         {description ? (

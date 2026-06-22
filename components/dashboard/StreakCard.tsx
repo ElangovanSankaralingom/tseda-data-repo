@@ -96,7 +96,7 @@ function StreakCard({
           className={cn(
             "flex size-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300",
             hasValue ? config.iconBg : "bg-[var(--color-skeleton-base)]",
-            "group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-black/10"
+            "group-hover:scale-110 group-hover:shadow-lg"
           )}
         >
           <Icon

@@ -186,7 +186,7 @@ export default function FacultySelect({
       />
 
       {open ? (
-        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl shadow-black/40">
+        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl">
           {fetching ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">Searching...</div>
           ) : filteredOptions.length === 0 ? (

@@ -82,7 +82,7 @@ function CalendarGrid({
 
   return (
     <div
-      className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-3 shadow-2xl shadow-black/40"
+      className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-3 shadow-2xl"
       style={{ width: 280 }}
       onMouseDown={(e) => e.preventDefault()}
     >
