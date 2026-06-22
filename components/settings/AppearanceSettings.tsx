@@ -48,34 +48,6 @@ function AccentSlider({
   );
 }
 
-function ThemePreview() {
-  return (
-    <div className="rounded-xl overflow-hidden border border-[var(--color-glass-border)]">
-      <div
-        className="h-10 flex items-center px-4 border-b border-[var(--color-glass-border)]"
-        style={{ backgroundColor: `color-mix(in srgb, var(--color-header-tint) 40%, var(--color-glass-bg) 60%)` }}
-      >
-        <div className="flex gap-1.5">
-          <div className="size-2 rounded-full bg-[var(--color-text-muted)]/30" />
-          <div className="size-2 rounded-full bg-[var(--color-text-muted)]/30" />
-          <div className="size-2 rounded-full bg-[var(--color-text-muted)]/30" />
-        </div>
-        <span className="text-xs text-[var(--color-text-primary)] ml-3 font-medium opacity-70">T&apos;SEDA</span>
-      </div>
-      <div className="p-4 flex gap-2.5 bg-[var(--color-body-bg)]">
-        <div className="flex-1 rounded-lg p-3 border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)]">
-          <div className="w-3/5 h-2 rounded bg-[var(--color-text-primary)] opacity-15 mb-2" />
-          <div className="w-2/5 h-1.5 rounded bg-[var(--color-text-primary)] opacity-[0.08]" />
-        </div>
-        <div className="flex-1 rounded-lg p-3 border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)]">
-          <div className="w-1/2 h-2 rounded bg-[var(--color-text-primary)] opacity-15 mb-2" />
-          <div className="w-3/4 h-1.5 rounded bg-[var(--color-text-primary)] opacity-[0.08]" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function AppearanceSettings() {
   const { mode, accent, previewAccent, setAccent, language, setMode, setLanguage } = useTheme();
   const { t } = useTranslation();
@@ -225,14 +197,6 @@ export default function AppearanceSettings() {
               onChange={(v) => apply({ ...hsl, l: v / 100 })} onCommit={commit} />
           </div>
         </div>
-      </section>
-
-      {/* Live preview */}
-      <section className="rounded-2xl p-5" style={cardStyle}>
-        <div className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
-          Preview
-        </div>
-        <ThemePreview />
       </section>
 
       {/* Language */}
