@@ -170,7 +170,7 @@ export default function ExportDashboard({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-6 animate-fade-in-up">
+      <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-6 animate-fade-in-up">
         <div className="mb-5">
           <div className="text-sm font-semibold text-[var(--color-text-primary)]">{t("adminExport.customExport")}</div>
           <div className="text-xs text-[var(--color-text-secondary)]">{t("adminExport.customExportDesc")}</div>
@@ -234,7 +234,7 @@ export default function ExportDashboard({
               {t("adminExport.addFiltersOptional")}
             </button>
             {showFilters ? (
-              <div className="mt-3 space-y-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+              <div className="mt-3 space-y-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
                 <div>
                   <div className="mb-1 text-xs text-[var(--color-text-secondary)]">{t("adminExport.status")}</div>
                   <div className="flex flex-wrap gap-1.5">
@@ -288,7 +288,7 @@ export default function ExportDashboard({
               {t("adminExport.chooseFields")} ({selectedFields.length}/{fieldOptions.length})
             </button>
             {showFields ? (
-              <div className="mt-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+              <div className="mt-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
                 <div className="mb-2 flex gap-2">
                   <button
                     type="button"
@@ -322,7 +322,7 @@ export default function ExportDashboard({
             ) : null}
           </div>
 
-          <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4">
+          <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4">
             {loadingPreview ? (
               <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                 <RefreshCw className="size-3 animate-spin" /> {t("adminExport.loadingPreview")}
@@ -377,7 +377,7 @@ export default function ExportDashboard({
       </div>
 
       {history.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
             {t("adminExport.recentExports")}
@@ -387,7 +387,7 @@ export default function ExportDashboard({
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-6 text-center animate-fade-in-up">
+        <div className="rounded-2xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-inset)] p-6 text-center animate-fade-in-up">
           <div className="text-sm text-[var(--color-text-secondary)]">{t("adminExport.noExportsYet")}</div>
         </div>
       )}
