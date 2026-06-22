@@ -101,7 +101,7 @@ export default function ProfileDropdown({
           style={{
             background: "var(--color-dropdown-bg)",
             border: "1px solid var(--color-border-default)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border-subtle), inset 0 1px 0 var(--color-border-subtle)",
+            boxShadow: "0 1px 2px rgba(20,30,70,0.06), 0 20px 60px -28px rgba(20,30,70,0.35), 0 0 0 1px var(--color-border-subtle)",
           }}
         >
           {/* Top accent bar */}
@@ -118,7 +118,7 @@ export default function ProfileDropdown({
                 className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl"
                 style={{
                   border: "2px solid var(--color-border-default)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                  boxShadow: "0 4px 12px -4px rgba(20,30,70,0.18)",
                 }}
               >
                 {photoUrl ? (
