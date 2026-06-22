@@ -288,21 +288,21 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
         <div className="flex items-center gap-2">
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Download className="size-3.5" />
             {t("adminSettings.export")}
           </button>
           <button
             onClick={handleImport}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Upload className="size-3.5" />
             {t("adminSettings.import")}
           </button>
           <button
             onClick={() => setResetAllOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-status-error)] shadow-sm transition-all hover:bg-[var(--color-status-error-bg)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-status-error-border)] bg-[var(--color-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-status-error)] shadow-sm transition-all hover:bg-[var(--color-status-error-bg)]"
           >
             <RotateCcw className="size-3.5" />
             {t("adminSettings.resetAll")}
@@ -314,7 +314,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
         {/* Sidebar */}
         <nav aria-label={t("adminSettings.categoriesNavAriaLabel")} className="hidden lg:block">
-          <div className="sticky top-24 space-y-1 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-2 shadow-sm">
+          <div className="sticky top-24 space-y-1 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-2 shadow-sm">
             {CATEGORY_ORDER.map((cat) => {
               const Icon = CATEGORY_ICONS[cat];
               const meta = CATEGORY_META[cat];
@@ -411,7 +411,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           ))}
 
           {filteredSettings.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm py-16 text-center">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-inset)] py-16 text-center">
               <Search className="size-8 text-[var(--color-text-muted)] mb-3" />
               <div className="text-sm font-medium text-[var(--color-text-secondary)]">{t("adminSettings.noSettingsFound")}</div>
               <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("adminSettings.tryDifferentSearch")}</div>
@@ -436,7 +436,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
                   changelog.slice(0, 15).map((entry, i) => (
                     <div
                       key={`${entry.key}-${entry.changedAt}-${i}`}
-                      className="flex items-start gap-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-3 text-xs"
+                      className="flex items-start gap-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-3 text-xs"
                     >
                       <Clock className="mt-0.5 size-3.5 shrink-0 text-[var(--color-text-secondary)]" />
                       <div className="min-w-0 flex-1">
