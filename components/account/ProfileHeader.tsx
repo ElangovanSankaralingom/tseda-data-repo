@@ -15,8 +15,10 @@ export default function ProfileHeader({ draft, employeeLabel }: { draft: Profile
   }, [photo]);
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 animate-fade-in-up">
-      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8 animate-fade-in-up">
+      <div className="absolute inset-x-0 top-0 h-[3px] animate-bar-draw origin-center" style={{ background: "var(--color-text-on-accent)" }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(120% 80% at 6% -12%, var(--color-surface-on-accent), transparent 55%)" }} />
+      <div className="relative flex flex-col items-center gap-4 sm:flex-row sm:items-center">
         <div className="ring-4 ring-[var(--color-surface-on-accent-strong)] rounded-full shadow-lg transition-shadow duration-500">
           <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)]">
             {photo && !avatarLoadFailed ? (
