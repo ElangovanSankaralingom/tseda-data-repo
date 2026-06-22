@@ -947,6 +947,9 @@ export const en = {
     english: "English",
     tamil: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD",
     default: "Default",
+    beta: "Beta",
+    darkBetaNotice: "Dark mode is still in beta. Some text or elements may not display correctly yet \u2014 if something looks off, switch back to Light.",
+    tamilBetaNotice: "Tamil is still in beta. Some text is not translated yet and may appear in English or look out of place.",
   },
   common: {
     loading: "Loading...",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Moon, Sun, RotateCcw } from "lucide-react";
+import { Moon, Sun, RotateCcw, AlertTriangle } from "lucide-react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
@@ -44,6 +44,38 @@ function AccentSlider({
         className="accent-slider w-full"
         style={{ background: track }}
       />
+    </div>
+  );
+}
+
+function BetaBadge({ label }: { label: string }) {
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+      style={{
+        background: "var(--color-status-warning-bg)",
+        color: "var(--color-status-warning)",
+        border: "1px solid var(--color-status-warning-border)",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function BetaNotice({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="mt-3 flex items-start gap-2 rounded-xl px-3 py-2.5"
+      style={{
+        background: "var(--color-status-warning-bg)",
+        border: "1px solid var(--color-status-warning-border)",
+      }}
+    >
+      <AlertTriangle className="mt-0.5 size-3.5 shrink-0" style={{ color: "var(--color-status-warning)" }} />
+      <p className="text-[11px] leading-relaxed" style={{ color: "var(--color-status-warning)" }}>
+        {children}
+      </p>
     </div>
   );
 }
@@ -149,11 +181,15 @@ export default function AppearanceSettings() {
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]">
               <Moon className="size-4 text-[var(--color-text-muted)]" />
             </div>
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
-              {t("appearance.dark")}
+            <span className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                {t("appearance.dark")}
+              </span>
+              <BetaBadge label={t("appearance.beta")} />
             </span>
           </button>
         </div>
+        {isDark && <BetaNotice>{t("appearance.darkBetaNotice")}</BetaNotice>}
       </section>
 
       {/* Accent color — custom HSL picker */}
@@ -228,13 +264,17 @@ export default function AppearanceSettings() {
                   {char}
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-medium text-[var(--color-text-primary)]">{t(nameKey)}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-[var(--color-text-primary)]">{t(nameKey)}</span>
+                    {key === "ta" && <BetaBadge label={t("appearance.beta")} />}
+                  </div>
                   {subKey && <div className="text-xs text-[var(--color-text-secondary)]">{t(subKey)}</div>}
                 </div>
               </button>
             );
           })}
         </div>
+        {language === "ta" && <BetaNotice>{t("appearance.tamilBetaNotice")}</BetaNotice>}
       </section>
       </div>
     </div>
