@@ -94,6 +94,7 @@
   --color-status-error-bg: rgba(239, 128, 121, 0.10);
   --color-status-error-border: rgba(239, 128, 121, 0.20);
   --color-status-error-strong: #E5685F;
+  --shadow-ink: 0, 0, 0;
   --color-status-info: #4DB8E8;
   --color-status-info-bg: rgba(77, 184, 232, 0.10);
   --color-status-info-border: rgba(77, 184, 232, 0.20);

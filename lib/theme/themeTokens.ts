@@ -96,6 +96,9 @@ export interface ThemeTokens {
   "--color-status-error-bg": string;
   "--color-status-error-border": string;
   "--color-status-error-strong": string;
+  /* RGB triplet for inline elevation shadows — navy ink in light, black in dark,
+     so shell shadows keep softness in light and real elevation in dark. */
+  "--shadow-ink": string;
   "--color-status-info": string;
   "--color-status-info-bg": string;
   "--color-status-info-border": string;
@@ -231,6 +234,7 @@ export const LIGHT_BASE: ThemeTokens = {
   "--color-status-error-bg": "rgba(196, 54, 47, 0.10)",
   "--color-status-error-border": "rgba(196, 54, 47, 0.20)",
   "--color-status-error-strong": "#A52D27",
+  "--shadow-ink": "20, 30, 70",
   "--color-status-info": "#1E7FB0",
   "--color-status-info-bg": "rgba(30, 127, 176, 0.10)",
   "--color-status-info-border": "rgba(30, 127, 176, 0.20)",
@@ -351,6 +355,7 @@ export const DARK_BASE: ThemeTokens = {
   "--color-status-error-bg": "rgba(239, 128, 121, 0.10)",
   "--color-status-error-border": "rgba(239, 128, 121, 0.20)",
   "--color-status-error-strong": "#E5685F",
+  "--shadow-ink": "0, 0, 0",
   "--color-status-info": "#4DB8E8",
   "--color-status-info-bg": "rgba(77, 184, 232, 0.10)",
   "--color-status-info-border": "rgba(77, 184, 232, 0.20)",

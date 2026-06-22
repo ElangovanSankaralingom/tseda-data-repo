@@ -229,8 +229,8 @@ export default function ShellClient({
           className={cn(
             "pointer-events-auto mx-auto max-w-screen-2xl transition-all duration-500",
             scrolled
-              ? "rounded-2xl shadow-[0_0_0_1px_var(--color-border-default),0_2px_4px_rgba(20,30,70,0.06),0_18px_44px_-20px_rgba(20,30,70,0.30)]"
-              : "rounded-2xl shadow-[0_0_0_1px_var(--color-border-default),0_1px_2px_rgba(20,30,70,0.05),0_12px_30px_-16px_rgba(20,30,70,0.22)]"
+              ? "rounded-2xl shadow-[0_0_0_1px_var(--color-border-default),0_2px_4px_rgba(var(--shadow-ink),0.06),0_18px_44px_-20px_rgba(var(--shadow-ink),0.30)]"
+              : "rounded-2xl shadow-[0_0_0_1px_var(--color-border-default),0_1px_2px_rgba(var(--shadow-ink),0.05),0_12px_30px_-16px_rgba(var(--shadow-ink),0.22)]"
           )}
           style={{
             background: scrolled
@@ -296,7 +296,7 @@ export default function ShellClient({
                     style={{
                       background: "var(--color-dropdown-bg)",
                       borderColor: "var(--color-border-default)",
-                      boxShadow: "0 1px 2px rgba(20,30,70,0.06), 0 20px 60px -28px rgba(20,30,70,0.35), 0 0 0 1px var(--color-border-subtle)",
+                      boxShadow: "0 1px 2px rgba(var(--shadow-ink),0.06), 0 20px 60px -28px rgba(var(--shadow-ink),0.35), 0 0 0 1px var(--color-border-subtle)",
                     }}
                   >
                     {/* Top accent bar */}
@@ -309,7 +309,7 @@ export default function ShellClient({
                           className="flex size-9 items-center justify-center rounded-xl text-sm font-black text-[var(--color-button-primary-text)]"
                           style={{
                             backgroundColor: "var(--color-primary)",
-                            boxShadow: "0 0 16px var(--color-glow-primary), 0 4px 12px -4px rgba(20,30,70,0.20)",
+                            boxShadow: "0 0 16px var(--color-glow-primary), 0 4px 12px -4px rgba(var(--shadow-ink),0.20)",
                           }}
                         >
                           T
