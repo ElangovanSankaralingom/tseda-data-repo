@@ -49,7 +49,7 @@ function formatTimeAgo(isoString: string) {
 
 function StatTile({ icon, label, value, sub, accent = "var(--color-primary)" }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
-    <div className="group flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div
         className="flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-on-accent)] transition-transform duration-200 group-hover:scale-110"
         style={{ backgroundColor: accent }}
@@ -74,7 +74,7 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
   const { t } = useTranslation();
   if (!lastRun) {
     return (
-      <span className="rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-[var(--color-text-primary)]">
+      <span className="rounded-full border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-primary)]">
         {t("adminMaintenance.noRunsYet")}
       </span>
     );
@@ -96,7 +96,7 @@ function LastRunBadge({ lastRun }: { lastRun: NightlyMaintenanceSummary | null }
 
 const NightlyStepRow = memo(function NightlyStepRow({ label, step }: { label: string; step: { ok: true; data: Record<string, unknown> } | { ok: false; errorCode: string; message: string } }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-card-bg)] px-3 py-2">
       <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
       {step.ok ? (
         <span className="flex items-center gap-1 text-xs font-medium text-[var(--color-status-success)]">
@@ -265,7 +265,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
 
       {/* Last Nightly Run Summary */}
       {lastRun ? (
-        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Activity className="size-4 text-[var(--color-text-secondary)]" />
             {t("adminMaintenance.lastNightlyRun")}
@@ -292,7 +292,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
           {JOBS.map((job, index) => (
             <div
               key={job.id}
-              className={`group relative rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${job.accent} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+              className={`group relative rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 ${job.accent} animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
             >
               <div className="flex items-start gap-3">
                 <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${job.iconBg} transition-transform duration-200 group-hover:scale-110`}>
@@ -318,7 +318,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
                 type="button"
                 disabled={running[job.id]}
                 onClick={() => void runJob(job)}
-                className="mt-3 w-full rounded-lg border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-all duration-150 hover:bg-[var(--color-dropdown-hover)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {running[job.id] ? (
                   <span className="flex items-center justify-center gap-1.5">
@@ -335,7 +335,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
       </div>
 
       {/* Run Full Nightly */}
-      <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5">
+      <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5">
         <div className="flex flex-wrap items-center gap-3">
           <form action="/admin/maintenance/run" method="post">
             <button
@@ -353,7 +353,7 @@ export default function MaintenanceDashboard({ lastRun, stats, actionLog }: Prop
 
       {/* Action History */}
       {actionLog.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 animate-fade-in-up">
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 animate-fade-in-up">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
             <Clock className="size-4 text-[var(--color-text-secondary)]" />
             {t("adminMaintenance.recentActions")}
