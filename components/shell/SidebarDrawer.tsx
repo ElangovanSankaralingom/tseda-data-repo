@@ -82,11 +82,9 @@ export default function SidebarDrawer({
               style={{
                 background: "var(--color-sidebar-bg)",
                 boxShadow: [
-                  "0 16px 56px rgba(0,0,0,0.35)",
-                  "0 4px 16px rgba(0,0,0,0.25)",
+                  "0 16px 56px -24px rgba(20,30,70,0.30)",
+                  "0 4px 16px -8px rgba(20,30,70,0.18)",
                   "0 0 0 1px var(--color-border-subtle)",
-                  "inset 0 1px 0 rgba(255,255,255,0.05)",
-                  "inset 0 -1px 0 rgba(255,255,255,0.02)",
                 ].join(", "),
               }}
             >
