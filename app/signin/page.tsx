@@ -83,7 +83,7 @@ export default function SignInPage() {
       {/* Drifting blue orb */}
       <div aria-hidden="true" className="pointer-events-none fixed left-1/2 top-1/4 -z-10 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-primary)]/5 blur-3xl animate-glow-drift" />
       {/* Secondary blue orb */}
-      <div aria-hidden="true" className="pointer-events-none fixed right-1/4 bottom-1/4 -z-10 h-72 w-72 rounded-full bg-blue-500/3 blur-3xl animate-glow-drift" style={{ animationDelay: "-3s" }} />
+      <div aria-hidden="true" className="pointer-events-none fixed right-1/4 bottom-1/4 -z-10 h-72 w-72 rounded-full bg-[var(--color-primary)]/[0.03] blur-3xl animate-glow-drift" style={{ animationDelay: "-3s" }} />
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-5 py-10">
         <div className="w-full max-w-lg animate-page-enter">
