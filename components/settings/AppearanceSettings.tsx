@@ -66,8 +66,13 @@ export default function AppearanceSettings() {
     }
   }
 
+  const cardStyle = {
+    background: "var(--color-card-bg)",
+    border: "1px solid var(--color-border-default)",
+  } as const;
+
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <div className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
@@ -78,8 +83,13 @@ export default function AppearanceSettings() {
         </h1>
       </div>
 
+      {/* Outer card — opaque recessed panel; each setting is its own opaque card within */}
+      <div
+        className="space-y-4 rounded-3xl p-4 sm:p-5"
+        style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-default)" }}
+      >
       {/* Theme */}
-      <section>
+      <section className="rounded-2xl p-5" style={cardStyle}>
         <div className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
           {t("appearance.theme")}
         </div>
@@ -90,7 +100,7 @@ export default function AppearanceSettings() {
             className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
               !isDark
                 ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
+                : "border border-[var(--color-glass-border)] bg-[var(--color-surface-inset)] hover:border-[var(--color-text-muted)]"
             }`}
           >
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]">
@@ -106,7 +116,7 @@ export default function AppearanceSettings() {
             className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
               isDark
                 ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
+                : "border border-[var(--color-glass-border)] bg-[var(--color-surface-inset)] hover:border-[var(--color-text-muted)]"
             }`}
           >
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]">
@@ -120,7 +130,7 @@ export default function AppearanceSettings() {
       </section>
 
       {/* Accent color */}
-      <section>
+      <section className="rounded-2xl p-5" style={cardStyle}>
         <div className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
           {t("appearance.colorPalette")}
         </div>
@@ -156,18 +166,15 @@ export default function AppearanceSettings() {
       </section>
 
       {/* Live preview */}
-      <section>
+      <section className="rounded-2xl p-5" style={cardStyle}>
         <div className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
           Preview
         </div>
         <ThemePreview />
       </section>
 
-      {/* Divider */}
-      <div className="h-px bg-gradient-to-r from-transparent via-[var(--color-glass-border)] to-transparent" />
-
       {/* Language */}
-      <section>
+      <section className="rounded-2xl p-5" style={cardStyle}>
         <div className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
           {t("appearance.language")}
         </div>
@@ -188,7 +195,7 @@ export default function AppearanceSettings() {
                 className={`flex flex-1 items-center gap-3 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
                   selected
                     ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                    : "border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] hover:border-[var(--color-text-muted)]"
+                    : "border border-[var(--color-glass-border)] bg-[var(--color-surface-inset)] hover:border-[var(--color-text-muted)]"
                 }`}
               >
                 <div className="flex size-8 shrink-0 items-center justify-center text-lg font-medium text-[var(--color-text-primary)]">
@@ -203,6 +210,7 @@ export default function AppearanceSettings() {
           })}
         </div>
       </section>
+      </div>
     </div>
   );
 }
