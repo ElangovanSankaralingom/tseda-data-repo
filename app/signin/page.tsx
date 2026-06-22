@@ -162,6 +162,9 @@ export default function SignInPage() {
                   "animate-fade-in-up stagger-2"
                 )}
               >
+                {/* Brand exception: the multicolor Google "G" needs a light backing
+                    disc in BOTH light and dark mode, so bg-white/90 is intentional
+                    and mode-invariant (allowlisted in scripts/check-theme-tokens.mjs). */}
                 <span className="inline-flex items-center justify-center rounded-full bg-white/90 p-1 transition-transform duration-200 group-hover:rotate-[5deg] group-hover:scale-110">
                   <GoogleIcon className="h-5 w-5" />
                 </span>
