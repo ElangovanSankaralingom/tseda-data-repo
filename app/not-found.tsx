@@ -4,7 +4,7 @@ import { FileQuestion } from "lucide-react";
 export default function NotFound() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[var(--color-body-bg)] px-4">
-      <div className="w-full max-w-md rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] p-8 text-center shadow-sm">
+      <div className="w-full max-w-md rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-8 text-center shadow-sm">
         <FileQuestion className="mx-auto size-12 text-[var(--color-text-secondary)]" />
         <h1 className="mt-4 text-base font-medium text-[var(--color-text-primary)]">Page not found</h1>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
