@@ -265,7 +265,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-1.5 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-full border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-dropdown-hover)] disabled:opacity-50"
           >
             <RefreshCw className={`size-3 ${refreshing ? "animate-spin" : ""}`} />
             {t("adminAnalytics.refresh")}
@@ -363,7 +363,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Entry Trends */}
-      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-2">
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-2">
         <SH title={t("adminAnalytics.entryActivity")} description={t("adminAnalytics.entryActivityDesc")} />
         <AreaChart data={trendData} previousData={prevTrendData} />
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-[var(--color-text-secondary)]">
@@ -380,7 +380,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
 
       {/* Category Breakdown */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-3">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-3">
           <SH title={t("adminAnalytics.byCategoryChart")} description={t("adminAnalytics.entryDistribution")} />
           <DonutChart
             segments={categoryData.map((c) => ({
@@ -391,7 +391,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
             total={totalEntries}
           />
         </div>
-        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-4">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-4">
           <SH title={t("adminAnalytics.categoryComparison")} description={t("adminAnalytics.performanceByCategory")} />
           <div className="rounded-lg border border-[var(--color-divider)]">
             {categoryData
@@ -413,13 +413,13 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Leaderboard */}
-      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-5">
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-5">
         <SH title={t("adminAnalytics.topContributors")} description={t("adminAnalytics.topContributorsDesc")} />
         <Leaderboard users={snapshot.users} />
       </div>
 
       {/* Heatmap */}
-      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-6">
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-6">
         <SH title={t("adminAnalytics.whenPeopleWork")} description={t("adminAnalytics.whenPeopleWorkDesc")} />
         <Heatmap entries={snapshot.entries} />
       </div>
@@ -427,7 +427,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       {/* Streak + Edit Requests */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Streak funnel */}
-        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-7">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-7">
           <SH title={t("adminAnalytics.streakInsights")} description={t("adminAnalytics.streakInsightsDesc")} />
           <div className="grid gap-6 sm:grid-cols-2">
             <StreakFunnel
@@ -457,7 +457,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
         </div>
 
         {/* Edit request metrics */}
-        <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-8">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
           <SH title={t("adminAnalytics.editRequests")} description={t("adminAnalytics.editRequestsDesc")} />
           <div className="grid gap-4 grid-cols-3">
             <div className="text-center">
@@ -496,7 +496,7 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Data Health Summary */}
-      <div className="rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm animate-fade-in-up stagger-8">
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-8">
         <SH title={t("adminAnalytics.systemHealth")} description={t("adminAnalytics.systemHealthDesc")} />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Link
