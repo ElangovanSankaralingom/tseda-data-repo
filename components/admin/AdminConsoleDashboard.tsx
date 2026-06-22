@@ -41,7 +41,7 @@ const FeatureCardItem = memo(function FeatureCardItem({ card, index }: { card: F
   return (
     <Link
       href={card.href}
-      className={`group flex items-start gap-4 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 hover:border-[var(--color-primary)]/10 animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+      className={`group flex items-start gap-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgba(20,30,70,0.25)] hover:border-[var(--color-primary)]/30 animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
     >
       <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${card.accentBg} transition-transform duration-200 group-hover:scale-110`}>
         <Icon className={`size-6 ${card.accent}`} />
@@ -144,7 +144,7 @@ export default function AdminConsoleDashboard({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm animate-pulse" />
+            <div key={i} className="h-24 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] animate-pulse" />
           ))}
         </div>
       </div>
