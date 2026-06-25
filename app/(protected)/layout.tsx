@@ -5,7 +5,8 @@ import NetworkStatus from "@/components/NetworkStatus";
 import ShellClient from "@/app/ShellClient";
 import ThemeProvider from "@/lib/theme/ThemeProvider";
 import { authOptions } from "@/lib/auth";
-import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { isFacultyAllowed } from "@/lib/admin/facultyRegistry";
 import { signin } from "@/lib/entryNavigation";
 import { getUserPreferences } from "@/lib/preferences/userPreferences";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
@@ -24,7 +25,9 @@ export default async function ProtectedLayout({
   if (!session?.user?.email) redirect(signin());
 
   const email = session.user.email.toLowerCase();
-  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX) || !findFacultyByEmail(email)) {
+  // Registry-backed allowlist (seeded from the prior hardcoded list); inactive
+  // faculty are blocked, the root master is always allowed.
+  if (!email.endsWith(ALLOWED_EMAIL_SUFFIX) || !isFacultyAllowed(email)) {
     redirect(`${signin()}?error=AccessDenied`);
   }
 
