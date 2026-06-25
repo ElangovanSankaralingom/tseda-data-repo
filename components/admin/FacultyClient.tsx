@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { UserPlus, Users, Building2, X, Plus } from "lucide-react";
+import { UserPlus, Users, Building2, X, Plus, Download } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type FacultyStatus = "active" | "llp" | "inactive";
@@ -102,11 +102,16 @@ export default function FacultyClient({ initialConfig }: { initialConfig: Config
                     </div>
                     <div className="mt-0.5 truncate text-[11px] text-[var(--color-text-tertiary)]">{f.email}</div>
                   </div>
-                  <select value={f.status} disabled={busy} onChange={(e) => post({ action: "setStatus", email: f.email, status: e.target.value })} className="rounded-lg px-2.5 py-1.5 text-xs text-[var(--color-text-primary)] outline-none" style={inset}>
-                    <option value="active">{t("faculty.statusActive")}</option>
-                    <option value="llp">{t("faculty.statusLlp")}</option>
-                    <option value="inactive">{t("faculty.statusInactive")}</option>
-                  </select>
+                  <div className="flex items-center gap-1.5">
+                    <a href={`/api/admin/faculty/${encodeURIComponent(f.email)}/profile`} className="rounded-lg p-1.5 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]" style={inset} aria-label={t("faculty.downloadProfile")} title={t("faculty.downloadProfile")}>
+                      <Download className="size-3.5" />
+                    </a>
+                    <select value={f.status} disabled={busy} onChange={(e) => post({ action: "setStatus", email: f.email, status: e.target.value })} className="rounded-lg px-2.5 py-1.5 text-xs text-[var(--color-text-primary)] outline-none" style={inset}>
+                      <option value="active">{t("faculty.statusActive")}</option>
+                      <option value="llp">{t("faculty.statusLlp")}</option>
+                      <option value="inactive">{t("faculty.statusInactive")}</option>
+                    </select>
+                  </div>
                 </div>
                 {/* Departments */}
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">

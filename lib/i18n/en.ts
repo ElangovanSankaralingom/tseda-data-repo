@@ -1051,6 +1051,7 @@ export const en = {
     statusInactive: "Inactive (no sign-in)",
     unassigned: "Unassigned",
     assignDept: "Add to department",
+    downloadProfile: "Download full profile",
   },
   bin: {
     empty: "The bin is empty.",
