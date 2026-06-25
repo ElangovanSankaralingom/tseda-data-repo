@@ -5,6 +5,7 @@ import CoordinatorsClient from "@/components/admin/CoordinatorsClient";
 import { authOptions } from "@/lib/auth";
 import { canManageAdminUsers } from "@/lib/admin/roles";
 import { getCoordinatorsConfig } from "@/lib/admin/coordinators";
+import { getFormatTemplatesConfig } from "@/lib/export/formatTemplates";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { listAllUsers } from "@/lib/users/service";
@@ -21,6 +22,10 @@ export default async function AdminCoordinatorsPage() {
   const config = getCoordinatorsConfig();
   const users = await listAllUsers();
   const faculty = users.map((u) => ({ email: u.email, name: u.name || u.email }));
+  // Master-authored export formats that can be assigned to a coordinator type.
+  const masterTemplates = getFormatTemplatesConfig()
+    .templates.filter((t) => t.ownerScope === "master")
+    .map((t) => ({ id: t.id, label: t.label, category: t.category }));
 
   return (
     <AdminPageShell
@@ -30,7 +35,7 @@ export default async function AdminCoordinatorsPage() {
       iconName="Network"
       maxWidthClassName="max-w-5xl"
     >
-      <CoordinatorsClient initialConfig={config} faculty={faculty} />
+      <CoordinatorsClient initialConfig={config} faculty={faculty} masterTemplates={masterTemplates} />
     </AdminPageShell>
   );
 }

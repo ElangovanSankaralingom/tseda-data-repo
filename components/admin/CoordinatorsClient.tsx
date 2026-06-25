@@ -8,6 +8,7 @@ import { adminCoordinators } from "@/lib/entryNavigation";
 import type { CoordinatorsConfig, CoordinatorType } from "@/lib/admin/coordinators";
 
 type Faculty = { email: string; name: string };
+type MasterTemplate = { id: string; label: string; category: string };
 
 type Action =
   | { action: "upsertType"; type: Partial<CoordinatorType> }
@@ -23,9 +24,11 @@ const cardStyle = {
 export default function CoordinatorsClient({
   initialConfig,
   faculty,
+  masterTemplates = [],
 }: {
   initialConfig: CoordinatorsConfig;
   faculty: Faculty[];
+  masterTemplates?: MasterTemplate[];
 }) {
   const { t, categoryLabel } = useTranslation();
   const [config, setConfig] = useState<CoordinatorsConfig>(initialConfig);
@@ -45,6 +48,12 @@ export default function CoordinatorsClient({
     faculty.forEach((f) => m.set(f.email, f.name));
     return m;
   }, [faculty]);
+
+  const templateById = useMemo(() => {
+    const m = new Map<string, MasterTemplate>();
+    masterTemplates.forEach((tpl) => m.set(tpl.id, tpl));
+    return m;
+  }, [masterTemplates]);
 
   const post = useCallback(async (body: Action) => {
     setBusy(true);
@@ -103,6 +112,9 @@ export default function CoordinatorsClient({
 
   const assigneesForType = (typeId: string) =>
     config.assignments.filter((a) => a.typeIds.includes(typeId)).map((a) => a.email);
+
+  const setTypeTemplates = (type: CoordinatorType, exportTemplateIds: string[]) =>
+    post({ action: "upsertType", type: { ...type, exportTemplateIds } });
 
   return (
     <div className="space-y-6">
@@ -259,6 +271,44 @@ export default function CoordinatorsClient({
                       </span>
                     ))}
                   </div>
+
+                  {/* Assigned export formats (only meaningful with the export power) */}
+                  {type.powers.export && (
+                    <div className="mt-3 rounded-xl p-3" style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-subtle)" }}>
+                      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                        {t("coordinators.assignedFormats")}
+                      </div>
+                      {type.exportTemplateIds.length === 0 ? (
+                        <div className="mb-2 text-xs text-[var(--color-text-tertiary)]">{t("coordinators.noFormats")}</div>
+                      ) : (
+                        <div className="mb-2 flex flex-wrap gap-1.5">
+                          {type.exportTemplateIds.map((id) => (
+                            <span key={id} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[var(--color-text-secondary)]" style={{ background: "var(--color-card-bg)", border: "1px solid var(--color-border-default)" }}>
+                              {templateById.get(id)?.label ?? id}
+                              <button
+                                type="button"
+                                onClick={() => setTypeTemplates(type, type.exportTemplateIds.filter((x) => x !== id))}
+                                disabled={busy}
+                                aria-label={t("common.remove")}
+                                className="text-[var(--color-text-tertiary)] hover:text-[var(--color-status-error)]"
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <AssignPicker
+                        options={masterTemplates
+                          .filter((mt) => (type.categories as string[]).includes(mt.category) && !type.exportTemplateIds.includes(mt.id))
+                          .map((mt) => ({ email: mt.id, name: mt.label }))}
+                        disabled={busy}
+                        placeholder={t("coordinators.addFormat")}
+                        addLabel={t("coordinators.add")}
+                        onAdd={(id) => setTypeTemplates(type, [...type.exportTemplateIds, id])}
+                      />
+                    </div>
+                  )}
 
                   {/* Assignees */}
                   <div className="mt-4 rounded-xl p-3" style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-subtle)" }}>

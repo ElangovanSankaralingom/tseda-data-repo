@@ -1025,6 +1025,9 @@ export const en = {
     deleteConfirm: "Delete this type? Its assignments are removed.",
     noAssignees: "No one assigned yet.",
     needNameCategory: "Add a name and at least one category.",
+    assignedFormats: "Assigned export formats",
+    noFormats: "No formats assigned.",
+    addFormat: "Assign a format…",
   },
   bin: {
     empty: "The bin is empty.",
