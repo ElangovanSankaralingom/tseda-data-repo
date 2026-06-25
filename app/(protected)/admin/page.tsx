@@ -17,7 +17,7 @@ import {
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dashboard } from "@/lib/entryNavigation";
 import { isMasterAdmin } from "@/lib/admin";
-import { isApprovalCoordinator } from "@/lib/admin/coordinators";
+import { isApprovalCoordinator, isDeleteApprover } from "@/lib/admin/coordinators";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +42,7 @@ export default async function AdminConsolePage() {
     confirmations: canApproveConfirmations(email) || coordinator,
     users: canManageAdminUsers(email),
     coordinators: canManageAdminUsers(email),
+    bin: isDeleteApprover(email),
     settings: canAccessSettings(email),
     audit: canViewAudit(email),
     analytics: canViewAnalytics(email),

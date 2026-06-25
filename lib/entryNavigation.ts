@@ -53,6 +53,10 @@ export function adminCoordinators() {
   return "/admin/coordinators";
 }
 
+export function adminBin() {
+  return "/admin/bin";
+}
+
 export function adminUserProfile(email: string) {
   return `/admin/users/${encodeURIComponent(email)}`;
 }

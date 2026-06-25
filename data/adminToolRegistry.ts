@@ -2,6 +2,7 @@ import {
   FileEdit,
   Users,
   Network,
+  Trash2,
   BarChart3,
   Download,
   Shield,
@@ -71,6 +72,15 @@ export const ADMIN_TOOLS: AdminTool[] = [
     icon: Network,
     accentText: "text-[var(--color-palette-cyan-fg)]",
     accentBg: "bg-[var(--color-palette-cyan-bg)]",
+  },
+  {
+    id: "bin",
+    titleKey: "adminConsole.bin",
+    descriptionKey: "adminConsole.binDesc",
+    href: "/admin/bin",
+    icon: Trash2,
+    accentText: "text-[var(--color-palette-rose-fg)]",
+    accentBg: "bg-[var(--color-palette-rose-bg)]",
   },
   {
     id: "analytics",

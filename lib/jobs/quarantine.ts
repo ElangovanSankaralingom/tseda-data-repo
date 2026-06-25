@@ -170,6 +170,29 @@ export async function restoreFromQuarantine(trashId: string): Promise<{
   return { manifest, entry };
 }
 
+/** Read a single quarantine manifest by id (null if missing/malformed). */
+export async function getQuarantineManifest(trashId: string): Promise<TrashManifest | null> {
+  try {
+    const raw = await fs.readFile(path.join(trashDir(trashId), "manifest.json"), "utf8");
+    return JSON.parse(raw) as TrashManifest;
+  } catch {
+    return null;
+  }
+}
+
+/** Permanently remove one quarantine bundle (entry + files). Returns true if it existed. */
+export async function purgeQuarantineBundle(trashId: string): Promise<boolean> {
+  const dir = trashDir(trashId);
+  try {
+    await fs.access(dir);
+  } catch {
+    return false;
+  }
+  await fs.rm(dir, { recursive: true, force: true });
+  logger.info({ event: "quarantine.purge-one", trashId });
+  return true;
+}
+
 /** Purge quarantine bundles older than the retention window. Returns count purged. */
 export async function purgeExpiredQuarantine(now: number = Date.now()): Promise<number> {
   const cutoff = now - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
