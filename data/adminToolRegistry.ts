@@ -1,6 +1,7 @@
 import {
   FileEdit,
   Users,
+  UserCog,
   Network,
   Trash2,
   Columns,
@@ -64,6 +65,15 @@ export const ADMIN_TOOLS: AdminTool[] = [
     badgeType: "count",
     badgeColor: "bg-blue-500",
     metricKey: "newUsersThisMonth",
+  },
+  {
+    id: "faculty",
+    titleKey: "adminConsole.faculty",
+    descriptionKey: "adminConsole.facultyDesc",
+    href: "/admin/faculty",
+    icon: UserCog,
+    accentText: "text-[var(--color-palette-indigo-fg)]",
+    accentBg: "bg-[var(--color-palette-indigo-bg)]",
   },
   {
     id: "coordinators",

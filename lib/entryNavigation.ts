@@ -61,6 +61,10 @@ export function adminExportFormats() {
   return "/admin/export-formats";
 }
 
+export function adminFaculty() {
+  return "/admin/faculty";
+}
+
 export function adminUserProfile(email: string) {
   return `/admin/users/${encodeURIComponent(email)}`;
 }

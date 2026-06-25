@@ -14,6 +14,7 @@ import {
   Shield,
   ShieldCheck,
   Trash2,
+  UserCog,
   Users,
   Wrench,
   type LucideIcon,
@@ -34,6 +35,7 @@ const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
   Shield,
   ShieldCheck,
   Trash2,
+  UserCog,
   Users,
   Wrench,
 };
