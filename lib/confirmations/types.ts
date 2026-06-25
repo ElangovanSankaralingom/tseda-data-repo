@@ -120,6 +120,8 @@ export type AdminNotification = {
   actionLabel?: string;
   triggeredBy?: string;
   triggeredByName?: string;
+  /** Category this notification concerns — used to scope coordinator visibility. */
+  categoryKey?: string;
 };
 
 export type AdminNotificationStore = {

@@ -3,7 +3,9 @@
 // ---------------------------------------------------------------------------
 
 import { addAdminNotification } from "./adminNotificationStore";
-import type { AdminNotificationType } from "./types";
+import type { AdminNotification, AdminNotificationType } from "./types";
+import { canManageEditRequests } from "@/lib/admin/roles";
+import { getCoordinatorScope } from "@/lib/admin/coordinators";
 
 /**
  * Fire-and-forget admin notification creation. Logs errors but never throws.
@@ -17,6 +19,7 @@ export async function notifyAdmins(
     actionLabel?: string;
     triggeredBy?: string;
     triggeredByName?: string;
+    categoryKey?: string;
   },
 ): Promise<void> {
   try {
@@ -28,10 +31,34 @@ export async function notifyAdmins(
       actionLabel: options?.actionLabel,
       triggeredBy: options?.triggeredBy,
       triggeredByName: options?.triggeredByName,
+      categoryKey: options?.categoryKey,
     });
   } catch {
     // Never block the primary operation
   }
+}
+
+/**
+ * Scope the admin notification feed for a viewer.
+ *
+ * - Global approvers (master/reviewer) and any other admin role see everything
+ *   (unchanged behaviour).
+ * - A *pure* coordinator (edit-approval scope but NOT a global approver) sees
+ *   ONLY edit-request notifications in their assigned categories — never delete
+ *   requests, other categories, or admin-wide notices.
+ */
+export function filterVisibleAdminNotifications(
+  notifications: AdminNotification[],
+  email: string,
+): AdminNotification[] {
+  const scope = getCoordinatorScope(email);
+  const isPureCoordinator = scope.approveEdits && !canManageEditRequests(email);
+  if (!isPureCoordinator) return notifications;
+
+  const cats = new Set<string>(scope.categories);
+  return notifications.filter(
+    (n) => n.type === "edit_request" && !!n.categoryKey && cats.has(n.categoryKey),
+  );
 }
 
 /** Notify admins that a user requested edit access. */
@@ -39,8 +66,7 @@ export async function notifyAdminEditRequest(
   ownerEmail: string,
   ownerName: string | undefined,
   entryTitle: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _categoryKey: string,
+  categoryKey: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _entryId: string,
 ): Promise<void> {
@@ -54,6 +80,7 @@ export async function notifyAdminEditRequest(
       actionLabel: "Review",
       triggeredBy: ownerEmail,
       triggeredByName: displayName,
+      categoryKey,
     },
   );
 }
@@ -63,8 +90,7 @@ export async function notifyAdminDeleteRequest(
   ownerEmail: string,
   ownerName: string | undefined,
   entryTitle: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _categoryKey: string,
+  categoryKey: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _entryId: string,
 ): Promise<void> {
@@ -78,6 +104,7 @@ export async function notifyAdminDeleteRequest(
       actionLabel: "Review",
       triggeredBy: ownerEmail,
       triggeredByName: displayName,
+      categoryKey,
     },
   );
 }

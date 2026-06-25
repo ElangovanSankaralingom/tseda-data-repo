@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { getAdminUnreadCount } from "@/lib/confirmations/adminNotificationStore";
+import { getAdminNotifications } from "@/lib/confirmations/adminNotificationStore";
+import { filterVisibleAdminNotifications } from "@/lib/confirmations/adminNotificationHelpers";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function GET(request: Request) {
@@ -29,6 +30,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const count = await getAdminUnreadCount(email);
+  // Scope to what this viewer can see (pure coordinators → only their categories'
+  // edit requests), then count the unread ones for this viewer.
+  const visible = filterVisibleAdminNotifications(await getAdminNotifications(), email);
+  const count = visible.filter((n) => !n.readBy.includes(email)).length;
   return NextResponse.json({ count });
 }

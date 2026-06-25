@@ -249,7 +249,7 @@ PERMANENT PURGE  (entry + files + notifications removed; analytics invalidated)
 | E11 | Restoring an entry that was a streak **Win** | `streakPermanentlyRemoved` was set on delete-request; decide whether restore re-grants the Win (§11 Q? — default: do **not** silently re-grant). |
 | E12 | Export references a field Layer A disallows / schema removed | Template flagged invalid; export **warns**, never silently drops (§6). |
 | E13 | Template assigned to a type that later loses the category | Export intersects template categories with the actor's current scope; out-of-scope categories omitted with notice. |
-| E14 | Edit-request notification | Routed to the covering DLC(s) for that category (+ master on fallback/escalation), **not** broadcast to all admins (§9). |
+| E14 | Edit-request notification | **Resolved (P2e):** notifications carry their `categoryKey`; a pure coordinator's admin feed + unread count are filtered to only their categories' edit requests (deletes/other categories/admin-wide notices hidden). Masters/reviewers unchanged. |
 | E15 | Two masters edit coordinator/template config simultaneously | Last-write-wins today (file store). Need optimistic check or per-section locking to avoid clobber (§9). |
 | E16 | Reviewer/Export-Admin legacy users | **Resolved (Q5):** kept as global roles. Reviewer retains edit + delete approval; nothing is stripped. Coordinators are additive below them. |
 

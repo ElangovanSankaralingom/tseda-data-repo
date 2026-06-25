@@ -5,6 +5,7 @@ import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getAdminNotifications } from "@/lib/confirmations/adminNotificationStore";
+import { filterVisibleAdminNotifications } from "@/lib/confirmations/adminNotificationHelpers";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 export async function GET(request: Request) {
@@ -29,6 +30,6 @@ export async function GET(request: Request) {
     );
   }
 
-  const notifications = await getAdminNotifications();
+  const notifications = filterVisibleAdminNotifications(await getAdminNotifications(), email);
   return NextResponse.json({ notifications, viewerEmail: email });
 }
