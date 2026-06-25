@@ -273,7 +273,7 @@ BIN  (recoverable: entry.json + files + manifest), shown ONLY in the DLC's
 | E8 | A DLC holds multiple types | Effective scope = union of categories; powers = OR. |
 | E9 | A faculty who is also a DLC submits in their own category | Their entry's requests skip their own queue → master (E1). |
 | E10 | Delete approved → restore | Restore re-inserts entry + files from quarantine to prior workflow state. |
-| E11 | Restoring an entry that was a streak **Win** | `streakPermanentlyRemoved` was set on delete-request; decide whether restore re-grants the Win (§11 Q? — default: do **not** silently re-grant). |
+| E11 | Restoring an entry that was a streak **Win** | **Resolved (Q7):** restore **auto-restores the streak** — clears `streakPermanentlyRemoved` so the Win returns. |
 | E12 | Export references a field Layer A disallows / schema removed | Template flagged invalid; export **warns**, never silently drops (§6). |
 | E13 | Template assigned to a type that later loses the category | Export intersects template categories with the actor's current scope; out-of-scope categories omitted with notice. |
 | E14 | Edit-request notification | **Resolved (P2e):** notifications carry their `categoryKey`; a pure coordinator's admin feed + unread count are filtered to only their categories' edit requests (deletes/other categories/admin-wide notices hidden). Masters/reviewers unchanged. |
@@ -338,9 +338,8 @@ Each phase ships with gates (lint + tsc + tests) and is independently committabl
 
 6. ✅ *(P4, RESOLVED)* **Bin retention** — **manual only**; the DLC bin never
    auto-empties. No retention timer.
-7. *(P4)* **Streak-on-restore** — when a deleted streak **Win** is restored, does the
-   Win come back, or stay forfeited? **Defaulted to: stay forfeited** (confirm if you
-   want it auto-restored).
+7. ✅ *(P4, RESOLVED)* **Streak-on-restore** — restoring a binned entry **auto-restores
+   its streak** (clears `streakPermanentlyRemoved`); a Win that was deleted comes back.
 8. ✅ *(P4, RESOLVED)* **Admin-initiated delete** — **no**; every delete begins as a
    faculty request.
 9. ✅ *(P4, RESOLVED)* **Delete ownership** — the DLC (with `approveDeletes`) approves
