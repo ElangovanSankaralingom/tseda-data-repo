@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canViewAudit } from "@/lib/admin/roles";
+import { isApprovalCoordinator, getCoordinatorScope } from "@/lib/admin/coordinators";
 import { getRecentAuditEvents, getAuditStats } from "@/lib/admin/auditLog";
 import type { AuditAction } from "@/lib/admin/auditLog";
 import { isCategoryKey } from "@/lib/categories";
@@ -19,7 +20,8 @@ function isWalAction(value: string): value is AuditAction {
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
-  if (!email || !canViewAudit(email)) {
+  const isGlobal = canViewAudit(email);
+  if (!email || (!isGlobal && !isApprovalCoordinator(email))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -34,6 +36,10 @@ export async function GET(request: Request) {
   const mode = url.searchParams.get("mode");
 
   if (mode === "stats") {
+    // Aggregate stats are master/reviewer only (global view); coordinators get none.
+    if (!isGlobal) {
+      return NextResponse.json({ data: null });
+    }
     const result = await getAuditStats();
     if (!result.ok) {
       return NextResponse.json({ error: result.error.message }, { status: 500 });
@@ -56,6 +62,8 @@ export async function GET(request: Request) {
     userEmail,
     actorEmail,
     category: category && isCategoryKey(category) ? category : undefined,
+    // Coordinators are scoped to their categories; master/reviewer see all.
+    allowedCategories: isGlobal ? undefined : getCoordinatorScope(email).categories,
     action: action && isWalAction(action) ? action : undefined,
     entryId,
     fromISO,

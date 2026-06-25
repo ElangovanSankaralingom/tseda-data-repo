@@ -35,6 +35,8 @@ type RecentAuditOptions = {
   userEmail?: string;
   actorEmail?: string;
   category?: CategoryKey;
+  /** Viewer scope: when set, only events in these categories are returned. */
+  allowedCategories?: string[];
   action?: AuditAction;
   actions?: AuditAction[];
   fromISO?: string;
@@ -242,6 +244,7 @@ export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Pr
     const actionFilter = options.action;
     const actionsFilter = options.actions;
     const categoryFilter = options.category;
+    const allowedCategories = options.allowedCategories ? new Set(options.allowedCategories) : null;
     const entryIdFilter = options.entryId?.trim();
     const fromMs = options.fromISO ? Date.parse(options.fromISO) : Number.NaN;
     const toMs = options.toISO ? Date.parse(options.toISO) : Number.NaN;
@@ -253,6 +256,7 @@ export async function getRecentAuditEvents(options: RecentAuditOptions = {}): Pr
       if (ownerFilter && !parsed.event.userEmail.toLowerCase().includes(ownerFilter)) continue;
       if (actorFilter && !parsed.event.actorEmail.toLowerCase().includes(actorFilter)) continue;
       if (categoryFilter && parsed.event.category !== categoryFilter) continue;
+      if (allowedCategories && !allowedCategories.has(parsed.event.category)) continue;
       if (actionFilter && parsed.event.action !== actionFilter) continue;
       if (actionsFilter && actionsFilter.length > 0 && !(actionsFilter as string[]).includes(parsed.event.action)) continue;
       if (entryIdFilter && parsed.event.entryId !== entryIdFilter) continue;

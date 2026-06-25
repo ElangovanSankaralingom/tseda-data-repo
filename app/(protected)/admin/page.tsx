@@ -47,7 +47,7 @@ export default async function AdminConsolePage() {
     bin: isDeleteApprover(email),
     exportFormats: canExport(email) || exportCoord,
     settings: canAccessSettings(email),
-    audit: canViewAudit(email),
+    audit: canViewAudit(email) || coordinator,
     analytics: canViewAnalytics(email),
     search: canAccessAdminSearch(email),
     export: canExport(email),
