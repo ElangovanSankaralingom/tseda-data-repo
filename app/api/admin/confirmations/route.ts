@@ -4,6 +4,11 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { canManageEditRequests } from "@/lib/admin/roles";
+import {
+  isEditApprovalCoordinator,
+  filterPendingForCoordinator,
+  canApproveEditForCategory,
+} from "@/lib/admin/coordinators";
 import { getPendingRequests } from "@/lib/admin/pendingConfirmations";
 import {
   approveDelete,
@@ -33,12 +38,16 @@ import { csrfGuard } from "@/lib/security/csrf";
 export async function GET() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
-  if (!canManageEditRequests(email)) {
+  const isGlobal = canManageEditRequests(email);
+  if (!isGlobal && !isEditApprovalCoordinator(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const rows = await getPendingRequests();
-  return NextResponse.json(rows, { status: 200 });
+  // Coordinators see only EDIT requests in their scoped categories; global
+  // approvers (master/reviewer) see everything.
+  const visible = isGlobal ? rows : filterPendingForCoordinator(rows, email);
+  return NextResponse.json(visible, { status: 200 });
 }
 
 export async function PATCH(request: Request) {
@@ -47,7 +56,9 @@ export async function PATCH(request: Request) {
 
   const session = await getServerSession(authOptions);
   const adminEmail = normalizeEmail(session?.user?.email ?? "");
-  if (!canManageEditRequests(adminEmail)) {
+  // Coarse gate: must be a global approver OR an edit-approval coordinator.
+  // The precise per-decision + per-category check happens after parsing below.
+  if (!canManageEditRequests(adminEmail) && !isEditApprovalCoordinator(adminEmail)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -84,6 +95,18 @@ export async function PATCH(request: Request) {
     }
     if (decision !== "grant" && decision !== "reject" && decision !== "reject_delete" && decision !== "approve_delete") {
       return NextResponse.json({ error: "decision must be 'grant', 'reject', 'reject_delete', or 'approve_delete'" }, { status: 400 });
+    }
+
+    // Per-decision authorisation:
+    // - edit decisions (grant/reject): global approver OR a coordinator scoped to
+    //   this category (the engine additionally blocks self-approval).
+    // - delete decisions (approve_delete/reject_delete): master/reviewer only.
+    const isEditDecision = decision === "grant" || decision === "reject";
+    const authorized = isEditDecision
+      ? canApproveEditForCategory(adminEmail, categoryKey)
+      : canManageEditRequests(adminEmail);
+    if (!authorized) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     let updatedEntry;

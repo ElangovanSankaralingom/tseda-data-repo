@@ -12,6 +12,8 @@ import {
   canCoordinatorApproveEdit,
   canCoordinatorExport,
   canApproveEditForCategory,
+  isEditApprovalCoordinator,
+  filterPendingForCoordinator,
   listCoordinatorEmailsForCategory,
   slugifyTypeId,
 } from "../../lib/admin/coordinators.ts";
@@ -91,6 +93,41 @@ test("master can approve edits in any category; coordinator only in scope", asyn
     assert.equal(canApproveEditForCategory(ROOT_MASTER_EMAIL, "fdp-attended"), true);
     assert.equal(canApproveEditForCategory(COORD, "case-studies"), true);
     assert.equal(canApproveEditForCategory(COORD, "fdp-attended"), false);
+  } finally {
+    ctx.restore();
+    await ctx.cleanup();
+  }
+});
+
+test("edit-approval coordinator: queue is scoped to EDIT requests in their categories", async () => {
+  const ctx = await createTestDataRoot("coord-queue");
+  try {
+    upsertCoordinatorType({ id: "cs", label: "CS", categories: ["case-studies"], powers: { approveEdits: true, export: false } });
+    setCoordinatorAssignment(COORD, ["cs"]);
+    assert.equal(isEditApprovalCoordinator(COORD), true);
+
+    const rows = [
+      { categoryKey: "case-studies", status: "EDIT_REQUESTED" },
+      { categoryKey: "case-studies", status: "DELETE_REQUESTED" }, // deletes hidden
+      { categoryKey: "fdp-attended", status: "EDIT_REQUESTED" }, // out of scope
+    ];
+    const visible = filterPendingForCoordinator(rows, COORD);
+    assert.equal(visible.length, 1);
+    assert.equal(visible[0].categoryKey, "case-studies");
+    assert.equal(visible[0].status, "EDIT_REQUESTED");
+  } finally {
+    ctx.restore();
+    await ctx.cleanup();
+  }
+});
+
+test("an export-only coordinator is not an edit-approval coordinator", async () => {
+  const ctx = await createTestDataRoot("coord-export-only");
+  try {
+    upsertCoordinatorType({ id: "exp", label: "Exp", categories: ["case-studies"], powers: { approveEdits: false, export: true } });
+    setCoordinatorAssignment(COORD, ["exp"]);
+    assert.equal(isEditApprovalCoordinator(COORD), false);
+    assert.deepEqual(filterPendingForCoordinator([{ categoryKey: "case-studies", status: "EDIT_REQUESTED" }], COORD), []);
   } finally {
     ctx.restore();
     await ctx.cleanup();

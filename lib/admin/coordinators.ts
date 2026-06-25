@@ -267,6 +267,24 @@ export function canApproveEditForCategory(email: string, category: string): bool
   return canManageEditRequests(email) || canCoordinatorApproveEdit(email, category);
 }
 
+/** True if the person is an edit-approval coordinator in ANY category. */
+export function isEditApprovalCoordinator(email: string): boolean {
+  return getCoordinatorScope(email).approveEdits;
+}
+
+/**
+ * Filter a pending-request list to what an edit-approval coordinator may act on:
+ * EDIT requests only (never deletes), and only in their scoped categories.
+ */
+export function filterPendingForCoordinator<
+  T extends { categoryKey: string; status: string }
+>(rows: T[], email: string): T[] {
+  const scope = getCoordinatorScope(email);
+  if (!scope.approveEdits) return [];
+  const cats = new Set<string>(scope.categories);
+  return rows.filter((r) => r.status === "EDIT_REQUESTED" && cats.has(r.categoryKey));
+}
+
 /** Emails of coordinators who can approve edits in `category` — for notification routing. */
 export function listCoordinatorEmailsForCategory(category: string): string[] {
   if (!isCategoryKey(category)) return [];
