@@ -245,9 +245,12 @@ function isFieldFilled(entry: StreakProgressEntryLike, field: SchemaFieldDefinit
  * An entry is a "win" when:
  * - streak-eligible (streakEligible === true)
  * - NOT disqualified
- * - All mandatory fields complete
+ * - All MANDATORY (required) data fields complete — optional fields may be blank
  * - Valid (non-stale) PDF exists
  * - Entry is finalized (timer expired OR manually finalised)
+ *
+ * The field set here MUST match computeStreakProgressAggregate (required data
+ * fields only) so per-entry and aggregate win detection never disagree.
  */
 export function isEntryWon(
   entry: StreakProgressEntryLike,
@@ -263,8 +266,11 @@ export function isEntryWon(
   if (!hasPdfGenerated(entry)) return false;
   if (entry.pdfStale === true) return false;
 
-  // All user-facing (exportable) DATA fields must be filled — NOT file uploads
-  const userDataFields = fields.filter((f) => f.exportable !== false && f.upload !== true);
+  // Required, user-facing (exportable) DATA fields must be filled — NOT optional
+  // fields and NOT file uploads.
+  const userDataFields = fields.filter(
+    (f) => f.exportable !== false && f.upload !== true && f.required !== false
+  );
   return userDataFields.every((field) => isFieldFilled(entry, field));
 }
 

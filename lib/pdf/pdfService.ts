@@ -11,6 +11,12 @@ import { computeEditWindowExpiry, normalizeEntryStatus } from "@/lib/entries/wor
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { getCanonicalName, normalizeEmail } from "@/lib/facultyDirectory";
 import { checkStreakEligibility } from "@/lib/streakProgress";
+import {
+  getEditWindowDays,
+  getStreakBufferDays,
+  getPastEntryWindowDays,
+  isStreaksEnabled,
+} from "@/lib/settings/consumer";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
 import { buildEntryPdfData } from "@/lib/pdf/buildPdfData";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
@@ -57,8 +63,21 @@ async function getAuthorizedTceEmail() {
   return email;
 }
 
-function buildPdfPatch(entry: Entry, category: CategoryKey, pdfMeta: Entry["pdfMeta"]) {
-  const streakEligible = checkStreakEligibility(entry);
+type PdfPatchOptions = {
+  editWindowDays: number;
+  streakBufferDays: number;
+  pastEntryWindowDays: number;
+  streaksEnabled: boolean;
+};
+
+function buildPdfPatch(
+  entry: Entry,
+  category: CategoryKey,
+  pdfMeta: Entry["pdfMeta"],
+  opts: PdfPatchOptions,
+) {
+  // Streaks off → no new eligibility (existing counts are preserved elsewhere).
+  const streakEligible = opts.streaksEnabled && checkStreakEligibility(entry);
   const nowISO = pdfMeta?.generatedAtISO ?? new Date().toISOString();
 
   const currentStatus = normalizeEntryStatus(entry);
@@ -80,6 +99,10 @@ function buildPdfPatch(entry: Entry, category: CategoryKey, pdfMeta: Entry["pdfM
     patch.editWindowExpiresAt = computeEditWindowExpiry(nowISO, {
       endDate: (entry as Record<string, unknown>).endDate,
       streakEligible,
+    }, {
+      editWindowDays: opts.editWindowDays,
+      streakBufferDays: opts.streakBufferDays,
+      pastEntryWindowDays: opts.pastEntryWindowDays,
     });
   }
 
@@ -129,11 +152,24 @@ export async function generateAndPersistEntryPdf(args: GeneratePdfArgs) {
     bytes,
   });
 
+  const [editWindowDays, streakBufferDays, pastEntryWindowDays, streaksEnabled] =
+    await Promise.all([
+      getEditWindowDays(),
+      getStreakBufferDays(),
+      getPastEntryWindowDays(),
+      isStreaksEnabled(),
+    ]);
+
   const persisted = await updateEntry(
     args.email,
     args.category,
     entryId,
-    buildPdfPatch(entry as Entry, args.category, pdfMeta)
+    buildPdfPatch(entry as Entry, args.category, pdfMeta, {
+      editWindowDays,
+      streakBufferDays,
+      pastEntryWindowDays,
+      streaksEnabled,
+    })
   );
 
   return { pdfMeta, entry: persisted };

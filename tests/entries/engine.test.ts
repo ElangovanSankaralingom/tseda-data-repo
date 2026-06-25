@@ -126,6 +126,14 @@ describe("computeEditWindowExpiry", () => {
     const expected = new Date("2024-06-06T12:00:00.000Z").toISOString();
     assert.equal(expiry, expected);
   });
+
+  it("honors a custom past-entry window override", () => {
+    const generated = "2024-06-15T12:00:00.000Z";
+    const endDate = "2024-06-01"; // before generated → past entry
+    const expiry = computeEditWindowExpiry(generated, { endDate }, { pastEntryWindowDays: 4 });
+    const expected = new Date("2024-06-19T12:00:00.000Z").toISOString();
+    assert.equal(expiry, expected);
+  });
 });
 
 // ---------------------------------------------------------------------------

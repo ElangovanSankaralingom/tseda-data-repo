@@ -204,10 +204,14 @@ export default function DashboardWelcome({
           <span className="font-mono text-[11px] font-medium tracking-wider text-[var(--color-text-tertiary)]">
             {totalEntries} ENTRIES
           </span>
-          <div className="h-3 w-px bg-[var(--color-border-subtle)]" />
-          <span className="font-mono text-[11px] font-medium tracking-wider text-[var(--color-text-tertiary)]">
-            {streakActivated + streakWins} STREAKS
-          </span>
+          {streakActivated + streakWins > 0 && (
+            <>
+              <div className="h-3 w-px bg-[var(--color-border-subtle)]" />
+              <span className="font-mono text-[11px] font-medium tracking-wider text-[var(--color-text-tertiary)]">
+                {streakActivated + streakWins} STREAKS
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import { entryDetail } from "@/lib/entryNavigation";
 import { getEntryTitle } from "@/lib/search/getEntryTitle";
 import { logger } from "@/lib/logger";
 import { computeCanonicalStreakSnapshot, type StreakProgressAggregateEntry } from "@/lib/streakProgress";
+import { isStreaksEnabled } from "@/lib/settings/consumer";
 import { incrementStatusCount, isEntryStatus, ENTRY_STATUSES, type Entry } from "@/lib/types/entry";
 
 type DashboardEntry = Entry;
@@ -420,7 +421,22 @@ export async function getDashboardSummary(email: string): Promise<DashboardSumma
 
   try {
     const cached = await getCachedSummary(normalizedEmail);
-    return normalizeSummary(cached);
+    const summary = normalizeSummary(cached);
+
+    // Streaks off → hide streak counts everywhere (the underlying entry flags
+    // are untouched, so counts return intact when re-enabled). Gated OUTSIDE
+    // the cached compute so toggling the setting takes effect immediately.
+    if (!(await isStreaksEnabled())) {
+      summary.totals.streakActivatedCount = 0;
+      summary.totals.streakWinsCount = 0;
+      for (const categoryKey of CATEGORY_KEYS) {
+        summary.byCategory[categoryKey].streakActivatedCount = 0;
+        summary.byCategory[categoryKey].streakWinsCount = 0;
+      }
+      summary.streakActivatedRows = [];
+    }
+
+    return summary;
   } catch (error) {
     logError(error, "dashboard.getDashboardSummary");
     return emptySummary();

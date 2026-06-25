@@ -98,6 +98,16 @@ const SETTINGS: SettingDefinition[] = [
     group: "Edit Windows",
   },
   {
+    key: "entries.pastEntryWindow",
+    label: "Past Entry Edit Window",
+    description: "Days after Generate that past-dated (non-streak) entries remain editable",
+    category: "entries",
+    type: "number",
+    default: APP_CONFIG.entryLifecycle.pastEntryWindowDays,
+    validation: { min: 1, max: 30 },
+    group: "Edit Windows",
+  },
+  {
     key: "entries.requireEditReason",
     label: "Require Reason for Edit Request",
     description: "Whether users must provide a reason when requesting edit access",

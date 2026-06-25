@@ -571,3 +571,28 @@ test("per-category counts are also mutually exclusive", () => {
     3
   );
 });
+
+// --- Win rule: required-only (isEntryWon must match the aggregate) ---
+
+const WIN_FIELDS = [
+  { key: "title", required: true },
+  { key: "remarks", required: false },
+] as unknown as import("../../data/schemas/types.ts").SchemaFieldDefinition[];
+
+const finalizedBase = {
+  id: "w1",
+  streakEligible: true,
+  confirmationStatus: "GENERATED",
+  // edit window already expired → finalized
+  editWindowExpiresAt: "2020-01-01T00:00:00.000Z",
+  pdfGenerated: true,
+  pdfStale: false,
+};
+
+test("isEntryWon: wins when only an OPTIONAL field is blank", () => {
+  assert.equal(isEntryWon({ ...finalizedBase, title: "Filled" }, WIN_FIELDS), true);
+});
+
+test("isEntryWon: does NOT win when a REQUIRED field is blank", () => {
+  assert.equal(isEntryWon({ ...finalizedBase, remarks: "only optional" }, WIN_FIELDS), false);
+});

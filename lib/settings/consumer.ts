@@ -10,6 +10,10 @@ export async function getStreakBufferDays(): Promise<number> {
   return getSetting<number>("entries.streakEditBuffer");
 }
 
+export async function getPastEntryWindowDays(): Promise<number> {
+  return getSetting<number>("entries.pastEntryWindow");
+}
+
 export async function getAllowedDomain(): Promise<string> {
   return getSetting<string>("auth.allowedDomain");
 }

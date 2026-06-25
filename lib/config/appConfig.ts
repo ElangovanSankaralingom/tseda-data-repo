@@ -17,6 +17,7 @@ export const APP_CONFIG = {
   entryLifecycle: {
     defaultEditWindowDays: 3,
     streakEditWindowBufferDays: 8,
+    pastEntryWindowDays: 1,
     maxRequestsPerMonth: 3,
   },
   rateLimits: {

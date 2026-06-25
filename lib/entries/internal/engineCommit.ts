@@ -11,7 +11,7 @@ import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeEntry } from "@/lib/normalize";
 import { checkStreakEligibility } from "@/lib/streakProgress";
-import { getEditWindowDays, getStreakBufferDays } from "@/lib/settings/consumer";
+import { getEditWindowDays, getStreakBufferDays, getPastEntryWindowDays, isStreaksEnabled } from "@/lib/settings/consumer";
 import { validateAndSanitizeOrThrow } from "@/lib/validation/validateEntryPayload";
 import type { Entry } from "@/lib/types/entry";
 import { logger } from "@/lib/logger";
@@ -86,15 +86,18 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       trackedFromStatus = String(getWorkflowStatus(existing));
 
       const nowISO = new Date().toISOString();
-      const streakEligible = checkStreakEligibility(existing);
-      const [editWindowDays, streakBufferDays] = await Promise.all([
+      const [editWindowDays, streakBufferDays, pastEntryWindowDays, streaksEnabled] = await Promise.all([
         getEditWindowDays(),
         getStreakBufferDays(),
+        getPastEntryWindowDays(),
+        isStreaksEnabled(),
       ]);
+      // Streaks off → no new eligibility (existing counts are preserved elsewhere).
+      const streakEligible = streaksEnabled && checkStreakEligibility(existing);
       const editWindowExpiresAt = computeEditWindowExpiry(nowISO, {
         endDate: existing.endDate,
         streakEligible,
-      }, { editWindowDays, streakBufferDays });
+      }, { editWindowDays, streakBufferDays, pastEntryWindowDays });
       const updated = prepareEntryForWrite(
         {
           ...existing,
