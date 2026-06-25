@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { canAccessAdminConsole } from "@/lib/admin/roles";
+import { canAccessAdminConsole, canViewAudit } from "@/lib/admin/roles";
+import { getCoordinatorScope } from "@/lib/admin/coordinators";
 import { cachedApiSuccess, apiError, apiForbidden, apiUnauthorized } from "@/lib/api/apiResponse";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -47,6 +48,10 @@ export async function GET(request: Request) {
       ? (actionTypeParam as ActionType)
       : undefined;
 
-  const result = getActionHistory({ page, pageSize, actionType, category });
+  // Scoped trail: master/reviewer see all; a coordinator sees only their
+  // assigned categories' history.
+  const allowedCategories = canViewAudit(email) ? undefined : getCoordinatorScope(email).categories;
+
+  const result = getActionHistory({ page, pageSize, actionType, category, allowedCategories });
   return cachedApiSuccess(result, 30);
 }

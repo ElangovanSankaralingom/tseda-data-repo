@@ -75,6 +75,8 @@ export function getActionHistory(opts?: {
   pageSize?: number;
   actionType?: ActionType;
   category?: string;
+  /** Viewer scope: when set, only records in these categories are visible. */
+  allowedCategories?: string[];
 }): {
   records: ActionHistoryRecord[];
   total: number;
@@ -89,6 +91,10 @@ export function getActionHistory(opts?: {
   }
   if (opts?.category) {
     filtered = filtered.filter((r) => r.category === opts.category);
+  }
+  if (opts?.allowedCategories) {
+    const allowed = new Set(opts.allowedCategories);
+    filtered = filtered.filter((r) => allowed.has(r.category));
   }
 
   const page = opts?.page ?? 1;
