@@ -1046,6 +1046,7 @@ export const en = {
     selected: "Columns in order",
     selectHint: "Click a column on the left to add it. Reorder with the arrows.",
     create: "Create format",
+    download: "Download",
     existingTitle: "Saved formats",
     empty: "No formats yet. Create one above.",
     delete: "Delete",

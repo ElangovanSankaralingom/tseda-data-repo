@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Columns, Plus, Trash2, ArrowUp, ArrowDown, X, Check } from "lucide-react";
+import { Columns, Plus, Trash2, ArrowUp, ArrowDown, X, Check, Download } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type Field = { key: string; label: string };
@@ -237,6 +237,9 @@ export default function FormatsClient({
                   <div className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">{tpl.columns.length} {t("formats.columns")}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
+                  <a href={`/api/admin/export/format/${tpl.id}`} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]" style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-default)" }}>
+                    <Download className="size-3.5" />{t("formats.download")}
+                  </a>
                   <button type="button" onClick={() => startEdit(tpl)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]" style={{ background: "var(--color-surface-inset)", border: "1px solid var(--color-border-default)" }}>{t("common.edit")}</button>
                   {confirmDelete === tpl.id ? (
                     <>
