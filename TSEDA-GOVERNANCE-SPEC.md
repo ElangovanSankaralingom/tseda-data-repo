@@ -1,4 +1,13 @@
-# TSEDA Governance & Delegation — Design Spec (v0.3)
+# TSEDA Governance & Delegation — Design Spec (v0.4)
+
+> **v0.4 changelog:** export templates are now **per-category, not shared** —
+> each DLC authors their own for their category, the master authors + assigns too
+> (§6). Delete handling **reverses** the earlier model: the DLC for a category
+> **approves deletes AND owns the bin** (restore / permanent-delete); the bin is
+> **manual-only** (no auto-purge); faculty have **no bin**; **no** admin-initiated
+> deletes (§7). Adds an `approveDeletes` coordinator power (§4). Resolves Q3, Q4,
+> Q6, Q8 in §11; Q7 defaulted.
+
 
 > **v0.3 changelog:** resolved Q1 (master hierarchy — hodarch is the permanent
 > root; senarch is a removable master) and Q5 (legacy roles kept — REVIEWER stays
@@ -110,12 +119,12 @@ CoordinatorType {
   label:      string          // "Case Studies Coordinator"
   categories: CategoryKey[]   // non-empty; which data types this type governs
   powers: {
-    approveEdits:  boolean     // approve/reject EDIT requests in scope
-    export:        boolean     // export their categories' data
-    // approveDeletes is intentionally absent — deletes are master-only (§7)
+    approveEdits:    boolean   // approve/reject EDIT requests in scope
+    approveDeletes:  boolean   // approve DELETE requests + own the category bin (§7)
+    export:          boolean   // export their categories' data + author templates (§6)
     // editEntriesDirectly: deferred (see §11 Q2)
   }
-  exportTemplateIds: string[]  // templates the master assigned to this type (§6)
+  exportTemplateIds: string[]  // master-authored templates assigned to this type (§6)
 }
 
 CoordinatorAssignment {
@@ -125,8 +134,14 @@ CoordinatorAssignment {
 }
 ```
 
-- Per your decisions: DLC powers = **approve edit-requests + export**, scoped to the
-  type's categories. Delete approvals excluded by design.
+- DLC powers (each a master-toggled checkbox — "fully customisable matrix"):
+  **approve edits**, **approve deletes** (+ owns the category bin), **export**
+  (+ author templates) — all scoped to the type's categories.
+- **"Assign to profiles" = this assignment itself.** The master decides which
+  categories a type covers and which powers it holds; there is no per-faculty
+  narrowing — a coordinator always covers every faculty member in their categories.
+- **Audit visibility follows scope:** a master sees the entire activity trail; a
+  DLC sees only the trail for their assigned categories (§9).
 - **Validation:** a type with an empty `categories[]` is rejected (a coordinator of
   nothing is a footgun). A person with multiple types gets the union of scope.
 - Add/remove "types of DLC" = create/delete `CoordinatorType` records; assigning a
@@ -143,10 +158,11 @@ CoordinatorAssignment {
 | Generate / finalise own entry | ✅ | — | ✅ |
 | Request edit / delete (after lock) | ✅ (one action ever) | — | n/a |
 | **Approve/reject edit request** | — | ✅ *(own categories, not own entry)* | ✅ (all) |
-| **Approve/reject delete request** | — | ❌ | ✅ (all, not own entry) — *also REVIEWER (global)* |
-| **Admin-initiated delete** (spam/dupe) | — | ❌ *(or §11 Q8)* | ✅ → quarantine |
-| Export data | — | ✅ *(own categories, assigned templates)* | ✅ (all, all templates) |
-| Restore / permanently purge from quarantine | — | ❌ | ✅ |
+| **Approve/reject delete request** | — | ✅ *(approveDeletes power, own categories, not own entry)* | ✅ (all) — *also REVIEWER (global)* |
+| **Admin-initiated delete** (spam/dupe) | — | ❌ | ❌ — *deletes always start as a faculty request (Q8)* |
+| Export data + author templates | — | ✅ *(export power, own categories)* | ✅ (all) |
+| **Restore / permanently delete from the bin** | — | ✅ *(approveDeletes power, own categories)* | ✅ (all) |
+| View activity trail | — | ✅ *(own categories only)* | ✅ (everything) |
 | Define exportable scope (Layer A) | — | ❌ | ✅ |
 | Create/assign export templates | — | author own? *(§11 Q3)* | ✅ create + assign |
 | Manage coordinator types & assignments | — | ❌ | ✅ |
@@ -160,30 +176,41 @@ CoordinatorAssignment {
 the system at all: which categories, and which fields within them, are exportable.
 A field not in the allowed set can never appear in any template.
 
-**Layer B — Format templates (named, reusable).** A template is a saved column-order
-+ inclusion structure, e.g. **"NAAC Format"**, **"NIRF Format"**.
+**Layer B — Format templates (per-category, NOT shared).** A template is a saved
+column-order + inclusion for **one category**, e.g. a "NAAC" ordering of the
+case-studies columns. (A NAAC export across categories = one such template per
+category.)
 
 ```
 ExportTemplate {
-  id:    string
-  label: string                 // "NAAC Format"
-  perCategory: {
-    [category]: { columns: string[] }   // ordered field keys (subset of allowed)
-  }
-  createdBy: string
-  scope: "global"               // shared, reusable
+  id:        string
+  label:     string             // "NAAC", "NIRF", …
+  category:  CategoryKey        // a template belongs to ONE category
+  columns:   string[]           // ordered field keys of that category (subset of allowed)
+  createdBy: string             // a DLC email or a master
+  ownerScope: "dlc" | "master"  // who authored it
 }
 ```
 
-- **Master authors templates and assigns them** to coordinator types. Templates are
-  **shared/global**, so they surface in two places:
+- **Both DLCs and the master author templates.** A DLC (with the export power) may
+  create as many templates as they like **for their own category**; the master may
+  create templates for **any** category. A DLC may **edit/delete their own**
+  templates; the master may edit/delete any.
+- **Templates are category-scoped, not shared between DLCs.** A DLC sees, on their
+  export page: (a) the templates **they authored** for their categories, plus
+  (b) any **master-authored templates the master assigned** to their type
+  (`exportTemplateIds`). They never see another DLC's templates.
+- **The master assigns specific master-authored templates to specific DLC types**
+  — the "fully customisable matrix." This is in addition to the DLC's own.
+- Templates surface in two places:
   - **Master Export Admin page** (existing, master-only): the *all-data download* —
     lists **every** template, exports **all categories, all faculty** in the chosen
     format.
-  - **DLC export page**: lists only the templates the master **assigned** to that
-    coordinator's type, and exports **only that type's categories**.
-  - Same template, two data scopes — template controls *column order/inclusion*,
-    role controls *how much data*.
+  - **DLC export page**: lists the templates they **authored** for their categories
+    **plus** any the master **assigned** to their type, and exports **only their
+    categories' data**.
+  - Template controls *column order/inclusion*; role controls *how much data*
+    (master = all faculty/all categories; DLC = their categories).
 - **No silent corruption (fixes v0.1 E7).** If a template references a field that
   Layer A later disallows, is renamed, or is removed by a schema change, the template
   is **flagged invalid** in the admin UI and the export **warns** rather than silently
@@ -197,38 +224,38 @@ ExportTemplate {
 
 ---
 
-## 7. Delete lifecycle (rewritten in v0.2)
+## 7. Delete lifecycle (rewritten in v0.4 — DLC-owned bin)
 
 **Code reality to fix:** today only the *nightly auto-delete* routes through
 quarantine (`quarantineEntry`). The user-facing **approved delete** still hard-deletes
-(`approveDelete` → `deleteEntryRaw`, removing entry + files + dir + notifications).
-The recoverable promise is therefore unimplemented for the exact path faculty use.
+(`approveDelete` → `deleteEntryRaw`). P4 reroutes it into a recoverable, DLC-owned bin.
 
-Target lifecycle (P4 reroutes `approveDelete` through quarantine):
+Target lifecycle:
 
 ```
-Faculty requests delete  ──or──  Master-initiated delete (§11 Q8)
+Faculty requests delete            (the ONLY way a delete starts — no admin-initiated, Q8)
         │
         ▼
-Master approves   ──reject──▶  entry stays, permanentlyLocked (existing behaviour)
+DLC for the category approves   ──reject──▶  entry stays, permanentlyLocked
+(approveDeletes power; masters/reviewers may also approve)
         │
         ▼
-QUARANTINE (recoverable: entry.json + files + manifest)
+BIN  (recoverable: entry.json + files + manifest), shown ONLY in the DLC's
+      category-scoped bin — never to the faculty member (no user bin)
         │
-        ├── Master restore ──▶ entry returns to prior state (§8 E11 streak rule)
-        │
-        ▼  (auto, after N days — N = governance.quarantineRetentionDays, a setting)
-PERMANENT PURGE  (entry + files + notifications removed; analytics invalidated)
+        ├── DLC restore          ──▶ entry returns to prior state (§8 E11 streak rule)
+        └── DLC permanent-delete ──▶ entry + files removed; analytics invalidated
 ```
 
-- **Retention is a setting,** not the hardcoded `TRASH_RETENTION_DAYS = 30`.
-- **Grandfathering (§11 Q6).** Purge currently recomputes against *current* retention,
-  so lowering N would shorten the life of entries *already* quarantined. Decide
-  new-only vs retroactive (mirrors the timer decision).
-- **Restore ⇄ purge concurrency.** The nightly purge and a manual restore both
-  `rm` the trash dir. A bundle being restored must be locked/marked so the purge
-  skips it (avoid a destroy-during-restore race).
-- Only a master restores or purges. DLCs never see delete approvals or quarantine.
+- **Manual-only (Q6):** nothing in the bin auto-empties. There is **no** retention
+  timer / auto-purge for the DLC bin; entries persist until a DLC restores or
+  permanently deletes them by hand. (The pre-existing *nightly auto-delete*
+  quarantine is a separate, system-initiated path and keeps its own retention.)
+- **Bin is category-scoped to the DLC.** A DLC sees only their categories' binned
+  entries; masters see all. Faculty never see a bin.
+- **Who can act on the bin:** a DLC with `approveDeletes` for the category, or a
+  master. Restoring/permanent-deleting is gated the same way as delete approval.
+- **No admin-initiated delete (Q8):** every delete begins as a faculty request.
 
 ---
 
@@ -260,6 +287,10 @@ PERMANENT PURGE  (entry + files + notifications removed; analytics invalidated)
 - **Scoped notifications.** Edit-request notifications target the covering
   coordinator(s) for the entry's category; delete-requests target masters. Fallback
   and SLA escalation add the master queue. No more global admin broadcast.
+- **Scoped audit trail.** A master sees the **entire** activity trail; a DLC sees
+  **only their assigned categories'** trail entries. The audit store already records
+  `category` per event, so this is a per-viewer filter (same pattern as the queue
+  and notifications). Applies to the audit page + any audit API.
 - **Config-change audit.** Creating/editing/deleting coordinator types, assignments,
   templates, exportable scope, and retention writes to the admin action-history —
   principle 5, currently only partially wired.
@@ -296,27 +327,28 @@ Each phase ships with gates (lint + tsc + tests) and is independently committabl
    (non-removable); `senarch@tce.edu` is a removable master. Implemented + tested.
 2. *(P2)* **Direct edit by DLC?** You chose "approvals + export" — confirm DLCs may
    **not** directly edit faculty entries (only approve/reject requests).
-3. *(P3)* **DLC-authored templates?** Master authors + assigns. May a DLC also create
-   their own templates for their categories, or only use assigned ones?
-4. *(P3)* **Template granularity** — one template = a set of *per-category* column
-   orders (one "NAAC" spanning all categories), or one template per single category?
-   (Spec assumes the per-category map.)
+3. ✅ *(P3, RESOLVED)* **DLC-authored templates** — DLCs author their own (for their
+   categories); the master authors any + assigns specific ones to DLC types.
+4. ✅ *(P3, RESOLVED)* **Template granularity** — **per single category** (not a
+   spanning map). "NAAC across categories" = one template per category.
 5. ✅ *(P1, RESOLVED)* **Reviewer / Export-Admin legacy roles** — kept as global roles.
    Reviewer retains edit + delete approval; coordinators are additive below them.
 
-**New from the robustness review:**
+**Delete / bin (resolved in v0.4):**
 
-6. *(P4)* **Quarantine retention grandfathering** — when the master lowers N, does it
-   apply only to newly-quarantined entries, or retroactively shorten ones already in
-   the bin? (Mirrors the timer "new-only" decision.)
+6. ✅ *(P4, RESOLVED)* **Bin retention** — **manual only**; the DLC bin never
+   auto-empties. No retention timer.
 7. *(P4)* **Streak-on-restore** — when a deleted streak **Win** is restored, does the
-   Win come back, or stay forfeited? (E11; default proposed: stay forfeited.)
-8. *(P4)* **Admin-initiated delete** — should masters be able to remove a faculty
-   entry directly (spam/duplicate/error) → quarantine, in addition to faculty-requested
-   deletes? (Matrix currently marks this master-only if enabled.)
-9. *(P2)* **Single-master self-action fallback** — when only one master is active and
-   the action is on their own entry, block with "needs a second master" (proposed), or
-   allow it? (§3, E1.)
+   Win come back, or stay forfeited? **Defaulted to: stay forfeited** (confirm if you
+   want it auto-restored).
+8. ✅ *(P4, RESOLVED)* **Admin-initiated delete** — **no**; every delete begins as a
+   faculty request.
+9. ✅ *(P4, RESOLVED)* **Delete ownership** — the DLC (with `approveDeletes`) approves
+   deletes for their category AND owns the bin (restore / permanent-delete); masters
+   also can. Overrides the earlier "master-only deletes."
+
+**Still genuinely open:** Q7 (streak-on-restore default), the single-master
+self-action fallback (§3, deferred), and confirming edge rules E1–E16 (§8).
 
 **Confirm the edge rules E1–E16 (§8)** — especially E1 (self-approval incl. masters),
 E6/E7 (fallback + SLA), and E12 (no silent export drop).
