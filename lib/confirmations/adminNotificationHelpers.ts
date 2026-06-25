@@ -5,7 +5,7 @@
 import { addAdminNotification } from "./adminNotificationStore";
 import type { AdminNotification, AdminNotificationType } from "./types";
 import { canManageEditRequests } from "@/lib/admin/roles";
-import { getCoordinatorScope } from "@/lib/admin/coordinators";
+import { getCoordinatorScope, canCoordinatorApproveEdit } from "@/lib/admin/coordinators";
 
 /**
  * Fire-and-forget admin notification creation. Logs errors but never throws.
@@ -55,9 +55,10 @@ export function filterVisibleAdminNotifications(
   const isPureCoordinator = scope.approveEdits && !canManageEditRequests(email);
   if (!isPureCoordinator) return notifications;
 
-  const cats = new Set<string>(scope.categories);
+  // Per-type: only edit-request notices in categories where this person actually
+  // holds the approveEdits power (not merely any category they touch).
   return notifications.filter(
-    (n) => n.type === "edit_request" && !!n.categoryKey && cats.has(n.categoryKey),
+    (n) => n.type === "edit_request" && !!n.categoryKey && canCoordinatorApproveEdit(email, n.categoryKey),
   );
 }
 

@@ -25,6 +25,7 @@ import { canManageEditRequests } from "@/lib/admin/roles";
 
 export type CoordinatorPowers = {
   approveEdits: boolean;
+  approveDeletes: boolean;
   export: boolean;
 };
 
@@ -50,6 +51,7 @@ export type CoordinatorsConfig = {
 export type CoordinatorScope = {
   categories: CategoryKey[];
   approveEdits: boolean;
+  approveDeletes: boolean;
   export: boolean;
 };
 
@@ -81,6 +83,7 @@ function normalizePowers(value: unknown): CoordinatorPowers {
   const record = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
   return {
     approveEdits: record.approveEdits === true,
+    approveDeletes: record.approveDeletes === true,
     export: record.export === true,
   };
 }
@@ -190,8 +193,12 @@ export function getCoordinatorsConfig(): CoordinatorsConfig {
 // CRUD
 // ---------------------------------------------------------------------------
 
+export type CoordinatorTypeInput = Partial<Omit<CoordinatorType, "powers">> & {
+  powers?: Partial<CoordinatorPowers>;
+};
+
 /** Create or update a coordinator type. Returns the new config, or null if invalid. */
-export function upsertCoordinatorType(input: Partial<CoordinatorType>): CoordinatorsConfig | null {
+export function upsertCoordinatorType(input: CoordinatorTypeInput): CoordinatorsConfig | null {
   const normalized = normalizeType(input);
   if (!normalized) return null;
   const config = getCoordinatorsConfig();
@@ -253,26 +260,43 @@ export function getCoordinatorScope(email: string): CoordinatorScope {
   const typeIds = new Set(config.assignments.find((a) => a.email === normalizeEmail(email))?.typeIds ?? []);
   const categories = new Set<CategoryKey>();
   let approveEdits = false;
+  let approveDeletes = false;
   let exportPower = false;
   for (const type of config.types) {
     if (!typeIds.has(type.id)) continue;
     type.categories.forEach((c) => categories.add(c));
     approveEdits = approveEdits || type.powers.approveEdits;
+    approveDeletes = approveDeletes || type.powers.approveDeletes;
     exportPower = exportPower || type.powers.export;
   }
-  return { categories: Array.from(categories), approveEdits, export: exportPower };
+  return { categories: Array.from(categories), approveEdits, approveDeletes, export: exportPower };
+}
+
+/**
+ * Per-type power check: does the person hold ANY assigned type that BOTH covers
+ * `category` AND grants `power`? Powers are bound to the categories of the type
+ * that grants them — a power from one type does NOT leak onto another type's
+ * categories (which a flattened union would wrongly allow).
+ */
+function hasPowerInCategory(email: string, category: string, power: keyof CoordinatorPowers): boolean {
+  if (!isCategoryKey(category)) return false;
+  const config = getCoordinatorsConfig();
+  const typeIds = new Set(config.assignments.find((a) => a.email === normalizeEmail(email))?.typeIds ?? []);
+  return config.types.some(
+    (t) => typeIds.has(t.id) && t.powers[power] && t.categories.includes(category),
+  );
 }
 
 export function canCoordinatorApproveEdit(email: string, category: string): boolean {
-  if (!isCategoryKey(category)) return false;
-  const scope = getCoordinatorScope(email);
-  return scope.approveEdits && scope.categories.includes(category);
+  return hasPowerInCategory(email, category, "approveEdits");
+}
+
+export function canCoordinatorApproveDelete(email: string, category: string): boolean {
+  return hasPowerInCategory(email, category, "approveDeletes");
 }
 
 export function canCoordinatorExport(email: string, category: string): boolean {
-  if (!isCategoryKey(category)) return false;
-  const scope = getCoordinatorScope(email);
-  return scope.export && scope.categories.includes(category);
+  return hasPowerInCategory(email, category, "export");
 }
 
 /**
@@ -283,6 +307,20 @@ export function canCoordinatorExport(email: string, category: string): boolean {
  */
 export function canApproveEditForCategory(email: string, category: string): boolean {
   return canManageEditRequests(email) || canCoordinatorApproveEdit(email, category);
+}
+
+/**
+ * Can this person approve a DELETE request in `category` (and act on its bin)?
+ * Master/Reviewer globally; a coordinator with the approveDeletes power in this
+ * category. (Owner/self-approval is enforced at the call site — E1.)
+ */
+export function canApproveDeleteForCategory(email: string, category: string): boolean {
+  return canManageEditRequests(email) || canCoordinatorApproveDelete(email, category);
+}
+
+/** True if the person can approve deletes in ANY category (global or coordinator). */
+export function isDeleteApprover(email: string): boolean {
+  return canManageEditRequests(email) || getCoordinatorScope(email).approveDeletes;
 }
 
 /** True if the person is an edit-approval coordinator in ANY category. */
@@ -297,10 +335,9 @@ export function isEditApprovalCoordinator(email: string): boolean {
 export function filterPendingForCoordinator<
   T extends { categoryKey: string; status: string }
 >(rows: T[], email: string): T[] {
-  const scope = getCoordinatorScope(email);
-  if (!scope.approveEdits) return [];
-  const cats = new Set<string>(scope.categories);
-  return rows.filter((r) => r.status === "EDIT_REQUESTED" && cats.has(r.categoryKey));
+  return rows.filter(
+    (r) => r.status === "EDIT_REQUESTED" && canCoordinatorApproveEdit(email, r.categoryKey),
+  );
 }
 
 /** Emails of coordinators who can approve edits in `category` — for notification routing. */

@@ -10,8 +10,10 @@ import {
   getCoordinatorScope,
   getCoordinatorsConfig,
   canCoordinatorApproveEdit,
+  canCoordinatorApproveDelete,
   canCoordinatorExport,
   canApproveEditForCategory,
+  canApproveDeleteForCategory,
   isEditApprovalCoordinator,
   filterPendingForCoordinator,
   listCoordinatorEmailsForCategory,
@@ -128,6 +130,28 @@ test("an export-only coordinator is not an edit-approval coordinator", async () 
     setCoordinatorAssignment(COORD, ["exp"]);
     assert.equal(isEditApprovalCoordinator(COORD), false);
     assert.deepEqual(filterPendingForCoordinator([{ categoryKey: "case-studies", status: "EDIT_REQUESTED" }], COORD), []);
+  } finally {
+    ctx.restore();
+    await ctx.cleanup();
+  }
+});
+
+test("approveDeletes power is scoped, and global approvers can always delete", async () => {
+  const ctx = await createTestDataRoot("coord-deletes");
+  try {
+    getAdminUsersConfig(); // seed masters
+    upsertCoordinatorType({ id: "cs", label: "CS", categories: ["case-studies"], powers: { approveEdits: true, approveDeletes: true, export: false } });
+    upsertCoordinatorType({ id: "fdp", label: "FDP", categories: ["fdp-attended"], powers: { approveEdits: true, approveDeletes: false, export: false } });
+    setCoordinatorAssignment(COORD, ["cs", "fdp"]);
+
+    // Coordinator can delete only in the category whose type grants approveDeletes.
+    assert.equal(canCoordinatorApproveDelete(COORD, "case-studies"), true);
+    assert.equal(canCoordinatorApproveDelete(COORD, "fdp-attended"), false);
+    assert.equal(canApproveDeleteForCategory(COORD, "case-studies"), true);
+    assert.equal(canApproveDeleteForCategory(COORD, "fdp-attended"), false);
+
+    // Master may delete in any category regardless of coordinator scope.
+    assert.equal(canApproveDeleteForCategory(ROOT_MASTER_EMAIL, "fdp-attended"), true);
   } finally {
     ctx.restore();
     await ctx.cleanup();

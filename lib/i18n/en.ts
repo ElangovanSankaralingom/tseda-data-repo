@@ -1005,6 +1005,7 @@ export const en = {
     categoriesLabel: "Categories",
     powersLabel: "Powers",
     powerApproveEdits: "Approve edit requests",
+    powerApproveDeletes: "Approve deletes & bin",
     powerExport: "Export data",
     create: "Create type",
     existingTitle: "Coordinator types",

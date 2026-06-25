@@ -36,6 +36,7 @@ export default function CoordinatorsClient({
   const [label, setLabel] = useState("");
   const [cats, setCats] = useState<Set<string>>(new Set());
   const [approveEdits, setApproveEdits] = useState(true);
+  const [approveDeletes, setApproveDeletes] = useState(false);
   const [exportPower, setExportPower] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -79,16 +80,17 @@ export default function CoordinatorsClient({
       type: {
         label: label.trim(),
         categories: Array.from(cats) as CoordinatorType["categories"],
-        powers: { approveEdits, export: exportPower },
+        powers: { approveEdits, approveDeletes, export: exportPower },
       },
     });
     if (ok) {
       setLabel("");
       setCats(new Set());
       setApproveEdits(true);
+      setApproveDeletes(false);
       setExportPower(false);
     }
-  }, [label, cats, approveEdits, exportPower, post, t]);
+  }, [label, cats, approveEdits, approveDeletes, exportPower, post, t]);
 
   const toggleCat = (key: string) => {
     setCats((prev) => {
@@ -166,6 +168,7 @@ export default function CoordinatorsClient({
         </div>
         <div className="mb-5 flex flex-wrap gap-2">
           <PowerToggle on={approveEdits} onClick={() => setApproveEdits((v) => !v)} icon={ShieldCheck} label={t("coordinators.powerApproveEdits")} />
+          <PowerToggle on={approveDeletes} onClick={() => setApproveDeletes((v) => !v)} icon={Trash2} label={t("coordinators.powerApproveDeletes")} />
           <PowerToggle on={exportPower} onClick={() => setExportPower((v) => !v)} icon={Download} label={t("coordinators.powerExport")} />
         </div>
 
@@ -210,6 +213,7 @@ export default function CoordinatorsClient({
                         <div className="text-sm font-semibold text-[var(--color-text-primary)]">{type.label}</div>
                         <div className="mt-0.5 flex flex-wrap gap-1.5">
                           {type.powers.approveEdits && <Badge label={t("coordinators.powerApproveEdits")} />}
+                          {type.powers.approveDeletes && <Badge label={t("coordinators.powerApproveDeletes")} />}
                           {type.powers.export && <Badge label={t("coordinators.powerExport")} />}
                         </div>
                       </div>
