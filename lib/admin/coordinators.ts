@@ -334,6 +334,11 @@ export function isApprovalCoordinator(email: string): boolean {
   return scope.approveEdits || scope.approveDeletes;
 }
 
+/** True if the person is a coordinator with the export power in any category. */
+export function isExportCoordinator(email: string): boolean {
+  return getCoordinatorScope(email).export;
+}
+
 /**
  * Filter a pending-request list to what a coordinator may act on:
  * EDIT requests in categories where they hold approveEdits, and DELETE requests

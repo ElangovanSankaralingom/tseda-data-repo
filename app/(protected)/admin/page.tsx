@@ -17,7 +17,7 @@ import {
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dashboard } from "@/lib/entryNavigation";
 import { isMasterAdmin } from "@/lib/admin";
-import { isApprovalCoordinator, isDeleteApprover } from "@/lib/admin/coordinators";
+import { isApprovalCoordinator, isDeleteApprover, isExportCoordinator } from "@/lib/admin/coordinators";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,8 @@ export default async function AdminConsolePage() {
   const email = normalizeEmail(session?.user?.email ?? "");
 
   const coordinator = isApprovalCoordinator(email);
-  if (!email || (!isMasterAdmin(email) && !canApproveConfirmations(email) && !canViewAudit(email) && !coordinator)) {
+  const exportCoord = isExportCoordinator(email);
+  if (!email || (!isMasterAdmin(email) && !canApproveConfirmations(email) && !canViewAudit(email) && !coordinator && !exportCoord)) {
     redirect(dashboard());
   }
 
@@ -43,6 +44,7 @@ export default async function AdminConsolePage() {
     users: canManageAdminUsers(email),
     coordinators: canManageAdminUsers(email),
     bin: isDeleteApprover(email),
+    exportFormats: canExport(email) || exportCoord,
     settings: canAccessSettings(email),
     audit: canViewAudit(email),
     analytics: canViewAnalytics(email),

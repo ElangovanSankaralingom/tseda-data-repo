@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   BarChart3,
+  Columns,
   Download,
   FileEdit,
   Network,
@@ -23,6 +24,7 @@ import type { TranslationKey } from "@/lib/i18n";
 
 const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
   BarChart3,
+  Columns,
   Download,
   FileEdit,
   Network,

@@ -3,6 +3,7 @@ import {
   Users,
   Network,
   Trash2,
+  Columns,
   BarChart3,
   Download,
   Shield,
@@ -99,6 +100,15 @@ export const ADMIN_TOOLS: AdminTool[] = [
     icon: Download,
     accentText: "text-amber-500",
     accentBg: "bg-amber-500/10",
+  },
+  {
+    id: "exportFormats",
+    titleKey: "adminConsole.formats",
+    descriptionKey: "adminConsole.formatsDesc",
+    href: "/admin/export-formats",
+    icon: Columns,
+    accentText: "text-[var(--color-palette-violet-fg)]",
+    accentBg: "bg-[var(--color-palette-violet-bg)]",
   },
   {
     id: "backups",
