@@ -11,6 +11,7 @@ import { computeEditWindowExpiry, normalizeEntryStatus } from "@/lib/entries/wor
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { getCanonicalName, normalizeEmail } from "@/lib/facultyDirectory";
 import { checkStreakEligibility } from "@/lib/streakProgress";
+import { facultyCanMutate } from "@/lib/admin/facultyRegistry";
 import {
   getEditWindowDays,
   getStreakBufferDays,
@@ -189,6 +190,13 @@ export async function runGeneratePdfRequest(
     const email = await getAuthorizedTceEmail();
     if (!email) {
       throw new AppError({ code: "UNAUTHORIZED", message: "Unauthorized" });
+    }
+    // LLP / read-only: a faculty on leave may view but not generate entries.
+    if (!facultyCanMutate(email)) {
+      throw new AppError({
+        code: "FORBIDDEN",
+        message: "Your account is read-only while on leave. You can view your entries but not change them.",
+      });
     }
 
     const category = String(args.category ?? "").trim();

@@ -23,6 +23,7 @@ import { assertEntryMutationInput, assertActionPayload, SECURITY_LIMITS } from "
 import { isEntryEditable } from "@/lib/entries/lock";
 import type { CategoryKey } from "@/lib/entries/types";
 import { validateCsrf } from "@/lib/security/csrf";
+import { facultyCanMutate } from "@/lib/admin/facultyRegistry";
 import { apiSuccess, apiPaginated, apiError, apiErrorFromCatch, parsePagination } from "@/lib/api/response";
 import { runWithRequestContext, getCurrentRequestId } from "@/lib/api/asyncContext";
 import { logger } from "@/lib/logger";
@@ -165,6 +166,9 @@ export async function handleCategoryPost(
 
     const auth = await requireAuth();
     if (!auth) return finishResponse(apiError("Unauthorized", "UNAUTHORIZED"), "POST", path, startedAt);
+    if (!facultyCanMutate(auth.email)) {
+      return finishResponse(apiError("Your account is read-only while on leave. You can view your entries but not change them.", "FORBIDDEN"), "POST", path, startedAt);
+    }
 
     try {
       let category: CategorySlug;
@@ -268,6 +272,10 @@ export async function handleCategoryPatch(
 
     const auth = await requireAuth();
     if (!auth) return finishResponse(apiError("Unauthorized", "UNAUTHORIZED"), "PATCH", path, startedAt);
+    // LLP / read-only: faculty on long leave may view but not change entries.
+    if (!facultyCanMutate(auth.email)) {
+      return finishResponse(apiError("Your account is read-only while on leave. You can view your entries but not change them.", "FORBIDDEN"), "PATCH", path, startedAt);
+    }
 
     try {
       let category: CategorySlug;
@@ -404,6 +412,9 @@ export async function handleCategoryDelete(
 
     const auth = await requireAuth();
     if (!auth) return finishResponse(apiError("Unauthorized", "UNAUTHORIZED"), "DELETE", path, startedAt);
+    if (!facultyCanMutate(auth.email)) {
+      return finishResponse(apiError("Your account is read-only while on leave. You can view your entries but not change them.", "FORBIDDEN"), "DELETE", path, startedAt);
+    }
 
     try {
       let category: CategorySlug;

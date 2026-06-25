@@ -22,6 +22,7 @@ import path from "node:path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { facultyCanMutate } from "@/lib/admin/facultyRegistry";
 import { getCategorySchema, isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry";
 import { readCategoryEntryById, upsertCategoryEntry } from "@/lib/dataStore";
 import { normalizeError } from "@/lib/errors";
@@ -154,6 +155,9 @@ export async function handleCategoryFilePost(request: Request, category: Categor
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!facultyCanMutate(email)) {
+    return NextResponse.json({ error: "Your account is read-only while on leave." }, { status: 403 });
+  }
 
   if (!isValidCategorySlug(category)) {
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
@@ -259,6 +263,9 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
   const email = await getAuthorizedEmail();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!facultyCanMutate(email)) {
+    return NextResponse.json({ error: "Your account is read-only while on leave." }, { status: 403 });
   }
 
   if (!isValidCategorySlug(category)) {
