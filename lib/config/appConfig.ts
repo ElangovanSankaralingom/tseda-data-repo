@@ -12,6 +12,9 @@ export const APP_CONFIG = {
     name: "Thiagarajar College of Engineering",
     shortName: "TCE",
     domain: "tce.edu",
+    // Root master: permanent, non-removable institutional anchor (HOD post).
+    rootMasterEmail: "hodarch@tce.edu",
+    // Founding master seeded by default; a full master, but removable by the root.
     masterAdminEmail: "senarch@tce.edu",
   },
   entryLifecycle: {

@@ -2,7 +2,9 @@ import "server-only";
 
 import fs from "node:fs";
 import path from "node:path";
-import { MASTER_ADMIN_EMAIL } from "@/lib/admin";
+import { MASTER_ADMIN_EMAIL, ROOT_MASTER_EMAIL, isRootMaster } from "@/lib/admin";
+
+export { isRootMaster };
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getDataRoot } from "@/lib/userStore";
 
@@ -44,15 +46,15 @@ export function getAdminUsersConfigPath() {
 }
 
 function buildDefaultConfig(): AdminUsersConfig {
-  return {
-    version: ADMIN_CONFIG_VERSION,
-    users: [
-      {
-        email: MASTER_ADMIN_EMAIL,
-        roles: ["MASTER_ADMIN"],
-      },
-    ],
-  };
+  // Seed both founders. The root (hodarch) is permanent; the founding master
+  // (senarch) is seeded for convenience but is removable by the root.
+  const users: AdminUser[] = [
+    { email: ROOT_MASTER_EMAIL, roles: ["MASTER_ADMIN"] },
+  ];
+  if (MASTER_ADMIN_EMAIL && MASTER_ADMIN_EMAIL !== ROOT_MASTER_EMAIL) {
+    users.push({ email: MASTER_ADMIN_EMAIL, roles: ["MASTER_ADMIN"] });
+  }
+  return { version: ADMIN_CONFIG_VERSION, users };
 }
 
 function normalizeRoles(value: unknown): AdminRole[] {
@@ -119,17 +121,21 @@ function sanitizeConfig(raw: unknown): AdminUsersConfig {
     byEmail.set(normalized.email, normalized);
   }
 
-  const masterExisting = byEmail.get(MASTER_ADMIN_EMAIL);
-  if (masterExisting) {
-    const roles = new Set<AdminRole>(masterExisting.roles);
+  // The ROOT master (hodarch) is permanent: always present, always MASTER_ADMIN.
+  // This also auto-reverts any attempt to demote the root (the role is re-added
+  // on every load). The founding master (senarch) is NOT pinned here — it is a
+  // removable master.
+  const rootExisting = byEmail.get(ROOT_MASTER_EMAIL);
+  if (rootExisting) {
+    const roles = new Set<AdminRole>(rootExisting.roles);
     roles.add("MASTER_ADMIN");
-    byEmail.set(MASTER_ADMIN_EMAIL, {
-      ...masterExisting,
+    byEmail.set(ROOT_MASTER_EMAIL, {
+      ...rootExisting,
       roles: Array.from(roles),
     });
   } else {
-    byEmail.set(MASTER_ADMIN_EMAIL, {
-      email: MASTER_ADMIN_EMAIL,
+    byEmail.set(ROOT_MASTER_EMAIL, {
+      email: ROOT_MASTER_EMAIL,
       roles: ["MASTER_ADMIN"],
     });
   }
@@ -208,7 +214,8 @@ export function upsertAdminUser(user: AdminUser): AdminUsersConfig {
 
 export function removeAdminUser(email: string): AdminUsersConfig {
   const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail || normalizedEmail === MASTER_ADMIN_EMAIL) {
+  // Only the ROOT master is protected from removal; other masters are removable.
+  if (!normalizedEmail || normalizedEmail === ROOT_MASTER_EMAIL) {
     return loadConfig();
   }
 
