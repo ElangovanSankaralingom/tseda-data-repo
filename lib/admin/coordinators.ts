@@ -225,6 +225,24 @@ export function getCoordinatorAssignment(email: string): string[] {
   return config.assignments.find((a) => a.email === normalizedEmail)?.typeIds ?? [];
 }
 
+/** Add a single type to a person's assignments (read-modify-write). */
+export function assignCoordinatorType(email: string, typeId: string): CoordinatorsConfig {
+  const current = getCoordinatorAssignment(email);
+  return setCoordinatorAssignment(email, Array.from(new Set([...current, typeId])));
+}
+
+/** Remove a single type from a person's assignments. */
+export function unassignCoordinatorType(email: string, typeId: string): CoordinatorsConfig {
+  const current = getCoordinatorAssignment(email);
+  return setCoordinatorAssignment(email, current.filter((id) => id !== typeId));
+}
+
+/** Emails assigned to a given coordinator type. */
+export function listAssigneesForType(typeId: string): string[] {
+  const config = getCoordinatorsConfig();
+  return config.assignments.filter((a) => a.typeIds.includes(typeId)).map((a) => a.email);
+}
+
 // ---------------------------------------------------------------------------
 // Scope + permission helpers (GP2b)
 // ---------------------------------------------------------------------------

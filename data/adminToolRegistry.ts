@@ -1,6 +1,7 @@
 import {
   FileEdit,
   Users,
+  Network,
   BarChart3,
   Download,
   Shield,
@@ -61,6 +62,15 @@ export const ADMIN_TOOLS: AdminTool[] = [
     badgeType: "count",
     badgeColor: "bg-blue-500",
     metricKey: "newUsersThisMonth",
+  },
+  {
+    id: "coordinators",
+    titleKey: "adminConsole.coordinators",
+    descriptionKey: "adminConsole.coordinatorsDesc",
+    href: "/admin/coordinators",
+    icon: Network,
+    accentText: "text-[var(--color-palette-cyan-fg)]",
+    accentBg: "bg-[var(--color-palette-cyan-bg)]",
   },
   {
     id: "analytics",

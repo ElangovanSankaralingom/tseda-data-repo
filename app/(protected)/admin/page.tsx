@@ -41,6 +41,7 @@ export default async function AdminConsolePage() {
   const permissions: Record<string, boolean> = {
     confirmations: canApproveConfirmations(email) || coordinator,
     users: canManageAdminUsers(email),
+    coordinators: canManageAdminUsers(email),
     settings: canAccessSettings(email),
     audit: canViewAudit(email),
     analytics: canViewAnalytics(email),
