@@ -351,3 +351,81 @@ self-action fallback (§3, deferred), and confirming edge rules E1–E16 (§8).
 
 **Confirm the edge rules E1–E16 (§8)** — especially E1 (self-approval incl. masters),
 E6/E7 (fallback + SLA), and E12 (no silent export drop).
+
+---
+
+## 12. Faculty Registry, Departments & Allowlist (Phase 6)
+
+Today the faculty list is **hardcoded** in `facultyDirectory.ts` and already acts
+as a sign-in allowlist. Phase 6 turns it into a **master-managed, permanent
+registry**.
+
+**Principles**
+- **Records are permanent.** Faculty come and go, but a faculty record is *never
+  deleted* — only deactivated. The registry is a lasting record, and all of a
+  faculty's data always remains.
+- **The registry IS the allowlist.** Only emails in the registry may sign in; a
+  random `@tce.edu` is rejected. **Everyone must be on the list — except the root
+  master (`hodarch`), who is always permitted** (lockout safety; mirrors the
+  pinned-root rule). Other admins/masters (incl. `senarch`) must be on the list.
+
+**Faculty status**
+| Status | Sign in? | Capability |
+|--------|----------|-----------|
+| **Active** | ✅ | Full (create / edit / generate / finalise) |
+| **LLP** (long leave) | ✅ | **Read-only** — may view their entries, cannot create or edit |
+| **Inactive** (deactivated) | ❌ | Blocked; all data retained, restored on reactivation |
+
+**Departments** (master-editable)
+- Default three: **Faculty of Architecture, Faculty of Planning, Faculty of Design.**
+- Master can add / rename / delete departments.
+- A faculty may belong to **multiple** departments; master assigns.
+- Deleting a department **moves its faculty to "Unassigned"** (no orphan).
+- Departments are an org attribute of faculty; **coordinator (DLC) scope stays
+  category-only** — departments do not scope the DLC model.
+
+**Master capabilities** (master-only)
+- Add faculty **single or bulk** (paste/upload a list of emails).
+- Set status (active / LLP / inactive); assign departments.
+- **View + download the full faculty profile** (personal, academic, experience,
+  uploads). Faculty fill their own profile from their account after first sign-in.
+
+**Data model (sketch)**
+```
+FacultyRecord {
+  email: string                 // permanent key, never removed
+  name?: string
+  departments: string[]         // department ids (may be many)
+  status: "active" | "llp" | "inactive"
+  addedBy: string; addedAtISO: string
+}
+Department { id: string; label: string }   // master-editable; "unassigned" reserved
+```
+
+**Edge conditions**
+| # | Situation | Rule |
+|---|-----------|------|
+| F1 | Master removes/deactivates a faculty | Status → inactive; **data kept**, sign-in blocked; re-activating restores access. Never deleted. |
+| F2 | Faculty on LLP attempts to create/edit | Blocked at the entry-mutation layer (read-only); viewing is allowed. |
+| F3 | Department deleted while faculty assigned | Those faculty reassigned to "Unassigned". |
+| F4 | Root master (`hodarch`) somehow not on the list | Always allowed anyway (cannot be locked out). |
+| F5 | Re-adding a previously deactivated faculty | Same record reactivated; their old data is intact. |
+| F6 | An admin/DLC who is not on the allowlist | Blocked from sign-in (everyone-on-the-list rule), except the root. Master should keep admins on the list. |
+| F7 | Email normalisation | All registry emails normalised (lowercased) to match the signin identity. |
+
+**Open / to confirm**
+- LLP read-only enforcement point: the entry mutation guards (generate/finalise/
+  save/request) must check faculty status === active. Confirm LLP also blocks
+  *requests* (edit/delete) — assumed yes (read-only = no mutations).
+
+---
+
+## 13. Permission audit (Phase 5)
+
+Verify — beyond the page gates (already correct) — that master-only tools are
+locked at every layer:
+- **API routes** for analytics, export (overall), backups, integrity, maintenance,
+  settings, users, coordinators are master-gated (not just the pages).
+- **Admin console tool-card visibility** matches: a DLC sees only Confirmations +
+  Bin (+ their scoped Export page in Phase 3c); never users/analytics/backup/etc.
+- **No mismatch**: a DLC must not reach any master-only surface via direct URL or API.
