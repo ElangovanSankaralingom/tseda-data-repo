@@ -6,7 +6,8 @@ import path from "path";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureDirs, PROFILES_DIR, safeEmailKey } from "@/lib/uploadStore";
-import { findFacultyByEmail, normalizeEmail } from "@/lib/facultyDirectory";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { getFacultyRecord, resolveFacultyName } from "@/lib/admin/facultyRegistry";
 import { assertActionPayload } from "@/lib/security/limits";
 import { apiUnauthorized } from "@/lib/api/apiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
@@ -117,7 +118,7 @@ export async function GET(request: Request) {
   }
 
   const profile = readProfile(email);
-  const canonical = findFacultyByEmail(email);
+  const facultyRec = getFacultyRecord(email);
   const sessionGoogleName = getSessionGoogleName(session);
   const sessionGooglePhotoURL = getSessionGooglePhotoURL(session);
   const fallbackName = profile.userPreferredName || sessionGoogleName || email.split("@")[0];
@@ -126,8 +127,8 @@ export async function GET(request: Request) {
 
   profile.email = email;
   profile.facultyId = email;
-  profile.isFacultyListed = !!canonical;
-  profile.officialName = canonical?.name ?? fallbackName;
+  profile.isFacultyListed = !!facultyRec;
+  profile.officialName = resolveFacultyName(email) ?? fallbackName;
   profile.googleName = sessionGoogleName || String(profile.googleName ?? "").trim() || null;
   profile.googlePhotoURL =
     sessionGooglePhotoURL || String(profile.googlePhotoURL ?? "").trim() || null;
@@ -178,7 +179,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: message }, { status: 413 });
   }
   const current = readProfile(email);
-  const canonical = findFacultyByEmail(email);
+  const facultyRec = getFacultyRecord(email);
   const sessionGoogleName = getSessionGoogleName(session);
   const sessionGooglePhotoURL = getSessionGooglePhotoURL(session);
   const sanitizedPatch = { ...patch };
@@ -214,9 +215,9 @@ export async function PUT(req: Request) {
 
   merged.email = email;
   merged.facultyId = email;
-  merged.isFacultyListed = !!canonical;
+  merged.isFacultyListed = !!facultyRec;
   merged.officialName =
-    canonical?.name ??
+    resolveFacultyName(email) ??
     merged.userPreferredName ??
     sessionGoogleName ??
     email.split("@")[0];

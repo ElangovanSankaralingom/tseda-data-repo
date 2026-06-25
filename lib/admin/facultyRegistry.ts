@@ -2,7 +2,7 @@ import "server-only";
 
 import fs from "node:fs";
 import path from "node:path";
-import { normalizeEmail, FACULTY } from "@/lib/facultyDirectory";
+import { normalizeEmail, FACULTY, getCanonicalName } from "@/lib/facultyDirectory";
 import { getDataRoot } from "@/lib/userStore";
 import { isRootMaster } from "@/lib/admin";
 
@@ -242,4 +242,15 @@ export function isFacultyAllowed(email: string): boolean {
 export function facultyCanMutate(email: string): boolean {
   if (isRootMaster(email)) return true;
   return getFacultyRecord(email)?.status === "active";
+}
+
+/**
+ * Resolve a faculty's display name, registry-first so faculty added through the
+ * registry (not in the legacy hardcoded list) still get a proper name. Falls
+ * back to the hardcoded directory, then null.
+ */
+export function resolveFacultyName(email: string): string | null {
+  const rec = getFacultyRecord(email);
+  if (rec && rec.name && rec.name !== rec.email) return rec.name;
+  return getCanonicalName(email) ?? rec?.name ?? null;
 }

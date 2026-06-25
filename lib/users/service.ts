@@ -6,7 +6,7 @@ import { getUsersRootDir } from "@/lib/userStore";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { getAdminUser } from "@/lib/admin/roles";
 import { getAllProfiles } from "@/lib/profileStore";
-import { getCanonicalName } from "@/lib/facultyDirectory";
+import { resolveFacultyName } from "@/lib/admin/facultyRegistry";
 import type { ActivityTrend, UserProfile, UserStats } from "@/lib/types/admin";
 
 type IndexJson = {
@@ -132,7 +132,7 @@ export async function listAllUsers(): Promise<UserProfile[]> {
     const name =
       profile?.userPreferredName ||
       profile?.googleDisplayName ||
-      getCanonicalName(email) ||
+      resolveFacultyName(email) ||
       email.split("@")[0];
 
     results.push({
