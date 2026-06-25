@@ -2,7 +2,7 @@ import "server-only";
 
 import { ENTRY_SCHEMAS } from "@/data/schemas";
 import { canManageEditRequests } from "@/lib/admin/roles";
-import { canCoordinatorApproveEdit } from "@/lib/admin/coordinators";
+import { canCoordinatorApproveEdit, canCoordinatorApproveDelete } from "@/lib/admin/coordinators";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
 import { withUserDataLock } from "@/lib/data/locks";
@@ -44,7 +44,7 @@ export type AdminMutationConfig = {
    * approver (master/reviewer). "editApproval" ALSO permits a coordinator scoped
    * to this category — but never on their OWN entry (self-approval block, E1).
    */
-  requiredScope?: "manage" | "editApproval";
+  requiredScope?: "manage" | "editApproval" | "deleteApproval";
   extraValidation?: (existing: EntryEngineRecord) => void;
   applyTransition: (existing: WorkflowEntryLike, ctx: { normalizedAdmin: string; nowISO: string }) => EntryLike;
   afterSuccess?: (entry: EntryEngineRecord) => void;
@@ -84,11 +84,14 @@ export async function runAdminMutation<T extends EntryEngineRecord = EntryEngine
     // edit-approval actions, a coordinator scoped to this category may also act —
     // but NOT on their own entry (self-approval block, E1).
     const isGlobalApprover = canManageEditRequests(normalizedAdmin);
-    const coordinatorMayApproveEdit =
-      config.requiredScope === "editApproval" &&
-      normalizedAdmin !== normalizedOwner &&
-      canCoordinatorApproveEdit(normalizedAdmin, config.category);
-    if (!isGlobalApprover && !coordinatorMayApproveEdit) {
+    const notOwnEntry = normalizedAdmin !== normalizedOwner;
+    const coordinatorMayAct =
+      notOwnEntry &&
+      ((config.requiredScope === "editApproval" &&
+        canCoordinatorApproveEdit(normalizedAdmin, config.category)) ||
+        (config.requiredScope === "deleteApproval" &&
+          canCoordinatorApproveDelete(normalizedAdmin, config.category)));
+    if (!isGlobalApprover && !coordinatorMayAct) {
       throw new AppError({ code: "FORBIDDEN", message: "Forbidden" });
     }
     enforceAdminMutationGuards(normalizedAdmin, config.guardKey, {

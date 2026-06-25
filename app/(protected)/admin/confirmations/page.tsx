@@ -4,7 +4,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminConfirmationsClient from "@/app/(protected)/admin/confirmations/AdminConfirmationsClient";
 import { authOptions } from "@/lib/auth";
 import { canApproveConfirmations } from "@/lib/admin/roles";
-import { isEditApprovalCoordinator } from "@/lib/admin/coordinators";
+import { isApprovalCoordinator } from "@/lib/admin/coordinators";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 
@@ -15,7 +15,7 @@ export default async function AdminConfirmationsPage() {
   const email = normalizeEmail(session?.user?.email ?? "");
   // Global approvers (master/reviewer) OR edit-approval coordinators may enter;
   // coordinators see only their scoped edit queue (filtered server-side).
-  if (!canApproveConfirmations(email) && !isEditApprovalCoordinator(email)) {
+  if (!canApproveConfirmations(email) && !isApprovalCoordinator(email)) {
     redirect(dashboard());
   }
 

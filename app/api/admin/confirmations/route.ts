@@ -5,9 +5,10 @@ import { authOptions } from "@/lib/auth";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { canManageEditRequests } from "@/lib/admin/roles";
 import {
-  isEditApprovalCoordinator,
+  isApprovalCoordinator,
   filterPendingForCoordinator,
   canApproveEditForCategory,
+  canApproveDeleteForCategory,
 } from "@/lib/admin/coordinators";
 import { getPendingRequests } from "@/lib/admin/pendingConfirmations";
 import {
@@ -39,13 +40,13 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   const isGlobal = canManageEditRequests(email);
-  if (!isGlobal && !isEditApprovalCoordinator(email)) {
+  if (!isGlobal && !isApprovalCoordinator(email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const rows = await getPendingRequests();
-  // Coordinators see only EDIT requests in their scoped categories; global
-  // approvers (master/reviewer) see everything.
+  // Coordinators see only the requests they can act on (edits where they hold
+  // approveEdits, deletes where they hold approveDeletes); global approvers see all.
   const visible = isGlobal ? rows : filterPendingForCoordinator(rows, email);
   return NextResponse.json(visible, { status: 200 });
 }
@@ -58,7 +59,7 @@ export async function PATCH(request: Request) {
   const adminEmail = normalizeEmail(session?.user?.email ?? "");
   // Coarse gate: must be a global approver OR an edit-approval coordinator.
   // The precise per-decision + per-category check happens after parsing below.
-  if (!canManageEditRequests(adminEmail) && !isEditApprovalCoordinator(adminEmail)) {
+  if (!canManageEditRequests(adminEmail) && !isApprovalCoordinator(adminEmail)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -104,7 +105,7 @@ export async function PATCH(request: Request) {
     const isEditDecision = decision === "grant" || decision === "reject";
     const authorized = isEditDecision
       ? canApproveEditForCategory(adminEmail, categoryKey)
-      : canManageEditRequests(adminEmail);
+      : canApproveDeleteForCategory(adminEmail, categoryKey);
     if (!authorized) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

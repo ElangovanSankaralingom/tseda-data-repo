@@ -17,7 +17,7 @@ import {
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { dashboard } from "@/lib/entryNavigation";
 import { isMasterAdmin } from "@/lib/admin";
-import { isEditApprovalCoordinator } from "@/lib/admin/coordinators";
+import { isApprovalCoordinator } from "@/lib/admin/coordinators";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function AdminConsolePage() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
 
-  const coordinator = isEditApprovalCoordinator(email);
+  const coordinator = isApprovalCoordinator(email);
   if (!email || (!isMasterAdmin(email) && !canApproveConfirmations(email) && !canViewAudit(email) && !coordinator)) {
     redirect(dashboard());
   }

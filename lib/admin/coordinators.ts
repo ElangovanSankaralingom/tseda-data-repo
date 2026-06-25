@@ -328,16 +328,25 @@ export function isEditApprovalCoordinator(email: string): boolean {
   return getCoordinatorScope(email).approveEdits;
 }
 
+/** True if the person is a coordinator with ANY approval power (edit or delete). */
+export function isApprovalCoordinator(email: string): boolean {
+  const scope = getCoordinatorScope(email);
+  return scope.approveEdits || scope.approveDeletes;
+}
+
 /**
- * Filter a pending-request list to what an edit-approval coordinator may act on:
- * EDIT requests only (never deletes), and only in their scoped categories.
+ * Filter a pending-request list to what a coordinator may act on:
+ * EDIT requests in categories where they hold approveEdits, and DELETE requests
+ * in categories where they hold approveDeletes. Per-type, per-power.
  */
 export function filterPendingForCoordinator<
   T extends { categoryKey: string; status: string }
 >(rows: T[], email: string): T[] {
-  return rows.filter(
-    (r) => r.status === "EDIT_REQUESTED" && canCoordinatorApproveEdit(email, r.categoryKey),
-  );
+  return rows.filter((r) => {
+    if (r.status === "EDIT_REQUESTED") return canCoordinatorApproveEdit(email, r.categoryKey);
+    if (r.status === "DELETE_REQUESTED") return canCoordinatorApproveDelete(email, r.categoryKey);
+    return false;
+  });
 }
 
 /** Emails of coordinators who can approve edits in `category` — for notification routing. */

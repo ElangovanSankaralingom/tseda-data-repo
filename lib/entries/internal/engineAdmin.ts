@@ -164,8 +164,11 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
   entryId: string
 ): Promise<T> {
   const { canManageEditRequests } = await import("@/lib/admin/roles");
+  const { canApproveDeleteForCategory } = await import("@/lib/admin/coordinators");
   const { withUserDataLock } = await import("@/lib/data/locks");
   const { buildEvent } = await import("@/lib/data/wal");
+  const { quarantineEntry, removeEmptyUploadDir, collectEntryFilePaths, FACULTY_DELETE_REASON } =
+    await import("@/lib/jobs/quarantine");
   const {
     normalizeId,
     enforceAdminMutationGuards,
@@ -193,7 +196,15 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
   });
 
   try {
-    if (!canManageEditRequests(normalizedAdmin)) {
+    // Global approvers (master/reviewer) may approve any delete; a coordinator
+    // with the approveDeletes power may approve in their categories, but NOT on
+    // their own entry (self-approval block, E1).
+    const isGlobalApprover = canManageEditRequests(normalizedAdmin);
+    const coordinatorMayDelete =
+      !isGlobalApprover &&
+      normalizedAdmin !== normalizedOwner &&
+      canApproveDeleteForCategory(normalizedAdmin, category);
+    if (!isGlobalApprover && !coordinatorMayDelete) {
       throw new AppError({ code: "FORBIDDEN", message: "Forbidden" });
     }
     enforceAdminMutationGuards(normalizedAdmin, "entry.delete.approve", {
@@ -241,8 +252,20 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
         adminEmail,
       });
 
-      // Delete the entry from the JSON store
+      // Move the entry + its files into the recoverable DLC bin (instead of a
+      // hard delete), then remove it from the live store. Manual-only: it stays
+      // in the bin until a coordinator/master restores or permanently deletes it.
+      const filePaths = collectEntryFilePaths(category, existing as unknown as Record<string, unknown>);
+      await quarantineEntry({
+        ownerEmail: normalizedOwner,
+        category,
+        entry: existing as unknown as Record<string, unknown>,
+        filePaths,
+        reason: FACULTY_DELETE_REASON,
+        entryTitle: extractEntryTitle(existing as unknown as Record<string, unknown>, category),
+      });
       await deleteEntryRaw(normalizedOwner, category, id);
+      await removeEmptyUploadDir(normalizedOwner, category, id);
 
       // Update the user index (before = existing, after = null signals removal)
       await refreshIndexForMutation(normalizedOwner, category, existing, null);
@@ -255,7 +278,7 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
         userEmail: normalizedOwner,
         category,
         entryId: id,
-        status: "PERMANENTLY_DELETED",
+        status: "BINNED",
         durationMs: Date.now() - startedAt,
       });
       logger.info({ event: "entry.admin_action", action: "approve_delete", category, entryId: id, adminEmail });
@@ -263,17 +286,7 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
       return existing as T;
     });
 
-    // Delete uploaded files from disk (fire-and-forget, outside the lock)
-    fireAndForget(
-      (async () => {
-        const fs = await import("node:fs/promises");
-        const path = await import("node:path");
-        const { ENTRY_UPLOADS_ROOT } = await import("@/lib/config/storagePaths");
-        const uploadDir = path.join(ENTRY_UPLOADS_ROOT, normalizedOwner, category, id);
-        await fs.rm(uploadDir, { recursive: true, force: true });
-      })(),
-      "deleteUploadFiles",
-    );
+    // (Files were MOVED into the bin by quarantineEntry — not deleted here.)
 
     // Invalidate analytics cache
     fireAndForget(
@@ -292,9 +305,9 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
       ownerEmail: normalizedOwner,
       category,
       entryId: id,
-      status: "PERMANENTLY_DELETED",
+      status: "BINNED",
       fromStatus: "DELETE_REQUESTED",
-      toStatus: "PERMANENTLY_DELETED",
+      toStatus: "BINNED",
       durationMs: Date.now() - startedAt,
       source: "admin",
     });
@@ -349,6 +362,7 @@ export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEng
     action: "cancelDeleteRequest",
     walAction: "CANCEL_DELETE_REQUEST",
     guardKey: "entry.delete.reject",
+    requiredScope: "deleteApproval",
     adminEmail,
     category,
     ownerEmail,

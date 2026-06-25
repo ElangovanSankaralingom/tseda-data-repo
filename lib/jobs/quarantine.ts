@@ -6,6 +6,31 @@ import { logger } from "@/lib/logger";
 import { PRIVATE_DATA_ROOT, resolveEntryUploadPath, ENTRY_UPLOADS_ROOT } from "@/lib/config/storagePaths";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { safeEmailKey } from "@/lib/uploadStore";
+import { getCategorySchema } from "@/data/categoryRegistry";
+
+/** Reason tag for entries a coordinator approved-deleted into the manual DLC bin. */
+export const FACULTY_DELETE_REASON = "faculty_delete_approved";
+
+/**
+ * Collect every stored upload path on an entry (PDF + schema upload fields,
+ * single or multi-file) — for moving files into / out of quarantine.
+ */
+export function collectEntryFilePaths(category: string, entry: Record<string, unknown>): string[] {
+  const filePaths: string[] = [];
+  const pushStored = (v: unknown) => {
+    const sp = (v as Record<string, unknown> | null | undefined)?.storedPath;
+    if (typeof sp === "string" && sp) filePaths.push(sp);
+  };
+  if (entry.pdfMeta && typeof entry.pdfMeta === "object") pushStored(entry.pdfMeta);
+  const schema = getCategorySchema(category);
+  for (const field of schema?.fields ?? []) {
+    if (!field.upload || !entry[field.key]) continue;
+    const val = entry[field.key];
+    if (Array.isArray(val)) val.forEach(pushStored);
+    else pushStored(val);
+  }
+  return filePaths;
+}
 
 /**
  * S1 (TECH-AUDIT-2026-06 C4): the nightly job used to *permanently* destroy
@@ -151,6 +176,9 @@ export async function purgeExpiredQuarantine(now: number = Date.now()): Promise<
   const manifests = await listQuarantine();
   let purged = 0;
   for (const m of manifests) {
+    // The DLC bin is manual-only: faculty-approved deletes never auto-purge —
+    // only a coordinator/master removes them by hand.
+    if (m.reason === FACULTY_DELETE_REASON) continue;
     if (Date.parse(m.quarantinedAtISO) < cutoff) {
       await fs.rm(trashDir(m.trashId), { recursive: true, force: true });
       purged++;
