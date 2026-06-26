@@ -22,10 +22,6 @@ export const PRIVATE_DATA_ROOT = path.join(process.cwd(), ".data");
  *  backwards compatibility); resolve via {@link resolveEntryUploadPath}. */
 export const ENTRY_UPLOADS_ROOT = path.join(PRIVATE_DATA_ROOT, "entry-uploads");
 
-/** Profile-scoped uploads (avatars, experience certificates):
- *  .data/uploads/<email>/... — served via /api/file (owner-checked). */
-export const PROFILE_UPLOADS_ROOT = path.join(PRIVATE_DATA_ROOT, "uploads");
-
 /** Per-user profile documents (contain PII): .data/profiles/<email>.json */
 export const PROFILES_DIR = path.join(PRIVATE_DATA_ROOT, "profiles");
 

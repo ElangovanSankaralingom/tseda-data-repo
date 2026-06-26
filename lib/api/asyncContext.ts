@@ -50,8 +50,3 @@ export function runWithRequestContext<T>(fn: () => T, requestId?: string): T {
 export function getCurrentRequestId(): string {
   return storage.getStore()?.requestId ?? "no-request-ctx";
 }
-
-/** Get the timestamp when the current request started. */
-export function getRequestStartTime(): number {
-  return storage.getStore()?.startedAt ?? Date.now();
-}

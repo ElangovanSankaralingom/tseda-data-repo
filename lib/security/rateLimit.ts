@@ -21,13 +21,6 @@ import { APP_CONFIG } from "@/lib/config/appConfig";
 
 export const RATE_LIMIT_PRESETS = APP_CONFIG.rateLimits;
 
-export const SENSITIVE_PRESETS = {
-  fileUpload: { windowMs: 60_000, max: 20 },
-  generate: { windowMs: 60_000, max: 10 },
-  delete: { windowMs: 60_000, max: 10 },
-  auth: { windowMs: 300_000, max: 20 },
-} as const;
-
 let lastPruneAt = 0;
 const PRUNE_INTERVAL_MS = 60_000;
 

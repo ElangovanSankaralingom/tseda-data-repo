@@ -11,14 +11,6 @@ const BASE_DEFAULT =
 const BASE_COMPACT =
   "inline-flex h-8 shrink-0 items-center justify-center rounded-full border px-3 text-sm font-medium transition-all duration-150 active:scale-[0.97]";
 
-export function getButtonVariant(role: ButtonRole) {
-  if (role === "primary") return "default" as const;
-  if (role === "destructive") return "destructive" as const;
-  if (role === "ghost") return "ghost" as const;
-  if (role === "link") return "link" as const;
-  return "outline" as const;
-}
-
 export function getActionButtonVariant(role: ButtonRole) {
   if (role === "primary") return "primary" as const;
   if (role === "destructive") return "destructive" as const;

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { normalizeError, type AppErrorCode } from "@/lib/errors";
+import { normalizeError } from "@/lib/errors";
 import { getCurrentRequestId } from "@/lib/api/asyncContext";
 import { logger } from "@/lib/logger";
 
@@ -58,25 +58,4 @@ export function reportError(error: unknown, context: ErrorReportContext): void {
   //     Sentry.captureException(error);
   //   });
   // -----------------------------------------------------------------------
-}
-
-/**
- * Report a warning-level issue (not a thrown error, but something noteworthy).
- */
-export function reportWarning(
-  message: string,
-  code: AppErrorCode,
-  context: ErrorReportContext,
-): void {
-  const requestId = getCurrentRequestId();
-
-  logger.warn({
-    event: "warning.reported",
-    errorCode: code,
-    requestId,
-    source: context.source,
-    ...(context.userEmail ? { userEmail: context.userEmail } : {}),
-    ...(context.path ? { path: context.path } : {}),
-    ...(context.meta ?? {}),
-  }, message);
 }

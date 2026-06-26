@@ -5,6 +5,7 @@ import AdminConfirmationsClient from "@/app/(protected)/admin/confirmations/Admi
 import { authOptions } from "@/lib/auth";
 import { canApproveConfirmations } from "@/lib/admin/roles";
 import { isApprovalCoordinator } from "@/lib/admin/coordinators";
+import { getRequestSlaDays } from "@/lib/settings/consumer";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 
@@ -19,6 +20,8 @@ export default async function AdminConfirmationsPage() {
     redirect(dashboard());
   }
 
+  const slaDays = await getRequestSlaDays();
+
   return (
     <AdminPageShell
       titleKey="adminPages.confirmationsTitle"
@@ -27,7 +30,7 @@ export default async function AdminConfirmationsPage() {
       iconName="FileEdit"
       maxWidthClassName="max-w-6xl"
     >
-      <AdminConfirmationsClient />
+      <AdminConfirmationsClient slaDays={slaDays} />
     </AdminPageShell>
   );
 }

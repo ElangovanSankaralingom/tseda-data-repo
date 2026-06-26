@@ -1,4 +1,3 @@
-import { CATEGORY_LIST, isValidCategorySlug } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
 
 type RouterLike = {
@@ -7,26 +6,12 @@ type RouterLike = {
   replace?: (href: string) => void;
 };
 
-const CATEGORY_SET = new Set<CategoryKey>(CATEGORY_LIST);
-
-export function normalizeCategory(category: string): CategoryKey {
-  const normalized = category.trim().toLowerCase();
-  if (isValidCategorySlug(normalized) && CATEGORY_SET.has(normalized)) {
-    return normalized as CategoryKey;
-  }
-  throw new Error(`Unsupported category: ${category}`);
-}
-
 export function dashboard() {
   return "/dashboard";
 }
 
 export function dataEntryHome() {
   return "/data-entry";
-}
-
-export function dataEntrySearch() {
-  return "/data-entry/search";
 }
 
 export function profile() {
@@ -55,18 +40,6 @@ export function adminCoordinators() {
 
 export function adminBin() {
   return "/admin/bin";
-}
-
-export function adminExportFormats() {
-  return "/admin/export-formats";
-}
-
-export function adminFaculty() {
-  return "/admin/faculty";
-}
-
-export function adminUserProfile(email: string) {
-  return `/admin/users/${encodeURIComponent(email)}`;
 }
 
 export function adminSettings() {
@@ -100,10 +73,6 @@ export function adminMaintenance() {
 
 export function adminIntegrity() {
   return "/admin/integrity";
-}
-
-export function adminSearch() {
-  return "/admin/search";
 }
 
 export function adminAnalytics() {
@@ -179,12 +148,5 @@ export function getCategoryNavigation(categoryPath: string, viewEntryId?: string
     categoryHref: categoryPath,
     backHref: categoryPath,
     backDisabled: false,
-  };
-}
-
-export function getDataEntryNavigation() {
-  return {
-    backHref: dashboard(),
-    backDisabled: true,
   };
 }

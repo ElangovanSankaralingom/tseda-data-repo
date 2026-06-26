@@ -32,11 +32,6 @@ export function isEntryEditable(entry: unknown) {
   return !isEntryLockedFromStatus(entry as LockableEntryLike);
 }
 
-export function isEntryLockedState(entry: unknown, mode?: "streak" | "generic") {
-  void mode;
-  return isEntryLockedFromStatus(entry as LockableEntryLike);
-}
-
 export function isFutureDatedEntry(startDate?: string, endDate?: string): boolean;
 export function isFutureDatedEntry(args: {
   startDate?: string;
@@ -58,19 +53,4 @@ export function isWithinRequestEditWindow(
   windowMinutes = 5
 ) {
   return isSharedRequestEditWindow(requestedAtISO, windowMinutes);
-}
-
-export function computeLockState(entry: unknown, mode?: "streak" | "generic"): EntryLockState {
-  const state = getEditLockState(entry, mode);
-  const color: LockStateColor =
-    state.isLocked || state.daysRemaining <= 2
-      ? "red"
-      : state.daysRemaining <= 5
-        ? "yellow"
-        : "normal";
-
-  return {
-    ...state,
-    color,
-  };
 }

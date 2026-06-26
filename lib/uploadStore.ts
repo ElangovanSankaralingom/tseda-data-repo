@@ -2,7 +2,6 @@ import "server-only";
 // lib/uploadStore.ts
 import fs from "fs";
 import path from "path";
-import { APP_CONFIG } from "@/lib/config/appConfig";
 
 /* S0: profile documents and uploads contain PII — they live under the
    gitignored .data/ root, never under the git-tracked data/ tree. */
@@ -23,24 +22,4 @@ export function safeEmailKey(email: string) {
 export function extFromFileName(fileName: string) {
   const ext = path.extname(fileName).toLowerCase();
   return ext;
-}
-
-export function assertAllowedUpload(contentType: string, fileName: string) {
-  const ext = extFromFileName(fileName);
-  const okExt = (APP_CONFIG.upload.allowedExtensions as readonly string[]).includes(ext);
-  const allMimeTypes = [...APP_CONFIG.upload.allowedDocMimeTypes, ...APP_CONFIG.upload.allowedImageMimeTypes];
-  const okType = allMimeTypes.includes(contentType);
-  if (!okExt || !okType) {
-    throw new Error("Only pdf/jpg/png are allowed.");
-  }
-}
-
-export function writeFileBytes(filePath: string, bytes: Uint8Array) {
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(filePath, Buffer.from(bytes));
-}
-
-export function deleteIfExists(filePath: string) {
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 }

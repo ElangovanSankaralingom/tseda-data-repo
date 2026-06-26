@@ -244,14 +244,6 @@ export function buildPatchForTab(tab: TabKey, draft: Profile) {
   }
 }
 
-export function findExperienceEntry<K extends ExperienceCategory>(
-  experience: Experience,
-  category: K,
-  entryId: string
-): ExperienceEntryByCategory[K] | undefined {
-  return experience[category].find((entry) => entry.id === entryId) as ExperienceEntryByCategory[K] | undefined;
-}
-
 export function updateExperienceCategoryCertificate<K extends ExperienceCategory>(
   experience: Experience,
   category: K,
@@ -404,17 +396,4 @@ export function getSectionsForErrors(scopeErrors: Array<[string, string]>) {
   }
 
   return Array.from(sections);
-}
-
-export function getTabErrorMessage(tab: TabKey, tabErrors: Array<[string, string]>) {
-  if (tab === "experience") {
-    return "Experience could not be saved. Fix overlap or validation issues in Experience.";
-  }
-
-  if (tab === "uploads") {
-    return "Uploads could not be saved. Try the upload action again.";
-  }
-
-  const sectionLabel = getSectionsForErrors(tabErrors).join(", ");
-  return `${sectionLabel} could not be saved. Fix the highlighted fields.`;
 }

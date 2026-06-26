@@ -103,34 +103,6 @@ export function toUserMessage(error: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// Error subclasses — typed constructors for common cases
-// ---------------------------------------------------------------------------
-
-export class ValidationError extends AppError {
-  constructor(message: string, details?: unknown) {
-    super({ code: "VALIDATION_ERROR", message, details });
-  }
-}
-
-export class NotFoundError extends AppError {
-  constructor(message = "Not found") {
-    super({ code: "NOT_FOUND", message });
-  }
-}
-
-export class ForbiddenError extends AppError {
-  constructor(message = "Forbidden") {
-    super({ code: "FORBIDDEN", message });
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message: string) {
-    super({ code: "CONFLICT", message });
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Error code → HTTP status mapping
 // ---------------------------------------------------------------------------
 

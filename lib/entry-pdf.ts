@@ -30,20 +30,6 @@ function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-export function isValidPdfMeta(meta: PdfMeta | null | undefined): meta is PdfMeta {
-  return !!(
-    meta &&
-    typeof meta.storedPath === "string" &&
-    meta.storedPath &&
-    typeof meta.url === "string" &&
-    meta.url &&
-    typeof meta.fileName === "string" &&
-    meta.fileName &&
-    typeof meta.generatedAtISO === "string" &&
-    meta.generatedAtISO
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Layout constants
 // ---------------------------------------------------------------------------

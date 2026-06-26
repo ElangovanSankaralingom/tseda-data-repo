@@ -94,20 +94,3 @@ export function validateSetting(key: string, value: unknown): ValidationResult {
   if (!def) return { valid: false, error: `Unknown setting: ${key}` };
   return validateValue(def, value);
 }
-
-export function validateSettings(
-  settings: Record<string, unknown>
-): { valid: boolean; errors: Record<string, string> } {
-  const errors: Record<string, string> = {};
-  let valid = true;
-
-  for (const [key, value] of Object.entries(settings)) {
-    const result = validateSetting(key, value);
-    if (!result.valid) {
-      errors[key] = result.error ?? "Invalid";
-      valid = false;
-    }
-  }
-
-  return { valid, errors };
-}

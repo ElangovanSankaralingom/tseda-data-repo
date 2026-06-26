@@ -35,13 +35,6 @@ export function monthStart(date?: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
-/** Get YYYY-MM-DD for the first day of last month */
-export function lastMonthStart(date?: Date): string {
-  const d = date ? new Date(date) : new Date();
-  d.setMonth(d.getMonth() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}
-
 /** Group items by a key function and count */
 export function groupAndCount<T>(items: T[], keyFn: (item: T) => string): Record<string, number> {
   const result: Record<string, number> = {};

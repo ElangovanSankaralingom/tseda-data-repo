@@ -23,7 +23,6 @@ import type { SchemaFieldDefinition } from "@/data/schemas/types";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { CategoryKey } from "@/lib/entries/types";
 import { isEntryFinalized, normalizeEntryStatus } from "@/lib/entries/workflow";
-import { normalizeStreakState, type StreakState } from "@/lib/streakState";
 import { nowISTDateISO } from "@/lib/time";
 
 export const STREAK_RULE_VERSION = 5;
@@ -134,15 +133,6 @@ export function compareStreakSortAtISO(left: string | null | undefined, right: s
 }
 
 // --- Streak eligibility ---
-
-/**
- * Returns the end date field name for a given category.
- * All categories currently use "endDate".
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getEndDateField(_category?: CategoryKey): string {
-  return END_DATE_FIELD;
-}
 
 /**
  * Check if an entry's end date is in the future (after today in IST).
@@ -262,29 +252,6 @@ export function isEntryWon(
     (f) => f.exportable !== false && f.upload !== true && f.required !== false
   );
   return userDataFields.every((field) => isFieldFilled(entry, field));
-}
-
-// --- Backward-compat per-entry snapshot (without schema) ---
-
-/**
- * Per-entry snapshot without schema context.
- * isWin is always false here — use isEntryWon() with schema for accurate win detection.
- */
-export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): StreakProgressSnapshot {
-  const id = String(entry.id ?? "").trim();
-  const streak = normalizeStreakState(entry.streak);
-  const activated = isEntryActivated(entry);
-
-  return {
-    id,
-    isActivated: activated,
-    isCompleted: activated,
-    isWin: false,
-    hasActivatedAt: !!streak.activatedAtISO,
-    hasCompletedAt: !!streak.completedAtISO,
-    dueAtISO: null,
-    sortAtISO: toStreakSortAtISO(entry),
-  };
 }
 
 // --- Aggregation ---

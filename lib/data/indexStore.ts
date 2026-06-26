@@ -14,12 +14,11 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { getSearchSnapshotKey } from "@/lib/search/searchText";
-import { ENTRY_STATUSES, type Entry } from "@/lib/types/entry";
+import { type Entry } from "@/lib/types/entry";
 import { logger } from "@/lib/logger";
 import {
   buildUserIndex,
   buildStreakSnapshotFromStore,
-  clampCount,
   cloneIndex,
   hydrateIndex,
   isInvalidCountMap,
@@ -29,7 +28,6 @@ import {
   toSortTime,
   writeIndexFile,
   type UserIndex,
-  type UserIndexDelta,
 } from "./indexStoreInternal";
 
 // Re-export types for consumers
@@ -141,58 +139,6 @@ export async function ensureUserIndex(userEmail: string): Promise<Result<UserInd
       return hydrated.index;
     });
   }, { context: "indexStore.ensureUserIndex" });
-}
-
-// ---------------------------------------------------------------------------
-// applyIndexDelta
-// ---------------------------------------------------------------------------
-
-export async function applyIndexDelta(
-  userEmail: string,
-  delta: UserIndexDelta
-): Promise<Result<UserIndex>> {
-  return safeAction(async () => {
-    const normalizedEmail = normalizeEmail(userEmail);
-    if (!normalizedEmail) {
-      throw new AppError({ code: "VALIDATION_ERROR", message: "Invalid email" });
-    }
-    return withUserDataLock(normalizedEmail, async () => {
-      const ensured = await ensureUserIndex(normalizedEmail);
-      if (!ensured.ok) {
-        throw ensured.error;
-      }
-
-      const next = cloneIndex(ensured.data);
-      for (const category of CATEGORY_KEYS) {
-        const totalDelta = delta.totalsByCategory?.[category] ?? 0;
-        const pendingDelta = delta.pendingByCategory?.[category] ?? 0;
-        const approvedDelta = delta.approvedByCategory?.[category] ?? 0;
-
-        next.totalsByCategory[category] = clampCount(next.totalsByCategory[category] + totalDelta);
-        next.pendingByCategory[category] = clampCount(next.pendingByCategory[category] + pendingDelta);
-        next.approvedByCategory[category] = clampCount(next.approvedByCategory[category] + approvedDelta);
-
-        if (Object.prototype.hasOwnProperty.call(delta.lastEntryAtByCategory ?? {}, category)) {
-          next.lastEntryAtByCategory[category] = delta.lastEntryAtByCategory?.[category] ?? null;
-        }
-      }
-
-      for (const status of ENTRY_STATUSES) {
-        const statusDelta = delta.countsByStatus?.[status] ?? 0;
-        next.countsByStatus[status] = clampCount(next.countsByStatus[status] + statusDelta);
-      }
-
-      next.updatedAt = new Date().toISOString();
-      await writeIndexFile(normalizedEmail, next);
-      logger.info({
-        event: "index.delta.applied",
-        userEmail: normalizedEmail,
-        count: Object.values(next.totalsByCategory).reduce((sum, value) => sum + value, 0),
-        deltaCategoryCount: Object.keys(delta.totalsByCategory ?? {}).length,
-      });
-      return next;
-    });
-  }, { context: "indexStore.applyIndexDelta" });
 }
 
 // ---------------------------------------------------------------------------

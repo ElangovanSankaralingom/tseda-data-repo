@@ -94,11 +94,3 @@ export function getChangedImmutableFieldsWhenPending(
 
   return changed;
 }
-
-export function hasPendingImmutableFieldChanges(
-  category: CategoryKey,
-  beforeEntry: PendingEntryLike,
-  afterEntry: PendingEntryLike
-): boolean {
-  return getChangedImmutableFieldsWhenPending(category, beforeEntry, afterEntry).length > 0;
-}

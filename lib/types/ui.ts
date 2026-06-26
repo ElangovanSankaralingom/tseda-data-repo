@@ -9,8 +9,6 @@ export type ToastState = {
 
 export type ConfirmDialogVariant = "default" | "destructive";
 
-export type BannerVariant = "finalized" | "edit_requested" | "edit_granted" | "expiring_soon";
-
 export type EntryShellMode = "new" | "edit" | "view" | "preview";
 
 export type GenerateButtonState = "idle" | "generating" | "success";

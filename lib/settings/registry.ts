@@ -303,10 +303,6 @@ export function getAllSettings(): SettingDefinition[] {
   return SETTINGS;
 }
 
-export function getAllCategories(): SettingCategory[] {
-  return Array.from(BY_CATEGORY.keys());
-}
-
 export function getDefaultValue(key: string): unknown {
   return BY_KEY.get(key)?.default;
 }

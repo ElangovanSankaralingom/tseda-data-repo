@@ -30,10 +30,6 @@ export function normalizeConfirmationStatus(
   return fallback;
 }
 
-export function getConfirmationStatus(entry: ConfirmationEntryLike): ConfirmationStatus {
-  return normalizeConfirmationStatus(entry.requestEditStatus);
-}
-
 export function normalizeEntryApprovalStatus(
   value: unknown,
   fallback: EntryApprovalStatus = "DRAFT"

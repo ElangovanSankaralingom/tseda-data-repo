@@ -6,7 +6,6 @@ import { getDataRoot } from "@/lib/userStore";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeError } from "@/lib/errors";
 import { err, ok, type Result } from "@/lib/result";
-import { buildTelemetrySummaryFromEvents } from "@/lib/telemetry/summary";
 import {
   isTelemetryEventName,
   TELEMETRY_VERSION,
@@ -15,7 +14,6 @@ import {
   type TelemetryEvent,
   type TelemetryEventInput,
   type TelemetryMeta,
-  type TelemetrySummary,
 } from "@/lib/telemetry/types";
 
 const DEFAULT_READ_LIMIT = 1000;
@@ -28,10 +26,6 @@ function getTelemetryRootDir() {
 
 function getTelemetryEventsPath() {
   return path.join(getTelemetryRootDir(), "events.log");
-}
-
-function getTelemetrySummaryPath() {
-  return path.join(getTelemetryRootDir(), "summary.json");
 }
 
 function toSafeString(value: unknown, maxLength = 256) {
@@ -195,43 +189,6 @@ export async function readTelemetryEvents(
     }
     if (limit === 0) return ok([]);
     return ok(items);
-  } catch (error) {
-    return err(normalizeError(error));
-  }
-}
-
-export async function summarizeTelemetry(
-  options: ReadTelemetryEventsOptions = {}
-): Promise<Result<TelemetrySummary>> {
-  const eventsResult = await readTelemetryEvents({
-    ...options,
-    limit: options.limit ?? MAX_READ_LIMIT,
-  });
-  if (!eventsResult.ok) return err(eventsResult.error);
-
-  try {
-    const summary = buildTelemetrySummaryFromEvents(eventsResult.data);
-    await ensureTelemetryStore();
-    await fs.writeFile(getTelemetrySummaryPath(), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
-    return ok(summary);
-  } catch (error) {
-    return err(normalizeError(error));
-  }
-}
-
-export async function readTelemetrySummaryCache(): Promise<Result<TelemetrySummary | null>> {
-  try {
-    const raw = await fs.readFile(getTelemetrySummaryPath(), "utf8").catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : "";
-      if (message.includes("ENOENT")) return "";
-      throw error;
-    });
-    if (!raw.trim()) return ok(null);
-    const parsed = JSON.parse(raw) as TelemetrySummary;
-    if (!parsed || typeof parsed !== "object") return ok(null);
-    if (typeof parsed.generatedAt !== "string") return ok(null);
-    if (typeof parsed.totalEvents !== "number") return ok(null);
-    return ok(parsed);
   } catch (error) {
     return err(normalizeError(error));
   }

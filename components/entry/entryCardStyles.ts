@@ -1,20 +1,4 @@
-import type { EntryDisplayCategory } from "@/lib/entries/displayLifecycle";
 import type { EntryListGroup } from "@/lib/entryCategorization";
-import { statusBorderClasses } from "@/components/ui/design-tokens";
-
-export function getEntryListCardClass(category: EntryDisplayCategory, status?: string) {
-  const borderLeft = status ? statusBorderClasses(status) : "";
-
-  if (category === "completed") {
-    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-primary)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 hover:shadow-lg transition-all duration-300`;
-  }
-
-  if (category === "streak_active") {
-    return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-palette-amber-fg)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 shadow-[0_0_12px_rgba(249,115,22,0.06)] hover:shadow-lg transition-all duration-300`;
-  }
-
-  return `rounded-lg border border-[var(--color-glass-border)] border-l-4 ${borderLeft || "border-l-[var(--color-text-muted)]"} bg-[var(--color-glass-bg)] backdrop-blur-sm p-4 hover:shadow-lg transition-all duration-300`;
-}
 
 /*
   ─────────────────────────────────────────────────────────
@@ -128,45 +112,6 @@ export type GroupCardStyle = {
   topStripeBg: string;
   topStripeHeight: number;
   hoverShadow: string;
-};
-
-export const GROUP_CARDS: Record<EntryListGroup, GroupCardStyle> = {
-  streak_runners: {
-    cardBorder: `color-mix(in srgb, ${GROUP_HEX.streak_runners} 15%, transparent)`,
-    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.streak_runners} 0%, color-mix(in srgb, ${GROUP_HEX.streak_runners} 60%, transparent) 60%, transparent 100%)`,
-    topStripeHeight: 3,
-    hoverShadow: "0 4px 20px rgba(251,191,36,0.10)",
-  },
-  on_the_clock: {
-    cardBorder: `color-mix(in srgb, ${GROUP_HEX.on_the_clock} 15%, transparent)`,
-    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.on_the_clock} 0%, color-mix(in srgb, ${GROUP_HEX.on_the_clock} 60%, transparent) 60%, transparent 100%)`,
-    topStripeHeight: 3,
-    hoverShadow: "0 4px 20px rgba(59,130,246,0.10)",
-  },
-  unlocked: {
-    cardBorder: `color-mix(in srgb, ${GROUP_HEX.unlocked} 12%, transparent)`,
-    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.unlocked} 0%, color-mix(in srgb, ${GROUP_HEX.unlocked} 60%, transparent) 60%, transparent 100%)`,
-    topStripeHeight: 2,
-    hoverShadow: "0 4px 20px rgba(168,85,247,0.08)",
-  },
-  in_the_works: {
-    cardBorder: "transparent",
-    topStripeBg: "transparent",
-    topStripeHeight: 0,
-    hoverShadow: "none",
-  },
-  under_review: {
-    cardBorder: `color-mix(in srgb, ${GROUP_HEX.under_review} 18%, transparent)`,
-    topStripeBg: `linear-gradient(90deg, ${GROUP_HEX.under_review} 0%, color-mix(in srgb, ${GROUP_HEX.under_review} 60%, transparent) 40%, transparent 100%)`,
-    topStripeHeight: 2,
-    hoverShadow: "0 4px 16px rgba(249,115,22,0.08)",
-  },
-  locked_in: {
-    cardBorder: "transparent",
-    topStripeBg: "transparent",
-    topStripeHeight: 0,
-    hoverShadow: "none",
-  },
 };
 
 /** Corner-notch clip path */

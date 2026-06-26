@@ -8,7 +8,6 @@ import { getDataRoot } from "@/lib/userStore";
 import {
   getSettingDefinition,
   getDefaultValue,
-  getSettingsForCategory,
   getAllSettings,
 } from "@/lib/settings/registry";
 import type {
@@ -128,12 +127,6 @@ export async function getSettings(keys: string[]): Promise<Record<string, unknow
   return result;
 }
 
-export async function getCategorySettings(category: SettingCategory): Promise<Record<string, unknown>> {
-  const defs = getSettingsForCategory(category);
-  const keys = defs.map((d) => d.key);
-  return getSettings(keys);
-}
-
 export async function setSetting(key: string, value: unknown, changedBy: string): Promise<void> {
   const def = getSettingDefinition(key);
   if (!def) throw new Error(`Unknown setting: ${key}`);
@@ -173,12 +166,6 @@ export async function setSettings(
   }
 }
 
-export async function resetSetting(key: string, changedBy: string): Promise<void> {
-  const def = getSettingDefinition(key);
-  if (!def) throw new Error(`Unknown setting: ${key}`);
-  await setSetting(key, def.default, changedBy);
-}
-
 export async function resetAllSettings(changedBy: string): Promise<void> {
   const config = await readConfig();
   const nowISO = new Date().toISOString();
@@ -197,22 +184,6 @@ export async function resetAllSettings(changedBy: string): Promise<void> {
 
   await writeConfig({ version: SETTINGS_VERSION, settings: {} });
   logger.info({ event: "settings.reset-all", changedBy });
-}
-
-export async function getSettingWithMeta(key: string): Promise<SettingWithMeta | null> {
-  const def = getSettingDefinition(key);
-  if (!def) return null;
-
-  const config = await readConfig();
-  const stored = config.settings[key];
-
-  return {
-    value: stored?.value ?? def.default,
-    definition: def,
-    isDefault: !stored,
-    lastChangedBy: stored?.changedBy,
-    lastChangedAt: stored?.changedAt,
-  };
 }
 
 export async function getAllSettingsWithMeta(): Promise<SettingWithMeta[]> {

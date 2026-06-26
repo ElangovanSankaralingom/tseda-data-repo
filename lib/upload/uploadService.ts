@@ -1,9 +1,7 @@
 "use client";
 
 import { AppError } from "@/lib/errors";
-import { safeAction } from "@/lib/safeAction";
 import { trackClientTelemetryEvent } from "@/lib/telemetry/client";
-import type { Result } from "@/lib/result";
 
 export type UploadedFile = {
   id: string;
@@ -272,17 +270,5 @@ export async function deleteFile({ endpoint, storedPath }: DeleteFileOptions): P
       source: "upload",
       storedPath: storedPath.slice(0, 120),
     },
-  });
-}
-
-export async function uploadFileSafe(options: UploadFileOptions): Promise<Result<UploadedFile>> {
-  return safeAction(() => uploadFile(options), {
-    context: "uploadService.uploadFile",
-  });
-}
-
-export async function deleteFileSafe(options: DeleteFileOptions): Promise<Result<void>> {
-  return safeAction(() => deleteFile(options), {
-    context: "uploadService.deleteFile",
   });
 }

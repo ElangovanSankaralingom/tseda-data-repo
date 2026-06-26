@@ -11,8 +11,6 @@ export type StudentYear = YearOfStudy;
 
 export { YEAR_OF_STUDY_OPTIONS, normalizeYearOfStudy, type CurrentSemester, type YearOfStudy };
 
-export const STUDENT_YEAR_OPTIONS = YEAR_OF_STUDY_OPTIONS;
-
 export function allowedSemestersForYear(year: YearOfStudy | undefined): CurrentSemester[] {
   return allowedCurrentSemestersForYear(year);
 }
@@ -22,8 +20,4 @@ export function isSemesterAllowed(
   semester: number | undefined
 ): boolean {
   return isCurrentSemesterAllowed(year, semester);
-}
-
-export function normalizeStudentYear(value: string): StudentYear | undefined {
-  return normalizeYearOfStudy(value);
 }

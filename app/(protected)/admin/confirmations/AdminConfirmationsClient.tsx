@@ -27,9 +27,6 @@ type PendingConfirmationRow = {
   ageDays?: number | null;
 };
 
-/** Flag requests that have waited a while so they don't sit forgotten (SLA). */
-const REQUEST_ATTENTION_DAYS = 3;
-
 function getRowKey(row: Pick<PendingConfirmationRow, "ownerEmail" | "categoryKey" | "entryId">) {
   return `${row.ownerEmail}:${row.categoryKey}:${row.entryId}`;
 }
@@ -46,7 +43,8 @@ function getRequestTimestamp(row: PendingConfirmationRow): string | null {
 
 type Tab = "pending" | "history";
 
-export default function AdminConfirmationsClient() {
+/** `slaDays`: requests waiting at least this many days get an attention badge (admin setting). */
+export default function AdminConfirmationsClient({ slaDays = 3 }: { slaDays?: number }) {
   const { t } = useTranslation();
   const { requestConfirmation, confirmationDialog } = useConfirmAction();
   const [activeTab, setActiveTab] = useState<Tab>("pending");
@@ -225,7 +223,7 @@ export default function AdminConfirmationsClient() {
                           }`}>
                             {isDeleteRequest ? t('entry.requestDelete') : t('entry.requestEdit')}
                           </span>
-                          {typeof row.ageDays === "number" && row.ageDays >= REQUEST_ATTENTION_DAYS && (
+                          {typeof row.ageDays === "number" && row.ageDays >= slaDays && (
                             <span
                               className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
                               style={{ background: "var(--color-status-warning-bg)", color: "var(--color-status-warning)", border: "1px solid var(--color-status-warning-border)" }}

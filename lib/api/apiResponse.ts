@@ -39,11 +39,3 @@ export function apiUnauthorized(message = AUTH.unauthorized) {
 export function apiForbidden(message = AUTH.accessDenied) {
   return apiError(message, { status: 403, code: "FORBIDDEN" });
 }
-
-export function apiNotFound(message = "Not found") {
-  return apiError(message, { status: 404, code: "NOT_FOUND" });
-}
-
-export function apiServerError(message = "Internal server error") {
-  return apiError(message, { status: 500, code: "INTERNAL_ERROR" });
-}

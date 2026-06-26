@@ -90,23 +90,3 @@ export function markSaved(
     ? { isDirtyPreStage: false, isDirtyPostStage: current.isDirtyPostStage }
     : { isDirtyPreStage: current.isDirtyPreStage, isDirtyPostStage: false };
 }
-
-export function markGenerated(current: EntryLifecycleState): EntryLifecycleState {
-  return computeEntryLifecycle({
-    isLocked: false,
-    hasPdfSnapshot: true,
-    preStageValid: true,
-    postStageValid: current.canDone,
-    preStageDirty: false,
-    postStageDirty: current.isDirtyPostStage,
-    streakActivated: current.streakActivated,
-    streakCompleted: current.streakCompleted,
-  });
-}
-
-export function markDone(current: EntryLifecycleState): EntryLifecycleState {
-  return {
-    ...current,
-    streakCompleted: true,
-  };
-}

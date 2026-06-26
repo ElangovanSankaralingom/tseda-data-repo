@@ -42,11 +42,6 @@ export async function getAdminNotifications(): Promise<AdminNotification[]> {
   return store.notifications;
 }
 
-export async function getAdminUnreadCount(adminEmail: string): Promise<number> {
-  const store = await readStore();
-  return store.notifications.filter((n) => !n.readBy.includes(adminEmail)).length;
-}
-
 export async function addAdminNotification(
   notification: Omit<AdminNotification, "id" | "createdAt" | "readBy">,
 ): Promise<AdminNotification> {

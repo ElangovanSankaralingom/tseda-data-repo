@@ -62,9 +62,6 @@ export function createEntryStatusRecord<T>(
   }, {} as Record<EntryStatus, T>);
 }
 
-/** Field stage for the two-stage model */
-export type FieldStage = 1 | 2;
-
 /**
  * Lifecycle fields managed by the engine.
  * These are NEVER user-editable. The engine sets them during transitions.

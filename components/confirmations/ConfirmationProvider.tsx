@@ -32,16 +32,6 @@ export function useConfirmation(): ConfirmationContextValue {
   return ctx;
 }
 
-// Convenience aliases
-export function useToast() {
-  const { toast, success, error, warning, info, loading, updateToast, dismissToast } = useConfirmation();
-  return { toast, success, error, warning, info, loading, updateToast, dismissToast };
-}
-
-export function useConfirm() {
-  return useConfirmation().confirm;
-}
-
 import { type PendingConfirm } from "./confirmTypes";
 
 const MAX_TOASTS = 5;

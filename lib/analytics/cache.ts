@@ -67,18 +67,3 @@ export async function getCachedAnalytics(forceRefresh = false): Promise<Result<A
     return result.data;
   }, { context: "analytics.cache" });
 }
-
-export function getCacheAge(): Promise<Result<{ computedAt: string | null; ageMs: number | null }>> {
-  return safeAction(async () => {
-    try {
-      const raw = await fs.readFile(cachePath(), "utf8");
-      const envelope = JSON.parse(raw) as CacheEnvelope;
-      return {
-        computedAt: envelope.computedAt,
-        ageMs: Date.now() - Date.parse(envelope.computedAt),
-      };
-    } catch {
-      return { computedAt: null, ageMs: null };
-    }
-  }, { context: "analytics.cacheAge" });
-}

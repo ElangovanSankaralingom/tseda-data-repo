@@ -1,7 +1,6 @@
 import {
   getEditTimeRemaining,
   isEntryCommitted,
-  isEntryEditable,
   isEntryFinalized,
   normalizeEntryStatus,
   type EditTimeRemaining,
@@ -83,13 +82,6 @@ export function getEntryCompletionState(entry: CategorizableEntry): EntryComplet
 export function getEntryStreakDisplayState(entry: CategorizableEntry): EntryStreakState {
   if (isStreakCompleted(entry)) return "completed";
   if (isStreakActivated(entry)) return "activated";
-  return "none";
-}
-
-export function getStreakIconVariant(entry: CategorizableEntry): StreakIconVariant {
-  const streakState = getEntryStreakDisplayState(entry);
-  if (streakState === "completed") return "completed";
-  if (streakState === "activated") return "activated";
   return "none";
 }
 
@@ -234,9 +226,4 @@ export function groupEntriesForList<T extends CategorizableEntry>(
   }
 
   return groups;
-}
-
-/** Check if an entry is editable (for action button decisions). */
-export function isEntryCurrentlyEditable(entry: CategorizableEntry): boolean {
-  return isEntryEditable(entry as EntryStateLike);
 }

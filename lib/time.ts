@@ -61,10 +61,6 @@ export function addDaysISO(dateISO: string, days: number) {
   return formatISTDate(date);
 }
 
-export function addDaysIST(dateISO: string, days: number) {
-  return addDaysISO(dateISO, days);
-}
-
 export function endOfDayIST(dateISO: string) {
   if (!isISODate(dateISO)) return null;
   return toISTDateTime(dateISO, 23, 59, 59, 999);

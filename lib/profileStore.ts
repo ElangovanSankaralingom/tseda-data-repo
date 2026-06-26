@@ -1,5 +1,5 @@
 import "server-only";
-import { readJson, writeJson, newId, PRIVATE_DIR } from "@/lib/storage";
+import { readJson, writeJson, PRIVATE_DIR } from "@/lib/storage";
 
 export type BloodGroup = "A+"|"A-"|"B+"|"B-"|"O+"|"O-"|"AB+"|"AB-";
 export type Designation =
@@ -128,8 +128,4 @@ export async function upsertProfile(email: string, patch: Partial<Profile>): Pro
   all[key] = next;
   await writeJson(FILE, all, PRIVATE_DIR);
   return next;
-}
-
-export function makeId() {
-  return newId();
 }

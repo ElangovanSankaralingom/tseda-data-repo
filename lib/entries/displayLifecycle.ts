@@ -1,7 +1,6 @@
 import { computeDueAtISO } from "../streakTiming.ts";
 import { getDaysLeft, getDaysLeftColor } from "../streakDeadline.ts";
 import {
-  groupEntries,
   type CategorizableEntry,
   type EntryDisplayCategory,
 } from "../entryCategorization.ts";
@@ -48,13 +47,4 @@ export function getEntryTag(category: EntryDisplayCategory, index: number) {
 export function isEditableNow(entry: LifecycleEntry) {
   void entry;
   return true;
-}
-
-export function groupEntriesByLifecycle<T extends LifecycleEntry>(entries: T[]) {
-  const grouped = groupEntries(entries, { sort: "newest" });
-  return {
-    drafts: grouped.draft,
-    pending: grouped.activated,
-    completed: grouped.completed,
-  };
 }

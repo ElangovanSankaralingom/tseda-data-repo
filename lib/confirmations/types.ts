@@ -42,15 +42,6 @@ export type Toast = ToastOptions & {
   createdAt: number;
 };
 
-// --- Undo Action ---
-
-export type UndoOptions = {
-  description: string;
-  undoFn: () => Promise<void>;
-  timeout?: number;
-  onExpire?: () => void;
-};
-
 // --- Progress Notification ---
 
 export type ProgressStatus = "running" | "success" | "error";
