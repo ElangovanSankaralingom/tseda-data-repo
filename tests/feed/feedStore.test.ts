@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { appendFeedEvent, listFeedEvents, toggleReaction } from "../../lib/feed/feedStore.ts";
+import { appendFeedEvent, listFeedEvents, removeFeedEvent, toggleReaction } from "../../lib/feed/feedStore.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 async function withSandbox<T>(label: string, run: () => Promise<T>): Promise<T> {
@@ -54,5 +54,19 @@ test("toggleReaction rejects an invalid reaction or a missing event", async () =
     await appendFeedEvent({ id: "y", type: "streak_started", actorEmail: "a@tce.edu" });
     assert.equal(await toggleReaction("y", "bogus", "v@tce.edu"), null);
     assert.equal(await toggleReaction("missing", "like", "v@tce.edu"), null);
+  });
+});
+
+test("removeFeedEvent removes a single event and is idempotent on a missing id", async () => {
+  await withSandbox("feed-remove", async () => {
+    await appendFeedEvent({ id: "r1", type: "streak_won", actorEmail: "a@tce.edu" });
+    await appendFeedEvent({ id: "r2", type: "streak_started", actorEmail: "b@tce.edu" });
+
+    assert.equal(await removeFeedEvent("r1"), true);
+    const events = await listFeedEvents();
+    assert.equal(events.length, 1);
+    assert.equal(events[0]?.id, "r2");
+
+    assert.equal(await removeFeedEvent("r1"), false);
   });
 });

@@ -6,7 +6,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import DashboardClient from "@/components/dashboard/DashboardClient";
-import { canAccessAdminConsole } from "@/lib/admin/roles";
+import { canAccessAdminConsole, isMasterAdmin } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { getDashboardSummary } from "@/lib/entries/summary";
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
         />
       )}
 
-      {feedEnabled && <ActivityFeed />}
+      {feedEnabled && <ActivityFeed canModerate={isMasterAdmin(email)} />}
     </div>
   );
 }

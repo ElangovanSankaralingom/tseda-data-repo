@@ -15,6 +15,7 @@ export const en = {
     startedStreak: "started a streak",
     wonStreak: "won a streak",
     milestoneReached: "hit {n} wins",
+    remove: "Remove",
     you: "You",
     justNow: "just now",
     minutesAgo: "{n}m ago",

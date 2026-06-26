@@ -68,6 +68,7 @@ export type PersistentNotificationType =
   | "timer_warning"
   | "entry_finalized"
   | "streak_won"
+  | "feed_reaction"
   | "system_announcement";
 
 export type PersistentNotification = {

@@ -2,9 +2,28 @@ import "server-only";
 
 import { getCategorySchema } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
-import { appendFeedEvent } from "@/lib/feed/feedStore";
+import { appendFeedEvent, type FeedEventType } from "@/lib/feed/feedStore";
 import { isEntryActivated, isEntryWon, type StreakProgressEntryLike } from "@/lib/streakProgress";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
+import { addNotification } from "@/lib/confirmations/notificationStore";
+import { resolveFacultyName } from "@/lib/admin/facultyRegistry";
+
+/** Notify a milestone's owner that someone reacted (best-effort, never throws). */
+export function notifyMilestoneReaction(ownerEmail: string, reactorEmail: string, type: FeedEventType): void {
+  const resolved = resolveFacultyName(reactorEmail);
+  const reactorName = resolved ? resolved.trim().split(/\s+/)[0] : (reactorEmail.split("@")[0] ?? "Someone");
+  const what = type === "streak_won" ? "streak win" : type === "milestone" ? "milestone" : "streak";
+  fireAndForget(
+    addNotification(ownerEmail, {
+      type: "feed_reaction",
+      title: "New reaction",
+      message: `${reactorName} reacted to your ${what}`,
+      actionUrl: "/dashboard",
+      actionLabel: "View",
+    }).then(() => undefined),
+    "feed.reaction.notify",
+  );
+}
 import { getDashboardSummary } from "@/lib/entries/summary";
 
 const WIN_MILESTONES = [5, 10, 25, 50, 100];

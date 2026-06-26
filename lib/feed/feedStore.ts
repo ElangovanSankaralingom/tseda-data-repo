@@ -190,3 +190,16 @@ export async function toggleReaction(
     return event;
   });
 }
+
+/** Remove a feed event entirely (master moderation). Returns true if one was removed. */
+export async function removeFeedEvent(eventId: string): Promise<boolean> {
+  const targetId = eventId.trim();
+  if (!targetId) return false;
+  return withLock(FEED_LOCK_KEY, async () => {
+    const config = await readConfig();
+    const next = config.events.filter((e) => e.id !== targetId);
+    if (next.length === config.events.length) return false;
+    await writeConfig({ version: CONFIG_VERSION, events: next });
+    return true;
+  });
+}

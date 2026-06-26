@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Flame, Trophy, Award, ThumbsUp, PartyPopper, Hand, Activity } from "lucide-react";
+import { Flame, Trophy, Award, ThumbsUp, PartyPopper, Hand, Activity, X } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { TranslationKey } from "@/lib/i18n";
@@ -120,11 +120,15 @@ const ReactionBar = React.memo(function ReactionBar({
 const MilestoneCard = React.memo(function MilestoneCard({
   event,
   now,
+  canModerate,
   onToggle,
+  onRemove,
 }: {
   event: FeedEvent;
   now: number;
+  canModerate: boolean;
   onToggle: (id: string, reaction: Reaction) => void;
+  onRemove: (id: string) => void;
 }) {
   const { t, categoryLabel } = useTranslation();
 
@@ -151,6 +155,16 @@ const MilestoneCard = React.memo(function MilestoneCard({
     >
       {freshWin && <ConfettiBurst active />}
       <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: accentFg, opacity: 0.85 }} />
+      {canModerate && (
+        <button
+          type="button"
+          onClick={() => onRemove(event.id)}
+          aria-label={t("feed.remove")}
+          className="absolute right-2 top-2 z-10 rounded-full p-1 text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-status-error-bg)] hover:text-[var(--color-status-error)]"
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
 
       <div className="flex items-start gap-3 pt-1">
         <div
@@ -181,18 +195,21 @@ const MilestoneCard = React.memo(function MilestoneCard({
   );
 });
 
-export default function ActivityFeed() {
+export default function ActivityFeed({ canModerate = false }: { canModerate?: boolean }) {
   const { t } = useTranslation();
   const { data, mutate } = useApi<FeedResponse>("/api/feed", { refreshInterval: 20_000 });
   const [overrides, setOverrides] = useState<
     Record<string, { reactions: Record<string, number>; myReactions: Reaction[] }>
   >({});
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const now = useNow();
 
   const events = useMemo(() => {
     const base = data?.data?.events ?? [];
-    return base.map((e) => (overrides[e.id] ? { ...e, ...overrides[e.id] } : e));
-  }, [data, overrides]);
+    return base
+      .filter((e) => !removedIds.has(e.id))
+      .map((e) => (overrides[e.id] ? { ...e, ...overrides[e.id] } : e));
+  }, [data, overrides, removedIds]);
 
   const eventsRef = useRef(events);
   useEffect(() => {
@@ -243,6 +260,26 @@ export default function ActivityFeed() {
     [mutate],
   );
 
+  const onRemove = useCallback(
+    async (id: string) => {
+      setRemovedIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+      try {
+        await fetch("/api/feed", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ eventId: id }),
+        });
+      } finally {
+        void mutate();
+      }
+    },
+    [mutate],
+  );
+
   if (!enabled) return null;
 
   return (
@@ -263,7 +300,14 @@ export default function ActivityFeed() {
       ) : (
         <div className="gap-4 [column-fill:balance] sm:columns-2 lg:columns-3">
           {events.map((event) => (
-            <MilestoneCard key={event.id} event={event} now={now} onToggle={onToggle} />
+            <MilestoneCard
+              key={event.id}
+              event={event}
+              now={now}
+              canModerate={canModerate}
+              onToggle={onToggle}
+              onRemove={onRemove}
+            />
           ))}
         </div>
       )}

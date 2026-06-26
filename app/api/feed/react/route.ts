@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { toggleReaction, FEED_REACTIONS, type FeedReaction } from "@/lib/feed/feedStore";
+import { notifyMilestoneReaction } from "@/lib/feed/feedEvents";
 import { isActivityFeedEnabled } from "@/lib/settings/consumer";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
@@ -54,6 +55,11 @@ export async function POST(request: Request) {
   const updated = await toggleReaction(eventId, reaction, email);
   if (!updated) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+
+  // Notify the owner when someone *adds* a reaction (not on un-react, not self).
+  if (updated.actorEmail !== email && (updated.reactions[reaction as FeedReaction] ?? []).includes(email)) {
+    notifyMilestoneReaction(updated.actorEmail, email, updated.type);
   }
 
   const reactions: Record<string, number> = {};
