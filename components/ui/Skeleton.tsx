@@ -24,13 +24,3 @@ export function SkeletonCard({ className }: SkeletonProps) {
     </div>
   );
 }
-
-export function SkeletonList({ count = 3, className }: SkeletonProps & { count?: number }) {
-  return (
-    <div className={cn("space-y-3", className)}>
-      {Array.from({ length: count }, (_, i) => (
-        <SkeletonCard key={i} />
-      ))}
-    </div>
-  );
-}

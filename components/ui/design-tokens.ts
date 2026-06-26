@@ -36,17 +36,6 @@ export const STATUS_COLORS: Record<
   },
 };
 
-export const GAMIFICATION_GRADIENTS = {
-  "streak-active":
-    "bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-orange-500/20",
-  "streak-record":
-    "bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg shadow-yellow-500/20",
-  progress:
-    "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20",
-  achievement:
-    "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20",
-} as const;
-
 const FALLBACK_STATUS: EntryStatus = "DRAFT";
 
 function resolveStatus(status: string): EntryStatus {
