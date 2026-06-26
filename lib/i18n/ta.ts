@@ -376,6 +376,7 @@ export const ta: TranslationDict = {
     yesterday: "நேற்று",
     daysAgo: "{count} நாட்களுக்கு முன்",
     requested: "கோரப்பட்டது {time}",
+    needsAttention: "{days} நாட்களாக காத்திருக்கிறது",
     byAdmin: "{name} மூலம்",
     lessThanOneHourAgo: "1 மணி நேரத்திற்குள்",
     hoursAgoShort: "{count} {unit} முன்",

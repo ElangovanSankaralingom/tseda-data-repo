@@ -24,7 +24,11 @@ type PendingConfirmationRow = {
   updatedAtISO?: string | null;
   status: "EDIT_REQUESTED" | "DELETE_REQUESTED";
   entryHref: string;
+  ageDays?: number | null;
 };
+
+/** Flag requests that have waited a while so they don't sit forgotten (SLA). */
+const REQUEST_ATTENTION_DAYS = 3;
 
 function getRowKey(row: Pick<PendingConfirmationRow, "ownerEmail" | "categoryKey" | "entryId">) {
   return `${row.ownerEmail}:${row.categoryKey}:${row.entryId}`;
@@ -221,6 +225,15 @@ export default function AdminConfirmationsClient() {
                           }`}>
                             {isDeleteRequest ? t('entry.requestDelete') : t('entry.requestEdit')}
                           </span>
+                          {typeof row.ageDays === "number" && row.ageDays >= REQUEST_ATTENTION_DAYS && (
+                            <span
+                              className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
+                              style={{ background: "var(--color-status-warning-bg)", color: "var(--color-status-warning)", border: "1px solid var(--color-status-warning-border)" }}
+                              title={t("admin.needsAttention").replace("{days}", String(row.ageDays))}
+                            >
+                              {t("admin.needsAttention").replace("{days}", String(row.ageDays))}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
                           <span className="rounded bg-[var(--color-dropdown-hover)] px-1.5 py-0.5 text-xs font-medium">{row.categoryKey}</span>

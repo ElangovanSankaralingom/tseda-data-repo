@@ -23,7 +23,16 @@ export type PendingConfirmationRow = {
   updatedAtISO: string | null;
   status: EntryStatus;
   entryHref: string;
+  /** Whole days since the request was raised (null if unknown). For SLA flagging. */
+  ageDays: number | null;
 };
+
+function ageInDays(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return null;
+  return Math.max(0, Math.floor((Date.now() - ms) / 86_400_000));
+}
 
 function toEntryTitle(categoryKey: CategoryKey, entry: Entry) {
   return getCategoryTitle(entry as Record<string, unknown>, categoryKey);
@@ -71,21 +80,27 @@ export async function getPendingRequests(): Promise<PendingConfirmationRow[]> {
           const entryId = String(entry.id ?? "").trim();
           if (!entryId) continue;
 
+          const editRequestedAtISO =
+            asOptionalISO(entry.editRequestedAt) ??
+            asOptionalISO(entry.updatedAt) ??
+            asOptionalISO(entry.createdAt);
+          const deleteRequestedAtISO = asOptionalISO(entry.deleteRequestedAt);
+          const requestedAtISO =
+            workflowStatus === "DELETE_REQUESTED" ? deleteRequestedAtISO : editRequestedAtISO;
+
           rows.push({
             ownerEmail,
             categoryKey,
             entryId,
             title: toEntryTitle(categoryKey, entry),
-            editRequestedAtISO:
-              asOptionalISO(entry.editRequestedAt) ??
-              asOptionalISO(entry.updatedAt) ??
-              asOptionalISO(entry.createdAt),
-            deleteRequestedAtISO: asOptionalISO(entry.deleteRequestedAt),
+            editRequestedAtISO,
+            deleteRequestedAtISO,
             editRequestMessage: asOptionalISO(entry.editRequestMessage),
             createdAtISO: asOptionalISO(entry.createdAt),
             updatedAtISO: asOptionalISO(entry.updatedAt),
             status: workflowStatus,
             entryHref: entryDetail(categoryKey, entryId),
+            ageDays: ageInDays(requestedAtISO),
           });
         }
       }

@@ -14,6 +14,10 @@ export async function getPastEntryWindowDays(): Promise<number> {
   return getSetting<number>("entries.pastEntryWindow");
 }
 
+export async function getRequestSlaDays(): Promise<number> {
+  return getSetting<number>("entries.requestSlaDays");
+}
+
 export async function getAllowedDomain(): Promise<string> {
   return getSetting<string>("auth.allowedDomain");
 }

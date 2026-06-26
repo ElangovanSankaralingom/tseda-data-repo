@@ -374,6 +374,7 @@ export const en = {
     yesterday: "Yesterday",
     daysAgo: "{count} days ago",
     requested: "Requested {time}",
+    needsAttention: "Waiting {days}d",
     byAdmin: "by {name}",
     lessThanOneHourAgo: "Less than 1 hour ago",
     hoursAgoShort: "{count} {unit} ago",

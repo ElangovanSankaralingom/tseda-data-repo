@@ -108,6 +108,16 @@ const SETTINGS: SettingDefinition[] = [
     group: "Edit Windows",
   },
   {
+    key: "entries.requestSlaDays",
+    label: "Request Attention SLA",
+    description: "Flag a pending edit/delete request as 'needs attention' after this many days",
+    category: "entries",
+    type: "number",
+    default: 3,
+    validation: { min: 1, max: 30 },
+    group: "Edit Requests",
+  },
+  {
     key: "entries.requireEditReason",
     label: "Require Reason for Edit Request",
     description: "Whether users must provide a reason when requesting edit access",
