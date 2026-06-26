@@ -92,16 +92,6 @@ export type CanonicalStreakSnapshot = {
   activeEntries: StreakActiveEntry[];
 };
 
-export type BuildCanonicalStreakMetadataArgs = {
-  streak: unknown;
-  startDateISO?: string | null;
-  endDateISO?: string | null;
-  hasPdf: boolean;
-  isCommitted: boolean;
-  completionSatisfied: boolean;
-  nowISO?: string | null;
-};
-
 function toOptionalISO(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -294,39 +284,6 @@ export function getStreakProgressSnapshot(entry: StreakProgressEntryLike): Strea
     hasCompletedAt: !!streak.completedAtISO,
     dueAtISO: null,
     sortAtISO: toStreakSortAtISO(entry),
-  };
-}
-
-// --- Deprecated streak metadata (kept for API route compat) ---
-
-/**
- * Resets the timing-related streak metadata fields to `null`, preserving other streak state.
- * Used when an entry loses streak eligibility or is permanently removed.
- *
- * @param streakValue - The raw streak state value from the entry (normalized internally).
- * @returns A new `StreakState` with `activatedAtISO`, `dueAtISO`, and `completedAtISO` cleared.
- */
-export function clearStreakMetadata(streakValue: unknown): StreakState {
-  const streak = normalizeStreakState(streakValue);
-  return {
-    ...streak,
-    activatedAtISO: null,
-    dueAtISO: null,
-    completedAtISO: null,
-  };
-}
-
-/**
- * @deprecated Streak metadata is no longer used for counting.
- * Kept for backward compatibility with API routes that store streak on entries.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function buildCanonicalStreakMetadata(_args: BuildCanonicalStreakMetadataArgs): StreakState {
-  return {
-    activatedAtISO: null,
-    dueAtISO: null,
-    completedAtISO: null,
-    windowDays: 0,
   };
 }
 

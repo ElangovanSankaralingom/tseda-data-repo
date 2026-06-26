@@ -1,6 +1,6 @@
 import { deriveAccentTokens, ACCENT_TOKEN_KEYS, normaliseAccent } from "./accent";
 
-export type ThemeMode = "light" | "dark" | "color";
+export type ThemeMode = "light" | "dark";
 /** Retained only for migrating old saved preferences → an accent hex. */
 export type ColorPalette = "midnight-lime" | "deep-ocean" | "carbon-violet" | "obsidian-amber";
 

@@ -5,7 +5,7 @@ import path from "node:path";
 import { getDataRoot, safeEmailDir } from "@/lib/userStore";
 
 export interface UserPreferences {
-  themeMode: "light" | "dark" | "color";
+  themeMode: "light" | "dark";
   /** Legacy preset name — retained for migration to accentHex. */
   colorPalette: string;
   /** Custom accent as a clamped hex (e.g. "#2A48CE"). */

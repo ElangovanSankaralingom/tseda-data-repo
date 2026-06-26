@@ -112,11 +112,6 @@ export async function getPendingRequests(): Promise<PendingConfirmationRow[]> {
   return rows.sort((left, right) => toSortTimestamp(right) - toSortTimestamp(left));
 }
 
-/** @deprecated Use getPendingRequests instead */
-export const getPendingEditRequests = getPendingRequests;
-/** @deprecated Use getPendingRequests instead */
-export const getPendingConfirmations = getPendingRequests;
-
 export async function getPendingRequestsCount() {
   const usersRoot = getUsersRootDir();
   let total = 0;
@@ -150,8 +145,3 @@ export async function getPendingRequestsCount() {
 
   return total;
 }
-
-/** @deprecated Use getPendingRequestsCount instead */
-export const getPendingEditRequestsCount = getPendingRequestsCount;
-/** @deprecated Use getPendingRequestsCount instead */
-export const getPendingConfirmationsCount = getPendingRequestsCount;

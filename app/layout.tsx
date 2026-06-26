@@ -8,7 +8,7 @@ import NavigationProgress from "@/components/ui/NavigationProgress";
 import { buildThemeCss, type ThemeMode } from "@/lib/theme/themeTokens";
 import { normaliseAccent } from "@/lib/theme/accent";
 
-const COOKIE_MODES: readonly ThemeMode[] = ["light", "dark", "color"];
+const COOKIE_MODES: readonly ThemeMode[] = ["light", "dark"];
 
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],

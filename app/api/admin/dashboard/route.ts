@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isMasterAdmin } from "@/lib/admin/roles";
 import { getRecentAuditEvents, getAuditStats } from "@/lib/admin/auditLog";
-import { getPendingEditRequestsCount } from "@/lib/admin/pendingConfirmations";
+import { getPendingRequestsCount } from "@/lib/admin/pendingConfirmations";
 import { canAccessAdminConsole } from "@/lib/admin/roles";
 import { getCachedAnalytics } from "@/lib/analytics/cache";
 import { daysAgo } from "@/lib/analytics/compare";
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     maintenanceMode,
   ] = await Promise.all([
     getCachedAnalytics().catch(() => null),
-    getPendingEditRequestsCount().catch(() => 0),
+    getPendingRequestsCount().catch(() => 0),
     getScheduleStatus().catch(() => ({ lastCheckAt: null, daysSinceLastCheck: null, isOverdue: false, lastStatus: null })),
     getLastReport().catch(() => null),
     getLatestBackupFile().catch(() => null),
