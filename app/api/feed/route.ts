@@ -56,6 +56,7 @@ export async function GET(request: Request) {
       actorName: firstName(e.actorEmail),
       isSelf: e.actorEmail === email,
       categoryKey: e.categoryKey,
+      milestone: e.milestone,
       createdAt: e.createdAt,
       reactions,
       myReactions,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Flame, Trophy, ThumbsUp, PartyPopper, Hand, Activity } from "lucide-react";
+import { Flame, Trophy, Award, ThumbsUp, PartyPopper, Hand, Activity } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { TranslationKey } from "@/lib/i18n";
@@ -22,6 +22,7 @@ type FeedEvent = {
   actorName: string;
   isSelf: boolean;
   categoryKey: string | null;
+  milestone: number | null;
   createdAt: string;
   reactions: Record<string, number>;
   myReactions: Reaction[];
@@ -128,13 +129,20 @@ const MilestoneCard = React.memo(function MilestoneCard({
   const { t, categoryLabel } = useTranslation();
 
   const isWon = event.type === "streak_won";
-  const accentFg = isWon ? "var(--color-palette-amber-fg)" : "var(--color-palette-orange-fg)";
-  const accentBg = isWon ? "var(--color-palette-amber-bg)" : "var(--color-palette-orange-bg)";
-  const accentBorder = isWon ? "var(--color-palette-amber-border)" : "var(--color-palette-orange-border)";
-  const TypeIcon = isWon ? Trophy : Flame;
-  const message = isWon ? t("feed.wonStreak") : t("feed.startedStreak");
+  const isMilestone = event.type === "milestone";
+  const palette = isWon ? "amber" : isMilestone ? "indigo" : "orange";
+  const accentFg = `var(--color-palette-${palette}-fg)`;
+  const accentBg = `var(--color-palette-${palette}-bg)`;
+  const accentBorder = `var(--color-palette-${palette}-border)`;
+  const TypeIcon = isWon ? Trophy : isMilestone ? Award : Flame;
+  const message = isWon
+    ? t("feed.wonStreak")
+    : isMilestone
+      ? t("feed.milestoneReached").replace("{n}", String(event.milestone ?? 0))
+      : t("feed.startedStreak");
   const name = event.isSelf ? t("feed.you") : event.actorName;
-  const freshWin = isWon && now > 0 && now - Date.parse(event.createdAt) < FRESH_WIN_MS;
+  const celebratory = isWon || isMilestone;
+  const freshWin = celebratory && now > 0 && now - Date.parse(event.createdAt) < FRESH_WIN_MS;
 
   return (
     <div

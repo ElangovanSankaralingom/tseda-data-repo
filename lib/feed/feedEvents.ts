@@ -5,6 +5,23 @@ import type { CategoryKey } from "@/lib/entries/types";
 import { appendFeedEvent } from "@/lib/feed/feedStore";
 import { isEntryActivated, isEntryWon, type StreakProgressEntryLike } from "@/lib/streakProgress";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
+import { getDashboardSummary } from "@/lib/entries/summary";
+
+const WIN_MILESTONES = [5, 10, 25, 50, 100];
+
+/** Emit a one-time "hit N wins" milestone when the actor's win count lands exactly on a threshold. */
+async function emitWinMilestone(actorEmail: string): Promise<void> {
+  const summary = await getDashboardSummary(actorEmail);
+  const wins = summary.totals.streakWinsCount;
+  if (typeof wins === "number" && WIN_MILESTONES.includes(wins)) {
+    await appendFeedEvent({
+      id: `milestone:${actorEmail}:${wins}`,
+      type: "milestone",
+      actorEmail,
+      milestone: wins,
+    });
+  }
+}
 
 /**
  * Best-effort: after a generate/finalise succeeds, record milestone events for
@@ -45,6 +62,7 @@ export function recordEntryMilestones(
         }),
         "feed.streak_won",
       );
+      fireAndForget(emitWinMilestone(actorEmail), "feed.win_milestone");
     }
   } catch {
     // Best-effort only.

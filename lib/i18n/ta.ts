@@ -16,6 +16,7 @@ export const ta: TranslationDict = {
     empty: "No milestones yet \u2014 be the first to start a streak.", // TODO: translate to Tamil
     startedStreak: "started a streak", // TODO: translate to Tamil
     wonStreak: "won a streak", // TODO: translate to Tamil
+    milestoneReached: "hit {n} wins", // TODO: translate to Tamil
     you: "You", // TODO: translate to Tamil
     justNow: "just now", // TODO: translate to Tamil
     minutesAgo: "{n}m ago", // TODO: translate to Tamil
