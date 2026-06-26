@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { isMasterAdmin } from "@/lib/admin/roles";
 import { CATEGORY_SLUGS } from "@/data/categoryRegistry";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";

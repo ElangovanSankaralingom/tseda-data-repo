@@ -3,7 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { isMasterAdmin } from "@/lib/admin/roles";
 import { getRecentAuditEvents, getAuditStats } from "@/lib/admin/auditLog";
 import { getPendingEditRequestsCount } from "@/lib/admin/pendingConfirmations";
 import { canAccessAdminConsole } from "@/lib/admin/roles";

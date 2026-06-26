@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isMasterAdmin } from "@/lib/admin";
+import { isMasterAdmin } from "@/lib/admin/roles";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 

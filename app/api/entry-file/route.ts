@@ -5,7 +5,7 @@ import path from "node:path";
 import { authOptions } from "@/lib/auth";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
-import { isMasterAdmin } from "@/lib/admin";
+import { isMasterAdmin } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import {
   ownerOfStoredPath,
