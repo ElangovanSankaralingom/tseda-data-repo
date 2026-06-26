@@ -12,33 +12,6 @@ const SETTINGS: SettingDefinition[] = [
     default: "T'SEDA Data Repository",
     group: "Branding",
   },
-  {
-    key: "general.institutionName",
-    label: "Institution Name",
-    description: "Shown on sign-in page and PDF exports",
-    category: "general",
-    type: "string",
-    default: APP_CONFIG.institution.name,
-    group: "Branding",
-  },
-  {
-    key: "general.institutionShort",
-    label: "Institution Short Name",
-    description: "Used in compact displays",
-    category: "general",
-    type: "string",
-    default: APP_CONFIG.institution.shortName,
-    group: "Branding",
-  },
-  {
-    key: "general.welcomeMessage",
-    label: "Dashboard Welcome Message",
-    description: "Shown below greeting on dashboard",
-    category: "general",
-    type: "string",
-    default: "Here's your progress overview",
-    group: "Content",
-  },
   // --- Entries ---
   {
     key: "entries.defaultEditWindow",
@@ -89,16 +62,6 @@ const SETTINGS: SettingDefinition[] = [
     default: false,
     group: "Edit Requests",
   },
-  {
-    key: "entries.autoFinalizeNotice",
-    label: "Finalization Warning Days",
-    description: "Show 'expiring soon' warning this many days before edit window closes",
-    category: "entries",
-    type: "number",
-    default: 1,
-    validation: { min: 0, max: 7 },
-    group: "Notifications",
-  },
 
   // --- Streaks ---
   {
@@ -114,15 +77,6 @@ const SETTINGS: SettingDefinition[] = [
     key: "streaks.showLeaderboard",
     label: "Show Streak Leaderboard",
     description: "Whether to show the leaderboard on analytics page",
-    category: "streaks",
-    type: "boolean",
-    default: true,
-    group: "Display",
-  },
-  {
-    key: "streaks.showUserRank",
-    label: "Show User Rank on Dashboard",
-    description: "Whether users see their leaderboard rank on their dashboard",
     category: "streaks",
     type: "boolean",
     default: true,
@@ -149,16 +103,6 @@ const SETTINGS: SettingDefinition[] = [
     default: 7,
     validation: { min: 1, max: 30 },
     group: "Integrity",
-  },
-  {
-    key: "maintenance.walRetentionDays",
-    label: "WAL Retention Days",
-    description: "Days to keep WAL event log entries before compaction",
-    category: "maintenance",
-    type: "number",
-    default: 30,
-    validation: { min: 7, max: 365 },
-    group: "Storage",
   },
   {
     key: "maintenance.maxExportHistory",
