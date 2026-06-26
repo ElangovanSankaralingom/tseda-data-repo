@@ -39,43 +39,6 @@ const SETTINGS: SettingDefinition[] = [
     default: "Here's your progress overview",
     group: "Content",
   },
-  {
-    key: "general.timezone",
-    label: "Default Timezone",
-    description: "Used for date calculations and display",
-    category: "general",
-    type: "select",
-    default: "Asia/Kolkata",
-    validation: {
-      options: [
-        { value: "Asia/Kolkata", label: "IST (Asia/Kolkata)" },
-        { value: "UTC", label: "UTC" },
-      ],
-    },
-    group: "Regional",
-  },
-
-  // --- Auth ---
-  {
-    key: "auth.allowedDomain",
-    label: "Allowed Email Domain",
-    description: "Only emails from this domain can sign in. Leave empty to allow all domains.",
-    category: "auth",
-    type: "string",
-    default: APP_CONFIG.institution.domain,
-    group: "Access Control",
-  },
-  {
-    key: "auth.sessionTimeout",
-    label: "Session Timeout",
-    description: "Days before users need to sign in again",
-    category: "auth",
-    type: "number",
-    default: 30,
-    validation: { min: 1, max: 365 },
-    group: "Sessions",
-  },
-
   // --- Entries ---
   {
     key: "entries.defaultEditWindow",
@@ -208,35 +171,6 @@ const SETTINGS: SettingDefinition[] = [
     group: "Storage",
   },
 
-  // --- Appearance ---
-  {
-    key: "appearance.showDotGrid",
-    label: "Show Background Dot Grid",
-    description: "Subtle dot pattern on page backgrounds",
-    category: "appearance",
-    type: "boolean",
-    default: true,
-    group: "Effects",
-  },
-  {
-    key: "appearance.enableAnimations",
-    label: "Enable Animations",
-    description: "Disable for reduced motion preference",
-    category: "appearance",
-    type: "boolean",
-    default: true,
-    group: "Effects",
-  },
-  {
-    key: "appearance.compactMode",
-    label: "Compact Mode",
-    description: "Reduced spacing and smaller cards for information density",
-    category: "appearance",
-    type: "boolean",
-    default: false,
-    group: "Layout",
-  },
-
   // --- Advanced ---
   {
     key: "advanced.analyticsCacheTTL",
@@ -247,16 +181,6 @@ const SETTINGS: SettingDefinition[] = [
     default: 60,
     validation: { min: 5, max: 1440 },
     group: "Performance",
-  },
-  {
-    key: "advanced.debugMode",
-    label: "Debug Mode",
-    description: "Enable verbose logging and debug endpoints. Never enable in production.",
-    category: "advanced",
-    type: "boolean",
-    default: false,
-    group: "Debug",
-    dangerous: true,
   },
   {
     key: "advanced.maintenanceMode",

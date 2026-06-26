@@ -11,6 +11,7 @@ import { isEntryWon } from "@/lib/streakProgress";
 import { pauseTimer, clearTimer } from "@/lib/workflow/timerManager";
 import { appendActionHistory } from "@/lib/admin/actionHistory";
 import { extractEntryTitle } from "@/lib/confirmations/notificationHelpers";
+import { isEditReasonRequired } from "@/lib/settings/consumer";
 import type { EntryEngineRecord, EntryLike, WorkflowEntryLike } from "./engineHelpers.ts";
 import { runUserRequestMutation } from "./engineMutationRunner.ts";
 
@@ -91,6 +92,9 @@ export async function requestEdit<T extends EntryEngineRecord = EntryEngineRecor
   entryId: string,
   message?: string
 ): Promise<T> {
+  if (!message?.trim() && (await isEditReasonRequired())) {
+    throw new AppError({ code: "VALIDATION_ERROR", message: "A reason is required to request an edit." });
+  }
   return runUserRequestMutation<T>({
     action: "requestEdit",
     walAction: "REQUEST_EDIT",

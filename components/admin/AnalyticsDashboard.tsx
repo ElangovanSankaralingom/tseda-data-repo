@@ -41,6 +41,7 @@ import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type Props = {
   snapshot: AnalyticsSnapshot;
+  showLeaderboard?: boolean;
 };
 
 import { RANGES, type RangeKey } from "./adminLocalTypes";
@@ -73,7 +74,7 @@ function getDayNames(tr: (key: string) => string): string[] {
 // Main Dashboard
 // ---------------------------------------------------------------------------
 
-export default function AnalyticsDashboard({ snapshot: initial }: Props) {
+export default function AnalyticsDashboard({ snapshot: initial, showLeaderboard = true }: Props) {
   const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState(initial);
   const [range, setRange] = useState<RangeKey>("30d");
@@ -413,10 +414,12 @@ export default function AnalyticsDashboard({ snapshot: initial }: Props) {
       </div>
 
       {/* Leaderboard */}
-      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-5">
-        <SH title={t("adminAnalytics.topContributors")} description={t("adminAnalytics.topContributorsDesc")} />
-        <Leaderboard users={snapshot.users} />
-      </div>
+      {showLeaderboard && (
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-5">
+          <SH title={t("adminAnalytics.topContributors")} description={t("adminAnalytics.topContributorsDesc")} />
+          <Leaderboard users={snapshot.users} />
+        </div>
+      )}
 
       {/* Heatmap */}
       <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-5 shadow-sm animate-fade-in-up stagger-6">

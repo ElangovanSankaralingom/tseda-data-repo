@@ -37,3 +37,15 @@ export async function isStreaksEnabled(): Promise<boolean> {
 export async function isMaintenanceMode(): Promise<boolean> {
   return getSetting<boolean>("advanced.maintenanceMode");
 }
+
+export async function getMaxExportHistory(): Promise<number> {
+  return getSetting<number>("maintenance.maxExportHistory");
+}
+
+export async function isEditReasonRequired(): Promise<boolean> {
+  return getSetting<boolean>("entries.requireEditReason");
+}
+
+export async function isStreakLeaderboardShown(): Promise<boolean> {
+  return getSetting<boolean>("streaks.showLeaderboard");
+}

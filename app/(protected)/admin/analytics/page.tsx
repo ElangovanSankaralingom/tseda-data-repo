@@ -7,6 +7,7 @@ import { canViewAnalytics } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 import { getCachedAnalytics } from "@/lib/analytics/cache";
+import { isStreakLeaderboardShown } from "@/lib/settings/consumer";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { t } from "@/lib/i18n";
 
@@ -27,6 +28,7 @@ export default async function AdminAnalyticsPage() {
   });
 
   const result = await getCachedAnalytics();
+  const showLeaderboard = await isStreakLeaderboardShown();
 
   if (!result.ok) {
     return (
@@ -52,7 +54,7 @@ export default async function AdminAnalyticsPage() {
       iconName="BarChart3"
       maxWidthClassName="max-w-6xl"
     >
-      <AnalyticsDashboard snapshot={result.data} />
+      <AnalyticsDashboard snapshot={result.data} showLeaderboard={showLeaderboard} />
     </AdminPageShell>
   );
 }

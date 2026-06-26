@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { getDataRoot } from "@/lib/userStore";
+import { getMaxExportHistory } from "@/lib/settings/consumer";
 
 export type ExportHistoryEntry = {
   id: string;
@@ -20,8 +21,6 @@ export type ExportHistoryEntry = {
   templateId?: string;
   durationMs: number;
 };
-
-const MAX_HISTORY = 50;
 
 function historyPath() {
   return path.join(process.cwd(), getDataRoot(), "maintenance", "export-history.json");
@@ -41,8 +40,9 @@ export async function appendExportHistory(entry: ExportHistoryEntry): Promise<Re
     }
 
     existing.unshift(entry);
-    if (existing.length > MAX_HISTORY) {
-      existing = existing.slice(0, MAX_HISTORY);
+    const maxHistory = await getMaxExportHistory();
+    if (existing.length > maxHistory) {
+      existing = existing.slice(0, maxHistory);
     }
 
     await atomicWriteTextFile(historyPath(), JSON.stringify(existing, null, 2));

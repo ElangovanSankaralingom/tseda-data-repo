@@ -103,6 +103,12 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
     return map;
   }, [settings]);
 
+  // Only show categories that actually have settings (empties are hidden, not hollow tabs).
+  const visibleCategories = useMemo(
+    () => CATEGORY_ORDER.filter((cat) => (counts[cat] ?? 0) > 0),
+    [counts]
+  );
+
   // Filtered settings (search)
   const filteredSettings = useMemo(() => {
     if (!search.trim()) {
@@ -315,7 +321,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
         {/* Sidebar */}
         <nav aria-label={t("adminSettings.categoriesNavAriaLabel")} className="hidden lg:block">
           <div className="sticky top-24 space-y-1 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-card-bg)] p-2 shadow-sm">
-            {CATEGORY_ORDER.map((cat) => {
+            {visibleCategories.map((cat) => {
               const Icon = CATEGORY_ICONS[cat];
               const meta = CATEGORY_META[cat];
               const count = counts[cat] ?? 0;
@@ -350,7 +356,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
 
         {/* Mobile tab bar */}
         <div className="flex gap-1 overflow-x-auto pb-2 lg:hidden -mx-4 px-4">
-          {CATEGORY_ORDER.map((cat) => {
+          {visibleCategories.map((cat) => {
             const Icon = CATEGORY_ICONS[cat];
             const meta = CATEGORY_META[cat];
             const isActive = activeCategory === cat && !isSearching;
