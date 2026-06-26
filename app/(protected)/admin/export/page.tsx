@@ -10,6 +10,7 @@ import {
   getExportableFields,
 } from "@/lib/export/exportService";
 import { getExportTemplates } from "@/lib/export/templates";
+import { listTemplatesForViewer } from "@/lib/export/formatTemplates";
 import { getExportHistory } from "@/lib/export/history";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
@@ -31,6 +32,12 @@ export default async function AdminExportPage() {
 
   const users = usersResult.ok ? usersResult.data : [];
   const templates = getExportTemplates();
+  const columnFormats = listTemplatesForViewer(email).map((t) => ({
+    id: t.id,
+    label: t.label,
+    category: t.category as string,
+    columns: t.columns,
+  }));
   const categories = getExportCategoryOptions();
   const statusOptions = getExportStatusOptions();
 
@@ -57,6 +64,7 @@ export default async function AdminExportPage() {
     >
       <ExportDashboard
         templates={templates}
+        columnFormats={columnFormats}
         users={users}
         categories={categories}
         statusOptions={statusOptions}

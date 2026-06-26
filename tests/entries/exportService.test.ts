@@ -68,6 +68,49 @@ test("buildExportRows uses schema labels and normalized values", async () => {
   });
 });
 
+test("buildExportRows honors the given column order (saved NAAC/NIRF layouts)", async () => {
+  await withSandbox("export-service-column-order", async (store) => {
+    await store.writeCategory(email, "workshops", [
+      {
+        id: "entry-1",
+        category: "workshops",
+        workshopName: "Order Workshop",
+        startDate: "2026-05-10T11:30:00.000Z",
+        confirmationStatus: "GENERATED",
+        createdAt: "2026-05-10T00:00:00.000Z",
+        updatedAt: "2026-05-11T00:00:00.000Z",
+      },
+    ]);
+
+    // Deliberately scrambled (non-schema) order — a saved column layout.
+    const built = await buildExportRows(
+      email,
+      "workshops",
+      ["confirmationStatus", "startDate", "workshopName", "id"]
+    );
+    assert.equal(built.ok, true);
+    if (!built.ok) return;
+
+    // Headers + used keys must come back in exactly the requested order.
+    assert.deepEqual(built.data.headers, [
+      "Confirmation Status",
+      "Start Date",
+      "Name of the Workshop",
+      "Entry ID",
+    ]);
+    assert.deepEqual(built.data.usedFieldKeys, [
+      "confirmationStatus",
+      "startDate",
+      "workshopName",
+      "id",
+    ]);
+    // Row cells align to that same column order.
+    assert.equal(String(built.data.rows[0]?.[0] ?? ""), "GENERATED");
+    assert.equal(String(built.data.rows[0]?.[2] ?? ""), "Order Workshop");
+    assert.equal(String(built.data.rows[0]?.[3] ?? ""), "entry-1");
+  });
+});
+
 test("getExportableFields resolves schema-driven fields and excludes internal-only fields", () => {
   const fields = getExportableFields("workshops");
   const keys = new Set(fields.map((field) => field.key));

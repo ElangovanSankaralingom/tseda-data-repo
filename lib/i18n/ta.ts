@@ -822,6 +822,9 @@ export const ta: TranslationDict = {
     status: "Status", // TODO: translate to Tamil
     fromDate: "From Date", // TODO: translate to Tamil
     toDate: "To Date", // TODO: translate to Tamil
+    columnLayout: "Column Layout", // TODO: translate to Tamil
+    columnLayoutDefault: "Default (schema order)", // TODO: translate to Tamil
+    columnLayoutHint: "Apply a saved NAAC/NIRF column order. Manage these in Export Formats.", // TODO: translate to Tamil
     chooseFields: "Choose Fields", // TODO: translate to Tamil
     selectAll: "Select All", // TODO: translate to Tamil
     clear: "Clear", // TODO: translate to Tamil

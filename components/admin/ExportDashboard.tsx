@@ -20,8 +20,11 @@ import {
 } from "./ExportDashboardParts";
 import { type Option, type PreviewData } from "./adminLocalTypes";
 
+type ColumnFormat = { id: string; label: string; category: string; columns: string[] };
+
 type Props = {
   templates: ExportTemplate[];
+  columnFormats: ColumnFormat[];
   users: string[];
   categories: Option[];
   statusOptions: Option[];
@@ -31,6 +34,7 @@ type Props = {
 
 export default function ExportDashboard({
   templates,
+  columnFormats,
   users,
   categories,
   statusOptions,
@@ -50,6 +54,7 @@ export default function ExportDashboard({
   const [showFilters, setShowFilters] = useState(false);
   const [showFields, setShowFields] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [appliedLayoutId, setAppliedLayoutId] = useState("");
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -60,9 +65,28 @@ export default function ExportDashboard({
     [selectedCategory, fieldOptionsByCategory]
   );
 
+  const availableLayouts = useMemo(
+    () => columnFormats.filter((f) => f.category === selectedCategory),
+    [columnFormats, selectedCategory]
+  );
+
   useEffect(() => {
     setSelectedFields(fieldOptions.map((f) => f.key));
+    setAppliedLayoutId("");
   }, [fieldOptions]);
+
+  const applyLayout = useCallback(
+    (layoutId: string) => {
+      setAppliedLayoutId(layoutId);
+      if (!layoutId) {
+        setSelectedFields(fieldOptions.map((f) => f.key));
+        return;
+      }
+      const layout = availableLayouts.find((l) => l.id === layoutId);
+      if (layout) setSelectedFields(layout.columns);
+    },
+    [availableLayouts, fieldOptions]
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -122,7 +146,7 @@ export default function ExportDashboard({
     }
     params.set("category", selectedCategory);
     params.set("format", format === "json" ? "csv" : format);
-    if (selectedFields.length > 0 && selectedFields.length < fieldOptions.length) {
+    if (selectedFields.length > 0 && (appliedLayoutId !== "" || selectedFields.length < fieldOptions.length)) {
       params.set("fields", selectedFields.join(","));
     }
     if (selectedStatuses.length > 0) params.set("statuses", selectedStatuses.join(","));
@@ -136,7 +160,7 @@ export default function ExportDashboard({
       setExportSuccess(true);
       setTimeout(() => setExportSuccess(false), 2000);
     }, 1500);
-  }, [allUsers, selectedUser, selectedCategory, format, selectedFields, fieldOptions, selectedStatuses, fromDate, toDate, users]);
+  }, [allUsers, selectedUser, selectedCategory, format, selectedFields, fieldOptions, appliedLayoutId, selectedStatuses, fromDate, toDate, users]);
 
   function toggleStatus(status: string) {
     setSelectedStatuses((prev) =>
@@ -145,6 +169,7 @@ export default function ExportDashboard({
   }
 
   function toggleField(key: string) {
+    setAppliedLayoutId("");
     setSelectedFields((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
@@ -278,6 +303,23 @@ export default function ExportDashboard({
             ) : null}
           </div>
 
+          {availableLayouts.length > 0 ? (
+            <div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-secondary)]">{t("adminExport.columnLayout")}</div>
+              <div className="max-w-sm">
+                <SelectDropdown
+                  value={appliedLayoutId}
+                  onChange={(value) => applyLayout(value)}
+                  options={[
+                    { label: t("adminExport.columnLayoutDefault"), value: "" },
+                    ...availableLayouts.map((l) => ({ label: l.label, value: l.id })),
+                  ]}
+                />
+              </div>
+              <div className="mt-1.5 text-xs text-[var(--color-text-secondary)]">{t("adminExport.columnLayoutHint")}</div>
+            </div>
+          ) : null}
+
           <div>
             <button
               type="button"
@@ -292,14 +334,14 @@ export default function ExportDashboard({
                 <div className="mb-2 flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedFields(fieldOptions.map((f) => f.key))}
+                    onClick={() => { setAppliedLayoutId(""); setSelectedFields(fieldOptions.map((f) => f.key)); }}
                     className="text-xs text-[var(--color-primary)] hover:text-[var(--color-primary-light)]"
                   >
                     {t("adminExport.selectAll")}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelectedFields([])}
+                    onClick={() => { setAppliedLayoutId(""); setSelectedFields([]); }}
                     className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                   >
                     {t("adminExport.clear")}
