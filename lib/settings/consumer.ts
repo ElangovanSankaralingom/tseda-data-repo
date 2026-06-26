@@ -49,3 +49,7 @@ export async function isEditReasonRequired(): Promise<boolean> {
 export async function isStreakLeaderboardShown(): Promise<boolean> {
   return getSetting<boolean>("streaks.showLeaderboard");
 }
+
+export async function isActivityFeedEnabled(): Promise<boolean> {
+  return getSetting<boolean>("streaks.showActivityFeed");
+}

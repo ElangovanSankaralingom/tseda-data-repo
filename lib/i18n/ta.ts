@@ -10,6 +10,24 @@ export const ta: TranslationDict = {
     signOut: "\u0BB5\u0BC6\u0BB3\u0BBF\u0BAF\u0BC7\u0BB1\u0BC1",
     search: "\u0BA4\u0BC7\u0B9F\u0BC1",
   },
+  feed: {
+    title: "Department Pulse", // TODO: translate to Tamil
+    live: "live", // TODO: translate to Tamil
+    empty: "No milestones yet \u2014 be the first to start a streak.", // TODO: translate to Tamil
+    startedStreak: "started a streak", // TODO: translate to Tamil
+    wonStreak: "won a streak", // TODO: translate to Tamil
+    you: "You", // TODO: translate to Tamil
+    justNow: "just now", // TODO: translate to Tamil
+    minutesAgo: "{n}m ago", // TODO: translate to Tamil
+    hoursAgo: "{n}h ago", // TODO: translate to Tamil
+    daysAgo: "{n}d ago", // TODO: translate to Tamil
+    react: {
+      like: "Like", // TODO: translate to Tamil
+      fire: "Fire", // TODO: translate to Tamil
+      celebrate: "Celebrate", // TODO: translate to Tamil
+      clap: "Clap", // TODO: translate to Tamil
+    },
+  },
   dashboard: {
     greetingMorning: "\u0B95\u0BBE\u0BB2\u0BC8 \u0BB5\u0BA3\u0B95\u0BCD\u0B95\u0BAE\u0BCD",
     greetingAfternoon: "\u0BAE\u0BA4\u0BBF\u0BAF \u0BB5\u0BA3\u0B95\u0BCD\u0B95\u0BAE\u0BCD",

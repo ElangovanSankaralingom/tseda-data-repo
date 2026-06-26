@@ -82,6 +82,15 @@ const SETTINGS: SettingDefinition[] = [
     default: true,
     group: "Display",
   },
+  {
+    key: "streaks.showActivityFeed",
+    label: "Show Activity Feed",
+    description: "Show the department activity feed (milestones + reactions) on everyone's dashboard",
+    category: "streaks",
+    type: "boolean",
+    default: true,
+    group: "Display",
+  },
 
   // --- Maintenance ---
   {

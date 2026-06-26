@@ -18,6 +18,8 @@ import {
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import DashboardWelcome from "@/components/dashboard/DashboardWelcome";
+import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import { isActivityFeedEnabled } from "@/lib/settings/consumer";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +83,8 @@ export default async function DashboardPage() {
     route: row.route,
   }));
 
+  const feedEnabled = await isActivityFeedEnabled();
+
   return (
     <div className="relative space-y-8 animate-page-enter dot-grid-bg">
       {/* ── Command Strip — dark hero bar ── */}
@@ -104,6 +108,8 @@ export default async function DashboardPage() {
           recentEntries={recentEntries}
         />
       )}
+
+      {feedEnabled && <ActivityFeed />}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
   updateEntry,
 } from "@/lib/entries/lifecycle";
 import { isValidCategorySlug, getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
+import { recordEntryMilestones } from "@/lib/feed/feedEvents";
 import { entryToApiResponse, entriesToApiResponse } from "@/lib/entries/toApiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { assertEntryMutationInput, assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
@@ -356,11 +357,13 @@ export async function handleCategoryPatch(
             )
           : undefined;
         const persisted = await commitDraft(auth.email, category as CategoryKey, entryId, extraFields);
+        recordEntryMilestones(auth.email, category as CategoryKey, persisted as Record<string, unknown>);
         return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
       }
 
       if (action === "finalise") {
         const persisted = await finalizeEntry(auth.email, category as CategoryKey, entryId);
+        recordEntryMilestones(auth.email, category as CategoryKey, persisted as Record<string, unknown>);
         return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
       }
 

@@ -1,0 +1,69 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { normalizeEmail } from "@/lib/facultyDirectory";
+import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
+import { listFeedEvents, FEED_REACTIONS, type FeedReaction } from "@/lib/feed/feedStore";
+import { resolveFacultyName } from "@/lib/admin/facultyRegistry";
+import { isActivityFeedEnabled } from "@/lib/settings/consumer";
+import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
+import { normalizeError, httpStatusForCode } from "@/lib/errors";
+
+function firstName(email: string): string {
+  const resolved = resolveFacultyName(email);
+  if (resolved) return resolved.trim().split(/\s+/)[0] ?? resolved;
+  return email.split("@")[0] ?? email;
+}
+
+export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+  const email = normalizeEmail(session?.user?.email ?? "");
+  if (!email || !email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    enforceRateLimitForRequest({
+      request,
+      userEmail: email,
+      action: "feed.get",
+      options: RATE_LIMIT_PRESETS.entryReads,
+    });
+  } catch (error) {
+    const appError = normalizeError(error);
+    return NextResponse.json(
+      { error: appError.message, code: appError.code },
+      { status: httpStatusForCode(appError.code) },
+    );
+  }
+
+  if (!(await isActivityFeedEnabled())) {
+    return NextResponse.json({ data: { enabled: false, events: [] } });
+  }
+
+  const events = await listFeedEvents(50);
+  const shaped = events.map((e) => {
+    const reactions: Record<string, number> = {};
+    const myReactions: FeedReaction[] = [];
+    for (const reaction of FEED_REACTIONS) {
+      const list = e.reactions[reaction] ?? [];
+      reactions[reaction] = list.length;
+      if (list.includes(email)) myReactions.push(reaction);
+    }
+    return {
+      id: e.id,
+      type: e.type,
+      actorName: firstName(e.actorEmail),
+      isSelf: e.actorEmail === email,
+      categoryKey: e.categoryKey,
+      createdAt: e.createdAt,
+      reactions,
+      myReactions,
+    };
+  });
+
+  return NextResponse.json(
+    { data: { enabled: true, events: shaped } },
+    { headers: { "Cache-Control": "private, max-age=15, stale-while-revalidate=30" } },
+  );
+}
