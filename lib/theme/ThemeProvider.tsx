@@ -15,6 +15,8 @@ interface ThemeContextValue {
   /** Current accent as a clamped hex (e.g. "#2A48CE"). */
   accent: string;
   language: Language;
+  /** Beta member? Gates beta-only features (dark mode, Tamil) in the UI. */
+  betaTester: boolean;
   setMode: (mode: ThemeMode) => void;
   /** Apply an accent live WITHOUT persisting — for slider drags. */
   previewAccent: (accent: string) => void;
@@ -27,6 +29,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   mode: "dark",
   accent: DEFAULT_ACCENT_HEX,
   language: "en",
+  betaTester: false,
   setMode: () => {},
   previewAccent: () => {},
   setAccent: () => {},
@@ -51,6 +54,7 @@ export default function ThemeProvider({
   initialAccent,
   initialPalette,
   initialLanguage,
+  betaTester = false,
 }: {
   children: React.ReactNode;
   initialMode?: ThemeMode;
@@ -58,13 +62,15 @@ export default function ThemeProvider({
   /** Legacy preset name — used only to migrate users with no saved accent yet. */
   initialPalette?: ColorPalette;
   initialLanguage?: Language;
+  /** When false, beta-only options (dark mode, Tamil) are clamped to light/en. */
+  betaTester?: boolean;
 }) {
-  const [mode, setModeState] = useState<ThemeMode>(initialMode ?? "dark");
+  const [mode, setModeState] = useState<ThemeMode>(betaTester ? (initialMode ?? "dark") : "light");
   const [accent, setAccentState] = useState<string>(() =>
     normaliseAccent(initialAccent ?? initialPalette),
   );
   const [language, setLanguageState] = useState<Language>(
-    initialLanguage ?? "en",
+    betaTester ? (initialLanguage ?? "en") : "en",
   );
 
   useEffect(() => {
@@ -90,10 +96,11 @@ export default function ThemeProvider({
 
   const setMode = useCallback(
     (newMode: ThemeMode) => {
-      setModeState(newMode);
-      persistPreferences({ themeMode: newMode });
+      const m: ThemeMode = !betaTester && newMode === "dark" ? "light" : newMode;
+      setModeState(m);
+      persistPreferences({ themeMode: m });
     },
-    [persistPreferences],
+    [persistPreferences, betaTester],
   );
 
   const previewAccent = useCallback((value: string) => {
@@ -111,15 +118,16 @@ export default function ThemeProvider({
 
   const setLanguage = useCallback(
     (newLanguage: Language) => {
-      setLanguageState(newLanguage);
-      persistPreferences({ language: newLanguage });
+      const l: Language = !betaTester && newLanguage === "ta" ? "en" : newLanguage;
+      setLanguageState(l);
+      persistPreferences({ language: l });
     },
-    [persistPreferences],
+    [persistPreferences, betaTester],
   );
 
   return (
     <ThemeContext.Provider
-      value={{ mode, accent, language, setMode, previewAccent, setAccent, setLanguage }}
+      value={{ mode, accent, language, betaTester, setMode, previewAccent, setAccent, setLanguage }}
     >
       {children}
     </ThemeContext.Provider>

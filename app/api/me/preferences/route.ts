@@ -8,8 +8,9 @@ import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { NextResponse } from "next/server";
 import { csrfGuard } from "@/lib/security/csrf";
 import { normaliseAccent } from "@/lib/theme/accent";
+import { isBetaTester } from "@/lib/admin/facultyRegistry";
 
-const VALID_THEME_MODES = ["light", "dark", "color"] as const;
+const VALID_THEME_MODES = ["light", "dark"] as const;
 const VALID_PALETTES = ["midnight-lime", "deep-ocean", "carbon-violet", "obsidian-amber"] as const;
 const VALID_LANGUAGES = ["en", "ta"] as const;
 
@@ -97,6 +98,11 @@ export async function PUT(request: Request) {
       return apiError("Invalid language", { status: 400 });
     }
     update.language = body.language;
+  }
+
+  // Beta-only options (dark mode, Tamil) may only be persisted by beta members.
+  if ((update.themeMode === "dark" || update.language === "ta") && !isBetaTester(email)) {
+    return apiError("Beta features require beta membership", { status: 403 });
   }
 
   const updated = setUserPreferences(email, update);

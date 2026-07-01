@@ -82,7 +82,7 @@ function BetaNotice({ children }: { children: React.ReactNode }) {
 }
 
 export default function AppearanceSettings() {
-  const { mode, accent, previewAccent, setAccent, language, setMode, setLanguage } = useTheme();
+  const { mode, accent, previewAccent, setAccent, language, setMode, setLanguage, betaTester } = useTheme();
   const { t } = useTranslation();
 
   const isDark = mode === "dark";
@@ -192,27 +192,30 @@ export default function AppearanceSettings() {
               {t("appearance.light")}
             </span>
           </button>
-          <button
-            type="button"
-            onClick={() => handleTheme("dark")}
-            className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
-              isDark
-                ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-                : "border border-[var(--color-glass-border)] bg-[var(--color-surface-inset)] hover:border-[var(--color-text-muted)]"
-            }`}
-          >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]">
-              <Moon className="size-4 text-[var(--color-text-muted)]" />
-            </div>
-            <span className="flex items-center gap-1.5">
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                {t("appearance.dark")}
+          {betaTester && (
+            <button
+              type="button"
+              onClick={() => handleTheme("dark")}
+              className={`flex flex-1 items-center gap-2.5 rounded-xl p-3.5 transition-all duration-200 cursor-pointer ${
+                isDark
+                  ? "border-2 border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
+                  : "border border-[var(--color-glass-border)] bg-[var(--color-surface-inset)] hover:border-[var(--color-text-muted)]"
+              }`}
+            >
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-hover)]">
+                <Moon className="size-4 text-[var(--color-text-muted)]" />
+              </div>
+              <span className="flex items-center gap-1.5">
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  {t("appearance.dark")}
+                </span>
+                <BetaBadge label={t("appearance.beta")} />
               </span>
-              <BetaBadge label={t("appearance.beta")} />
-            </span>
-          </button>
+            </button>
+          )}
         </div>
         {isDark && <BetaNotice>{t("appearance.darkBetaNotice")}</BetaNotice>}
+        {!betaTester && <BetaNotice>{t("appearance.betaLocked")}</BetaNotice>}
       </section>
 
       {/* Accent color — custom HSL picker */}
@@ -269,7 +272,9 @@ export default function AppearanceSettings() {
         <div className="flex gap-2.5">
           {([
             { key: "en" as Language, char: "EN", nameKey: "appearance.english" as const, subKey: "appearance.default" as const },
-            { key: "ta" as Language, char: "\u0BA4", nameKey: "appearance.tamil" as const, subKey: null },
+            ...(betaTester
+              ? [{ key: "ta" as Language, char: "\u0BA4", nameKey: "appearance.tamil" as const, subKey: null }]
+              : []),
           ]).map(({ key, char, nameKey, subKey }) => {
             const selected = language === key;
             return (

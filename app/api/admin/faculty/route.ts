@@ -8,9 +8,11 @@ import {
   addFacultyBulk,
   setFacultyStatus,
   setFacultyDepartments,
+  setBetaStatus,
   upsertDepartment,
   removeDepartment,
   type FacultyStatus,
+  type BetaStatus,
 } from "@/lib/admin/facultyRegistry";
 import { logError, normalizeError } from "@/lib/errors";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -32,6 +34,7 @@ type Body =
   | { action: "addBulk"; emails: string[] }
   | { action: "setStatus"; email: string; status: FacultyStatus }
   | { action: "setDepartments"; email: string; departmentIds: string[] }
+  | { action: "setBeta"; email: string; betaStatus: BetaStatus }
   | { action: "upsertDept"; label: string; id?: string }
   | { action: "removeDept"; id: string };
 
@@ -70,6 +73,8 @@ export async function POST(request: Request) {
         const ids = Array.isArray(body.departmentIds) ? body.departmentIds.map(String) : [];
         return NextResponse.json(setFacultyDepartments(String(body.email ?? ""), ids));
       }
+      case "setBeta":
+        return NextResponse.json(setBetaStatus(String(body.email ?? ""), body.betaStatus));
       case "upsertDept": {
         const label = String(body.label ?? "").trim();
         if (!label) return NextResponse.json({ error: "label required" }, { status: 400 });

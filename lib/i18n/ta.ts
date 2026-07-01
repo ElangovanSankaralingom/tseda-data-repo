@@ -30,6 +30,21 @@ export const ta: TranslationDict = {
       clap: "Clap", // TODO: translate to Tamil
     },
   },
+  beta: {
+    programTitle: "Beta program", // TODO: translate to Tamil
+    programDesc: "Beta testers get early access to features still in development — currently dark mode and Tamil.", // TODO: translate to Tamil
+    join: "Join the beta program", // TODO: translate to Tamil
+    pending: "Your request is pending review", // TODO: translate to Tamil
+    cancelRequest: "Cancel request", // TODO: translate to Tamil
+    member: "You're a beta tester", // TODO: translate to Tamil
+    leave: "Leave the program", // TODO: translate to Tamil
+    requestedBadge: "Requested", // TODO: translate to Tamil
+    memberBadge: "Beta", // TODO: translate to Tamil
+    approve: "Approve", // TODO: translate to Tamil
+    reject: "Reject", // TODO: translate to Tamil
+    addMember: "Add to beta", // TODO: translate to Tamil
+    remove: "Remove", // TODO: translate to Tamil
+  },
   dashboard: {
     greetingMorning: "\u0B95\u0BBE\u0BB2\u0BC8 \u0BB5\u0BA3\u0B95\u0BCD\u0B95\u0BAE\u0BCD",
     greetingAfternoon: "\u0BAE\u0BA4\u0BBF\u0BAF \u0BB5\u0BA3\u0B95\u0BCD\u0B95\u0BAE\u0BCD",
@@ -975,6 +990,7 @@ export const ta: TranslationDict = {
     tamil: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD",
     default: "\u0B87\u0BAF\u0BB2\u0BCD\u0BAA\u0BC1\u0BA8\u0BBF\u0BB2\u0BC8",
     beta: "\u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE",
+    betaLocked: "Dark mode and Tamil are beta features. Join the beta program from your Account to enable them.", // TODO: translate to Tamil
     darkBetaTitle: "\u0B87\u0BB0\u0BC1\u0B9F\u0BCD\u0B9F\u0BC1 \u0BAE\u0BCB\u0B9F\u0BC1 \u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE\u0BB5\u0BBF\u0BB2\u0BCD \u0B89\u0BB3\u0BCD\u0BB3\u0BA4\u0BC1",
     tamilBetaTitle: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD \u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE\u0BB5\u0BBF\u0BB2\u0BCD \u0B89\u0BB3\u0BCD\u0BB3\u0BA4\u0BC1",
     darkBetaNotice: "\u0B87\u0BB0\u0BC1\u0B9F\u0BCD\u0B9F\u0BC1 \u0BAE\u0BCB\u0B9F\u0BC1 \u0B87\u0BA9\u0BCD\u0BA9\u0BC1\u0BAE\u0BCD \u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE \u0BA8\u0BBF\u0BB2\u0BC8\u0BAF\u0BBF\u0BB2\u0BCD \u0B89\u0BB3\u0BCD\u0BB3\u0BA4\u0BC1. \u0B9A\u0BBF\u0BB2 \u0B89\u0BB0\u0BC8\u0B95\u0BB3\u0BCD \u0B85\u0BB2\u0BCD\u0BB2\u0BA4\u0BC1 \u0B95\u0BC2\u0BB1\u0BC1\u0B95\u0BB3\u0BCD \u0B9A\u0BB0\u0BBF\u0BAF\u0BBE\u0B95\u0BA4\u0BCD \u0BA4\u0BCB\u0BA9\u0BCD\u0BB1\u0BBE\u0BAE\u0BB2\u0BCD \u0B87\u0BB0\u0BC1\u0B95\u0BCD\u0B95\u0BB2\u0BBE\u0BAE\u0BCD \u2014 \u0B8F\u0BA4\u0BBE\u0BB5\u0BA4\u0BC1 \u0B9A\u0BB0\u0BBF\u0BAF\u0BBF\u0BB2\u0BCD\u0BB2\u0BC8 \u0B8E\u0BA9\u0BCD\u0BB1\u0BBE\u0BB2\u0BCD, \u0BB2\u0BC8\u0B9F\u0BCD \u0BAE\u0BCB\u0B9F\u0BC1\u0B95\u0BCD\u0B95\u0BC1 \u0BAE\u0BBE\u0BB1\u0BB5\u0BC1\u0BAE\u0BCD.",

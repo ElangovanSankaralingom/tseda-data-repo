@@ -8,6 +8,7 @@ import PersonalTab from "@/components/account/PersonalTab";
 import AcademicTab from "@/components/account/AcademicTab";
 import ExperienceTab from "@/components/account/ExperienceTab";
 import UploadsTab from "@/components/account/UploadsTab";
+import BetaProgramCard from "@/components/account/BetaProgramCard";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { dashboard } from "@/lib/entryNavigation";
@@ -302,6 +303,8 @@ export default function AccountPage() {
           </div>
         ) : null}
       </div>
+
+      <BetaProgramCard />
 
       {/* Danger Zone */}
       <div className="mt-10 rounded-2xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] p-5">

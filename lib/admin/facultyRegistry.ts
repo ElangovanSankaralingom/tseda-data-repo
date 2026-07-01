@@ -21,12 +21,14 @@ import { isRootMaster } from "@/lib/admin";
  */
 
 export type FacultyStatus = "active" | "llp" | "inactive";
+export type BetaStatus = "none" | "requested" | "member";
 
 export type FacultyRecord = {
   email: string;
   name: string;
   departments: string[]; // department ids; empty = "Unassigned"
   status: FacultyStatus;
+  betaStatus: BetaStatus;
   addedBy?: string;
   addedAtISO?: string;
 };
@@ -64,6 +66,12 @@ function normalizeStatus(v: unknown): FacultyStatus {
   return typeof v === "string" && VALID_STATUS.has(v as FacultyStatus) ? (v as FacultyStatus) : "active";
 }
 
+const VALID_BETA = new Set<BetaStatus>(["none", "requested", "member"]);
+
+function normalizeBeta(v: unknown): BetaStatus {
+  return typeof v === "string" && VALID_BETA.has(v as BetaStatus) ? (v as BetaStatus) : "none";
+}
+
 function normalizeDept(raw: unknown): Department | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
@@ -86,6 +94,7 @@ function normalizeRecord(raw: unknown, validDeptIds: Set<string>): FacultyRecord
     name: typeof r.name === "string" && r.name.trim() ? r.name.trim() : email,
     departments,
     status: normalizeStatus(r.status),
+    betaStatus: normalizeBeta(r.betaStatus),
     addedBy: typeof r.addedBy === "string" ? r.addedBy : undefined,
     addedAtISO: typeof r.addedAtISO === "string" ? r.addedAtISO : undefined,
   };
@@ -102,6 +111,7 @@ function seedConfig(): FacultyRegistryConfig {
       name: f.name,
       departments: ["architecture"],
       status: "active" as FacultyStatus,
+      betaStatus: "none" as BetaStatus,
       addedBy: "system:seed",
       addedAtISO: nowISO,
     })),
@@ -168,6 +178,7 @@ export function addFaculty(email: string, name: string | undefined, addedBy: str
     name: name?.trim() || e,
     departments: [],
     status: "active",
+    betaStatus: "none",
     addedBy,
     addedAtISO: new Date().toISOString(),
   });
@@ -184,7 +195,7 @@ export function addFacultyBulk(emails: string[], addedBy: string): { config: Fac
     const e = normalizeEmail(raw);
     if (!e || existing.has(e)) continue;
     existing.add(e);
-    config.faculty.push({ email: e, name: e, departments: [], status: "active", addedBy, addedAtISO: nowISO });
+    config.faculty.push({ email: e, name: e, departments: [], status: "active", betaStatus: "none", addedBy, addedAtISO: nowISO });
     added += 1;
   }
   return { config: write(sanitize(config)), added };
@@ -205,6 +216,25 @@ export function setFacultyDepartments(email: string, departmentIds: string[]): F
   const rec = config.faculty.find((f) => f.email === e);
   if (rec) rec.departments = Array.from(new Set(departmentIds.filter((id) => valid.has(id))));
   return write(sanitize(config));
+}
+
+// --- Beta program ---
+
+export function getBetaStatus(email: string): BetaStatus {
+  return getFacultyRecord(email)?.betaStatus ?? "none";
+}
+
+export function setBetaStatus(email: string, status: BetaStatus): FacultyRegistryConfig {
+  const e = normalizeEmail(email);
+  const config = getFacultyRegistry();
+  const rec = config.faculty.find((f) => f.email === e);
+  if (rec) rec.betaStatus = VALID_BETA.has(status) ? status : "none";
+  return write(sanitize(config));
+}
+
+/** True only for explicit beta members — no implicit admin access. */
+export function isBetaTester(email: string): boolean {
+  return getBetaStatus(email) === "member";
 }
 
 // --- Departments (master-editable) ---

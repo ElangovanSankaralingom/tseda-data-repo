@@ -6,7 +6,7 @@ import ShellClient from "@/app/ShellClient";
 import ThemeProvider from "@/lib/theme/ThemeProvider";
 import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { isFacultyAllowed } from "@/lib/admin/facultyRegistry";
+import { isFacultyAllowed, isBetaTester } from "@/lib/admin/facultyRegistry";
 import { signin } from "@/lib/entryNavigation";
 import { getUserPreferences } from "@/lib/preferences/userPreferences";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
@@ -31,8 +31,12 @@ export default async function ProtectedLayout({
     redirect(`${signin()}?error=AccessDenied`);
   }
 
+  const betaTester = isBetaTester(email);
   const prefs = getUserPreferences(normalizeEmail(email));
-  const mode = prefs.themeMode as ThemeMode;
+  // Beta-only options (dark mode, Tamil) are clamped to light + English for
+  // non-members — enforced at first paint and in ThemeProvider.
+  const mode = (betaTester ? prefs.themeMode : "light") as ThemeMode;
+  const language = (betaTester ? prefs.language : "en") as Language;
   // Prefer the saved custom accent; fall back to a legacy preset name (migration).
   const accent = normaliseAccent(prefs.accentHex || prefs.colorPalette);
 
@@ -40,7 +44,8 @@ export default async function ProtectedLayout({
     <ThemeProvider
       initialMode={mode}
       initialAccent={accent}
-      initialLanguage={prefs.language as Language}
+      initialLanguage={language}
+      betaTester={betaTester}
     >
       {/* First-paint theming: resolved tokens + .dark class BEFORE hydration.
           The <style> overrides the static dark fallback in globals.css (same

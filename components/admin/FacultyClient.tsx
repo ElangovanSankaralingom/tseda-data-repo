@@ -5,7 +5,8 @@ import { UserPlus, Users, Building2, X, Plus, Download } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type FacultyStatus = "active" | "llp" | "inactive";
-type FacultyRecord = { email: string; name: string; departments: string[]; status: FacultyStatus };
+type BetaStatus = "none" | "requested" | "member";
+type FacultyRecord = { email: string; name: string; departments: string[]; status: FacultyStatus; betaStatus: BetaStatus };
 type Department = { id: string; label: string };
 type Config = { faculty: FacultyRecord[]; departments: Department[] };
 
@@ -127,6 +128,24 @@ export default function FacultyClient({ initialConfig }: { initialConfig: Config
                       <option value="">+ {t("faculty.assignDept")}</option>
                       {unassignedDepts.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
                     </select>
+                  )}
+                </div>
+                {/* Beta program */}
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-[var(--color-divider)] pt-2.5">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">{t("beta.programTitle")}</span>
+                  {f.betaStatus === "requested" ? (
+                    <>
+                      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ background: "var(--color-status-warning-bg)", color: "var(--color-status-warning)" }}>{t("beta.requestedBadge")}</span>
+                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "member" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ background: "var(--color-status-success-bg)", color: "var(--color-status-success)" }}>{t("beta.approve")}</button>
+                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "none" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.reject")}</button>
+                    </>
+                  ) : f.betaStatus === "member" ? (
+                    <>
+                      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ background: "var(--color-palette-violet-bg)", color: "var(--color-palette-violet-fg)" }}>{t("beta.memberBadge")}</span>
+                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "none" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.remove")}</button>
+                    </>
+                  ) : (
+                    <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "member" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.addMember")}</button>
                   )}
                 </div>
               </div>
