@@ -1,5 +1,10 @@
 # Database Migration Plan: JSON Files → SQLite
 
+> **SUPERSEDED for execution:** this file is background/rationale only.
+> The authoritative step-by-step playbook (schema, method contracts,
+> verification gates, cutover + rollback, known traps) is
+> **[docs/SQLITE-MIGRATION.md](./docs/SQLITE-MIGRATION.md)**. Follow that.
+
 ## Current Architecture
 
 T'SEDA uses **file-based JSON storage** with no external database dependency:

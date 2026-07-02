@@ -288,7 +288,8 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 ## Current State
 
-- **508 tests, 0 failures** (2026-07 audit: added concurrency, nightly-idempotency, IST-boundary, requestIp, and ta-completeness coverage)
+- **519 tests, 0 failures** (2026-07: + schema invariant guards, collab fan-out suite)
+- **Playbooks:** SQLite migration → `docs/SQLITE-MIGRATION.md` (planned, not started); deployment topology + scaling walls → `docs/DEPLOYMENT.md`. Read BEFORE touching storage or running multiple instances.
 - **Build: clean** (Turbopack warnings are cosmetic)
 - **Docker + CI/CD ready** (GitHub Actions)
 - **5 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops
