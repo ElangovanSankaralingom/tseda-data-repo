@@ -23,6 +23,7 @@ export const ta: TranslationDict = {
     minutesAgo: "{n} \u0ba8\u0bbf\u0bae\u0bbf \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
     hoursAgo: "{n} \u0bae\u0ba3\u0bbf \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
     daysAgo: "{n} \u0ba8\u0bbe\u0bb3\u0bcd \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
+    withNames: "{names} \u0b89\u0b9f\u0ba9\u0bcd",
     react: {
       like: "\u0bb5\u0bbf\u0bb0\u0bc1\u0baa\u0bcd\u0baa\u0bc1",
       fire: "\u0ba4\u0bc0",

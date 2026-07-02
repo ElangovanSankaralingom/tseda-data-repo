@@ -28,6 +28,8 @@ export type FeedEvent = {
   categoryKey: string | null;
   /** For "milestone" events: the win-count threshold reached (e.g. 5, 10, 25). */
   milestone: number | null;
+  /** First names of collaborators on the underlying entry ("with X & Y"). */
+  withNames: string[];
   createdAt: string;
   reactions: Record<FeedReaction, string[]>;
 };
@@ -38,6 +40,7 @@ export type NewFeedEvent = {
   actorEmail: string;
   categoryKey?: string | null;
   milestone?: number | null;
+  withNames?: string[];
   createdAt?: string;
 };
 
@@ -92,6 +95,12 @@ function normalizeEvent(raw: unknown): FeedEvent | null {
     actorEmail,
     categoryKey: typeof r.categoryKey === "string" ? r.categoryKey : null,
     milestone: typeof r.milestone === "number" && Number.isFinite(r.milestone) ? r.milestone : null,
+    withNames: Array.isArray(r.withNames)
+      ? (r.withNames as unknown[])
+          .filter((v): v is string => typeof v === "string" && !!v.trim())
+          .map((v) => v.trim())
+          .slice(0, 4)
+      : [],
     createdAt,
     reactions,
   };
@@ -141,6 +150,7 @@ export async function appendFeedEvent(event: NewFeedEvent): Promise<void> {
         actorEmail: normalizeEmail(event.actorEmail),
         categoryKey: event.categoryKey ?? null,
         milestone: event.milestone ?? null,
+        withNames: (event.withNames ?? []).slice(0, 4),
         createdAt: event.createdAt ?? new Date().toISOString(),
         reactions: emptyReactions(),
       };

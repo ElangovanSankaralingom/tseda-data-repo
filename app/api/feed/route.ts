@@ -59,6 +59,7 @@ export async function GET(request: Request) {
       isSelf: e.actorEmail === email,
       categoryKey: e.categoryKey,
       milestone: e.milestone,
+      withNames: e.withNames,
       createdAt: e.createdAt,
       reactions,
       myReactions,

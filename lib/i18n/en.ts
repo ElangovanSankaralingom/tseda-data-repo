@@ -21,6 +21,7 @@ export const en = {
     minutesAgo: "{n}m ago",
     hoursAgo: "{n}h ago",
     daysAgo: "{n}d ago",
+    withNames: "with {names}",
     react: {
       like: "Like",
       fire: "Fire",

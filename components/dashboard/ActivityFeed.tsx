@@ -23,6 +23,7 @@ type FeedEvent = {
   isSelf: boolean;
   categoryKey: string | null;
   milestone: number | null;
+  withNames: string[];
   createdAt: string;
   reactions: Record<string, number>;
   myReactions: Reaction[];
@@ -139,11 +140,14 @@ const MilestoneCard = React.memo(function MilestoneCard({
   const accentBg = `var(--color-palette-${palette}-bg)`;
   const accentBorder = `var(--color-palette-${palette}-border)`;
   const TypeIcon = isWon ? Trophy : isMilestone ? Award : Flame;
-  const message = isWon
+  const baseMessage = isWon
     ? t("feed.wonStreak")
     : isMilestone
       ? t("feed.milestoneReached").replace("{n}", String(event.milestone ?? 0))
       : t("feed.startedStreak");
+  const message = event.withNames?.length
+    ? `${baseMessage} ${t("feed.withNames").replace("{names}", event.withNames.join(", "))}`
+    : baseMessage;
   const name = event.isSelf ? t("feed.you") : event.actorName;
   const celebratory = isWon || isMilestone;
   const freshWin = celebratory && now > 0 && now - Date.parse(event.createdAt) < FRESH_WIN_MS;

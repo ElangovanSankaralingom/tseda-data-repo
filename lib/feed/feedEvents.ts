@@ -28,6 +28,43 @@ import { getDashboardSummary } from "@/lib/entries/summary";
 
 const WIN_MILESTONES = [5, 10, 25, 50, 100];
 
+/**
+ * First names of the entry's collaborators (schema `collaborates` fields),
+ * excluding the actor — powers the feed's "with X & Y" rendering. Names only:
+ * consistent with the feed's milestone-only privacy design.
+ */
+function collabDisplayNames(
+  actorEmail: string,
+  category: CategoryKey,
+  entry: Record<string, unknown>,
+): string[] {
+  const names: string[] = [];
+  const seen = new Set<string>([actorEmail.trim().toLowerCase()]);
+  try {
+    for (const field of getCategorySchema(category).fields) {
+      if (!field.collaborates) continue;
+      const rows = entry[field.key];
+      if (!Array.isArray(rows)) continue;
+      for (const row of rows) {
+        if (!row || typeof row !== "object") continue;
+        const record = row as Record<string, unknown>;
+        const rowEmail = String(record.email ?? "").trim().toLowerCase();
+        if (!rowEmail || seen.has(rowEmail)) continue;
+        seen.add(rowEmail);
+        const rawName = String(record.name ?? "").trim();
+        const display = (rawName || resolveFacultyName(rowEmail) || rowEmail.split("@")[0] || "")
+          .trim()
+          .split(/\s+/)[0];
+        if (display) names.push(display);
+        if (names.length >= 4) return names;
+      }
+    }
+  } catch {
+    // Best-effort only.
+  }
+  return names;
+}
+
 /** Emit a one-time "hit N wins" milestone when the actor's win count lands exactly on a threshold. */
 async function emitWinMilestone(actorEmail: string): Promise<void> {
   const summary = await getDashboardSummary(actorEmail);
@@ -58,6 +95,8 @@ export function recordEntryMilestones(
   const candidate = entry as StreakProgressEntryLike;
 
   try {
+    const withNames = collabDisplayNames(actorEmail, category, entry);
+
     if (isEntryActivated(candidate)) {
       fireAndForget(
         appendFeedEvent({
@@ -65,6 +104,7 @@ export function recordEntryMilestones(
           type: "streak_started",
           actorEmail,
           categoryKey: category,
+          ...(withNames.length ? { withNames } : {}),
         }),
         "feed.streak_started",
       );
@@ -78,6 +118,7 @@ export function recordEntryMilestones(
           type: "streak_won",
           actorEmail,
           categoryKey: category,
+          ...(withNames.length ? { withNames } : {}),
         }),
         "feed.streak_won",
       );
