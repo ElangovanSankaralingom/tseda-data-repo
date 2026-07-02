@@ -39,5 +39,18 @@ export const authOptions: NextAuthOptions = {
       // list, so the day-one allowed set is unchanged.
       return email.endsWith(ALLOWED_EMAIL_SUFFIX) && isFacultyAllowed(email);
     },
+    async session({ session }) {
+      // Live registry re-check on EVERY session read (2026-07 audit): a JWT
+      // can outlive an admin's deactivation by up to 8h. Stripping the user
+      // here makes every consumer's existing "no email → 401/redirect" guard
+      // fire — all ~80 API routes, the protected layout, and the client's
+      // useSession() are covered by this single point, with no per-route
+      // duplication.
+      const email = (session.user?.email ?? "").toLowerCase();
+      if (!email.endsWith(ALLOWED_EMAIL_SUFFIX) || !isFacultyAllowed(email)) {
+        return { ...session, user: undefined };
+      }
+      return session;
+    },
   },
 };
