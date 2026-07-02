@@ -66,9 +66,13 @@ function writeProfile(email: string, profile: AnyObj) {
   fs.writeFileSync(file, JSON.stringify(profile, null, 2), "utf-8");
 }
 
+/** Keys that must never be merged from client input (prototype pollution). */
+const FORBIDDEN_MERGE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 function deepMerge(base: AnyObj, patch: AnyObj): AnyObj {
   const out: AnyObj = { ...base };
   for (const k of Object.keys(patch || {})) {
+    if (FORBIDDEN_MERGE_KEYS.has(k)) continue;
     const pv = patch[k];
     const bv = base?.[k];
     if (isAnyObj(pv) && isAnyObj(bv)) {

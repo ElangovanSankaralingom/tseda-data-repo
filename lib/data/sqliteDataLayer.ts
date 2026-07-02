@@ -22,35 +22,35 @@ function notImplemented(method: string): never {
 }
 
 export class SqliteDataLayer implements DataLayer {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async listEntries(_email: string, _category: CategoryKey): Promise<DataLayerEntry[]> {
     notImplemented("listEntries");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async getEntry(_email: string, _category: CategoryKey, _id: string): Promise<DataLayerEntry | null> {
     notImplemented("getEntry");
   }
 
   async saveEntry(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _email: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _category: CategoryKey,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _entry: DataLayerEntry,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _options?: UpsertOptions,
   ): Promise<DataLayerEntry> {
     notImplemented("saveEntry");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async replaceEntries(_email: string, _category: CategoryKey, _entries: DataLayerEntry[]): Promise<void> {
     notImplemented("replaceEntries");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async deleteEntry(_email: string, _category: CategoryKey, _id: string): Promise<DataLayerEntry | null> {
     notImplemented("deleteEntry");
   }
@@ -59,17 +59,17 @@ export class SqliteDataLayer implements DataLayer {
     notImplemented("listUsers");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async getUserIndex(_email: string): Promise<UserIndex | null> {
     notImplemented("getUserIndex");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async saveUserIndex(_email: string, _index: UserIndex): Promise<void> {
     notImplemented("saveUserIndex");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async withLock<T>(_key: string, _fn: () => Promise<T>): Promise<T> {
     notImplemented("withLock");
   }

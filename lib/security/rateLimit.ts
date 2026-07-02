@@ -48,14 +48,28 @@ function normalizeRateKeyPart(value: string) {
   return value.trim().toLowerCase();
 }
 
+/**
+ * Client IP for rate-limit keying.
+ *
+ * Forwarding headers are attacker-controllable unless a trusted reverse
+ * proxy sets them. Two hardenings (2026-07 audit):
+ * - `TRUST_PROXY=false` ignores forwarding headers entirely (for deployments
+ *   exposed directly, where any client can forge them).
+ * - When trusted (default), the RIGHTMOST x-forwarded-for entry is used — it
+ *   is appended by the nearest proxy, unlike the client-forgeable first
+ *   entry. Per-user limits remain the primary defence either way.
+ */
 export function getRequestIp(request: Request) {
+  if (process.env.TRUST_PROXY?.trim().toLowerCase() === "false") return null;
+
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    const first = forwarded
+    const parts = forwarded
       .split(",")
       .map((value) => value.trim())
-      .find(Boolean);
-    if (first) return first;
+      .filter(Boolean);
+    const last = parts.at(-1);
+    if (last) return last;
   }
 
   const realIp = request.headers.get("x-real-ip")?.trim();

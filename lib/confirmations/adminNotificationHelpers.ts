@@ -68,7 +68,7 @@ export async function notifyAdminEditRequest(
   ownerName: string | undefined,
   entryTitle: string,
   categoryKey: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   _entryId: string,
 ): Promise<void> {
   const displayName = ownerName || ownerEmail.split("@")[0];
@@ -92,7 +92,7 @@ export async function notifyAdminDeleteRequest(
   ownerName: string | undefined,
   entryTitle: string,
   categoryKey: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   _entryId: string,
 ): Promise<void> {
   const displayName = ownerName || ownerEmail.split("@")[0];

@@ -8,7 +8,7 @@
 
 export type StreakDeadlineColor = "normal" | "yellow" | "red";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export function getDaysLeft(deadlineISO: string | null | undefined, _nowISO?: string) {
   if (!deadlineISO) return 0;
 

@@ -109,8 +109,7 @@ for (const dir of SCAN_DIRS) {
         }
       }
       RATCHET.re.lastIndex = 0;
-      let r;
-      while ((r = RATCHET.re.exec(line)) !== null) {
+      while (RATCHET.re.exec(line) !== null) {
         ratchetCounts[rel] = (ratchetCounts[rel] ?? 0) + 1;
       }
     });

@@ -27,7 +27,7 @@ export function useEntryConfirmation<TEntry extends ConfirmableEntry>(args: {
   const [sendingIds] = useState<Record<string, boolean>>({});
 
   const sendForConfirmation = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     async (_entry: TEntry) => {
       // No-op: entries auto-finalize in the new workflow
     },
