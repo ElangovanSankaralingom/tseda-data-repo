@@ -12,7 +12,9 @@ import { listQuarantine } from "../../lib/jobs/quarantine.ts";
  * second quarantine or an error on already-removed entries.
  */
 
-const OWNER = "faculty.nightly@tce.edu";
+// Unique per run — assertions filter quarantine bundles by this owner so the
+// test stays hermetic even if an environment shares a trash directory.
+const OWNER = `faculty.nightly-${Date.now()}@tce.edu`;
 const CATEGORY = "workshops";
 
 function daysAgoISO(days: number): string {
@@ -47,7 +49,7 @@ test("nightly auto-archive is idempotent: expired incomplete entry is deleted ex
     const afterFirst = await readCategoryEntries(OWNER, CATEGORY);
     assert.equal(afterFirst.length, 0, "entry must be gone from the live store");
 
-    const quarantinedOnce = await listQuarantine();
+    const quarantinedOnce = (await listQuarantine()).filter((m) => m.ownerEmail === OWNER);
     assert.equal(quarantinedOnce.length, 1, "exactly one quarantine bundle after pass 1");
 
     // Second run: nothing left to act on — no error, no double effects.
@@ -56,7 +58,7 @@ test("nightly auto-archive is idempotent: expired incomplete entry is deleted ex
     assert.equal(second.data.deleted, 0, "pass 2 must not delete again");
     assert.equal(second.data.archived, 0, "pass 2 must not archive anything new");
 
-    const quarantinedTwice = await listQuarantine();
+    const quarantinedTwice = (await listQuarantine()).filter((m) => m.ownerEmail === OWNER);
     assert.equal(
       quarantinedTwice.length,
       1,

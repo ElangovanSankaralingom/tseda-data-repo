@@ -10,6 +10,7 @@ export type TestDataRootContext = {
 
 export async function createTestDataRoot(label: string): Promise<TestDataRootContext> {
   const previousDataRoot = process.env.DATA_ROOT;
+  const previousPrivateRoot = process.env.PRIVATE_DATA_ROOT;
   const root = path.join(
     process.cwd(),
     "tmp",
@@ -18,6 +19,9 @@ export async function createTestDataRoot(label: string): Promise<TestDataRootCon
 
   await fs.mkdir(root, { recursive: true });
   process.env.DATA_ROOT = root;
+  // Sandbox the private root too (trash, entry uploads) — without this,
+  // quarantine bundles and upload files from tests land in the LIVE .data.
+  process.env.PRIVATE_DATA_ROOT = path.join(root, "private");
 
   return {
     root,
@@ -26,6 +30,11 @@ export async function createTestDataRoot(label: string): Promise<TestDataRootCon
         delete process.env.DATA_ROOT;
       } else {
         process.env.DATA_ROOT = previousDataRoot;
+      }
+      if (previousPrivateRoot === undefined) {
+        delete process.env.PRIVATE_DATA_ROOT;
+      } else {
+        process.env.PRIVATE_DATA_ROOT = previousPrivateRoot;
       }
     },
     async cleanup() {

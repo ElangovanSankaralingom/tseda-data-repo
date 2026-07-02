@@ -7,9 +7,8 @@ import {
   listQuarantine,
   restoreFromQuarantine,
   purgeExpiredQuarantine,
-  TRASH_ROOT,
 } from "../../lib/jobs/quarantine.ts";
-import { ENTRY_UPLOADS_ROOT, resolveEntryUploadPath } from "../../lib/config/storagePaths.ts";
+import { resolveEntryUploadPath } from "../../lib/config/storagePaths.ts";
 import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 /**
@@ -92,7 +91,3 @@ test("purge removes bundles older than retention, keeps fresh ones", async () =>
     assert.equal((await listQuarantine()).some((m) => m.trashId === trashId), false);
   });
 });
-
-// Keep references used so lint doesn't flag the imports if a test is trimmed.
-void TRASH_ROOT;
-void ENTRY_UPLOADS_ROOT;

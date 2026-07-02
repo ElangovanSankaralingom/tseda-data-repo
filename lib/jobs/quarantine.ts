@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { logger } from "@/lib/logger";
-import { PRIVATE_DATA_ROOT, resolveEntryUploadPath, ENTRY_UPLOADS_ROOT } from "@/lib/config/storagePaths";
+import { privateDataRoot, resolveEntryUploadPath, entryUploadsRoot } from "@/lib/config/storagePaths";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { safeEmailKey } from "@/lib/uploadStore";
 import { getCategorySchema } from "@/data/categoryRegistry";
@@ -41,7 +41,9 @@ export function collectEntryFilePaths(category: string, entry: Record<string, un
  * (or an admin) removes them later; until then they can be restored.
  */
 
-export const TRASH_ROOT = path.join(PRIVATE_DATA_ROOT, "trash");
+export function trashRoot(): string {
+  return path.join(privateDataRoot(), "trash");
+}
 
 /** How long quarantined entries are retained before they may be purged. */
 export const TRASH_RETENTION_DAYS = 30;
@@ -59,7 +61,7 @@ export type TrashManifest = {
 };
 
 function trashDir(trashId: string): string {
-  return path.join(TRASH_ROOT, trashId);
+  return path.join(trashRoot(), trashId);
 }
 
 /**
@@ -127,7 +129,7 @@ export async function quarantineEntry(args: {
 export async function listQuarantine(): Promise<TrashManifest[]> {
   let ids: string[];
   try {
-    ids = await fs.readdir(TRASH_ROOT);
+    ids = await fs.readdir(trashRoot());
   } catch {
     return [];
   }
@@ -216,7 +218,7 @@ export async function purgeExpiredQuarantine(now: number = Date.now()): Promise<
 /** Best-effort cleanup of a now-empty per-entry upload directory. */
 export async function removeEmptyUploadDir(ownerEmail: string, category: string, entryId: string): Promise<void> {
   try {
-    await fs.rm(path.join(ENTRY_UPLOADS_ROOT, ownerEmail, category, entryId), { recursive: true, force: true });
+    await fs.rm(path.join(entryUploadsRoot(), ownerEmail, category, entryId), { recursive: true, force: true });
   } catch {
     /* ignore */
   }

@@ -7,7 +7,7 @@ import { logger } from "@/lib/logger";
 import { listUsers } from "@/lib/admin/integrity";
 import { CATEGORY_LIST } from "@/data/categoryRegistry";
 import { readCategoryEntries } from "@/lib/dataStore";
-import { ENTRY_UPLOADS_ROOT } from "@/lib/config/storagePaths";
+import { entryUploadsRoot } from "@/lib/config/storagePaths";
 
 export type OrphanScanResult = {
   orphanPaths: string[];
@@ -21,7 +21,7 @@ export type OrphanScanResult = {
  * Files younger than 24 hours are excluded (may be mid-upload).
  */
 export async function findOrphanUploads(): Promise<OrphanScanResult> {
-  const uploadsRoot = ENTRY_UPLOADS_ROOT;
+  const uploadsRoot = entryUploadsRoot();
   const now = Date.now();
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 

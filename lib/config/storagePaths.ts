@@ -12,18 +12,24 @@ import path from "node:path";
  *   through session-checked API routes (`/api/file`, `/api/entry-file`).
  */
 
-/** Gitignored private root. */
-export const PRIVATE_DATA_ROOT = path.join(process.cwd(), ".data");
+/** Gitignored private root. Resolved dynamically (NOT at module load) so the
+ *  PRIVATE_DATA_ROOT env override — used by the test harness to sandbox
+ *  trash/upload writes — takes effect. Load-time pinning previously let test
+ *  runs write quarantine bundles and upload files into the LIVE `.data`
+ *  (2026-07 audit follow-up). */
+export function privateDataRoot(): string {
+  const custom = process.env.PRIVATE_DATA_ROOT?.trim();
+  return custom ? path.resolve(process.cwd(), custom) : path.join(process.cwd(), ".data");
+}
 
 /** Entry attachments + generated entry PDFs.
  *  Disk layout: .data/entry-uploads/<ownerEmail>/<category>/<entryId>/...
  *  Entries persist a `storedPath` of the form
  *  "uploads/<ownerEmail>/<category>/<entryId>/..." (kept stable for
  *  backwards compatibility); resolve via {@link resolveEntryUploadPath}. */
-export const ENTRY_UPLOADS_ROOT = path.join(PRIVATE_DATA_ROOT, "entry-uploads");
-
-/** Per-user profile documents (contain PII): .data/profiles/<email>.json */
-export const PROFILES_DIR = path.join(PRIVATE_DATA_ROOT, "profiles");
+export function entryUploadsRoot(): string {
+  return path.join(privateDataRoot(), "entry-uploads");
+}
 
 const STORED_PATH_PREFIX = "uploads/";
 
@@ -49,9 +55,10 @@ export function resolveEntryUploadPath(storedPath: string): string {
   if (!isValidStoredPath(storedPath)) {
     throw new Error("Invalid stored path");
   }
+  const root = entryUploadsRoot();
   const rest = storedPath.slice(STORED_PATH_PREFIX.length);
-  const resolved = path.resolve(ENTRY_UPLOADS_ROOT, rest);
-  if (!resolved.startsWith(path.resolve(ENTRY_UPLOADS_ROOT) + path.sep)) {
+  const resolved = path.resolve(root, rest);
+  if (!resolved.startsWith(path.resolve(root) + path.sep)) {
     throw new Error("Invalid stored path");
   }
   return resolved;
