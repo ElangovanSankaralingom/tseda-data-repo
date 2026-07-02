@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Check } from "lucide-react";
 export { type SelectDropdownOption } from "@/lib/types/ui";
 import { type SelectDropdownOption } from "@/lib/types/ui";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -275,27 +276,36 @@ export default function SelectDropdown({
           {filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">No matching options.</div>
           ) : (
-            filteredOptions.map((option, index) => (
-              <button
-                key={option.value}
-                id={id ? `${id}-option-${index}` : undefined}
-                type="button"
-                role="option"
-                aria-selected={index === resolvedHighlightedIndex}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => chooseOption(option)}
-                className={cx(
-                  "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[var(--color-text-primary)] transition-colors",
-                  index === resolvedHighlightedIndex && !option.disabled && "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
-                  option.disabled
-                    ? "pointer-events-none cursor-not-allowed text-[var(--color-text-muted)] opacity-50"
-                    : "hover:bg-[var(--color-glass-hover)]"
-                )}
-              >
-                {option.icon ? <option.icon className="size-4 shrink-0 text-[var(--color-text-secondary)]" /> : null}
-                {resolveLabel(option)}
-              </button>
-            ))
+            filteredOptions.map((option, index) => {
+              const isSelected = selectedOption?.value === option.value;
+              return (
+                <button
+                  key={option.value}
+                  id={id ? `${id}-option-${index}` : undefined}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => chooseOption(option)}
+                  className={cx(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[var(--color-text-primary)] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/30",
+                    // The CURRENT selection reads as accent even when the
+                    // keyboard highlight is elsewhere — reopening the list
+                    // shows what's chosen at a glance.
+                    isSelected && "bg-[var(--color-primary)]/15 font-medium text-[var(--color-primary)]",
+                    index === resolvedHighlightedIndex && !option.disabled && "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
+                    option.disabled
+                      ? "pointer-events-none cursor-not-allowed text-[var(--color-text-muted)] opacity-50"
+                      : "hover:bg-[var(--color-glass-hover)]"
+                  )}
+                >
+                  {option.icon ? <option.icon className="size-4 shrink-0 text-[var(--color-text-secondary)]" /> : null}
+                  {resolveLabel(option)}
+                  {isSelected ? <Check className="ml-auto size-4 shrink-0" aria-hidden="true" /> : null}
+                </button>
+              );
+            })
           )}
         </DropdownPortal>
       ) : null}

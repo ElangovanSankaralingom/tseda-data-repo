@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export type FacultyOption = {
@@ -193,21 +194,25 @@ export default function FacultySelect({
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">{t("entry.searching")}</div>
           ) : filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">
-              {useApi && normalizedQuery.length < 2 ? "Type at least 2 characters to search." : "No matching faculty. Press Save to keep typed text."}
+              {useApi && normalizedQuery.length < 2 ? t("entry.searchMinChars") : t("entry.noMatchingFaculty")}
             </div>
           ) : (
             filteredOptions.map((option, index) => {
               const optionDisabled = disabledEmails.has(option.email.toLowerCase());
+              const isSelected = !!value.email && value.email.toLowerCase() === option.email.toLowerCase();
               return (
                 <button
                   key={option.email}
                   type="button"
+                  aria-selected={isSelected}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     if (!optionDisabled) chooseOption(option);
                   }}
                   className={cx(
                     "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-[var(--color-text-primary)] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/30",
+                    isSelected && "bg-[var(--color-primary)]/15 font-medium text-[var(--color-primary)]",
                     index === highlightedIndex && !optionDisabled && "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
                     optionDisabled
                       ? "pointer-events-none cursor-not-allowed text-[var(--color-text-muted)] opacity-50"
@@ -215,6 +220,7 @@ export default function FacultySelect({
                   )}
                 >
                   {option.name}
+                  {isSelected ? <Check className="ml-auto size-4 shrink-0" aria-hidden="true" /> : null}
                 </button>
               );
             })

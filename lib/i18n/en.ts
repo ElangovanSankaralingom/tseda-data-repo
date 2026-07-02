@@ -118,6 +118,8 @@ export const en = {
     saving: "Saving...",
     searching: "Searching...",
     saved: "Saved",
+    searchMinChars: "Type at least 2 characters to search.",
+    noMatchingFaculty: "No matching faculty. Press Save to keep typed text.",
     searchPageTitle: "Entry Search",
     searchPageSubtitle: "Search your entries across categories using keywords.",
     searchResultsCount: "Results: {n}",

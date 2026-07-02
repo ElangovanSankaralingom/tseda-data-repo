@@ -117,7 +117,7 @@ export default function NotificationBell({
       <button
         type="button"
         onClick={() => { if (open) handleClose(); else handleOpen(); }}
-        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors ${unreadCount > 0 ? "hover:bg-[var(--color-primary)]/10" : "hover:bg-[var(--color-dropdown-hover)]"}`}
+        className={`relative flex size-9 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 ${unreadCount > 0 ? "hover:bg-[var(--color-primary)]/10" : "hover:bg-[var(--color-dropdown-hover)]"}`}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
       >
         <Bell className={`size-5 ${unreadCount > 0 ? "text-[var(--color-text-secondary)] fill-[var(--color-text-secondary)]" : "text-[var(--color-text-muted)]"}`} />

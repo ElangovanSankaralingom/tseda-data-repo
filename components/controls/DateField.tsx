@@ -139,6 +139,7 @@ function CalendarGrid({
               onClick={() => onSelect(viewYear, viewMonth, cell.day)}
               className={cx(
                 "flex size-8 items-center justify-center rounded-lg text-xs font-medium transition-all duration-150",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40",
                 isSelected
                   ? "bg-[var(--color-primary)] text-[var(--color-text-on-accent)] font-bold"
                   : isToday
