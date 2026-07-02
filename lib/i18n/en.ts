@@ -29,6 +29,18 @@ export const en = {
       clap: "Clap",
     },
   },
+  awards: {
+    sectionTitle: "My Award Progress",
+    points: "points",
+    coverageNote: "{tracked} of {total} metrics auto-tracked from your entries — more as new categories arrive",
+    strengths: "Strengths",
+    quickWins: "Quick Wins",
+    notTracked: "Not Yet Tracked",
+    noStrengthsYet: "Generate entries to see your strengths here",
+    noQuickWins: "No easy points pending",
+    allTracked: "Everything is being tracked",
+    upTo: "up to {n}",
+  },
   beta: {
     programTitle: "Beta program",
     programDesc: "Beta testers get early access to features still in development — currently dark mode and Tamil.",

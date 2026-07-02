@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import AwardProgress from "@/components/dashboard/AwardProgress";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
 import { canAccessAdminConsole, isMasterAdmin } from "@/lib/admin/roles";
@@ -91,6 +92,10 @@ export default async function DashboardPage() {
         draftCount={draftCount}
         editRequestedCount={editRequestedCount}
       />
+
+      {/* ── My Award Progress — self-reflection panel (renders only once
+             the faculty has entries with an academic year) ── */}
+      {hasAnyEntries ? <AwardProgress /> : null}
 
       {/* ── Content: Empty state or Bento grid ── */}
       {!hasAnyEntries ? (

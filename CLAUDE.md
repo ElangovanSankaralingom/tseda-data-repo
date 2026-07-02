@@ -290,6 +290,7 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 - **519 tests, 0 failures** (2026-07: + schema invariant guards, collab fan-out suite)
 - **Playbooks:** SQLite migration → `docs/SQLITE-MIGRATION.md` (planned, not started); deployment topology + scaling walls → `docs/DEPLOYMENT.md`. Read BEFORE touching storage or running multiple instances.
+- **Faculty Awards system (2026-07):** rulebook → `data/awardMetrics.ts` (T'SEDA 7-section scheme as data — NEVER hardcode point values elsewhere); admin overrides → `lib/awards/config.ts` (+ `/api/admin/awards/points`); scoring → `lib/awards/scoring.ts` (committed entries only, year-bucketed via `academicYear`, explicit per-metric derivers); dashboard panel `AwardProgress`. Visibility: self + admin, no leaderboard. Build order for everything else → `docs/AWARDS-ROADMAP.md`.
 - **Build: clean** (Turbopack warnings are cosmetic)
 - **Docker + CI/CD ready** (GitHub Actions)
 - **5 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops
