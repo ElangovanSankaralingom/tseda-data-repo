@@ -326,6 +326,7 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
         const resetValue = config.arraySlots.has(parsed.slot) ? [] : null;
         const nowISO = new Date().toISOString();
 
+        let nextEntry: Record<string, unknown>;
         if (config.nested) {
           // Nested: entry.uploads.{slot}
           const currentUploads =
@@ -333,19 +334,33 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
               ? { ...(existing.uploads as Record<string, unknown>) }
               : {};
           currentUploads[parsed.slot] = resetValue;
-          await upsertCategoryEntry(email, category, {
+          nextEntry = {
             ...existing,
             uploads: currentUploads,
             updatedAt: nowISO,
-          });
+          };
         } else {
           // Top-level: entry.{slot}
-          await upsertCategoryEntry(email, category, {
+          nextEntry = {
             ...existing,
             [parsed.slot]: resetValue,
             updatedAt: nowISO,
-          });
+          };
         }
+        await upsertCategoryEntry(email, category, nextEntry);
+
+        // This handler writes the entry directly (not via the engine) — keep
+        // the derived stores coherent too (2026-07 correlation audit).
+        const { refreshIndexForMutation, revalidateDashboardSummary } = await import(
+          "@/lib/entries/internal/engineHelpers"
+        );
+        await refreshIndexForMutation(
+          email,
+          category,
+          existing as unknown as Parameters<typeof refreshIndexForMutation>[2],
+          nextEntry as Parameters<typeof refreshIndexForMutation>[3],
+        );
+        revalidateDashboardSummary(email);
       }
     }
 

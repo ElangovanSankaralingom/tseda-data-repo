@@ -12,6 +12,15 @@ import { computeWorkflowState } from "@/lib/workflow";
 import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
 import { notifyAutoArchived, extractEntryTitle } from "@/lib/confirmations/notificationHelpers";
 import { appendActionHistory } from "@/lib/admin/actionHistory";
+import { getEditWindowDays, getStreakBufferDays, getPastEntryWindowDays } from "@/lib/settings/consumer";
+import type { WorkflowConfig } from "@/lib/workflow/workflowConfig";
+import {
+  type EntryEngineRecord,
+  refreshIndexForMutation,
+  revalidateDashboardSummary,
+} from "@/lib/entries/internal/engineHelpers";
+import { recordEntryMilestones } from "@/lib/feed/feedEvents";
+import { removeFeedEvent } from "@/lib/feed/feedStore";
 import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -64,11 +73,11 @@ async function quarantineDeletedEntry(email: string, category: CategoryKey, entr
   await deleteCategoryEntry(email, category, entryId);
   await removeEmptyUploadDir(email, category, entryId);
 
-  // Invalidate analytics cache
+  // Invalidate analytics cache via its owning module (path stays in sync
+  // with where analytics actually writes — 2026-07 correlation audit).
   try {
-    const fs = await import("node:fs/promises");
-    const path = await import("node:path");
-    await fs.rm(path.join(process.cwd(), ".data", "maintenance", "analytics-cache.json"), { force: true });
+    const { invalidateAnalyticsCache } = await import("@/lib/analytics/cache");
+    await invalidateAnalyticsCache();
   } catch { /* ignore */ }
 }
 
@@ -82,12 +91,30 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
     let locked = 0;
     let deleted = 0;
 
+    // Judge entries with the SAME live settings the commit path used —
+    // frozen defaults here would let nightly verdicts disagree with the
+    // timers users were actually given (2026-07 correlation audit).
+    const [editWindowDays, streakBufferDays, pastEntryWindowDays] = await Promise.all([
+      getEditWindowDays(),
+      getStreakBufferDays(),
+      getPastEntryWindowDays(),
+    ]);
+    const liveConfig: WorkflowConfig = {
+      ...DEFAULT_WORKFLOW_CONFIG,
+      timer: {
+        ...DEFAULT_WORKFLOW_CONFIG.timer,
+        defaultWindowDays: editWindowDays,
+        streakBufferDays,
+        pastEntryWindowDays,
+      },
+    };
+
     for (const userEmail of usersResult.data) {
       for (const category of CATEGORY_KEYS) {
         const entries = await readCategoryEntries(userEmail, category);
 
         for (const entry of entries) {
-          const state = computeWorkflowState(entry as Record<string, unknown>, category as CategoryKey, DEFAULT_WORKFLOW_CONFIG);
+          const state = computeWorkflowState(entry as Record<string, unknown>, category as CategoryKey, liveConfig);
 
           // Skip paused timers, non-expired, already locked
           if (state.timer.isPaused) continue;
@@ -96,11 +123,23 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
 
           if (state.autoAction === "finalise") {
             // Auto-finalise: permanently lock
+            const before = { ...(entry as Record<string, unknown>) };
             (entry as Record<string, unknown>).permanentlyLocked = true;
             (entry as Record<string, unknown>).timerPausedAt = null;
             (entry as Record<string, unknown>).timerRemainingMs = null;
             await upsertCategoryEntry(userEmail, category, entry);
             locked++;
+
+            // Keep derived stores coherent: index counts, dashboard summary,
+            // and the Celebration Wall (an auto-finalise can BE the win).
+            await refreshIndexForMutation(
+              userEmail,
+              category as CategoryKey,
+              before as EntryEngineRecord,
+              entry as unknown as EntryEngineRecord,
+            );
+            revalidateDashboardSummary(userEmail);
+            recordEntryMilestones(userEmail, category as CategoryKey, entry as Record<string, unknown>);
 
             try {
               appendActionHistory({
@@ -139,6 +178,19 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
             // Auto-delete: quarantine entry + files (recoverable, 30-day retention)
             await quarantineDeletedEntry(userEmail, category as CategoryKey, entry as Record<string, unknown>);
             deleted++;
+
+            // Keep derived stores coherent: index/summary reflect the removal,
+            // and the feed never celebrates an entry that no longer exists.
+            const removedId = String((entry as Record<string, unknown>).id ?? "");
+            await refreshIndexForMutation(
+              userEmail,
+              category as CategoryKey,
+              entry as unknown as EntryEngineRecord,
+              null,
+            );
+            revalidateDashboardSummary(userEmail);
+            await removeFeedEvent(`streak_started:${removedId}`).catch(() => false);
+            await removeFeedEvent(`streak_won:${removedId}`).catch(() => false);
 
             const title = extractEntryTitle(entry as unknown as Record<string, unknown>, category);
             notifyAutoArchived(userEmail, title, category).catch((err) => {

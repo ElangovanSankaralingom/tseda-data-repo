@@ -21,6 +21,20 @@ type CacheEnvelope = {
   snapshot: AnalyticsSnapshot;
 };
 
+/**
+ * Remove the cached snapshot so the next analytics read recomputes.
+ * SINGLE SOURCE for the cache location — mutation sites must call this
+ * instead of hardcoding the path (2026-07 correlation audit: two sites
+ * hardcoded ".data" while this module resolves via getDataRoot()).
+ */
+export async function invalidateAnalyticsCache(): Promise<void> {
+  try {
+    await fs.rm(cachePath(), { force: true });
+  } catch {
+    // Best-effort — a stale cache expires via TTL anyway.
+  }
+}
+
 export async function getCachedAnalytics(forceRefresh = false): Promise<Result<AnalyticsSnapshot>> {
   return safeAction(async () => {
     let cacheTtlMs = DEFAULT_CACHE_TTL_MS;

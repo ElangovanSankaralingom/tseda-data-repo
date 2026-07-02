@@ -8,6 +8,11 @@ import {
   isEditWindowExpired,
   transitionEntry,
 } from "@/lib/entries/workflow";
+import {
+  type EntryEngineRecord,
+  refreshIndexForMutation,
+  revalidateDashboardSummary,
+} from "@/lib/entries/internal/engineHelpers";
 import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -38,6 +43,16 @@ export async function runEditGrantExpiry(): Promise<Result<EditGrantExpiryResult
           const transitioned = transitionEntry(entry, "generateEntry");
           await upsertCategoryEntry(userEmail, category, transitioned);
           expired++;
+
+          // Keep index counts + dashboard summary in step with the status
+          // change (2026-07 correlation audit).
+          await refreshIndexForMutation(
+            userEmail,
+            category,
+            entry as unknown as EntryEngineRecord,
+            transitioned as unknown as EntryEngineRecord,
+          );
+          revalidateDashboardSummary(userEmail);
 
           logger.info({
             event: "jobs.editGrantExpiry.entry",

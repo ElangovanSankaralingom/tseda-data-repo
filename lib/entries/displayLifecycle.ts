@@ -20,9 +20,22 @@ export type EntryTagColor = "default" | "yellow" | "red" | "expired";
 
 type LifecycleEntry = CategorizableEntry;
 
-export function computeCutoffDate(endDateISO?: string | null, isStreak = false) {
-  if (!isStreak || !endDateISO) return null;
-  return computeDueAtISO(endDateISO);
+/**
+ * Display cutoff for a streak entry. Prefers the STORED server-computed
+ * deadline (`storedCutoffISO` = entry.editWindowExpiresAt, computed with live
+ * admin settings at commit) and only estimates endDate+buffer for entries
+ * that don't carry one yet (2026-07 correlation audit).
+ */
+export function computeCutoffDate(
+  endDateISO?: string | null,
+  isStreak = false,
+  storedCutoffISO?: string | null,
+  bufferDays?: number,
+) {
+  if (!isStreak) return null;
+  if (storedCutoffISO && storedCutoffISO.trim()) return storedCutoffISO;
+  if (!endDateISO) return null;
+  return computeDueAtISO(endDateISO, bufferDays);
 }
 
 export function computeDaysLeft(cutoffISO?: string | null) {

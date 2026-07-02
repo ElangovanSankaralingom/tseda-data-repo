@@ -288,12 +288,16 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
 
     // (Files were MOVED into the bin by quarantineEntry — not deleted here.)
 
-    // Invalidate analytics cache
+    // Invalidate analytics cache (via its owning module — path stays in sync
+    // with where analytics actually writes) and drop the entry's feed
+    // milestones so the Celebration Wall never celebrates a deleted entry.
     fireAndForget(
       (async () => {
-        const fs = await import("node:fs/promises");
-        const path = await import("node:path");
-        await fs.rm(path.join(process.cwd(), ".data", "maintenance", "analytics-cache.json"), { force: true });
+        const { invalidateAnalyticsCache } = await import("@/lib/analytics/cache");
+        await invalidateAnalyticsCache();
+        const { removeFeedEvent } = await import("@/lib/feed/feedStore");
+        await removeFeedEvent(`streak_started:${id}`);
+        await removeFeedEvent(`streak_won:${id}`);
       })(),
       "invalidateAnalyticsCache",
     );

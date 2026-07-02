@@ -118,16 +118,23 @@ On timer expiry:
 - Admin grants edit → timer resumes, user edits, re-generates, re-finalises
 - Admin approves delete → entry + files permanently deleted from disk
 
-### Permanent Delete
+### Approved Delete (DLC bin)
 
-`approveDelete` in `engineAdmin.ts` removes:
-- Entry from category JSON
-- All uploaded files (PDF, certificates, letters)
-- Upload directory
-- Admin notifications for this entry
-- Invalidates analytics cache
+`approveDelete` in `engineAdmin.ts` QUARANTINES rather than destroys:
+- Entry + all uploaded files move to the recoverable trash (`FACULTY_DELETE_REASON` bundles never auto-purge — manual-only bin; a coordinator/master restores or permanently removes them)
+- Entry leaves the live store; index + dashboard summary refreshed
+- Analytics cache invalidated via `invalidateAnalyticsCache()` (`lib/analytics/cache.ts` — never hardcode the cache path)
+- The entry's feed milestones (`streak_started:<id>`, `streak_won:<id>`) are removed — the Celebration Wall never celebrates a deleted entry
 
-No ARCHIVED status for delete flow — data is gone.
+### Single Sources of Truth — Correlation Map (2026-07 audit)
+
+Concepts that live in one place and must be consumed from there ONLY:
+
+- **Faculty identity** → `lib/admin/facultyRegistry.ts`. Consumed by: sign-in allowlist, `/api/faculty` picker/search (ACTIVE faculty only), collaboration fan-out guard, `resolveFacultyName` (feed/notifications), beta membership. There is NO separate faculty directory file.
+- **Timer/streak settings** → `lib/settings/consumer.ts` (live admin settings). Consumed by: commitDraft, pdfService, AND the nightly autoArchive (builds a live WorkflowConfig — never judge entries with frozen defaults). The client renders deadlines from the SERVER-STORED `editWindowExpiresAt` (computed with live settings at commit); `DEFAULT_WORKFLOW_CONFIG` on the client is advisory-only.
+- **Streak rules** → `lib/streakProgress.ts` (eligibility/activated/won) — every surface (engine, dashboard, feed, analytics) uses these; no local reimplementations. `computeDueAtISO(endDate, bufferDays)` takes the buffer as a parameter; display prefers stored deadlines via `computeCutoffDate(..., storedCutoffISO)`.
+- **Feed win/start events** → emitted via `recordEntryMilestones` on generate, finalise, SAVE (a save can be the win moment — last stage-2 upload persisting), and nightly auto-finalise. Idempotent by deterministic event ids. Removed when the entry is deleted (admin approve + nightly quarantine).
+- **Derived stores** (per-user index, dashboard summary): refreshed on EVERY write path — engine mutations, upload-slot DELETE handler, nightly autoArchive, editGrantExpiry.
 
 ---
 

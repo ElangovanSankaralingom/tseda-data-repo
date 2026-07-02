@@ -24,8 +24,6 @@ export function notifyMilestoneReaction(ownerEmail: string, reactorEmail: string
     "feed.reaction.notify",
   );
 }
-import { getDashboardSummary } from "@/lib/entries/summary";
-
 const WIN_MILESTONES = [5, 10, 25, 50, 100];
 
 /**
@@ -67,6 +65,9 @@ function collabDisplayNames(
 
 /** Emit a one-time "hit N wins" milestone when the actor's win count lands exactly on a threshold. */
 async function emitWinMilestone(actorEmail: string): Promise<void> {
+  // Deferred import: the summary module reaches next/cache, which only
+  // resolves inside the Next runtime — jobs/tests import this module too.
+  const { getDashboardSummary } = await import("@/lib/entries/summary");
   const summary = await getDashboardSummary(actorEmail);
   const wins = summary.totals.streakWinsCount;
   if (typeof wins === "number" && WIN_MILESTONES.includes(wins)) {

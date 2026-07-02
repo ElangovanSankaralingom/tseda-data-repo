@@ -387,6 +387,12 @@ export async function handleCategoryPatch(
         entryRecord as Record<string, unknown>,
       );
 
+      // A save can be the WIN moment (last stage-2 upload persisted onto the
+      // entry) — emit milestones here too, not only on generate/finalise.
+      // Idempotent via deterministic event ids, so repeated saves never
+      // double-post (2026-07 correlation audit).
+      recordEntryMilestones(auth.email, category as CategoryKey, persisted as Record<string, unknown>);
+
       return finishResponse(entryResponse(persisted, category), "PATCH", path, startedAt);
     } catch (error) {
       return finishResponse(apiErrorFromCatch(error, "Save failed"), "PATCH", path, startedAt);

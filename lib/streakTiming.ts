@@ -15,9 +15,16 @@ export function isFutureDatedEntry(startISO: string, endISO: string) {
   return startISO >= todayIST && endISO >= todayIST;
 }
 
-export function computeDueAtISO(endDateISO: string) {
+/**
+ * Streak grace deadline: endDate + buffer, end-of-day IST. The default buffer
+ * matches DEFAULT_WORKFLOW_CONFIG / the `entries.streakEditBuffer` setting's
+ * default; callers that know the live setting should pass it explicitly.
+ * NOTE: committed entries carry the authoritative server-computed deadline in
+ * `editWindowExpiresAt` — prefer the stored value for display when present.
+ */
+export function computeDueAtISO(endDateISO: string, bufferDays = 8) {
   if (!isISODate(endDateISO)) return null;
-  const dueDayISO = addDaysISO(endDateISO, 8);
+  const dueDayISO = addDaysISO(endDateISO, bufferDays);
   return endOfDayIST(dueDayISO);
 }
 
