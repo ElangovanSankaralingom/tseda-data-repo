@@ -408,25 +408,21 @@ export default function ShellClient({
                 className={cn(
                   "relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-200",
                   isActive(dashboard())
-                    ? "text-[var(--color-text-primary)]"
+                    ? "text-[var(--color-text-on-accent)] shadow-[0_0_12px_var(--color-glow-primary)]"
                     : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-glass-hover)] hover:-translate-y-px"
                 )}
               >
                 {isActive(dashboard()) && (
+                  // Solid per-page accent pill — the 9% wash + 15% border was
+                  // invisible on the light header (2026-07 accent pass).
                   <span
                     className="absolute inset-0 rounded-lg"
-                    style={{
-                      background: `linear-gradient(135deg, color-mix(in srgb, ${PAGE_CONTEXT["/dashboard"].accent} 9%, transparent) 0%, transparent 100%)`,
-                      border: `1px solid color-mix(in srgb, ${PAGE_CONTEXT["/dashboard"].accent} 15%, transparent)`,
-                    }}
+                    style={{ background: PAGE_CONTEXT["/dashboard"].accent }}
                   />
                 )}
                 <span className="relative flex items-center gap-2">
                   {isActive(dashboard()) && (
-                    <span
-                      className="size-1.5 rounded-full animate-subtle-pulse"
-                      style={{ backgroundColor: PAGE_CONTEXT["/dashboard"].accent }}
-                    />
+                    <span className="size-1.5 rounded-full animate-subtle-pulse bg-[var(--color-surface-on-accent-strong)]" />
                   )}
                   <LayoutDashboard className="size-3.5" />
                   <span className="hidden md:inline">{t('nav.dashboard')}</span>
@@ -440,25 +436,19 @@ export default function ShellClient({
                   className={cn(
                     "relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-200",
                     isActive(adminHome())
-                      ? "text-[var(--color-text-primary)]"
+                      ? "text-[var(--color-text-on-accent)] shadow-[0_0_12px_var(--color-glow-primary)]"
                       : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-glass-hover)] hover:-translate-y-px"
                   )}
                 >
                   {isActive(adminHome()) && (
                     <span
                       className="absolute inset-0 rounded-lg"
-                      style={{
-                        background: `linear-gradient(135deg, color-mix(in srgb, ${PAGE_CONTEXT["/admin"].accent} 9%, transparent) 0%, transparent 100%)`,
-                        border: `1px solid color-mix(in srgb, ${PAGE_CONTEXT["/admin"].accent} 15%, transparent)`,
-                      }}
+                      style={{ background: PAGE_CONTEXT["/admin"].accent }}
                     />
                   )}
                   <span className="relative flex items-center gap-2">
                     {isActive(adminHome()) && (
-                      <span
-                        className="size-1.5 rounded-full animate-subtle-pulse"
-                        style={{ backgroundColor: PAGE_CONTEXT["/admin"].accent }}
-                      />
+                      <span className="size-1.5 rounded-full animate-subtle-pulse bg-[var(--color-surface-on-accent-strong)]" />
                     )}
                     <Shield className="size-3.5" />
                     <span className="hidden md:inline">{t('nav.admin')}</span>
