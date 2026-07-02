@@ -154,6 +154,24 @@ const SETTINGS: SettingDefinition[] = [
     default: "T'SEDA is currently undergoing maintenance. Please check back soon.",
     group: "System",
   },
+  {
+    key: "pdf.signatoryName",
+    label: "PDF Signatory Name",
+    description: "Name printed in the signature block of every generated entry PDF — change here when the signatory changes, no redeploy needed",
+    category: "general",
+    type: "string",
+    default: APP_CONFIG.pdf.signatoryName,
+    group: "PDF",
+  },
+  {
+    key: "pdf.signatoryDesignation",
+    label: "PDF Signatory Designation",
+    description: "Designation line printed under the signatory name in generated PDFs",
+    category: "general",
+    type: "string",
+    default: APP_CONFIG.pdf.signatoryDesignation,
+    group: "PDF",
+  },
 ];
 
 // --- Lookup helpers ---

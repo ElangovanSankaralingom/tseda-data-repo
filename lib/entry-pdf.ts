@@ -186,7 +186,12 @@ async function drawHeader(
 // Footer (last page only)
 // ---------------------------------------------------------------------------
 
-function drawFooter(page: PDFPage, font: PDFFont, boldFont: PDFFont) {
+function drawFooter(
+  page: PDFPage,
+  font: PDFFont,
+  boldFont: PDFFont,
+  signatory: { name: string; designation: string },
+) {
   const footerTop = MARGIN_BOTTOM + FOOTER_HEIGHT - 20;
 
   // Signature line
@@ -198,7 +203,7 @@ function drawFooter(page: PDFPage, font: PDFFont, boldFont: PDFFont) {
   });
 
   // Name (larger, bold)
-  page.drawText(APP_CONFIG.pdf.signatoryName, {
+  page.drawText(signatory.name, {
     x: PAGE_WIDTH - MARGIN_RIGHT - 200,
     y: footerTop,
     font: boldFont,
@@ -208,7 +213,7 @@ function drawFooter(page: PDFPage, font: PDFFont, boldFont: PDFFont) {
 
   // Designation lines (below name with extra gap)
   const designationLines = [
-    "Professor and Head, T\u2019SEDA",
+    signatory.designation,
     "Thiagarajar College of Engineering",
     "Madurai \u2014 625 015",
   ];
@@ -406,6 +411,9 @@ export async function generateEntryPdfBytes(args: {
   categoryName: string;
   fields: PdfField[];
   facultyName?: string;
+  /** Live signature block values (admin settings); APP_CONFIG is the fallback. */
+  signatoryName?: string;
+  signatoryDesignation?: string;
 }) {
   const pdfDoc = await PDFDocument.create();
   const pages: PDFPage[] = [];
@@ -432,7 +440,10 @@ export async function generateEntryPdfBytes(args: {
   drawFieldTable(pages, pdfDoc, font, boldFont, args.fields, contentStartY);
 
   // Footer on last page only
-  drawFooter(pages[pages.length - 1], font, boldFont);
+  drawFooter(pages[pages.length - 1], font, boldFont, {
+    name: args.signatoryName?.trim() || APP_CONFIG.pdf.signatoryName,
+    designation: args.signatoryDesignation?.trim() || APP_CONFIG.pdf.signatoryDesignation,
+  });
 
   // Page numbers on all pages (only if multi-page)
   if (pages.length > 1) {

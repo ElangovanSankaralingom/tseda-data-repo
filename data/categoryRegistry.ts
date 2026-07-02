@@ -4,7 +4,6 @@ import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
 import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
-import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/workflowConfig";
 
 export const CATEGORY_SLUGS = [
   "fdp-attended",

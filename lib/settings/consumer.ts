@@ -30,6 +30,14 @@ export async function getAnalyticsCacheTTL(): Promise<number> {
   return getSetting<number>("advanced.analyticsCacheTTL");
 }
 
+export async function getPdfSignatoryName(): Promise<string> {
+  return getSetting<string>("pdf.signatoryName");
+}
+
+export async function getPdfSignatoryDesignation(): Promise<string> {
+  return getSetting<string>("pdf.signatoryDesignation");
+}
+
 export async function isStreaksEnabled(): Promise<boolean> {
   return getSetting<boolean>("streaks.enabled");
 }

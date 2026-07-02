@@ -40,6 +40,34 @@ Faculty log professional development activities across categories. The app gamif
 - Rate limiting on all endpoints
 - `CRON_SECRET` required for nightly job
 
+## Pre-Ship Checklist — MANDATORY for every change (human or AI)
+
+Work through this IN ORDER before any commit. The suite + lint enforce most
+of it mechanically — a violation fails loudly with a named reason.
+
+1. **Mutations go through the engine.** Any entry write outside
+   `lib/entries/internal/engine.ts` (via `lib/entries/lifecycle.ts`) is a bug.
+   Direct `upsertCategoryEntry` callers (jobs, file handlers) MUST also call
+   `refreshIndexForMutation` + `revalidateDashboardSummary` — see the
+   Correlation Map section.
+2. **No new sources of truth.** Faculty → registry; timers → live settings
+   (`lib/settings/consumer.ts`); streak rules → `lib/streakProgress.ts`;
+   colors → theme tokens; routes → `lib/entryNavigation.ts`; strings → i18n.
+   If a concept already lives somewhere, consume it from there.
+3. **New entry fields:** hash-neutral metadata goes into `LIFECYCLE_FIELDS`
+   (`lib/pdfSnapshot.ts`) AND `SYSTEM_ALLOWED_KEYS`
+   (`lib/validation/validateEntryPayload.ts`), or it will either stale PDFs
+   or be stripped by the sanitizer.
+4. **i18n:** every user-facing string via `t()`/`fieldLabel()`, keys added to
+   BOTH `lib/i18n/en.ts` and `lib/i18n/ta.ts` with real Tamil (the
+   ta-completeness test fails on TODO placeholders).
+5. **New category?** Use `./scripts/add-category.sh` and follow its printed
+   checklist; `tests/schemas/schemaInvariants.test.ts` validates the result.
+6. **Gates, all four:** `npm run lint && npx tsc --noEmit && npm test &&
+   npm run build`. Never build-only. Husky runs lint+tsc on commit anyway.
+7. **Tests for new behavior** follow existing patterns
+   (`createTestDataRoot` sandbox — NEVER write to live `.data`).
+
 ---
 
 ## Architecture

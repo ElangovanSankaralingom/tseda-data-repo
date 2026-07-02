@@ -16,6 +16,8 @@ import {
   getEditWindowDays,
   getStreakBufferDays,
   getPastEntryWindowDays,
+  getPdfSignatoryName,
+  getPdfSignatoryDesignation,
   isStreaksEnabled,
 } from "@/lib/settings/consumer";
 import { generateEntryPdfBytes, storeEntryPdf } from "@/lib/entry-pdf";
@@ -139,10 +141,16 @@ export async function generateAndPersistEntryPdf(args: GeneratePdfArgs) {
   }
 
   const pdfData = buildEntryPdfData(args.category, entry as Entry);
+  const [signatoryName, signatoryDesignation] = await Promise.all([
+    getPdfSignatoryName(),
+    getPdfSignatoryDesignation(),
+  ]);
   const bytes = await generateEntryPdfBytes({
     categoryName: pdfData.categoryName,
     fields: pdfData.fields,
     facultyName: resolveFacultyName(args.email) || args.email,
+    signatoryName,
+    signatoryDesignation,
   });
 
   const pdfMeta = await storeEntryPdf({

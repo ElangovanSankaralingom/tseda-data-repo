@@ -64,8 +64,10 @@ export const APP_CONFIG = {
     allowedExtensions: [".pdf", ".png", ".jpg", ".jpeg"] as readonly string[],
   },
   pdf: {
+    // Compile-time FALLBACKS — the live values come from admin settings
+    // (pdf.signatoryName / pdf.signatoryDesignation in lib/settings/registry.ts).
     signatoryName: "Dr. Jinu Louishidha Kitchley",
-    signatoryDesignation: "Head of the Department",
+    signatoryDesignation: "Professor and Head, T’SEDA",
     footerText: "T'SEDA Data Repository",
   },
 } as const;
