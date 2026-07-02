@@ -189,7 +189,7 @@ export default function FacultySelect({
       />
 
       {open ? (
-        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl animate-dropdown-in">
+        <div role="listbox" className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl animate-dropdown-in">
           {fetching ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">{t("entry.searching")}</div>
           ) : filteredOptions.length === 0 ? (
@@ -204,6 +204,7 @@ export default function FacultySelect({
                 <button
                   key={option.email}
                   type="button"
+                  role="option"
                   aria-selected={isSelected}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
