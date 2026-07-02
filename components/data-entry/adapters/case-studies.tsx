@@ -19,7 +19,7 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { MetadataPills, AttachmentBadges } from "@/components/data-entry/EntryMetadataDisplay";
-import { uuid } from "@/lib/utils/idHelpers";
+import { uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import { formatCurrency } from "@/lib/i18n/locale";
 import {
   allowedSemestersForYear,
@@ -579,6 +579,10 @@ export function CaseStudiesPage(props: CategoryAdapterPageProps = {}) {
           parts.push(`${t('entry.fundedBy')} ${fundingStr}`);
         }
         if (typeof entry.numberOfParticipants === "number") parts.push(`${entry.numberOfParticipants} ${t('entry.participants')}`);
+        if ((entry.staffAccompanying?.length ?? 0) > 0) {
+          parts.push(`${t('entry.staffAccompanyingTitle')}: ${entry.staffAccompanying.map(formatFacultyDisplay).join(", ")}`);
+        }
+        if (entry.sourceEmail) parts.push(`${t('entry.sharedBy')} ${entry.sourceEmail}`);
         return (
           <>
             <MetadataPills parts={parts} group={group} />

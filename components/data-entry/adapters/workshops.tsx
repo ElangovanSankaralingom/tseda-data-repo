@@ -573,6 +573,7 @@ export function WorkshopsPage(props: CategoryAdapterPageProps = {}) {
         if (entry.coCoordinators.length > 0) {
           parts.push(`${t('fields.coCoordinators')}: ${entry.coCoordinators.map(formatFacultyDisplay).join(", ")}`);
         }
+        if (entry.sourceEmail) parts.push(`${t('entry.sharedBy')} ${entry.sourceEmail}`);
         return (
           <>
             <MetadataPills parts={parts} group={group} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX, Calendar, BookOpen, Clock, Unlock } from "lucide-react";
+import { Flag, Globe, Monitor, Building2, CloudSun, Sun, Banknote, BanknoteX, Calendar, BookOpen, Clock, Unlock, Users } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { t as staticT } from "@/lib/i18n";
 import TextInput from "@/components/controls/TextInput";
@@ -17,10 +17,11 @@ import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/
 import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
 import { getInclusiveDays, formatDisplayDate } from "@/lib/utils/dateHelpers";
 import { MetadataPills, AttachmentBadges } from "@/components/data-entry/EntryMetadataDisplay";
-import { uuid } from "@/lib/utils/idHelpers";
+import { uuid, formatFacultyDisplay } from "@/lib/utils/idHelpers";
 import { formatCurrency } from "@/lib/i18n/locale";
+import FacultyPickerRows, { type FacultyRowValue } from "@/components/entry/FacultyPickerRows";
 import type { FdpAttended } from "@/components/data-entry/adapters/adapterTypes";
-import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureStreak } from "@/lib/entries/hydrateEntry";
+import { safeString, safeNumber, safeBoolString, ensureFileMetaArray, ensureFacultyArray, ensureStreak } from "@/lib/entries/hydrateEntry";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
 // ---------------------------------------------------------------------------
@@ -65,6 +66,7 @@ function emptyForm(): FdpAttended {
     endDate: "",
     programName: "",
     organisingBody: "",
+    coParticipants: [],
     sponsored: "",
     fundingAgency: "",
     fundingAmount: null,
@@ -89,6 +91,17 @@ function validateFields(form: FdpAttended): Record<string, string> {
     if (!form.fundingAgency?.trim()) errors.fundingAgency = staticT('entry.fundingAgencyRequired', 'en');
     if (form.fundingAmount === null || form.fundingAmount === undefined) errors.fundingAmount = staticT('entry.fundingAmountRequired', 'en');
   }
+
+  const emailCounts = new Map<string, number>();
+  for (const row of form.coParticipants ?? []) {
+    const rowEmail = (row.email || "").trim().toLowerCase();
+    if (rowEmail) emailCounts.set(rowEmail, (emailCounts.get(rowEmail) ?? 0) + 1);
+  }
+  (form.coParticipants ?? []).forEach((value, index) => {
+    if (value.email && (emailCounts.get(value.email.toLowerCase()) ?? 0) > 1) {
+      errors[`coParticipants.${index}`] = staticT('entry.facultyAlreadySelected', 'en');
+    }
+  });
   return errors;
 }
 
@@ -109,7 +122,18 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
   const g4Filled = [form.sponsored].filter(Boolean).length
     + (form.sponsored === "Yes" ? [form.fundingAgency].filter(Boolean).length + (form.fundingAmount !== null && form.fundingAmount !== undefined ? 1 : 0) : 0);
   const g4Total = form.sponsored === "Yes" ? 3 : 1;
-  const g5Filled = (form.permissionLetter?.length > 0 ? 1 : 0) + (form.completionCertificate?.length > 0 ? 1 : 0);
+  const g5Filled = (form.coParticipants?.length ?? 0) > 0 ? 1 : 0;
+  const g6Filled = (form.permissionLetter?.length > 0 ? 1 : 0) + (form.completionCertificate?.length > 0 ? 1 : 0);
+
+  async function persistCoParticipantRows(nextRows: FacultyRowValue[]) {
+    return persistCurrentMutation({
+      buildNextEntry: (current) => ({
+        ...current,
+        coParticipants: nextRows,
+      }),
+      selectResult: (persisted) => persisted.coParticipants,
+    });
+  }
 
   return (
     <div className="space-y-4">
@@ -274,17 +298,58 @@ function FdpAttendedFormFields({ ctx }: { ctx: FormFieldsContext<FdpAttended> })
         </div>
       </FormFieldGroup>
 
-      {/* ── Group 5: Supporting Documents (Stage 2) ── */}
+      {/* ── Group 5: Co-Participants (collaborative fan-out) ── */}
+      <FormFieldGroup
+        step={5}
+        title={t('entry.coParticipantTitle')}
+        subtitle={t('entry.coParticipantHint')}
+        icon={Users}
+        accent="#06b6d4"
+        filled={g5Filled}
+        total={1}
+        disabled={coreFieldDisabled("coParticipants")}
+        animationDelay={240}
+      >
+        <FacultyPickerRows
+          title={t('entry.coParticipantTitle')}
+          helperText={t('entry.coParticipantHint')}
+          addLabel={t('entry.addCoParticipant')}
+          rowLabelPrefix={t('entry.coParticipantLabel')}
+          rows={form.coParticipants}
+          onRowsChange={(rows) => setForm((c) => ({ ...c, coParticipants: rows }))}
+          onPersistRow={async (rows) => persistCoParticipantRows(rows)}
+          facultyEndpoint="/api/faculty"
+          parentLocked={coreFieldDisabled("coParticipants")}
+          viewOnly={isViewMode}
+          disableEmails={[email]}
+          sectionError={errors.coParticipants}
+          showSectionError={submitted}
+          emptyStateText={t('entry.noCoParticipants')}
+          validateRow={(rows, row, index) => {
+            if (!row.email) return t('entry.selectFaculty');
+            if (row.email.trim().toLowerCase() === email.trim().toLowerCase()) {
+              return t('entry.facultyAlreadySelected');
+            }
+            const duplicates = rows.filter(
+              (item, itemIndex) =>
+                itemIndex !== index && item.email.trim().toLowerCase() === row.email.trim().toLowerCase()
+            ).length;
+            return duplicates > 0 ? t('entry.facultyAlreadySelected') : null;
+          }}
+        />
+      </FormFieldGroup>
+
+      {/* ── Group 6: Supporting Documents (Stage 2) ── */}
       {uploadsVisible ? (
         <>
           <StageTwoDivider />
           <FormFieldGroup
-            step={5}
+            step={6}
             title={t('entry.groupDocuments')}
             subtitle={t('entry.groupDocumentsHint')}
             icon={Unlock}
             accent="#10b981"
-            filled={g5Filled}
+            filled={g6Filled}
             total={2}
             animationDelay={0}
           >
@@ -385,6 +450,7 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
           endDate: safeString(e.endDate),
           programName: safeString(e.programName),
           organisingBody: safeString(e.organisingBody),
+          coParticipants: ensureFacultyArray(e.coParticipants),
           sponsored: safeBoolString(e.sponsored),
           fundingAgency: safeString(e.fundingAgency),
           fundingAmount: safeNumber(e.fundingAmount) ?? safeNumber(e.supportAmount),
@@ -411,6 +477,10 @@ export function FdpAttendedPage(props: CategoryAdapterPageProps = {}) {
         if (days) parts.push(`${days} ${t('timer.days')}`);
         if (entry.sponsored === "Yes" && entry.fundingAgency) parts.push(`${t('entry.fundedBy')} ${entry.fundingAgency}`);
         if (entry.sponsored === "Yes" && typeof entry.fundingAmount === "number") parts.push(formatCurrency(entry.fundingAmount, "en"));
+        if ((entry.coParticipants?.length ?? 0) > 0) {
+          parts.push(`${t('entry.coParticipantTitle')}: ${entry.coParticipants.map(formatFacultyDisplay).join(", ")}`);
+        }
+        if (entry.sourceEmail) parts.push(`${t('entry.sharedBy')} ${entry.sourceEmail}`);
         return (
           <>
             <MetadataPills parts={parts} group={group} />

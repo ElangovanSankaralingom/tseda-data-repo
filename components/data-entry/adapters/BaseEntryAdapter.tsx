@@ -13,6 +13,7 @@ import EntryListSkeleton from "@/components/data-entry/EntryListSkeleton";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { createGroupedEntryListCard } from "@/components/data-entry/GroupedEntrySections";
 import AutoSaveIndicator from "@/components/entry/AutoSaveIndicator";
+import SharedProvenanceBanner from "@/components/entry/SharedProvenanceBanner";
 import EntryDocumentSection from "@/components/data-entry/EntryDocumentSection";
 import { useCategoryEntryPageController } from "@/hooks/useCategoryEntryPageController";
 import { getEntryApprovalStatus } from "@/lib/confirmation";
@@ -687,6 +688,9 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
               className: "bg-[var(--color-glass-bg)]/70 p-5",
               content: (
                 <>
+                  <SharedProvenanceBanner
+                    sourceEmail={(form as { sourceEmail?: string | null }).sourceEmail}
+                  />
                   <FormErrorBoundary fallbackMessage="Something went wrong loading the form.">
                     {renderFormFields(formFieldsCtx)}
                   </FormErrorBoundary>

@@ -39,7 +39,7 @@ export type WorkshopEntry = {
   id: string;
   sharedEntryId?: string;
   sourceEmail?: string;
-  sharedRole?: "coCoordinator";
+  sharedRole?: string;
   confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
@@ -84,6 +84,9 @@ export type WorkshopEntry = {
 
 export type FdpAttended = {
   id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
   confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
@@ -99,6 +102,7 @@ export type FdpAttended = {
   sponsored: string;
   fundingAgency: string;
   fundingAmount: number | null;
+  coParticipants: FacultyRowValue[];
   pdfMeta?: {
     storedPath: string;
     url: string;
@@ -123,6 +127,9 @@ export type FdpAttended = {
 
 export type FdpConducted = {
   id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
   confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
@@ -171,7 +178,7 @@ export type CaseStudyEntry = {
   id: string;
   sharedEntryId?: string;
   sourceEmail?: string;
-  sharedRole?: "staffAccompanying";
+  sharedRole?: string;
   confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
@@ -220,7 +227,7 @@ export type GuestLectureEntry = {
   id: string;
   sharedEntryId?: string;
   sourceEmail?: string;
-  sharedRole?: "coCoordinator";
+  sharedRole?: string;
   confirmationStatus?: EntryStatus;
   requestEditStatus?: RequestEditStatus;
   requestEditRequestedAtISO?: string | null;
