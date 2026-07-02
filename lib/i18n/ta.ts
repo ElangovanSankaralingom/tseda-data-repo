@@ -11,39 +11,39 @@ export const ta: TranslationDict = {
     search: "\u0BA4\u0BC7\u0B9F\u0BC1",
   },
   feed: {
-    title: "Department Pulse", // TODO: translate to Tamil
-    live: "live", // TODO: translate to Tamil
-    empty: "No milestones yet \u2014 be the first to start a streak.", // TODO: translate to Tamil
-    startedStreak: "started a streak", // TODO: translate to Tamil
-    wonStreak: "won a streak", // TODO: translate to Tamil
-    milestoneReached: "hit {n} wins", // TODO: translate to Tamil
-    remove: "Remove", // TODO: translate to Tamil
-    you: "You", // TODO: translate to Tamil
-    justNow: "just now", // TODO: translate to Tamil
-    minutesAgo: "{n}m ago", // TODO: translate to Tamil
-    hoursAgo: "{n}h ago", // TODO: translate to Tamil
-    daysAgo: "{n}d ago", // TODO: translate to Tamil
+    title: "\u0ba4\u0bc1\u0bb1\u0bc8 \u0ba4\u0bc1\u0b9f\u0bbf\u0baa\u0bcd\u0baa\u0bc1",
+    live: "\u0ba8\u0bc7\u0bb0\u0bb2\u0bc8",
+    empty: "\u0b87\u0ba9\u0bcd\u0ba9\u0bc1\u0bae\u0bcd \u0bae\u0bc8\u0bb2\u0bcd\u0b95\u0bb1\u0bcd\u0b95\u0bb3\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8 \u2014 \u0ba4\u0bca\u0b9f\u0bb0\u0bc8\u0ba4\u0bcd \u0ba4\u0bca\u0b9f\u0b99\u0bcd\u0b95\u0bc1\u0bae\u0bcd \u0bae\u0bc1\u0ba4\u0bb2\u0bcd \u0ba8\u0baa\u0bb0\u0bbe\u0b95\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd.",
+    startedStreak: "\u0ba4\u0bca\u0b9f\u0bb0\u0bc8\u0ba4\u0bcd \u0ba4\u0bca\u0b9f\u0b99\u0bcd\u0b95\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd",
+    wonStreak: "\u0ba4\u0bca\u0b9f\u0bb0\u0bbf\u0bb2\u0bcd \u0bb5\u0bc6\u0ba9\u0bcd\u0bb1\u0bbe\u0bb0\u0bcd",
+    milestoneReached: "{n} \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf\u0b95\u0bb3\u0bc8 \u0b8e\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd",
+    remove: "\u0b85\u0b95\u0bb1\u0bcd\u0bb1\u0bc1",
+    you: "\u0ba8\u0bc0\u0b99\u0bcd\u0b95\u0bb3\u0bcd",
+    justNow: "\u0b87\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc1",
+    minutesAgo: "{n} \u0ba8\u0bbf\u0bae\u0bbf \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
+    hoursAgo: "{n} \u0bae\u0ba3\u0bbf \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
+    daysAgo: "{n} \u0ba8\u0bbe\u0bb3\u0bcd \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
     react: {
-      like: "Like", // TODO: translate to Tamil
-      fire: "Fire", // TODO: translate to Tamil
-      celebrate: "Celebrate", // TODO: translate to Tamil
-      clap: "Clap", // TODO: translate to Tamil
+      like: "\u0bb5\u0bbf\u0bb0\u0bc1\u0baa\u0bcd\u0baa\u0bc1",
+      fire: "\u0ba4\u0bc0",
+      celebrate: "\u0b95\u0bca\u0ba3\u0bcd\u0b9f\u0bbe\u0b9f\u0bcd\u0b9f\u0bae\u0bcd",
+      clap: "\u0b95\u0bc8\u0ba4\u0b9f\u0bcd\u0b9f\u0bb2\u0bcd",
     },
   },
   beta: {
-    programTitle: "Beta program", // TODO: translate to Tamil
-    programDesc: "Beta testers get early access to features still in development — currently dark mode and Tamil.", // TODO: translate to Tamil
-    join: "Join the beta program", // TODO: translate to Tamil
-    pending: "Your request is pending review", // TODO: translate to Tamil
-    cancelRequest: "Cancel request", // TODO: translate to Tamil
-    member: "You're a beta tester", // TODO: translate to Tamil
-    leave: "Leave the program", // TODO: translate to Tamil
-    requestedBadge: "Requested", // TODO: translate to Tamil
-    memberBadge: "Beta", // TODO: translate to Tamil
-    approve: "Approve", // TODO: translate to Tamil
-    reject: "Reject", // TODO: translate to Tamil
-    addMember: "Add to beta", // TODO: translate to Tamil
-    remove: "Remove", // TODO: translate to Tamil
+    programTitle: "பீட்டா திட்டம்",
+    programDesc: "உருவாக்கத்தில் உள்ள அம்சங்களை முன்கூட்டியே பயன்படுத்த பீட்டா சோதனையாளர்களுக்கு வாய்ப்பு கிடைக்கும் — தற்போது இருட்டு மோடு மற்றும் தமிழ்.",
+    join: "பீட்டா திட்டத்தில் சேர்",
+    pending: "உங்கள் கோரிக்கை பரிசீலனையில் உள்ளது",
+    cancelRequest: "கோரிக்கையை ரத்து செய்",
+    member: "நீங்கள் ஒரு பீட்டா சோதனையாளர்",
+    leave: "திட்டத்திலிருந்து வெளியேறு",
+    requestedBadge: "கோரப்பட்டது",
+    memberBadge: "பீட்டா",
+    approve: "அங்கீகரி",
+    reject: "நிராகரி",
+    addMember: "பீட்டாவில் சேர்",
+    remove: "அகற்று",
   },
   dashboard: {
     greetingMorning: "\u0B95\u0BBE\u0BB2\u0BC8 \u0BB5\u0BA3\u0B95\u0BCD\u0B95\u0BAE\u0BCD",
@@ -512,10 +512,9 @@ export const ta: TranslationDict = {
     allCategories: "அனைத்து வகைகள்",
     searchPlaceholder: "தலைப்பு, வகை அல்லது புல மதிப்புகளால் தேடுங்கள்",
     emailPlaceholder: "faculty@tce.edu",
-    // TODO: translate to Tamil
-    adminActionFailed: "Admin action failed",
-    tryAgain: "Try again",
-    backToAdmin: "Back to Admin",
+    adminActionFailed: "நிர்வாக செயல் தோல்வியடைந்தது",
+    tryAgain: "மீண்டும் முயற்சிக்கவும்",
+    backToAdmin: "நிர்வாகத்திற்குத் திரும்பு",
   },
   adminAnalytics: {
     refresh: "\u0BAA\u0BC1\u0BA4\u0BC1\u0BAA\u0BCD\u0BAA\u0BBF",
@@ -545,11 +544,11 @@ export const ta: TranslationDict = {
     systemHealthDesc: "\u0BB5\u0BBF\u0BB0\u0BC8\u0BB5\u0BC1 \u0BA8\u0BBE\u0B9F\u0BBF\u0BA4\u0BCD\u0BA4\u0BC1\u0B9F\u0BBF\u0BAA\u0BCD\u0BAA\u0BC1 \u0B9A\u0BB0\u0BBF\u0BAA\u0BBE\u0BB0\u0BCD\u0BAA\u0BCD\u0BAA\u0BC1",
     never: "\u0B8E\u0BAA\u0BCD\u0BAA\u0BCB\u0BA4\u0BC1\u0BAE\u0BCD \u0B87\u0BB2\u0BCD\u0BB2\u0BC8",
     justNow: "\u0B87\u0BAA\u0BCD\u0BAA\u0BCB\u0BA4\u0BC1",
-    streakChampions: "Streak Champions", // TODO: translate to Tamil
-    noStreakWinsYet: "No streak wins yet", // TODO: translate to Tamil
-    total: "Total", // TODO: translate to Tamil
-    avgResponse: "Avg Response", // TODO: translate to Tamil
-    grantRate: "Grant Rate", // TODO: translate to Tamil
+    streakChampions: "தொடர் சாம்பியன்கள்",
+    noStreakWinsYet: "இன்னும் தொடர் வெற்றிகள் இல்லை",
+    total: "மொத்தம்",
+    avgResponse: "சராசரி பதிலளிப்பு",
+    grantRate: "அனுமதி விகிதம்"
   },
   adminMaintenance: {
     maintenanceJobs: "\u0BAA\u0BB0\u0BBE\u0BAE\u0BB0\u0BBF\u0BAA\u0BCD\u0BAA\u0BC1 \u0BAA\u0BA3\u0BBF\u0B95\u0BB3\u0BCD",
@@ -651,69 +650,69 @@ export const ta: TranslationDict = {
     warnings: "\u0B8E\u0B9A\u0BCD\u0B9A\u0BB0\u0BBF\u0B95\u0BCD\u0B95\u0BC8\u0B95\u0BB3\u0BCD",
     criticalIssues: "\u0B85\u0BB5\u0B9A\u0BB0 \u0B9A\u0BBF\u0B95\u0BCD\u0B95\u0BB2\u0BCD\u0B95\u0BB3\u0BCD",
     scannedTimeAgo: "\u0BB8\u0BCD\u0B95\u0BC7\u0BA9\u0BCD \u0B9A\u0BC6\u0BAF\u0BCD\u0BAF\u0BAA\u0BCD\u0BAA\u0B9F\u0BCD\u0B9F\u0BA4\u0BC1",
-    // User-detail page (TODO: translate to Tamil)
-    userPageSubtitle: "Category-store, index, WAL, and attachment metadata checks with repair actions.",
-    userTitlePrefix: "Integrity",
-    userInvalidEmail: "Invalid user email route parameter.",
-    userIntegrityCheck: "Integrity Check",
-    userBackLabel: "Integrity",
-    confirmRepairStoresTitle: "Repair all category stores?",
-    confirmRepairStoresDesc: "This will rewrite category files for this user after normalization and create backups.",
-    repairStores: "Repair Stores",
-    rebuildIndex: "Rebuild Index",
-    confirmMigrateTitle: "Run data migrations?",
-    confirmMigrateDesc: "This may rewrite legacy data files to the latest schema version and create backups.",
-    runMigrations: "Run Migrations",
-    confirmBackupRepairTitle: "Run backup + repair all?",
-    confirmBackupRepairDesc: "This creates backups and performs migration plus index rebuild for this user.",
-    backupRepairAll: "Backup + Repair All",
-    refreshReport: "Refresh Report",
-    totalIssues: "Total Issues",
-    errors: "Errors",
-    info: "Info",
-    categoryStores: "Category Stores",
-    colExists: "Exists",
-    colLegacy: "Legacy",
-    colEntries: "Entries",
-    colIssues: "Issues",
-    colActions: "Actions",
-    confirmRepairCategoryTitle: "Repair {category} store?",
-    confirmRepairCategoryDesc: "This rewrites the category file after normalization and creates a backup.",
-    repairCategory: "Repair Category",
-    indexConsistency: "Index Consistency",
-    walSanity: "WAL Sanity",
-    issuesCount: "Issues: {count}",
-    walStats: "Valid lines: {valid} • Invalid lines: {invalid} • Out-of-order: {order}",
-    detectedIssues: "Detected Issues",
-    noIssuesDetected: "No integrity issues detected.",
-    fixAvailable: "• Fix available",
-    manualReview: "• Manual review",
-    categoryPrefix: "Category:",
-    entryPrefix: "Entry:",
+    // User-detail page
+    userPageSubtitle: "வகை சேமிப்பு, அகவரிசை, WAL மற்றும் இணைப்பு மீத்தரவு சரிபார்ப்புகள் — சரிசெய்யும் செயல்களுடன்.",
+    userTitlePrefix: "முழுமை",
+    userInvalidEmail: "பாதை அளவுருவில் தவறான பயனர் மின்னஞ்சல்.",
+    userIntegrityCheck: "முழுமைச் சரிபார்ப்பு",
+    userBackLabel: "முழுமை",
+    confirmRepairStoresTitle: "அனைத்து வகை சேமிப்புகளையும் சரிசெய்யவா?",
+    confirmRepairStoresDesc: "இந்தப் பயனரின் வகை கோப்புகள் சீரமைக்கப்பட்டு மீண்டும் எழுதப்படும்; பிரதிகள் உருவாக்கப்படும்.",
+    repairStores: "சேமிப்புகளைச் சரிசெய்",
+    rebuildIndex: "அகவரிசையை மீளுருவாக்கு",
+    confirmMigrateTitle: "தரவு இடமாற்றங்களை இயக்கவா?",
+    confirmMigrateDesc: "பழைய தரவு கோப்புகள் சமீபத்திய வடிவத்திற்கு மாற்றி எழுதப்படலாம்; பிரதிகள் உருவாக்கப்படும்.",
+    runMigrations: "இடமாற்றங்களை இயக்கு",
+    confirmBackupRepairTitle: "பிரதி + முழு சரிசெய்தல் இயக்கவா?",
+    confirmBackupRepairDesc: "பிரதிகள் உருவாக்கப்பட்டு, இந்தப் பயனருக்கான இடமாற்றமும் அகவரிசை மீளுருவாக்கமும் செய்யப்படும்.",
+    backupRepairAll: "பிரதி + முழு சரிசெய்தல்",
+    refreshReport: "அறிக்கையைப் புதுப்பி",
+    totalIssues: "மொத்த சிக்கல்கள்",
+    errors: "பிழைகள்",
+    info: "தகவல்",
+    categoryStores: "வகை சேமிப்புகள்",
+    colExists: "உள்ளது",
+    colLegacy: "பழையது",
+    colEntries: "பதிவுகள்",
+    colIssues: "சிக்கல்கள்",
+    colActions: "செயல்கள்",
+    confirmRepairCategoryTitle: "{category} சேமிப்பைச் சரிசெய்யவா?",
+    confirmRepairCategoryDesc: "வகை கோப்பு சீரமைக்கப்பட்டு மீண்டும் எழுதப்படும்; ஒரு பிரதி உருவாக்கப்படும்.",
+    repairCategory: "வகையைச் சரிசெய்",
+    indexConsistency: "அகவரிசை ஒத்திசைவு",
+    walSanity: "WAL சரிநிலை",
+    issuesCount: "சிக்கல்கள்: {count}",
+    walStats: "சரியான வரிகள்: {valid} • தவறான வரிகள்: {invalid} • வரிசை மாறியவை: {order}",
+    detectedIssues: "கண்டறியப்பட்ட சிக்கல்கள்",
+    noIssuesDetected: "முழுமைச் சிக்கல்கள் எதுவும் இல்லை.",
+    fixAvailable: "• சரிசெய்ய முடியும்",
+    manualReview: "• கைமுறை பரிசோதனை தேவை",
+    categoryPrefix: "வகை:",
+    entryPrefix: "பதிவு:",
   },
   adminSettings: {
     searchPlaceholder: "\u0B85\u0BAE\u0BC8\u0BAA\u0BCD\u0BAA\u0BC1\u0B95\u0BB3\u0BC8 \u0BA4\u0BC7\u0B9F\u0BC1...",
-    searchAriaLabel: "Search settings", // TODO: translate to Tamil
-    categoriesNavAriaLabel: "Settings categories", // TODO: translate to Tamil
-    decreaseValueAriaLabel: "Decrease value", // TODO: translate to Tamil
-    increaseValueAriaLabel: "Increase value", // TODO: translate to Tamil
-    numericValueAriaLabel: "Numeric value", // TODO: translate to Tamil
-    selectValuePlaceholder: "Select value", // TODO: translate to Tamil
-    colorPickerAriaLabel: "Color picker", // TODO: translate to Tamil
-    changedFromDefaultTitle: "Changed from default", // TODO: translate to Tamil
-    restartRequired: "Restart required", // TODO: translate to Tamil
-    sensitiveSettingNote: "Sensitive setting \u2014 changes take effect immediately", // TODO: translate to Tamil
-    resetToDefault: "Reset to default", // TODO: translate to Tamil
-    changeSensitiveSettingTitle: "Change sensitive setting?", // TODO: translate to Tamil
-    changeSensitiveSettingDesc: "You're about to change \"{label}\". This is a sensitive setting that takes effect immediately.", // TODO: translate to Tamil
-    changeSensitiveSettingConfirm: "Yes, change it", // TODO: translate to Tamil
-    justNowShort: "just now", // TODO: translate to Tamil
-    minutesAgo: "{n}m ago", // TODO: translate to Tamil
-    hoursAgo: "{n}h ago", // TODO: translate to Tamil
-    daysAgo: "{n}d ago", // TODO: translate to Tamil
-    rangeHint: "Range: {min} \u2013 {max}", // TODO: translate to Tamil
-    minHint: "Min: {n}", // TODO: translate to Tamil
-    maxHint: "Max: {n}", // TODO: translate to Tamil
+    searchAriaLabel: "\u0b85\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bc8\u0ba4\u0bcd \u0ba4\u0bc7\u0b9f\u0bc1",
+    categoriesNavAriaLabel: "\u0b85\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc1 \u0bb5\u0b95\u0bc8\u0b95\u0bb3\u0bcd",
+    decreaseValueAriaLabel: "\u0bae\u0ba4\u0bbf\u0baa\u0bcd\u0baa\u0bc8\u0b95\u0bcd \u0b95\u0bc1\u0bb1\u0bc8",
+    increaseValueAriaLabel: "\u0bae\u0ba4\u0bbf\u0baa\u0bcd\u0baa\u0bc8 \u0b85\u0ba4\u0bbf\u0b95\u0bb0\u0bbf",
+    numericValueAriaLabel: "\u0b8e\u0ba3\u0bcd \u0bae\u0ba4\u0bbf\u0baa\u0bcd\u0baa\u0bc1",
+    selectValuePlaceholder: "\u0bae\u0ba4\u0bbf\u0baa\u0bcd\u0baa\u0bc8\u0ba4\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0bb5\u0bc1\u0b9a\u0bc6\u0baf\u0bcd",
+    colorPickerAriaLabel: "\u0ba8\u0bbf\u0bb1\u0ba4\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0bb5\u0bbf",
+    changedFromDefaultTitle: "\u0b87\u0baf\u0bb2\u0bcd\u0baa\u0bc1\u0ba8\u0bbf\u0bb2\u0bc8\u0baf\u0bbf\u0bb2\u0bbf\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1 \u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1",
+    restartRequired: "\u0bae\u0bb1\u0bc1\u0ba4\u0bca\u0b9f\u0b95\u0bcd\u0b95\u0bae\u0bcd \u0ba4\u0bc7\u0bb5\u0bc8",
+    sensitiveSettingNote: "\u0bae\u0bc1\u0b95\u0bcd\u0b95\u0bbf\u0baf\u0bae\u0bbe\u0ba9 \u0b85\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc1 \u2014 \u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0b89\u0b9f\u0ba9\u0bc7 \u0b85\u0bae\u0bb2\u0bbe\u0b95\u0bc1\u0bae\u0bcd",
+    resetToDefault: "\u0b87\u0baf\u0bb2\u0bcd\u0baa\u0bc1\u0ba8\u0bbf\u0bb2\u0bc8\u0b95\u0bcd\u0b95\u0bc1 \u0bae\u0bc0\u0b9f\u0bcd\u0b9f\u0bae\u0bc8",
+    changeSensitiveSettingTitle: "\u0bae\u0bc1\u0b95\u0bcd\u0b95\u0bbf\u0baf\u0bae\u0bbe\u0ba9 \u0b85\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc8 \u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0bb5\u0bbe?",
+    changeSensitiveSettingDesc: "\"{label}\" \u0b85\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc8 \u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0baa\u0bcd \u0baa\u0bcb\u0b95\u0bbf\u0bb1\u0bc0\u0bb0\u0bcd\u0b95\u0bb3\u0bcd. \u0b87\u0ba4\u0bc1 \u0b89\u0b9f\u0ba9\u0bc7 \u0b85\u0bae\u0bb2\u0bbe\u0b95\u0bc1\u0bae\u0bcd \u0bae\u0bc1\u0b95\u0bcd\u0b95\u0bbf\u0baf\u0bae\u0bbe\u0ba9 \u0b85\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc1.",
+    changeSensitiveSettingConfirm: "\u0b86\u0bae\u0bcd, \u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0bc1",
+    justNowShort: "\u0b87\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc1",
+    minutesAgo: "{n} \u0ba8\u0bbf\u0bae\u0bbf \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
+    hoursAgo: "{n} \u0bae\u0ba3\u0bbf \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
+    daysAgo: "{n} \u0ba8\u0bbe\u0bb3\u0bcd \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0bc1",
+    rangeHint: "\u0bb5\u0bb0\u0bae\u0bcd\u0baa\u0bc1: {min} \u2013 {max}",
+    minHint: "\u0b95\u0bc1\u0bb1\u0bc8\u0ba8\u0bcd\u0ba4\u0baa\u0b9f\u0bcd\u0b9a\u0bae\u0bcd: {n}",
+    maxHint: "\u0b85\u0ba4\u0bbf\u0b95\u0baa\u0b9f\u0bcd\u0b9a\u0bae\u0bcd: {n}",
     export: "\u0B8F\u0BB1\u0BCD\u0BB1\u0BC1\u0BAE\u0BA4\u0BBF",
     import: "\u0B87\u0BB1\u0B95\u0BCD\u0B95\u0BC1\u0BAE\u0BA4\u0BBF",
     resetAll: "\u0B85\u0BA9\u0BC8\u0BA4\u0BCD\u0BA4\u0BC8\u0BAF\u0BC1\u0BAE\u0BCD \u0BAE\u0BC0\u0B9F\u0BCD\u0B9F\u0BAE\u0BC8",
@@ -831,53 +830,53 @@ export const ta: TranslationDict = {
     in: "\u0B87\u0BB2\u0BCD",
     last14Days: "\u0B95\u0B9F\u0BA8\u0BCD\u0BA4 14 \u0BA8\u0BBE\u0B9F\u0BCD\u0B95\u0BB3\u0BCD",
     // View toggle + actions
-    timeline: "Timeline", // TODO: translate to Tamil
-    table: "Table", // TODO: translate to Tamil
-    refresh: "Refresh", // TODO: translate to Tamil
-    viewStatistics: "View Statistics", // TODO: translate to Tamil
-    searchAriaLabel: "Search audit logs", // TODO: translate to Tamil
+    timeline: "காலவரிசை",
+    table: "அட்டவணை",
+    refresh: "புதுப்பி",
+    viewStatistics: "புள்ளிவிவரங்களைக் காண்",
+    searchAriaLabel: "தணிக்கை பதிவேடுகளைத் தேடு"
   },
   adminExport: {
     generating: "\u0B89\u0BB0\u0BC1\u0BB5\u0BBE\u0B95\u0BCD\u0B95\u0BC1\u0B95\u0BBF\u0BB1\u0BA4\u0BC1...",
     exportButton: "\u0B8F\u0BB1\u0BCD\u0BB1\u0BC1\u0BAE\u0BA4\u0BBF",
     justNow: "\u0B87\u0BAA\u0BCD\u0BAA\u0BCB\u0BA4\u0BC1",
     // Section headers
-    quickExports: "Quick Exports", // TODO: translate to Tamil
-    quickExportsDesc: "One-click exports for common needs", // TODO: translate to Tamil
-    customExport: "Custom Export", // TODO: translate to Tamil
-    customExportDesc: "Build exactly the export you need", // TODO: translate to Tamil
+    quickExports: "\u0bb5\u0bbf\u0bb0\u0bc8\u0bb5\u0bc1 \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bb3\u0bcd",
+    quickExportsDesc: "\u0baa\u0bca\u0ba4\u0bc1\u0bb5\u0bbe\u0ba9 \u0ba4\u0bc7\u0bb5\u0bc8\u0b95\u0bb3\u0bc1\u0b95\u0bcd\u0b95\u0bc1 \u0b92\u0bb0\u0bc7 \u0b95\u0bbf\u0bb3\u0bbf\u0b95\u0bcd\u0b95\u0bbf\u0bb2\u0bcd \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bb3\u0bcd",
+    customExport: "\u0ba4\u0ba9\u0bbf\u0baa\u0bcd\u0baa\u0baf\u0ba9\u0bcd \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf",
+    customExportDesc: "\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bc1\u0b95\u0bcd\u0b95\u0bc1\u0ba4\u0bcd \u0ba4\u0bc7\u0bb5\u0bc8\u0baf\u0bbe\u0ba9 \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf\u0baf\u0bc8 \u0b89\u0bb0\u0bc1\u0bb5\u0bbe\u0b95\u0bcd\u0b95\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd",
     // Form sections
-    format: "Format", // TODO: translate to Tamil
-    scope: "Scope", // TODO: translate to Tamil
-    allUsers: "All Users", // TODO: translate to Tamil
-    specificUser: "Specific User", // TODO: translate to Tamil
-    selectUser: "Select user", // TODO: translate to Tamil
-    selectCategory: "Select category", // TODO: translate to Tamil
-    addFiltersOptional: "Add Filters (optional)", // TODO: translate to Tamil
-    status: "Status", // TODO: translate to Tamil
-    fromDate: "From Date", // TODO: translate to Tamil
-    toDate: "To Date", // TODO: translate to Tamil
-    columnLayout: "Column Layout", // TODO: translate to Tamil
-    columnLayoutDefault: "Default (schema order)", // TODO: translate to Tamil
-    columnLayoutHint: "Apply a saved NAAC/NIRF column order. Manage these in Export Formats.", // TODO: translate to Tamil
-    chooseFields: "Choose Fields", // TODO: translate to Tamil
-    selectAll: "Select All", // TODO: translate to Tamil
-    clear: "Clear", // TODO: translate to Tamil
+    format: "\u0bb5\u0b9f\u0bbf\u0bb5\u0bae\u0bcd",
+    scope: "\u0b8e\u0bb2\u0bcd\u0bb2\u0bc8",
+    allUsers: "\u0b85\u0ba9\u0bc8\u0ba4\u0bcd\u0ba4\u0bc1 \u0baa\u0baf\u0ba9\u0bb0\u0bcd\u0b95\u0bb3\u0bcd",
+    specificUser: "\u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bbf\u0b9f\u0bcd\u0b9f \u0baa\u0baf\u0ba9\u0bb0\u0bcd",
+    selectUser: "\u0baa\u0baf\u0ba9\u0bb0\u0bc8\u0ba4\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0bb5\u0bc1\u0b9a\u0bc6\u0baf\u0bcd",
+    selectCategory: "\u0bb5\u0b95\u0bc8\u0baf\u0bc8\u0ba4\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0bb5\u0bc1\u0b9a\u0bc6\u0baf\u0bcd",
+    addFiltersOptional: "\u0bb5\u0b9f\u0bbf\u0baa\u0bcd\u0baa\u0bbe\u0ba9\u0bcd\u0b95\u0bb3\u0bc8\u0b9a\u0bcd \u0b9a\u0bc7\u0bb0\u0bcd (\u0bb5\u0bbf\u0bb0\u0bc1\u0bae\u0bcd\u0baa\u0bbf\u0ba9\u0bbe\u0bb2\u0bcd)",
+    status: "\u0ba8\u0bbf\u0bb2\u0bc8",
+    fromDate: "\u0ba4\u0bca\u0b9f\u0b95\u0bcd\u0b95\u0ba4\u0bcd \u0ba4\u0bc7\u0ba4\u0bbf",
+    toDate: "\u0b87\u0bb1\u0bc1\u0ba4\u0bbf\u0ba4\u0bcd \u0ba4\u0bc7\u0ba4\u0bbf",
+    columnLayout: "\u0ba8\u0bc6\u0b9f\u0bc1\u0bb5\u0bb0\u0bbf\u0b9a\u0bc8 \u0b85\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc1",
+    columnLayoutDefault: "\u0b87\u0baf\u0bb2\u0bcd\u0baa\u0bc1\u0ba8\u0bbf\u0bb2\u0bc8 (\u0bb5\u0b9f\u0bbf\u0bb5\u0bae\u0bc8\u0baa\u0bcd\u0baa\u0bc1 \u0bb5\u0bb0\u0bbf\u0b9a\u0bc8)",
+    columnLayoutHint: "\u0b9a\u0bc7\u0bae\u0bbf\u0ba4\u0bcd\u0ba4 NAAC/NIRF \u0ba8\u0bc6\u0b9f\u0bc1\u0bb5\u0bb0\u0bbf\u0b9a\u0bc8 \u0bb5\u0bb0\u0bbf\u0b9a\u0bc8\u0baf\u0bc8\u0baa\u0bcd \u0baa\u0baf\u0ba9\u0bcd\u0baa\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd. \u0b87\u0bb5\u0bb1\u0bcd\u0bb1\u0bc8 \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf \u0bb5\u0b9f\u0bbf\u0bb5\u0b99\u0bcd\u0b95\u0bb3\u0bbf\u0bb2\u0bcd \u0ba8\u0bbf\u0bb0\u0bcd\u0bb5\u0b95\u0bbf\u0b95\u0bcd\u0b95\u0bb2\u0bbe\u0bae\u0bcd.",
+    chooseFields: "\u0baa\u0bc1\u0bb2\u0b99\u0bcd\u0b95\u0bb3\u0bc8\u0ba4\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0bb5\u0bc1\u0b9a\u0bc6\u0baf\u0bcd",
+    selectAll: "\u0b85\u0ba9\u0bc8\u0ba4\u0bcd\u0ba4\u0bc8\u0baf\u0bc1\u0bae\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0bb5\u0bc1\u0b9a\u0bc6\u0baf\u0bcd",
+    clear: "\u0b85\u0bb4\u0bbf",
     // Preview area
-    loadingPreview: "Loading preview...", // TODO: translate to Tamil
-    previewIntro: "This export will include", // TODO: translate to Tamil
-    entriesWord: "entries", // TODO: translate to Tamil
-    fromWord: "from", // TODO: translate to Tamil
-    userWord: "user", // TODO: translate to Tamil
-    usersWord: "users", // TODO: translate to Tamil
-    previewEmpty: "Select options above to see a preview", // TODO: translate to Tamil
+    loadingPreview: "\u0bae\u0bc1\u0ba9\u0bcd\u0ba9\u0bcb\u0b9f\u0bcd\u0b9f\u0bae\u0bcd \u0b8f\u0bb1\u0bcd\u0bb1\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1...",
+    previewIntro: "\u0b87\u0ba8\u0bcd\u0ba4 \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf\u0baf\u0bbf\u0bb2\u0bcd \u0b85\u0b9f\u0b99\u0bcd\u0b95\u0bc1\u0bae\u0bcd",
+    entriesWord: "\u0baa\u0ba4\u0bbf\u0bb5\u0bc1\u0b95\u0bb3\u0bcd",
+    fromWord: "\u0b87\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1",
+    userWord: "\u0baa\u0baf\u0ba9\u0bb0\u0bcd",
+    usersWord: "\u0baa\u0baf\u0ba9\u0bb0\u0bcd\u0b95\u0bb3\u0bcd",
+    previewEmpty: "\u0bae\u0bc1\u0ba9\u0bcd\u0ba9\u0bcb\u0b9f\u0bcd\u0b9f\u0bae\u0bcd \u0b95\u0bbe\u0ba3 \u0bae\u0bc7\u0bb2\u0bc7 \u0b89\u0bb3\u0bcd\u0bb3 \u0bb5\u0bbf\u0bb0\u0bc1\u0baa\u0bcd\u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bc8\u0ba4\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0bb5\u0bc1\u0b9a\u0bc6\u0baf\u0bcd\u0baf\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd",
     // Action button states
-    generatingExport: "Generating export...", // TODO: translate to Tamil
-    downloaded: "Downloaded!", // TODO: translate to Tamil
-    exportEntriesAs: "Export {count} Entries as {format}", // TODO: translate to Tamil
+    generatingExport: "\u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf \u0b89\u0bb0\u0bc1\u0bb5\u0bbe\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1...",
+    downloaded: "\u0baa\u0ba4\u0bbf\u0bb5\u0bbf\u0bb1\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1!",
+    exportEntriesAs: "{count} \u0baa\u0ba4\u0bbf\u0bb5\u0bc1\u0b95\u0bb3\u0bc8 {format} \u0b86\u0b95 \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf \u0b9a\u0bc6\u0baf\u0bcd",
     // History
-    recentExports: "Recent Exports", // TODO: translate to Tamil
-    noExportsYet: "No exports yet \u2014 create your first one above!", // TODO: translate to Tamil
+    recentExports: "\u0b9a\u0bae\u0bc0\u0baa\u0ba4\u0bcd\u0ba4\u0bbf\u0baf \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bb3\u0bcd",
+    noExportsYet: "\u0b87\u0ba9\u0bcd\u0ba9\u0bc1\u0bae\u0bcd \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bb3\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8 \u2014 \u0bae\u0bc7\u0bb2\u0bc7 \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0bae\u0bc1\u0ba4\u0bb2\u0bcd \u0b8f\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0ba4\u0bbf\u0baf\u0bc8 \u0b89\u0bb0\u0bc1\u0bb5\u0bbe\u0b95\u0bcd\u0b95\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd!"
   },
   adminSettingsPage: {
     general: "\u0BAA\u0BCA\u0BA4\u0BC1\u0BB5\u0BBE\u0BA9\u0BA4\u0BC1",
@@ -990,7 +989,7 @@ export const ta: TranslationDict = {
     tamil: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD",
     default: "\u0B87\u0BAF\u0BB2\u0BCD\u0BAA\u0BC1\u0BA8\u0BBF\u0BB2\u0BC8",
     beta: "\u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE",
-    betaLocked: "Dark mode and Tamil are beta features. Join the beta program from your Account to enable them.", // TODO: translate to Tamil
+    betaLocked: "இருட்டு மோடு மற்றும் தமிழ் பீட்டா அம்சங்கள். இவற்றை இயக்க உங்கள் கணக்குப் பக்கத்திலிருந்து பீட்டா திட்டத்தில் சேருங்கள்.",
     darkBetaTitle: "\u0B87\u0BB0\u0BC1\u0B9F\u0BCD\u0B9F\u0BC1 \u0BAE\u0BCB\u0B9F\u0BC1 \u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE\u0BB5\u0BBF\u0BB2\u0BCD \u0B89\u0BB3\u0BCD\u0BB3\u0BA4\u0BC1",
     tamilBetaTitle: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD \u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE\u0BB5\u0BBF\u0BB2\u0BCD \u0B89\u0BB3\u0BCD\u0BB3\u0BA4\u0BC1",
     darkBetaNotice: "\u0B87\u0BB0\u0BC1\u0B9F\u0BCD\u0B9F\u0BC1 \u0BAE\u0BCB\u0B9F\u0BC1 \u0B87\u0BA9\u0BCD\u0BA9\u0BC1\u0BAE\u0BCD \u0BAA\u0BC0\u0B9F\u0BCD\u0B9F\u0BBE \u0BA8\u0BBF\u0BB2\u0BC8\u0BAF\u0BBF\u0BB2\u0BCD \u0B89\u0BB3\u0BCD\u0BB3\u0BA4\u0BC1. \u0B9A\u0BBF\u0BB2 \u0B89\u0BB0\u0BC8\u0B95\u0BB3\u0BCD \u0B85\u0BB2\u0BCD\u0BB2\u0BA4\u0BC1 \u0B95\u0BC2\u0BB1\u0BC1\u0B95\u0BB3\u0BCD \u0B9A\u0BB0\u0BBF\u0BAF\u0BBE\u0B95\u0BA4\u0BCD \u0BA4\u0BCB\u0BA9\u0BCD\u0BB1\u0BBE\u0BAE\u0BB2\u0BCD \u0B87\u0BB0\u0BC1\u0B95\u0BCD\u0B95\u0BB2\u0BBE\u0BAE\u0BCD \u2014 \u0B8F\u0BA4\u0BBE\u0BB5\u0BA4\u0BC1 \u0B9A\u0BB0\u0BBF\u0BAF\u0BBF\u0BB2\u0BCD\u0BB2\u0BC8 \u0B8E\u0BA9\u0BCD\u0BB1\u0BBE\u0BB2\u0BCD, \u0BB2\u0BC8\u0B9F\u0BCD \u0BAE\u0BCB\u0B9F\u0BC1\u0B95\u0BCD\u0B95\u0BC1 \u0BAE\u0BBE\u0BB1\u0BB5\u0BC1\u0BAE\u0BCD.",
