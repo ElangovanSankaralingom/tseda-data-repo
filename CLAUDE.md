@@ -89,7 +89,11 @@ Timer **resumes** when admin acts (grant/reject).
 
 On timer expiry:
 - All fields complete + PDF fresh → auto-finalise (permanentlyLocked)
-- Incomplete or stale PDF → auto-delete permanently (nightly job)
+- Incomplete or stale PDF → auto-delete (nightly job). NOTE: the nightly
+  delete verdict QUARANTINES (30-day recoverable trash, `lib/jobs/quarantine.ts`)
+  rather than destroying — only admin-approved delete requests are truly
+  permanent. There is also an `ARCHIVED` status used by auto-archive/restore
+  (distinct from the delete flow).
 
 ### Streak Rules
 
@@ -233,13 +237,14 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 ### Environment
 - `.env.local`: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, NEXTAUTH_URL, CRON_SECRET
+- Optional: TRUST_PROXY=false disables x-forwarded-for/x-real-ip trust for rate limiting (direct-exposure deployments)
 - Master admin: `senarch@tce.edu` (configured in `lib/config/appConfig.ts`)
 
 ---
 
 ## Current State
 
-- **445+ tests** (24 pre-existing failures in streak/workflow edge cases)
+- **508 tests, 0 failures** (2026-07 audit: added concurrency, nightly-idempotency, IST-boundary, requestIp, and ta-completeness coverage)
 - **Build: clean** (Turbopack warnings are cosmetic)
 - **Docker + CI/CD ready** (GitHub Actions)
 - **5 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops
