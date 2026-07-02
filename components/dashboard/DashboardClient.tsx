@@ -137,7 +137,7 @@ export default function DashboardClient({
               className={cn(
                 "flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-[13px] font-semibold tracking-wide transition-all duration-200 active:scale-95",
                 activeGroup === tab.key
-                  ? "bg-white text-[rgba(0,0,0,0.85)] shadow-md"
+                  ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] shadow-md"
                   : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-raised)]"
               )}
             >
@@ -146,7 +146,7 @@ export default function DashboardClient({
                 className={cn(
                   "flex size-5 items-center justify-center rounded-full text-[10px] font-bold",
                   activeGroup === tab.key
-                    ? "bg-[rgba(0,0,0,0.08)] text-[rgba(0,0,0,0.55)]"
+                    ? "bg-[var(--color-surface-on-accent)] text-[var(--color-text-on-accent-muted)]"
                     : "bg-[var(--color-border-subtle)] text-[var(--color-text-placeholder)]"
                 )}
               >
