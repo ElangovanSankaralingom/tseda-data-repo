@@ -156,7 +156,11 @@ export default function AdminConsoleDashboard({
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="rounded-2xl bg-gradient-to-br from-[var(--color-band-from)] to-[var(--color-band-to)] p-8">
           <h1 className="text-2xl font-bold text-[var(--color-text-on-accent)]">{t("adminConsole.title")}</h1>
-          <p className="mt-2 text-sm text-[var(--color-status-error)]">{t("adminConsole.loadFailed")}</p>
+          {/* Error message chipped — raw status-error text has no contrast
+              guarantee on the saturated band. */}
+          <p className="mt-3 inline-block rounded-lg bg-[var(--color-surface-on-accent-strong)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-on-accent)]">
+            {t("adminConsole.loadFailed")}
+          </p>
         </div>
       </div>
     );
@@ -174,21 +178,29 @@ export default function AdminConsoleDashboard({
             <p className="mt-1 text-sm text-[var(--color-text-on-accent-muted)]">{t("adminConsole.subtitle")}</p>
           </div>
 
-          {/* Health traffic lights */}
-          <div className="flex items-center gap-5">
+          {/* Health traffic lights — each lamp gets an on-accent housing so
+              status colors never sit raw on the saturated band (they turn
+              muddy there, especially amber-on-indigo). */}
+          <div className="flex items-center gap-4">
             <Link href={adminBackups()} className="flex flex-col items-center gap-1.5 group">
-              <HealthDot status={data.health.backup.status} size="md" />
+              <span className="flex size-9 items-center justify-center rounded-full bg-[var(--color-surface-on-accent)] ring-1 ring-inset ring-[var(--color-surface-on-accent-strong)] transition-transform duration-200 group-hover:scale-110">
+                <HealthDot status={data.health.backup.status} size="md" />
+              </span>
               <span className="text-xs text-[var(--color-text-on-accent-muted)] group-hover:text-[var(--color-text-on-accent)] transition-colors">{t("adminConsole.backup")}</span>
             </Link>
             <Link href={adminIntegrity()} className="flex flex-col items-center gap-1.5 group">
-              <HealthDot status={data.health.integrity.status} size="md" />
+              <span className="flex size-9 items-center justify-center rounded-full bg-[var(--color-surface-on-accent)] ring-1 ring-inset ring-[var(--color-surface-on-accent-strong)] transition-transform duration-200 group-hover:scale-110">
+                <HealthDot status={data.health.integrity.status} size="md" />
+              </span>
               <span className="text-xs text-[var(--color-text-on-accent-muted)] group-hover:text-[var(--color-text-on-accent)] transition-colors">{t("adminConsole.integrity")}</span>
             </Link>
             <Link href={adminSettings()} className="flex flex-col items-center gap-1.5 group">
-              <HealthDot
-                status={data.health.system.maintenanceMode ? "amber" : "green"}
-                size="md"
-              />
+              <span className="flex size-9 items-center justify-center rounded-full bg-[var(--color-surface-on-accent)] ring-1 ring-inset ring-[var(--color-surface-on-accent-strong)] transition-transform duration-200 group-hover:scale-110">
+                <HealthDot
+                  status={data.health.system.maintenanceMode ? "amber" : "green"}
+                  size="md"
+                />
+              </span>
               <span className="text-xs text-[var(--color-text-on-accent-muted)] group-hover:text-[var(--color-text-on-accent)] transition-colors">{t("adminConsole.system")}</span>
             </Link>
           </div>
