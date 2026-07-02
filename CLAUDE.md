@@ -101,6 +101,14 @@ On timer expiry:
 - **Activated:** Streak eligible + PDF generated + GENERATED status
 - **Win:** Activated + ALL stage 2 fields filled
 
+### Collaborative Fan-Out (2026-07)
+
+- Schema fields flagged `collaborates: true` (coCoordinators / staffAccompanying / coParticipants) power collaboration: when an ORIGIN entry is GENERATED, every faculty listed gets their OWN prefilled DRAFT copy via `lib/entries/internal/engineShare.ts` — own PDF, own timer, own stage-2 uploads, own streak.
+- Copy provenance: `sharedEntryId` (origin id), `sourceEmail` (origin owner), `sharedRole` (field key). In the copy's collaborates field the recipient is swapped out and the origin owner swapped in.
+- Guards: copies never fan out again (loop guard via `sourceEmail`); `sharedFanOutDone` on the origin + a recipient-side `sharedEntryId` scan prevent duplicates; active-registry faculty only; per-target failure isolation; cap 10 targets.
+- All four `shared*` keys are hash-neutral (in `LIFECYCLE_FIELDS`) — collaboration metadata never stales a PDF.
+- Feed events carry `withNames` (collaborator first names) → "with X & Y" on the Celebration Wall. Recipient notification type: `shared_entry`. Editor shows `SharedProvenanceBanner` on copies.
+
 ### Request Action Rules
 
 - Each entry gets ONE request action ever (edit OR delete). `requestActionUsed` flag tracks this.
@@ -205,6 +213,7 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 - Upload fields should use `kind: "array"` with `upload: true, stage: 2`
 - All uploads are multi-file (`FileMeta[]`) — no single-file upload fields
 - If the category can be sponsored, add the `sponsored`/`fundingAgency`/`fundingAmount` conditional pattern (sponsored Yes/No drives visibility of funding fields)
+- Faculty-row fields that should fan out copies to the listed colleagues on generate use `collaborates: true` (see Collaborative Fan-Out)
 - Add icons to `Level`, `Mode`, and `Sponsored` option lists using lucide-react icons (see existing schemas for examples)
 
 ---
