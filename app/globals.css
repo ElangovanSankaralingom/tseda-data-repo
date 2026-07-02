@@ -101,6 +101,9 @@
   --color-status-error-bg: rgba(239, 128, 121, 0.10);
   --color-status-error-border: rgba(239, 128, 121, 0.20);
   --color-status-error-strong: #E5685F;
+  --color-status-success-on-accent: #5EEAA4;
+  --color-status-warning-on-accent: #FFC94D;
+  --color-status-error-on-accent: #FF8A80;
   --shadow-ink: 0, 0, 0;
   --color-status-info: #4DB8E8;
   --color-status-info-bg: rgba(77, 184, 232, 0.10);

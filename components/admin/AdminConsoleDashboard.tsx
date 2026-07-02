@@ -14,13 +14,16 @@ import { ADMIN_TOOLS } from "@/data/adminToolRegistry";
 // ---------------------------------------------------------------------------
 
 function HealthDot({ status, size = "sm" }: { status: HealthStatus; size?: "sm" | "md" }) {
-  const sizeClass = size === "md" ? "size-3" : "size-2.5";
+  const sizeClass = size === "md" ? "size-3.5" : "size-2.5";
+  // Lamp tokens, not regular status tokens: these dots live on the saturated
+  // band, where card-tuned status colors go muddy (light-mode amber = brown).
+  // The matching glow makes them read as LIT indicators in both modes.
   const color =
     status === "green"
-      ? "bg-[var(--color-status-success)]"
+      ? "bg-[var(--color-status-success-on-accent)] shadow-[0_0_10px_1px_var(--color-status-success-on-accent)]"
       : status === "amber"
-        ? "bg-[var(--color-status-warning)] animate-subtle-pulse"
-        : "bg-[var(--color-status-error)] animate-subtle-pulse";
+        ? "bg-[var(--color-status-warning-on-accent)] shadow-[0_0_10px_1px_var(--color-status-warning-on-accent)] animate-subtle-pulse"
+        : "bg-[var(--color-status-error-on-accent)] shadow-[0_0_10px_1px_var(--color-status-error-on-accent)] animate-subtle-pulse";
   return <span className={`${sizeClass} rounded-full ${color} inline-block`} />;
 }
 
