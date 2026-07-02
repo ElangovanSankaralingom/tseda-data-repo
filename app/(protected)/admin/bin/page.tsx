@@ -25,7 +25,7 @@ export default async function AdminBinPage() {
       subtitleKey="adminPages.binSubtitle"
       backHref={adminHome()}
       iconName="Trash2"
-      maxWidthClassName="max-w-4xl"
+      maxWidthClassName="max-w-5xl"
     >
       <BinClient
         initialEntries={entries.map((m) => ({

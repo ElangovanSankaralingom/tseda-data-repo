@@ -1,14 +1,10 @@
-import Link from "next/link";
 import { getServerSession } from "next-auth";
-import SearchCategorySelect from "@/components/controls/SearchCategorySelect";
-import PageHeader from "@/components/layout/PageHeader";
-import SectionCard from "@/components/layout/SectionCard";
-import { CATEGORY_LIST, getCategoryConfig, isValidCategorySlug } from "@/data/categoryRegistry";
+import EntrySearchClient from "@/components/search/EntrySearchClient";
+import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { authOptions } from "@/lib/auth";
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { dashboard } from "@/lib/entryNavigation";
 import { searchUserEntries, type SearchResult } from "@/lib/search/searchIndex";
 
 export const dynamic = "force-dynamic";
@@ -57,91 +53,11 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8">
-      <PageHeader
-        title="Entry Search"
-        subtitle="Search your entries across categories using keywords."
-        backHref={dashboard()}
-        showBack
-      />
-
-      <div className="mt-6">
-        <SectionCard>
-          <form method="GET">
-            <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-[var(--color-text-muted)]">Keyword</span>
-                <input
-                  name="q"
-                  defaultValue={query}
-                  placeholder="Search by title, category, or field values"
-                  className="w-full rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-[var(--color-text-muted)]">Category</span>
-                <SearchCategorySelect
-                  name="category"
-                  defaultValue={categoryValue}
-                  options={[
-                    { label: "All categories", value: "all" },
-                    ...CATEGORY_LIST.map((category) => ({
-                      label: getCategoryConfig(category).label,
-                      value: category,
-                    })),
-                  ]}
-                  placeholder="All categories"
-                />
-              </label>
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--color-glass-border)] px-4 text-sm font-medium transition hover:bg-[var(--color-glass-hover)]/60"
-                >
-                  Search
-                </button>
-              </div>
-            </div>
-          </form>
-        </SectionCard>
-      </div>
-
-      {error ? (
-        <div className="mt-4 rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] px-3 py-2 text-sm text-[var(--color-status-error)]">
-          {error}
-        </div>
-      ) : null}
-
-      {query ? (
-        <div className="mt-5">
-          <SectionCard
-            title="Search Results"
-            subtitle={`Results: ${results.length}`}
-          >
-            {results.length === 0 ? (
-              <div className="text-sm text-[var(--color-text-muted)]">No entries matched this search.</div>
-            ) : (
-              <div className="space-y-3">
-                {results.map((result) => (
-                  <Link
-                    key={`${result.category}:${result.entryId}`}
-                    href={result.href}
-                    className="block rounded-xl border border-[var(--color-glass-border)] p-3 transition hover:bg-[var(--color-glass-hover)]/40"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="text-sm font-medium">{result.title}</div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{result.updatedAt || "-"}</div>
-                    </div>
-                    <div className="mt-1 text-xs text-[var(--color-text-muted)]">
-                      {result.categoryLabel} • {result.status}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </SectionCard>
-        </div>
-      ) : null}
-    </div>
+    <EntrySearchClient
+      query={query}
+      categoryValue={categoryValue}
+      results={results}
+      error={error}
+    />
   );
 }

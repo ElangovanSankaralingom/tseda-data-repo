@@ -299,7 +299,7 @@ export default function AccountPage() {
 
         {hasBlockingErrors && activeTabDirty && !loading ? (
           <div className="rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] px-4 py-3 text-sm">
-            There are validation issues. Fix them to auto-save.
+            {t("entry.validationAutoSaveNote")}
           </div>
         ) : null}
       </div>

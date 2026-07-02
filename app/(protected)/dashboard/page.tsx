@@ -1,20 +1,13 @@
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import {
-  ClipboardList,
-  ArrowUpRight,
-} from "lucide-react";
 import DashboardClient from "@/components/dashboard/DashboardClient";
+import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
 import { canAccessAdminConsole, isMasterAdmin } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { getDashboardSummary } from "@/lib/entries/summary";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import {
-  entryList,
-  signin,
-} from "@/lib/entryNavigation";
+import { signin } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import DashboardWelcome from "@/components/dashboard/DashboardWelcome";
@@ -114,37 +107,3 @@ export default async function DashboardPage() {
   );
 }
 
-function DashboardEmptyState() {
-  return (
-    <div className="flex overflow-hidden rounded-2xl border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-inset)] animate-card-lift">
-      {/* ── Thick left accent bar ── */}
-      <div className="w-1.5 shrink-0 bg-[var(--color-primary)] opacity-25" />
-
-      <div className="flex-1 p-8 sm:p-10">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-          {/* ── Left: Bright icon panel (white surface pop) ── */}
-          <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-surface-raised)] border border-[var(--color-border-default)]">
-            <ClipboardList className="size-9 text-[var(--color-icon-muted)]" />
-          </div>
-
-          {/* ── Right: Text + CTA ── */}
-          <div>
-            <p className="text-base font-bold text-[var(--color-text-secondary)]">
-              No entries yet
-            </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
-              Start collecting data to build your streak
-            </p>
-            <Link
-              href={entryList("fdp-attended")}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-button-primary-bg)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--color-button-primary-text)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
-            >
-              Create First Entry
-              <ArrowUpRight className="size-3.5" />
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

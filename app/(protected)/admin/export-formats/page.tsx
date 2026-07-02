@@ -35,7 +35,7 @@ export default async function AdminExportFormatsPage() {
       subtitleKey="adminPages.formatsSubtitle"
       backHref={adminHome()}
       iconName="Columns"
-      maxWidthClassName="max-w-4xl"
+      maxWidthClassName="max-w-5xl"
     >
       <FormatsClient initialTemplates={listTemplatesForViewer(email)} categories={categories} />
     </AdminPageShell>
