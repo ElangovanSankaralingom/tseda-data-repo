@@ -2,19 +2,21 @@
 # Usage: ./scripts/add-category.sh <category-slug> "<Display Label>"
 # Example: ./scripts/add-category.sh journal-papers "Journal Papers"
 #
-# Creates skeleton files for a new category:
-#   - data/schemas/<slug>.ts           (schema)
-#   - app/api/me/<slug>/route.ts       (API route)
-#   - components/data-entry/adapters/<slug>.tsx  (adapter)
+# Creates convention-clean skeleton files for a new category:
+#   - data/schemas/<slug>.ts                      (schema — two-stage field model)
+#   - app/api/me/<slug>/route.ts                  (thin API route wrapper)
+#   - components/data-entry/adapters/<slug>.tsx   (adapter skeleton)
 #
 # Pages are handled by the dynamic [category] route — no per-category pages needed.
 #
-# After running, you still need to:
-#   1. Edit the schema — add your fields
-#   2. Register in data/categoryRegistry.ts
-#   3. Add adapter import + mapping in components/data-entry/CategoryPageRouter.tsx
-#   4. Flesh out the adapter (form fields, list rendering)
-#   5. npm run build
+# IMPORTANT ORDER: register the slug in data/categoryRegistry.ts FIRST —
+# until then, tsc fails on the new schema/adapter (by design: the compiler
+# forces the registration step, no `as any` escape hatches).
+#
+# The generated files follow every CLAUDE.md convention: two-stage fields,
+# multi-file uploads (FileMeta[]), sponsored pattern, `collaborates` hint,
+# i18n via t()/fieldLabel(), theme tokens only. tests/schemas enforces the
+# structural invariants — the suite fails loudly if the pattern is violated.
 
 set -euo pipefail
 
@@ -29,7 +31,6 @@ fi
 
 # Derive identifiers
 # slug: journal-papers → camelCase: journalPapers → PascalCase: JournalPapers
-# Use awk for portable case conversion (macOS sed doesn't support \U)
 CAMEL=$(echo "$SLUG" | awk -F- '{out=$1; for(i=2;i<=NF;i++){out=out toupper(substr($i,1,1)) substr($i,2)} print out}')
 PASCAL=$(echo "$CAMEL" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
 
@@ -53,46 +54,50 @@ import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/wor
 
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
-  { key: "academicYear", label: "Academic Year", kind: "string", stage: 1 },
-  { key: "yearOfStudy", label: "Year of Study", kind: "string", stage: 1 },
-  { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10, stage: 1 },
-  { key: "startDate", label: "Start Date", kind: "date", stage: 1 },
-  { key: "endDate", label: "End Date", kind: "date", stage: 1 },
-  // TODO: add category-specific Stage 1 fields here (stage: 1)
-
-  // Stage 2 (uploads — do NOT affect PDF hash)
-  // TODO: add upload fields here, e.g.:
-  // { key: "supportingDocument", label: "Supporting Document", kind: "object", upload: true, stage: 2 },
-
+  { key: "academicYear", label: "Academic Year", kind: "string" },
+  { key: "semesterType", label: "Semester Type", kind: "string", stage: 1 },
+  { key: "level", label: "Level", kind: "string", stage: 1, enumValues: ["National", "International"] },
+  { key: "mode", label: "Mode", kind: "string", stage: 1, enumValues: ["Online", "Offline"] },
+  { key: "startDate", label: "Start Date", kind: "date" },
+  { key: "endDate", label: "End Date", kind: "date" },
+  // TODO: category-specific stage-1 data fields go here.
+  // A faculty-row field whose listed colleagues should receive their OWN
+  // copy of the entry on generate (own PDF/timer/streak) is marked:
+  // { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false, collaborates: true },
+  { key: "sponsored", label: "Sponsored", kind: "string", required: false, enumValues: ["Yes", "No"] },
+  { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false },
+  { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, format: "currency" },
+  // Stage 2 — uploads. ALWAYS kind: "array" (multi-file FileMeta[]), NEVER
+  // single-object uploads. Stage 2 never affects the PDF hash.
+  { key: "permissionLetter", label: "Permission Letter", kind: "array", upload: true, stage: 2 },
+  // TODO: more upload slots here.
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },
 ] as const;
 
+export const workflow: WorkflowConfig = { ...DEFAULT_WORKFLOW_CONFIG };
+
 export const ${CAMEL}Schema: EntrySchema = {
-  category: "${SLUG}" as any, // Update CategorySlug first, then remove 'as any'
+  // Register "${SLUG}" in data/categoryRegistry.ts FIRST — tsc fails here
+  // until the slug exists in the CategoryKey union (this is intentional).
+  category: "${SLUG}",
   fields,
   immutableWhenPending: [
-    "academicYear",
-    "yearOfStudy",
-    "currentSemester",
-    "startDate",
-    "endDate",
-    // TODO: add category-specific immutable fields
+    "academicYear", "semesterType", "level", "mode",
+    "startDate", "endDate",
+    // Every stage-1 field (INCLUDING collaborates fields) belongs here so
+    // nothing changes after generate without an edit grant.
+    "sponsored", "fundingAgency", "fundingAmount",
   ],
   requiredForCommit: [
-    "academicYear",
-    "yearOfStudy",
-    "currentSemester",
-    "startDate",
-    "endDate",
-    // TODO: add category-specific required fields
+    "academicYear", "semesterType", "level", "mode",
+    "startDate", "endDate",
+    // TODO: category-specific required fields (NOT optional ones).
   ],
   validate(payload, mode) {
     return validateByFieldDefinitions(payload, mode, fields);
   },
 };
-
-export const workflow: WorkflowConfig = { ...DEFAULT_WORKFLOW_CONFIG };
 SCHEMA
 
 echo "  ✓ data/schemas/${SLUG}.ts"
@@ -139,23 +144,31 @@ echo "  ✓ app/api/me/${SLUG}/route.ts"
 cat > "components/data-entry/adapters/${SLUG}.tsx" << ADAPTER
 "use client";
 
-import { ACADEMIC_YEAR_DROPDOWN_OPTIONS } from "@/lib/utils/academicYear";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { uuid } from "@/lib/utils/idHelpers";
 import BaseEntryAdapter from "@/components/data-entry/adapters/BaseEntryAdapter";
-import SelectDropdown from "@/components/controls/SelectDropdown";
 import type { CategoryAdapterPageProps } from "@/components/data-entry/adapters/types";
 import { validateEntryFields } from "@/lib/validation/schemaValidator";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// Follow an existing adapter (components/data-entry/adapters/workshops.tsx)
+// for the full pattern: FormFieldGroup sections, PillSelect/SelectDropdown/
+// DateField controls, UploadFieldMulti for stage-2 slots, FacultyPickerRows
+// for collaborates fields, sponsored conditional, hydrateEntry helpers.
+//
+// CONVENTIONS (enforced by lint + tests — do not deviate):
+// - ZERO hardcoded user-facing strings: t('key') / fieldLabel('fieldKey')
+//   only, with keys added to BOTH lib/i18n/en.ts and lib/i18n/ta.ts.
+// - Colors via CSS variable tokens only (lib/theme/themeTokens.ts) — the
+//   theme guard hard-fails raw hex / white-alpha / Tailwind palette drift.
+// - No \`any\`, no console.log. Inputs use value={field || ""}.
 
 type ${PASCAL}Entry = Record<string, unknown> & {
   id: string;
   academicYear: string;
   startDate: string;
   endDate: string;
-  // TODO: add category-specific fields
+  // TODO: category-specific fields (see adapterTypes.ts for the shape
+  // pattern, including sharedEntryId/sourceEmail/sharedRole provenance).
 };
 
 function emptyForm(): ${PASCAL}Entry {
@@ -168,7 +181,7 @@ function emptyForm(): ${PASCAL}Entry {
     semesterType: "",
     startDate: "",
     endDate: "",
-    // TODO: add default values for category-specific fields
+    // TODO: defaults for category-specific fields.
     pdfMeta: null,
     pdfStale: false,
     pdfSourceHash: "",
@@ -179,31 +192,28 @@ function emptyForm(): ${PASCAL}Entry {
 }
 
 function validateFields(form: ${PASCAL}Entry): Record<string, string> {
-  return validateEntryFields("${SLUG}" as any, form as unknown as Record<string, unknown>);
+  return validateEntryFields("${SLUG}", form as unknown as Record<string, unknown>);
 }
 
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
-
 export function ${PASCAL}Page(props: CategoryAdapterPageProps = {}) {
+  const { t } = useTranslation();
   return (
     <BaseEntryAdapter<${PASCAL}Entry>
       {...props}
-      category={"${SLUG}" as any}
+      category="${SLUG}"
       emptyForm={emptyForm}
       validateFields={validateFields}
       renderFormFields={() => (
-        <div className="text-sm text-muted-foreground">
-          TODO: implement form fields for ${LABEL}
+        <div className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+          {t('entry.formComingSoon')}
         </div>
       )}
-      buildListEntryTitle={() => "${LABEL} Entry"}
-      title="${LABEL}"
-      subtitle="TODO: add subtitle"
-      formTitle="${LABEL} Entry"
-      formSubtitle="Add the entry details and upload the required documents."
-      deleteDescription="This permanently deletes this entry and its associated uploaded files."
+      buildListEntryTitle={(entry) => String(entry.id)}
+      title={t('entry.${CAMEL}PageTitle')}
+      subtitle={t('entry.${CAMEL}PageSubtitle')}
+      formTitle={t('entry.${CAMEL}FormTitle')}
+      formSubtitle={t('entry.${CAMEL}FormSubtitle')}
+      deleteDescription={t('entry.${CAMEL}DeleteDesc')}
     />
   );
 }
@@ -218,17 +228,19 @@ echo "  ✓ components/data-entry/adapters/${SLUG}.tsx"
 echo ""
 echo "Scaffolded: $SLUG"
 echo ""
-echo "MANUAL STEPS REMAINING:"
-echo "  1. Edit data/schemas/${SLUG}.ts — add your fields"
-echo "  2. Register in data/categoryRegistry.ts:"
-echo "     - Add '${SLUG}' to CATEGORY_SLUGS array"
-echo "     - Add ${CAMEL}Schema import + registry entry"
-echo "     - Add '${CAMEL}' to CategorySummaryKey type"
-echo "  3. Add adapter to components/data-entry/CategoryPageRouter.tsx:"
-echo "     - Import { ${PASCAL}Page } from adapters/${SLUG}"
-echo "     - Add '${SLUG}': ${PASCAL}Page to ADAPTER_MAP"
-echo "  4. Flesh out components/data-entry/adapters/${SLUG}.tsx"
-echo "     - Add form fields to renderFormFields"
-echo "     - Add list rendering (buildListEntryTitle, buildListEntrySubtitle, renderListEntryBody)"
-echo "  5. npm run build — verify"
-echo "  6. Test: create entry, fill fields, generate, finalise"
+echo "MANUAL STEPS REMAINING (in this order):"
+echo "  1. Register in data/categoryRegistry.ts FIRST (tsc fails until then):"
+echo "     - Add '${SLUG}' to the slug union / CATEGORY list"
+echo "     - Import ${CAMEL}Schema + add the registry entry (label, icon,"
+echo "       color, schema, entryTitleField)"
+echo "  2. Edit data/schemas/${SLUG}.ts — real fields; keep the two-stage"
+echo "     model; mark faculty-row fan-out fields with collaborates: true"
+echo "  3. Router: components/data-entry/CategoryPageRouter.tsx —"
+echo "     lazy import { ${PASCAL}Page } + map '${SLUG}'"
+echo "  4. i18n: add every new key to BOTH lib/i18n/en.ts AND lib/i18n/ta.ts"
+echo "     (the ta-completeness test fails on TODO placeholders)"
+echo "  5. Flesh out the adapter from an existing one (workshops.tsx)"
+echo "  6. Gates (ALL must pass before commit):"
+echo "     npm run lint && npx tsc --noEmit && npm test && npm run build"
+echo "     (tests/schemas/schemaInvariants.test.ts checks your schema shape)"
+echo "  7. Manual test: create → fill → generate → upload → finalise"

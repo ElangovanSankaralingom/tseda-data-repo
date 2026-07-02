@@ -113,7 +113,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       chartHex: "#059669",
     },
     subtitle: "Capture FDPs conducted with coordinator details, dates, and required supporting documents.",
-    entryTitleField: "eventName",
+    entryTitleField: "programName",
     entryTitleFallback: "FDP Entry",
   },
   "case-studies": {
@@ -165,7 +165,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       chartHex: "#9333EA",
     },
     subtitle: "Record event details and supporting documents.",
-    entryTitleField: "eventName",
+    entryTitleField: "topicOfLecture",
     entryTitleFallback: "Guest Lecture",
   },
   workshops: {
@@ -191,7 +191,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
       chartHex: "#E11D48",
     },
     subtitle: "Record workshop details and supporting documents.",
-    entryTitleField: "eventName",
+    entryTitleField: "workshopName",
     entryTitleFallback: "Workshop",
   },
 };
@@ -226,11 +226,3 @@ export function getCategoryTitle(entry: Record<string, unknown>, slug: string): 
   return titleFieldValue || config.entryTitleFallback || config.label;
 }
 
-export function getCategoryWorkflowConfig(category: string): WorkflowConfig {
-  try {
-    const schema = getCategorySchema(category);
-    return (schema as Record<string, unknown>).workflow as WorkflowConfig ?? DEFAULT_WORKFLOW_CONFIG;
-  } catch {
-    return DEFAULT_WORKFLOW_CONFIG;
-  }
-}
