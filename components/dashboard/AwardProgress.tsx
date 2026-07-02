@@ -26,13 +26,12 @@ export default function AwardProgress() {
     : "/api/me/awards";
   const { data: body } = useApi<AwardsResponse>(endpoint);
 
-  const years = body?.data?.years ?? [];
   const score = body?.data?.score ?? null;
 
-  const yearOptions = useMemo(
-    () => years.map((value) => ({ label: value, value })),
-    [years],
-  );
+  const yearOptions = useMemo(() => {
+    const years = body?.data?.years ?? [];
+    return years.map((value) => ({ label: value, value }));
+  }, [body]);
 
   // Nothing recorded at all yet — the dashboard's empty state already guides
   // the first entry; this panel stays out of the way.
