@@ -409,7 +409,16 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
     toast,
   } = controller;
 
-  // Warn user before closing tab/navigating away with unsaved changes
+  // Warn user before closing tab/navigating away with unsaved changes.
+  //
+  // KNOWN, ACCEPTED GAP (2026-07 save/cancel audit): beforeunload fires on
+  // tab close / hard navigation but NOT on App Router client-side BACK
+  // navigation — the browser back button can leave a dirty form without this
+  // warning. Exposure is bounded to edits since the last autosave (≤15s
+  // debounce), and the in-app Back/Cancel buttons DO route through the
+  // confirmation modal. Next.js has no supported API to block client route
+  // changes; popstate re-push hacks cause worse bugs (broken history, double
+  // entries). Do NOT "fix" this with a popstate interceptor.
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
       if (hasUnsavedChanges) {
