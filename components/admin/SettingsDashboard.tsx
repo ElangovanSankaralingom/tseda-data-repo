@@ -103,10 +103,14 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
     return map;
   }, [settings]);
 
-  // Only show categories that actually have settings (empties are hidden, not hollow tabs).
+  // Show every category that has settings DEFINED (auth/appearance currently
+  // have none and stay hidden). NOTE: `counts` means "settings changed from
+  // default" per category — it powers the amber modified-badge and must never
+  // drive visibility: on a fresh install (or after Reset All) every count is
+  // 0 and the whole sidebar vanished with no way to navigate (2026-07 fix).
   const visibleCategories = useMemo(
-    () => CATEGORY_ORDER.filter((cat) => (counts[cat] ?? 0) > 0),
-    [counts]
+    () => CATEGORY_ORDER.filter((cat) => (byCategory.get(cat)?.length ?? 0) > 0),
+    [byCategory]
   );
 
   // Filtered settings (search)
