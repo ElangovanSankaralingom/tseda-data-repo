@@ -69,6 +69,7 @@ export type PersistentNotificationType =
   | "entry_finalized"
   | "streak_won"
   | "feed_reaction"
+  | "shared_entry"
   | "system_announcement";
 
 export type PersistentNotification = {

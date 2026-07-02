@@ -14,7 +14,7 @@ const fields = [
   { key: "guestSpeakerName", label: "Guest Speaker Name", kind: "string" },
   { key: "guestSpeakerDesignation", label: "Guest Speaker Designation", kind: "string" },
   { key: "guestSpeakerOrganisation", label: "Guest Speaker Organisation", kind: "string" },
-  { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false },
+  { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false, collaborates: true },
   { key: "sponsored", label: "Sponsored", kind: "string", required: false, enumValues: ["Yes", "No"] },
   { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false },
   { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, format: "currency" },

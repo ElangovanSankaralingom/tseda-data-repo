@@ -11,7 +11,7 @@ const fields = [
   { key: "startDate", label: "Start Date", kind: "date" },
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "programName", label: "Program Name", kind: "string" },
-  { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false },
+  { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false, collaborates: true },
   { key: "sponsored", label: "Sponsored", kind: "string", required: false, enumValues: ["Yes", "No"] },
   { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false },
   { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, format: "currency" },

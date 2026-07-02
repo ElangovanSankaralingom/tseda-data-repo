@@ -29,6 +29,12 @@ export type SchemaFieldDefinition = {
   upload?: boolean;
   /** Stage 1 = data field (affects PDF hash), Stage 2 = upload field (does NOT affect PDF hash). Default: 1 */
   stage?: 1 | 2;
+  /**
+   * Collaborative faculty-row field: when the entry is generated, every
+   * faculty listed in this field receives their own prefilled DRAFT copy
+   * (own PDF, own timer, own streak). See lib/entries/internal/engineShare.ts.
+   */
+  collaborates?: boolean;
   /** Display format hint for PDF and UI rendering. */
   format?: SchemaFieldFormat;
   maxLength?: number;

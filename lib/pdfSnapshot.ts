@@ -89,6 +89,8 @@ const LIFECYCLE_FIELDS = new Set([
   'archivedAt', 'archiveReason', 'timerWarningShown',
   'attachments', 'data',
   'pdfMeta', 'streak',
+  // Collaboration provenance (engineShare) — metadata, never document content
+  'sharedEntryId', 'sourceEmail', 'sharedRole', 'sharedFanOutDone',
 ]);
 
 /** Cache of Stage 2 field keys per category */

@@ -12,7 +12,7 @@ const fields = [
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "placeOfVisit", label: "Place of Visit", kind: "string" },
   { key: "purposeOfVisit", label: "Purpose of Visit", kind: "string" },
-  { key: "staffAccompanying", label: "Staff Accompanying", kind: "array", required: false },
+  { key: "staffAccompanying", label: "Staff Accompanying", kind: "array", required: false, collaborates: true },
   { key: "sponsored", label: "Sponsored", kind: "string", required: false, enumValues: ["Yes", "No"] },
   { key: "fundingAgency", label: "Funding Agency", kind: "string", required: false },
   { key: "fundingAmount", label: "Funding Amount", kind: "number", required: false, format: "currency" },

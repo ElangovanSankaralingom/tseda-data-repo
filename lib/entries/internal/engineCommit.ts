@@ -32,6 +32,7 @@ import {
   trackEntryMutationSuccess,
   trackEntryMutationFailure,
 } from "./engineHelpers.ts";
+import { shareEntryWithCollaborators } from "./engineShare.ts";
 
 /**
  * Commits a draft entry, transitioning it to the GENERATED state.
@@ -145,6 +146,25 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       });
       return updated as T;
     });
+
+    // Collaborative fan-out: faculty named in `collaborates` fields get their
+    // own prefilled DRAFT copy. Runs after the owner's lock is released (each
+    // copy takes only the target's lock) and never affects the commit result.
+    try {
+      await shareEntryWithCollaborators(
+        normalizedOwner,
+        category,
+        committed as EntryEngineRecord,
+      );
+    } catch (error) {
+      logger.warn({
+        event: "entry.commit.share_failed",
+        userEmail: normalizedOwner,
+        category,
+        entryId: id,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     await trackEntryMutationSuccess({
       action: "commitDraft",

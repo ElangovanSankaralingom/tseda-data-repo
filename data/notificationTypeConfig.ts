@@ -37,6 +37,7 @@ export const USER_NOTIFICATION_STYLES: Record<PersistentNotificationType, Notifi
   entry_finalized: { Icon: Lock, iconBg: "bg-[var(--color-dropdown-hover)]", iconColor: "text-[var(--color-text-secondary)]" },
   streak_won: { Icon: Trophy, iconBg: "bg-[var(--color-status-warning-bg)]", iconColor: "text-[var(--color-status-warning)]" },
   feed_reaction: { Icon: Heart, iconBg: "bg-[var(--color-palette-rose-bg)]", iconColor: "text-[var(--color-palette-rose-fg)]" },
+  shared_entry: { Icon: UserPlus, iconBg: "bg-[var(--color-status-info-bg)]", iconColor: "text-[var(--color-status-info)]" },
   system_announcement: { Icon: Megaphone, iconBg: "bg-[var(--color-status-info-bg)]", iconColor: "text-[var(--color-status-info)]" },
 };
 

@@ -158,6 +158,25 @@ export async function notifyAutoArchived(
 }
 
 /**
+ * Notify a faculty member that a collaborator added them to an entry —
+ * a prefilled DRAFT copy has landed in their category list (engineShare).
+ */
+export async function notifySharedEntry(
+  targetEmail: string,
+  sourceName: string,
+  entryTitle: string,
+  category: string,
+): Promise<void> {
+  await notifyUser(
+    targetEmail,
+    "shared_entry",
+    "Added as collaborator",
+    `${sourceName} added you on '${entryTitle}' — a prefilled draft is in your list. Generate it to start your own streak`,
+    `/data-entry/${category}`,
+  );
+}
+
+/**
  * Notify user that an entry's edit window expires in ~24 hours.
  */
 export async function notifyTimerWarning(
