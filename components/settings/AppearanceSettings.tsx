@@ -98,8 +98,13 @@ export default function AppearanceSettings() {
       latestHex.current = hex;
       setHsl(clamped);
       previewAccent(hex); // instant, no network
+      // No mid-drag persistence: a long drag used to fire a PUT every 400ms,
+      // which could trip the rate limit and silently drop the FINAL value —
+      // the accent then "reset" on next login. onPointerUp → commit() is the
+      // single persist point (with a safety timer in case pointerup is
+      // missed, e.g. keyboard-driven changes).
       if (persistTimer.current) clearTimeout(persistTimer.current);
-      persistTimer.current = setTimeout(() => setAccent(hex), 400);
+      persistTimer.current = setTimeout(() => setAccent(latestHex.current), 1200);
     },
     [previewAccent, setAccent],
   );

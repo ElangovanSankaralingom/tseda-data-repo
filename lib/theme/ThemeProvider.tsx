@@ -85,10 +85,14 @@ export default function ThemeProvider({
 
   const persistPreferences = useCallback(
     (update: Record<string, string>) => {
+      // keepalive: the request survives immediate tab close / navigation.
+      // Without it, "change accent → close tab" lost the save silently and
+      // the preference reset on the next login (2026-07 fix).
       void fetch("/api/me/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(update),
+        keepalive: true,
       });
     },
     [],
