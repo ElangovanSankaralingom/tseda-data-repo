@@ -22,7 +22,11 @@ export default function EntryListSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }, (_, i) => (
-        <SkeletonCard key={i} />
+        // Staggered fade on a wrapper (the card itself pulses) so the list
+        // materializes instead of popping in.
+        <div key={i} className={`animate-fade-in-up stagger-${Math.min(i + 1, 12)}`}>
+          <SkeletonCard />
+        </div>
       ))}
     </div>
   );

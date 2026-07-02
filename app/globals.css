@@ -15,6 +15,13 @@
    ───────────────────────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
+  /* Motion tokens (2026-07 motion pass) — use these for ALL new
+     transitions/animations; never hardcode durations or curves. */
+  --motion-fast: 150ms;
+  --motion-base: 240ms;
+  --motion-slow: 400ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --color-primary: #8AA2F8;
   --color-primary-light: #AEBEFB;
   --color-primary-muted: #12172A;
@@ -1025,10 +1032,39 @@ select:focus {
     opacity: 0;
   }
 
+  /* Overlay + feedback micro-motion (2026-07 motion pass) */
+  @keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-dropdown-in {
+    transform-origin: top;
+    animation: dropdown-in var(--motion-fast) var(--ease-out-expo) both;
+  }
+
+  @keyframes error-in {
+    from { opacity: 0; transform: translateY(-2px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-error-in { animation: error-in 180ms var(--ease-smooth) both; }
+
+  @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+  .animate-backdrop-in { animation: backdrop-in 200ms var(--ease-smooth) both; }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .animate-toast-in { animation: toast-in 200ms var(--ease-out-expo) both; }
+
   /* Respect prefers-reduced-motion */
   @media (prefers-reduced-motion: reduce) {
     [data-streak-dot],
     [data-streak-pill],
+    .animate-dropdown-in,
+    .animate-error-in,
+    .animate-backdrop-in,
+    .animate-toast-in,
     .animate-fade-in-up,
     .animate-subtle-pulse,
     .animate-bounce-subtle,
@@ -1078,6 +1114,16 @@ select:focus {
 
     .glass-card-hover:hover {
       transform: none !important;
+    }
+
+    /* Blanket clamp: catches CSS transitions and any animation not
+       enumerated above (including the html/body theme-switch fade), so
+       reduced-motion users never see movement we forgot to list. */
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
 

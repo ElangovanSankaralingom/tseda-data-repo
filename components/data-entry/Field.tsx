@@ -38,7 +38,7 @@ export default function Field({ label, error, hint, required, fieldKey, children
         : isValidElement(children)
           ? cloneElement(children, { id: fieldId } as Record<string, unknown>)
           : children}
-      {error ? <div id={errorId} className="text-xs text-[var(--color-status-error)]" role="alert">{error}</div> : null}
+      {error ? <div id={errorId} className="text-xs text-[var(--color-status-error)] animate-error-in" role="alert">{error}</div> : null}
     </div>
   );
 }

@@ -113,6 +113,7 @@ export const en = {
     editEntry: "Edit Entry",
     save: "Save",
     saving: "Saving...",
+    searching: "Searching...",
     saved: "Saved",
     cancel: "Cancel",
     delete: "Delete",

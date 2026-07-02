@@ -29,13 +29,19 @@ export default function AutoSaveIndicator({
 }) {
   const { t } = useTranslation();
 
+  // key={phase} forces a remount on phase change so the state transition is
+  // felt (subtle fade) rather than text snapping in place.
   if (status.phase === "saving") {
-    return <p className="text-xs text-[var(--color-text-muted)]">{t("common.saving")}</p>;
+    return (
+      <p key="saving" className="text-xs text-[var(--color-text-muted)] animate-error-in">
+        {t("common.saving")}
+      </p>
+    );
   }
 
   if (status.phase === "error") {
     return (
-      <p className="text-xs text-[var(--color-status-warning)]">
+      <p key="error" className="text-xs text-[var(--color-status-warning)] animate-error-in">
         {t("entry.autoSaveFailed")}
       </p>
     );
@@ -43,11 +49,15 @@ export default function AutoSaveIndicator({
 
   if (status.phase === "saved") {
     return (
-      <p className="text-xs text-[var(--color-text-muted)]">
+      <p key="saved" className="text-xs text-[var(--color-text-muted)] animate-error-in">
         {getSavedLabel(status.savedAtISO, t as (key: string) => string)}
       </p>
     );
   }
 
-  return <p className="text-xs text-[var(--color-text-muted)]">{t("time.autosaveEnabled")}</p>;
+  return (
+    <p key="idle" className="text-xs text-[var(--color-text-muted)]">
+      {t("time.autosaveEnabled")}
+    </p>
+  );
 }

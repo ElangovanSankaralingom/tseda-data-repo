@@ -116,7 +116,7 @@ export default function RequestActionDropdown({
         <ChevronDown className={`size-3.5 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? (
-        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] py-1 shadow-lg">
+        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] py-1 shadow-lg animate-dropdown-in">
           <button
             type="button"
             role="menuitem"

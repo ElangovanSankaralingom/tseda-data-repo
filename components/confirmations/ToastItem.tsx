@@ -126,7 +126,7 @@ export default function ToastItem({ toast, onDismiss }: { toast: Toast; onDismis
       aria-live="polite"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`relative overflow-hidden rounded-xl shadow-lg transition-all duration-200 ${
+      className={`relative overflow-hidden rounded-xl shadow-lg animate-toast-in transition-all duration-200 ${
         exiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
       } ${
         isUndo

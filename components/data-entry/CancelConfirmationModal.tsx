@@ -41,7 +41,7 @@ export default function CancelConfirmationModal({
   return createPortal(
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center animate-backdrop-in"
       style={{ background: "var(--color-modal-overlay)", backdropFilter: "blur(4px)" }}
       onClick={(e) => {
         if (e.target === backdropRef.current) onClose();

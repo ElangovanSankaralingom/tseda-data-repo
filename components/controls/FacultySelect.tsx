@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export type FacultyOption = {
   name: string;
@@ -37,6 +38,7 @@ export default function FacultySelect({
   disabled,
   error,
 }: FacultySelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -186,9 +188,9 @@ export default function FacultySelect({
       />
 
       {open ? (
-        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl">
+        <div className="absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl animate-dropdown-in">
           {fetching ? (
-            <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">Searching...</div>
+            <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">{t("entry.searching")}</div>
           ) : filteredOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">
               {useApi && normalizedQuery.length < 2 ? "Type at least 2 characters to search." : "No matching faculty. Press Save to keep typed text."}

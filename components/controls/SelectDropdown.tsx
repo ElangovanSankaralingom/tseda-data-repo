@@ -60,7 +60,7 @@ function DropdownPortal({
       ref={portalRef}
       id={id}
       role="listbox"
-      className="max-h-56 overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl"
+      className="max-h-56 overflow-auto rounded-xl border border-[var(--color-glass-border)] bg-[var(--color-dropdown-bg)] backdrop-blur-2xl p-1 shadow-2xl animate-dropdown-in"
       style={{
         position: "absolute",
         top: pos.top,
