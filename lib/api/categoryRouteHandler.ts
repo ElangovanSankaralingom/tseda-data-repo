@@ -24,7 +24,7 @@ import { assertEntryMutationInput, assertActionPayload, SECURITY_LIMITS } from "
 import { isEntryEditable } from "@/lib/entries/lock";
 import type { CategoryKey } from "@/lib/entries/types";
 import { validateCsrf } from "@/lib/security/csrf";
-import { facultyCanMutate } from "@/lib/admin/facultyRegistry";
+import { facultyCanMutate, isFacultyAllowed } from "@/lib/admin/facultyRegistry";
 import { apiSuccess, apiPaginated, apiError, apiErrorFromCatch, parsePagination } from "@/lib/api/response";
 import { runWithRequestContext, getCurrentRequestId } from "@/lib/api/asyncContext";
 import { logger } from "@/lib/logger";
@@ -50,6 +50,11 @@ async function requireAuth(): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase() ?? "";
   if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) return null;
+  // Live registry check: a session token can outlive an admin's decision by
+  // up to 8h — deactivated faculty must lose API access (reads included) on
+  // their NEXT request, not at token expiry. The protected layout already
+  // does this for pages; this closes the direct-API path.
+  if (!isFacultyAllowed(email)) return null;
   return { email };
 }
 
