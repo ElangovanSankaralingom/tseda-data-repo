@@ -54,6 +54,8 @@ export default async function AdminConsolePage() {
     integrity: canRunIntegrityTools(email),
     backups: canManageBackups(email),
     maintenance: canRunMaintenance(email),
+    // Demo roster management is master-only ("the admin assigns faculty").
+    demo: isMasterAdmin(email),
   };
 
   return <AdminConsoleDashboard permissions={permissions} />;

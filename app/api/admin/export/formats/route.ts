@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
@@ -25,7 +26,7 @@ function canSeeFormats(email: string): boolean {
   return canExport(email) || getCoordinatorScope(email).export;
 }
 
-export async function GET() {
+async function GETHandler() {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!canSeeFormats(email)) {
@@ -38,7 +39,7 @@ type Body =
   | { action: "upsert"; template: Partial<ExportFormatTemplate> }
   | { action: "remove"; id: string };
 
-export async function POST(request: Request) {
+async function POSTHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
 
@@ -106,3 +107,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: appError.message || "Error" }, { status: 500 });
   }
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const POST = demoAware(POSTHandler);

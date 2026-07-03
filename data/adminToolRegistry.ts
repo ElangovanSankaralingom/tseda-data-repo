@@ -1,5 +1,6 @@
 import {
   FileEdit,
+  FlaskConical,
   Users,
   UserCog,
   Network,
@@ -173,5 +174,14 @@ export const ADMIN_TOOLS: AdminTool[] = [
     badgeType: "dot",
     badgeColor: "bg-[var(--color-status-warning)]",
     healthKey: "system",
+  },
+  {
+    id: "demo",
+    titleKey: "adminConsole.demo",
+    descriptionKey: "adminConsole.demoDesc",
+    href: "/admin/demo",
+    icon: FlaskConical,
+    accentText: "text-[var(--color-status-warning)]",
+    accentBg: "bg-[var(--color-status-warning-bg)]",
   },
 ];

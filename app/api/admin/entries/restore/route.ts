@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -21,7 +22,7 @@ import { assertActionPayload, SECURITY_LIMITS } from "@/lib/security/limits";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 
-export async function POST(request: Request) {
+async function POSTHandler(request: Request) {
   const csrfError = validateCsrf(request);
   if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
   const session = await getServerSession(authOptions);
@@ -93,3 +94,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: appError.message || "Failed to restore entry." }, { status: 500 });
   }
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const POST = demoAware(POSTHandler);

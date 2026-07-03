@@ -5,6 +5,7 @@ import BinClient from "@/components/admin/BinClient";
 import { authOptions } from "@/lib/auth";
 import { isDeleteApprover } from "@/lib/admin/coordinators";
 import { listBinForViewer } from "@/lib/admin/bin";
+import { inUserUniverse } from "@/lib/demo/demoAware";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 
@@ -17,7 +18,8 @@ export default async function AdminBinPage() {
     redirect(dashboard());
   }
 
-  const entries = await listBinForViewer(email);
+  // Server-side read → runs in the viewer's universe (real or demo).
+  const entries = await inUserUniverse(email, () => listBinForViewer(email));
 
   return (
     <AdminPageShell

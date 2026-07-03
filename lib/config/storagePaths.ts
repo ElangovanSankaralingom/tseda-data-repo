@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { universeRoot } from "@/lib/demo/universe";
 
 /**
  * Central storage roots for user-generated/sensitive content.
@@ -22,13 +23,21 @@ export function privateDataRoot(): string {
   return custom ? path.resolve(process.cwd(), custom) : path.join(process.cwd(), ".data");
 }
 
+/** Private root of the CURRENT UNIVERSE — `<root>/demo` inside a demo-mode
+ *  request (see lib/demo/universe.ts), the real root otherwise. Entry
+ *  uploads, generated PDFs, and quarantine trash resolve through this so
+ *  demo-mode files are fully isolated and wiped with the demo universe. */
+export function universePrivateDataRoot(): string {
+  return universeRoot(privateDataRoot());
+}
+
 /** Entry attachments + generated entry PDFs.
  *  Disk layout: .data/entry-uploads/<ownerEmail>/<category>/<entryId>/...
  *  Entries persist a `storedPath` of the form
  *  "uploads/<ownerEmail>/<category>/<entryId>/..." (kept stable for
  *  backwards compatibility); resolve via {@link resolveEntryUploadPath}. */
 export function entryUploadsRoot(): string {
-  return path.join(privateDataRoot(), "entry-uploads");
+  return path.join(universePrivateDataRoot(), "entry-uploads");
 }
 
 const STORED_PATH_PREFIX = "uploads/";

@@ -3,10 +3,12 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { getDataRoot } from "@/lib/userStore";
+import { getUniverseDataRoot } from "@/lib/userStore";
 
+// Universe-aware: admin actions taken in demo mode never pollute the real
+// action history (and demo history is wiped with the demo universe).
 function getHistoryFilePath(): string {
-  return path.join(process.cwd(), getDataRoot(), "admin", "action-history.json");
+  return path.join(process.cwd(), getUniverseDataRoot(), "admin", "action-history.json");
 }
 
 export type ActionType =

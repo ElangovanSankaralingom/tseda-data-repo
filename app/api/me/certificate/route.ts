@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { csrfGuard } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
@@ -28,7 +29,7 @@ function cloneProfile<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-export async function POST(req: Request) {
+async function POSTHandler(req: Request) {
   const csrfBlocked = csrfGuard(req);
   if (csrfBlocked) return csrfBlocked;
 
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
   return NextResponse.json(updated);
 }
 
-export async function DELETE(req: Request) {
+async function DELETEHandler(req: Request) {
   const csrfBlocked = csrfGuard(req);
   if (csrfBlocked) return csrfBlocked;
 
@@ -183,3 +184,7 @@ export async function DELETE(req: Request) {
   const updated = await upsertProfile(email, next);
   return NextResponse.json(updated);
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const POST = demoAware(POSTHandler);
+export const DELETE = demoAware(DELETEHandler);

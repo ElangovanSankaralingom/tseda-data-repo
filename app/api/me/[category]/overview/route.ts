@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -13,7 +14,7 @@ import type { StreakProgressEntryLike } from "@/lib/streakProgress";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
-export async function GET(
+async function GETHandler(
   _request: Request,
   { params }: { params: Promise<{ category: string }> },
 ) {
@@ -175,3 +176,6 @@ export async function GET(
     },
   });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

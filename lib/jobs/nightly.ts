@@ -242,6 +242,16 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
         return purgeExpiredQuarantine();
       }, { context: "jobs.nightly.quarantine_purge" }),
     );
+    // Demo mode: expire stale sessions (24h) and wipe orphaned demo data.
+    // Best-effort, same rationale as the quarantine purge. This is the only
+    // step that touches the demo universe — every other step above runs with
+    // no demo context and therefore only ever sees REAL data.
+    await withTimer("jobs.nightly.step.demoCleanup", () =>
+      safeAction(async () => {
+        const { runDemoCleanup } = await import("@/lib/jobs/demoCleanup");
+        return runDemoCleanup();
+      }, { context: "jobs.nightly.demo_cleanup" }),
+    );
 
     const summary: NightlyMaintenanceSummary = {
       startedAt,

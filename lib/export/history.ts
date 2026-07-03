@@ -6,7 +6,7 @@ import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
-import { getDataRoot } from "@/lib/userStore";
+import { getUniverseDataRoot } from "@/lib/userStore";
 import { getMaxExportHistory } from "@/lib/settings/consumer";
 
 export type ExportHistoryEntry = {
@@ -22,8 +22,9 @@ export type ExportHistoryEntry = {
   durationMs: number;
 };
 
+// Universe-aware: exports run in demo mode log to the demo history.
 function historyPath() {
-  return path.join(process.cwd(), getDataRoot(), "maintenance", "export-history.json");
+  return path.join(process.cwd(), getUniverseDataRoot(), "maintenance", "export-history.json");
 }
 
 export async function appendExportHistory(entry: ExportHistoryEntry): Promise<Result<void>> {

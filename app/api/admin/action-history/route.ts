@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canAccessAdminConsole, canViewAudit } from "@/lib/admin/roles";
@@ -19,7 +20,7 @@ const VALID_ACTION_TYPES: ActionType[] = [
   "auto_deleted",
 ];
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) return apiUnauthorized();
@@ -55,3 +56,6 @@ export async function GET(request: Request) {
   const result = getActionHistory({ page, pageSize, actionType, category, allowedCategories });
   return cachedApiSuccess(result, 30);
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

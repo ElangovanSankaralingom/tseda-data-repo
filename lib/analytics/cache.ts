@@ -6,14 +6,15 @@ import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
-import { getDataRoot } from "@/lib/userStore";
+import { getUniverseDataRoot } from "@/lib/userStore";
 import { computeAnalytics, type AnalyticsSnapshot } from "@/lib/analytics/compute";
 import { getAnalyticsCacheTTL } from "@/lib/settings/consumer";
 
 const DEFAULT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour fallback
 
+// Universe-aware: analytics computed in demo mode cache under the demo root.
 function cachePath() {
-  return path.join(process.cwd(), getDataRoot(), "maintenance", "analytics-cache.json");
+  return path.join(process.cwd(), getUniverseDataRoot(), "maintenance", "analytics-cache.json");
 }
 
 type CacheEnvelope = {

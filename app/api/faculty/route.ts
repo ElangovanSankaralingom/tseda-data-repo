@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
@@ -32,7 +33,7 @@ function displayName(record: FacultyRecord): string {
   return name || record.email.split("@")[0] || record.email;
 }
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) {
@@ -91,3 +92,6 @@ export async function GET(req: Request) {
     limited.map((f) => ({ fullName: displayName(f), email: f.email })),
   );
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

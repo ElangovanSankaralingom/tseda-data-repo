@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -17,7 +18,7 @@ function isWalAction(value: string): value is AuditAction {
   return valid.has(value);
 }
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   const isGlobal = canViewAudit(email);
@@ -76,3 +77,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ data: result.data });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

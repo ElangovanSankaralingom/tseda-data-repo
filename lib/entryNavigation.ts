@@ -71,6 +71,10 @@ export function adminMaintenance() {
   return "/admin/maintenance";
 }
 
+export function adminDemo() {
+  return "/admin/demo";
+}
+
 export function adminIntegrity() {
   return "/admin/integrity";
 }

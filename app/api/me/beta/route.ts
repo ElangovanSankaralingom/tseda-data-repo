@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -29,7 +30,7 @@ function rateLimited(request: Request, email: string, action: string, mutation: 
   }
 }
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const email = await authedEmail();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const limited = rateLimited(request, email, "me.beta.get", false);
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
 }
 
 /** Request to join the beta program (none → requested). Members stay members. */
-export async function POST(request: Request) {
+async function POSTHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
   const email = await authedEmail();
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 }
 
 /** Withdraw: cancel a pending request or leave the program (→ none). */
-export async function DELETE(request: Request) {
+async function DELETEHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
   const email = await authedEmail();
@@ -64,3 +65,8 @@ export async function DELETE(request: Request) {
   setBetaStatus(email, "none");
   return NextResponse.json({ data: { status: "none" } });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const POST = demoAware(POSTHandler);
+export const DELETE = demoAware(DELETEHandler);

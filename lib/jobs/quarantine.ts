@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { logger } from "@/lib/logger";
-import { privateDataRoot, resolveEntryUploadPath, entryUploadsRoot } from "@/lib/config/storagePaths";
+import { universePrivateDataRoot, resolveEntryUploadPath, entryUploadsRoot } from "@/lib/config/storagePaths";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { safeEmailKey } from "@/lib/uploadStore";
 import { getCategorySchema } from "@/data/categoryRegistry";
@@ -41,8 +41,10 @@ export function collectEntryFilePaths(category: string, entry: Record<string, un
  * (or an admin) removes them later; until then they can be restored.
  */
 
+// Universe-aware: demo-mode deletions quarantine into the demo trash, which
+// is wiped with the demo universe — never into the real DLC bin.
 export function trashRoot(): string {
-  return path.join(privateDataRoot(), "trash");
+  return path.join(universePrivateDataRoot(), "trash");
 }
 
 /** How long quarantined entries are retained before they may be purged. */

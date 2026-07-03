@@ -5,7 +5,7 @@ import path from "node:path";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { withLock } from "@/lib/data/locks";
 import { normalizeEmail } from "@/lib/facultyDirectory";
-import { getDataRoot } from "@/lib/userStore";
+import { getUniverseDataRoot } from "@/lib/userStore";
 
 /**
  * Department activity feed — a shared, append-only stream of *milestone* events
@@ -50,8 +50,10 @@ const CONFIG_VERSION = 1 as const;
 const MAX_FEED_EVENTS = 200;
 const FEED_LOCK_KEY = "feed.activity";
 
+// Universe-aware: demo-mode milestones land in the demo feed, so the real
+// Celebration Wall never celebrates practice entries.
 function feedPath() {
-  return path.join(process.cwd(), getDataRoot(), "feed", "activity.json");
+  return path.join(process.cwd(), getUniverseDataRoot(), "feed", "activity.json");
 }
 
 function emptyReactions(): Record<FeedReaction, string[]> {

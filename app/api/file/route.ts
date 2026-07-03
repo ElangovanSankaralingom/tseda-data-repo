@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import fs from "node:fs/promises";
@@ -7,7 +8,7 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -64,3 +65,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Failed to read file" }, { status: 500 });
   }
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

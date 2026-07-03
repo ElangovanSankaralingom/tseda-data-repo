@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
@@ -54,7 +55,7 @@ async function readList(email: string): Promise<FdpConductedRecord[]> {
   return listEntriesForCategory(email, "fdp-conducted");
 }
 
-export async function PATCH(
+async function PATCHHandler(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -160,3 +161,6 @@ export async function PATCH(
     return NextResponse.json({ error: appError.message || "Request failed" }, { status: 500 });
   }
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const PATCH = demoAware(PATCHHandler);

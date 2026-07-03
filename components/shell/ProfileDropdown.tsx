@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, Settings, User, Shield } from "lucide-react";
+import { ChevronDown, FlaskConical, LogOut, Settings, User, Shield } from "lucide-react";
 import { profile, settingsAppearance } from "@/lib/entryNavigation";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -25,6 +25,56 @@ export default function ProfileDropdown({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Demo mode: lazily resolved when the menu first opens; the toggle is only
+  // rendered for permitted users (master admin + admin-assigned faculty).
+  // Permission is enforced server-side — this merely hides the entry point.
+  const [demo, setDemo] = useState<{ permitted: boolean; active: boolean } | null>(null);
+  const [demoBusy, setDemoBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open || demo !== null) return;
+    let cancelled = false;
+    void fetch("/api/me/demo", { cache: "no-store" })
+      .then(async (r) =>
+        r.ok ? ((await r.json()) as { data?: { permitted?: boolean; active?: boolean } }) : null,
+      )
+      .then((body) => {
+        if (!cancelled) {
+          setDemo({
+            permitted: Boolean(body?.data?.permitted),
+            active: Boolean(body?.data?.active),
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setDemo({ permitted: false, active: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, demo]);
+
+  async function toggleDemo() {
+    if (demoBusy || !demo) return;
+    setDemoBusy(true);
+    try {
+      const res = await fetch("/api/me/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: demo.active ? "exit" : "enter" }),
+      });
+      if (res.ok) {
+        // Hard navigation: re-renders the layout + drops all client caches
+        // so the new universe (and the banner) is consistent everywhere.
+        window.location.href = "/dashboard";
+        return;
+      }
+    } catch {
+      // fall through
+    }
+    setDemoBusy(false);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -201,6 +251,47 @@ export default function ProfileDropdown({
               );
             })}
           </div>
+
+          {/* ── Demo mode toggle (permitted users only) ── */}
+          {demo?.permitted && (
+            <>
+              <div className="mx-4 h-px" style={{ background: "var(--color-divider)" }} />
+              <div className="p-2">
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={demoBusy}
+                  onClick={() => void toggleDemo()}
+                  className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-200 hover:-translate-y-px cursor-pointer disabled:opacity-60"
+                  style={{ color: "var(--color-text-secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--color-status-warning-bg)";
+                    e.currentTarget.style.color = "var(--color-status-warning)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--color-text-secondary)";
+                  }}
+                >
+                  <div
+                    className="flex size-8 items-center justify-center rounded-lg transition-all duration-200"
+                    style={{ background: "var(--color-status-warning-bg)" }}
+                  >
+                    <FlaskConical className="size-4" style={{ color: "var(--color-status-warning)" }} />
+                  </div>
+                  <span className="text-[13px] font-medium">
+                    {demoBusy
+                      ? demo.active
+                        ? t("demo.exiting")
+                        : t("demo.entering")
+                      : demo.active
+                        ? t("demo.exit")
+                        : t("demo.enter")}
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Divider */}
           <div className="mx-4 h-px" style={{ background: "var(--color-divider)" }} />

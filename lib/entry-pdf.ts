@@ -1,10 +1,11 @@
 import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, degrees, type PDFPage, type PDFFont } from "pdf-lib";
 import { safeEmailDir } from "@/lib/userStore";
 import { APP_CONFIG } from "@/lib/config/appConfig";
 import { resolveEntryUploadPath, entryFileUrl } from "@/lib/config/storagePaths";
+import { isDemoContext } from "@/lib/demo/universe";
 
 export type PdfMeta = {
   storedPath: string;
@@ -238,8 +239,10 @@ function drawFooter(
     color: COLOR_BORDER,
   });
 
-  // Confidential marker
-  const idText = "T\u2019SEDA Data Repository";
+  // Confidential marker \u2014 in demo mode the document declares itself fake.
+  const idText = isDemoContext()
+    ? "DEMO DOCUMENT \u2014 NOT A RECORD"
+    : "T\u2019SEDA Data Repository";
   const idWidth = font.widthOfTextAtSize(idText, 7);
   page.drawText(idText, {
     x: (PAGE_WIDTH - idWidth) / 2,
@@ -247,6 +250,24 @@ function drawFooter(
     font,
     size: 7,
     color: COLOR_WATERMARK,
+  });
+
+}
+
+// Demo mode: a diagonal DEMO watermark across a page, so a downloaded
+// practice PDF can never be mistaken for (or submitted as) a real record.
+function drawDemoWatermark(page: PDFPage, boldFont: PDFFont) {
+  const stamp = "DEMO";
+  const stampSize = 140;
+  const stampWidth = boldFont.widthOfTextAtSize(stamp, stampSize);
+  page.drawText(stamp, {
+    x: (PAGE_WIDTH - stampWidth * 0.72) / 2,
+    y: PAGE_HEIGHT * 0.28,
+    font: boldFont,
+    size: stampSize,
+    color: COLOR_WATERMARK,
+    rotate: degrees(35),
+    opacity: 0.55,
   });
 }
 
@@ -444,6 +465,11 @@ export async function generateEntryPdfBytes(args: {
     name: args.signatoryName?.trim() || APP_CONFIG.pdf.signatoryName,
     designation: args.signatoryDesignation?.trim() || APP_CONFIG.pdf.signatoryDesignation,
   });
+
+  // Demo mode: stamp EVERY page.
+  if (isDemoContext()) {
+    pages.forEach((pg) => drawDemoWatermark(pg, boldFont));
+  }
 
   // Page numbers on all pages (only if multi-page)
   if (pages.length > 1) {

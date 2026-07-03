@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
@@ -13,7 +14,7 @@ import {
 import { getSettingDefinition } from "@/lib/settings/registry";
 import { validateSetting } from "@/lib/settings/validation";
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || !canAccessSettings(email)) {
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ data: { settings, counts } });
 }
 
-export async function PUT(request: Request) {
+async function PUTHandler(request: Request) {
   const csrfError = validateCsrf(request);
   if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
 
@@ -88,3 +89,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const PUT = demoAware(PUTHandler);

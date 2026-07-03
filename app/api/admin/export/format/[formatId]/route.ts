@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -23,7 +24,7 @@ import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/r
  * column order. Scope: master/export-admin or a coordinator the format is visible
  * to (their own / assigned). Always exports all faculty in the format's category.
  */
-export async function GET(
+async function GETHandler(
   request: Request,
   { params }: { params: Promise<{ formatId: string }> }
 ) {
@@ -96,3 +97,6 @@ export async function GET(
     },
   });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

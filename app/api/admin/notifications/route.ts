@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -8,7 +9,7 @@ import { getAdminNotifications } from "@/lib/confirmations/adminNotificationStor
 import { filterVisibleAdminNotifications } from "@/lib/confirmations/adminNotificationHelpers";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || !canAccessAdminConsole(email)) {
@@ -33,3 +34,6 @@ export async function GET(request: Request) {
   const notifications = filterVisibleAdminNotifications(await getAdminNotifications(), email);
   return NextResponse.json({ notifications, viewerEmail: email });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

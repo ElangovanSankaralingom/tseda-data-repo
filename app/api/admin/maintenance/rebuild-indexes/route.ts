@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -9,7 +10,7 @@ import { appendMaintenanceLog } from "@/lib/maintenance/log";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { csrfGuard } from "@/lib/security/csrf";
 
-export async function POST(request: Request) {
+async function POSTHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
 
@@ -61,3 +62,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ data });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const POST = demoAware(POSTHandler);

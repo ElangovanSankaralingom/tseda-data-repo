@@ -21,7 +21,7 @@ import { withUserDataLock } from "@/lib/data/locks";
 import { logger } from "@/lib/logger";
 import { normalizeEntry } from "@/lib/normalize";
 import type { Entry } from "@/lib/types/entry";
-import { getDataRoot, getUserCategoryStoreFile } from "@/lib/userStore";
+import { getUserCategoryStoreFile } from "@/lib/userStore";
 
 export type EntryEngineRecord = Entry;
 
@@ -78,17 +78,20 @@ export function normalizeDataStoreEntry(
 }
 
 export class DataStore {
-  private readonly dataRoot: string;
+  /** Explicit root override (tests only). When absent, every call resolves
+   *  the root of the CURRENT universe — the singleton must never pin a root
+   *  at construction, or demo-mode requests would write into real data. */
+  private readonly dataRootOverride?: string;
 
   constructor(options?: { dataRoot?: string }) {
-    this.dataRoot = options?.dataRoot?.trim() || getDataRoot();
+    this.dataRootOverride = options?.dataRoot?.trim() || undefined;
   }
 
   categoryFilePath(email: string, category: CategoryKey) {
     return getUserCategoryStoreFile(
       normalizeEmail(email),
       CATEGORY_STORE_FILES[category],
-      this.dataRoot
+      this.dataRootOverride
     );
   }
 

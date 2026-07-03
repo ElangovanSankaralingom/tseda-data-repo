@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/security/csrf";
 import { getServerSession } from "next-auth";
@@ -8,7 +9,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { markAllAdminAsRead } from "@/lib/confirmations/adminNotificationStore";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
-export async function PUT(request: Request) {
+async function PUTHandler(request: Request) {
   const csrfError = validateCsrf(request);
   if (csrfError) return NextResponse.json({ error: csrfError }, { status: 403 });
   const session = await getServerSession(authOptions);
@@ -35,3 +36,6 @@ export async function PUT(request: Request) {
   const marked = await markAllAdminAsRead(email);
   return NextResponse.json({ marked });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const PUT = demoAware(PUTHandler);

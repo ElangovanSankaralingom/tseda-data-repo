@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -11,7 +12,7 @@ import { apiUnauthorized } from "@/lib/api/apiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { normalizeError, httpStatusForCode } from "@/lib/errors";
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) {
@@ -87,3 +88,6 @@ export async function GET(request: Request) {
     },
   });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

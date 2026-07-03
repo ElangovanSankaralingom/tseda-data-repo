@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 // app/api/me/route.ts
 import { NextResponse } from "next/server";
 import { csrfGuard } from "@/lib/security/csrf";
@@ -100,7 +101,7 @@ function getSessionGooglePhotoURL(session: unknown) {
   return typeof user?.image === "string" ? user.image.trim() : "";
 }
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const sessionEmail = session?.user?.email;
   const email = sessionEmail ? normalizeEmail(sessionEmail) : "";
@@ -145,7 +146,7 @@ export async function GET(request: Request) {
   return NextResponse.json(profile);
 }
 
-export async function PUT(req: Request) {
+async function PUTHandler(req: Request) {
   const csrfBlocked = csrfGuard(req);
   if (csrfBlocked) return csrfBlocked;
 
@@ -235,3 +236,7 @@ export async function PUT(req: Request) {
 
   return NextResponse.json(merged);
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const PUT = demoAware(PUTHandler);

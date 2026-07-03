@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
@@ -90,7 +91,7 @@ function requireQuery(req: Request, key: string) {
   return v;
 }
 
-export async function POST(req: Request) {
+async function POSTHandler(req: Request) {
   const csrfBlocked = csrfGuard(req);
   if (csrfBlocked) return csrfBlocked;
 
@@ -190,7 +191,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, certificate });
 }
 
-export async function DELETE(req: Request) {
+async function DELETEHandler(req: Request) {
   const csrfBlocked = csrfGuard(req);
   if (csrfBlocked) return csrfBlocked;
 
@@ -246,7 +247,7 @@ export async function DELETE(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -297,3 +298,8 @@ export async function GET(req: Request) {
     },
   });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const POST = demoAware(POSTHandler);
+export const DELETE = demoAware(DELETEHandler);

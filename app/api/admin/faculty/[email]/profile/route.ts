@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
@@ -8,7 +9,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
 /** Master-only download of a faculty's full profile + registry record (JSON). */
-export async function GET(
+async function GETHandler(
   request: Request,
   { params }: { params: Promise<{ email: string }> }
 ) {
@@ -48,3 +49,6 @@ export async function GET(
     },
   });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

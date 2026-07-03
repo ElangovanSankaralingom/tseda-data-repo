@@ -7,6 +7,7 @@ import { canAccessAdminConsole, isMasterAdmin } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import { getDashboardSummary } from "@/lib/entries/summary";
+import { inUserUniverse } from "@/lib/demo/demoAware";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { signin } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
@@ -38,7 +39,8 @@ export default async function DashboardPage() {
     meta: { page: "/dashboard" },
   });
 
-  const summary = await getDashboardSummary(email);
+  // Server-side read → runs in the caller's universe (real or demo).
+  const summary = await inUserUniverse(email, () => getDashboardSummary(email));
   const userName = session?.user?.name?.trim() || email;
 
   const streakActivated = toSafeCount(summary.totals.streakActivatedCount);

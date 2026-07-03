@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -142,7 +143,7 @@ function toLimitErrorResponse(error: unknown) {
   return NextResponse.json({ error: appError.message }, { status: 500 });
 }
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const email = await getAuthorizedEmail();
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -183,7 +184,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ error: "File not found" }, { status: 404 });
 }
 
-export async function POST(request: Request) {
+async function POSTHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
 
@@ -285,7 +286,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+async function DELETEHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
 
@@ -336,3 +337,8 @@ export async function DELETE(request: Request) {
     return toLimitErrorResponse(error);
   }
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const POST = demoAware(POSTHandler);
+export const DELETE = demoAware(DELETEHandler);

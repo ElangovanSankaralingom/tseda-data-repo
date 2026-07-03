@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -16,7 +17,7 @@ import { appendExportHistory } from "@/lib/export/history";
 import { logger } from "@/lib/logger";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
-export async function GET(
+async function GETHandler(
   request: Request,
   { params }: { params: Promise<{ templateId: string }> }
 ) {
@@ -125,3 +126,6 @@ export async function GET(
     },
   });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

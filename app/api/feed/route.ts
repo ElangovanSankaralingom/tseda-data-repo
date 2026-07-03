@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -17,7 +18,7 @@ function firstName(email: string): string {
   return email.split("@")[0] ?? email;
 }
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || !email.endsWith(ALLOWED_EMAIL_SUFFIX)) {
@@ -72,7 +73,7 @@ export async function GET(request: Request) {
   );
 }
 
-export async function DELETE(request: Request) {
+async function DELETEHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
 
@@ -111,3 +112,7 @@ export async function DELETE(request: Request) {
   const removed = await removeFeedEvent(eventId);
   return NextResponse.json({ data: { removed } });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const DELETE = demoAware(DELETEHandler);

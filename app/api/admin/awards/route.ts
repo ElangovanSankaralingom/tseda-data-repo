@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -12,7 +13,7 @@ import {
 } from "@/lib/awards/scoring";
 
 /** Admin view: any faculty member's award score (needed to run the award). */
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) return apiUnauthorized();
@@ -44,3 +45,6 @@ export async function GET(req: Request) {
   const score = await computeFacultyAwardScore(target, year);
   return apiSuccess({ years, score });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

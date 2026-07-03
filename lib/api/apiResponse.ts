@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AUTH } from "@/lib/constants/messages";
+import { isDemoContext } from "@/lib/demo/universe";
 
 type ApiSuccessOptions = {
   status?: number;
@@ -19,6 +20,11 @@ export function apiSuccess<T>(data: T, options: ApiSuccessOptions = {}) {
 }
 
 export function cachedApiSuccess<T>(data: T, maxAge: number, staleWhileRevalidate?: number) {
+  // Demo mode: never let the browser serve cached REAL responses inside a
+  // demo session (or vice versa after exit) — same URL, different universe.
+  if (isDemoContext()) {
+    return apiSuccess(data, { headers: { "Cache-Control": "no-store" } });
+  }
   const cacheControl = staleWhileRevalidate
     ? `private, max-age=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`
     : `private, max-age=${maxAge}`;

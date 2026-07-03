@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import fs from "node:fs/promises";
@@ -18,7 +19,7 @@ import {
  * files are only readable by their owner (or the master admin), never by URL
  * possession alone.
  */
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -83,3 +84,6 @@ export async function GET(req: Request) {
     );
   }
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

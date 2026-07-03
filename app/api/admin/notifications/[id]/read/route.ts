@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -8,7 +9,7 @@ import { markAdminAsRead } from "@/lib/confirmations/adminNotificationStore";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 import { csrfGuard } from "@/lib/security/csrf";
 
-export async function PUT(
+async function PUTHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -43,3 +44,6 @@ export async function PUT(
   }
   return NextResponse.json({ ok: true });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const PUT = demoAware(PUTHandler);

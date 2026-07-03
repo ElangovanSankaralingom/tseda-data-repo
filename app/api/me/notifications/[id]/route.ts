@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -11,7 +12,7 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function DELETE(request: Request, context: RouteContext) {
+async function DELETEHandler(request: Request, context: RouteContext) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
 
@@ -44,3 +45,6 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   return NextResponse.json({ ok: true });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const DELETE = demoAware(DELETEHandler);

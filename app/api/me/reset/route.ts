@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getServerSession } from "next-auth";
@@ -98,7 +99,7 @@ async function clearLegacyProfilesIndex(email: string) {
   }
 }
 
-export async function POST(request: Request) {
+async function POSTHandler(request: Request) {
   // S2: the Reset Center is a development-only data wipe (the UI says it's
   // removed before production). Hard-fail in production regardless of auth.
   if (process.env.NODE_ENV === "production") {
@@ -157,3 +158,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ success: true });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const POST = demoAware(POSTHandler);

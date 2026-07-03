@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -24,7 +25,7 @@ async function requireSettingsAdmin(): Promise<string | null> {
   return email;
 }
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   const email = await requireSettingsAdmin();
   if (!email) return apiForbidden();
 
@@ -46,7 +47,7 @@ export async function GET(req: Request) {
   return apiSuccess({ metrics: await listEffectiveAwardMetrics() });
 }
 
-export async function PUT(req: Request) {
+async function PUTHandler(req: Request) {
   const csrfBlocked = csrfGuard(req);
   if (csrfBlocked) return csrfBlocked;
 
@@ -93,3 +94,7 @@ export async function PUT(req: Request) {
 
   return apiSuccess({ metrics: await listEffectiveAwardMetrics() });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const PUT = demoAware(PUTHandler);

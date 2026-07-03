@@ -5,12 +5,15 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import type { PersistentNotification, PersistentNotificationType, NotificationStore } from "./types";
+import { getUserStoreDir } from "@/lib/userStore";
 
-const DATA_ROOT = path.join(process.cwd(), ".data", "users");
 const MAX_NOTIFICATIONS = 50;
 
+// Resolved per call through the universe-aware user store dir (demo-mode
+// isolation + DATA_ROOT sandboxing). Previously pinned ".data/users" at
+// module load, which bypassed root overrides (2026-07 demo audit fix).
 function notificationPath(email: string): string {
-  return path.join(DATA_ROOT, email, "notifications.json");
+  return path.join(getUserStoreDir(email), "notifications.json");
 }
 
 async function readStore(email: string): Promise<NotificationStore> {

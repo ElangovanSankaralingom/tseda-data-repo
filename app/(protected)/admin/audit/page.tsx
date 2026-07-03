@@ -4,6 +4,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import AuditDashboard from "@/components/admin/AuditDashboard";
 import { authOptions } from "@/lib/auth";
 import { getRecentAuditEvents, getAuditStats } from "@/lib/admin/auditLog";
+import { inUserUniverse } from "@/lib/demo/demoAware";
 import { canViewAudit } from "@/lib/admin/roles";
 import { isApprovalCoordinator, getCoordinatorScope } from "@/lib/admin/coordinators";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -22,10 +23,13 @@ export default async function AdminAuditPage() {
   // Master/reviewer see the whole trail + aggregate stats; a coordinator sees only
   // their categories' events and no global stats.
   const allowedCategories = isGlobal ? undefined : getCoordinatorScope(email).categories;
-  const [eventsResult, statsResult] = await Promise.all([
-    getRecentAuditEvents({ limit: 500, allowedCategories }),
-    isGlobal ? getAuditStats() : Promise.resolve(null),
-  ]);
+  // Server-side reads → run in the viewer's universe (real or demo).
+  const [eventsResult, statsResult] = await inUserUniverse(email, () =>
+    Promise.all([
+      getRecentAuditEvents({ limit: 500, allowedCategories }),
+      isGlobal ? getAuditStats() : Promise.resolve(null),
+    ]),
+  );
 
   const events = eventsResult.ok ? eventsResult.data : [];
   const stats = statsResult && statsResult.ok ? statsResult.data : null;

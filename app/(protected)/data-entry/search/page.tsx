@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import EntrySearchClient from "@/components/search/EntrySearchClient";
 import { isValidCategorySlug } from "@/data/categoryRegistry";
 import { authOptions } from "@/lib/auth";
+import { inUserUniverse } from "@/lib/demo/demoAware";
 import { toUserMessage } from "@/lib/errors";
 import type { CategoryKey } from "@/lib/entries/types";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -41,10 +42,13 @@ export default async function DataEntrySearchPage({ searchParams }: DataEntrySea
   let error: string | null = null;
   let results: SearchResult[] = [];
   if (email && query) {
-    const result = await searchUserEntries(email, query, {
-      category: selectedCategory,
-      limit: 100,
-    });
+    // Server-side read → runs in the caller's universe (real or demo).
+    const result = await inUserUniverse(email, () =>
+      searchUserEntries(email, query, {
+        category: selectedCategory,
+        limit: 100,
+      }),
+    );
     if (result.ok) {
       results = result.data;
     } else {

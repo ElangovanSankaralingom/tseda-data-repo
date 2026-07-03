@@ -67,6 +67,12 @@ of it mechanically — a violation fails loudly with a named reason.
    npm run build`. Never build-only. Husky runs lint+tsc on commit anyway.
 7. **Tests for new behavior** follow existing patterns
    (`createTestDataRoot` sandbox — NEVER write to live `.data`).
+8. **New API route?** Export every handler wrapped: `export const GET =
+   demoAware(GETHandler)` (`lib/demo/demoAware.ts`) — demo-mode isolation
+   depends on it; `tests/demo/routeGuard.test.ts` fails otherwise. New
+   storage file? Decide its universe: per-user/side-effect data resolves via
+   `getUniverseDataRoot()` / `universePrivateDataRoot()`; configuration stays
+   on `getDataRoot()` / `privateDataRoot()`. See the Demo Mode section.
 
 ---
 
@@ -163,6 +169,37 @@ Concepts that live in one place and must be consumed from there ONLY:
 - **Streak rules** → `lib/streakProgress.ts` (eligibility/activated/won) — every surface (engine, dashboard, feed, analytics) uses these; no local reimplementations. `computeDueAtISO(endDate, bufferDays)` takes the buffer as a parameter; display prefers stored deadlines via `computeCutoffDate(..., storedCutoffISO)`.
 - **Feed win/start events** → emitted via `recordEntryMilestones` on generate, finalise, SAVE (a save can be the win moment — last stage-2 upload persisting), and nightly auto-finalise. Idempotent by deterministic event ids. Removed when the entry is deleted (admin approve + nightly quarantine).
 - **Derived stores** (per-user index, dashboard summary): refreshed on EVERY write path — engine mutations, upload-slot DELETE handler, nightly autoArchive, editGrantExpiry.
+- **Storage universe** → `lib/demo/universe.ts` + `lib/userStore.ts:getUniverseDataRoot()` / `lib/config/storagePaths.ts:universePrivateDataRoot()`. See Demo Mode below.
+
+### Demo Mode (2026-07) — parallel practice universe
+
+Permitted users (master admin + roster in `<dataRoot>/demo-mode.json`, managed
+at `/admin/demo`) can enter DEMO MODE: a fully isolated copy of the app's data
+world under `.data/demo/**`. Real data is NEVER touched; exit wipes.
+
+- **Universe resolution:** the ACTOR (session user) decides the universe, not
+  the data owner. `AsyncLocalStorage` context set by `demoAware()` route
+  wrappers (`lib/demo/demoAware.ts`) — EVERY `app/api/**/route.ts` must export
+  `export const GET = demoAware(GETHandler)` etc. (`tests/demo/routeGuard.test.ts`
+  enforces this; exemptions: nextauth, cron, health). Server components that
+  read user data directly wrap reads in `inUserUniverse(email, fn)`.
+  NEVER use `enterWith` — ALS context does not survive back across an await.
+- **Universe-scoped** (fork under /demo): users tree (entries, index, summary,
+  notifications), feed, entry-uploads + PDFs, quarantine trash, action
+  history, analytics cache, export history. **Shared** (never fork): faculty
+  registry, roles, live settings, preferences, awards config, demo state.
+- **Wipes** (`lib/demo/wipe.ts`): `assertDemoPath` refuses any path outside
+  `<root>/demo` — no refactor can point a wipe at real data. Exit wipes own
+  subtree; last-out wipes the whole universe; nightly `demoCleanup` expires
+  sessions >24h and wipes orphan subtrees (e.g. fan-out copies for colleagues
+  who never entered). Nightly runs contextless → judges REAL data only; demo
+  entries are never auto-finalised/auto-deleted.
+- **Indicators:** floating warning pill (`components/DemoModeBanner.tsx`,
+  rendered by ShellClient via server-resolved prop), toggle in
+  ProfileDropdown (permitted users), diagonal DEMO watermark on every
+  generated PDF page, `cachedApiSuccess` → no-store inside demo.
+- **New route rule:** any new API route MUST wrap its exports with
+  `demoAware(...)` — the route guard test fails otherwise.
 
 ---
 

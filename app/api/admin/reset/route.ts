@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
@@ -148,7 +149,7 @@ async function clearTarget(target: string): Promise<ClearResult> {
 }
 
 // Stats endpoint (GET) — returns file counts and sizes per target
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!isMasterAdmin(email)) {
@@ -253,7 +254,7 @@ export async function GET(request: Request) {
 }
 
 // Clear endpoint (POST)
-export async function POST(request: Request) {
+async function POSTHandler(request: Request) {
   // S2: destructive dev-only reset — never reachable in production.
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "Not available in production." }, { status: 404 });
@@ -324,3 +325,7 @@ export async function POST(request: Request) {
     results,
   });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const POST = demoAware(POSTHandler);

@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -14,7 +15,7 @@ const VALID_THEME_MODES = ["light", "dark"] as const;
 const VALID_PALETTES = ["midnight-lime", "deep-ocean", "carbon-violet", "obsidian-amber"] as const;
 const VALID_LANGUAGES = ["en", "ta"] as const;
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email) return apiUnauthorized();
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
   return apiSuccess(prefs);
 }
 
-export async function PUT(request: Request) {
+async function PUTHandler(request: Request) {
   const csrfBlocked = csrfGuard(request);
   if (csrfBlocked) return csrfBlocked;
 
@@ -108,3 +109,7 @@ export async function PUT(request: Request) {
   const updated = setUserPreferences(email, update);
   return apiSuccess(updated);
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);
+export const PUT = demoAware(PUTHandler);

@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -7,7 +8,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getExportableFields, parseExportCategory } from "@/lib/export/exportService";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
 
-export async function GET(
+async function GETHandler(
   request: Request,
   { params }: { params: Promise<{ category: string }> }
 ) {
@@ -40,3 +41,6 @@ export async function GET(
 
   return NextResponse.json({ data: getExportableFields(parsed) });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

@@ -1,3 +1,4 @@
+import { demoAware } from "@/lib/demo/demoAware";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -49,7 +50,7 @@ function entryTrend(entries: EntryDataPoint[], days: number): { date: string; co
 // GET handler
 // ---------------------------------------------------------------------------
 
-export async function GET(request: Request) {
+async function GETHandler(request: Request) {
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email || (!canAccessAdminConsole(email) && !isMasterAdmin(email))) {
@@ -326,3 +327,6 @@ export async function GET(request: Request) {
     },
   }, { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" } });
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe.
+export const GET = demoAware(GETHandler);

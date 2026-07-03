@@ -9,6 +9,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import { isFacultyAllowed, isBetaTester } from "@/lib/admin/facultyRegistry";
 import { signin } from "@/lib/entryNavigation";
 import { getUserPreferences } from "@/lib/preferences/userPreferences";
+import { isDemoActive } from "@/lib/demo/state";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { buildThemeCss } from "@/lib/theme/themeTokens";
 import type { ThemeMode } from "@/lib/theme/themeTokens";
@@ -32,6 +33,9 @@ export default async function ProtectedLayout({
   }
 
   const betaTester = isBetaTester(email);
+  // Demo mode indicator: resolved server-side on every navigation so the
+  // banner state can never drift from the server's demo-mode truth.
+  const demoActive = await isDemoActive(email);
   const prefs = getUserPreferences(normalizeEmail(email));
   // Beta-only options (dark mode, Tamil) are clamped to light + English for
   // non-members — enforced at first paint and in ThemeProvider.
@@ -58,7 +62,7 @@ export default async function ProtectedLayout({
           __html: `document.documentElement.classList.toggle("dark",${mode === "dark"});`,
         }}
       />
-      <ShellClient>
+      <ShellClient demoActive={demoActive}>
         <NavigationRefresh />
         <NetworkStatus />
         {children}
