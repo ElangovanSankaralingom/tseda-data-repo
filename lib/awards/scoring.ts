@@ -359,13 +359,12 @@ export async function listFacultyAcademicYears(email: string): Promise<string[]>
   return [...years].sort().reverse();
 }
 
-export async function computeFacultyAwardScore(
+/** Committed, in-year entries per category — THE data the award sees. The
+ *  appraisal report consumes this too, so report and score can never drift. */
+export async function listCommittedEntriesForYear(
   email: string,
   academicYear: string,
-): Promise<AwardScore> {
-  const config = await getAwardPointsConfig();
-
-  // One read per category, committed + in-year only.
+): Promise<Map<CategoryKey, EntryRecord[]>> {
   const entriesByCategory = new Map<CategoryKey, EntryRecord[]>();
   for (const category of CATEGORY_LIST) {
     const entries = await readCategoryEntries(email, category);
@@ -374,6 +373,17 @@ export async function computeFacultyAwardScore(
       (entries as EntryRecord[]).filter((e) => isCommitted(e) && inYear(e, academicYear)),
     );
   }
+  return entriesByCategory;
+}
+
+export async function computeFacultyAwardScore(
+  email: string,
+  academicYear: string,
+): Promise<AwardScore> {
+  const config = await getAwardPointsConfig();
+
+  // One read per category, committed + in-year only.
+  const entriesByCategory = await listCommittedEntriesForYear(email, academicYear);
 
   // Profile-sourced metrics (Ph.D. milestones) read the Research section.
   const researchProfile = await readResearchProfile(email);

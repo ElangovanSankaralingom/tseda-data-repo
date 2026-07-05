@@ -42,6 +42,8 @@ export const ta: TranslationDict = {
     noQuickWins: "நிலுவையில் எளிய புள்ளிகள் இல்லை",
     allTracked: "அனைத்தும் கண்காணிக்கப்படுகின்றன",
     upTo: "{n} வரை",
+    downloadReport: "மதிப்பீடு (.docx)",
+    downloadReportHint: "இந்த ஆண்டிற்கான நிரப்பப்பட்ட விருது மதிப்பீட்டு ஆவணத்தைப் பதிவிறக்கவும்",
   },
   research: {
     ownPhdTitle: "எனது Ph.D.",

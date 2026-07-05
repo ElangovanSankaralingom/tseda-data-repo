@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Award, Sparkles, Target, CircleDashed } from "lucide-react";
+import { Award, Sparkles, Target, CircleDashed, FileDown } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import SelectDropdown from "@/components/controls/SelectDropdown";
@@ -61,6 +61,16 @@ export default function AwardProgress() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* One-click appraisal: the official submission document, filled
+              from the same committed data this panel scores. */}
+          <a
+            href={`/api/me/awards/report?year=${encodeURIComponent(score.academicYear)}`}
+            className="flex items-center gap-1.5 rounded-xl border border-[var(--color-border-strong)] px-3.5 py-2 text-xs font-bold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-surface-raised)]"
+            title={t("awards.downloadReportHint")}
+          >
+            <FileDown className="size-4" />
+            {t("awards.downloadReport")}
+          </a>
           <div className="w-56">
             <SelectDropdown
               value={score.academicYear}

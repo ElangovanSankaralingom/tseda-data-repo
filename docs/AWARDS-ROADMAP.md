@@ -141,12 +141,15 @@ Admin/DLC can verify (the value is auditable against CAMU reports).
     syllabus 5) into a per-faculty-per-year store the scoring engine merges
     (`source: "interview"` metrics stop being 0). Reads
     studio-contributions (#8) as its evidence base.
-17. **One-click Faculty Award Appraisal report** — button on the dashboard
-    panel → `/api/me/awards/report?year=` generates the OFFICIAL 18-table
-    submission format as .docx, each table filled from the faculty's
-    committed entries (fields map 1:1 per the specs above), score summary
-    appended, signature blocks left blank. Implementation: `docx` npm
-    package server-side (pdf-lib is PDF-only); stream as download.
+17. ~~**One-click Faculty Award Appraisal report**~~ ✅ SHIPPED 2026-07 —
+    "Appraisal (.docx)" button on the My Award Progress panel →
+    `/api/me/awards/report?year=` streams the submission document: score
+    summary, one table per metric filled from the SAME committed entries +
+    research profile the score reads (`listCommittedEntriesForYear` shared
+    with the engine — no drift possible), Nil rows for empty metrics,
+    committee/claim notes, blank signature blocks, DEMO stamp inside demo
+    mode. Layout follows the T'SEDA seven sections; compare against the
+    college's original 18-table form and tune table order if needed.
 
 ## B1/B2/B3 — department data beyond the award (Elan's ruling)
 

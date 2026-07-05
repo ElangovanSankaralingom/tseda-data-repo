@@ -40,6 +40,8 @@ export const en = {
     noQuickWins: "No easy points pending",
     allTracked: "Everything is being tracked",
     upTo: "up to {n}",
+    downloadReport: "Appraisal (.docx)",
+    downloadReportHint: "Download the filled award appraisal document for this year",
   },
   research: {
     ownPhdTitle: "My Ph.D.",
