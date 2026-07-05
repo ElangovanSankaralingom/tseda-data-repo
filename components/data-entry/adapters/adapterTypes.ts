@@ -548,3 +548,39 @@ export type GuestLectureEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// StudioContributionEntry (record flow — S1 descriptive box + proof)
+// ---------------------------------------------------------------------------
+
+export type StudioContributionEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  contributionKind: string;
+  activityTitle: string;
+  descriptionText: string;
+  eventDate: string;
+  venue: string;
+  externalParticipants: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  proofs: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

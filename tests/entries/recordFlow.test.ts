@@ -262,6 +262,42 @@ test("editorial-roles: fixed 6 once for Editor/Assoc; reviewer roles noted, not 
   });
 });
 
+test("studio-contributions: reviews/exhibitions score 1/unit capped at 3; other kinds are evidence", async () => {
+  await withSandbox("record-studio", async () => {
+    const base = {
+      academicYear: YEAR,
+      semesterType: "EVEN",
+      descriptionText: "Open review with practicing architects; 34 students presented.",
+      eventDate: "2026-03-14",
+      proofs: [{ storedPath: "uploads/x/jury.pdf", url: "/api/entry-file?p=7", fileName: "jury.pdf" }],
+    };
+    // Four scoring events (1 each, model caps at 3) + one evidence-only entry.
+    const kinds = [
+      "Open Review / Jury",
+      "Open Review / Jury",
+      "Exhibition of Student Work",
+      "Exhibition of Student Work",
+      "Studio Documentation",
+    ];
+    for (const [index, contributionKind] of kinds.entries()) {
+      const entry = await createEntry(OWNER, "studio-contributions", {
+        ...base, contributionKind, activityTitle: `Studio event ${index + 1}`,
+      } as never);
+      await commitDraft(OWNER, "studio-contributions", String(entry.id));
+    }
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "open_reviews_exhibitions");
+    assert.equal(metric?.count, 4, "four qualifying events");
+    assert.equal(metric?.points, 3, "capped at the model max");
+    assert.ok(metric?.notes.some((n) => n.includes("Capped")), "cap explained");
+    assert.ok(
+      metric?.notes.some((n) => n.includes("committee evidence")),
+      "documentation entry surfaced as committee evidence",
+    );
+  });
+});
+
 test("submit: rejects incomplete records; completed submit locks with no timer and wins instantly", async () => {
   await withSandbox("record-submit", async () => {
     // Missing the required firstPage upload → submit must refuse.

@@ -154,6 +154,29 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points: perUnit * entries.length, count: entries.length, notes: [] };
   },
 
+  /** Open reviews & exhibitions (S1, record flow): studio-contributions
+   *  entries of the two scoring kinds, 1/unit capped at the model max.
+   *  Documentation / beyond-syllabus entries don't score here — they are
+   *  the committee's evidence base for the S1 interview metrics. */
+  open_reviews_exhibitions({ entriesByCategory, model }) {
+    const all = entriesByCategory.get("studio-contributions") ?? [];
+    const scoring = all.filter((entry) => {
+      const kind = String(entry.contributionKind ?? "");
+      return kind === "Open Review / Jury" || kind === "Exhibition of Student Work";
+    });
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    const cap = model.kind === "perUnit" ? model.maxPoints ?? Number.POSITIVE_INFINITY : 0;
+    const raw = perUnit * scoring.length;
+    const points = Math.min(raw, cap);
+    const notes: string[] = [];
+    if (raw > points) notes.push(`Capped at ${cap} (${scoring.length} qualifying events)`);
+    const evidenceOnly = all.length - scoring.length;
+    if (evidenceOnly > 0) {
+      notes.push(`${evidenceOnly} documentation/beyond-syllabus entries recorded as committee evidence`);
+    }
+    return { points, count: scoring.length, notes };
+  },
+
   /** Books (record flow): books-and-chapters entries with kind = Book. */
   book_publication({ entriesByCategory, model }) {
     const entries = (entriesByCategory.get("books-and-chapters") ?? []).filter(

@@ -94,13 +94,18 @@ profile upload slots generalize.
 
 ## Phase B — T'SEDA-specific creative outputs
 
-8. **studio-contributions** [RECORD, descriptive] (feeds
-   `open_reviews_exhibitions` 1/unit max 3 + evidence for S1 interview
-   items) — Elan's S1 lead: a small DESCRIPTIVE BOX ("what you did") +
-   proof upload, per event. Fields: academicYear, semesterType, kind
-   (OpenReview|Exhibition|StudioDocumentation|BeyondSyllabus), description
-   (textarea), date, venue/externals; proofs: photos/report. Doubles as the
-   evidence base the committee reads for S1 interview scores.
+8. ~~**studio-contributions**~~ ✅ SHIPPED 2026-07 [RECORD, descriptive] —
+   Elan's S1 lead exactly: contributionKind (Open Review / Jury |
+   Exhibition of Student Work | Studio Documentation | Beyond Syllabus),
+   activityTitle, descriptionText (the "what you did" TextArea), eventDate,
+   venue, externalParticipants; required proofs upload. Open reviews +
+   exhibitions auto-score `open_reviews_exhibitions` (1/unit CAP 3, deriver
+   notes the cap); documentation/beyond-syllabus entries surface in score
+   notes as the committee's interview evidence base. Field key is
+   `contributionKind` (NOT `kind`) — the shared fields.kind label is
+   "Publication Kind"; the same collision was silently mislabeling
+   research-funding's selector and was fixed with a dedicated
+   `fields.fundingKind` label in the same commit.
 9. **design-competitions** [PERMISSION] (feeds `design_competition` award 5
    / participation 2) — prior approval to participate; complete data
    mandatory. level, competition, organizer, result Award|Participation

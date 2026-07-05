@@ -150,7 +150,7 @@ function ResearchFundingFormFields({ ctx }: { ctx: FormFieldsContext<ResearchFun
         animationDelay={60}
       >
         <div className="space-y-4">
-          <Field label={fieldLabel('kind')} error={submitted ? errors.kind : undefined} hint={t('entry.fundingKindHint')} fieldKey="kind">
+          <Field label={fieldLabel('fundingKind')} error={submitted ? errors.kind : undefined} hint={t('entry.fundingKindHint')} fieldKey="kind">
             <PillSelect
               value={form.kind || ""}
               onChange={(value) => setForm((c) => ({ ...c, kind: value }))}

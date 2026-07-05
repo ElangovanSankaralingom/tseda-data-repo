@@ -9,6 +9,7 @@ import { fdpAttendedSchema } from "@/data/schemas/fdp-attended";
 import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
 import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
 import { journalPublicationsSchema } from "@/data/schemas/journal-publications";
+import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
 
@@ -25,6 +26,7 @@ export const CATEGORY_SLUGS = [
   "research-funding",
   "editorial-roles",
   "conferences-organized",
+  "studio-contributions",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -41,7 +43,8 @@ export type CategorySummaryKey =
   | "patents"
   | "researchFunding"
   | "editorialRoles"
-  | "conferencesOrganized";
+  | "conferencesOrganized"
+  | "studioContributions";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -454,6 +457,37 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Plan and record conferences, seminars, and symposia you organize — permission letter first, proofs after.",
     entryTitleField: "conferenceTitle",
     entryTitleFallback: "Conference",
+  },
+  "studio-contributions": {
+    slug: "studio-contributions",
+    label: "Studio Contributions",
+    schemaKey: "studio-contributions",
+    schema: studioContributionsSchema,
+    summaryKey: "studioContributions",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW (S1 ruling): descriptive box + proof per studio event.
+    // Open reviews / exhibitions auto-score; documentation and beyond-
+    // syllabus entries are the committee's interview evidence base.
+    flow: "record",
+    group: "academic",
+    icon: "palette",
+    color: {
+      bar: "from-orange-400 to-orange-600",
+      bg: "bg-orange-100",
+      text: "text-orange-600",
+      ring: "hover:ring-orange-200",
+      cta: "text-orange-500",
+      gradient: "from-orange-600 via-orange-700 to-orange-900",
+      accentBg: "bg-orange-500/10",
+      borderTop: "border-t-orange-500",
+      buttonBg: "bg-orange-600",
+      buttonHover: "hover:bg-orange-700",
+      chartHex: "#EA580C",
+    },
+    subtitle: "Describe studio events — open reviews, exhibitions, documentation, beyond-syllabus work — with proof.",
+    entryTitleField: "activityTitle",
+    entryTitleFallback: "Studio Contribution",
   },
 };
 

@@ -18,6 +18,7 @@ import {
   Library,
   Megaphone,
   Mic,
+  Palette,
   PenLine,
   Presentation,
   Wrench,
@@ -35,6 +36,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   banknote: Banknote,
   "pen-line": PenLine,
   "calendar-days": CalendarDays,
+  palette: Palette,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

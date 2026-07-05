@@ -153,6 +153,17 @@ const ROW_BUILDERS: Record<string, RowBuilder> = {
       s(x, "conferenceTitle"), s(x, "role"), `${s(x, "startDate")} – ${s(x, "endDate")}`,
     ]),
   },
+  open_reviews_exhibitions: {
+    columns: ["Event", "Type", "Date", "External Experts"],
+    rows: (e) => (e.get("studio-contributions") ?? [])
+      .filter((x) => {
+        const kind = s(x, "contributionKind");
+        return kind === "Open Review / Jury" || kind === "Exhibition of Student Work";
+      })
+      .map((x) => [
+        s(x, "activityTitle"), s(x, "contributionKind"), s(x, "eventDate"), s(x, "externalParticipants"),
+      ]),
+  },
   natl_conference_organized: {
     columns: ["Conference", "Role", "Dates"],
     rows: (e) => (e.get("conferences-organized") ?? []).filter((x) => s(x, "level") === "National").map((x) => [
