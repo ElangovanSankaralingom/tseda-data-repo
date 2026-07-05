@@ -160,6 +160,18 @@ const ROW_BUILDERS: Record<string, RowBuilder> = {
       `${s(x, "startDate")} – ${s(x, "endDate")}`,
     ]),
   },
+  tce_online_course: {
+    columns: ["Course", "Duration", "New / Rerun", "Dates"],
+    rows: (e) => (e.get("online-courses") ?? []).filter((x) => s(x, "courseKind") === "TCE Online Course").map((x) => [
+      s(x, "courseName"), `${s(x, "durationWeeks")} weeks`, s(x, "newOrRerun"), `${s(x, "startDate")} – ${s(x, "endDate")}`,
+    ]),
+  },
+  industry_supported_course: {
+    columns: ["Course", "Credits", "Industry Expert", "Dates"],
+    rows: (e) => (e.get("online-courses") ?? []).filter((x) => s(x, "courseKind") === "Industry-Supported Course").map((x) => [
+      s(x, "courseName"), s(x, "credits"), s(x, "industryExpert"), `${s(x, "startDate")} – ${s(x, "endDate")}`,
+    ]),
+  },
   public_exhibition: {
     columns: ["Event", "Type", "Venue", "Dates"],
     rows: (e) => (e.get("exhibitions-outreach") ?? []).map((x) => [

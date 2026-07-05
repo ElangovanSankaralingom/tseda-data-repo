@@ -185,7 +185,8 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "industry_supported_course",
     section: "s3",
     label: "Industry-Supported Course Development",
-    source: "claim",
+    source: "entry",
+    categories: ["online-courses"],
     effort: "medium",
     pointsModel: {
       kind: "tiered",
@@ -200,7 +201,8 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "tce_online_course",
     section: "s3",
     label: "TCE Online Course Development (new or rerun)",
-    source: "claim",
+    source: "entry",
+    categories: ["online-courses"],
     effort: "high",
     pointsModel: {
       kind: "tiered",

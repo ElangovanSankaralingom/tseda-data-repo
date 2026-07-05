@@ -12,6 +12,7 @@ import { journalPublicationsSchema } from "@/data/schemas/journal-publications";
 import { creativePublicationsSchema } from "@/data/schemas/creative-publications";
 import { designCompetitionsSchema } from "@/data/schemas/design-competitions";
 import { exhibitionsOutreachSchema } from "@/data/schemas/exhibitions-outreach";
+import { onlineCoursesSchema } from "@/data/schemas/online-courses";
 import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
@@ -33,6 +34,7 @@ export const CATEGORY_SLUGS = [
   "creative-publications",
   "design-competitions",
   "exhibitions-outreach",
+  "online-courses",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -53,7 +55,8 @@ export type CategorySummaryKey =
   | "studioContributions"
   | "creativePublications"
   | "designCompetitions"
-  | "exhibitionsOutreach";
+  | "exhibitionsOutreach"
+  | "onlineCourses";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -585,6 +588,36 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Plan public exhibitions and community outreach — permission letter first, documentation after.",
     entryTitleField: "eventName",
     entryTitleFallback: "Exhibition / Outreach",
+  },
+  "online-courses": {
+    slug: "online-courses",
+    label: "Online Courses",
+    schemaKey: "online-courses",
+    schema: onlineCoursesSchema,
+    summaryKey: "onlineCourses",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // PERMISSION FLOW (S3 ruling): course development needs prior,
+    // Dean-signed approval. courseKind routes tce_online_course (weeks
+    // tier) vs industry_supported_course (credits tier).
+    group: "professional",
+    icon: "monitor-play",
+    color: {
+      bar: "from-red-400 to-red-600",
+      bg: "bg-red-100",
+      text: "text-red-600",
+      ring: "hover:ring-red-200",
+      cta: "text-red-500",
+      gradient: "from-red-600 via-red-700 to-red-900",
+      accentBg: "bg-red-500/10",
+      borderTop: "border-t-red-500",
+      buttonBg: "bg-red-600",
+      buttonHover: "hover:bg-red-700",
+      chartHex: "#DC2626",
+    },
+    subtitle: "Plan TCE-online and industry-supported course development — Dean-signed approval first, proofs after.",
+    entryTitleField: "courseName",
+    entryTitleFallback: "Online Course",
   },
 };
 

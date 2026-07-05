@@ -696,3 +696,43 @@ export type ExhibitionOutreachEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// OnlineCourseEntry (PERMISSION flow — kind routes two tiered metrics)
+// ---------------------------------------------------------------------------
+
+export type OnlineCourseEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  courseName: string;
+  courseKind: string;
+  durationWeeks: string;
+  newOrRerun: string;
+  credits: string;
+  industryExpert: string;
+  startDate: string;
+  endDate: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  permissionLetter: FileMeta[];
+  deanProof: FileMeta[];
+  coursePageProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

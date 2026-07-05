@@ -20,6 +20,7 @@ import {
   Library,
   Megaphone,
   Mic,
+  MonitorPlay,
   Palette,
   PenLine,
   Presentation,
@@ -43,6 +44,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   brush: Brush,
   trophy: Trophy,
   landmark: Landmark,
+  "monitor-play": MonitorPlay,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

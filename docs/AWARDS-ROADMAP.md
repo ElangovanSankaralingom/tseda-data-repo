@@ -124,10 +124,13 @@ profile upload slots generalize.
     optional, workUrl optional; required publicationCopy upload. Feeds
     `creative_publication` 5/unit (auto-tracked); appraisal prints the
     works table. Pink palette + Brush icon.
-12. **online-courses** [PERMISSION] (feeds `tce_online_course` 10/15/20 by
-    weeks + `industry_supported_course` 4/8 by credits) — course development
-    needs prior approval (Dean-signed). kind, durationWeeks or credits
-    (tier), newOrRerun, industryExpert (ISC). Stage 2: Dean-signed proofs.
+12. ~~**online-courses**~~ ✅ SHIPPED 2026-07 [PERMISSION] — one category,
+    `courseKind` routes BOTH metrics: TCE Online Course → durationWeeks
+    tier (4→10, 8→15, 12→20) + newOrRerun; Industry-Supported Course →
+    credits tier (1→4, 2→8) + industryExpert. Conditional fields enforced
+    in the adapter validator ("proper data needed"). Stage 2: permission
+    letter + Dean-signed offering proof (required), Canvas/enrollment
+    proof. Red palette + MonitorPlay icon.
 13. **mentoring-programs** [PERMISSION] (feeds `fast_slow_learners` 5) —
     fast/slow-learner programs (workbook Qn 6–7): event name, targetGroup
     Fast|Slow, date, student list. Stage 2: proofs. Prior-approval flow per

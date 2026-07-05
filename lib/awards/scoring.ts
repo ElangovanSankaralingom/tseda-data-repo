@@ -204,6 +204,49 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count, notes };
   },
 
+  /** TCE online courses (permission flow): duration tier 4w→10 / 8w→15 /
+   *  12w→20, new and rerun both count. */
+  tce_online_course({ entriesByCategory, model }) {
+    const entries = (entriesByCategory.get("online-courses") ?? []).filter(
+      (entry) => String(entry.courseKind ?? "") === "TCE Online Course",
+    );
+    let points = 0;
+    let count = 0;
+    const notes: string[] = [];
+    for (const entry of entries) {
+      const weeks = String(entry.durationWeeks ?? "");
+      const key = weeks === "4" ? "w4" : weeks === "8" ? "w8" : weeks === "12" ? "w12" : "";
+      if (!key) {
+        notes.push("1 not counted: duration not recorded");
+        continue;
+      }
+      points += tierPoints(model, key);
+      count += 1;
+    }
+    return { points, count, notes };
+  },
+
+  /** Industry-supported courses (permission flow): credits tier 1→4 / 2→8. */
+  industry_supported_course({ entriesByCategory, model }) {
+    const entries = (entriesByCategory.get("online-courses") ?? []).filter(
+      (entry) => String(entry.courseKind ?? "") === "Industry-Supported Course",
+    );
+    let points = 0;
+    let count = 0;
+    const notes: string[] = [];
+    for (const entry of entries) {
+      const credits = String(entry.credits ?? "");
+      const key = credits === "1" ? "one_credit" : credits === "2" ? "two_credits" : "";
+      if (!key) {
+        notes.push("1 not counted: credits not recorded");
+        continue;
+      }
+      points += tierPoints(model, key);
+      count += 1;
+    }
+    return { points, count, notes };
+  },
+
   /** Public exhibitions / outreach (permission flow): 2 per event, cap 4. */
   public_exhibition({ entriesByCategory, model }) {
     const entries = entriesByCategory.get("exhibitions-outreach") ?? [];

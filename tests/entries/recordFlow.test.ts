@@ -380,6 +380,37 @@ test("exhibitions-outreach: permission flow; 2 per event capped at 4", async () 
   });
 });
 
+test("online-courses: courseKind routes two tiered metrics (weeks 10/15/20, credits 4/8)", async () => {
+  await withSandbox("perm-online-courses", async () => {
+    const today = nowISTDateISO();
+    const base = {
+      academicYear: YEAR,
+      semesterType: "ODD",
+      startDate: addDaysISO(today, 3),
+      endDate: addDaysISO(today, 60),
+    };
+
+    const tce = await createEntry(OWNER, "online-courses", {
+      ...base, courseName: "Climate Design 101", courseKind: "TCE Online Course",
+      durationWeeks: "8", newOrRerun: "New",
+    } as never);
+    await commitDraft(OWNER, "online-courses", String(tce.id));
+
+    const isc = await createEntry(OWNER, "online-courses", {
+      ...base, courseName: "BIM in Practice", courseKind: "Industry-Supported Course",
+      credits: "2", industryExpert: "L&T Construction",
+    } as never);
+    await commitDraft(OWNER, "online-courses", String(isc.id));
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const byId = new Map(score.metrics.map((m) => [m.id, m]));
+    assert.equal(byId.get("tce_online_course")?.points, 15, "8 weeks → 15");
+    assert.equal(byId.get("tce_online_course")?.count, 1);
+    assert.equal(byId.get("industry_supported_course")?.points, 8, "2 credits → 8");
+    assert.equal(byId.get("industry_supported_course")?.count, 1);
+  });
+});
+
 test("submit: rejects incomplete records; completed submit locks with no timer and wins instantly", async () => {
   await withSandbox("record-submit", async () => {
     // Missing the required firstPage upload → submit must refuse.
