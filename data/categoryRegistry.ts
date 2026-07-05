@@ -1,5 +1,6 @@
 import { booksAndChaptersSchema } from "@/data/schemas/books-and-chapters";
 import { caseStudiesSchema } from "@/data/schemas/case-studies";
+import { conferencesOrganizedSchema } from "@/data/schemas/conferences-organized";
 import { editorialRolesSchema } from "@/data/schemas/editorial-roles";
 import { patentsSchema } from "@/data/schemas/patents";
 import { researchFundingSchema } from "@/data/schemas/research-funding";
@@ -23,6 +24,7 @@ export const CATEGORY_SLUGS = [
   "patents",
   "research-funding",
   "editorial-roles",
+  "conferences-organized",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -38,7 +40,8 @@ export type CategorySummaryKey =
   | "booksAndChapters"
   | "patents"
   | "researchFunding"
-  | "editorialRoles";
+  | "editorialRoles"
+  | "conferencesOrganized";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -422,6 +425,35 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Record editor, board, and reviewer roles with appointment proofs — submitted entries count immediately.",
     entryTitleField: "journalName",
     entryTitleFallback: "Editorial Role",
+  },
+  "conferences-organized": {
+    slug: "conferences-organized",
+    label: "Conferences Organized",
+    schemaKey: "conferences-organized",
+    schema: conferencesOrganizedSchema,
+    summaryKey: "conferencesOrganized",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // PERMISSION FLOW (S7 ruling): organizing needs prior approval — letter,
+    // timer, stage-2 proofs, finalise. Role drives the 50/30/20 award share.
+    group: "academic",
+    icon: "calendar-days",
+    color: {
+      bar: "from-violet-400 to-violet-600",
+      bg: "bg-violet-100",
+      text: "text-violet-600",
+      ring: "hover:ring-violet-200",
+      cta: "text-violet-500",
+      gradient: "from-violet-600 via-violet-700 to-violet-900",
+      accentBg: "bg-violet-500/10",
+      borderTop: "border-t-violet-500",
+      buttonBg: "bg-violet-600",
+      buttonHover: "hover:bg-violet-700",
+      chartHex: "#7C3AED",
+    },
+    subtitle: "Plan and record conferences, seminars, and symposia you organize — permission letter first, proofs after.",
+    entryTitleField: "conferenceTitle",
+    entryTitleFallback: "Conference",
   },
 };
 

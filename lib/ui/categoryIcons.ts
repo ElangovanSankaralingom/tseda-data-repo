@@ -12,6 +12,7 @@ import {
   BadgeCheck,
   Banknote,
   BookOpen,
+  CalendarDays,
   FileSearch,
   FileText,
   Library,
@@ -33,6 +34,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "badge-check": BadgeCheck,
   banknote: Banknote,
   "pen-line": PenLine,
+  "calendar-days": CalendarDays,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

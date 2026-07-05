@@ -400,7 +400,9 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "intl_conference_organized",
     section: "s7",
     label: "International Conferences/Seminars/Symposia Organized",
-    source: "claim",
+    details: "AUTO-TRACKED from conferences-organized entries (level = International); the role field applies the share.",
+    source: "entry",
+    categories: ["conferences-organized"],
     effort: "high",
     pointsModel: { kind: "fixed", points: 20 },
     sharingNote:
@@ -411,7 +413,9 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "natl_conference_organized",
     section: "s7",
     label: "National Conferences/Seminars/Symposia Organized",
-    source: "claim",
+    details: "AUTO-TRACKED from conferences-organized entries (level = National); the role field applies the share.",
+    source: "entry",
+    categories: ["conferences-organized"],
     effort: "medium",
     pointsModel: { kind: "fixed", points: 12 },
     sharingNote:

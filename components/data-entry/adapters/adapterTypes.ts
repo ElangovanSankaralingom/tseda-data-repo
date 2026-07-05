@@ -316,6 +316,48 @@ export type EditorialRoleEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// ConferenceOrganizedEntry (PERMISSION flow — letter, timer, stage-2 proofs)
+// ---------------------------------------------------------------------------
+
+export type ConferenceOrganizedEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  conferenceTitle: string;
+  level: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  collaboratingBodies: string;
+  organizingTeam: FacultyRowValue[];
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  permissionLetter: FileMeta[];
+  eventReport: FileMeta[];
+  committeeProof: FileMeta[];
+  photographs: FileMeta[];
+  numberOfDelegates: number | null;
+  papersPresented: number | null;
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ---------------------------------------------------------------------------
 // FdpAttended
 // ---------------------------------------------------------------------------
 

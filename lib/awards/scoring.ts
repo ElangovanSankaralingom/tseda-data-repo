@@ -93,6 +93,35 @@ function tierPoints(model: AwardPointsModel, tierKey: string): number {
   return model.tiers.find((t) => t.key === tierKey)?.points ?? 0;
 }
 
+/** T'SEDA conference-organizing share by role (50/30/20). */
+const CONFERENCE_ROLE_SHARE: Record<string, number> = {
+  "Coordinator": 0.5,
+  "Co-Coordinator": 0.3,
+  "Committee Member": 0.2,
+};
+
+function conferenceOrganizedShare(
+  entriesByCategory: Map<CategoryKey, EntryRecord[]>,
+  model: AwardPointsModel,
+  level: "National" | "International",
+): { points: number; count: number; notes: string[] } {
+  const fixed = model.kind === "fixed" ? model.points : 0;
+  let points = 0;
+  let count = 0;
+  const notes: string[] = [];
+  for (const entry of entriesByCategory.get("conferences-organized") ?? []) {
+    if (String(entry.level ?? "") !== level) continue;
+    const share = CONFERENCE_ROLE_SHARE[String(entry.role ?? "")];
+    if (share === undefined) {
+      notes.push("1 conference skipped: role not recognised for the point share");
+      continue;
+    }
+    points += Math.round(fixed * share * 10) / 10;
+    count += 1;
+  }
+  return { points: Math.round(points * 10) / 10, count, notes };
+}
+
 // ── Per-metric derivers (explicit — no generic rule evaluation) ────────────
 
 type DeriverInput = {
@@ -181,6 +210,17 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
       count += 1;
     }
     return { points, count, notes: [] };
+  },
+
+  /** Conferences organized (permission flow): fixed points × the T'SEDA
+   *  role share — Coordinator 50%, Co-Coordinator 30%, Committee Member 20%.
+   *  Split by level into the two metrics. */
+  intl_conference_organized({ entriesByCategory, model }) {
+    return conferenceOrganizedShare(entriesByCategory, model, "International");
+  },
+
+  natl_conference_organized({ entriesByCategory, model }) {
+    return conferenceOrganizedShare(entriesByCategory, model, "National");
   },
 
   /** Editorial roles (record flow): fixed points, awarded ONCE per year when

@@ -18,6 +18,7 @@ import { DEFAULT_WORKFLOW_CONFIG } from "../../lib/workflow/workflowConfig.ts";
 import { isEntryActivated, isEntryWon } from "../../lib/streakProgress.ts";
 import { getCategorySchema, getCategoryFlow, CATEGORY_LIST } from "../../data/categoryRegistry.ts";
 import { computeFacultyAwardScore } from "../../lib/awards/scoring.ts";
+import { addDaysISO, nowISTDateISO } from "../../lib/time.ts";
 
 /**
  * RECORD FLOW — the second lifecycle archetype: post-facto achievements.
@@ -77,9 +78,41 @@ test("registry: publications are record-flow categories; originals stay permissi
   assert.equal(getCategoryFlow("patents"), "record");
   assert.equal(getCategoryFlow("research-funding"), "record");
   assert.equal(getCategoryFlow("editorial-roles"), "record");
-  for (const slug of ["workshops", "guest-lectures", "fdp-attended", "fdp-conducted", "case-studies"]) {
+  for (const slug of ["workshops", "guest-lectures", "fdp-attended", "fdp-conducted", "case-studies", "conferences-organized"]) {
     assert.equal(getCategoryFlow(slug), "permission", `${slug} must remain permission-flow`);
   }
+});
+
+test("conferences-organized: permission flow + 50/30/20 role share on the award", async () => {
+  await withSandbox("perm-conferences", async () => {
+    const today = nowISTDateISO();
+    const base = {
+      academicYear: YEAR,
+      semesterType: "EVEN",
+      startDate: addDaysISO(today, 10),
+      endDate: addDaysISO(today, 12),
+    };
+    // International Coordinator → 20 × 50% = 10
+    const intl = await createEntry(OWNER, "conferences-organized", {
+      ...base, conferenceTitle: "Intl Symposium on Climate Design", level: "International", role: "Coordinator",
+    } as never);
+    const committedIntl = await commitDraft(OWNER, "conferences-organized", String(intl.id)) as Record<string, unknown>;
+
+    // PERMISSION flow: timer exists, no record stamp — the original machine.
+    assert.notEqual(committedIntl.editWindowExpiresAt, null, "permission flow keeps its edit window");
+    assert.notEqual(committedIntl.entryFlow, "record");
+
+    // National Co-Coordinator → 12 × 30% = 3.6
+    const natl = await createEntry(OWNER, "conferences-organized", {
+      ...base, conferenceTitle: "National Seminar on Vernacular Housing", level: "National", role: "Co-Coordinator",
+    } as never);
+    await commitDraft(OWNER, "conferences-organized", String(natl.id));
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const byId = new Map(score.metrics.map((m) => [m.id, m]));
+    assert.equal(byId.get("intl_conference_organized")?.points, 10, "20 × 50% coordinator share");
+    assert.equal(byId.get("natl_conference_organized")?.points, 3.6, "12 × 30% co-coordinator share");
+  });
 });
 
 test("conference-publications: submit locks, wins instantly, scores 5/unit", async () => {

@@ -67,11 +67,13 @@
    academicYear, semesterType, kind, projectTitle, agencyOrClient,
    amountInr, sanctionDate, duration, investigators (`collaborates: true`),
    externalInvestigators; proofs: sanction/work order (required), receipts.
-6. **conferences-organized** [PERMISSION] (feeds `intl/natl_conference_organized`,
-   SHARED 50/30/20 by role) — form T15/T16. Prior-approval event: permission
-   PDF → conduct → stage-2 proofs → finalise. level, title, role
-   (coordinator|lead|member — drives share %), team collaborates with
-   per-row role, dates, delegates, papersPresented. Deriver: points × share.
+6. ~~**conferences-organized**~~ ✅ SHIPPED 2026-07 [PERMISSION] — the first
+   NEW permission-flow category (letter → timer → stage-2 proofs →
+   finalise). Role (Coordinator/Co-Coordinator/Committee Member) applies the
+   50/30/20 share to intl 20 / natl 12, both auto-tracked. Team fan-out:
+   each recipient sets THEIR OWN role before generating their letter.
+   Stage 2: signed letter, event report, committee proof (required),
+   photographs, delegates, papersPresented.
 7. ~~**editorial-roles**~~ ✅ SHIPPED 2026-07 [RECORD, individual] — fixed 6
    awarded once per year for Editor / Associate Editor roles (auto-tracked);
    board memberships and reviewer roles recorded with an explanatory note.
