@@ -232,12 +232,13 @@ who/when for DLC audit.
 
 ## Field additions to EXISTING categories (small, anytime)
 
-- `fdp-conducted` + `workshops`: `outsideParticipants` (number, stage 2) —
-  the award rule requires "> 20 OUTSIDE participants"; today the deriver
-  uses `numberOfParticipants` as a proxy and says so in its notes.
-- `guest-lectures`: `speakerAffiliationType` (Industry|Academic) — not
-  points-relevant today (tiers are identical) but matches the Excel sheet
-  and future-proofs the S2 split.
+- ~~`fdp-conducted` + `workshops`: `outsideParticipants`~~ ✅ SHIPPED
+  2026-07 (number, stage 2, optional). The fdp_conducted deriver now
+  PREFERS the dedicated outside count and only falls back to total
+  participants as a proxy — proxied judgments say so in the score notes.
+- ~~`guest-lectures`: `speakerAffiliationType`~~ ✅ SHIPPED 2026-07
+  (Industry|Academic pills, optional stage 1 — hash-safe for existing
+  entries because empty values never enter the PDF hash payload).
 - DONE 2026-07: `semesterType` added to case-studies (export-filter spine).
 
 ## Not award-scoring (by design — keep as records)

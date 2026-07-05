@@ -12,6 +12,7 @@ const fields = [
   { key: "endDate", label: "End Date", kind: "date" },
   { key: "topicOfLecture", label: "Topic of the Lecture", kind: "string" },
   { key: "guestSpeakerName", label: "Guest Speaker Name", kind: "string" },
+  { key: "speakerAffiliationType", label: "Speaker Affiliation", kind: "string", required: false, stage: 1, enumValues: ["Industry", "Academic"] },
   { key: "guestSpeakerDesignation", label: "Guest Speaker Designation", kind: "string" },
   { key: "guestSpeakerOrganisation", label: "Guest Speaker Organisation", kind: "string" },
   { key: "coCoordinators", label: "Co-Coordinators", kind: "array", required: false, collaborates: true },

@@ -73,6 +73,7 @@ export type WorkshopEntry = {
   attendanceSheet: FileMeta[];
   officialPoster: FileMeta[];
   numberOfParticipants: number | null;
+  outsideParticipants: number | null;
   streak: StreakState;
   createdAt: string;
   updatedAt: string;
@@ -441,6 +442,7 @@ export type FdpConducted = {
   geotaggedPhotos: FileMeta[];
   attendanceSheet: FileMeta[];
   numberOfParticipants: number | null;
+  outsideParticipants: number | null;
   officialPoster: FileMeta[];
   streak: StreakState;
   createdAt: string;
@@ -520,6 +522,7 @@ export type GuestLectureEntry = {
   endDate: string;
   topicOfLecture: string;
   guestSpeakerName: string;
+  speakerAffiliationType: string;
   guestSpeakerDesignation: string;
   guestSpeakerOrganisation: string;
   coordinatorName: string;

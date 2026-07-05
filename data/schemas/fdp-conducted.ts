@@ -19,6 +19,8 @@ const fields = [
   { key: "geotaggedPhotos", label: "Geotagged Photos", kind: "array", upload: true, stage: 2 },
   { key: "attendanceSheet", label: "Attendance Sheet", kind: "array", upload: true, stage: 2 },
   { key: "numberOfParticipants", label: "Number of Participants", kind: "number", required: false, stage: 2 },
+  // Award rule wants "> 20 OUTSIDE participants" — the dedicated count.
+  { key: "outsideParticipants", label: "Outside Participants", kind: "number", required: false, stage: 2 },
   { key: "officialPoster", label: "Official Poster", kind: "array", upload: true, stage: 2 },
   { key: "pdfMeta", label: "PDF Metadata", kind: "object", exportable: false },
   { key: "streak", label: "Streak", kind: "object", exportable: false },

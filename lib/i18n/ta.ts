@@ -591,6 +591,8 @@ export const ta: TranslationDict = {
     studentAwardsPageTitle: "மாணவர் விருதுகள்",
     studentAwardsPageSubtitle: "பதிவு எண்ணால் அடையாளப்படுத்தப்பட்ட மாணவர் பரிசுகள் மற்றும் அங்கீகாரங்கள் — நியமிக்கப்பட்ட DLC ஆல் உள்ளிடப்படும்",
     studentAwardsFormTitle: "மாணவர் விருது பதிவு",
+    outsideParticipantsHint: "விருது விதி 20-க்கும் மேற்பட்ட வெளி பங்கேற்பாளர்கள் உள்ள நிகழ்வுகளைக் கணக்கிடுகிறது",
+    speakerAffiliationHint: "தொழில்துறை அல்லது கல்வித்துறை — துறை தரவுத் தாளுடன் பொருந்துகிறது",
   },
   fields: {
     academicYear: "\u0B95\u0BB2\u0BCD\u0BB5\u0BBF \u0B86\u0BA3\u0BCD\u0B9F\u0BC1",
@@ -692,6 +694,8 @@ export const ta: TranslationDict = {
     awardLevel: "\u0BA8\u0BBF\u0BB2\u0BC8",
     awardDate: "\u0BB5\u0BBF\u0BB0\u0BC1\u0BA4\u0BC1 \u0BA4\u0BC7\u0BA4\u0BBF",
     awardProof: "\u0B9A\u0BBE\u0BA9\u0BCD\u0BB1\u0BBF\u0BA4\u0BB4\u0BCD / \u0B86\u0BA4\u0BBE\u0BB0\u0BAE\u0BCD",
+    outsideParticipants: "\u0BB5\u0BC6\u0BB3\u0BBF \u0BAA\u0B99\u0BCD\u0B95\u0BC7\u0BB1\u0BCD\u0BAA\u0BBE\u0BB3\u0BB0\u0BCD\u0B95\u0BB3\u0BCD",
+    speakerAffiliationType: "\u0BAA\u0BC7\u0B9A\u0BCD\u0B9A\u0BBE\u0BB3\u0BB0\u0BCD \u0B9A\u0BBE\u0BB0\u0BCD\u0BAA\u0BC1",
     bookTitle: "\u0BA8\u0BC2\u0BB2\u0BBF\u0BA9\u0BCD \u0BA4\u0BB2\u0BC8\u0BAA\u0BCD\u0BAA\u0BC1",
     chapterTitle: "\u0B85\u0BA4\u0BCD\u0BA4\u0BBF\u0BAF\u0BBE\u0BAF\u0BA4\u0BCD\u0BA4\u0BBF\u0BA9\u0BCD \u0BA4\u0BB2\u0BC8\u0BAA\u0BCD\u0BAA\u0BC1",
     publisher: "\u0BAA\u0BA4\u0BBF\u0BAA\u0BCD\u0BAA\u0B95\u0BAE\u0BCD",
@@ -1622,6 +1626,7 @@ export const ta: TranslationDict = {
     scoreOrRank: "எ.கா., AIR 214 / 328 மதிப்பெண்",
     awardTitle: "எ.கா., சிறந்த ஆய்வறிக்கை விருது",
     awardedBy: "எ.கா., CoA, IIA, NIASA",
+    outsideParticipants: "எ.கா., 24",
   },
   upload: {
     saveFirst: "கோப்புகளைப் பதிவேற்ற முதலில் உள்ளீட்டைச் சேமிக்கவும்",

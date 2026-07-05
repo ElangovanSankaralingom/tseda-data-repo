@@ -53,6 +53,11 @@ const SPONSORED_OPTIONS = [
 // Helpers
 // ---------------------------------------------------------------------------
 
+const AFFILIATION_OPTIONS = [
+  { label: "Industry", value: "Industry" },
+  { label: "Academic", value: "Academic" },
+];
+
 function emptyForm(): GuestLectureEntry {
   return {
     id: uuid(),
@@ -67,6 +72,7 @@ function emptyForm(): GuestLectureEntry {
     endDate: "",
     topicOfLecture: "",
     guestSpeakerName: "",
+    speakerAffiliationType: "",
     guestSpeakerDesignation: "",
     guestSpeakerOrganisation: "",
     coordinatorName: "",
@@ -320,6 +326,15 @@ function GuestLectureFormFields({ ctx }: { ctx: FormFieldsContext<GuestLectureEn
               disabled={coreFieldDisabled("guestSpeakerName")}
               error={submitted && !!errors.guestSpeakerName}
               placeholder={t('placeholder.guestSpeakerName')}
+            />
+          </Field>
+
+          <Field label={fieldLabel('speakerAffiliationType')} hint={t('entry.speakerAffiliationHint')} fieldKey="speakerAffiliationType">
+            <PillSelect
+              value={form.speakerAffiliationType || ""}
+              onChange={(value) => setForm((c) => ({ ...c, speakerAffiliationType: value }))}
+              options={AFFILIATION_OPTIONS}
+              disabled={coreFieldDisabled("speakerAffiliationType")}
             />
           </Field>
 
@@ -630,6 +645,7 @@ export function GuestLecturesPage(props: CategoryAdapterPageProps = {}) {
           endDate: safeString(e.endDate),
           topicOfLecture: safeString(e.topicOfLecture) || safeString(e.eventName),
           guestSpeakerName: safeString(e.guestSpeakerName) || safeString(e.speakerName),
+          speakerAffiliationType: safeString(e.speakerAffiliationType),
           guestSpeakerDesignation: safeString(e.guestSpeakerDesignation),
           guestSpeakerOrganisation: safeString(e.guestSpeakerOrganisation) || safeString(e.organizationName),
           coordinatorName: safeString(e.coordinatorName),

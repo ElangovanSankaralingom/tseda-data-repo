@@ -432,14 +432,19 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count, notes: [] };
   },
 
-  /** FDPs conducted: tier by duration; requires > 20 outside participants. */
+  /** FDPs conducted: tier by duration; requires > 20 OUTSIDE participants.
+   *  Prefers the dedicated `outsideParticipants` field; falls back to total
+   *  `numberOfParticipants` as a proxy (noted honestly). */
   fdp_conducted({ entriesByCategory, model }) {
     let points = 0;
     let count = 0;
     let skippedParticipants = 0;
     let skippedDates = 0;
+    let proxied = 0;
     for (const entry of entriesByCategory.get("fdp-conducted") ?? []) {
-      const participants = Number(entry.numberOfParticipants ?? Number.NaN);
+      const outside = Number(entry.outsideParticipants ?? Number.NaN);
+      const total = Number(entry.numberOfParticipants ?? Number.NaN);
+      const participants = Number.isFinite(outside) ? outside : total;
       if (!Number.isFinite(participants) || participants <= 20) {
         skippedParticipants += 1;
         continue;
@@ -449,10 +454,14 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
         skippedDates += 1;
         continue;
       }
+      if (!Number.isFinite(outside)) proxied += 1;
       points += tierPoints(model, days <= 5 ? "short" : "long");
       count += 1;
     }
     const notes: string[] = [];
+    if (proxied > 0) {
+      notes.push(`${proxied} judged on TOTAL participants (outside count not recorded — rule wants > 20 outside)`);
+    }
     if (skippedParticipants > 0) {
       notes.push(`${skippedParticipants} not counted: participants not recorded as > 20`);
     }

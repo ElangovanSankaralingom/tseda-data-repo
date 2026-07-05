@@ -83,6 +83,7 @@ function emptyForm(): WorkshopEntry {
     attendanceSheet: [],
     officialPoster: [],
     numberOfParticipants: null,
+    outsideParticipants: null,
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
     updatedAt: "",
@@ -483,6 +484,17 @@ function WorkshopFormFields({ ctx }: { ctx: FormFieldsContext<WorkshopEntry> }) 
                   onChange={(e) => setForm((c) => ({ ...c, numberOfParticipants: e.target.value === "" ? null : Number(e.target.value) }))}
                   disabled={controlsDisabled}
                   placeholder={t('placeholder.numberOfParticipants')}
+                />
+              </Field>
+
+              <Field label={fieldLabel('outsideParticipants')} hint={t('entry.outsideParticipantsHint')} fieldKey="outsideParticipants">
+                <TextInput
+                  type="number"
+                  min="0"
+                  value={form.outsideParticipants === null ? "" : String(form.outsideParticipants)}
+                  onChange={(e) => setForm((c) => ({ ...c, outsideParticipants: e.target.value === "" ? null : Number(e.target.value) }))}
+                  disabled={controlsDisabled}
+                  placeholder={t('placeholder.outsideParticipants')}
                 />
               </Field>
 

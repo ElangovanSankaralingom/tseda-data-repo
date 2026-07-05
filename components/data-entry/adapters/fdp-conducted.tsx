@@ -79,6 +79,7 @@ function emptyForm(): FdpConducted {
     geotaggedPhotos: [],
     attendanceSheet: [],
     numberOfParticipants: null,
+    outsideParticipants: null,
     officialPoster: [],
     streak: { activatedAtISO: null, dueAtISO: null, completedAtISO: null, windowDays: 5 },
     createdAt: "",
@@ -485,6 +486,17 @@ function FdpConductedFormFields({ ctx }: { ctx: FormFieldsContext<FdpConducted> 
                 />
               </Field>
 
+              <Field label={fieldLabel('outsideParticipants')} hint={t('entry.outsideParticipantsHint')} fieldKey="outsideParticipants">
+                <TextInput
+                  type="number"
+                  min="0"
+                  value={form.outsideParticipants === null ? "" : String(form.outsideParticipants)}
+                  onChange={(e) => setForm((c) => ({ ...c, outsideParticipants: e.target.value === "" ? null : Number(e.target.value) }))}
+                  disabled={controlsDisabled}
+                  placeholder={t('placeholder.outsideParticipants')}
+                />
+              </Field>
+
               <UploadFieldMulti
                 key={`${form.id}-officialPoster`}
                 title={fieldLabel('officialPoster')}
@@ -555,6 +567,7 @@ export function FdpConductedPage(props: CategoryAdapterPageProps = {}) {
           fundingAgency: safeString(e.fundingAgency),
           fundingAmount: safeNumber(e.fundingAmount),
           numberOfParticipants: safeNumber(e.numberOfParticipants),
+          outsideParticipants: safeNumber(e.outsideParticipants),
           permissionLetter: ensureFileMetaArray(e.permissionLetter),
           geotaggedPhotos: ensureFileMetaArray(e.geotaggedPhotos),
           attendanceSheet: ensureFileMetaArray(e.attendanceSheet),

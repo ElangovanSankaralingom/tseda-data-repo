@@ -589,6 +589,8 @@ export const en = {
     studentAwardsPageTitle: "Student Awards",
     studentAwardsPageSubtitle: "Student prizes and recognitions keyed by register number — entered by the assigned DLC",
     studentAwardsFormTitle: "Student Award Record",
+    outsideParticipantsHint: "The award rule counts events with more than 20 OUTSIDE participants",
+    speakerAffiliationHint: "Industry or academic — matches the department data sheet",
   },
   fields: {
     academicYear: "Academic Year",
@@ -690,6 +692,8 @@ export const en = {
     awardLevel: "Level",
     awardDate: "Award Date",
     awardProof: "Certificate / Proof",
+    outsideParticipants: "Outside Participants",
+    speakerAffiliationType: "Speaker Affiliation",
     bookTitle: "Title of the Book",
     chapterTitle: "Title of the Chapter",
     publisher: "Publisher",
@@ -1636,6 +1640,7 @@ export const en = {
     scoreOrRank: "e.g., AIR 214 / 328 score",
     awardTitle: "e.g., Best Thesis Award",
     awardedBy: "e.g., CoA, IIA, NIASA",
+    outsideParticipants: "e.g., 24",
   },
   upload: {
     saveFirst: "Save the entry first to upload files",
