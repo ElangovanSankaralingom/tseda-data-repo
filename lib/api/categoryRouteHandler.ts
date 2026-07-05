@@ -16,7 +16,8 @@ import {
   requestEdit,
   updateEntry,
 } from "@/lib/entries/lifecycle";
-import { isValidCategorySlug, getCategorySchema, type CategorySlug } from "@/data/categoryRegistry";
+import { isValidCategorySlug, getCategorySchema, getCategoryEntryScope, type CategorySlug } from "@/data/categoryRegistry";
+import { canCoordinatorEnterData } from "@/lib/admin/coordinators";
 import { recordEntryMilestones } from "@/lib/feed/feedEvents";
 import { entryToApiResponse, entriesToApiResponse } from "@/lib/entries/toApiResponse";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
@@ -64,6 +65,21 @@ function validateCategory(key: string): CategorySlug {
   }
   return key;
 }
+
+/**
+ * Entry-scope guard (B2): dlc-scoped categories are department records —
+ * only coordinators holding the `enterData` power for the category may
+ * mutate. Faculty-scoped categories pass through untouched. Reads are not
+ * gated here: users only ever read their OWN tree, which is empty for
+ * everyone but the assigned DLC.
+ */
+function canMutateInScope(email: string, category: CategorySlug): boolean {
+  if (getCategoryEntryScope(category) !== "dlc") return true;
+  return canCoordinatorEnterData(email, category);
+}
+
+const SCOPE_FORBIDDEN_MESSAGE =
+  "This category holds department records — only the assigned entry-DLC can enter data.";
 
 function entryResponse(persisted: unknown, category: CategorySlug) {
   return apiSuccess(entryToApiResponse(persisted as Record<string, unknown>, category));
@@ -184,6 +200,11 @@ export async function handleCategoryPost(
         return finishResponse(apiError("Invalid category", "VALIDATION_ERROR"), "POST", path, startedAt);
       }
 
+      // Entry-scope guard (B2): dlc categories mutate only for the assigned DLC.
+      if (!canMutateInScope(auth.email, category)) {
+        return finishResponse(apiError(SCOPE_FORBIDDEN_MESSAGE, "FORBIDDEN"), "POST", path, startedAt);
+      }
+
       // Rate limit
       enforceRateLimitForRequest({
         request,
@@ -289,6 +310,11 @@ export async function handleCategoryPatch(
         category = validateCategory(categoryKey);
       } catch {
         return finishResponse(apiError("Invalid category", "VALIDATION_ERROR"), "PATCH", path, startedAt);
+      }
+
+      // Entry-scope guard (B2): dlc categories mutate only for the assigned DLC.
+      if (!canMutateInScope(auth.email, category)) {
+        return finishResponse(apiError(SCOPE_FORBIDDEN_MESSAGE, "FORBIDDEN"), "PATCH", path, startedAt);
       }
 
       // Rate limit
@@ -436,6 +462,11 @@ export async function handleCategoryDelete(
         category = validateCategory(categoryKey);
       } catch {
         return finishResponse(apiError("Invalid category", "VALIDATION_ERROR"), "DELETE", path, startedAt);
+      }
+
+      // Entry-scope guard (B2): dlc categories mutate only for the assigned DLC.
+      if (!canMutateInScope(auth.email, category)) {
+        return finishResponse(apiError(SCOPE_FORBIDDEN_MESSAGE, "FORBIDDEN"), "DELETE", path, startedAt);
       }
 
       // Parse body

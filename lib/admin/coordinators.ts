@@ -27,6 +27,9 @@ export type CoordinatorPowers = {
   approveEdits: boolean;
   approveDeletes: boolean;
   export: boolean;
+  /** Entry-DLC (Elan's B2 ruling): may CREATE/EDIT entries in dlc-scoped
+   *  categories (student data keyed by reg no — "one faculty enters"). */
+  enterData: boolean;
 };
 
 export type CoordinatorType = {
@@ -53,6 +56,7 @@ export type CoordinatorScope = {
   approveEdits: boolean;
   approveDeletes: boolean;
   export: boolean;
+  enterData: boolean;
 };
 
 const COORDINATORS_CONFIG_VERSION = 1 as const;
@@ -85,6 +89,7 @@ function normalizePowers(value: unknown): CoordinatorPowers {
     approveEdits: record.approveEdits === true,
     approveDeletes: record.approveDeletes === true,
     export: record.export === true,
+    enterData: record.enterData === true,
   };
 }
 
@@ -262,14 +267,16 @@ export function getCoordinatorScope(email: string): CoordinatorScope {
   let approveEdits = false;
   let approveDeletes = false;
   let exportPower = false;
+  let enterData = false;
   for (const type of config.types) {
     if (!typeIds.has(type.id)) continue;
     type.categories.forEach((c) => categories.add(c));
     approveEdits = approveEdits || type.powers.approveEdits;
     approveDeletes = approveDeletes || type.powers.approveDeletes;
     exportPower = exportPower || type.powers.export;
+    enterData = enterData || type.powers.enterData;
   }
-  return { categories: Array.from(categories), approveEdits, approveDeletes, export: exportPower };
+  return { categories: Array.from(categories), approveEdits, approveDeletes, export: exportPower, enterData };
 }
 
 /**
@@ -297,6 +304,24 @@ export function canCoordinatorApproveDelete(email: string, category: string): bo
 
 export function canCoordinatorExport(email: string, category: string): boolean {
   return hasPowerInCategory(email, category, "export");
+}
+
+/** Entry-DLC check (B2): may this person enter data in `category`? Per-type,
+ *  per-power — an enterData power is bound to its own type's categories. */
+export function canCoordinatorEnterData(email: string, category: string): boolean {
+  return hasPowerInCategory(email, category, "enterData");
+}
+
+/** The dlc-scoped categories this person may enter (for home-page gating). */
+export function listEntryDlcCategories(email: string): CategoryKey[] {
+  const config = getCoordinatorsConfig();
+  const typeIds = new Set(config.assignments.find((a) => a.email === normalizeEmail(email))?.typeIds ?? []);
+  const categories = new Set<CategoryKey>();
+  for (const type of config.types) {
+    if (!typeIds.has(type.id) || !type.powers.enterData) continue;
+    type.categories.forEach((c) => categories.add(c));
+  }
+  return Array.from(categories);
 }
 
 /**

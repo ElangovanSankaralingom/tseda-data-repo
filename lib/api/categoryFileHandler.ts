@@ -23,7 +23,8 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { facultyCanMutate } from "@/lib/admin/facultyRegistry";
-import { getCategoryFlow, getCategorySchema, isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry";
+import { getCategoryFlow, getCategoryEntryScope, getCategorySchema, isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry";
+import { canCoordinatorEnterData } from "@/lib/admin/coordinators";
 import { readCategoryEntryById, upsertCategoryEntry } from "@/lib/dataStore";
 import { normalizeError } from "@/lib/errors";
 import { isEntryEditable } from "@/lib/entries/lock";
@@ -163,6 +164,14 @@ export async function handleCategoryFilePost(request: Request, category: Categor
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
   }
 
+  // Entry-scope guard (B2): dlc categories mutate only for the assigned DLC.
+  if (getCategoryEntryScope(category) === "dlc" && !canCoordinatorEnterData(email, category)) {
+    return NextResponse.json(
+      { error: "This category holds department records — only the assigned entry-DLC can enter data." },
+      { status: 403 },
+    );
+  }
+
   const config = getUploadSlotConfig(category);
 
   try {
@@ -274,6 +283,14 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
 
   if (!isValidCategorySlug(category)) {
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+  }
+
+  // Entry-scope guard (B2): dlc categories mutate only for the assigned DLC.
+  if (getCategoryEntryScope(category) === "dlc" && !canCoordinatorEnterData(email, category)) {
+    return NextResponse.json(
+      { error: "This category holds department records — only the assigned entry-DLC can enter data." },
+      { status: 403 },
+    );
   }
 
   const config = getUploadSlotConfig(category);

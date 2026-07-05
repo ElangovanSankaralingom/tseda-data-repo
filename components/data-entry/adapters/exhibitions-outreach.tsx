@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Landmark, Clock, Unlock, CloudSun, Sun, MapPin } from "lucide-react";
+import { Calendar, Landmark, Clock, Unlock, CloudSun, Sun } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import TextInput from "@/components/controls/TextInput";
 import Field from "@/components/data-entry/Field";

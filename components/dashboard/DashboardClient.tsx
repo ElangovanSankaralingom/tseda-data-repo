@@ -67,6 +67,7 @@ const GROUP_LABEL_KEYS: Record<CategoryGroup, TranslationKey> = {
   professional: "dashboard.groupProfessionalDev",
   academic: "dashboard.groupAcademicActivities",
   research: "dashboard.groupResearch",
+  department: "dashboard.groupDepartment",
 };
 
 function slugsOfGroup(group: CategoryGroup): string[] {

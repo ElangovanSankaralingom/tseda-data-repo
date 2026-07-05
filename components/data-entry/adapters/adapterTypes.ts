@@ -773,3 +773,41 @@ export type MentoringProgramEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// StudentPlacementEntry (DLC-scoped department record — B2)
+// ---------------------------------------------------------------------------
+
+export type StudentPlacementEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  regNo: string;
+  studentName: string;
+  programme: string;
+  companyName: string;
+  roleOffered: string;
+  packageLpa: number | null;
+  offerDate: string;
+  placementType: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  offerProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

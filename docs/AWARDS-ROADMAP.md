@@ -198,16 +198,25 @@ who/when for DLC audit.
   (journals, chapters, conferences, grants, consultancy, memberships) via
   the export system's category+field filters (academicYear + semesterType
   spine required everywhere for exactly this reason).
-- **B2 student data → DLC-ASSIGNED categories (Elan, 2026-07):** placements,
-  higher studies, competitive exams, learners programs, student awards are
-  keyed by STUDENT reg no — "one faculty has to enter those fields". Design:
-  CategoryConfig gains `entryScope: "faculty" | "dlc"` — a dlc-scoped
-  category is VISIBLE/ENTERABLE only to the faculty assigned to it (reuse
-  the coordinators pattern: per-category entry-DLC assignment managed by the
-  master admin, same as approval coordinators). DLC-scoped entries are
-  department records: record flow, no streaks, no award points, full export
-  support. Home page shows these under their own club only to the assigned
-  DLC.
+- ~~**B2 student data → DLC-ASSIGNED categories**~~ ✅ MACHINERY + FIRST
+  CATEGORY SHIPPED 2026-07 — `entryScope: "faculty" | "dlc"` on
+  CategoryConfig; entry-DLC is a FOURTH coordinator power (`enterData`) on
+  the existing types/assignment system (master admin manages it on
+  /admin/coordinators — new "Enter department data" toggle), so the power is
+  per-type-per-category like every other. Enforcement: mutations 403 in
+  categoryRouteHandler + categoryFileHandler; category pages redirect
+  non-assigned users (entryScopeGate); the dashboard omits dlc categories
+  for everyone else ("Department Records" club appears only for the DLC).
+  Engine: dlc commits are NEVER streakEligible → no streaks, no feed, no
+  Celebration Wall; no award metric reads a dlc category. First category:
+  **student-placements** (regNo, studentName, programme, company, role,
+  packageLpa, offerDate, placementType, optional offer proof — spine
+  included for department exports). Remaining student-data sheets (higher
+  studies, competitive exams, student awards) now follow the same
+  ~30-minute template with `entryScope: "dlc"`. NOTE: entries live under
+  the entering DLC's user tree — if the DLC changes, old records remain
+  with the old account (exports aggregate across users, so reporting is
+  unaffected).
 - **B3 course records → merge into existing categories where they overlap**
   (Elan's example: the case-studies category already covers the site-visit
   sheet). Course plans/feedback/BoS stay admin/DLC territory; merge, don't

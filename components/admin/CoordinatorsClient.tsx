@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Network, Plus, Trash2, X, ShieldCheck, Download } from "lucide-react";
+import { Network, Plus, Trash2, X, ShieldCheck, Download, ClipboardPen } from "lucide-react";
 import { CATEGORY_LIST } from "@/data/categoryRegistry";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { adminCoordinators } from "@/lib/entryNavigation";
@@ -41,6 +41,7 @@ export default function CoordinatorsClient({
   const [approveEdits, setApproveEdits] = useState(true);
   const [approveDeletes, setApproveDeletes] = useState(false);
   const [exportPower, setExportPower] = useState(false);
+  const [enterData, setEnterData] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const nameByEmail = useMemo(() => {
@@ -89,7 +90,7 @@ export default function CoordinatorsClient({
       type: {
         label: label.trim(),
         categories: Array.from(cats) as CoordinatorType["categories"],
-        powers: { approveEdits, approveDeletes, export: exportPower },
+        powers: { approveEdits, approveDeletes, export: exportPower, enterData },
       },
     });
     if (ok) {
@@ -98,8 +99,9 @@ export default function CoordinatorsClient({
       setApproveEdits(true);
       setApproveDeletes(false);
       setExportPower(false);
+      setEnterData(false);
     }
-  }, [label, cats, approveEdits, approveDeletes, exportPower, post, t]);
+  }, [label, cats, approveEdits, approveDeletes, exportPower, enterData, post, t]);
 
   const toggleCat = (key: string) => {
     setCats((prev) => {
@@ -182,6 +184,7 @@ export default function CoordinatorsClient({
           <PowerToggle on={approveEdits} onClick={() => setApproveEdits((v) => !v)} icon={ShieldCheck} label={t("coordinators.powerApproveEdits")} />
           <PowerToggle on={approveDeletes} onClick={() => setApproveDeletes((v) => !v)} icon={Trash2} label={t("coordinators.powerApproveDeletes")} />
           <PowerToggle on={exportPower} onClick={() => setExportPower((v) => !v)} icon={Download} label={t("coordinators.powerExport")} />
+          <PowerToggle on={enterData} onClick={() => setEnterData((v) => !v)} icon={ClipboardPen} label={t("coordinators.powerEnterData")} />
         </div>
 
         <button
@@ -227,6 +230,7 @@ export default function CoordinatorsClient({
                           {type.powers.approveEdits && <Badge label={t("coordinators.powerApproveEdits")} />}
                           {type.powers.approveDeletes && <Badge label={t("coordinators.powerApproveDeletes")} />}
                           {type.powers.export && <Badge label={t("coordinators.powerExport")} />}
+                          {type.powers.enterData && <Badge label={t("coordinators.powerEnterData")} />}
                         </div>
                       </div>
                     </div>

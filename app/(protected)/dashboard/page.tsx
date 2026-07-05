@@ -6,6 +6,8 @@ import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
 import { canAccessAdminConsole, isMasterAdmin } from "@/lib/admin/roles";
 import { authOptions } from "@/lib/auth";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { getCategoryEntryScope } from "@/data/categoryRegistry";
+import { canCoordinatorEnterData } from "@/lib/admin/coordinators";
 import { getDashboardSummary } from "@/lib/entries/summary";
 import { inUserUniverse } from "@/lib/demo/demoAware";
 import { normalizeEmail } from "@/lib/facultyDirectory";
@@ -55,8 +57,12 @@ export default async function DashboardPage() {
   const hour = new Date().getHours();
   const greetingKey = hour < 12 ? "greetingMorning" : hour < 17 ? "greetingAfternoon" : "greetingEvening";
 
-  // Build per-category summaries for the bento grid
-  const categories = CATEGORY_KEYS.map((slug) => {
+  // Build per-category summaries for the bento grid. DLC-scoped categories
+  // (B2) are department records — visible only to the assigned entry-DLC.
+  const visibleKeys = CATEGORY_KEYS.filter(
+    (slug) => getCategoryEntryScope(slug) !== "dlc" || canCoordinatorEnterData(email, slug),
+  );
+  const categories = visibleKeys.map((slug) => {
     const cat = summary.byCategory[slug];
     return {
       slug,

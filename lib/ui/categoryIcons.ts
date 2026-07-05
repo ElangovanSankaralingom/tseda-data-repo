@@ -16,6 +16,7 @@ import {
   CalendarDays,
   FileSearch,
   FileText,
+  GraduationCap,
   Landmark,
   Library,
   Megaphone,
@@ -47,6 +48,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   landmark: Landmark,
   "monitor-play": MonitorPlay,
   "users-round": UsersRound,
+  "graduation-cap": GraduationCap,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

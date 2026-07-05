@@ -7,7 +7,7 @@ import { withUserDataLock } from "@/lib/data/locks";
 import { buildEvent, inferWalUpdateAction } from "@/lib/data/wal";
 import { AppError } from "@/lib/errors";
 import { computeEditWindowExpiry, isEntryEditable, normalizeEntryStatus } from "@/lib/entries/workflow";
-import { getCategoryFlow } from "@/data/categoryRegistry";
+import { getCategoryFlow, getCategoryEntryScope } from "@/data/categoryRegistry";
 import { computeCompletionState } from "@/lib/workflow/completionChecker";
 import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
@@ -120,7 +120,11 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       // Streaks off → no new eligibility (existing counts are preserved elsewhere).
       // Record flow: completed work is ALWAYS eligible — the submission itself
       // is the streak moment; past dates are the norm, not a disqualifier.
-      const streakEligible = streaksEnabled && (flow === "record" || checkStreakEligibility(existing));
+      // DLC-scoped categories (B2): department records — NEVER streak
+      // eligible, which also keeps them out of the feed (isEntryWon gates on
+      // eligibility) and the Celebration Wall.
+      const dlcScoped = getCategoryEntryScope(category) === "dlc";
+      const streakEligible = !dlcScoped && streaksEnabled && (flow === "record" || checkStreakEligibility(existing));
       // Record flow has no edit window — the entry locks on submit.
       const editWindowExpiresAt = flow === "record"
         ? null

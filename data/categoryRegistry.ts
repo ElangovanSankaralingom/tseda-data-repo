@@ -14,6 +14,7 @@ import { designCompetitionsSchema } from "@/data/schemas/design-competitions";
 import { exhibitionsOutreachSchema } from "@/data/schemas/exhibitions-outreach";
 import { mentoringProgramsSchema } from "@/data/schemas/mentoring-programs";
 import { onlineCoursesSchema } from "@/data/schemas/online-courses";
+import { studentPlacementsSchema } from "@/data/schemas/student-placements";
 import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
@@ -37,6 +38,7 @@ export const CATEGORY_SLUGS = [
   "exhibitions-outreach",
   "online-courses",
   "mentoring-programs",
+  "student-placements",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -59,7 +61,8 @@ export type CategorySummaryKey =
   | "designCompetitions"
   | "exhibitionsOutreach"
   | "onlineCourses"
-  | "mentoringPrograms";
+  | "mentoringPrograms"
+  | "studentPlacements";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -107,8 +110,19 @@ export type CategoryFlow = "permission" | "record";
  * Display names live in i18n as `dashboard.group*` keys (see GROUP_LABEL_KEYS
  * in DashboardClient).
  */
-export const CATEGORY_GROUP_ORDER = ["professional", "academic", "research"] as const;
+export const CATEGORY_GROUP_ORDER = ["professional", "academic", "research", "department"] as const;
 export type CategoryGroup = (typeof CATEGORY_GROUP_ORDER)[number];
+
+/**
+ * Entry scope (Elan's B2 ruling, 2026-07): who may CREATE/EDIT entries.
+ *  - "faculty" (default): every faculty member enters their own activities.
+ *  - "dlc": department records keyed by STUDENT reg no — visible and
+ *    enterable ONLY by coordinators holding the `enterData` power for the
+ *    category (assigned by the master admin on /admin/coordinators). DLC
+ *    entries are record flow with NO streaks, NO feed events, NO award
+ *    points — pure department data with full export support.
+ */
+export type CategoryEntryScope = "faculty" | "dlc";
 
 export type CategoryConfig = {
   slug: CategorySlug;
@@ -120,6 +134,8 @@ export type CategoryConfig = {
   supportsConfirmation: boolean;
   /** Lifecycle archetype; absent = "permission" (all original categories). */
   flow?: CategoryFlow;
+  /** Who enters data; absent = "faculty" (self-entered activities). */
+  entryScope?: CategoryEntryScope;
   /** Home-page club this category belongs to (tab bar grouping). */
   group: CategoryGroup;
   icon: string;
@@ -651,6 +667,37 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     entryTitleField: "programName",
     entryTitleFallback: "Mentoring Program",
   },
+  "student-placements": {
+    slug: "student-placements",
+    label: "Student Placements",
+    schemaKey: "student-placements",
+    schema: studentPlacementsSchema,
+    summaryKey: "studentPlacements",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // DLC-SCOPED department records (B2 ruling): record flow, entered only
+    // by coordinators holding the enterData power; no streaks/feed/points.
+    flow: "record",
+    entryScope: "dlc",
+    group: "department",
+    icon: "graduation-cap",
+    color: {
+      bar: "from-zinc-400 to-zinc-600",
+      bg: "bg-zinc-100",
+      text: "text-zinc-600",
+      ring: "hover:ring-zinc-200",
+      cta: "text-zinc-500",
+      gradient: "from-zinc-600 via-zinc-700 to-zinc-900",
+      accentBg: "bg-zinc-500/10",
+      borderTop: "border-t-zinc-500",
+      buttonBg: "bg-zinc-600",
+      buttonHover: "hover:bg-zinc-700",
+      chartHex: "#52525B",
+    },
+    subtitle: "Department placement records keyed by register number — entered by the assigned placement DLC.",
+    entryTitleField: "studentName",
+    entryTitleFallback: "Placement Record",
+  },
 };
 
 export const CATEGORY_LIST = CATEGORY_SLUGS as readonly CategorySlug[];
@@ -676,6 +723,15 @@ export function getCategorySchema(slug: string): EntrySchema {
  *  gating, and the entry UI. */
 export function getCategoryFlow(slug: string): CategoryFlow {
   return getCategoryConfig(slug).flow ?? "permission";
+}
+
+export function getCategoryEntryScope(slug: string): CategoryEntryScope {
+  return getCategoryConfig(slug).entryScope ?? "faculty";
+}
+
+/** Slugs of dlc-scoped categories (home-page gating + route guards). */
+export function listDlcScopedSlugs(): CategorySlug[] {
+  return CATEGORY_LIST.filter((slug) => getCategoryEntryScope(slug) === "dlc");
 }
 
 export function getCategoryLabel(slug: string): string {
