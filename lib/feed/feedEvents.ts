@@ -3,7 +3,7 @@ import "server-only";
 import { getCategorySchema } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
 import { appendFeedEvent, type FeedEventType } from "@/lib/feed/feedStore";
-import { isEntryActivated, isEntryWon, type StreakProgressEntryLike } from "@/lib/streakProgress";
+import { getStreakTier, isEntryActivated, isEntryWon, type StreakProgressEntryLike } from "@/lib/streakProgress";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { addNotification } from "@/lib/confirmations/notificationStore";
 import { resolveFacultyName } from "@/lib/admin/facultyRegistry";
@@ -119,6 +119,7 @@ export function recordEntryMilestones(
           type: "streak_won",
           actorEmail,
           categoryKey: category,
+          tier: getStreakTier(candidate),
           ...(withNames.length ? { withNames } : {}),
         }),
         "feed.streak_won",

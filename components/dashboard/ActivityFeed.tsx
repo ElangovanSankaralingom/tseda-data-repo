@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Flame, Trophy, Award, ThumbsUp, PartyPopper, Hand, Activity, X } from "lucide-react";
+import { Flame, Trophy, Medal, Award, ThumbsUp, PartyPopper, Hand, Activity, X } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { TranslationKey } from "@/lib/i18n";
@@ -24,6 +24,7 @@ type FeedEvent = {
   categoryKey: string | null;
   milestone: number | null;
   withNames: string[];
+  tier: "gold" | "silver" | null;
   createdAt: string;
   reactions: Record<string, number>;
   myReactions: Reaction[];
@@ -135,13 +136,17 @@ const MilestoneCard = React.memo(function MilestoneCard({
 
   const isWon = event.type === "streak_won";
   const isMilestone = event.type === "milestone";
-  const palette = isWon ? "amber" : isMilestone ? "indigo" : "orange";
-  const accentFg = `var(--color-palette-${palette}-fg)`;
-  const accentBg = `var(--color-palette-${palette}-bg)`;
-  const accentBorder = `var(--color-palette-${palette}-border)`;
-  const TypeIcon = isWon ? Trophy : isMilestone ? Award : Flame;
+  // Streak tiers (Elan, 2026-07): GOLD (permission flow) glows yellow;
+  // SILVER (record flow) takes a neutral metallic treatment via tokens.
+  const tier = isWon ? event.tier : null;
+  const isSilver = tier === "silver";
+  const palette = isWon ? (isSilver ? null : tier === "gold" ? "yellow" : "amber") : isMilestone ? "indigo" : "orange";
+  const accentFg = palette ? `var(--color-palette-${palette}-fg)` : "var(--color-text-secondary)";
+  const accentBg = palette ? `var(--color-palette-${palette}-bg)` : "var(--color-surface-inset)";
+  const accentBorder = palette ? `var(--color-palette-${palette}-border)` : "var(--color-border-strong)";
+  const TypeIcon = isWon ? (isSilver ? Medal : Trophy) : isMilestone ? Award : Flame;
   const baseMessage = isWon
-    ? t("feed.wonStreak")
+    ? (tier === "gold" ? t("feed.wonGoldStreak") : isSilver ? t("feed.wonSilverStreak") : t("feed.wonStreak"))
     : isMilestone
       ? t("feed.milestoneReached").replace("{n}", String(event.milestone ?? 0))
       : t("feed.startedStreak");

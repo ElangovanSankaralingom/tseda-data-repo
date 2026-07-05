@@ -63,6 +63,8 @@ export type UserIndex = {
     ruleVersion: number;
     streakActivatedCount: number;
     streakWinsCount: number;
+    streakGoldWinsCount: number;
+    streakSilverWinsCount: number;
     byCategory: UserIndexStreakByCategory;
     activeEntries: UserIndexActiveEntry[];
     lastComputedAt: string;
@@ -148,6 +150,8 @@ export function createEmptyUserIndex(userEmail: string, nowISO = new Date().toIS
       ruleVersion: USER_INDEX_STREAK_RULE_VERSION,
       streakActivatedCount: 0,
       streakWinsCount: 0,
+    streakGoldWinsCount: 0,
+    streakSilverWinsCount: 0,
       byCategory: emptyStreakByCategory(),
       activeEntries: [],
       lastComputedAt: nowISO,
@@ -224,6 +228,8 @@ function buildStreakSnapshotFromInputs(
     ruleVersion: USER_INDEX_STREAK_RULE_VERSION,
     streakActivatedCount: summary.streakActivatedCount,
     streakWinsCount: summary.streakWinsCount,
+    streakGoldWinsCount: summary.streakGoldWinsCount,
+    streakSilverWinsCount: summary.streakSilverWinsCount,
     byCategory: CATEGORY_KEYS.reduce<UserIndexStreakByCategory>((next, category) => {
       next[category] = {
         activated: summary.byCategory[category].activated,

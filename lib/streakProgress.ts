@@ -77,6 +77,10 @@ export type StreakProgressAggregateEntry = StreakProgressEntryLike & {
 export type StreakProgressAggregate = {
   activatedCount: number;
   winsCount: number;
+  /** GOLD wins — permission-flow entries (plan → letter → execute → finalise). */
+  goldWinsCount: number;
+  /** SILVER wins — record-flow entries (post-facto data + proofs). */
+  silverWinsCount: number;
   eligibleCount: number;
   byCategory: StreakProgressAggregateByCategory;
   activatedEntries: StreakActiveEntry[];
@@ -86,10 +90,24 @@ export type CanonicalStreakSnapshot = {
   ruleVersion: number;
   streakActivatedCount: number;
   streakWinsCount: number;
+  streakGoldWinsCount: number;
+  streakSilverWinsCount: number;
   streakEligibleCount: number;
   byCategory: StreakProgressAggregateByCategory;
   activeEntries: StreakActiveEntry[];
 };
+
+/**
+ * STREAK TIERS (Elan, 2026-07): GOLD for permission-flow wins — they carry
+ * the extra weight of prior approval, execution, and finalisation. SILVER
+ * for record-flow ("data alone") wins. Derived from the entry's own flow
+ * stamp — the single source of truth for tier everywhere (dashboard, feed).
+ */
+export type StreakTier = "gold" | "silver";
+
+export function getStreakTier(entry: StreakProgressEntryLike): StreakTier {
+  return isRecordFlowEntry(entry) ? "silver" : "gold";
+}
 
 function toOptionalISO(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -303,6 +321,8 @@ export function createEmptyStreakProgressAggregate(): StreakProgressAggregate {
   return {
     activatedCount: 0,
     winsCount: 0,
+    goldWinsCount: 0,
+    silverWinsCount: 0,
     eligibleCount: 0,
     byCategory: emptyAggregateByCategory(),
     activatedEntries: [],
@@ -339,6 +359,22 @@ export function computeStreakProgressAggregate(
 
     summary.eligibleCount += 1;
 
+    // RECORD FLOW: submission IS the win (SILVER tier) — no PDF and no
+    // activation phase exist. Without this branch, record wins showed on
+    // the Celebration Wall (isEntryWon has its own record branch) but were
+    // invisible in the dashboard counters (latent bug, fixed 2026-07 with
+    // the gold/silver tiers).
+    if (isRecordFlowEntry(entry)) {
+      // Mirror isEntryWon's record branch: only a clean GENERATED record is
+      // a win (pending edit/delete requests pause the celebration).
+      if (status === "GENERATED") {
+        summary.winsCount += 1;
+        summary.silverWinsCount += 1;
+        summary.byCategory[categoryKey].wins += 1;
+      }
+      continue;
+    }
+
     // Must have generated a PDF to be in either counter
     if (!hasPdfGenerated(entry)) continue;
 
@@ -353,6 +389,7 @@ export function computeStreakProgressAggregate(
 
       if (complete && validPdf) {
         summary.winsCount += 1;
+        summary.goldWinsCount += 1;
         summary.byCategory[categoryKey].wins += 1;
       }
       // If finalized but not complete or stale PDF: not in either counter
@@ -393,6 +430,8 @@ export function computeCanonicalStreakSnapshot(
     ruleVersion: STREAK_RULE_VERSION,
     streakActivatedCount: aggregate.activatedCount,
     streakWinsCount: aggregate.winsCount,
+    streakGoldWinsCount: aggregate.goldWinsCount,
+    streakSilverWinsCount: aggregate.silverWinsCount,
     streakEligibleCount: aggregate.eligibleCount,
     byCategory: CATEGORY_KEYS.reduce<StreakProgressAggregateByCategory>((next, categoryKey) => {
       next[categoryKey] = {

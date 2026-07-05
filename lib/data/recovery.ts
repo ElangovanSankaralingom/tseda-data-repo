@@ -58,6 +58,8 @@ function createEmptyIndex(userEmail: string, nowISO = new Date().toISOString()):
       ruleVersion: STREAK_RULE_VERSION,
       streakActivatedCount: 0,
       streakWinsCount: 0,
+    streakGoldWinsCount: 0,
+    streakSilverWinsCount: 0,
       byCategory: emptyCategoryMap(() => ({ activated: 0, wins: 0 })),
       activeEntries: [],
       lastComputedAt: nowISO,
@@ -135,6 +137,8 @@ function buildIndexFromState(userEmail: string, state: Map<CategoryKey, Map<stri
     ruleVersion: STREAK_RULE_VERSION,
     streakActivatedCount: streakSummary.streakActivatedCount,
     streakWinsCount: streakSummary.streakWinsCount,
+    streakGoldWinsCount: streakSummary.streakGoldWinsCount,
+    streakSilverWinsCount: streakSummary.streakSilverWinsCount,
     byCategory: CATEGORY_KEYS.reduce<UserIndex["streakSnapshot"]["byCategory"]>((next, category) => {
       next[category] = {
         activated: streakSummary.byCategory[category].activated,

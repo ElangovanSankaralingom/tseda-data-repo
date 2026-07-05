@@ -30,6 +30,8 @@ export type FeedEvent = {
   milestone: number | null;
   /** First names of collaborators on the underlying entry ("with X & Y"). */
   withNames: string[];
+  /** Streak tier for "streak_won": GOLD (permission flow) / SILVER (record). */
+  tier: "gold" | "silver" | null;
   createdAt: string;
   reactions: Record<FeedReaction, string[]>;
 };
@@ -41,6 +43,7 @@ export type NewFeedEvent = {
   categoryKey?: string | null;
   milestone?: number | null;
   withNames?: string[];
+  tier?: "gold" | "silver" | null;
   createdAt?: string;
 };
 
@@ -103,6 +106,7 @@ function normalizeEvent(raw: unknown): FeedEvent | null {
           .map((v) => v.trim())
           .slice(0, 4)
       : [],
+    tier: r.tier === "gold" || r.tier === "silver" ? r.tier : null,
     createdAt,
     reactions,
   };
@@ -153,6 +157,7 @@ export async function appendFeedEvent(event: NewFeedEvent): Promise<void> {
         categoryKey: event.categoryKey ?? null,
         milestone: event.milestone ?? null,
         withNames: (event.withNames ?? []).slice(0, 4),
+        tier: event.tier ?? null,
         createdAt: event.createdAt ?? new Date().toISOString(),
         reactions: emptyReactions(),
       };

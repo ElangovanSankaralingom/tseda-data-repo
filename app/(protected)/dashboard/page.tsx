@@ -96,6 +96,8 @@ export default async function DashboardPage() {
         totalEntries={totalEntries}
         streakActivated={streakActivated}
         streakWins={streakWins}
+        goldWins={toSafeCount(summary.totals.streakGoldWinsCount)}
+        silverWins={toSafeCount(summary.totals.streakSilverWinsCount)}
         hasAnyEntries={hasAnyEntries}
         draftCount={draftCount}
         editRequestedCount={editRequestedCount}

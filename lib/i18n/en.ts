@@ -14,6 +14,8 @@ export const en = {
     empty: "No milestones yet — be the first to start a streak.",
     startedStreak: "started a streak",
     wonStreak: "won a streak",
+    wonGoldStreak: "won a GOLD streak",
+    wonSilverStreak: "won a silver streak",
     milestoneReached: "hit {n} wins",
     remove: "Remove",
     you: "You",
@@ -765,6 +767,8 @@ export const en = {
   streak: {
     activated: "Streak Activated",
     won: "Streak Won",
+    goldWon: "Gold Streaks",
+    silverWon: "Silver Streaks",
     lost: "Streak Lost",
     eligible: "Streak Eligible",
     notEligible: "Not Eligible for Streak",

@@ -61,6 +61,7 @@ async function GETHandler(request: Request) {
       categoryKey: e.categoryKey,
       milestone: e.milestone,
       withNames: e.withNames,
+      tier: e.tier,
       createdAt: e.createdAt,
       reactions,
       myReactions,

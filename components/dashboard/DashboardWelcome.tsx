@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Flame, Trophy, FileText, Clock } from "lucide-react";
+import { Flame, Trophy, Medal, FileText, Clock } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { formatNumber } from "@/lib/i18n/locale";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
@@ -32,6 +32,8 @@ export default function DashboardWelcome({
   totalEntries,
   streakActivated,
   streakWins,
+  goldWins = 0,
+  silverWins = 0,
   hasAnyEntries,
   draftCount,
   editRequestedCount,
@@ -41,6 +43,9 @@ export default function DashboardWelcome({
   totalEntries: number;
   streakActivated: number;
   streakWins: number;
+  /** GOLD = permission-flow wins (weighted tier); SILVER = record-flow. */
+  goldWins?: number;
+  silverWins?: number;
   hasAnyEntries: boolean;
   draftCount: number;
   editRequestedCount: number;
@@ -123,7 +128,35 @@ export default function DashboardWelcome({
                 {streakActivated > 0 && streakWins > 0 && (
                   <div className="h-10 w-px bg-[var(--color-divider)]" />
                 )}
-                {streakWins > 0 && (
+                {/* GOLD — permission-flow wins carry the weight (Elan, 2026-07). */}
+                {goldWins > 0 && (
+                  <StreakRing
+                    icon={Trophy}
+                    value={goldWins}
+                    maxValue={Math.max(streakWins, goldWins)}
+                    label={t("streak.goldWon")}
+                    wins={goldWins}
+                    ringColor="#eab308"
+                    valueColor="#eab308"
+                  />
+                )}
+                {goldWins > 0 && silverWins > 0 && (
+                  <div className="h-10 w-px bg-[var(--color-divider)]" />
+                )}
+                {/* SILVER — record-flow ("data alone") wins. */}
+                {silverWins > 0 && (
+                  <StreakRing
+                    icon={Medal}
+                    value={silverWins}
+                    maxValue={Math.max(streakWins, silverWins)}
+                    label={t("streak.silverWon")}
+                    wins={silverWins}
+                    ringColor="#a1a1aa"
+                    valueColor="#a1a1aa"
+                  />
+                )}
+                {/* Fallback: stale index without tier split yet — combined ring. */}
+                {streakWins > 0 && goldWins === 0 && silverWins === 0 && (
                   <StreakRing
                     icon={Trophy}
                     value={streakWins}

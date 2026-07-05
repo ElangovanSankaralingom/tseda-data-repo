@@ -59,6 +59,8 @@ export type DashboardSummary = {
     editGrantedCount: number;
     streakActivatedCount: number;
     streakWinsCount: number;
+    streakGoldWinsCount: number;
+    streakSilverWinsCount: number;
     completedNonStreakCount: number;
     // Keep old names as aliases for dashboard page compatibility
     pendingConfirmationCount: number;
@@ -105,6 +107,8 @@ function emptySummary(): DashboardSummary {
       editGrantedCount: 0,
       streakActivatedCount: 0,
       streakWinsCount: 0,
+      streakGoldWinsCount: 0,
+      streakSilverWinsCount: 0,
       completedNonStreakCount: 0,
       pendingConfirmationCount: 0,
       approvedCount: 0,
@@ -155,6 +159,8 @@ function normalizeSummary(summary: unknown): DashboardSummary {
     editGrantedCount,
     streakActivatedCount: toFiniteCount(rawTotals.streakActivatedCount),
     streakWinsCount: toFiniteCount(rawTotals.streakWinsCount),
+    streakGoldWinsCount: toFiniteCount(rawTotals.streakGoldWinsCount),
+    streakSilverWinsCount: toFiniteCount(rawTotals.streakSilverWinsCount),
     completedNonStreakCount: toFiniteCount(rawTotals.completedNonStreakCount),
     // Compatibility aliases
     pendingConfirmationCount: editRequestedCount,
@@ -238,6 +244,8 @@ function computeDashboardFromIndex(index: UserIndex): DashboardSummary {
   summary.totals.totalEntries = Object.values(index.totalsByCategory).reduce((s, v) => s + v, 0);
   summary.totals.streakActivatedCount = index.streakSnapshot.streakActivatedCount;
   summary.totals.streakWinsCount = index.streakSnapshot.streakWinsCount;
+  summary.totals.streakGoldWinsCount = index.streakSnapshot.streakGoldWinsCount ?? 0;
+  summary.totals.streakSilverWinsCount = index.streakSnapshot.streakSilverWinsCount ?? 0;
   summary.totals.pendingConfirmationCount = summary.totals.editRequestedCount;
   summary.totals.approvedCount = summary.totals.generatedCount + summary.totals.editGrantedCount;
   summary.totals.rejectedCount = 0;
@@ -376,6 +384,8 @@ async function computeDashboardSummary(normalizedEmail: string): Promise<Dashboa
     summary.totals.streakActivatedCount += categorySummary.streakActivatedCount;
     summary.totals.streakWinsCount += categorySummary.streakWinsCount;
   }
+  summary.totals.streakGoldWinsCount = streakSummary.streakGoldWinsCount;
+  summary.totals.streakSilverWinsCount = streakSummary.streakSilverWinsCount;
 
   const rows = streakSummary.activeEntries
     .slice()

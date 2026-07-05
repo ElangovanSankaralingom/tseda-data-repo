@@ -33,6 +33,8 @@ function migrateUserIndexV0ToV1(raw: Record<string, unknown>, nowISO: string) {
       ruleVersion: 0,
       streakActivatedCount: 0,
       streakWinsCount: 0,
+      streakGoldWinsCount: 0,
+      streakSilverWinsCount: 0,
       byCategory: emptyCategoryMap(() => ({ activated: 0, wins: 0 })),
       activeEntries: [],
       lastComputedAt: nowISO,
@@ -70,6 +72,8 @@ function migrateUserIndexV0ToV1(raw: Record<string, unknown>, nowISO: string) {
   next.streakSnapshot.ruleVersion = toVersion(streakSnapshot?.ruleVersion, 0);
   next.streakSnapshot.streakActivatedCount = toNonNegativeInteger(streakSnapshot?.streakActivatedCount);
   next.streakSnapshot.streakWinsCount = toNonNegativeInteger(streakSnapshot?.streakWinsCount);
+  next.streakSnapshot.streakGoldWinsCount = toNonNegativeInteger(streakSnapshot?.streakGoldWinsCount);
+  next.streakSnapshot.streakSilverWinsCount = toNonNegativeInteger(streakSnapshot?.streakSilverWinsCount);
   next.streakSnapshot.lastComputedAt = toISO(streakSnapshot?.lastComputedAt, nowISO);
   next.streakSnapshot.activeEntries = activeEntriesRaw
     .map((value) => {
