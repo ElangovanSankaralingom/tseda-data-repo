@@ -28,6 +28,9 @@ export type UserSummary = {
   name: string;
   entryCount: number;
   streakWins: number;
+  /** GOLD (permission-flow) / SILVER (record-flow) split of streakWins. */
+  streakGoldWins: number;
+  streakSilverWins: number;
   streakActivated: number;
   lastActivity: string | null;
   entriesByCategory: Record<string, number>;
@@ -245,6 +248,8 @@ export async function computeAnalytics(): Promise<Result<AnalyticsSnapshot>> {
             name: displayName,
             entryCount,
             streakWins: streakSnap.streakWinsCount,
+            streakGoldWins: streakSnap.streakGoldWinsCount ?? 0,
+            streakSilverWins: streakSnap.streakSilverWinsCount ?? 0,
             streakActivated: streakSnap.streakActivatedCount,
             lastActivity,
             entriesByCategory,

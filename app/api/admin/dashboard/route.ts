@@ -223,6 +223,8 @@ async function GETHandler(request: Request) {
       name: u.name,
       entries: u.entryCount,
       streakWins: u.streakWins,
+      streakGoldWins: u.streakGoldWins ?? 0,
+      streakSilverWins: u.streakSilverWins ?? 0,
     }));
 
   // --- Pending items ---

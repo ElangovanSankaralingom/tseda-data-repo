@@ -119,7 +119,7 @@ export type CategoryFlow = "permission" | "record";
  * Display names live in i18n as `dashboard.group*` keys (see GROUP_LABEL_KEYS
  * in DashboardClient).
  */
-export const CATEGORY_GROUP_ORDER = ["professional", "academic", "research", "department"] as const;
+export const CATEGORY_GROUP_ORDER = ["professional", "academic", "creative", "research", "department"] as const;
 export type CategoryGroup = (typeof CATEGORY_GROUP_ORDER)[number];
 
 /**
@@ -510,7 +510,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     // Open reviews / exhibitions auto-score; documentation and beyond-
     // syllabus entries are the committee's interview evidence base.
     flow: "record",
-    group: "academic",
+    group: "creative",
     icon: "palette",
     color: {
       bar: "from-orange-400 to-orange-600",
@@ -540,7 +540,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     // RECORD FLOW (roadmap #11): essays, critiques, visual narratives in
     // design platforms/magazines — individual, 5 points per unit.
     flow: "record",
-    group: "research",
+    group: "creative",
     icon: "brush",
     color: {
       bar: "from-pink-400 to-pink-600",
@@ -569,7 +569,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     supportsConfirmation: true,
     // PERMISSION FLOW (S4 ruling): participation needs prior approval.
     // Result (Award / Participation) is stage 2 — known only afterwards.
-    group: "academic",
+    group: "creative",
     icon: "trophy",
     color: {
       bar: "from-yellow-400 to-yellow-600",
@@ -598,7 +598,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     supportsConfirmation: true,
     // PERMISSION FLOW (S4 ruling): public-facing events beyond academics
     // need prior approval. Feeds public_exhibition 2/unit, capped at 4.
-    group: "academic",
+    group: "creative",
     icon: "landmark",
     color: {
       bar: "from-green-400 to-green-600",

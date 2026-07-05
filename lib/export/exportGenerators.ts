@@ -55,32 +55,66 @@ function columnName(index: number) {
   return name;
 }
 
+/**
+ * FORMATTING LAYERS (Elan, 2026-07): content-aware column widths (S.No
+ * stays narrow, long titles get room), a styled bold header band, thin
+ * borders on every data cell, and a frozen header row.
+ */
+const MIN_COL_WIDTH = 7;
+const MAX_COL_WIDTH = 48;
+
+function computeColumnWidths(headers: string[], rows: Array<Array<string | number | boolean>>): number[] {
+  return headers.map((header, columnIndex) => {
+    let maxLen = String(header ?? "").length;
+    // Sample up to 200 rows — enough signal, bounded cost on huge exports.
+    const sample = rows.length > 200 ? rows.slice(0, 200) : rows;
+    for (const row of sample) {
+      const value = row[columnIndex];
+      if (value === null || value === undefined || value === "") continue;
+      const len = String(value).length;
+      if (len > maxLen) maxLen = len;
+    }
+    // Excel width units ≈ characters; padding for the header's bold face.
+    return Math.min(MAX_COL_WIDTH, Math.max(MIN_COL_WIDTH, Math.round(maxLen * 1.05 + 2)));
+  });
+}
+
 function buildSheetXml(headers: string[], rows: Array<Array<string | number | boolean>>) {
+  const widths = computeColumnWidths(headers, rows);
+  const colsXml = widths
+    .map((width, index) => `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`)
+    .join("");
+
   const allRows = [headers, ...rows];
   const rowXml = allRows
     .map((row, rowIndex) => {
+      const isHeader = rowIndex === 0;
+      const styleId = isHeader ? 1 : 2;
       const cellXml = row
         .map((cell, columnIndex) => {
           const ref = `${columnName(columnIndex)}${rowIndex + 1}`;
           if (cell === "" || cell === null || cell === undefined) {
-            return `<c r="${ref}"/>`;
+            return `<c r="${ref}" s="${styleId}"/>`;
           }
           if (typeof cell === "number" && Number.isFinite(cell)) {
-            return `<c r="${ref}"><v>${cell}</v></c>`;
+            return `<c r="${ref}" s="${isHeader ? 1 : 3}"><v>${cell}</v></c>`;
           }
           if (typeof cell === "boolean") {
-            return `<c r="${ref}" t="b"><v>${cell ? 1 : 0}</v></c>`;
+            return `<c r="${ref}" s="${styleId}" t="b"><v>${cell ? 1 : 0}</v></c>`;
           }
           const text = xmlEscape(String(cell));
-          return `<c r="${ref}" t="inlineStr"><is><t>${text}</t></is></c>`;
+          return `<c r="${ref}" s="${styleId}" t="inlineStr"><is><t>${text}</t></is></c>`;
         })
         .join("");
-      return `<row r="${rowIndex + 1}">${cellXml}</row>`;
+      const heightAttr = isHeader ? ' ht="22" customHeight="1"' : "";
+      return `<row r="${rowIndex + 1}"${heightAttr}>${cellXml}</row>`;
     })
     .join("");
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+  <cols>${colsXml}</cols>
   <sheetData>${rowXml}</sheetData>
 </worksheet>`;
 }
@@ -203,13 +237,30 @@ export function generateXlsxBuffer(
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
 </Relationships>`;
 
+    // Style ids: 0 default · 1 header (bold white on brand blue, centered)
+    // · 2 body text (thin borders, wrapped) · 3 body number (borders, right).
     const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
-  <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
-  <borders count="1"><border/></borders>
+  <fonts count="2">
+    <font><sz val="11"/><name val="Calibri"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+  </fonts>
+  <fills count="3">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF2A48CE"/><bgColor rgb="FF2A48CE"/></patternFill></fill>
+  </fills>
+  <borders count="2">
+    <border/>
+    <border><left style="thin"><color rgb="FFB8C0D8"/></left><right style="thin"><color rgb="FFB8C0D8"/></right><top style="thin"><color rgb="FFB8C0D8"/></top><bottom style="thin"><color rgb="FFB8C0D8"/></bottom></border>
+  </borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>
+  <cellXfs count="4">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf>
+  </cellXfs>
 </styleSheet>`;
 
     const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

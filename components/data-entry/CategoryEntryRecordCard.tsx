@@ -1,5 +1,6 @@
 "use client";
 
+import { Medal, Trophy } from "lucide-react";
 import EntryListCardShell from "@/components/data-entry/EntryListCardShell";
 import RequestActionDropdown from "@/components/entry/RequestActionDropdown";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -42,6 +43,7 @@ export default function CategoryEntryRecordCard({
   permanentlyLocked = false,
   requestActionUsed = false,
   children,
+  streakTier = null,
 }: CategoryEntryRecordCardProps) {
   const { t } = useTranslation();
   const resolvedDeleteLabel = deleteLabel || t('common.delete');
@@ -58,6 +60,21 @@ export default function CategoryEntryRecordCard({
       href={href}
       title={title}
       subtitle={subtitle}
+      badges={
+        streakTier ? (
+          <span
+            className={
+              streakTier === "gold"
+                ? "inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-palette-yellow-bg)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-palette-yellow-fg)]"
+                : "inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-inset)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-text-secondary)]"
+            }
+            title={streakTier === "gold" ? t('streak.goldWon') : t('streak.silverWon')}
+          >
+            {streakTier === "gold" ? <Trophy className="size-3" /> : <Medal className="size-3" />}
+            {streakTier === "gold" ? t('streak.goldBadge') : t('streak.silverBadge')}
+          </span>
+        ) : undefined
+      }
       metadata={metadata}
       editTime={editTime}
       createdAt={createdAt}
@@ -190,10 +207,23 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
     const resolvedPreviewUrl = previewUrl?.(entry) ?? entry.pdfMeta?.url ?? null;
     const editTime = getEntryEditTime(entry);
 
+    // Streak tier medal (Elan, 2026-07): a WON entry wears its tier — GOLD
+    // for permission-flow wins, SILVER for record-flow wins. Mirrors
+    // lib/streakProgress isEntryWon semantics client-side.
+    const raw = entry as Record<string, unknown>;
+    const eligibleForTier = raw.streakEligible === true && raw.streakPermanentlyRemoved !== true;
+    const isRecordEntry = raw.entryFlow === "record";
+    const streakTier: "gold" | "silver" | null = !eligibleForTier
+      ? null
+      : isRecordEntry
+        ? (String(raw.confirmationStatus ?? "") === "GENERATED" ? "silver" : null)
+        : (group === "locked_in" && raw.pdfStale !== true && !!entry.pdfMeta ? "gold" : null);
+
     return (
       <CategoryEntryRecordCard
         key={entry.id}
         group={group}
+        streakTier={streakTier}
         index={index}
         href={buildHref(entry)}
         title={buildTitle(entry)}

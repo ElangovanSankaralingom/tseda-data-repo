@@ -3,6 +3,7 @@
 /**
  * Sub-hook: generate entry (PDF) and finalise entry operations.
  */
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 import {
   useCallback,
   useState,
@@ -66,6 +67,7 @@ export function useEntryGenerateAndFinalise<TEntry extends CategoryPageEntry>(
       persistProgress: options.persistEntry,
       applyGeneratedEntry: options.applyGeneratedEntry,
     });
+    notifyDataChanged();
     nextRouter.refresh();
     return success;
   }, [
@@ -90,6 +92,7 @@ export function useEntryGenerateAndFinalise<TEntry extends CategoryPageEntry>(
         }
         const updated = (await res.json()) as TEntry;
         options.setList((prev) => prev.map((e) => (e.id === entryId ? updated : e)));
+        notifyDataChanged();
         nextRouter.refresh();
         return true;
       } catch (error) {

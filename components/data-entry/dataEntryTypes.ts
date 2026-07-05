@@ -187,6 +187,8 @@ export type EditorStatusBannersProps = {
 // --- Props from CategoryEntryRecordCard.tsx ---
 
 export type CategoryEntryRecordCardProps = {
+  /** Set when the entry is a WON streak: gold (permission) / silver (record). */
+  streakTier?: "gold" | "silver" | null;
   group: EntryListGroup;
   index: number;
   href: string;

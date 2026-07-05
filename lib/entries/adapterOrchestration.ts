@@ -1,5 +1,6 @@
 "use client";
 
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 import type { Dispatch, SetStateAction } from "react";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { TelemetryEventName } from "@/lib/telemetry/types";
@@ -164,6 +165,8 @@ export function createPersistProgress<T extends Record<string, unknown>>(
     }
 
     const persisted = config.normalizeResponse(payload);
+    // Instant-update bus: hero, analytics cards, feed, award panel.
+    notifyDataChanged();
     void trackClientTelemetryEvent({
       event: eventName,
       category: config.category,
@@ -254,6 +257,8 @@ export function createDeleteEntry<T extends { id?: unknown }>(
       config.setList((current) => optimisticRemove(current, id));
       void config.refreshList();
       config.onDeletedActiveEntry?.(id);
+      // Instant-update bus: dashboard counters + feed reflect the delete.
+      notifyDataChanged();
       config.showToast("ok", "Entry deleted.", 1200);
     } catch (error) {
       if (rollbackSnapshot) {

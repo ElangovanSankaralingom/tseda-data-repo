@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { DATA_CHANGED_EVENT } from "@/lib/ui/appRefresh";
 
 /**
  * Forces a server re-render whenever the pathname changes or
@@ -44,13 +45,20 @@ export default function NavigationRefresh() {
         debouncedRefresh();
       }
     }
+    // Instant-update bus: any successful entry mutation anywhere fires this
+    // event (lib/ui/appRefresh.ts) → server components re-render at once.
+    function handleDataChanged() {
+      debouncedRefresh();
+    }
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener(DATA_CHANGED_EVENT, handleDataChanged);
     return () => {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener(DATA_CHANGED_EVENT, handleDataChanged);
     };
   }, [router]);
 

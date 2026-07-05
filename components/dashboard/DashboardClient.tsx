@@ -19,6 +19,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
 import { getCategoryConfig, CATEGORY_GROUP_ORDER, CATEGORY_LIST, type CategoryGroup } from "@/data/categoryRegistry";
 import { getCategoryIcon } from "@/lib/ui/categoryIcons";
+import { preloadCategoryAdapters } from "@/components/data-entry/CategoryPageRouter";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { TranslationKey, Language } from "@/lib/i18n";
 import { entryList } from "@/lib/entryNavigation";
@@ -66,6 +67,7 @@ type GroupKey = "all" | CategoryGroup;
 const GROUP_LABEL_KEYS: Record<CategoryGroup, TranslationKey> = {
   professional: "dashboard.groupProfessionalDev",
   academic: "dashboard.groupAcademicActivities",
+  creative: "dashboard.groupCreative",
   research: "dashboard.groupResearch",
   department: "dashboard.groupDepartment",
 };
@@ -81,6 +83,12 @@ export default function DashboardClient({
   categories: CategorySummary[];
   recentEntries: RecentEntry[];
 }) {
+  // Idle-prefetch every visible category's adapter chunk so clicking a
+  // card renders instantly instead of flashing a loader (Elan, 2026-07).
+  useEffect(() => {
+    preloadCategoryAdapters(categories.map((c) => c.slug));
+  }, [categories]);
+
   const { t, language } = useTranslation();
 
   const [activeGroup, setActiveGroup] = useState<GroupKey>("all");

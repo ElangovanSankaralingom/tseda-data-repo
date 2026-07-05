@@ -15,6 +15,7 @@ import { signin } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import DashboardWelcome from "@/components/dashboard/DashboardWelcome";
+import DashboardAnalytics, { buildClubStats } from "@/components/dashboard/DashboardAnalytics";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import { isActivityFeedEnabled } from "@/lib/settings/consumer";
 
@@ -102,6 +103,20 @@ export default async function DashboardPage() {
         draftCount={draftCount}
         editRequestedCount={editRequestedCount}
       />
+
+      {/* ── Analytics cards: club distribution, status mix, streak split ── */}
+      {hasAnyEntries ? (
+        <DashboardAnalytics
+          clubs={buildClubStats(categories)}
+          totalEntries={totalEntries}
+          draftCount={draftCount}
+          generatedCount={toSafeCount(summary.totals.generatedCount)}
+          editRequestedCount={editRequestedCount}
+          streakActivated={streakActivated}
+          goldWins={toSafeCount(summary.totals.streakGoldWinsCount)}
+          silverWins={toSafeCount(summary.totals.streakSilverWinsCount)}
+        />
+      ) : null}
 
       {/* ── My Award Progress — self-reflection panel (renders only once
              the faculty has entries with an academic year) ── */}

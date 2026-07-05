@@ -40,10 +40,11 @@ test("CategoryPageRouter lazy map covers every registry slug", () => {
     "utf8",
   );
   for (const slug of CATEGORY_LIST) {
-    // Keys appear as "<slug>": lazy(...) (quoted) or <slug>: lazy(...) (bare
-    // for identifier-safe slugs like workshops/patents).
+    // Keys appear as "<slug>": <loader> (quoted) or <slug>: <loader> (bare
+    // for identifier-safe slugs like workshops/patents). The loader shape
+    // is either lazy(...) or () => import(...) — accept both.
     const quoted = `"${slug}"`;
-    const bare = new RegExp(`(^|\\s)${slug.replace(/-/g, "\\-")}: lazy`, "m");
+    const bare = new RegExp(`(^|\\s)${slug.replace(/-/g, "\\-")}: (lazy|\\(\\) =>)`, "m");
     assert.ok(
       routerSource.includes(quoted) || bare.test(routerSource),
       `${slug}: missing from CategoryPageRouter ADAPTERS map — the category page would 404`,

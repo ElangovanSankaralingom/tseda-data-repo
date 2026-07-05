@@ -5,7 +5,7 @@ import { ChevronDown, Crown, Medal, Trophy } from "lucide-react";
 import { compare } from "@/lib/analytics/compare";
 import { pct, catColor } from "./AnalyticsChartsCore";
 
-export function Leaderboard({ users }: { users: { email: string; name: string; entryCount: number; streakWins: number }[] }) {
+export function Leaderboard({ users }: { users: { email: string; name: string; entryCount: number; streakWins: number; streakGoldWins?: number; streakSilverWins?: number }[] }) {
   const top = users.slice(0, 10);
   if (top.length === 0) {
     return <div className="text-sm text-[var(--color-text-secondary)]">No users with entries yet</div>;
@@ -50,8 +50,17 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
               <div className="text-lg font-bold text-[var(--color-text-primary)]">{user.entryCount}</div>
               <div className="text-[10px] text-[var(--color-text-secondary)]">entries</div>
               {user.streakWins > 0 && (
-                <div className="mt-1 flex items-center gap-0.5 text-[10px] text-[var(--color-status-warning)]">
-                  <Trophy className="size-3" /> {user.streakWins}
+                <div className="mt-1 flex items-center gap-1.5 text-[10px]">
+                  {(user.streakGoldWins ?? user.streakWins) > 0 && (
+                    <span className="flex items-center gap-0.5 text-[var(--color-palette-yellow-fg)]" title="Gold streaks">
+                      <Trophy className="size-3" /> {user.streakGoldWins ?? user.streakWins}
+                    </span>
+                  )}
+                  {(user.streakSilverWins ?? 0) > 0 && (
+                    <span className="flex items-center gap-0.5 text-[var(--color-text-secondary)]" title="Silver streaks">
+                      <Medal className="size-3" /> {user.streakSilverWins}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -78,8 +87,17 @@ export function Leaderboard({ users }: { users: { email: string; name: string; e
                 {user.entryCount}
               </div>
               {user.streakWins > 0 && (
-                <div className="flex items-center gap-0.5 text-xs text-[var(--color-status-warning)]">
-                  <Trophy className="size-3" /> {user.streakWins}
+                <div className="flex items-center gap-1.5 text-xs">
+                  {(user.streakGoldWins ?? user.streakWins) > 0 && (
+                    <span className="flex items-center gap-0.5 text-[var(--color-palette-yellow-fg)]" title="Gold streaks">
+                      <Trophy className="size-3" /> {user.streakGoldWins ?? user.streakWins}
+                    </span>
+                  )}
+                  {(user.streakSilverWins ?? 0) > 0 && (
+                    <span className="flex items-center gap-0.5 text-[var(--color-text-secondary)]" title="Silver streaks">
+                      <Medal className="size-3" /> {user.streakSilverWins}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

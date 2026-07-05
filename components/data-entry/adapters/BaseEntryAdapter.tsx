@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 import { AlertTriangle } from "lucide-react";
 import { SYSTEM } from "@/lib/constants/messages";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -301,6 +302,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       if (!response.ok) {
         throw new Error(String(payload?.error || "Request failed."));
       }
+      notifyDataChanged();
       return payload as T;
     },
     persistCancelRequestEdit: async (entry) => {
@@ -315,7 +317,8 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         if (!response.ok) {
           throw new Error(String(payload?.error || "Cancel edit grant failed."));
         }
-        return payload as T;
+        notifyDataChanged();
+      return payload as T;
       }
       const response = await fetch("/api/me/entry/confirmation", {
         method: "DELETE",
@@ -326,6 +329,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       if (!response.ok) {
         throw new Error(String(payload?.error || "Cancel request failed."));
       }
+      notifyDataChanged();
       return payload as T;
     },
     persistRequestDelete: async (entry) => {
@@ -338,6 +342,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       if (!response.ok) {
         throw new Error(String(payload?.error || "Request failed."));
       }
+      notifyDataChanged();
       return payload as T;
     },
     persistCancelRequestDelete: async (entry) => {
@@ -350,6 +355,7 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
       if (!response.ok) {
         throw new Error(String(payload?.error || "Cancel request failed."));
       }
+      notifyDataChanged();
       return payload as T;
     },
     commitDraft: commitDraftEntry,

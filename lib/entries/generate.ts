@@ -1,3 +1,4 @@
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 import type { CategoryKey } from "./types.ts";
 
 type GeneratePdfResult<TEntry> = {
@@ -37,5 +38,8 @@ export async function generateEntrySnapshot<TEntry extends { id?: string | null 
     throw new Error(message);
   }
 
+  // Instant-update bus: generate/submit is THE streak moment — hero rings,
+  // analytics cards, and the Department Pulse must reflect it at once.
+  notifyDataChanged();
   return payload;
 }
