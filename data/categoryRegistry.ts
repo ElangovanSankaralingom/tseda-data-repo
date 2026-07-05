@@ -14,6 +14,9 @@ import { designCompetitionsSchema } from "@/data/schemas/design-competitions";
 import { exhibitionsOutreachSchema } from "@/data/schemas/exhibitions-outreach";
 import { mentoringProgramsSchema } from "@/data/schemas/mentoring-programs";
 import { onlineCoursesSchema } from "@/data/schemas/online-courses";
+import { studentAwardsSchema } from "@/data/schemas/student-awards";
+import { studentExamsSchema } from "@/data/schemas/student-exams";
+import { studentHigherStudiesSchema } from "@/data/schemas/student-higher-studies";
 import { studentPlacementsSchema } from "@/data/schemas/student-placements";
 import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
@@ -39,6 +42,9 @@ export const CATEGORY_SLUGS = [
   "online-courses",
   "mentoring-programs",
   "student-placements",
+  "student-higher-studies",
+  "student-exams",
+  "student-awards",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -62,7 +68,10 @@ export type CategorySummaryKey =
   | "exhibitionsOutreach"
   | "onlineCourses"
   | "mentoringPrograms"
-  | "studentPlacements";
+  | "studentPlacements"
+  | "studentHigherStudies"
+  | "studentExams"
+  | "studentAwards";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -697,6 +706,96 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Department placement records keyed by register number — entered by the assigned placement DLC.",
     entryTitleField: "studentName",
     entryTitleFallback: "Placement Record",
+  },
+  "student-higher-studies": {
+    slug: "student-higher-studies",
+    label: "Higher Studies",
+    schemaKey: "student-higher-studies",
+    schema: studentHigherStudiesSchema,
+    summaryKey: "studentHigherStudies",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // DLC-SCOPED department records (B2) — zinc family = department identity.
+    flow: "record",
+    entryScope: "dlc",
+    group: "department",
+    icon: "school",
+    color: {
+      bar: "from-zinc-400 to-zinc-600",
+      bg: "bg-zinc-100",
+      text: "text-zinc-600",
+      ring: "hover:ring-zinc-200",
+      cta: "text-zinc-500",
+      gradient: "from-zinc-600 via-zinc-700 to-zinc-900",
+      accentBg: "bg-zinc-500/10",
+      borderTop: "border-t-zinc-500",
+      buttonBg: "bg-zinc-600",
+      buttonHover: "hover:bg-zinc-700",
+      chartHex: "#71717A",
+    },
+    subtitle: "Higher-education admissions keyed by register number — entered by the assigned DLC.",
+    entryTitleField: "studentName",
+    entryTitleFallback: "Higher Studies Record",
+  },
+  "student-exams": {
+    slug: "student-exams",
+    label: "Competitive Exams",
+    schemaKey: "student-exams",
+    schema: studentExamsSchema,
+    summaryKey: "studentExams",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // DLC-SCOPED department records (B2).
+    flow: "record",
+    entryScope: "dlc",
+    group: "department",
+    icon: "clipboard-check",
+    color: {
+      bar: "from-zinc-400 to-zinc-600",
+      bg: "bg-zinc-100",
+      text: "text-zinc-600",
+      ring: "hover:ring-zinc-200",
+      cta: "text-zinc-500",
+      gradient: "from-zinc-600 via-zinc-700 to-zinc-900",
+      accentBg: "bg-zinc-500/10",
+      borderTop: "border-t-zinc-500",
+      buttonBg: "bg-zinc-600",
+      buttonHover: "hover:bg-zinc-700",
+      chartHex: "#3F3F46",
+    },
+    subtitle: "Qualified competitive exams (GATE, NATA, GRE, …) keyed by register number.",
+    entryTitleField: "studentName",
+    entryTitleFallback: "Exam Record",
+  },
+  "student-awards": {
+    slug: "student-awards",
+    label: "Student Awards",
+    schemaKey: "student-awards",
+    schema: studentAwardsSchema,
+    summaryKey: "studentAwards",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // DLC-SCOPED department records (B2).
+    flow: "record",
+    entryScope: "dlc",
+    group: "department",
+    icon: "medal",
+    color: {
+      bar: "from-zinc-400 to-zinc-600",
+      bg: "bg-zinc-100",
+      text: "text-zinc-600",
+      ring: "hover:ring-zinc-200",
+      cta: "text-zinc-500",
+      gradient: "from-zinc-600 via-zinc-700 to-zinc-900",
+      accentBg: "bg-zinc-500/10",
+      borderTop: "border-t-zinc-500",
+      buttonBg: "bg-zinc-600",
+      buttonHover: "hover:bg-zinc-700",
+      chartHex: "#A1A1AA",
+    },
+    subtitle: "Student prizes and recognitions keyed by register number — entered by the assigned DLC.",
+    entryTitleField: "studentName",
+    entryTitleFallback: "Student Award",
   },
 };
 

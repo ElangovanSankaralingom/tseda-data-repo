@@ -811,3 +811,91 @@ export type StudentPlacementEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// Remaining DLC-scoped student records (B2)
+// ---------------------------------------------------------------------------
+
+export type StudentHigherStudiesEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  regNo: string;
+  studentName: string;
+  programme: string;
+  institutionName: string;
+  courseAdmitted: string;
+  country: string;
+  qualifyingExam: string;
+  admissionDate: string;
+  pdfMeta?: { storedPath: string; url: string; fileName: string; generatedAtISO: string } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  admitProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StudentExamEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  regNo: string;
+  studentName: string;
+  programme: string;
+  examName: string;
+  scoreOrRank: string;
+  examDate: string;
+  pdfMeta?: { storedPath: string; url: string; fileName: string; generatedAtISO: string } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  scoreProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StudentAwardEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  regNo: string;
+  studentName: string;
+  programme: string;
+  awardTitle: string;
+  awardedBy: string;
+  awardLevel: string;
+  awardDate: string;
+  pdfMeta?: { storedPath: string; url: string; fileName: string; generatedAtISO: string } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  awardProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

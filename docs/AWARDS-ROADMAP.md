@@ -216,7 +216,15 @@ who/when for DLC audit.
   ~30-minute template with `entryScope: "dlc"`. NOTE: entries live under
   the entering DLC's user tree — if the DLC changes, old records remain
   with the old account (exports aggregate across users, so reporting is
-  unaffected).
+  unaffected). FOLLOW-UP SHIPPED 2026-07: **student-higher-studies**
+  (institution, course, country, qualifying exam, admission date),
+  **student-exams** (exam, score/rank, date), **student-awards** (award,
+  awarded by, level, date) — all dlc/record/zinc with distinct icons
+  (School / ClipboardCheck / Medal); optional proofs each. The Department
+  Records club is complete: placements + higher studies + exams + awards.
+  ("Learners programs" student lists stay inside mentoring-programs'
+  studentsCovered + proofs — no separate dlc sheet needed unless the DLC
+  asks for per-student rows.)
 - **B3 course records → merge into existing categories where they overlap**
   (Elan's example: the case-studies category already covers the site-visit
   sheet). Course plans/feedback/BoS stay admin/DLC territory; merge, don't
