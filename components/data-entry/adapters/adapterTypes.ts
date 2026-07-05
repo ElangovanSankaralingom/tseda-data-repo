@@ -203,6 +203,44 @@ export type BookChapterEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// PatentEntry (record flow — no permission PDF, no timer)
+// ---------------------------------------------------------------------------
+
+export type PatentEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  patentTitle: string;
+  status: string;
+  level: string;
+  applicationNumber: string;
+  applicationDate: string;
+  statusDate: string;
+  inventors: FacultyRowValue[];
+  externalInventors: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  patentDocument: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ---------------------------------------------------------------------------
 // FdpAttended
 // ---------------------------------------------------------------------------
 

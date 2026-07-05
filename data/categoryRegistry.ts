@@ -1,5 +1,6 @@
 import { booksAndChaptersSchema } from "@/data/schemas/books-and-chapters";
 import { caseStudiesSchema } from "@/data/schemas/case-studies";
+import { patentsSchema } from "@/data/schemas/patents";
 import { conferencePublicationsSchema } from "@/data/schemas/conference-publications";
 import { fdpAttendedSchema } from "@/data/schemas/fdp-attended";
 import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
@@ -17,6 +18,7 @@ export const CATEGORY_SLUGS = [
   "journal-publications",
   "conference-publications",
   "books-and-chapters",
+  "patents",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -29,7 +31,8 @@ export type CategorySummaryKey =
   | "workshops"
   | "journalPublications"
   | "conferencePublications"
-  | "booksAndChapters";
+  | "booksAndChapters"
+  | "patents";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -323,6 +326,36 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Record published books and book chapters with proofs — submitted entries count immediately.",
     entryTitleField: "bookTitle",
     entryTitleFallback: "Book / Chapter",
+  },
+  patents: {
+    slug: "patents",
+    label: "Patents",
+    schemaKey: "patents",
+    schema: patentsSchema,
+    summaryKey: "patents",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW — S6 "data enter alone"; status drives granted 10 /
+    // published 5 (utility_patent metric).
+    flow: "record",
+    group: "research",
+    icon: "badge-check",
+    color: {
+      bar: "from-cyan-400 to-cyan-600",
+      bg: "bg-cyan-100",
+      text: "text-cyan-600",
+      ring: "hover:ring-cyan-200",
+      cta: "text-cyan-500",
+      gradient: "from-cyan-600 via-cyan-700 to-cyan-900",
+      accentBg: "bg-cyan-500/10",
+      borderTop: "border-t-cyan-500",
+      buttonBg: "bg-cyan-600",
+      buttonHover: "hover:bg-cyan-700",
+      chartHex: "#0891B2",
+    },
+    subtitle: "Record published and granted patents with documents — submitted entries count immediately.",
+    entryTitleField: "patentTitle",
+    entryTitleFallback: "Patent",
   },
 };
 

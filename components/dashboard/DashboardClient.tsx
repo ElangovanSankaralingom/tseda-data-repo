@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import {
   FileCheck,
@@ -84,6 +84,35 @@ export default function DashboardClient({
 
   const [activeGroup, setActiveGroup] = useState<GroupKey>("all");
   const [activeSlug, setActiveSlug] = useState<string>(categories[0]?.slug ?? "");
+
+  // ── Category-rail scroll indicator (2026-07) ──
+  // The native scrollbar is hidden; a small accent dot floats along the LEFT
+  // edge while scrolling (or hovering) and fades away when idle — minimal,
+  // but unmistakably "there is more".
+  const railRef = useRef<HTMLDivElement>(null);
+  const railHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [rail, setRail] = useState({ progress: 0, visible: false, canScroll: false });
+
+  const updateRail = useCallback((show: boolean) => {
+    const el = railRef.current;
+    if (!el) return;
+    const range = el.scrollHeight - el.clientHeight;
+    const canScroll = range > 8;
+    const progress = canScroll ? Math.min(1, Math.max(0, el.scrollTop / range)) : 0;
+    setRail({ progress, canScroll, visible: show && canScroll });
+    if (show && canScroll) {
+      if (railHideTimer.current) clearTimeout(railHideTimer.current);
+      railHideTimer.current = setTimeout(() => {
+        setRail((prev) => ({ ...prev, visible: false }));
+      }, 900);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (railHideTimer.current) clearTimeout(railHideTimer.current);
+    };
+  }, []);
 
   const filteredCategories = useMemo(() => {
     if (activeGroup === "all") return categories;
@@ -181,11 +210,34 @@ export default function DashboardClient({
           {/* ═══ LEFT: Category list ═══
                Scrollable rail (2026-07): the category set keeps growing, so
                the list caps its height and scrolls instead of stretching the
-               whole page — a bottom fade signals there is more below. */}
+               whole page. Native scrollbar hidden — a floating accent dot on
+               the LEFT edge appears while scrolling and fades when idle. */}
           <div className="lg:w-80 xl:w-[360px] shrink-0 animate-card-lift relative">
+            {/* Floating scroll dot — indicator only, scrolling stays native */}
+            {rail.canScroll && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -left-2.5 top-3 bottom-8 z-10 hidden w-[3px] lg:block transition-opacity duration-500"
+                style={{ opacity: rail.visible ? 1 : 0 }}
+              >
+                {/* Hairline track */}
+                <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 rounded-full" style={{ background: "var(--color-border-subtle)" }} />
+                {/* The dot */}
+                <div
+                  className="absolute left-1/2 h-6 w-[4px] -translate-x-1/2 rounded-full transition-[top] duration-100"
+                  style={{
+                    top: `calc(${rail.progress} * (100% - 24px))`,
+                    background: "var(--color-primary)",
+                    boxShadow: "0 0 8px var(--color-glow-primary)",
+                  }}
+                />
+              </div>
+            )}
             <div
-              className="flex flex-col gap-2.5 lg:max-h-[calc(100vh-260px)] lg:min-h-[420px] lg:overflow-y-auto lg:pr-1.5 lg:pb-6"
-              style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-strong) transparent" }}
+              ref={railRef}
+              onScroll={() => updateRail(true)}
+              onMouseEnter={() => updateRail(true)}
+              className="scrollbar-none flex flex-col gap-2.5 lg:max-h-[calc(100vh-260px)] lg:min-h-[420px] lg:overflow-y-auto lg:pb-6"
             >
               {filteredCategories.map((cat, idx) => {
                 const isAct = cat.slug === effectiveSlug;

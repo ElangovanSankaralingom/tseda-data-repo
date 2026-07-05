@@ -227,6 +227,17 @@ html:not(.dark) .shadow-2xl { box-shadow: 0 5px 14px rgba(46, 52, 92, 0.07), 0 2
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Hide the native scrollbar entirely — used by surfaces that render their
+   own minimal scroll indicator (e.g. the dashboard category rail's floating
+   dot). Scrolling itself stays fully native. */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Selection — accent-tinted highlight that adapts to mode.
    Was hardcoded rgba(lime)/near-white text, which made selected text
    unreadable in light mode (white text on pale lime). */

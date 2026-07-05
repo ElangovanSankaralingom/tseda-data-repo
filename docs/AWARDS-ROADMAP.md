@@ -56,10 +56,11 @@
    publisher, ISBN, edition/volume, pages, publicationDate, coAuthors
    (`collaborates: true`), externalAuthors; proofs: cover/ISBN page
    (required), publication proof.
-4. **patents** [RECORD] (feeds `utility_patent` granted 10 / published 5)
-   — form T5/T6. status Published|Granted (tier key!), inventors
-   collaborates, nationalOrInternational, applicationDate,
-   publicationOrGrantDate. Proofs: patent document.
+4. ~~**patents**~~ ✅ SHIPPED 2026-07 [RECORD] — `status` Published|Granted
+   picks the tier (5/10, utility_patent auto-tracked). Fields: academicYear,
+   semesterType, patentTitle, status, level, applicationNumber,
+   applicationDate, statusDate, inventors (`collaborates: true`),
+   externalInventors; proof: patent document (required).
 5. **research-funding** [RECORD — "data enter alone"] (feeds `rd_funding`
    tiers + `non_rd_funding`; consultancy folds in as kind) — form T11/T12 +
    Excel "Research Grant"/"Consultancy". kind R&D|Consultancy|Other,

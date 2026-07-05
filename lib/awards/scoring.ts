@@ -136,6 +136,19 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points: perUnit * entries.length, count: entries.length, notes: [] };
   },
 
+  /** Patents (record flow): the status field picks the tier (granted 10 /
+   *  published 5). */
+  utility_patent({ entriesByCategory, model }) {
+    let points = 0;
+    let count = 0;
+    for (const entry of entriesByCategory.get("patents") ?? []) {
+      const tier = String(entry.status ?? "") === "Granted" ? "granted" : "published";
+      points += tierPoints(model, tier);
+      count += 1;
+    }
+    return { points, count, notes: [] };
+  },
+
   /** Workshops: India vs abroad via the entry's `level` field. */
   collab_workshop({ entriesByCategory, model }) {
     let points = 0;

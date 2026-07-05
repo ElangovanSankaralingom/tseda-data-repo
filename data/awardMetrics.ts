@@ -311,9 +311,11 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
   },
   {
     id: "utility_patent",
+    details: "AUTO-TRACKED from patents entries; the status field picks the tier.",
+    categories: ["patents"],
     section: "s5",
     label: "Utility Patents",
-    source: "claim",
+    source: "entry",
     effort: "high",
     pointsModel: {
       kind: "tiered",

@@ -74,6 +74,7 @@ test("registry: publications are record-flow categories; originals stay permissi
   assert.equal(getCategoryFlow("journal-publications"), "record");
   assert.equal(getCategoryFlow("conference-publications"), "record");
   assert.equal(getCategoryFlow("books-and-chapters"), "record");
+  assert.equal(getCategoryFlow("patents"), "record");
   for (const slug of ["workshops", "guest-lectures", "fdp-attended", "fdp-conducted", "case-studies"]) {
     assert.equal(getCategoryFlow(slug), "permission", `${slug} must remain permission-flow`);
   }
@@ -134,6 +135,33 @@ test("books-and-chapters: kind splits the two metrics (Book 10 / Chapter 5)", as
     assert.equal(byId.get("book_publication")?.count, 1);
     assert.equal(byId.get("book_chapter")?.points, 5);
     assert.equal(byId.get("book_chapter")?.count, 1);
+  });
+});
+
+test("patents: status picks the tier (Granted 10 / Published 5)", async () => {
+  await withSandbox("record-patents", async () => {
+    const base = {
+      academicYear: YEAR,
+      semesterType: "EVEN",
+      level: "National",
+      applicationNumber: "202641012345",
+      statusDate: "2025-12-05",
+      patentDocument: [{ storedPath: "uploads/x/patent.pdf", url: "/api/entry-file?p=4", fileName: "patent.pdf" }],
+    };
+    const granted = await createEntry(OWNER, "patents", {
+      ...base, patentTitle: "Modular bamboo joinery system", status: "Granted",
+    } as never);
+    await commitDraft(OWNER, "patents", String(granted.id));
+
+    const published = await createEntry(OWNER, "patents", {
+      ...base, patentTitle: "Passive cooling wall assembly", status: "Published",
+    } as never);
+    await commitDraft(OWNER, "patents", String(published.id));
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "utility_patent");
+    assert.equal(metric?.points, 15, "10 (granted) + 5 (published)");
+    assert.equal(metric?.count, 2);
   });
 });
 
