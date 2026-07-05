@@ -22,6 +22,7 @@ import {
   Palette,
   PenLine,
   Presentation,
+  Trophy,
   Wrench,
 } from "lucide-react";
 
@@ -39,6 +40,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "calendar-days": CalendarDays,
   palette: Palette,
   brush: Brush,
+  trophy: Trophy,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

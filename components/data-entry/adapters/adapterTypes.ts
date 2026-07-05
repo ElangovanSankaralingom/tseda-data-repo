@@ -619,3 +619,42 @@ export type CreativePublicationEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// DesignCompetitionEntry (PERMISSION flow — result tiered 5/2 at stage 2)
+// ---------------------------------------------------------------------------
+
+export type DesignCompetitionEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  competitionName: string;
+  level: string;
+  organizer: string;
+  startDate: string;
+  endDate: string;
+  entryTheme: string;
+  teamMembers: FacultyRowValue[];
+  result: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  certificate: FileMeta[];
+  submissionCopy: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

@@ -106,10 +106,13 @@ profile upload slots generalize.
    "Publication Kind"; the same collision was silently mislabeling
    research-funding's selector and was fixed with a dedicated
    `fields.fundingKind` label in the same commit.
-9. **design-competitions** [PERMISSION] (feeds `design_competition` award 5
-   / participation 2) — prior approval to participate; complete data
-   mandatory. level, competition, organizer, result Award|Participation
-   (tier), teamMembers collaborates. Stage 2: certificate.
+9. ~~**design-competitions**~~ ✅ SHIPPED 2026-07 [PERMISSION] — prior
+   approval to participate: competitionName, level, organizer, dates,
+   entryTheme, teamMembers (`collaborates: true`). `result` (Recognized
+   Entry / Award | Participation) is STAGE 2 — known only after the
+   competition — required for finalise and drives the 5/2 tier; entries
+   with pending results score 0 with a note. Stage 2 uploads: certificate
+   (required), submissionCopy. Yellow palette + Trophy icon.
 10. **exhibitions-outreach** [PERMISSION] (feeds `public_exhibition` 2 max
     4) — public/outreach events need prior approval. kind
     Exhibition|Outreach, venue, dates, externalExperts. Stage 2:

@@ -10,6 +10,7 @@ import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
 import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
 import { journalPublicationsSchema } from "@/data/schemas/journal-publications";
 import { creativePublicationsSchema } from "@/data/schemas/creative-publications";
+import { designCompetitionsSchema } from "@/data/schemas/design-competitions";
 import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
@@ -29,6 +30,7 @@ export const CATEGORY_SLUGS = [
   "conferences-organized",
   "studio-contributions",
   "creative-publications",
+  "design-competitions",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -47,7 +49,8 @@ export type CategorySummaryKey =
   | "editorialRoles"
   | "conferencesOrganized"
   | "studioContributions"
-  | "creativePublications";
+  | "creativePublications"
+  | "designCompetitions";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -521,6 +524,35 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Record essays, critiques, and visual narratives published in design platforms and magazines.",
     entryTitleField: "workTitle",
     entryTitleFallback: "Creative Publication",
+  },
+  "design-competitions": {
+    slug: "design-competitions",
+    label: "Design Competitions",
+    schemaKey: "design-competitions",
+    schema: designCompetitionsSchema,
+    summaryKey: "designCompetitions",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // PERMISSION FLOW (S4 ruling): participation needs prior approval.
+    // Result (Award / Participation) is stage 2 — known only afterwards.
+    group: "academic",
+    icon: "trophy",
+    color: {
+      bar: "from-yellow-400 to-yellow-600",
+      bg: "bg-yellow-100",
+      text: "text-yellow-600",
+      ring: "hover:ring-yellow-200",
+      cta: "text-yellow-500",
+      gradient: "from-yellow-600 via-yellow-700 to-yellow-900",
+      accentBg: "bg-yellow-500/10",
+      borderTop: "border-t-yellow-500",
+      buttonBg: "bg-yellow-600",
+      buttonHover: "hover:bg-yellow-700",
+      chartHex: "#CA8A04",
+    },
+    subtitle: "Plan competition participation — permission letter first, certificate and result after.",
+    entryTitleField: "competitionName",
+    entryTitleFallback: "Design Competition",
   },
 };
 

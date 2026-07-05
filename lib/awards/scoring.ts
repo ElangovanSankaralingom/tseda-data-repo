@@ -178,6 +178,32 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count: scoring.length, notes };
   },
 
+  /** Design competitions (permission flow): result picks the tier —
+   *  Recognized Entry / Award 5, Participation 2. Entries whose result is
+   *  not recorded yet (letter generated, competition pending) score 0 with
+   *  an honest note. */
+  design_competition({ entriesByCategory, model }) {
+    const entries = entriesByCategory.get("design-competitions") ?? [];
+    let points = 0;
+    let count = 0;
+    let pending = 0;
+    for (const entry of entries) {
+      const result = String(entry.result ?? "");
+      if (result === "Recognized Entry / Award") {
+        points += tierPoints(model, "award");
+        count += 1;
+      } else if (result === "Participation") {
+        points += tierPoints(model, "participation");
+        count += 1;
+      } else {
+        pending += 1;
+      }
+    }
+    const notes: string[] = [];
+    if (pending > 0) notes.push(`${pending} not counted: result not recorded yet`);
+    return { points, count, notes };
+  },
+
   /** Creative publications (record flow): flat per-unit per committed piece. */
   creative_publication({ entriesByCategory, model }) {
     const entries = entriesByCategory.get("creative-publications") ?? [];

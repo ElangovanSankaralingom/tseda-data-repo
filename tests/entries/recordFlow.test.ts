@@ -319,6 +319,43 @@ test("creative-publications: 5 per committed piece", async () => {
   });
 });
 
+test("design-competitions: permission flow; result tiers 5/2, pending results noted", async () => {
+  await withSandbox("perm-competitions", async () => {
+    const today = nowISTDateISO();
+    const base = {
+      academicYear: YEAR,
+      semesterType: "ODD",
+      organizer: "HUDCO",
+      level: "National",
+      startDate: addDaysISO(today, 5),
+      endDate: addDaysISO(today, 6),
+    };
+
+    // Award (5) + Participation (2) + result pending (0, noted).
+    const award = await createEntry(OWNER, "design-competitions", {
+      ...base, competitionName: "HUDCO Design Awards", result: "Recognized Entry / Award",
+    } as never);
+    const committed = await commitDraft(OWNER, "design-competitions", String(award.id)) as Record<string, unknown>;
+    assert.notEqual(committed.editWindowExpiresAt, null, "permission flow keeps its edit window");
+
+    const participation = await createEntry(OWNER, "design-competitions", {
+      ...base, competitionName: "CoA National Ideas Competition", result: "Participation",
+    } as never);
+    await commitDraft(OWNER, "design-competitions", String(participation.id));
+
+    const pending = await createEntry(OWNER, "design-competitions", {
+      ...base, competitionName: "IIA Awards (ongoing)",
+    } as never);
+    await commitDraft(OWNER, "design-competitions", String(pending.id));
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "design_competition");
+    assert.equal(metric?.points, 7, "5 (award) + 2 (participation)");
+    assert.equal(metric?.count, 2);
+    assert.ok(metric?.notes.some((n) => n.includes("result not recorded")), "pending result noted");
+  });
+});
+
 test("submit: rejects incomplete records; completed submit locks with no timer and wins instantly", async () => {
   await withSandbox("record-submit", async () => {
     // Missing the required firstPage upload → submit must refuse.

@@ -223,7 +223,8 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     section: "s4",
     label: "Design Competitions (apart from NASA)",
     details: "Recognized entries or awards at National / International levels.",
-    source: "claim",
+    source: "entry",
+    categories: ["design-competitions"],
     effort: "medium",
     pointsModel: {
       kind: "tiered",

@@ -153,6 +153,13 @@ const ROW_BUILDERS: Record<string, RowBuilder> = {
       s(x, "conferenceTitle"), s(x, "role"), `${s(x, "startDate")} – ${s(x, "endDate")}`,
     ]),
   },
+  design_competition: {
+    columns: ["Competition", "Level", "Organizer", "Result", "Dates"],
+    rows: (e) => (e.get("design-competitions") ?? []).map((x) => [
+      s(x, "competitionName"), s(x, "level"), s(x, "organizer"), s(x, "result") || "Pending",
+      `${s(x, "startDate")} – ${s(x, "endDate")}`,
+    ]),
+  },
   creative_publication: {
     columns: ["Title of Work", "Platform / Magazine", "ISSN", "Date"],
     rows: (e) => (e.get("creative-publications") ?? []).map((x) => [
