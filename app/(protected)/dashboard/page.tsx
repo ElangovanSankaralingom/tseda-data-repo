@@ -95,14 +95,14 @@ export default async function DashboardPage() {
       <DashboardWelcome
         greetingKey={greetingKey}
         firstName={firstName}
-        totalEntries={totalEntries}
         streakActivated={streakActivated}
         streakWins={streakWins}
-        goldWins={toSafeCount(summary.totals.streakGoldWinsCount)}
-        silverWins={toSafeCount(summary.totals.streakSilverWinsCount)}
         hasAnyEntries={hasAnyEntries}
-        draftCount={draftCount}
-        editRequestedCount={editRequestedCount}
+        continueRows={(summary.streakActivatedRows ?? []).slice(0, 3).map((row) => ({
+          id: row.id,
+          categoryLabel: row.categoryLabel,
+          route: row.route,
+        }))}
       />
 
       {/* ── Analytics cards: club distribution, status mix, streak split ── */}

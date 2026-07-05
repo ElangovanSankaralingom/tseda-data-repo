@@ -99,22 +99,38 @@ export default function DashboardClient({
   // edge while scrolling (or hovering) and fades away when idle — minimal,
   // but unmistakably "there is more".
   const railRef = useRef<HTMLDivElement>(null);
+  const railDotRef = useRef<HTMLDivElement>(null);
   const railHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [rail, setRail] = useState({ progress: 0, visible: false, canScroll: false });
+  const railRafPending = useRef(false);
+  const [rail, setRail] = useState({ visible: false, canScroll: false });
 
+  // The dot position is written DIRECTLY to the DOM inside a rAF — no React
+  // state, no CSS transition on position — so it tracks the finger 1:1
+  // instead of leaping to the far end after the fact (Elan, 2026-07).
   const updateRail = useCallback((show: boolean) => {
-    const el = railRef.current;
-    if (!el) return;
-    const range = el.scrollHeight - el.clientHeight;
-    const canScroll = range > 8;
-    const progress = canScroll ? Math.min(1, Math.max(0, el.scrollTop / range)) : 0;
-    setRail({ progress, canScroll, visible: show && canScroll });
-    if (show && canScroll) {
-      if (railHideTimer.current) clearTimeout(railHideTimer.current);
-      railHideTimer.current = setTimeout(() => {
-        setRail((prev) => ({ ...prev, visible: false }));
-      }, 900);
-    }
+    if (railRafPending.current) return;
+    railRafPending.current = true;
+    requestAnimationFrame(() => {
+      railRafPending.current = false;
+      const el = railRef.current;
+      if (!el) return;
+      const range = el.scrollHeight - el.clientHeight;
+      const canScroll = range > 8;
+      const progress = canScroll ? Math.min(1, Math.max(0, el.scrollTop / range)) : 0;
+      const dot = railDotRef.current;
+      if (dot) dot.style.top = `calc(${progress} * (100% - 24px))`;
+      setRail((prev) =>
+        prev.canScroll === canScroll && prev.visible === (show && canScroll)
+          ? prev
+          : { canScroll, visible: show && canScroll },
+      );
+      if (show && canScroll) {
+        if (railHideTimer.current) clearTimeout(railHideTimer.current);
+        railHideTimer.current = setTimeout(() => {
+          setRail((prev) => ({ ...prev, visible: false }));
+        }, 900);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -233,9 +249,10 @@ export default function DashboardClient({
                 <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 rounded-full" style={{ background: "var(--color-border-subtle)" }} />
                 {/* The dot */}
                 <div
-                  className="absolute left-1/2 h-6 w-[4px] -translate-x-1/2 rounded-full transition-[top] duration-100"
+                  ref={railDotRef}
+                  className="absolute left-1/2 h-6 w-[4px] -translate-x-1/2 rounded-full"
                   style={{
-                    top: `calc(${rail.progress} * (100% - 24px))`,
+                    top: 0,
                     background: "var(--color-primary)",
                     boxShadow: "0 0 8px var(--color-glow-primary)",
                   }}

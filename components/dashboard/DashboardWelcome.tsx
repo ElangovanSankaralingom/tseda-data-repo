@@ -1,57 +1,76 @@
 "use client";
 
 import React from "react";
-import { Flame, Trophy, Medal, FileText, Clock } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Award, Flame, CircleCheckBig } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import { formatNumber } from "@/lib/i18n/locale";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
-import { useCountUp } from "@/hooks/useCountUp";
+import { useApi } from "@/hooks/useApi";
+import type { AwardScore } from "@/lib/awards/scoring";
 import type { TranslationKey } from "@/lib/i18n";
-import StreakRing from "./StreakRing";
-
-/* Token migration note: all white-alpha literals now use CSS variable tokens from themeTokens.ts */
 
 /*
   ───────────────────────────────────────────────────────
-   COMMAND STRIP — Formal institutional hero bar.
+   COMMAND STRIP — identity + ACTION (2026-07 redesign).
 
-   Surface depth system (4 levels):
-   L0: Body bg (deepest)
-   L1: Card bg — subtle primary wash gradient
-   L2: Inset panels — white/[0.06-0.08]
-   L3: Bright panels — white/[0.12-0.16]
-   L4: Hero elements — accent-colored backgrounds
-
-   Colors are functional, not decorative.
+   Numbers were repeated three times on the dashboard (hero rings, hero
+   counter panel, analytics cards). Ruling: the HERO carries identity and
+   the next action; the ANALYTICS STRIP owns every number. So the hero
+   shows the greeting and "continue where you left off" — the running
+   entries a click away — and nothing that the cards below restate.
   ───────────────────────────────────────────────────────
 */
+
+export type ContinueRow = {
+  id: string;
+  categoryLabel: string;
+  route: string;
+};
+
+type AwardsResponse = { data?: { years: string[]; score: AwardScore | null } };
+
+/** Headline award number (Elan, 2026-07): total points for the latest
+ *  award year, right in the hero. Same SWR key as the award panel below —
+ *  one request, deduped, refreshed by the instant-update bus. */
+function HeroAwardPoints() {
+  const { t } = useTranslation();
+  const { data: body } = useApi<AwardsResponse>("/api/me/awards");
+  const score = body?.data?.score ?? null;
+  if (!score) return null;
+  return (
+    <div className="mt-5 inline-flex items-center gap-3 rounded-2xl border border-[var(--color-surface-on-accent)] bg-[var(--color-surface-on-accent)] px-4 py-2.5">
+      <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--color-status-warning)]/20">
+        <Award className="size-4 text-[var(--color-status-warning)]" />
+      </span>
+      <div>
+        <div className="font-mono text-xl font-black leading-none tabular-nums text-[var(--color-text-on-accent)]">
+          {score.totalPoints}
+        </div>
+        <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
+          {t("dashboard.awardPoints")} · {score.academicYear.replace("Academic Year ", "")}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardWelcome({
   greetingKey,
   firstName,
-  totalEntries,
+  hasAnyEntries,
   streakActivated,
   streakWins,
-  goldWins = 0,
-  silverWins = 0,
-  hasAnyEntries,
-  draftCount,
-  editRequestedCount,
+  continueRows = [],
 }: {
   greetingKey: string;
   firstName: string;
-  totalEntries: number;
+  hasAnyEntries: boolean;
   streakActivated: number;
   streakWins: number;
-  /** GOLD = permission-flow wins (weighted tier); SILVER = record-flow. */
-  goldWins?: number;
-  silverWins?: number;
-  hasAnyEntries: boolean;
-  draftCount: number;
-  editRequestedCount: number;
+  /** Running (activated) entries — the hero's call to action. */
+  continueRows?: ContinueRow[];
 }) {
-  const { t, language } = useTranslation();
-  const animatedTotal = useCountUp(totalEntries);
+  const { t } = useTranslation();
   const greeting = t(`dashboard.${greetingKey}` as TranslationKey);
 
   const welcomeSubtext = !hasAnyEntries
@@ -68,6 +87,8 @@ export default function DashboardWelcome({
     ...lightStyle,
     opacity: isHovered ? 0.04 : 0,
   };
+
+  const rows = continueRows.slice(0, 3);
 
   return (
     <div className="animate-fade-in-up">
@@ -90,140 +111,69 @@ export default function DashboardWelcome({
         <div className="flex flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-10">
 
           {/* ═══ LEFT: Identity ═══ */}
-          <div className="flex-1 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-4">
-                <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
-                  {greeting}
-                </p>
-                <div className="h-px flex-1 bg-[var(--color-surface-on-accent)]" />
-                <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-text-on-accent-muted)]">
-                  {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
-                </span>
-              </div>
-              <div className="mt-4 animate-text-reveal">
-                <h1 className="text-[36px] font-extrabold tracking-[-0.03em] text-[var(--color-text-on-accent)] sm:text-[42px]">
-                  {firstName}
-                </h1>
-              </div>
-              <p className="mt-3 text-sm text-[var(--color-text-on-accent-muted)] font-medium max-w-sm leading-relaxed">
-                {welcomeSubtext}
+          <div className="flex-1">
+            <div className="flex items-center gap-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
+                {greeting}
               </p>
+              <div className="h-px flex-1 bg-[var(--color-surface-on-accent)]" />
+              <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-text-on-accent-muted)]">
+                {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
+              </span>
             </div>
-
-            {/* ── Streak ring gauges — raised surface ── */}
-            {hasAnyEntries && (streakActivated > 0 || streakWins > 0) && (
-              <div className="mt-7 rounded-2xl px-5 py-4 inline-flex items-center gap-6 self-start" style={{ backgroundColor: "var(--color-surface-panel-raised)", borderColor: "var(--color-border-subtle)", borderWidth: "1px", boxShadow: "0 6px 14px -12px rgba(10,16,42,0.16)" }}>
-                {streakActivated > 0 && (
-                  <StreakRing
-                    icon={Flame}
-                    value={streakActivated}
-                    maxValue={Math.max(totalEntries, streakActivated)}
-                    label={t("streak.activated")}
-                    wins={streakWins}
-                    ringColor="#fbbf24"
-                    valueColor="#fbbf24"
-                  />
-                )}
-                {streakActivated > 0 && streakWins > 0 && (
-                  <div className="h-10 w-px bg-[var(--color-divider)]" />
-                )}
-                {/* GOLD — permission-flow wins carry the weight (Elan, 2026-07). */}
-                {goldWins > 0 && (
-                  <StreakRing
-                    icon={Trophy}
-                    value={goldWins}
-                    maxValue={Math.max(streakWins, goldWins)}
-                    label={t("streak.goldWon")}
-                    wins={goldWins}
-                    ringColor="#eab308"
-                    valueColor="#eab308"
-                  />
-                )}
-                {goldWins > 0 && silverWins > 0 && (
-                  <div className="h-10 w-px bg-[var(--color-divider)]" />
-                )}
-                {/* SILVER — record-flow ("data alone") wins. */}
-                {silverWins > 0 && (
-                  <StreakRing
-                    icon={Medal}
-                    value={silverWins}
-                    maxValue={Math.max(streakWins, silverWins)}
-                    label={t("streak.silverWon")}
-                    wins={silverWins}
-                    ringColor="#a1a1aa"
-                    valueColor="#a1a1aa"
-                  />
-                )}
-                {/* Fallback: stale index without tier split yet — combined ring. */}
-                {streakWins > 0 && goldWins === 0 && silverWins === 0 && (
-                  <StreakRing
-                    icon={Trophy}
-                    value={streakWins}
-                    maxValue={Math.max(streakActivated, streakWins)}
-                    label={t("streak.won")}
-                    wins={streakWins}
-                    ringColor="var(--color-primary)"
-                    valueColor="var(--color-primary)"
-                  />
-                )}
-              </div>
-            )}
+            <div className="mt-4 animate-text-reveal">
+              <h1 className="text-[36px] font-extrabold tracking-[-0.03em] text-[var(--color-text-on-accent)] sm:text-[42px]">
+                {firstName}
+              </h1>
+            </div>
+            <p className="mt-3 text-sm text-[var(--color-text-on-accent-muted)] font-medium max-w-sm leading-relaxed">
+              {welcomeSubtext}
+            </p>
+            {hasAnyEntries && <HeroAwardPoints />}
           </div>
 
-          {/* ═══ RIGHT: Bright counter panel (L3) ═══ */}
+          {/* ═══ RIGHT: Continue where you left off — ACTION, not numbers ═══ */}
           {hasAnyEntries && (
-            <div className="lg:w-72 shrink-0">
+            <div className="lg:w-96 shrink-0">
               <div className="h-full overflow-hidden rounded-2xl bg-[var(--color-surface-panel-tile)] border border-[var(--color-border-default)] flex flex-col" style={{ boxShadow: "0 7px 16px -12px rgba(10,16,42,0.16)" }}>
-                <div className="h-[2px] bg-[var(--color-primary)] opacity-50" />
-
-                <div className="flex-1 p-6 flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-secondary)]">
-                      {t("dashboard.totalEntries")}
-                    </div>
-                    <div className="mt-2 font-mono text-[38px] font-extrabold tracking-tighter text-[var(--color-text-primary)] leading-none tabular-nums">
-                      {formatNumber(animatedTotal, language)}
-                    </div>
+                <div className="h-[2px] bg-[var(--color-status-warning)] opacity-60" />
+                <div className="flex-1 p-5">
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-secondary)]">
+                    {rows.length > 0 ? <Flame className="size-3.5 text-[var(--color-status-warning)]" /> : <CircleCheckBig className="size-3.5 text-[var(--color-status-success)]" />}
+                    {rows.length > 0 ? t("dashboard.continueTitle") : t("dashboard.allCaughtUpTitle")}
                   </div>
 
-                  {/* Dark inset micro-stats (L1 inside L3 — creates depth) */}
-                  <div className="mt-6 flex gap-3">
-                    <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: "var(--color-surface-panel)", borderColor: "var(--color-divider)", borderWidth: "1px" }}>
-                      <div className="flex items-center gap-2">
-                        <FileText className="size-4 text-[var(--color-text-tertiary)]" />
-                        <span className="font-mono text-lg font-black text-[var(--color-text-primary)]">
-                          {formatNumber(draftCount, language)}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-[11px] font-semibold text-[var(--color-text-tertiary)]">
-                        {t("dashboard.drafts")}
-                      </div>
-                    </div>
-                    {editRequestedCount > 0 && (
-                      <div
-                        className="flex-1 rounded-xl px-4 py-3"
-                        style={{ backgroundColor: "color-mix(in srgb, var(--color-status-warning) 8%, var(--color-surface-panel-raised))", border: "1px solid var(--color-status-warning-border)" }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Clock className="size-4 text-[var(--color-status-warning)]/80" />
-                          <span className="font-mono text-lg font-black text-[var(--color-status-warning)]">
-                            {formatNumber(editRequestedCount, language)}
+                  {rows.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {rows.map((row) => (
+                        <Link
+                          key={row.id}
+                          href={row.route}
+                          className="group flex items-center gap-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-panel)] px-3.5 py-2.5 transition-all hover:border-[var(--color-border-strong)] hover:-translate-y-px"
+                        >
+                          <span className="size-1.5 shrink-0 rounded-full bg-[var(--color-status-warning)] animate-subtle-pulse" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-text-primary)]">
+                            {row.categoryLabel}
                           </span>
-                        </div>
-                        <div className="mt-1 text-[11px] font-semibold text-[var(--color-status-warning)]/50">
-                          {t("dashboard.editRequested")}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                          <span className="shrink-0 text-[11px] font-semibold text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]">
+                            {t("dashboard.finishIt")}
+                          </span>
+                          <ArrowRight className="size-3.5 shrink-0 text-[var(--color-icon-muted)] transition-transform group-hover:translate-x-0.5" />
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-tertiary)]">
+                      {t("dashboard.allCaughtUpBody")}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* ── Status bar — own surface ── */}
+        {/* ── Status bar — ambient ticker, no repeated stats ── */}
         <div className="mt-8 rounded-xl px-5 py-3.5 flex items-center gap-4" style={{ backgroundColor: "var(--color-surface-inset)", borderColor: "var(--color-border-subtle)", borderWidth: "1px", boxShadow: "0 6px 18px -10px rgba(10,16,42,0.30)" }}>
           <span className="text-[var(--color-primary)] text-xs font-bold">{">"}</span>
           <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-text-tertiary)]">
@@ -233,18 +183,6 @@ export default function DashboardWelcome({
           <span className="font-mono text-[11px] font-semibold tracking-wider text-[var(--color-status-success)]/70">
             ONLINE
           </span>
-          <div className="h-3 w-px bg-[var(--color-border-subtle)]" />
-          <span className="font-mono text-[11px] font-medium tracking-wider text-[var(--color-text-tertiary)]">
-            {totalEntries} ENTRIES
-          </span>
-          {streakActivated + streakWins > 0 && (
-            <>
-              <div className="h-3 w-px bg-[var(--color-border-subtle)]" />
-              <span className="font-mono text-[11px] font-medium tracking-wider text-[var(--color-text-tertiary)]">
-                {streakActivated + streakWins} STREAKS
-              </span>
-            </>
-          )}
         </div>
       </div>
     </div>

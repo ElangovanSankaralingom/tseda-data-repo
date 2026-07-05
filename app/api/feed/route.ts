@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import { listFeedEvents, removeFeedEvent, FEED_REACTIONS, type FeedReaction } from "@/lib/feed/feedStore";
+import { backfillFeedIfNeeded } from "@/lib/feed/backfill";
 import { resolveFacultyName } from "@/lib/admin/facultyRegistry";
 import { isActivityFeedEnabled } from "@/lib/settings/consumer";
 import { enforceRateLimitForRequest, RATE_LIMIT_PRESETS } from "@/lib/security/rateLimit";
@@ -44,7 +45,13 @@ async function GETHandler(request: Request) {
     return NextResponse.json({ data: { enabled: false, events: [] } });
   }
 
-  const events = await listFeedEvents(50);
+  let events = await listFeedEvents(50);
+  if (events.length === 0) {
+    // Empty wall + entries that predate feed wiring → one idempotent sweep
+    // per universe (deterministic event ids; marker file stops rescans).
+    await backfillFeedIfNeeded();
+    events = await listFeedEvents(50);
+  }
   const shaped = events.map((e) => {
     const reactions: Record<string, number> = {};
     const myReactions: FeedReaction[] = [];

@@ -66,6 +66,9 @@ export default function DashboardAnalytics(props: DashboardAnalyticsProps) {
         <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           <Layers className="size-3.5" />
           {t("dashboardAnalytics.byClub")}
+          <span className="ml-auto rounded-full bg-[var(--color-surface-inset)] px-2 py-0.5 font-mono text-[11px] font-black tabular-nums text-[var(--color-text-primary)]">
+            {totalEntries}
+          </span>
         </div>
         <div className="mt-4 space-y-2.5">
           {clubs.filter((c) => c.categories > 0).map((club) => (
