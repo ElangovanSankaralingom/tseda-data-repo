@@ -12,6 +12,8 @@ import {
 import { getAwardPointsConfig, resolveEffectivePointsModel } from "@/lib/awards/config";
 import { readCategoryEntries } from "@/lib/dataStore";
 import { normalizeEntryStatus } from "@/lib/entries/workflow";
+import { readResearchProfile, type ResearchProfile } from "@/lib/research/researchProfile";
+import { academicYearOfDate } from "@/lib/utils/academicYear";
 import type { CategoryKey } from "@/lib/entries/types";
 
 /**
@@ -127,6 +129,10 @@ function conferenceOrganizedShare(
 type DeriverInput = {
   entriesByCategory: Map<CategoryKey, EntryRecord[]>;
   model: AwardPointsModel;
+  /** Profile-sourced metrics (Ph.D. milestones) read the Research section. */
+  researchProfile: ResearchProfile;
+  /** The academic year being scored — profile dates bucket against this. */
+  academicYear: string;
 };
 
 type DeriverResult = { points: number; count: number; notes: string[] };
@@ -223,6 +229,36 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return conferenceOrganizedShare(entriesByCategory, model, "National");
   },
 
+  /** Ph.D. awarded (profile-sourced): fixed points in the academic year of
+   *  the OWN viva date — the only date the T'SEDA rule considers. */
+  phd_awarded({ researchProfile, model, academicYear }) {
+    const fixed = model.kind === "fixed" ? model.points : 0;
+    const own = researchProfile.ownPhd;
+    if (own.status !== "Awarded" || !own.vivaDate) {
+      return { points: 0, count: 0, notes: [] };
+    }
+    const vivaYear = academicYearOfDate(own.vivaDate);
+    if (vivaYear !== academicYear) {
+      return { points: 0, count: 0, notes: [`Ph.D. viva falls in ${vivaYear ?? "an unknown year"}`] };
+    }
+    return { points: fixed, count: 1, notes: [] };
+  },
+
+  /** Ph.D. guided (profile-sourced): per scholar whose viva date falls in
+   *  the scored academic year. */
+  phd_guided({ researchProfile, model, academicYear }) {
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    const qualifying = researchProfile.guidedScholars.filter(
+      (scholar) => academicYearOfDate(scholar.vivaDate) === academicYear,
+    );
+    const pending = researchProfile.guidedScholars.length - qualifying.length;
+    const notes: string[] = [];
+    if (pending > 0) {
+      notes.push(`${pending} scholar(s) recorded with viva outside this year (or pending)`);
+    }
+    return { points: perUnit * qualifying.length, count: qualifying.length, notes };
+  },
+
   /** Editorial roles (record flow): fixed points, awarded ONCE per year when
    *  at least one Editor / Associate Editor role exists. Board memberships
    *  and reviewer roles are recorded but not points-eligible. */
@@ -300,7 +336,8 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
-/** Academic years present in a faculty member's entries (any status), newest first. */
+/** Academic years present in a faculty member's entries (any status) and
+ *  profile viva dates, newest first. */
 export async function listFacultyAcademicYears(email: string): Promise<string[]> {
   const years = new Set<string>();
   for (const category of CATEGORY_LIST) {
@@ -309,6 +346,15 @@ export async function listFacultyAcademicYears(email: string): Promise<string[]>
       const year = String((entry as EntryRecord).academicYear ?? "").trim();
       if (year) years.add(year);
     }
+  }
+  const research = await readResearchProfile(email);
+  const vivaDates = [
+    research.ownPhd.vivaDate,
+    ...research.guidedScholars.map((scholar) => scholar.vivaDate),
+  ];
+  for (const date of vivaDates) {
+    const year = academicYearOfDate(date);
+    if (year) years.add(year);
   }
   return [...years].sort().reverse();
 }
@@ -329,6 +375,9 @@ export async function computeFacultyAwardScore(
     );
   }
 
+  // Profile-sourced metrics (Ph.D. milestones) read the Research section.
+  const researchProfile = await readResearchProfile(email);
+
   const metrics: MetricScore[] = AWARD_METRICS.map((metric) => {
     const model = resolveEffectivePointsModel(metric, config);
     const base: Omit<MetricScore, "status" | "points" | "count" | "notes"> = {
@@ -340,12 +389,12 @@ export async function computeFacultyAwardScore(
       maxPointsPerInstance: maxPointsOf(model),
     };
 
-    if (metric.source === "entry") {
+    if (metric.source === "entry" || metric.source === "profile") {
       const deriver = DERIVERS[metric.id];
       if (!deriver) {
         return { ...base, status: "zero", points: 0, count: 0, notes: ["No deriver wired"] };
       }
-      const { points, count, notes } = deriver({ entriesByCategory, model });
+      const { points, count, notes } = deriver({ entriesByCategory, model, researchProfile, academicYear });
       return {
         ...base,
         status: points > 0 ? "scored" : "zero",
@@ -390,7 +439,7 @@ export async function computeFacultyAwardScore(
     sections,
     metrics,
     coverage: {
-      tracked: AWARD_METRICS.filter((m) => m.source === "entry").length,
+      tracked: AWARD_METRICS.filter((m) => m.source === "entry" || m.source === "profile").length,
       total: AWARD_METRICS.length,
     },
     strengths,

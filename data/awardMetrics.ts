@@ -13,6 +13,8 @@ import type { CategorySlug } from "@/data/categoryRegistry";
  * `source` classifies how a metric is scored:
  *  - "entry"     → auto-derived from committed TSEDA entries (wired via
  *                  `categories` + a deriver in lib/awards/scoring.ts)
+ *  - "profile"   → auto-derived from the faculty's profile (Research section
+ *                  — Ph.D. milestones; deriver reads the research profile)
  *  - "claim"     → needs a future entry category (see docs/AWARDS-ROADMAP.md);
  *                  shows as "not yet tracked" until built
  *  - "interview" → awarded by the department (interview/committee), entered
@@ -34,7 +36,7 @@ export type AwardPointsModel =
   | { kind: "tiered"; tiers: readonly AwardTier[] }
   | { kind: "perUnit"; points: number; maxPoints?: number };
 
-export type AwardSourceType = "entry" | "claim" | "interview";
+export type AwardSourceType = "entry" | "profile" | "claim" | "interview";
 
 export type AwardMetricDefinition = {
   /** Stable id — used by config overrides, scoring, and the appraisal report. */
@@ -380,8 +382,10 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "phd_awarded",
     section: "s7",
     label: "Ph.D. Awarded to Faculty",
-    details: "Only viva date considered.",
-    source: "claim",
+    details:
+      "Only viva date considered. AUTO-TRACKED from the profile's Research " +
+      "section (own Ph.D., status Awarded, viva date in the scored year).",
+    source: "profile",
     effort: "high",
     pointsModel: { kind: "fixed", points: 15 },
     proofs: ["Proof with viva date"],
@@ -390,8 +394,10 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "phd_guided",
     section: "s7",
     label: "Ph.D. Guided by the Supervisor",
-    details: "Only viva date considered.",
-    source: "claim",
+    details:
+      "Only viva date considered. AUTO-TRACKED from the profile's Research " +
+      "section (guided scholars whose viva date falls in the scored year).",
+    source: "profile",
     effort: "high",
     pointsModel: { kind: "perUnit", points: 12 },
     proofs: ["Proof with viva date"],

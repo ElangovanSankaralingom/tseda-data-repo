@@ -80,12 +80,17 @@
    Fields: academicYear, semesterType, journalName, role, ISSN, publisher,
    appointmentDate, details; proof: appointment/invitation (required).
 
-**Ph.D. milestones (`phd_awarded` 15 / `phd_guided` 12) → PROFILE, not a
-category (Elan's ruling):** add a "Research" section to the profile/account
-page — ownPhd {status, university, thesisTitle, vivaDate, proof} + guided
-scholars list {scholar, thesis, vivaDate, proof} (mirrors the Research
-Scholars sheet). Scoring reads the profile store via a `source: "profile"`
-deriver. Corrections through the same DLC-request pattern.
+~~**Ph.D. milestones → PROFILE**~~ ✅ SHIPPED 2026-07 — "Research" tab on
+the account page: own Ph.D. (status/university/thesis/supervisor/vivaDate)
++ guided scholars list, both with INTERNAL (TCE faculty, registry-picked —
+creates a network edge) / EXTERNAL tagging per Elan's network ruling.
+`phd_awarded` 15 and `phd_guided` 12/scholar score via the new
+`source: "profile"` deriver, bucketed by each viva date's academic year
+(July–June). The derived network panel shows faculty who tagged YOU as
+supervisor (read-time join — no denormalised writes). Store is
+universe-scoped (demo-safe). Future: department research-network admin view
+joining both edge directions; proof uploads for viva certificates once
+profile upload slots generalize.
 
 ## Phase B — T'SEDA-specific creative outputs
 

@@ -8,6 +8,7 @@ import PersonalTab from "@/components/account/PersonalTab";
 import AcademicTab from "@/components/account/AcademicTab";
 import ExperienceTab from "@/components/account/ExperienceTab";
 import UploadsTab from "@/components/account/UploadsTab";
+import ResearchTab from "@/components/account/ResearchTab";
 import BetaProgramCard from "@/components/account/BetaProgramCard";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -33,7 +34,9 @@ import {
 export default function AccountPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<TabKey>("profile");
+  // "research" is self-contained (own fetch/save via /api/me/research) and
+  // deliberately outside the profile save machinery's TabKey cycle.
+  const [activeTab, setActiveTab] = useState<TabKey | "research">("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
@@ -89,8 +92,11 @@ export default function AccountPage() {
     [profile, draft]
   );
 
-  const activeTabDirty = dirtyByTab[activeTab];
-  const activeTabErrors = getErrorsForTab(activeTab, errors);
+  // The research tab manages its own store — the profile save machinery
+  // (dirty tracking, autosave, error gating) only applies to profile tabs.
+  const profileTab: TabKey | null = activeTab === "research" ? null : activeTab;
+  const activeTabDirty = profileTab ? dirtyByTab[profileTab] : false;
+  const activeTabErrors = profileTab ? getErrorsForTab(profileTab, errors) : [];
   const hasBlockingErrors = activeTabErrors.length > 0;
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
 
@@ -152,12 +158,13 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (loading) return;
+    if (!profileTab) return; // research tab saves itself
     if (!activeTabDirty) return;
-    const tabErrors = getErrorsForTab(activeTab, buildErrors(draftRef.current));
+    const tabErrors = getErrorsForTab(profileTab, buildErrors(draftRef.current));
     if (tabErrors.length > 0) return;
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    const tabToSave = activeTab;
+    const tabToSave = profileTab;
     autoSaveTimerRef.current = setTimeout(() => {
       void saveCurrentTab({ tab: tabToSave });
     }, 1500);
@@ -242,7 +249,8 @@ export default function AccountPage() {
               ["academic", t("account.academic")],
               ["experience", t("account.experience")],
               ["uploads", t("account.uploads")],
-            ] as Array<[TabKey, string]>
+              ["research", t("account.research")],
+            ] as Array<[TabKey | "research", string]>
           ).map(([key, label]) => (
             <button
               key={key}
@@ -296,6 +304,8 @@ export default function AccountPage() {
         {!loading && activeTab === "uploads" ? (
           <UploadsTab draft={draft} setDraft={setDraft} saveCurrentTab={saveCurrentTab} showToast={showToast} />
         ) : null}
+
+        {!loading && activeTab === "research" ? <ResearchTab /> : null}
 
         {hasBlockingErrors && activeTabDirty && !loading ? (
           <div className="rounded-xl border border-[var(--color-status-error-border)] bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] px-4 py-3 text-sm">
