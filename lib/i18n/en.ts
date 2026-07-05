@@ -59,6 +59,12 @@ export const en = {
     statusUntracked: "Not tracked",
     statusManual: "Committee",
     privacyNote: "Visible to admins only — faculty see their own panel on the dashboard",
+    committeeHint: "Committee-assessed — enter the points awarded at interview",
+    committeeNotePlaceholder: "Committee note (optional)",
+    saveAward: "Save",
+    clearAward: "Clear",
+    awardedByLine: "Awarded by {name} · {date}",
+    maxHint: "max {n}",
   },
   research: {
     ownPhdTitle: "My Ph.D.",

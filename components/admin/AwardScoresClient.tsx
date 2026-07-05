@@ -1,15 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Award, FileDown, UserSearch } from "lucide-react";
+import { Award, FileDown, Loader2, UserSearch } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { formatDate } from "@/lib/i18n/locale";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultySelect, { type FacultySelection } from "@/components/controls/FacultySelect";
 import type { AwardScore, MetricScore, MetricScoreStatus } from "@/lib/awards/scoring";
+import type { InterviewAward } from "@/lib/awards/interview";
 
 type AwardsResponse = {
   data?: { years: string[]; score: AwardScore | null };
+};
+
+type InterviewResponse = {
+  data?: { awards: Record<string, InterviewAward> };
 };
 
 /**
@@ -19,7 +25,7 @@ type AwardsResponse = {
  * every metric with counts and deriver notes), download the appraisal.
  * NO peer-visible leaderboard by design (privacy decision, 2026-07).
  */
-export default function AwardScoresClient() {
+export default function AwardScoresClient({ canAwardCommittee }: { canAwardCommittee: boolean }) {
   const { t } = useTranslation();
   const [faculty, setFaculty] = useState<FacultySelection>({ name: "", email: "" });
   const [year, setYear] = useState<string>("");
@@ -29,13 +35,21 @@ export default function AwardScoresClient() {
         year ? `&year=${encodeURIComponent(year)}` : ""
       }`
     : null;
-  const { data: body, isLoading } = useApi<AwardsResponse>(endpoint);
+  const { data: body, isLoading, mutate: refreshScore } = useApi<AwardsResponse>(endpoint);
 
   const score = body?.data?.score ?? null;
   const yearOptions = useMemo(() => {
     const years = body?.data?.years ?? [];
     return years.map((value) => ({ label: value, value }));
   }, [body]);
+
+  // Committee awards for the resolved year — prefills the inline editors.
+  const interviewEndpoint =
+    canAwardCommittee && faculty.email && score
+      ? `/api/admin/awards/interview?email=${encodeURIComponent(faculty.email)}&year=${encodeURIComponent(score.academicYear)}`
+      : null;
+  const { data: interviewBody, mutate: refreshAwards } = useApi<InterviewResponse>(interviewEndpoint);
+  const interviewAwards = interviewBody?.data?.awards ?? {};
 
   return (
     <div className="space-y-5">
@@ -93,7 +107,15 @@ export default function AwardScoresClient() {
       ) : !score ? (
         <EmptyState icon={<Award className="size-5" />} text={t("awardsAdmin.noActivity")} />
       ) : (
-        <ScorePanel score={score} />
+        <ScorePanel
+          score={score}
+          facultyEmail={faculty.email}
+          canAwardCommittee={canAwardCommittee}
+          interviewAwards={interviewAwards}
+          onAwardSaved={async () => {
+            await Promise.all([refreshScore(), refreshAwards()]);
+          }}
+        />
       )}
     </div>
   );
@@ -120,8 +142,30 @@ const STATUS_STYLE: Record<MetricScoreStatus, string> = {
     "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning)] border-[var(--color-status-warning-border)]",
 };
 
-function ScorePanel({ score }: { score: AwardScore }) {
+type CommitteeContext = {
+  facultyEmail: string;
+  academicYear: string;
+  interviewAwards: Record<string, InterviewAward>;
+  onAwardSaved: () => Promise<void>;
+};
+
+function ScorePanel({
+  score,
+  facultyEmail,
+  canAwardCommittee,
+  interviewAwards,
+  onAwardSaved,
+}: {
+  score: AwardScore;
+  facultyEmail: string;
+  canAwardCommittee: boolean;
+  interviewAwards: Record<string, InterviewAward>;
+  onAwardSaved: () => Promise<void>;
+}) {
   const { t } = useTranslation();
+  const committee: CommitteeContext | null = canAwardCommittee
+    ? { facultyEmail, academicYear: score.academicYear, interviewAwards, onAwardSaved }
+    : null;
 
   const statusLabel: Record<MetricScoreStatus, string> = {
     scored: t("awardsAdmin.statusScored"),
@@ -178,7 +222,12 @@ function ScorePanel({ score }: { score: AwardScore }) {
             </header>
             <ul className="divide-y divide-[var(--color-divider)]">
               {metrics.map((metric) => (
-                <MetricRow key={metric.id} metric={metric} statusLabel={statusLabel[metric.status]} />
+                <MetricRow
+                  key={metric.id}
+                  metric={metric}
+                  statusLabel={statusLabel[metric.status]}
+                  committee={metric.source === "interview" ? committee : null}
+                />
               ))}
             </ul>
           </section>
@@ -188,8 +237,17 @@ function ScorePanel({ score }: { score: AwardScore }) {
   );
 }
 
-function MetricRow({ metric, statusLabel }: { metric: MetricScore; statusLabel: string }) {
+function MetricRow({
+  metric,
+  statusLabel,
+  committee,
+}: {
+  metric: MetricScore;
+  statusLabel: string;
+  committee: CommitteeContext | null;
+}) {
   const { t } = useTranslation();
+  const award = committee?.interviewAwards[metric.id];
   return (
     <li className="px-4 py-2.5">
       <div className="flex items-center gap-3">
@@ -219,6 +277,127 @@ function MetricRow({ metric, statusLabel }: { metric: MetricScore; statusLabel: 
           ))}
         </ul>
       ) : null}
+      {committee ? (
+        <CommitteeEditor
+          key={`${metric.id}:${award?.awardedAt ?? "none"}`}
+          metric={metric}
+          award={award}
+          committee={committee}
+        />
+      ) : null}
     </li>
+  );
+}
+
+/**
+ * Inline committee entry (roadmap #16) — settings-tier admins type the
+ * interview points + a one-line note; the score and the appraisal document
+ * pick both up immediately. Keyed remount on `awardedAt` keeps the inputs
+ * in sync after each save without effect-driven state.
+ */
+function CommitteeEditor({
+  metric,
+  award,
+  committee,
+}: {
+  metric: MetricScore;
+  award: InterviewAward | undefined;
+  committee: CommitteeContext;
+}) {
+  const { t, language } = useTranslation();
+  const [points, setPoints] = useState<string>(award ? String(award.points) : "");
+  const [note, setNote] = useState<string>(award?.note ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const parsed = Number(points);
+  const valid = points.trim() !== "" && Number.isFinite(parsed) && parsed >= 0 && parsed <= metric.maxPointsPerInstance;
+  const dirty = points !== (award ? String(award.points) : "") || note !== (award?.note ?? "");
+
+  async function submit(reset: boolean) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/awards/interview", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          reset
+            ? { email: committee.facultyEmail, academicYear: committee.academicYear, metricId: metric.id, reset: true }
+            : { email: committee.facultyEmail, academicYear: committee.academicYear, metricId: metric.id, points: parsed, note },
+        ),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(body?.error ?? t("common.error"));
+        return;
+      }
+      await committee.onAwardSaved();
+    } catch {
+      setError(t("common.error"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-panel-raised)] p-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          max={metric.maxPointsPerInstance}
+          step={0.5}
+          value={points || ""}
+          onChange={(e) => setPoints(e.target.value)}
+          disabled={busy}
+          aria-label={t("awardsAdmin.pointsCol")}
+          className="w-20 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-text-primary)] outline-none focus:border-[var(--color-border-strong)]"
+        />
+        <span className="text-[10px] text-[var(--color-text-muted)]">
+          {t("awardsAdmin.maxHint").replace("{n}", String(metric.maxPointsPerInstance))}
+        </span>
+        <input
+          value={note || ""}
+          onChange={(e) => setNote(e.target.value)}
+          disabled={busy}
+          maxLength={300}
+          placeholder={t("awardsAdmin.committeeNotePlaceholder")}
+          className="min-w-40 flex-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] px-2.5 py-1.5 text-xs text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-placeholder)] focus:border-[var(--color-border-strong)]"
+        />
+        <button
+          type="button"
+          onClick={() => void submit(false)}
+          disabled={busy || !valid || !dirty}
+          className="flex items-center gap-1.5 rounded-lg bg-[var(--color-button-primary-bg)] px-3 py-1.5 text-xs font-bold text-[var(--color-button-primary-text)] transition-opacity disabled:opacity-40"
+        >
+          {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
+          {t("awardsAdmin.saveAward")}
+        </button>
+        {award ? (
+          <button
+            type="button"
+            onClick={() => void submit(true)}
+            disabled={busy}
+            className="rounded-lg border border-[var(--color-border-default)] px-3 py-1.5 text-xs font-bold text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-raised)] disabled:opacity-40"
+          >
+            {t("awardsAdmin.clearAward")}
+          </button>
+        ) : null}
+      </div>
+      {error ? (
+        <p className="mt-1.5 text-[11px] text-[var(--color-status-error)]">{error}</p>
+      ) : award ? (
+        <p className="mt-1.5 text-[11px] text-[var(--color-text-muted)]">
+          {t("awardsAdmin.awardedByLine")
+            .replace("{name}", award.awardedBy)
+            .replace("{date}", formatDate(award.awardedAt, language))}
+        </p>
+      ) : (
+        <p className="mt-1.5 text-[11px] text-[var(--color-text-muted)]">{t("awardsAdmin.committeeHint")}</p>
+      )}
+    </div>
   );
 }

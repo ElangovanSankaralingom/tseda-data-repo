@@ -141,11 +141,18 @@ Admin/DLC can verify (the value is auditable against CAMU reports).
     + admin download of any faculty's appraisal via the new
     `/api/admin/awards/report?email=&year=`. NO peer-visible leaderboard
     (privacy decision, 2026-07).
-16. **Interview/committee metrics entry** — small admin form writing
-    committee-awarded points (studio focus 5, documentation 3, beyond
-    syllabus 5) into a per-faculty-per-year store the scoring engine merges
-    (`source: "interview"` metrics stop being 0). Reads
-    studio-contributions (#8) as its evidence base.
+16. ~~**Interview/committee metrics entry**~~ ✅ SHIPPED 2026-07 — inline
+    committee editors on the `/admin/awards` metric rows (settings-tier
+    gate: entering committee scores changes outcomes exactly like editing
+    point values, so it takes the SAME trust level as the points config;
+    console-tier admins see scores read-only). Store:
+    `lib/awards/interview.ts` at `<users>/<email>/interview-points.json`
+    (universe-scoped → demo-safe), points clamped to the EFFECTIVE model
+    max at write. Scoring merges `source: "interview"` awards (status
+    manual, "Committee: <note>" in notes) → the appraisal document carries
+    points + note automatically. API `/api/admin/awards/interview`
+    (GET/PUT, CSRF, demoAware). Will read studio-contributions (#8) as its
+    evidence base once that ships.
 17. ~~**One-click Faculty Award Appraisal report**~~ ✅ SHIPPED 2026-07 —
     "Appraisal (.docx)" button on the My Award Progress panel →
     `/api/me/awards/report?year=` streams the submission document: score

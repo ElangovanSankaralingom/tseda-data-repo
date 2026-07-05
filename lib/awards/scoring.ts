@@ -12,6 +12,7 @@ import {
 import { getAwardPointsConfig, resolveEffectivePointsModel } from "@/lib/awards/config";
 import { readCategoryEntries } from "@/lib/dataStore";
 import { normalizeEntryStatus } from "@/lib/entries/workflow";
+import { readInterviewPointsForYear } from "@/lib/awards/interview";
 import { readResearchProfile, type ResearchProfile } from "@/lib/research/researchProfile";
 import { academicYearOfDate } from "@/lib/utils/academicYear";
 import type { CategoryKey } from "@/lib/entries/types";
@@ -388,6 +389,11 @@ export async function computeFacultyAwardScore(
   // Profile-sourced metrics (Ph.D. milestones) read the Research section.
   const researchProfile = await readResearchProfile(email);
 
+  // Committee-awarded points (source: "interview") — entered by the award
+  // committee on the admin scores view, merged here so manual metrics stop
+  // being 0 once assessed.
+  const interviewAwards = await readInterviewPointsForYear(email, academicYear);
+
   const metrics: MetricScore[] = AWARD_METRICS.map((metric) => {
     const model = resolveEffectivePointsModel(metric, config);
     const base: Omit<MetricScore, "status" | "points" | "count" | "notes"> = {
@@ -414,9 +420,28 @@ export async function computeFacultyAwardScore(
       } as MetricScore;
     }
 
+    if (metric.source === "interview") {
+      const award = interviewAwards[metric.id];
+      if (!award) {
+        return { ...base, status: "manual", points: 0, count: 0, notes: [] } as MetricScore;
+      }
+      const notes = [
+        award.note
+          ? `Committee: ${award.note}`
+          : "Awarded by the committee",
+      ];
+      return {
+        ...base,
+        status: "manual",
+        points: Math.min(award.points, base.maxPointsPerInstance),
+        count: 1,
+        notes,
+      } as MetricScore;
+    }
+
     return {
       ...base,
-      status: metric.source === "interview" ? "manual" : "untracked",
+      status: "untracked",
       points: 0,
       count: 0,
       notes: [],

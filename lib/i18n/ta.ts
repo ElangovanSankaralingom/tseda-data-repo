@@ -61,6 +61,12 @@ export const ta: TranslationDict = {
     statusUntracked: "கண்காணிக்கப்படவில்லை",
     statusManual: "குழு",
     privacyNote: "நிர்வாகிகளுக்கு மட்டுமே தெரியும் — ஆசிரியர்கள் முகப்புப் பலகையில் தங்கள் சொந்தப் பலகையைக் காண்பார்கள்",
+    committeeHint: "குழு மதிப்பீடு — நேர்காணலில் வழங்கப்பட்ட புள்ளிகளை உள்ளிடவும்",
+    committeeNotePlaceholder: "குழு குறிப்பு (விருப்பம்)",
+    saveAward: "சேமி",
+    clearAward: "அழி",
+    awardedByLine: "{name} வழங்கியது · {date}",
+    maxHint: "அதிகபட்சம் {n}",
   },
   research: {
     ownPhdTitle: "எனது Ph.D.",

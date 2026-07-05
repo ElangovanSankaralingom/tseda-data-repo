@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AwardScoresClient from "@/components/admin/AwardScoresClient";
 import { authOptions } from "@/lib/auth";
-import { canAccessAdminConsole } from "@/lib/admin/roles";
+import { canAccessAdminConsole, canAccessSettings } from "@/lib/admin/roles";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { adminHome, dashboard } from "@/lib/entryNavigation";
 
@@ -28,7 +28,9 @@ export default async function AdminAwardsPage() {
       iconName="Award"
       maxWidthClassName="max-w-4xl"
     >
-      <AwardScoresClient />
+      {/* Committee entry is settings-tier (it changes award outcomes, same
+          trust level as editing point values); viewing is console-tier. */}
+      <AwardScoresClient canAwardCommittee={canAccessSettings(email)} />
     </AdminPageShell>
   );
 }
