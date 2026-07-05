@@ -91,6 +91,8 @@ const LIFECYCLE_FIELDS = new Set([
   'pdfMeta', 'streak',
   // Collaboration provenance (engineShare) — metadata, never document content
   'sharedEntryId', 'sourceEmail', 'sharedRole', 'sharedFanOutDone',
+  // Lifecycle archetype stamp (record flow) — metadata, never document content
+  'entryFlow',
 ]);
 
 /** Cache of Stage 2 field keys per category */

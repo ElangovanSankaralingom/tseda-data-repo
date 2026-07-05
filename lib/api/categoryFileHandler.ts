@@ -23,7 +23,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { facultyCanMutate } from "@/lib/admin/facultyRegistry";
-import { getCategorySchema, isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry";
+import { getCategoryFlow, getCategorySchema, isValidCategorySlug, type CategorySlug } from "@/data/categoryRegistry";
 import { readCategoryEntryById, upsertCategoryEntry } from "@/lib/dataStore";
 import { normalizeError } from "@/lib/errors";
 import { isEntryEditable } from "@/lib/entries/lock";
@@ -191,14 +191,18 @@ export async function handleCategoryFilePost(request: Request, category: Categor
       return NextResponse.json({ error: "recordId required" }, { status: 400 });
     }
 
-    // Verify entry exists and has a generated PDF
+    // Verify entry exists — and, for the permission flow, that its PDF has
+    // been generated (stage 2 opens after Generate). RECORD flow categories
+    // have no PDF: proof uploads happen in the draft itself, before submit.
     const existing = await readCategoryEntryById(email, category, recordId);
     if (!existing) {
       return NextResponse.json({ error: "Generate the entry first." }, { status: 400 });
     }
-    const pdfMeta = existing.pdfMeta as { storedPath?: string | null; url?: string | null } | null | undefined;
-    if (!pdfMeta?.storedPath || !pdfMeta?.url) {
-      return NextResponse.json({ error: "Generate the entry first." }, { status: 400 });
+    if (getCategoryFlow(category) !== "record") {
+      const pdfMeta = existing.pdfMeta as { storedPath?: string | null; url?: string | null } | null | undefined;
+      if (!pdfMeta?.storedPath || !pdfMeta?.url) {
+        return NextResponse.json({ error: "Generate the entry first." }, { status: 400 });
+      }
     }
     if (!isEntryEditable(existing)) {
       return NextResponse.json({ error: "This entry is locked." }, { status: 403 });

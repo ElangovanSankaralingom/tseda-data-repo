@@ -7,6 +7,9 @@ import { withUserDataLock } from "@/lib/data/locks";
 import { buildEvent, inferWalUpdateAction } from "@/lib/data/wal";
 import { AppError } from "@/lib/errors";
 import { computeEditWindowExpiry, isEntryEditable, normalizeEntryStatus } from "@/lib/entries/workflow";
+import { getCategoryFlow } from "@/data/categoryRegistry";
+import { computeCompletionState } from "@/lib/workflow/completionChecker";
+import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
 import { computeFieldProgress } from "@/lib/entries/fieldProgress";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { normalizeEntry } from "@/lib/normalize";
@@ -87,18 +90,44 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
       trackedFromStatus = String(getWorkflowStatus(existing));
 
       const nowISO = new Date().toISOString();
+      const flow = getCategoryFlow(category);
       const [editWindowDays, streakBufferDays, pastEntryWindowDays, streaksEnabled] = await Promise.all([
         getEditWindowDays(),
         getStreakBufferDays(),
         getPastEntryWindowDays(),
         isStreaksEnabled(),
       ]);
+
+      if (flow === "record") {
+        // RECORD FLOW: submit = everything at once. Fields AND proof uploads
+        // must be complete BEFORE the entry can be committed — there is no
+        // stage-2-after-generate phase and no PDF.
+        const merged = { ...existing, ...(extraFields ?? {}) } as Record<string, unknown>;
+        const completion = computeCompletionState(
+          merged,
+          category,
+          { ...DEFAULT_WORKFLOW_CONFIG, completion: { ...DEFAULT_WORKFLOW_CONFIG.completion, requireFreshPdf: false } },
+          true,
+        );
+        if (!completion.stage1Complete || !completion.stage2Complete) {
+          throw new AppError({
+            code: "VALIDATION_ERROR",
+            message: "All required fields and proof uploads must be complete before submitting.",
+          });
+        }
+      }
+
       // Streaks off → no new eligibility (existing counts are preserved elsewhere).
-      const streakEligible = streaksEnabled && checkStreakEligibility(existing);
-      const editWindowExpiresAt = computeEditWindowExpiry(nowISO, {
-        endDate: existing.endDate,
-        streakEligible,
-      }, { editWindowDays, streakBufferDays, pastEntryWindowDays });
+      // Record flow: completed work is ALWAYS eligible — the submission itself
+      // is the streak moment; past dates are the norm, not a disqualifier.
+      const streakEligible = streaksEnabled && (flow === "record" || checkStreakEligibility(existing));
+      // Record flow has no edit window — the entry locks on submit.
+      const editWindowExpiresAt = flow === "record"
+        ? null
+        : computeEditWindowExpiry(nowISO, {
+            endDate: existing.endDate,
+            streakEligible,
+          }, { editWindowDays, streakBufferDays, pastEntryWindowDays });
       const updated = prepareEntryForWrite(
         {
           ...existing,
@@ -107,6 +136,7 @@ export async function commitDraft<T extends EntryEngineRecord = EntryEngineRecor
           streakEligible,
           confirmationStatus: "GENERATED" as const,
           editWindowExpiresAt,
+          ...(flow === "record" ? { entryFlow: "record" as const } : {}),
         },
         nowISO,
         category

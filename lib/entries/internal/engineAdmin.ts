@@ -53,6 +53,13 @@ export async function grantEditAccess<T extends EntryEngineRecord = EntryEngineR
     entryId,
     applyTransition: (existing, { normalizedAdmin, nowISO }) => {
       const transitioned = transitionEntry(existing, "grantEdit", { nowISO, adminEmail: normalizedAdmin });
+      if ((existing as Record<string, unknown>).entryFlow === "record") {
+        // Record flow: no PDF to stale, no timer to resume. The grant simply
+        // unlocks the entry (EDIT_GRANTED is editable by status); it locks
+        // again the moment the faculty resubmits.
+        (transitioned as Record<string, unknown>).hashAtEditGrant = hashPrePdfFields(existing as Record<string, unknown>, category);
+        return transitioned as EntryLike;
+      }
       (transitioned as EntryEngineRecord).pdfStale = true;
       // Resume paused timer and record hash at grant
       const resumed = resumeTimer(existing as Record<string, unknown>);
@@ -120,7 +127,11 @@ export async function rejectEditRequest<T extends EntryEngineRecord = EntryEngin
       const cleared = clearTimer();
       (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
       (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
-      (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      // Record flow: a rejection settles THIS request but the record stays
+      // correctable — a future request (with better justification) is allowed.
+      if ((existing as Record<string, unknown>).entryFlow !== "record") {
+        (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      }
       (transitioned as Record<string, unknown>).requestActionUsed = true;
       return transitioned as EntryLike;
     },
@@ -376,7 +387,10 @@ export async function rejectDeleteRequest<T extends EntryEngineRecord = EntryEng
       const cleared = clearTimer();
       (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
       (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
-      (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      // Record flow stays correctable after a rejected delete request.
+      if ((existing as Record<string, unknown>).entryFlow !== "record") {
+        (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      }
       (transitioned as Record<string, unknown>).requestActionUsed = true;
       return transitioned as EntryLike;
     },

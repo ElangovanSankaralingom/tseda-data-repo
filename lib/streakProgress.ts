@@ -189,6 +189,10 @@ export function isEntryActivated(entry: StreakProgressEntryLike): boolean {
   if (!isEntryStreakEligible(entry)) return false;
   if (isStreakPermanentlyRemoved(entry)) return false;
 
+  // Record-flow entries never pass through an "activated" phase — they jump
+  // straight to WON at submission (see isEntryWon). No PDF, no timer.
+  if (isRecordFlowEntry(entry)) return false;
+
   const status = normalizeEntryStatus(entry);
   if (status === "DRAFT" || status === "ARCHIVED") return false;
 
@@ -199,6 +203,12 @@ export function isEntryActivated(entry: StreakProgressEntryLike): boolean {
   if (isEntryFinalized(entry)) return false;
 
   return true;
+}
+
+/** Record-flow entries (post-facto achievements) — stamped at submit by the
+ *  engine. No PDF and no timer exist for them; the streak rules branch here. */
+function isRecordFlowEntry(entry: StreakProgressEntryLike): boolean {
+  return (entry as Record<string, unknown>).entryFlow === "record";
 }
 
 /**
@@ -238,6 +248,13 @@ export function isEntryWon(
 ): boolean {
   if (!isEntryStreakEligible(entry)) return false;
   if (isStreakPermanentlyRemoved(entry)) return false;
+
+  // Record flow: submission IS the win. The engine only commits a record
+  // entry when every required field AND proof upload is complete, so a
+  // committed record entry is a won entry — no PDF, no timer to wait out.
+  if (isRecordFlowEntry(entry)) {
+    return normalizeEntryStatus(entry) === "GENERATED";
+  }
 
   // Must be finalized
   if (!isEntryFinalized(entry)) return false;

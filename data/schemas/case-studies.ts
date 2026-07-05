@@ -6,6 +6,9 @@ import { DEFAULT_WORKFLOW_CONFIG, type WorkflowConfig } from "@/lib/workflow/wor
 const fields = [
   { key: "id", label: "Entry ID", kind: "string", required: true, exportable: false },
   { key: "academicYear", label: "Academic Year", kind: "string" },
+  // Export-filter spine (2026-07 rule): every category collects ODD/EVEN.
+  // Case studies also keep yearOfStudy/currentSemester (student context).
+  { key: "semesterType", label: "Semester Type", kind: "string", stage: 1, enumValues: ["ODD", "EVEN"] },
   { key: "yearOfStudy", label: "Year of Study", kind: "string", enumValues: YEAR_OF_STUDY_VALUES },
   { key: "currentSemester", label: "Current Semester", kind: "number", min: 1, max: 10 },
   { key: "startDate", label: "Start Date", kind: "date" },
@@ -33,12 +36,12 @@ export const caseStudiesSchema: EntrySchema = {
   category: "case-studies",
   fields,
   immutableWhenPending: [
-    "academicYear", "yearOfStudy", "currentSemester",
+    "academicYear", "semesterType", "yearOfStudy", "currentSemester",
     "startDate", "endDate", "placeOfVisit", "purposeOfVisit",
     "staffAccompanying", "sponsored", "fundingAgency", "fundingAmount",
   ],
   requiredForCommit: [
-    "academicYear", "yearOfStudy", "currentSemester",
+    "academicYear", "semesterType", "yearOfStudy", "currentSemester",
     "startDate", "endDate", "placeOfVisit", "purposeOfVisit",
   ],
   validate(payload, mode) {

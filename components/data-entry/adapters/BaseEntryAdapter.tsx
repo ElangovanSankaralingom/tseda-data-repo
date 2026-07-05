@@ -32,7 +32,7 @@ import {
   createPersistProgress,
   createRefreshList,
 } from "@/lib/entries/adapterOrchestration";
-import { getCategoryConfig } from "@/data/categoryRegistry";
+import { getCategoryConfig, getCategoryFlow } from "@/data/categoryRegistry";
 import { hashPrePdfFields } from "@/lib/pdfSnapshot";
 import { computeWorkflowState } from "@/lib/workflow";
 import { DEFAULT_WORKFLOW_CONFIG } from "@/lib/workflow/workflowConfig";
@@ -233,7 +233,9 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
   });
 
   const uploadPersisting = uploadPersistingCount > 0;
-  const uploadsVisible = !!form.pdfMeta;
+  // Permission flow: stage-2 uploads unlock AFTER Generate (PDF exists).
+  // Record flow: proofs are part of the entry itself — visible from draft.
+  const uploadsVisible = getCategoryFlow(category) === "record" ? true : !!form.pdfMeta;
 
   const resetUploadState = useCallback(() => {
     resetUploadStateProp?.();
@@ -648,6 +650,16 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
         workflowAction: (() => {
           if (!showForm || workflowState.isViewMode) return undefined;
           if (!workflowState.buttons.generate.visible) return undefined;
+          // RECORD FLOW: the generate slot is the SUBMIT action — no PDF
+          // machinery. Enabled only when fields AND proof uploads are done.
+          if (workflowState.flow === "record") {
+            return {
+              label: workflowState.status === "EDIT_GRANTED" ? t("entry.resubmitRecord") : t("entry.submitRecord"),
+              onClick: () => controller.generateEntry(),
+              disabled: !workflowState.buttons.generate.enabled,
+              busyLabel: t("entry.submitting"),
+            };
+          }
           if (workflowState.buttons.generate.enabled || !workflowState.completion.pdfExists || !workflowState.completion.pdfFresh) {
             return {
               label: workflowState.buttons.generate.label,
@@ -675,17 +687,21 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           setForm((prev) => ({ ...prev, confirmationStatus: "EDIT_REQUESTED", requestEditStatus: "pending", requestActionUsed: true } as T));
         }),
         onCancelRequestEdit: () => void controller.cancelRequestEdit(form).then(() => {
-          setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", requestEditStatus: "none", permanentlyLocked: true } as T));
+          // Record flow: cancelling returns the entry to its locked state
+          // WITHOUT the permanent lock — records stay correctable.
+          setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", requestEditStatus: "none", ...(workflowState.flow === "record" ? {} : { permanentlyLocked: true }) } as T));
         }),
         onRequestDelete: () => void controller.requestDelete(form).then(() => {
           setForm((prev) => ({ ...prev, confirmationStatus: "DELETE_REQUESTED", requestActionUsed: true } as T));
         }),
         onCancelRequestDelete: () => void controller.cancelRequestDelete(form).then(() => {
-          setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", permanentlyLocked: true } as T));
+          setForm((prev) => ({ ...prev, confirmationStatus: "GENERATED", ...(workflowState.flow === "record" ? {} : { permanentlyLocked: true }) } as T));
         }),
         onBack: () => closeForm(categoryPath),
         permanentlyLocked: workflowState.isPermanentlyLocked,
-        requestActionUsed: workflowState.requestState.requestActionUsed,
+        // Record flow: requests are re-requestable after resolution — the
+        // one-request-ever gate applies to the permission flow only.
+        requestActionUsed: workflowState.flow === "record" ? false : workflowState.requestState.requestActionUsed,
       })}
       loading={loading}
       showForm={showForm}

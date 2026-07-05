@@ -78,6 +78,39 @@ of it mechanically — a violation fails loudly with a named reason.
 
 ## Architecture
 
+### Two Lifecycle Flows (2026-07)
+
+Every category declares `flow` in `data/categoryRegistry.ts` (single source of
+truth, read via `getCategoryFlow(slug)`); absent = "permission".
+
+- **permission** (original): prior-approval activities. Generate permission
+  PDF → edit-window timer → stage-2 uploads → finalise/auto-finalise.
+  Streaks: future-dated only; activated on generate; won on stage-2 complete.
+- **record** (post-facto achievements — publications, grants, patents…): NO
+  PDF, NO timer. Fields + proof uploads together in the draft; SUBMIT
+  requires everything complete, locks the entry (`entryFlow: "record"`
+  stamped, `editWindowExpiresAt: null`), streak counts IMMEDIATELY (past
+  dates are the norm — record entries skip "activated" and are WON at
+  commit). Corrections only via edit/delete request to the DLC/admin —
+  RE-REQUESTABLE after cancel/reject (no permanentlyLocked; records must
+  stay correctable forever), one pending at a time, monthly cap applies.
+  Nightly job NEVER auto-finalises/deletes records (`autoAction: "none"`).
+
+Key branch points (all consult `getCategoryFlow` or the `entryFlow` stamp):
+`isEditWindowExpired` (workflow.ts — the root predicate: record+committed =
+"expired" → finalized/locked/requestable everywhere), `commitDraft`
+(engineCommit — completeness gate, no window), `computeWorkflowState`
+(record branch: Submit in the generate slot, finalise hidden),
+`generateAndPersistEntryPdf` (record = commit only, no PDF),
+`isEntryWon`/`isEntryActivated` (streakProgress), request/admin lock sites,
+upload gating (categoryFileHandler allows draft uploads for records),
+`uploadsVisible` (BaseEntryAdapter). First record category:
+`journal-publications` (tests/entries/recordFlow.test.ts is the reference).
+
+**EXPORT-FILTER SPINE (mandatory):** every category collects REQUIRED
+`academicYear` + `semesterType` (ODD/EVEN) — they drive all departmental
+export filters. Enforced by tests/entries/recordFlow.test.ts.
+
 ### Two-Stage Field Model
 
 Every entry has two independent field sets:
@@ -330,8 +363,8 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 - **Faculty Awards system (2026-07):** rulebook → `data/awardMetrics.ts` (T'SEDA 7-section scheme as data — NEVER hardcode point values elsewhere); admin overrides → `lib/awards/config.ts` (+ `/api/admin/awards/points`); scoring → `lib/awards/scoring.ts` (committed entries only, year-bucketed via `academicYear`, explicit per-metric derivers); dashboard panel `AwardProgress`. Visibility: self + admin, no leaderboard. Build order for everything else → `docs/AWARDS-ROADMAP.md`.
 - **Build: clean** (Turbopack warnings are cosmetic)
 - **Docker + CI/CD ready** (GitHub Actions)
-- **5 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops
-  - All categories use: semesterType, level, mode, sponsored pattern (except case-studies keeps yearOfStudy/currentSemester)
+- **6 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops (permission flow) + journal-publications (record flow)
+  - EVERY category carries the export-filter spine: required academicYear + semesterType (case-studies additionally keeps yearOfStudy/currentSemester)
   - All uploads are multi-file (FileMeta[])
   - Guest lectures uses topicOfLecture, guestSpeaker* fields
   - Workshops uses workshopName, resourcePerson* fields

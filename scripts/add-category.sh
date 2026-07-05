@@ -107,6 +107,7 @@ echo "  ✓ data/schemas/${SLUG}.ts"
 mkdir -p "app/api/me/${SLUG}"
 
 cat > "app/api/me/${SLUG}/route.ts" << 'ROUTE'
+import { demoAware } from "@/lib/demo/demoAware";
 import { type NextRequest } from "next/server";
 import {
   handleCategoryGet,
@@ -120,21 +121,28 @@ cat >> "app/api/me/${SLUG}/route.ts" << ROUTE
 
 const CATEGORY = "${SLUG}" as const;
 
-export async function GET(req: NextRequest) {
+async function GETHandler(req: NextRequest) {
   return handleCategoryGet(req, CATEGORY);
 }
 
-export async function POST(req: NextRequest) {
+async function POSTHandler(req: NextRequest) {
   return handleCategoryPost(req, CATEGORY);
 }
 
-export async function PATCH(req: NextRequest) {
+async function PATCHHandler(req: NextRequest) {
   return handleCategoryPatch(req, CATEGORY);
 }
 
-export async function DELETE(req: NextRequest) {
+async function DELETEHandler(req: NextRequest) {
   return handleCategoryDelete(req, CATEGORY);
 }
+
+// Demo-mode universe wrapper — every handler runs in the caller's universe
+// (tests/demo/routeGuard.test.ts enforces this on every route).
+export const GET = demoAware(GETHandler);
+export const POST = demoAware(POSTHandler);
+export const PATCH = demoAware(PATCHHandler);
+export const DELETE = demoAware(DELETEHandler);
 ROUTE
 
 echo "  ✓ app/api/me/${SLUG}/route.ts"

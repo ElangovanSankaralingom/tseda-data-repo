@@ -52,6 +52,7 @@ function emptyForm(): CaseStudyEntry {
     requestEditRequestedAtISO: null,
     requestEditMessage: "",
     academicYear: "",
+    semesterType: "",
     yearOfStudy: "",
     currentSemester: null,
     startDate: "",
@@ -86,6 +87,7 @@ function hydrateEntry(entry: CaseStudyEntry): CaseStudyEntry {
     ...emptyForm(),
     ...e,
     academicYear: safeString(e.academicYear),
+    semesterType: safeString(e.semesterType),
     yearOfStudy: safeString(e.yearOfStudy),
     currentSemester: safeNumber(e.currentSemester),
     startDate: safeString(e.startDate),
@@ -169,10 +171,11 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
   // Count filled fields per group for completion badges
   const group1Filled = [
     form.academicYear,
+    form.semesterType,
     form.yearOfStudy,
     form.currentSemester !== null,
   ].filter(Boolean).length;
-  const group1Total = 3;
+  const group1Total = 4;
 
   const group2Filled = [
     form.placeOfVisit,
@@ -245,6 +248,21 @@ function CaseStudyFormFields({ ctx }: { ctx: FormFieldsContext<CaseStudyEntry> }
               placeholder={t('placeholder.selectAcademicYear')}
               disabled={coreFieldDisabled("academicYear")}
               error={submitted && !!errors.academicYear}
+            />
+          </Field>
+
+          {/* Export-filter spine (2026-07): ODD/EVEN on every category. */}
+          <Field label={fieldLabel('semesterType')} error={submitted ? errors.semesterType : undefined} fieldKey="semesterType">
+            <SelectDropdown
+              value={form.semesterType || ""}
+              onChange={(value) => setForm((c) => ({ ...c, semesterType: value }))}
+              options={[
+                { label: t('entry.oddSemester'), value: "ODD" },
+                { label: t('entry.evenSemester'), value: "EVEN" },
+              ]}
+              placeholder={t('placeholder.selectSemesterType')}
+              disabled={coreFieldDisabled("semesterType")}
+              error={submitted && !!errors.semesterType}
             />
           </Field>
 

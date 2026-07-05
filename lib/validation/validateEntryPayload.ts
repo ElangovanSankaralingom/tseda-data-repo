@@ -60,6 +60,7 @@ const SYSTEM_ALLOWED_KEYS = new Set<string>([
   "sourceEmail",
   "sharedRole",
   "sharedFanOutDone",
+  "entryFlow",
 ]);
 
 function toSchemaMode(mode: ValidateEntryMode): SchemaValidationMode {

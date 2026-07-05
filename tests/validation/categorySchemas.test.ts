@@ -136,9 +136,14 @@ describe("case-studies schema", () => {
     assert.ok(keys.includes("advanceClosure"));
   });
 
-  it("does NOT have semesterType or level", () => {
+  it("carries the export-filter spine (semesterType) PLUS student context; no level", () => {
+    // 2026-07 rule: academicYear + ODD/EVEN semesterType on EVERY category —
+    // they drive departmental export filters. Case studies additionally keep
+    // yearOfStudy/currentSemester (student context) and still have no level.
     const keys = caseStudiesSchema.fields.map((f) => f.key);
-    assert.ok(!keys.includes("semesterType"));
+    assert.ok(keys.includes("semesterType"));
+    assert.ok(keys.includes("yearOfStudy"));
+    assert.ok(keys.includes("currentSemester"));
     assert.ok(!keys.includes("level"));
   });
 });

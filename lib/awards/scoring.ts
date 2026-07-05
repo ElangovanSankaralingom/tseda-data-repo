@@ -103,6 +103,14 @@ type DeriverInput = {
 type DeriverResult = { points: number; count: number; notes: string[] };
 
 const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
+  /** Journal publications (record flow): flat per-unit points per committed
+   *  paper — the engine already guarantees proofs exist at submit. */
+  journal_publication({ entriesByCategory, model }) {
+    const entries = entriesByCategory.get("journal-publications") ?? [];
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    return { points: perUnit * entries.length, count: entries.length, notes: [] };
+  },
+
   /** Workshops: India vs abroad via the entry's `level` field. */
   collab_workshop({ entriesByCategory, model }) {
     let points = 0;

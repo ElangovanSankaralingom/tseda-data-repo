@@ -2,6 +2,7 @@ import { caseStudiesSchema } from "@/data/schemas/case-studies";
 import { fdpAttendedSchema } from "@/data/schemas/fdp-attended";
 import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
 import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
+import { journalPublicationsSchema } from "@/data/schemas/journal-publications";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
 
@@ -11,6 +12,7 @@ export const CATEGORY_SLUGS = [
   "case-studies",
   "guest-lectures",
   "workshops",
+  "journal-publications",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -20,7 +22,8 @@ export type CategorySummaryKey =
   | "fdpConducted"
   | "caseStudies"
   | "guestLectures"
-  | "workshops";
+  | "workshops"
+  | "journalPublications";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -47,6 +50,20 @@ export type CategoryColor = {
   chartHex: string;
 };
 
+/**
+ * The two entry lifecycles (2026-07):
+ * - "permission": the original flow — prior-approval activities. Generate a
+ *   permission-letter PDF, edit window timer, stage-2 uploads after
+ *   generate, finalise/auto-finalise. Streaks: future-dated only, activated
+ *   on generate, won when stage 2 completes.
+ * - "record": post-facto achievements (publications, grants, patents…). No
+ *   PDF, no timer. All fields + proof uploads entered together, SUBMIT
+ *   locks the entry and the streak counts immediately. Corrections only via
+ *   edit/delete request to the DLC/admin — re-requestable after resolution
+ *   (records must stay correctable forever).
+ */
+export type CategoryFlow = "permission" | "record";
+
 export type CategoryConfig = {
   slug: CategorySlug;
   label: string;
@@ -55,6 +72,8 @@ export type CategoryConfig = {
   summaryKey: CategorySummaryKey;
   supportsUploads: boolean;
   supportsConfirmation: boolean;
+  /** Lifecycle archetype; absent = "permission" (all original categories). */
+  flow?: CategoryFlow;
   icon: string;
   color: CategoryColor;
   subtitle?: string;
@@ -193,6 +212,35 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     entryTitleField: "workshopName",
     entryTitleFallback: "Workshop",
   },
+  "journal-publications": {
+    slug: "journal-publications",
+    label: "Journal Publications",
+    schemaKey: "journal-publications",
+    schema: journalPublicationsSchema,
+    summaryKey: "journalPublications",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW: post-facto achievement — no permission PDF, no timer;
+    // submit locks + streak counts immediately (see CategoryFlow).
+    flow: "record",
+    icon: "book-open",
+    color: {
+      bar: "from-teal-400 to-teal-600",
+      bg: "bg-teal-100",
+      text: "text-teal-600",
+      ring: "hover:ring-teal-200",
+      cta: "text-teal-500",
+      gradient: "from-teal-600 via-teal-700 to-teal-900",
+      accentBg: "bg-teal-500/10",
+      borderTop: "border-t-teal-500",
+      buttonBg: "bg-teal-600",
+      buttonHover: "hover:bg-teal-700",
+      chartHex: "#0D9488",
+    },
+    subtitle: "Record published journal papers with proofs — submitted entries count immediately.",
+    entryTitleField: "paperTitle",
+    entryTitleFallback: "Journal Publication",
+  },
 };
 
 export const CATEGORY_LIST = CATEGORY_SLUGS as readonly CategorySlug[];
@@ -211,6 +259,13 @@ export function getCategoryConfig(slug: string): CategoryConfig {
 
 export function getCategorySchema(slug: string): EntrySchema {
   return getCategoryConfig(slug).schema;
+}
+
+/** Lifecycle archetype of a category — see CategoryFlow. Single source of
+ *  truth consumed by the workflow engine, commit path, streak rules, upload
+ *  gating, and the entry UI. */
+export function getCategoryFlow(slug: string): CategoryFlow {
+  return getCategoryConfig(slug).flow ?? "permission";
 }
 
 export function getCategoryLabel(slug: string): string {

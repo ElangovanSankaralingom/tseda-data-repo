@@ -243,6 +243,19 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
 
   // ── Section 5: Scholarly Publications and Research Output ─────────────────
   {
+    id: "journal_publication",
+    section: "s5",
+    label: "Journal Publications (refereed, ISSN)",
+    details:
+      "Published journal papers (mirrors TCE form T7 / dept R&D–Journals sheet). " +
+      "AUTO-TRACKED from the journal-publications category; default 5/unit, admin-adjustable.",
+    source: "entry",
+    categories: ["journal-publications"],
+    effort: "high",
+    pointsModel: { kind: "perUnit", points: 5 },
+    proofs: ["First page of the paper", "Indexing / listing proof"],
+  },
+  {
     id: "creative_publication",
     section: "s5",
     label: "Creative Publications and Writing",

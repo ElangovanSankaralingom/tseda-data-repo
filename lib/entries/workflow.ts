@@ -212,6 +212,12 @@ export function computeEditGrantExpiry(
  * @returns `true` if the current time is at or past the edit window expiry.
  */
 export function isEditWindowExpired(entry: EntryStateLike, nowISO?: string): boolean {
+  // Record-flow entries have NO edit window — they lock the moment they are
+  // submitted. Treating the (non-existent) window as expired makes every
+  // downstream predicate correct: finalized immediately, not editable after
+  // submit, and edit/delete requests available right away.
+  if ((entry as Record<string, unknown>).entryFlow === "record") return true;
+
   // Timer paused during pending requests — not expired
   if ((entry as Record<string, unknown>).timerPausedAt) return false;
 

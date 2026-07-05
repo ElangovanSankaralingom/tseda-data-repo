@@ -23,11 +23,19 @@ function safeAppendHistory(params: Parameters<typeof appendActionHistory>[0]) {
   }
 }
 
+function isRecordFlow(existing: EntryLike): boolean {
+  return (existing as Record<string, unknown>).entryFlow === "record";
+}
+
 function validateRequestEligibility(existing: EntryLike) {
   if ((existing as Record<string, unknown>).permanentlyLocked === true) {
     throw new AppError({ code: "VALIDATION_ERROR", message: "This entry is permanently locked and cannot be modified." });
   }
-  if ((existing as Record<string, unknown>).requestActionUsed === true) {
+  // Record flow: requests are RE-REQUESTABLE after resolution — a record must
+  // stay correctable forever (a typo found in a two-year-old publication must
+  // have recourse). The one-request-ever rule protects the timer game, which
+  // records do not play. The monthly cap in canRequestAction still applies.
+  if (!isRecordFlow(existing) && (existing as Record<string, unknown>).requestActionUsed === true) {
     throw new AppError({ code: "VALIDATION_ERROR", message: "A request action has already been used on this entry." });
   }
   if (!isEntryCommitted(existing as WorkflowEntryLike)) {
@@ -46,19 +54,25 @@ function applyRequestFields(
   message?: string,
 ): EntryLike {
   const fields = ENTRY_SCHEMAS[category]?.fields ?? [];
+  const recordFlow = isRecordFlow(existing);
   const wasWin = isEntryWon(existing, fields);
   const transitioned = transitionEntry(existing as WorkflowEntryLike, transitionAction, { nowISO });
   if (message?.trim()) {
     (transitioned as Record<string, unknown>).editRequestMessage = message.trim();
   }
-  if (wasWin) {
+  // Permission flow: requesting on a Win forfeits the streak (anti-gaming for
+  // the timer system). Record flow: corrections never forfeit the streak —
+  // the win conditions are re-evaluated on resubmit anyway.
+  if (wasWin && !recordFlow) {
     (transitioned as Record<string, unknown>).streakPermanentlyRemoved = true;
   }
-  // Pause the timer while the request is pending
-  const timerPause = pauseTimer(existing as Record<string, unknown>);
-  (transitioned as Record<string, unknown>).timerPausedAt = timerPause.timerPausedAt;
-  (transitioned as Record<string, unknown>).timerRemainingMs = timerPause.timerRemainingMs;
-  // Mark that the user has used their one-time request action
+  if (!recordFlow) {
+    // Pause the timer while the request is pending (records have no timer).
+    const timerPause = pauseTimer(existing as Record<string, unknown>);
+    (transitioned as Record<string, unknown>).timerPausedAt = timerPause.timerPausedAt;
+    (transitioned as Record<string, unknown>).timerRemainingMs = timerPause.timerRemainingMs;
+  }
+  // Request-history stamp (a GATE only in the permission flow).
   (transitioned as Record<string, unknown>).requestActionUsed = true;
   const now = new Date();
   const resetAt = typeof existing.requestCountResetAt === "string" && existing.requestCountResetAt.trim()
@@ -156,7 +170,12 @@ export async function cancelEditRequest<T extends EntryEngineRecord = EntryEngin
       const cleared = clearTimer();
       (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
       (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
-      (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      // Permission flow: cancelling your one request locks the entry forever.
+      // Record flow: the entry simply returns to its locked GENERATED state —
+      // it stays correctable via a future request.
+      if (!isRecordFlow(existing as EntryLike)) {
+        (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      }
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {
@@ -296,7 +315,10 @@ export async function cancelDeleteRequest<T extends EntryEngineRecord = EntryEng
       const cleared = clearTimer();
       (transitioned as Record<string, unknown>).timerPausedAt = cleared.timerPausedAt;
       (transitioned as Record<string, unknown>).timerRemainingMs = cleared.timerRemainingMs;
-      (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      // Record flow stays correctable — no permanent lock on cancel.
+      if (!isRecordFlow(existing as EntryLike)) {
+        (transitioned as Record<string, unknown>).permanentlyLocked = true;
+      }
       return transitioned as EntryLike;
     },
     afterSuccess: (entry) => {

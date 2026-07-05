@@ -79,6 +79,47 @@ export type WorkshopEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// JournalPublicationEntry (record flow — no permission PDF, no timer)
+// ---------------------------------------------------------------------------
+
+export type JournalPublicationEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  paperTitle: string;
+  journalName: string;
+  issn: string;
+  volumeIssue: string;
+  pageNumbers: string;
+  publicationDate: string;
+  doi: string;
+  indexing: string;
+  coAuthors: FacultyRowValue[];
+  externalAuthors: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  firstPage: FileMeta[];
+  indexProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ---------------------------------------------------------------------------
 // FdpAttended
 // ---------------------------------------------------------------------------
 
@@ -184,6 +225,7 @@ export type CaseStudyEntry = {
   requestEditRequestedAtISO?: string | null;
   requestEditMessage?: string;
   academicYear: string;
+  semesterType: string;
   yearOfStudy: YearOfStudy | "";
   currentSemester: number | null;
   startDate: string;

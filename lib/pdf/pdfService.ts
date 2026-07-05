@@ -2,7 +2,8 @@ import "server-only";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isValidCategorySlug } from "@/data/categoryRegistry";
+import { getCategoryFlow, isValidCategorySlug } from "@/data/categoryRegistry";
+import { recordEntryMilestones } from "@/lib/feed/feedEvents";
 import { readCategoryEntryById } from "@/lib/dataStore";
 import { AppError, normalizeError } from "@/lib/errors";
 import { validatePreUploadFields } from "@/lib/categoryRequirements";
@@ -127,6 +128,15 @@ export async function generateAndPersistEntryPdf(args: GeneratePdfArgs) {
   if (!entry) {
     throw new AppError({ code: "NOT_FOUND", message: "Entry not found" });
   }
+
+  // RECORD FLOW: "generate" means SUBMIT — commit the completed record (the
+  // engine enforces that all fields AND proof uploads are present) and stop.
+  // There is no permission-letter PDF in this flow.
+  if (getCategoryFlow(args.category) === "record") {
+    const submitted = await commitDraft(args.email, args.category, entryId);
+    return { pdfMeta: null, entry: submitted };
+  }
+
   if (!validatePreUploadFields(args.category, entry as Record<string, unknown>)) {
     throw new AppError({
       code: "VALIDATION_ERROR",
@@ -245,6 +255,12 @@ export async function runGeneratePdfRequest(
       category,
       entryId,
     });
+
+    // Feed milestones at the moment they happen (idempotent by event id):
+    // permission flow → streak_started on generate; record flow → the
+    // submission IS the win, so streak_won fires right here — there is no
+    // later save to catch it (the entry just locked).
+    recordEntryMilestones(email, category as CategoryKey, result.entry as Record<string, unknown>);
 
     return Response.json(result, { status: 200 });
   } catch (error) {
