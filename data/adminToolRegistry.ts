@@ -1,4 +1,5 @@
 import {
+  Award,
   FileEdit,
   FlaskConical,
   Users,
@@ -174,6 +175,15 @@ export const ADMIN_TOOLS: AdminTool[] = [
     badgeType: "dot",
     badgeColor: "bg-[var(--color-status-warning)]",
     healthKey: "system",
+  },
+  {
+    id: "awards",
+    titleKey: "adminConsole.awards",
+    descriptionKey: "adminConsole.awardsDesc",
+    href: "/admin/awards",
+    icon: Award,
+    accentText: "text-[var(--color-palette-yellow-fg)]",
+    accentBg: "bg-[var(--color-palette-yellow-bg)]",
   },
   {
     id: "demo",

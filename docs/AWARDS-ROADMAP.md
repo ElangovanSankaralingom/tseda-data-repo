@@ -133,9 +133,14 @@ Admin/DLC can verify (the value is auditable against CAMU reports).
 14. **Admin points editor UI** — consumes `/api/admin/awards/points`
     (GET/PUT exist). A table per section: default vs effective, inline edit,
     reset-to-default. Settings-gated.
-15. **Admin faculty scores view** — consumes `/api/admin/awards?email=`;
-    per-faculty year picker inside the admin console (needed to run the
-    award). NO peer-visible leaderboard (privacy decision, 2026-07).
+15. ~~**Admin faculty scores view**~~ ✅ SHIPPED 2026-07 — `/admin/awards`
+    (registry card "Faculty Awards", gate = `canAccessAdminConsole`, same as
+    the API): faculty picker → year picker → total + per-section cards with
+    the FULL metric table (status chip, count, points, deriver notes — the
+    self-view's insight chips are deliberately not enough to run the award)
+    + admin download of any faculty's appraisal via the new
+    `/api/admin/awards/report?email=&year=`. NO peer-visible leaderboard
+    (privacy decision, 2026-07).
 16. **Interview/committee metrics entry** — small admin form writing
     committee-awarded points (studio focus 5, documentation 3, beyond
     syllabus 5) into a per-faculty-per-year store the scoring engine merges

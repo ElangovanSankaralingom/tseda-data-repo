@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import AdminConsoleDashboard from "@/components/admin/AdminConsoleDashboard";
 import { authOptions } from "@/lib/auth";
 import {
+  canAccessAdminConsole,
   canAccessAdminSearch,
   canAccessSettings,
   canApproveConfirmations,
@@ -56,6 +57,9 @@ export default async function AdminConsolePage() {
     maintenance: canRunMaintenance(email),
     // Demo roster management is master-only ("the admin assigns faculty").
     demo: isMasterAdmin(email),
+    // Same gate as /api/admin/awards + /admin/awards — card only where the
+    // page would actually let you in.
+    awards: canAccessAdminConsole(email),
   };
 
   return <AdminConsoleDashboard permissions={permissions} />;
