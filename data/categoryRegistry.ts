@@ -11,6 +11,7 @@ import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
 import { journalPublicationsSchema } from "@/data/schemas/journal-publications";
 import { creativePublicationsSchema } from "@/data/schemas/creative-publications";
 import { designCompetitionsSchema } from "@/data/schemas/design-competitions";
+import { exhibitionsOutreachSchema } from "@/data/schemas/exhibitions-outreach";
 import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
@@ -31,6 +32,7 @@ export const CATEGORY_SLUGS = [
   "studio-contributions",
   "creative-publications",
   "design-competitions",
+  "exhibitions-outreach",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -50,7 +52,8 @@ export type CategorySummaryKey =
   | "conferencesOrganized"
   | "studioContributions"
   | "creativePublications"
-  | "designCompetitions";
+  | "designCompetitions"
+  | "exhibitionsOutreach";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -553,6 +556,35 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Plan competition participation — permission letter first, certificate and result after.",
     entryTitleField: "competitionName",
     entryTitleFallback: "Design Competition",
+  },
+  "exhibitions-outreach": {
+    slug: "exhibitions-outreach",
+    label: "Exhibitions & Outreach",
+    schemaKey: "exhibitions-outreach",
+    schema: exhibitionsOutreachSchema,
+    summaryKey: "exhibitionsOutreach",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // PERMISSION FLOW (S4 ruling): public-facing events beyond academics
+    // need prior approval. Feeds public_exhibition 2/unit, capped at 4.
+    group: "academic",
+    icon: "landmark",
+    color: {
+      bar: "from-green-400 to-green-600",
+      bg: "bg-green-100",
+      text: "text-green-600",
+      ring: "hover:ring-green-200",
+      cta: "text-green-500",
+      gradient: "from-green-600 via-green-700 to-green-900",
+      accentBg: "bg-green-500/10",
+      borderTop: "border-t-green-500",
+      buttonBg: "bg-green-600",
+      buttonHover: "hover:bg-green-700",
+      chartHex: "#16A34A",
+    },
+    subtitle: "Plan public exhibitions and community outreach — permission letter first, documentation after.",
+    entryTitleField: "eventName",
+    entryTitleFallback: "Exhibition / Outreach",
   },
 };
 

@@ -356,6 +356,30 @@ test("design-competitions: permission flow; result tiers 5/2, pending results no
   });
 });
 
+test("exhibitions-outreach: permission flow; 2 per event capped at 4", async () => {
+  await withSandbox("perm-exhibitions", async () => {
+    const today = nowISTDateISO();
+    for (let index = 0; index < 3; index += 1) {
+      const entry = await createEntry(OWNER, "exhibitions-outreach", {
+        academicYear: YEAR,
+        semesterType: "EVEN",
+        eventName: `Public exhibition ${index + 1}`,
+        eventKind: index === 0 ? "Community Outreach" : "Public Exhibition",
+        venue: "Gandhi Museum Gallery",
+        startDate: addDaysISO(today, 4 + index),
+        endDate: addDaysISO(today, 5 + index),
+      } as never);
+      await commitDraft(OWNER, "exhibitions-outreach", String(entry.id));
+    }
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "public_exhibition");
+    assert.equal(metric?.count, 3);
+    assert.equal(metric?.points, 4, "3 × 2 = 6, capped at 4");
+    assert.ok(metric?.notes.some((n) => n.includes("Capped")), "cap explained");
+  });
+});
+
 test("submit: rejects incomplete records; completed submit locks with no timer and wins instantly", async () => {
   await withSandbox("record-submit", async () => {
     // Missing the required firstPage upload → submit must refuse.

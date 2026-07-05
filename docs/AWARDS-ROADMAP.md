@@ -113,10 +113,12 @@ profile upload slots generalize.
    competition — required for finalise and drives the 5/2 tier; entries
    with pending results score 0 with a note. Stage 2 uploads: certificate
    (required), submissionCopy. Yellow palette + Trophy icon.
-10. **exhibitions-outreach** [PERMISSION] (feeds `public_exhibition` 2 max
-    4) — public/outreach events need prior approval. kind
-    Exhibition|Outreach, venue, dates, externalExperts. Stage 2:
-    catalogue/invitation/report.
+10. ~~**exhibitions-outreach**~~ ✅ SHIPPED 2026-07 [PERMISSION] —
+    eventName, eventKind (Public Exhibition | Community Outreach), venue,
+    dates, externalExperts. Stage 2: permission letter + documentation
+    (catalogue/invitation/report, required) + photographs. Feeds
+    `public_exhibition` 2/unit CAP 4 (cap noted). Green palette + Landmark
+    icon.
 11. ~~**creative-publications**~~ ✅ SHIPPED 2026-07 [RECORD, individual] —
     workTitle, publicationName (platform/magazine), publicationDate, ISSN
     optional, workUrl optional; required publicationCopy upload. Feeds

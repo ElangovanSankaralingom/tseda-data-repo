@@ -16,6 +16,7 @@ import {
   CalendarDays,
   FileSearch,
   FileText,
+  Landmark,
   Library,
   Megaphone,
   Mic,
@@ -41,6 +42,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   palette: Palette,
   brush: Brush,
   trophy: Trophy,
+  landmark: Landmark,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

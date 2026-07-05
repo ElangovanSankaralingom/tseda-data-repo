@@ -658,3 +658,41 @@ export type DesignCompetitionEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// ExhibitionOutreachEntry (PERMISSION flow — public_exhibition 2/unit max 4)
+// ---------------------------------------------------------------------------
+
+export type ExhibitionOutreachEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  eventName: string;
+  eventKind: string;
+  venue: string;
+  startDate: string;
+  endDate: string;
+  externalExperts: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  permissionLetter: FileMeta[];
+  documentation: FileMeta[];
+  photographs: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

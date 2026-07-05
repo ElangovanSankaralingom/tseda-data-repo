@@ -204,6 +204,18 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count, notes };
   },
 
+  /** Public exhibitions / outreach (permission flow): 2 per event, cap 4. */
+  public_exhibition({ entriesByCategory, model }) {
+    const entries = entriesByCategory.get("exhibitions-outreach") ?? [];
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    const cap = model.kind === "perUnit" ? model.maxPoints ?? Number.POSITIVE_INFINITY : 0;
+    const raw = perUnit * entries.length;
+    const points = Math.min(raw, cap);
+    const notes: string[] = [];
+    if (raw > points) notes.push(`Capped at ${cap} (${entries.length} events)`);
+    return { points, count: entries.length, notes };
+  },
+
   /** Creative publications (record flow): flat per-unit per committed piece. */
   creative_publication({ entriesByCategory, model }) {
     const entries = entriesByCategory.get("creative-publications") ?? [];

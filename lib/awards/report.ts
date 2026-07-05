@@ -160,6 +160,12 @@ const ROW_BUILDERS: Record<string, RowBuilder> = {
       `${s(x, "startDate")} – ${s(x, "endDate")}`,
     ]),
   },
+  public_exhibition: {
+    columns: ["Event", "Type", "Venue", "Dates"],
+    rows: (e) => (e.get("exhibitions-outreach") ?? []).map((x) => [
+      s(x, "eventName"), s(x, "eventKind"), s(x, "venue"), `${s(x, "startDate")} – ${s(x, "endDate")}`,
+    ]),
+  },
   creative_publication: {
     columns: ["Title of Work", "Platform / Magazine", "ISSN", "Date"],
     rows: (e) => (e.get("creative-publications") ?? []).map((x) => [
