@@ -19,7 +19,7 @@ import { getUniverseDataRoot } from "@/lib/userStore";
 export const FEED_REACTIONS = ["like", "fire", "celebrate", "clap"] as const;
 export type FeedReaction = (typeof FEED_REACTIONS)[number];
 
-export type FeedEventType = "streak_started" | "streak_won" | "milestone";
+export type FeedEventType = "streak_started" | "streak_won" | "milestone" | "entry_committed";
 
 export type FeedEvent = {
   id: string;
@@ -73,7 +73,7 @@ function normalizeEvent(raw: unknown): FeedEvent | null {
   const id = typeof r.id === "string" ? r.id.trim() : "";
   if (!id) return null;
   const type = r.type;
-  if (type !== "streak_started" && type !== "streak_won" && type !== "milestone") return null;
+  if (type !== "streak_started" && type !== "streak_won" && type !== "milestone" && type !== "entry_committed") return null;
   const actorEmail = typeof r.actorEmail === "string" ? normalizeEmail(r.actorEmail) : "";
   if (!actorEmail) return null;
   const createdAt = typeof r.createdAt === "string" && r.createdAt.trim() ? r.createdAt : new Date().toISOString();

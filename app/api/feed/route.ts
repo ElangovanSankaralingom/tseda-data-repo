@@ -45,13 +45,11 @@ async function GETHandler(request: Request) {
     return NextResponse.json({ data: { enabled: false, events: [] } });
   }
 
-  let events = await listFeedEvents(50);
-  if (events.length === 0) {
-    // Empty wall + entries that predate feed wiring → one idempotent sweep
-    // per universe (deterministic event ids; marker file stops rescans).
-    await backfillFeedIfNeeded();
-    events = await listFeedEvents(50);
-  }
+  // Coherence on EVERY load (Elan's ruling): the sweep self-gates on a
+  // versioned marker, so this is one fs.access once a universe is swept —
+  // and a full idempotent backfill the first time (or after a version bump).
+  await backfillFeedIfNeeded();
+  const events = await listFeedEvents(50);
   const shaped = events.map((e) => {
     const reactions: Record<string, number> = {};
     const myReactions: FeedReaction[] = [];

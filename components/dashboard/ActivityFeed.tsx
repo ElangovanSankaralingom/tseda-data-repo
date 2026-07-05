@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Flame, Trophy, Medal, Award, ThumbsUp, PartyPopper, Hand, Activity, X } from "lucide-react";
+import { Flame, Trophy, Medal, Award, ThumbsUp, PartyPopper, Hand, Activity, X, ClipboardCheck } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import type { TranslationKey } from "@/lib/i18n";
@@ -18,7 +18,7 @@ const REACTION_ICON: Record<Reaction, typeof ThumbsUp> = {
 
 type FeedEvent = {
   id: string;
-  type: "streak_started" | "streak_won" | "milestone";
+  type: "streak_started" | "streak_won" | "milestone" | "entry_committed";
   actorName: string;
   isSelf: boolean;
   categoryKey: string | null;
@@ -136,20 +136,30 @@ const MilestoneCard = React.memo(function MilestoneCard({
 
   const isWon = event.type === "streak_won";
   const isMilestone = event.type === "milestone";
+  const isCommitted = event.type === "entry_committed";
   // Streak tiers (Elan, 2026-07): GOLD (permission flow) glows yellow;
   // SILVER (record flow) takes a neutral metallic treatment via tokens.
+  // entry_committed (the everyday pulse) reads settled emerald — flat, done.
   const tier = isWon ? event.tier : null;
   const isSilver = tier === "silver";
-  const palette = isWon ? (isSilver ? null : tier === "gold" ? "yellow" : "amber") : isMilestone ? "indigo" : "orange";
+  const palette = isWon
+    ? (isSilver ? null : tier === "gold" ? "yellow" : "amber")
+    : isMilestone
+      ? "indigo"
+      : isCommitted
+        ? "emerald"
+        : "orange";
   const accentFg = palette ? `var(--color-palette-${palette}-fg)` : "var(--color-text-secondary)";
   const accentBg = palette ? `var(--color-palette-${palette}-bg)` : "var(--color-surface-inset)";
   const accentBorder = palette ? `var(--color-palette-${palette}-border)` : "var(--color-border-strong)";
-  const TypeIcon = isWon ? (isSilver ? Medal : Trophy) : isMilestone ? Award : Flame;
+  const TypeIcon = isWon ? (isSilver ? Medal : Trophy) : isMilestone ? Award : isCommitted ? ClipboardCheck : Flame;
   const baseMessage = isWon
     ? (tier === "gold" ? t("feed.wonGoldStreak") : isSilver ? t("feed.wonSilverStreak") : t("feed.wonStreak"))
     : isMilestone
       ? t("feed.milestoneReached").replace("{n}", String(event.milestone ?? 0))
-      : t("feed.startedStreak");
+      : isCommitted
+        ? t("feed.loggedEntry")
+        : t("feed.startedStreak");
   const message = event.withNames?.length
     ? `${baseMessage} ${t("feed.withNames").replace("{names}", event.withNames.join(", "))}`
     : baseMessage;

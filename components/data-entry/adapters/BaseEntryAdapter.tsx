@@ -749,10 +749,13 @@ export default function BaseEntryAdapter<T extends EntryRecord>({
           ? null
           : loading && list.length === 0
             ? {
+                // NO fabricated stats while loading (the old `total: 1`
+                // placeholder flashed "1 ENTRIES / 0/1 finalized" in the hero
+                // before the real fetch landed). Undefined stats = the hero
+                // renders identity only; the skeleton fills the list area.
                 title: `Saved ${config.label} Entries`,
                 subtitle: "Your saved records are stored locally and keyed by your signed-in email.",
                 content: <EntryListSkeleton count={3} />,
-                stats: { total: 1, drafts: 0, active: 0, finalized: 0, pending: 0, streakActive: 0 },
               }
             : createGroupedEntryListCard({
                 title: `Saved ${config.label} Entries`,

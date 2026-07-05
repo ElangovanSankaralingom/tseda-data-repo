@@ -13,6 +13,7 @@ export const en = {
     live: "live",
     empty: "No milestones yet — be the first to start a streak.",
     startedStreak: "started a streak",
+    loggedEntry: "logged an activity",
     wonStreak: "won a streak",
     wonGoldStreak: "won a GOLD streak",
     wonSilverStreak: "won a silver streak",

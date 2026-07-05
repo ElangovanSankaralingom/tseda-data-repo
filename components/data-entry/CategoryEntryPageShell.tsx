@@ -492,7 +492,11 @@ export default function CategoryEntryPageShell({
 
           {topContent}
 
-          {loading ? <LoadingState message={resolvedLoadingMessage} /> : null}
+          {/* While loading, prefer the adapter's skeleton cards over the
+              plain text box — and never fabricate hero stats. */}
+          {loading ? (
+            listCard?.content ?? <LoadingState message={resolvedLoadingMessage} />
+          ) : null}
 
           {!loading && listCard && hasEntries ? (
             <div className="animate-fade-in-up stagger-1">

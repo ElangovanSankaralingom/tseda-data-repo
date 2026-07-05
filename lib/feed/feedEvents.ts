@@ -2,8 +2,9 @@ import "server-only";
 
 import { getCategorySchema } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
-import { appendFeedEvent, type FeedEventType } from "@/lib/feed/feedStore";
+import { appendFeedEvent, type FeedEventType, type NewFeedEvent } from "@/lib/feed/feedStore";
 import { getStreakTier, isEntryActivated, isEntryWon, type StreakProgressEntryLike } from "@/lib/streakProgress";
+import { isEntryCommitted, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { addNotification } from "@/lib/confirmations/notificationStore";
 import { resolveFacultyName } from "@/lib/admin/facultyRegistry";
@@ -80,51 +81,127 @@ async function emitWinMilestone(actorEmail: string): Promise<void> {
   }
 }
 
+function toISO(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
 /**
- * Best-effort: after a generate/finalise succeeds, record milestone events for
- * the department activity feed. Milestone-only (no entry data is broadcast).
- * Idempotent via deterministic event ids, so re-running never double-posts.
- * Never throws — feed emission must not affect the originating action.
+ * Decide which feed events an entry has earned — pure, no I/O.
+ *
+ * Three arrival stories, one per entry state (Elan's "Department Pulse shows
+ * no data", round 2 — the wall must reflect COMMITS, not just streaks):
+ *  - streak_started  — streak-eligible entry committed (the gold track)
+ *  - streak_won      — stage 2 complete / record submitted (tiered)
+ *  - entry_committed — committed but never streak-eligible (past-dated
+ *    permission entries: the everyday reality of post-facto data entry).
+ *
+ * Event timestamps come from the ENTRY (commit / completion time), so a
+ * backfill sweep lands history in honest chronological order instead of
+ * stamping everything "just now". Ids are deterministic → idempotent.
+ */
+export function collectEntryMilestoneEvents(
+  actorEmail: string,
+  category: CategoryKey,
+  entry: Record<string, unknown>,
+): NewFeedEvent[] {
+  const entryId = String(entry.id ?? "").trim();
+  if (!entryId) return [];
+  const candidate = entry as StreakProgressEntryLike;
+  const events: NewFeedEvent[] = [];
+
+  try {
+    const withNames = collabDisplayNames(actorEmail, category, entry);
+    const names = withNames.length ? { withNames } : {};
+    const committedAt = toISO(entry.committedAtISO) ?? toISO(entry.generatedAt);
+
+    const activated = isEntryActivated(candidate);
+    if (activated) {
+      events.push({
+        id: `streak_started:${entryId}`,
+        type: "streak_started",
+        actorEmail,
+        categoryKey: category,
+        ...(committedAt ? { createdAt: committedAt } : {}),
+        ...names,
+      });
+    }
+
+    const fields = getCategorySchema(category).fields;
+    const won = isEntryWon(candidate, fields);
+    if (won) {
+      const streak = entry.streak as { completedAtISO?: unknown } | null | undefined;
+      const wonAt = toISO(streak?.completedAtISO) ?? committedAt;
+      events.push({
+        id: `streak_won:${entryId}`,
+        type: "streak_won",
+        actorEmail,
+        categoryKey: category,
+        tier: getStreakTier(candidate),
+        ...(wonAt ? { createdAt: wonAt } : {}),
+        ...names,
+      });
+    }
+
+    // Committed but never on the streak track (past-dated permission
+    // entries) → the plain "logged" pulse card. Archived entries stay off
+    // the wall — an expired incomplete window is nothing to broadcast.
+    if (!activated && !won) {
+      const state = entry as EntryStateLike;
+      if (isEntryCommitted(state) && normalizeEntryStatus(state) !== "ARCHIVED") {
+        events.push({
+          id: `entry_committed:${entryId}`,
+          type: "entry_committed",
+          actorEmail,
+          categoryKey: category,
+          ...(committedAt ? { createdAt: committedAt } : {}),
+          ...names,
+        });
+      }
+    }
+  } catch {
+    // Best-effort only.
+  }
+
+  return events;
+}
+
+/**
+ * Awaited emission — the backfill sweep uses this so the SAME request that
+ * triggered the sweep can re-read the feed and see the events (the
+ * fire-and-forget path races the re-read).
+ */
+export async function recordEntryMilestonesAwaited(
+  actorEmail: string,
+  category: CategoryKey,
+  entry: Record<string, unknown>,
+): Promise<void> {
+  const events = collectEntryMilestoneEvents(actorEmail, category, entry);
+  for (const event of events) {
+    await appendFeedEvent(event);
+    if (event.type === "streak_won") {
+      fireAndForget(emitWinMilestone(actorEmail), "feed.win_milestone");
+    }
+  }
+}
+
+/**
+ * Best-effort: after a generate/finalise/save succeeds, record milestone
+ * events for the department activity feed. Milestone-only (no entry data is
+ * broadcast). Idempotent via deterministic event ids, so re-running never
+ * double-posts. Never throws — feed emission must not affect the
+ * originating action.
  */
 export function recordEntryMilestones(
   actorEmail: string,
   category: CategoryKey,
   entry: Record<string, unknown>,
 ): void {
-  const entryId = String(entry.id ?? "").trim();
-  if (!entryId) return;
-  const candidate = entry as StreakProgressEntryLike;
-
   try {
-    const withNames = collabDisplayNames(actorEmail, category, entry);
-
-    if (isEntryActivated(candidate)) {
-      fireAndForget(
-        appendFeedEvent({
-          id: `streak_started:${entryId}`,
-          type: "streak_started",
-          actorEmail,
-          categoryKey: category,
-          ...(withNames.length ? { withNames } : {}),
-        }),
-        "feed.streak_started",
-      );
-    }
-
-    const fields = getCategorySchema(category).fields;
-    if (isEntryWon(candidate, fields)) {
-      fireAndForget(
-        appendFeedEvent({
-          id: `streak_won:${entryId}`,
-          type: "streak_won",
-          actorEmail,
-          categoryKey: category,
-          tier: getStreakTier(candidate),
-          ...(withNames.length ? { withNames } : {}),
-        }),
-        "feed.streak_won",
-      );
-      fireAndForget(emitWinMilestone(actorEmail), "feed.win_milestone");
+    for (const event of collectEntryMilestoneEvents(actorEmail, category, entry)) {
+      fireAndForget(appendFeedEvent(event), `feed.${event.type}`);
+      if (event.type === "streak_won") {
+        fireAndForget(emitWinMilestone(actorEmail), "feed.win_milestone");
+      }
     }
   } catch {
     // Best-effort only.

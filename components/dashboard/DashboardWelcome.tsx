@@ -29,13 +29,19 @@ export type ContinueRow = {
 
 type AwardsResponse = { data?: { years: string[]; score: AwardScore | null } };
 
-/** Headline award number (Elan, 2026-07): total points for the latest
- *  award year, right in the hero. Same SWR key as the award panel below —
- *  one request, deduped, refreshed by the instant-update bus. */
-function HeroAwardPoints() {
-  const { t } = useTranslation();
+/** One hook, two surfaces: the identity chip (when the continue card is
+ *  busy) or the split-up card (when all caught up). Same SWR key as the
+ *  award panel below — one request, deduped, refreshed by the update bus. */
+function useAwardScore(): AwardScore | null {
   const { data: body } = useApi<AwardsResponse>("/api/me/awards");
-  const score = body?.data?.score ?? null;
+  return body?.data?.score ?? null;
+}
+
+/** Headline award number (Elan, 2026-07): total points for the latest
+ *  award year, right in the hero — shown only while the right card is
+ *  occupied by continue-links, so the number never appears twice. */
+function HeroAwardPoints({ score }: { score: AwardScore | null }) {
+  const { t } = useTranslation();
   if (!score) return null;
   return (
     <div className="mt-5 inline-flex items-center gap-3 rounded-2xl border border-[var(--color-surface-on-accent)] bg-[var(--color-surface-on-accent)] px-4 py-2.5">
@@ -49,6 +55,46 @@ function HeroAwardPoints() {
         <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
           {t("dashboard.awardPoints")} · {score.academicYear.replace("Academic Year ", "")}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** All-caught-up card body (Elan: "have total point here, like a split up"):
+ *  the freed-up card shows the award total + per-section breakdown. Section
+ *  labels come from the T'SEDA rulebook data (same source the award panel
+ *  renders), so the split can never disagree with the panel below. */
+function AwardSplitBody({ score }: { score: AwardScore }) {
+  const { t } = useTranslation();
+  return (
+    <div className="mt-3">
+      <div className="flex items-baseline gap-2">
+        <span className="font-mono text-3xl font-black leading-none tabular-nums text-[var(--color-text-primary)]">
+          {score.totalPoints}
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-tertiary)]">
+          {t("dashboard.awardPoints")} · {score.academicYear.replace("Academic Year ", "")}
+        </span>
+      </div>
+      <div className="mt-3 space-y-1 border-t border-[var(--color-divider)] pt-3">
+        {score.sections.map((section) => {
+          const scored = section.points > 0;
+          return (
+            <div key={section.section} className="flex items-baseline justify-between gap-3 text-xs">
+              <span
+                className={`min-w-0 flex-1 truncate ${scored ? "font-medium text-[var(--color-text-secondary)]" : "text-[var(--color-text-muted)]"}`}
+                title={section.label}
+              >
+                {section.label}
+              </span>
+              <span
+                className={`shrink-0 font-mono font-bold tabular-nums ${scored ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}
+              >
+                {section.points}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -89,6 +135,10 @@ export default function DashboardWelcome({
   };
 
   const rows = continueRows.slice(0, 3);
+  const score = useAwardScore();
+  // One home per number: with continue-links in the card, the total rides
+  // the identity chip; caught up, the card owns total + split-up instead.
+  const showSplitCard = rows.length === 0 && !!score;
 
   return (
     <div className="animate-fade-in-up">
@@ -129,7 +179,7 @@ export default function DashboardWelcome({
             <p className="mt-3 text-sm text-[var(--color-text-on-accent-muted)] font-medium max-w-sm leading-relaxed">
               {welcomeSubtext}
             </p>
-            {hasAnyEntries && <HeroAwardPoints />}
+            {hasAnyEntries && !showSplitCard && <HeroAwardPoints score={score} />}
           </div>
 
           {/* ═══ RIGHT: Continue where you left off — ACTION, not numbers ═══ */}
@@ -162,6 +212,8 @@ export default function DashboardWelcome({
                         </Link>
                       ))}
                     </div>
+                  ) : showSplitCard && score ? (
+                    <AwardSplitBody score={score} />
                   ) : (
                     <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-tertiary)]">
                       {t("dashboard.allCaughtUpBody")}
