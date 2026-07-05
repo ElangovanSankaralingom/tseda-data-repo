@@ -358,16 +358,22 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 ## Current State
 
-- **519 tests, 0 failures** (2026-07: + schema invariant guards, collab fan-out suite)
+- **586 tests, 0 failures** (2026-07: + record-flow suite, demo isolation, entryScope guards, award scoring/report/appraisal suites, wiring-completeness guards)
 - **Playbooks:** SQLite migration → `docs/SQLITE-MIGRATION.md` (planned, not started); deployment topology + scaling walls → `docs/DEPLOYMENT.md`. Read BEFORE touching storage or running multiple instances.
 - **Faculty Awards system (2026-07):** rulebook → `data/awardMetrics.ts` (T'SEDA 7-section scheme as data — NEVER hardcode point values elsewhere); admin overrides → `lib/awards/config.ts` (+ `/api/admin/awards/points`); scoring → `lib/awards/scoring.ts` (committed entries only, year-bucketed via `academicYear`, explicit per-metric derivers); dashboard panel `AwardProgress`. Visibility: self + admin, no leaderboard. Build order for everything else → `docs/AWARDS-ROADMAP.md`.
 - **Build: clean** (Turbopack warnings are cosmetic)
 - **Docker + CI/CD ready** (GitHub Actions)
-- **6 categories:** fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops (permission flow) + journal-publications (record flow)
+- **22 categories** across four clubs (professional / academic / research / department):
+  - PERMISSION flow (10): fdp-attended, fdp-conducted, guest-lectures, case-studies, workshops, conferences-organized, design-competitions (result is a STAGE-2 field driving the 5/2 tier), exhibitions-outreach, online-courses (courseKind routes two tiered metrics), mentoring-programs
+  - RECORD flow (8): journal-publications, conference-publications, books-and-chapters, patents, research-funding, editorial-roles, studio-contributions (S1 descriptive box; field key is `contributionKind`, NOT `kind`), creative-publications
+  - DLC-SCOPED department records (4, all record flow, `entryScope: "dlc"`): student-placements, student-higher-studies, student-exams, student-awards — visible/enterable ONLY via the coordinator `enterData` power; never streak, never feed, never score award points (entries live under the entering DLC's user tree)
   - EVERY category carries the export-filter spine: required academicYear + semesterType (case-studies additionally keeps yearOfStudy/currentSemester)
   - All uploads are multi-file (FileMeta[])
-  - Guest lectures uses topicOfLecture, guestSpeaker* fields
-  - Workshops uses workshopName, resourcePerson* fields
+  - Guest lectures uses topicOfLecture, guestSpeaker* fields (+ optional speakerAffiliationType)
+  - Workshops + fdp-conducted carry optional `outsideParticipants` (stage 2) — the fdp_conducted deriver prefers it over the numberOfParticipants proxy
+- **Award surfaces (2026-07):** dashboard "My Award Progress" panel (+ student-feedback ODD/EVEN claim strip + "Appraisal (.docx)" download via `/api/me/awards/report`); admin `/admin/awards` (per-faculty scores, inline committee-points entry on interview metrics, per-faculty appraisal download via `/api/admin/awards/report`) + `/admin/awards/points` editor. Committee entry + points editing are settings-tier (`canAccessSettings` — changing scores = changing point values).
+- **Per-user universe-scoped stores** (demo-safe, under `getUserStoreDir(email)`): `research-profile.json` (Ph.D. milestones + supervision network), `interview-points.json` (committee awards, clamped to the EFFECTIVE points model), `feedback-claims.json` (S3 student-feedback ODD/EVEN percentages, CAMU-auditable)
+- **Entry-DLC (B2):** `entryScope` on CategoryConfig + fourth coordinator power `enterData` (per-type-per-category, managed on /admin/coordinators). Enforcement: categoryRouteHandler + categoryFileHandler 403, page gate `lib/entries/entryScopeGate.ts`, dashboard server-side filtering. dlc commits are never streakEligible.
 
 ## Do NOT
 
