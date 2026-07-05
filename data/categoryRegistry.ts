@@ -1,6 +1,7 @@
 import { booksAndChaptersSchema } from "@/data/schemas/books-and-chapters";
 import { caseStudiesSchema } from "@/data/schemas/case-studies";
 import { patentsSchema } from "@/data/schemas/patents";
+import { researchFundingSchema } from "@/data/schemas/research-funding";
 import { conferencePublicationsSchema } from "@/data/schemas/conference-publications";
 import { fdpAttendedSchema } from "@/data/schemas/fdp-attended";
 import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
@@ -19,6 +20,7 @@ export const CATEGORY_SLUGS = [
   "conference-publications",
   "books-and-chapters",
   "patents",
+  "research-funding",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -32,7 +34,8 @@ export type CategorySummaryKey =
   | "journalPublications"
   | "conferencePublications"
   | "booksAndChapters"
-  | "patents";
+  | "patents"
+  | "researchFunding";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -356,6 +359,36 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Record published and granted patents with documents — submitted entries count immediately.",
     entryTitleField: "patentTitle",
     entryTitleFallback: "Patent",
+  },
+  "research-funding": {
+    slug: "research-funding",
+    label: "Research Funding",
+    schemaKey: "research-funding",
+    schema: researchFundingSchema,
+    summaryKey: "researchFunding",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW — S6 "data enter alone"; kind routes to rd_funding /
+    // non_rd_funding, amountInr picks the tier (up to 25 points).
+    flow: "record",
+    group: "research",
+    icon: "banknote",
+    color: {
+      bar: "from-lime-400 to-lime-600",
+      bg: "bg-lime-100",
+      text: "text-lime-600",
+      ring: "hover:ring-lime-200",
+      cta: "text-lime-500",
+      gradient: "from-lime-600 via-lime-700 to-lime-900",
+      accentBg: "bg-lime-500/10",
+      borderTop: "border-t-lime-500",
+      buttonBg: "bg-lime-600",
+      buttonHover: "hover:bg-lime-700",
+      chartHex: "#65A30D",
+    },
+    subtitle: "Record funded projects and consultancy with sanction orders — submitted entries count immediately.",
+    entryTitleField: "projectTitle",
+    entryTitleFallback: "Funded Project",
   },
 };
 

@@ -330,10 +330,13 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
   // ── Section 6: Grants, Consultancy, and Practice-Led Research ─────────────
   {
     id: "rd_funding",
+    categories: ["research-funding"],
     section: "s6",
     label: "Funded / Sponsored R&D Projects",
-    details: "Seed money not considered.",
-    source: "claim",
+    details:
+      "Seed money not considered. AUTO-TRACKED from research-funding entries " +
+      "with kind = R&D; amountInr picks the tier.",
+    source: "entry",
     effort: "high",
     pointsModel: {
       kind: "tiered",
@@ -349,10 +352,13 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
   },
   {
     id: "non_rd_funding",
+    categories: ["research-funding"],
     section: "s6",
     label: "Funding from Govt./Agencies (non-R&D)",
-    details: "Must not be claimed under any other category.",
-    source: "claim",
+    details:
+      "Must not be claimed under any other category. AUTO-TRACKED from " +
+      "research-funding entries with kind = Consultancy/Other; amountInr picks the tier.",
+    source: "entry",
     effort: "medium",
     pointsModel: {
       kind: "tiered",

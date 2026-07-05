@@ -10,6 +10,7 @@ import { createElement } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BadgeCheck,
+  Banknote,
   BookOpen,
   FileSearch,
   FileText,
@@ -29,6 +30,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   megaphone: Megaphone,
   library: Library,
   "badge-check": BadgeCheck,
+  banknote: Banknote,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

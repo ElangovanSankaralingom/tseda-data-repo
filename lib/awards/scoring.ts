@@ -149,6 +149,40 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count, notes: [] };
   },
 
+  /** R&D funding (record flow): kind = R&D; the amount (INR → lakhs) picks
+   *  the tier (<5L 5 · 5–10L 10 · 10–20L 15 · 20–50L 20 · ≥50L 25). */
+  rd_funding({ entriesByCategory, model }) {
+    let points = 0;
+    let count = 0;
+    for (const entry of entriesByCategory.get("research-funding") ?? []) {
+      if (String(entry.kind ?? "") !== "R&D") continue;
+      const lakhs = (Number(entry.amountInr) || 0) / 100_000;
+      const tier =
+        lakhs >= 50 ? "gte50" :
+        lakhs >= 20 ? "20to50" :
+        lakhs >= 10 ? "10to20" :
+        lakhs >= 5 ? "5to10" : "lt5";
+      points += tierPoints(model, tier);
+      count += 1;
+    }
+    return { points, count, notes: [] };
+  },
+
+  /** Non-R&D funding (record flow): kind = Consultancy/Other; amount picks
+   *  the tier (<2.5L 3 / ≥2.5L 5). */
+  non_rd_funding({ entriesByCategory, model }) {
+    let points = 0;
+    let count = 0;
+    for (const entry of entriesByCategory.get("research-funding") ?? []) {
+      const kind = String(entry.kind ?? "");
+      if (kind !== "Consultancy" && kind !== "Other") continue;
+      const lakhs = (Number(entry.amountInr) || 0) / 100_000;
+      points += tierPoints(model, lakhs >= 2.5 ? "gte2_5" : "lt2_5");
+      count += 1;
+    }
+    return { points, count, notes: [] };
+  },
+
   /** Workshops: India vs abroad via the entry's `level` field. */
   collab_workshop({ entriesByCategory, model }) {
     let points = 0;

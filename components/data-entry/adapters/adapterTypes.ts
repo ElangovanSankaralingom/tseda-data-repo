@@ -241,6 +241,45 @@ export type PatentEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// ResearchFundingEntry (record flow — no permission PDF, no timer)
+// ---------------------------------------------------------------------------
+
+export type ResearchFundingEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  kind: string;
+  projectTitle: string;
+  agencyOrClient: string;
+  amountInr: number | null;
+  sanctionDate: string;
+  durationText: string;
+  investigators: FacultyRowValue[];
+  externalInvestigators: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  sanctionOrder: FileMeta[];
+  supportingProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ---------------------------------------------------------------------------
 // FdpAttended
 // ---------------------------------------------------------------------------
 

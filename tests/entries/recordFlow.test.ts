@@ -75,6 +75,7 @@ test("registry: publications are record-flow categories; originals stay permissi
   assert.equal(getCategoryFlow("conference-publications"), "record");
   assert.equal(getCategoryFlow("books-and-chapters"), "record");
   assert.equal(getCategoryFlow("patents"), "record");
+  assert.equal(getCategoryFlow("research-funding"), "record");
   for (const slug of ["workshops", "guest-lectures", "fdp-attended", "fdp-conducted", "case-studies"]) {
     assert.equal(getCategoryFlow(slug), "permission", `${slug} must remain permission-flow`);
   }
@@ -162,6 +163,42 @@ test("patents: status picks the tier (Granted 10 / Published 5)", async () => {
     const metric = score.metrics.find((m) => m.id === "utility_patent");
     assert.equal(metric?.points, 15, "10 (granted) + 5 (published)");
     assert.equal(metric?.count, 2);
+  });
+});
+
+test("research-funding: kind routes the metric, amount picks the tier", async () => {
+  await withSandbox("record-funding", async () => {
+    const base = {
+      academicYear: YEAR,
+      semesterType: "ODD",
+      agencyOrClient: "DST",
+      sanctionDate: "2025-09-15",
+      sanctionOrder: [{ storedPath: "uploads/x/order.pdf", url: "/api/entry-file?p=5", fileName: "order.pdf" }],
+    };
+    // R&D, ₹12,00,000 → 12 lakhs → "10to20" tier → 15 points
+    const rd = await createEntry(OWNER, "research-funding", {
+      ...base, kind: "R&D", projectTitle: "Heat-resilient housing study", amountInr: 1_200_000,
+    } as never);
+    await commitDraft(OWNER, "research-funding", String(rd.id));
+
+    // Consultancy, ₹3,00,000 → 3 lakhs → "gte2_5" → 5 points
+    const consult = await createEntry(OWNER, "research-funding", {
+      ...base, kind: "Consultancy", projectTitle: "Ecopark Children's Library", amountInr: 300_000,
+    } as never);
+    await commitDraft(OWNER, "research-funding", String(consult.id));
+
+    // Other, ₹1,50,000 → 1.5 lakhs → "lt2_5" → 3 points
+    const other = await createEntry(OWNER, "research-funding", {
+      ...base, kind: "Other", projectTitle: "Exhibition support grant", amountInr: 150_000,
+    } as never);
+    await commitDraft(OWNER, "research-funding", String(other.id));
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const byId = new Map(score.metrics.map((m) => [m.id, m]));
+    assert.equal(byId.get("rd_funding")?.points, 15, "12L R&D lands in the 10–20L tier");
+    assert.equal(byId.get("rd_funding")?.count, 1);
+    assert.equal(byId.get("non_rd_funding")?.points, 8, "5 (3L consultancy) + 3 (1.5L other)");
+    assert.equal(byId.get("non_rd_funding")?.count, 2);
   });
 });
 

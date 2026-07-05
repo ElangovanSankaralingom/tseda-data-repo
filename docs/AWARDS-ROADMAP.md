@@ -61,12 +61,12 @@
    semesterType, patentTitle, status, level, applicationNumber,
    applicationDate, statusDate, inventors (`collaborates: true`),
    externalInventors; proof: patent document (required).
-5. **research-funding** [RECORD — "data enter alone"] (feeds `rd_funding`
-   tiers + `non_rd_funding`; consultancy folds in as kind) — form T11/T12 +
-   Excel "Research Grant"/"Consultancy". kind R&D|Consultancy|Other,
-   investigators collaborates (PI/Co-PI role), title, agency/client,
-   amountLakhs (drives tier), sanctionDate, period. Proofs: sanction order /
-   work order / receipts.
+5. ~~**research-funding**~~ ✅ SHIPPED 2026-07 [RECORD — "data enter alone"]
+   — kind R&D|Consultancy|Other routes to `rd_funding` (amount tiers 5–25)
+   or `non_rd_funding` (3/5), both auto-tracked from `amountInr`. Fields:
+   academicYear, semesterType, kind, projectTitle, agencyOrClient,
+   amountInr, sanctionDate, duration, investigators (`collaborates: true`),
+   externalInvestigators; proofs: sanction/work order (required), receipts.
 6. **conferences-organized** [PERMISSION] (feeds `intl/natl_conference_organized`,
    SHARED 50/30/20 by role) — form T15/T16. Prior-approval event: permission
    PDF → conduct → stage-2 proofs → finalise. level, title, role
