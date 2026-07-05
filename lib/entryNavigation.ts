@@ -87,6 +87,14 @@ export function adminIntegrityUser(userEmail: string) {
   return `/admin/integrity/${encodeURIComponent(userEmail)}`;
 }
 
+export function adminAwards() {
+  return "/admin/awards";
+}
+
+export function adminAwardPoints() {
+  return "/admin/awards/points";
+}
+
 export function settingsAppearance() {
   return "/settings/appearance";
 }

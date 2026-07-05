@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Award, FileDown, Loader2, UserSearch } from "lucide-react";
+import Link from "next/link";
+import { Award, FileDown, Loader2, SlidersHorizontal, UserSearch } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { formatDate } from "@/lib/i18n/locale";
+import { adminAwardPoints } from "@/lib/entryNavigation";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import FacultySelect, { type FacultySelection } from "@/components/controls/FacultySelect";
 import type { AwardScore, MetricScore, MetricScoreStatus } from "@/lib/awards/scoring";
@@ -91,9 +93,20 @@ export default function AwardScoresClient({ canAwardCommittee }: { canAwardCommi
             </>
           ) : null}
         </div>
-        <p className="mt-3 text-xs text-[var(--color-text-tertiary)]">
-          {t("awardsAdmin.privacyNote")}
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-[var(--color-text-tertiary)]">
+            {t("awardsAdmin.privacyNote")}
+          </p>
+          {canAwardCommittee ? (
+            <Link
+              href={adminAwardPoints()}
+              className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+            >
+              <SlidersHorizontal className="size-3.5" />
+              {t("awardsAdmin.configurePoints")}
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {/* ── Result panel ── */}

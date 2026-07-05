@@ -130,9 +130,14 @@ Admin/DLC can verify (the value is auditable against CAMU reports).
 
 ## Phase C — admin & workflow surfaces
 
-14. **Admin points editor UI** — consumes `/api/admin/awards/points`
-    (GET/PUT exist). A table per section: default vs effective, inline edit,
-    reset-to-default. Settings-gated.
+14. ~~**Admin points editor UI**~~ ✅ SHIPPED 2026-07 — `/admin/awards/points`
+    (settings-gated, linked from the awards admin view via "Points Config"):
+    section cards with per-metric inline editors — fixed/perUnit get one
+    input, tiered models get one input per tier with the document default
+    beside each — Overridden badge + Reset-to-default. Consumes the existing
+    GET/PUT `/api/admin/awards/points`. Phase C complete: the award now runs
+    end to end (scores → committee entry → points tuning → appraisal
+    documents) from the admin console.
 15. ~~**Admin faculty scores view**~~ ✅ SHIPPED 2026-07 — `/admin/awards`
     (registry card "Faculty Awards", gate = `canAccessAdminConsole`, same as
     the API): faculty picker → year picker → total + per-section cards with
