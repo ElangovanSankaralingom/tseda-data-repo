@@ -2,7 +2,8 @@
 
 import { BarChart3, Layers, Trophy, Medal, Flame, FileEdit, CircleDashed } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import { getCategoryConfig, CATEGORY_GROUP_ORDER, type CategoryGroup } from "@/data/categoryRegistry";
+import { CATEGORY_GROUP_ORDER, type CategoryGroup } from "@/data/categoryRegistry";
+import type { ClubStat } from "@/lib/dashboard/clubStats";
 import type { TranslationKey } from "@/lib/i18n";
 
 /**
@@ -11,12 +12,6 @@ import type { TranslationKey } from "@/lib/i18n";
  * Server-computed props from the SAME summary the bento grid uses, so the
  * numbers can never disagree with the cards below them.
  */
-
-export type ClubStat = {
-  group: CategoryGroup;
-  entries: number;
-  categories: number;
-};
 
 export type DashboardAnalyticsProps = {
   clubs: ClubStat[];
@@ -156,20 +151,3 @@ export default function DashboardAnalytics(props: DashboardAnalyticsProps) {
   );
 }
 
-/** Server-side helper: roll categories up into club stats. */
-export function buildClubStats(
-  perCategory: Array<{ slug: string; totalEntries: number }>,
-): ClubStat[] {
-  const byGroup = new Map<CategoryGroup, ClubStat>();
-  for (const group of CATEGORY_GROUP_ORDER) {
-    byGroup.set(group, { group, entries: 0, categories: 0 });
-  }
-  for (const row of perCategory) {
-    const group = getCategoryConfig(row.slug).group;
-    const stat = byGroup.get(group);
-    if (!stat) continue;
-    stat.entries += row.totalEntries;
-    stat.categories += 1;
-  }
-  return CATEGORY_GROUP_ORDER.map((group) => byGroup.get(group)!).filter(Boolean);
-}

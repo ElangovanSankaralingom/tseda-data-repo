@@ -15,7 +15,8 @@ import { signin } from "@/lib/entryNavigation";
 import { trackEvent } from "@/lib/telemetry/telemetry";
 import { ALLOWED_EMAIL_SUFFIX } from "@/lib/config/appConfig";
 import DashboardWelcome from "@/components/dashboard/DashboardWelcome";
-import DashboardAnalytics, { buildClubStats } from "@/components/dashboard/DashboardAnalytics";
+import DashboardAnalytics from "@/components/dashboard/DashboardAnalytics";
+import { buildClubStats } from "@/lib/dashboard/clubStats";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import { isActivityFeedEnabled } from "@/lib/settings/consumer";
 
