@@ -584,3 +584,38 @@ export type StudioContributionEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// CreativePublicationEntry (record flow — individual, 5/unit)
+// ---------------------------------------------------------------------------
+
+export type CreativePublicationEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  workTitle: string;
+  publicationName: string;
+  publicationDate: string;
+  issn: string;
+  workUrl: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  publicationCopy: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

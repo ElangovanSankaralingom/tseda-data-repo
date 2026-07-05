@@ -298,6 +298,27 @@ test("studio-contributions: reviews/exhibitions score 1/unit capped at 3; other 
   });
 });
 
+test("creative-publications: 5 per committed piece", async () => {
+  await withSandbox("record-creative", async () => {
+    for (const workTitle of ["Photo essay on verandahs", "Critique of Chennai metro stations"]) {
+      const entry = await createEntry(OWNER, "creative-publications", {
+        academicYear: YEAR,
+        semesterType: "ODD",
+        workTitle,
+        publicationName: "ArchitectureLive!",
+        publicationDate: "2025-11-05",
+        publicationCopy: [{ storedPath: "uploads/x/copy.pdf", url: "/api/entry-file?p=8", fileName: "copy.pdf" }],
+      } as never);
+      await commitDraft(OWNER, "creative-publications", String(entry.id));
+    }
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "creative_publication");
+    assert.equal(metric?.count, 2);
+    assert.equal(metric?.points, 10, "5 per unit, uncapped");
+  });
+});
+
 test("submit: rejects incomplete records; completed submit locks with no timer and wins instantly", async () => {
   await withSandbox("record-submit", async () => {
     // Missing the required firstPage upload → submit must refuse.

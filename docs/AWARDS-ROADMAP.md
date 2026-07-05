@@ -114,8 +114,11 @@ profile upload slots generalize.
     4) — public/outreach events need prior approval. kind
     Exhibition|Outreach, venue, dates, externalExperts. Stage 2:
     catalogue/invitation/report.
-11. **creative-publications** [RECORD] (feeds `creative_publication` 5/unit)
-    — platform/magazine, ISSN if any, publication date. Proofs: copy.
+11. ~~**creative-publications**~~ ✅ SHIPPED 2026-07 [RECORD, individual] —
+    workTitle, publicationName (platform/magazine), publicationDate, ISSN
+    optional, workUrl optional; required publicationCopy upload. Feeds
+    `creative_publication` 5/unit (auto-tracked); appraisal prints the
+    works table. Pink palette + Brush icon.
 12. **online-courses** [PERMISSION] (feeds `tce_online_course` 10/15/20 by
     weeks + `industry_supported_course` 4/8 by credits) — course development
     needs prior approval (Dean-signed). kind, durationWeeks or credits

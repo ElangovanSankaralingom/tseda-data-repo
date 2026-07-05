@@ -12,6 +12,7 @@ import {
   BadgeCheck,
   Banknote,
   BookOpen,
+  Brush,
   CalendarDays,
   FileSearch,
   FileText,
@@ -37,6 +38,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "pen-line": PenLine,
   "calendar-days": CalendarDays,
   palette: Palette,
+  brush: Brush,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

@@ -9,6 +9,7 @@ import { fdpAttendedSchema } from "@/data/schemas/fdp-attended";
 import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
 import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
 import { journalPublicationsSchema } from "@/data/schemas/journal-publications";
+import { creativePublicationsSchema } from "@/data/schemas/creative-publications";
 import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
 import { workshopsSchema } from "@/data/schemas/workshops";
@@ -27,6 +28,7 @@ export const CATEGORY_SLUGS = [
   "editorial-roles",
   "conferences-organized",
   "studio-contributions",
+  "creative-publications",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -44,7 +46,8 @@ export type CategorySummaryKey =
   | "researchFunding"
   | "editorialRoles"
   | "conferencesOrganized"
-  | "studioContributions";
+  | "studioContributions"
+  | "creativePublications";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -488,6 +491,36 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Describe studio events — open reviews, exhibitions, documentation, beyond-syllabus work — with proof.",
     entryTitleField: "activityTitle",
     entryTitleFallback: "Studio Contribution",
+  },
+  "creative-publications": {
+    slug: "creative-publications",
+    label: "Creative Publications",
+    schemaKey: "creative-publications",
+    schema: creativePublicationsSchema,
+    summaryKey: "creativePublications",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW (roadmap #11): essays, critiques, visual narratives in
+    // design platforms/magazines — individual, 5 points per unit.
+    flow: "record",
+    group: "research",
+    icon: "brush",
+    color: {
+      bar: "from-pink-400 to-pink-600",
+      bg: "bg-pink-100",
+      text: "text-pink-600",
+      ring: "hover:ring-pink-200",
+      cta: "text-pink-500",
+      gradient: "from-pink-600 via-pink-700 to-pink-900",
+      accentBg: "bg-pink-500/10",
+      borderTop: "border-t-pink-500",
+      buttonBg: "bg-pink-600",
+      buttonHover: "hover:bg-pink-700",
+      chartHex: "#DB2777",
+    },
+    subtitle: "Record essays, critiques, and visual narratives published in design platforms and magazines.",
+    entryTitleField: "workTitle",
+    entryTitleFallback: "Creative Publication",
   },
 };
 

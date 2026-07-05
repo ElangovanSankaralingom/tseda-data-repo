@@ -177,6 +177,13 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count: scoring.length, notes };
   },
 
+  /** Creative publications (record flow): flat per-unit per committed piece. */
+  creative_publication({ entriesByCategory, model }) {
+    const entries = entriesByCategory.get("creative-publications") ?? [];
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    return { points: perUnit * entries.length, count: entries.length, notes: [] };
+  },
+
   /** Books (record flow): books-and-chapters entries with kind = Book. */
   book_publication({ entriesByCategory, model }) {
     const entries = (entriesByCategory.get("books-and-chapters") ?? []).filter(
