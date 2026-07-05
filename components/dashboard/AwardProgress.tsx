@@ -1,14 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Award, Sparkles, Target, CircleDashed, FileDown } from "lucide-react";
+import { Award, Sparkles, Target, CircleDashed, FileDown, GraduationCap, Loader2 } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import SelectDropdown from "@/components/controls/SelectDropdown";
 import type { AwardScore, MetricScore } from "@/lib/awards/scoring";
+import type { FeedbackYearClaim } from "@/lib/awards/feedback";
 
 type AwardsResponse = {
   data?: { years: string[]; score: AwardScore | null };
+};
+
+type FeedbackResponse = {
+  data?: { years: Record<string, FeedbackYearClaim> };
 };
 
 /**
@@ -24,7 +29,8 @@ export default function AwardProgress() {
   const endpoint = year
     ? `/api/me/awards?year=${encodeURIComponent(year)}`
     : "/api/me/awards";
-  const { data: body } = useApi<AwardsResponse>(endpoint);
+  const { data: body, mutate: refreshScore } = useApi<AwardsResponse>(endpoint);
+  const { data: feedbackBody, mutate: refreshFeedback } = useApi<FeedbackResponse>("/api/me/feedback");
 
   const score = body?.data?.score ?? null;
 
@@ -116,6 +122,15 @@ export default function AwardProgress() {
         })}
       </div>
 
+      {/* ── Student-feedback claim (S3): ODD/EVEN %, averaged into the tier ── */}
+      <FeedbackClaimStrip
+        academicYear={score.academicYear}
+        claim={feedbackBody?.data?.years?.[score.academicYear] ?? null}
+        onSaved={async () => {
+          await Promise.all([refreshScore(), refreshFeedback()]);
+        }}
+      />
+
       {/* ── Insight chips: strengths / quick wins / not yet tracked ── */}
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <InsightGroup
@@ -141,6 +156,129 @@ export default function AwardProgress() {
         />
       </div>
     </section>
+  );
+}
+
+/**
+ * S3 claim strip (Elan's ruling): enter the CAMU feedback percentage for
+ * ODD/EVEN of the selected award year — the average drives the tier.
+ * Keyed remount on updatedAt keeps inputs in sync without effects.
+ */
+function FeedbackClaimStrip({
+  academicYear,
+  claim,
+  onSaved,
+}: {
+  academicYear: string;
+  claim: FeedbackYearClaim | null;
+  onSaved: () => Promise<void>;
+}) {
+  return (
+    <FeedbackClaimForm
+      key={`${academicYear}:${claim?.updatedAt ?? "none"}`}
+      academicYear={academicYear}
+      claim={claim}
+      onSaved={onSaved}
+    />
+  );
+}
+
+function FeedbackClaimForm({
+  academicYear,
+  claim,
+  onSaved,
+}: {
+  academicYear: string;
+  claim: FeedbackYearClaim | null;
+  onSaved: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [odd, setOdd] = useState<string>(typeof claim?.odd === "number" ? String(claim.odd) : "");
+  const [even, setEven] = useState<string>(typeof claim?.even === "number" ? String(claim.even) : "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const validPercent = (v: string) => v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100);
+  const valid = validPercent(odd) && validPercent(even) && (odd.trim() !== "" || even.trim() !== "");
+  const dirty =
+    odd !== (typeof claim?.odd === "number" ? String(claim.odd) : "") ||
+    even !== (typeof claim?.even === "number" ? String(claim.even) : "");
+
+  async function save() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/me/feedback", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academicYear,
+          odd: odd.trim() === "" ? null : Number(odd),
+          even: even.trim() === "" ? null : Number(even),
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(body?.error ?? t("common.error"));
+        return;
+      }
+      await onSaved();
+    } catch {
+      setError(t("common.error"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const inputClass =
+    "w-20 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-inset)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-placeholder)] focus:border-[var(--color-border-strong)]";
+
+  return (
+    <div className="mt-5 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-panel-raised)] p-3.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+          <GraduationCap className="size-3.5" />
+          {t("awards.feedbackTitle")}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
+            {t("awards.feedbackOdd")}
+            <input
+              type="number" inputMode="decimal" min={0} max={100} step={0.1}
+              value={odd || ""}
+              onChange={(e) => setOdd(e.target.value)}
+              disabled={busy}
+              placeholder="92"
+              className={inputClass}
+            />
+          </label>
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
+            {t("awards.feedbackEven")}
+            <input
+              type="number" inputMode="decimal" min={0} max={100} step={0.1}
+              value={even || ""}
+              onChange={(e) => setEven(e.target.value)}
+              disabled={busy}
+              placeholder="88"
+              className={inputClass}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => void save()}
+            disabled={busy || !valid || !dirty}
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--color-button-primary-bg)] px-3 py-1.5 text-xs font-bold text-[var(--color-button-primary-text)] transition-opacity disabled:opacity-40"
+          >
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
+            {t("awards.feedbackSave")}
+          </button>
+        </div>
+      </div>
+      <p className="mt-1.5 text-[11px] text-[var(--color-text-muted)]">
+        {error ?? t("awards.feedbackHint")}
+      </p>
+    </div>
   );
 }
 

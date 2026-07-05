@@ -42,6 +42,11 @@ export const en = {
     upTo: "up to {n}",
     downloadReport: "Appraisal (.docx)",
     downloadReportHint: "Download the filled award appraisal document for this year",
+    feedbackTitle: "Student Feedback (CAMU)",
+    feedbackOdd: "ODD %",
+    feedbackEven: "EVEN %",
+    feedbackSave: "Save",
+    feedbackHint: "Average feedback percentage per semester, labs excluded — ODD + EVEN are averaged for the award tier (≥90 → 10, 80–90 → 5). Auditable against CAMU reports.",
   },
   awardsAdmin: {
     title: "Faculty Award Scores",

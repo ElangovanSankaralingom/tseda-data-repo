@@ -237,6 +237,18 @@ export async function buildAppraisalModel(
           return { ...base, columns: builder.columns, rows: builder.rows(entries) };
         }
 
+        // Student feedback IS tracked (self-claimed ODD/EVEN percentages) —
+        // the score notes carry the values; the note states the provenance.
+        if (metric.id === "student_feedback") {
+          return {
+            ...base,
+            columns: ["Particulars"],
+            rows: [],
+            assessmentNote:
+              "Self-claimed CAMU feedback percentage (ODD + EVEN averaged, labs excluded) — auditable against CAMU reports.",
+          };
+        }
+
         return {
           ...base,
           columns: ["Particulars"],

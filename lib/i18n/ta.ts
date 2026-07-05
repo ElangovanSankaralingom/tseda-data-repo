@@ -44,6 +44,11 @@ export const ta: TranslationDict = {
     upTo: "{n} வரை",
     downloadReport: "மதிப்பீடு (.docx)",
     downloadReportHint: "இந்த ஆண்டிற்கான நிரப்பப்பட்ட விருது மதிப்பீட்டு ஆவணத்தைப் பதிவிறக்கவும்",
+    feedbackTitle: "மாணவர் கருத்து (CAMU)",
+    feedbackOdd: "ODD %",
+    feedbackEven: "EVEN %",
+    feedbackSave: "சேமி",
+    feedbackHint: "ஒவ்வொரு பருவத்தின் சராசரி கருத்து சதவீதம், ஆய்வகங்கள் தவிர்த்து — ODD + EVEN சராசரி விருது அடுக்கை தீர்மானிக்கும் (≥90 → 10, 80–90 → 5). CAMU அறிக்கைகளுடன் சரிபார்க்கத்தக்கது.",
   },
   awardsAdmin: {
     title: "ஆசிரியர் விருது மதிப்பெண்கள்",

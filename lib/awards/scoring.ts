@@ -12,6 +12,7 @@ import {
 import { getAwardPointsConfig, resolveEffectivePointsModel } from "@/lib/awards/config";
 import { readCategoryEntries } from "@/lib/dataStore";
 import { normalizeEntryStatus } from "@/lib/entries/workflow";
+import { feedbackAverage, readFeedbackClaims, readFeedbackClaimForYear } from "@/lib/awards/feedback";
 import { readInterviewPointsForYear } from "@/lib/awards/interview";
 import { readResearchProfile, type ResearchProfile } from "@/lib/research/researchProfile";
 import { academicYearOfDate } from "@/lib/utils/academicYear";
@@ -387,6 +388,9 @@ export async function listFacultyAcademicYears(email: string): Promise<string[]>
     const year = academicYearOfDate(date);
     if (year) years.add(year);
   }
+  // Feedback claims can exist before any entry does — their years count too.
+  const feedback = await readFeedbackClaims(email);
+  for (const year of Object.keys(feedback.years)) years.add(year);
   return [...years].sort().reverse();
 }
 
@@ -424,6 +428,10 @@ export async function computeFacultyAwardScore(
   // being 0 once assessed.
   const interviewAwards = await readInterviewPointsForYear(email, academicYear);
 
+  // Student-feedback claim (S3): self-entered ODD/EVEN percentages,
+  // averaged into the tier. Auditable against CAMU.
+  const feedbackClaim = await readFeedbackClaimForYear(email, academicYear);
+
   const metrics: MetricScore[] = AWARD_METRICS.map((metric) => {
     const model = resolveEffectivePointsModel(metric, config);
     const base: Omit<MetricScore, "status" | "points" | "count" | "notes"> = {
@@ -446,6 +454,27 @@ export async function computeFacultyAwardScore(
         status: points > 0 ? "scored" : "zero",
         points,
         count,
+        notes,
+      } as MetricScore;
+    }
+
+    // Student feedback (claim): ODD/EVEN percentages averaged into the tier.
+    if (metric.id === "student_feedback") {
+      const average = feedbackAverage(feedbackClaim);
+      if (average === null) {
+        return { ...base, status: "untracked", points: 0, count: 0, notes: [] } as MetricScore;
+      }
+      const points = average >= 90 ? tierPoints(model, "gte90") : average >= 80 ? tierPoints(model, "80to90") : 0;
+      const parts: string[] = [];
+      if (typeof feedbackClaim?.odd === "number") parts.push(`ODD ${feedbackClaim.odd}%`);
+      if (typeof feedbackClaim?.even === "number") parts.push(`EVEN ${feedbackClaim.even}%`);
+      const notes = [`${parts.join(" + ")} → average ${average}% (labs excluded; auditable vs CAMU)`];
+      if (parts.length === 1) notes.push("Only one semester entered so far");
+      return {
+        ...base,
+        status: points > 0 ? "scored" : "zero",
+        points,
+        count: parts.length,
         notes,
       } as MetricScore;
     }

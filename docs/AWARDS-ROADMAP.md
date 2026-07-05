@@ -130,11 +130,15 @@ profile upload slots generalize.
 
 ## S3 — Student feedback (claim, not a category)
 
-Per Elan: faculty select academic year + semester and enter the feedback
-PERCENTAGE (odd + even averaged, labs excluded). Small self-entry surface
-(dashboard panel or profile) writing to a per-faculty-per-year claim store;
-`student_feedback` scores its ≥90→10 / 80–90→5 tier from the average.
-Admin/DLC can verify (the value is auditable against CAMU reports).
+~~Per Elan: faculty select academic year + semester and enter the feedback
+PERCENTAGE.~~ ✅ SHIPPED 2026-07 — claim strip on the "My Award Progress"
+panel (year comes from the panel's selector): ODD % + EVEN % inputs →
+`/api/me/feedback` (self-write, CSRF, demoAware) → per-faculty
+`feedback-claims.json` (universe-scoped). Scoring averages the entered
+semesters (single-semester counts as-is, noted), tiers ≥90→10 / 80–90→5,
+labs excluded by convention; claim-only years appear in the year list; the
+appraisal document states the CAMU-auditable provenance. Claims store
+who/when for DLC audit.
 
 ## Phase C — admin & workflow surfaces
 
