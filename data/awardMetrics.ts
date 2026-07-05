@@ -176,7 +176,8 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     label: "Mentoring of Fast / Slow Learners",
     details:
       "Fast: research-practice courses, hackathon winners, patents with students. Slow: non-remunerative special classes with arrear-clearing proof.",
-    source: "claim",
+    source: "entry",
+    categories: ["mentoring-programs"],
     effort: "medium",
     pointsModel: { kind: "fixed", points: 5 },
     proofs: ["Mentor proof / winner certificates", "Special class schedule + arrear clearance proof"],

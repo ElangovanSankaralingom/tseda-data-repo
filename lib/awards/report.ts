@@ -160,6 +160,12 @@ const ROW_BUILDERS: Record<string, RowBuilder> = {
       `${s(x, "startDate")} – ${s(x, "endDate")}`,
     ]),
   },
+  fast_slow_learners: {
+    columns: ["Programme", "Target Group", "Focus", "Dates"],
+    rows: (e) => (e.get("mentoring-programs") ?? []).map((x) => [
+      s(x, "programName"), s(x, "targetGroup"), s(x, "activityDetail"), `${s(x, "startDate")} – ${s(x, "endDate")}`,
+    ]),
+  },
   tce_online_course: {
     columns: ["Course", "Duration", "New / Rerun", "Dates"],
     rows: (e) => (e.get("online-courses") ?? []).filter((x) => s(x, "courseKind") === "TCE Online Course").map((x) => [

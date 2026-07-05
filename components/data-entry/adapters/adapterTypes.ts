@@ -736,3 +736,40 @@ export type OnlineCourseEntry = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// MentoringProgramEntry (PERMISSION flow — fast_slow_learners fixed 5)
+// ---------------------------------------------------------------------------
+
+export type MentoringProgramEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  programName: string;
+  targetGroup: string;
+  activityDetail: string;
+  startDate: string;
+  endDate: string;
+  studentsCovered: number | null;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  permissionLetter: FileMeta[];
+  outcomeProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};

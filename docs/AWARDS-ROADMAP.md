@@ -131,10 +131,13 @@ profile upload slots generalize.
     in the adapter validator ("proper data needed"). Stage 2: permission
     letter + Dean-signed offering proof (required), Canvas/enrollment
     proof. Red palette + MonitorPlay icon.
-13. **mentoring-programs** [PERMISSION] (feeds `fast_slow_learners` 5) —
-    fast/slow-learner programs (workbook Qn 6–7): event name, targetGroup
-    Fast|Slow, date, student list. Stage 2: proofs. Prior-approval flow per
-    Elan's S3 ruling.
+13. ~~**mentoring-programs**~~ ✅ SHIPPED 2026-07 [PERMISSION] —
+    programName, targetGroup (Fast | Slow Learners), activityDetail, dates;
+    stage 2: permission letter + outcome proof (schedule/certificates/
+    arrear clearance, required) + studentsCovered count. Feeds
+    `fast_slow_learners` fixed 5 ONCE per year (multiple programmes
+    recorded + noted). Stone palette + UsersRound icon. **Phase B complete —
+    every rulebook metric that can be tracked now is.**
 
 ## S3 — Student feedback (claim, not a category)
 

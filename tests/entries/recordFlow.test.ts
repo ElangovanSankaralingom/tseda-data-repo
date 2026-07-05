@@ -411,6 +411,31 @@ test("online-courses: courseKind routes two tiered metrics (weeks 10/15/20, cred
   });
 });
 
+test("mentoring-programs: fixed 5 once per year, multiple programmes noted", async () => {
+  await withSandbox("perm-mentoring", async () => {
+    const today = nowISTDateISO();
+    const base = {
+      academicYear: YEAR,
+      semesterType: "EVEN",
+      activityDetail: "Weekly special classes",
+      startDate: addDaysISO(today, 2),
+      endDate: addDaysISO(today, 30),
+    };
+    for (const [index, targetGroup] of ["Slow Learners", "Fast Learners"].entries()) {
+      const entry = await createEntry(OWNER, "mentoring-programs", {
+        ...base, programName: `Mentoring batch ${index + 1}`, targetGroup,
+      } as never);
+      await commitDraft(OWNER, "mentoring-programs", String(entry.id));
+    }
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "fast_slow_learners");
+    assert.equal(metric?.points, 5, "fixed 5 awarded once");
+    assert.equal(metric?.count, 2, "both programmes recorded");
+    assert.ok(metric?.notes.some((n) => n.includes("awarded once")), "once-per-year explained");
+  });
+});
+
 test("submit: rejects incomplete records; completed submit locks with no timer and wins instantly", async () => {
   await withSandbox("record-submit", async () => {
     // Missing the required firstPage upload → submit must refuse.

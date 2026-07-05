@@ -12,6 +12,7 @@ import { journalPublicationsSchema } from "@/data/schemas/journal-publications";
 import { creativePublicationsSchema } from "@/data/schemas/creative-publications";
 import { designCompetitionsSchema } from "@/data/schemas/design-competitions";
 import { exhibitionsOutreachSchema } from "@/data/schemas/exhibitions-outreach";
+import { mentoringProgramsSchema } from "@/data/schemas/mentoring-programs";
 import { onlineCoursesSchema } from "@/data/schemas/online-courses";
 import { studioContributionsSchema } from "@/data/schemas/studio-contributions";
 import type { EntrySchema } from "@/data/schemas/types";
@@ -35,6 +36,7 @@ export const CATEGORY_SLUGS = [
   "design-competitions",
   "exhibitions-outreach",
   "online-courses",
+  "mentoring-programs",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -56,7 +58,8 @@ export type CategorySummaryKey =
   | "creativePublications"
   | "designCompetitions"
   | "exhibitionsOutreach"
-  | "onlineCourses";
+  | "onlineCourses"
+  | "mentoringPrograms";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -618,6 +621,35 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Plan TCE-online and industry-supported course development — Dean-signed approval first, proofs after.",
     entryTitleField: "courseName",
     entryTitleFallback: "Online Course",
+  },
+  "mentoring-programs": {
+    slug: "mentoring-programs",
+    label: "Mentoring Programs",
+    schemaKey: "mentoring-programs",
+    schema: mentoringProgramsSchema,
+    summaryKey: "mentoringPrograms",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // PERMISSION FLOW (S3 ruling): fast/slow-learner programmes need prior
+    // approval. Feeds fast_slow_learners fixed 5 (once per year).
+    group: "academic",
+    icon: "users-round",
+    color: {
+      bar: "from-stone-400 to-stone-600",
+      bg: "bg-stone-100",
+      text: "text-stone-600",
+      ring: "hover:ring-stone-200",
+      cta: "text-stone-500",
+      gradient: "from-stone-600 via-stone-700 to-stone-900",
+      accentBg: "bg-stone-500/10",
+      borderTop: "border-t-stone-500",
+      buttonBg: "bg-stone-600",
+      buttonHover: "hover:bg-stone-700",
+      chartHex: "#57534E",
+    },
+    subtitle: "Plan fast/slow-learner mentoring programmes — permission letter first, outcome proofs after.",
+    entryTitleField: "programName",
+    entryTitleFallback: "Mentoring Program",
   },
 };
 

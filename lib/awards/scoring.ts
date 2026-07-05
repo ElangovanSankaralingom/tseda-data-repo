@@ -204,6 +204,20 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count, notes };
   },
 
+  /** Fast/slow-learner mentoring (permission flow): fixed 5, awarded ONCE
+   *  per year regardless of how many programmes ran (rulebook semantics —
+   *  same shape as editorial_role). */
+  fast_slow_learners({ entriesByCategory, model }) {
+    const entries = entriesByCategory.get("mentoring-programs") ?? [];
+    if (entries.length === 0) return { points: 0, count: 0, notes: [] };
+    const fixed = model.kind === "fixed" ? model.points : 0;
+    const notes: string[] = [];
+    if (entries.length > 1) {
+      notes.push(`${entries.length} programmes recorded — fixed points awarded once`);
+    }
+    return { points: fixed, count: entries.length, notes };
+  },
+
   /** TCE online courses (permission flow): duration tier 4w→10 / 8w→15 /
    *  12w→20, new and rerun both count. */
   tce_online_course({ entriesByCategory, model }) {

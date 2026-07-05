@@ -25,6 +25,7 @@ import {
   PenLine,
   Presentation,
   Trophy,
+  UsersRound,
   Wrench,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   trophy: Trophy,
   landmark: Landmark,
   "monitor-play": MonitorPlay,
+  "users-round": UsersRound,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;
