@@ -280,6 +280,42 @@ export type ResearchFundingEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// EditorialRoleEntry (record flow — no permission PDF, no timer, no fan-out)
+// ---------------------------------------------------------------------------
+
+export type EditorialRoleEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  journalName: string;
+  role: string;
+  issn: string;
+  publisher: string;
+  appointmentDate: string;
+  detailsText: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  appointmentProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ---------------------------------------------------------------------------
 // FdpAttended
 // ---------------------------------------------------------------------------
 

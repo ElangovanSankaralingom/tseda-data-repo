@@ -76,6 +76,7 @@ test("registry: publications are record-flow categories; originals stay permissi
   assert.equal(getCategoryFlow("books-and-chapters"), "record");
   assert.equal(getCategoryFlow("patents"), "record");
   assert.equal(getCategoryFlow("research-funding"), "record");
+  assert.equal(getCategoryFlow("editorial-roles"), "record");
   for (const slug of ["workshops", "guest-lectures", "fdp-attended", "fdp-conducted", "case-studies"]) {
     assert.equal(getCategoryFlow(slug), "permission", `${slug} must remain permission-flow`);
   }
@@ -199,6 +200,32 @@ test("research-funding: kind routes the metric, amount picks the tier", async ()
     assert.equal(byId.get("rd_funding")?.count, 1);
     assert.equal(byId.get("non_rd_funding")?.points, 8, "5 (3L consultancy) + 3 (1.5L other)");
     assert.equal(byId.get("non_rd_funding")?.count, 2);
+  });
+});
+
+test("editorial-roles: fixed 6 once for Editor/Assoc; reviewer roles noted, not scored", async () => {
+  await withSandbox("record-editorial", async () => {
+    const base = {
+      academicYear: YEAR,
+      semesterType: "ODD",
+      appointmentDate: "2025-08-20",
+      appointmentProof: [{ storedPath: "uploads/x/appt.pdf", url: "/api/entry-file?p=6", fileName: "appt.pdf" }],
+    };
+    const editor = await createEntry(OWNER, "editorial-roles", {
+      ...base, journalName: "Journal of Tropical Architecture", role: "Associate Editor",
+    } as never);
+    await commitDraft(OWNER, "editorial-roles", String(editor.id));
+
+    const reviewer = await createEntry(OWNER, "editorial-roles", {
+      ...base, journalName: "Built Environment Review", role: "Reviewer",
+    } as never);
+    await commitDraft(OWNER, "editorial-roles", String(reviewer.id));
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "editorial_role");
+    assert.equal(metric?.points, 6, "fixed 6 awarded once");
+    assert.equal(metric?.count, 1, "only the Associate Editor role qualifies");
+    assert.ok(metric?.notes.some((n) => n.includes("not points-eligible")), "reviewer role explained");
   });
 });
 

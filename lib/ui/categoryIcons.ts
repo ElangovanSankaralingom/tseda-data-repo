@@ -17,6 +17,7 @@ import {
   Library,
   Megaphone,
   Mic,
+  PenLine,
   Presentation,
   Wrench,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   library: Library,
   "badge-check": BadgeCheck,
   banknote: Banknote,
+  "pen-line": PenLine,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;

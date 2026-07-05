@@ -304,7 +304,12 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "editorial_role",
     section: "s5",
     label: "Editor / Associate Editor in Journals",
-    source: "claim",
+    details:
+      "AUTO-TRACKED from editorial-roles entries with role Editor / Associate " +
+      "Editor (fixed points, awarded once per year; board/reviewer roles are " +
+      "recorded but not points-eligible).",
+    source: "entry",
+    categories: ["editorial-roles"],
     effort: "low",
     pointsModel: { kind: "fixed", points: 6 },
     proofs: ["Proof with clear date"],

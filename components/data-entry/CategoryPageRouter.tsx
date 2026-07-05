@@ -19,6 +19,7 @@ const ADAPTER_MAP: Record<string, React.LazyExoticComponent<AdapterComponent>> =
   "books-and-chapters": lazy(() => import("@/components/data-entry/adapters/books-and-chapters")),
   patents: lazy(() => import("@/components/data-entry/adapters/patents")),
   "research-funding": lazy(() => import("@/components/data-entry/adapters/research-funding")),
+  "editorial-roles": lazy(() => import("@/components/data-entry/adapters/editorial-roles")),
 };
 
 export default function CategoryPageRouter({

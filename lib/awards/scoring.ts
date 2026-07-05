@@ -183,6 +183,28 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points, count, notes: [] };
   },
 
+  /** Editorial roles (record flow): fixed points, awarded ONCE per year when
+   *  at least one Editor / Associate Editor role exists. Board memberships
+   *  and reviewer roles are recorded but not points-eligible. */
+  editorial_role({ entriesByCategory, model }) {
+    const entries = entriesByCategory.get("editorial-roles") ?? [];
+    const qualifying = entries.filter((entry) => {
+      const role = String(entry.role ?? "");
+      return role === "Editor" || role === "Associate Editor";
+    });
+    const fixed = model.kind === "fixed" ? model.points : 0;
+    const notes: string[] = [];
+    const nonScoring = entries.length - qualifying.length;
+    if (nonScoring > 0) {
+      notes.push(`${nonScoring} recorded role(s) (board/reviewer) are not points-eligible`);
+    }
+    return {
+      points: qualifying.length > 0 ? fixed : 0,
+      count: qualifying.length,
+      notes,
+    };
+  },
+
   /** Workshops: India vs abroad via the entry's `level` field. */
   collab_workshop({ entriesByCategory, model }) {
     let points = 0;

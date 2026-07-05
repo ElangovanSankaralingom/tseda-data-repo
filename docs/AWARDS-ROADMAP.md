@@ -72,8 +72,11 @@
    PDF → conduct → stage-2 proofs → finalise. level, title, role
    (coordinator|lead|member — drives share %), team collaborates with
    per-row role, dates, delegates, papersPresented. Deriver: points × share.
-7. **editorial-roles** [RECORD] (feeds `editorial_role` 6) — form T10.
-   journalName, role, reviewDetails. Proofs: appointment letter.
+7. ~~**editorial-roles**~~ ✅ SHIPPED 2026-07 [RECORD, individual] — fixed 6
+   awarded once per year for Editor / Associate Editor roles (auto-tracked);
+   board memberships and reviewer roles recorded with an explanatory note.
+   Fields: academicYear, semesterType, journalName, role, ISSN, publisher,
+   appointmentDate, details; proof: appointment/invitation (required).
 
 **Ph.D. milestones (`phd_awarded` 15 / `phd_guided` 12) → PROFILE, not a
 category (Elan's ruling):** add a "Research" section to the profile/account

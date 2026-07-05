@@ -1,5 +1,6 @@
 import { booksAndChaptersSchema } from "@/data/schemas/books-and-chapters";
 import { caseStudiesSchema } from "@/data/schemas/case-studies";
+import { editorialRolesSchema } from "@/data/schemas/editorial-roles";
 import { patentsSchema } from "@/data/schemas/patents";
 import { researchFundingSchema } from "@/data/schemas/research-funding";
 import { conferencePublicationsSchema } from "@/data/schemas/conference-publications";
@@ -21,6 +22,7 @@ export const CATEGORY_SLUGS = [
   "books-and-chapters",
   "patents",
   "research-funding",
+  "editorial-roles",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -35,7 +37,8 @@ export type CategorySummaryKey =
   | "conferencePublications"
   | "booksAndChapters"
   | "patents"
-  | "researchFunding";
+  | "researchFunding"
+  | "editorialRoles";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -389,6 +392,36 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Record funded projects and consultancy with sanction orders — submitted entries count immediately.",
     entryTitleField: "projectTitle",
     entryTitleFallback: "Funded Project",
+  },
+  "editorial-roles": {
+    slug: "editorial-roles",
+    label: "Editorial Roles",
+    schemaKey: "editorial-roles",
+    schema: editorialRolesSchema,
+    summaryKey: "editorialRoles",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW — individual recognition (no fan-out); Editor / Associate
+    // Editor roles score the fixed editorial_role points.
+    flow: "record",
+    group: "research",
+    icon: "pen-line",
+    color: {
+      bar: "from-fuchsia-400 to-fuchsia-600",
+      bg: "bg-fuchsia-100",
+      text: "text-fuchsia-600",
+      ring: "hover:ring-fuchsia-200",
+      cta: "text-fuchsia-500",
+      gradient: "from-fuchsia-600 via-fuchsia-700 to-fuchsia-900",
+      accentBg: "bg-fuchsia-500/10",
+      borderTop: "border-t-fuchsia-500",
+      buttonBg: "bg-fuchsia-600",
+      buttonHover: "hover:bg-fuchsia-700",
+      chartHex: "#C026D3",
+    },
+    subtitle: "Record editor, board, and reviewer roles with appointment proofs — submitted entries count immediately.",
+    entryTitleField: "journalName",
+    entryTitleFallback: "Editorial Role",
   },
 };
 
