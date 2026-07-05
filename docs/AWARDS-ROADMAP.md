@@ -43,10 +43,12 @@
    indexing (Scopus/WoS/UGC-CARE/Other), coAuthors (`collaborates: true`),
    externalAuthors; proofs: first page (required), index proof. Metric:
    `journal_publication` 5/unit, auto-tracked.
-2. **conference-publications** [RECORD, collaborative] (feeds
-   `conference_publication` 5/unit) — workbook conference block. Title,
-   authors collaborates, conference name, ISSN, national/international,
-   month-year. Proofs: first page. S5 rule: fan-out on authors is essential.
+2. ~~**conference-publications**~~ ✅ SHIPPED 2026-07 [RECORD, collaborative]
+   — feeds `conference_publication` 5/unit auto-tracked. Fields:
+   academicYear, semesterType, paperTitle, conferenceName, level
+   (National/International), organizedBy, publicationDate, ISSN/ISBN, DOI,
+   pages, indexing, coAuthors (`collaborates: true`), externalAuthors;
+   proofs: first page (required), proceedings/index proof.
 3. **books-and-chapters** [RECORD, collaborative] (feeds `book_publication`
    10 / `book_chapter` 5) — form T8/T9. One category, kind Book|Chapter;
    authors collaborates; publisher, ISBN, monthYearEdition, chapterTitle
@@ -139,10 +141,16 @@ Admin/DLC can verify (the value is auditable against CAMU reports).
   (journals, chapters, conferences, grants, consultancy, memberships) via
   the export system's category+field filters (academicYear + semesterType
   spine required everywhere for exactly this reason).
-- **B2 student data → DLC-entered module:** placements, higher studies,
-  competitive exams, learners programs, student awards are keyed by STUDENT
-  reg no, not faculty work. Build later as a DLC-scoped admin module (each
-  sheet's DLC owner enters/imports their sheet), not per-faculty entry.
+- **B2 student data → DLC-ASSIGNED categories (Elan, 2026-07):** placements,
+  higher studies, competitive exams, learners programs, student awards are
+  keyed by STUDENT reg no — "one faculty has to enter those fields". Design:
+  CategoryConfig gains `entryScope: "faculty" | "dlc"` — a dlc-scoped
+  category is VISIBLE/ENTERABLE only to the faculty assigned to it (reuse
+  the coordinators pattern: per-category entry-DLC assignment managed by the
+  master admin, same as approval coordinators). DLC-scoped entries are
+  department records: record flow, no streaks, no award points, full export
+  support. Home page shows these under their own club only to the assigned
+  DLC.
 - **B3 course records → merge into existing categories where they overlap**
   (Elan's example: the case-studies category already covers the site-visit
   sheet). Course plans/feedback/BoS stay admin/DLC territory; merge, don't

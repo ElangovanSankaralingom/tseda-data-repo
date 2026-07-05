@@ -1,4 +1,5 @@
 import { caseStudiesSchema } from "@/data/schemas/case-studies";
+import { conferencePublicationsSchema } from "@/data/schemas/conference-publications";
 import { fdpAttendedSchema } from "@/data/schemas/fdp-attended";
 import { fdpConductedSchema } from "@/data/schemas/fdp-conducted";
 import { guestLecturesSchema } from "@/data/schemas/guest-lectures";
@@ -13,6 +14,7 @@ export const CATEGORY_SLUGS = [
   "guest-lectures",
   "workshops",
   "journal-publications",
+  "conference-publications",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -23,7 +25,8 @@ export type CategorySummaryKey =
   | "caseStudies"
   | "guestLectures"
   | "workshops"
-  | "journalPublications";
+  | "journalPublications"
+  | "conferencePublications";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -64,6 +67,16 @@ export type CategoryColor = {
  */
 export type CategoryFlow = "permission" | "record";
 
+/**
+ * Home-page clubbing (2026-07): every category belongs to a display group;
+ * the dashboard's tab bar derives its tabs (and counts) from the registry,
+ * so a new category — or a whole new club — appears by declaring it HERE.
+ * Display names live in i18n as `dashboard.group*` keys (see GROUP_LABEL_KEYS
+ * in DashboardClient).
+ */
+export const CATEGORY_GROUP_ORDER = ["professional", "academic", "research"] as const;
+export type CategoryGroup = (typeof CATEGORY_GROUP_ORDER)[number];
+
 export type CategoryConfig = {
   slug: CategorySlug;
   label: string;
@@ -74,6 +87,8 @@ export type CategoryConfig = {
   supportsConfirmation: boolean;
   /** Lifecycle archetype; absent = "permission" (all original categories). */
   flow?: CategoryFlow;
+  /** Home-page club this category belongs to (tab bar grouping). */
+  group: CategoryGroup;
   icon: string;
   color: CategoryColor;
   subtitle?: string;
@@ -90,6 +105,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     summaryKey: "fdpAttended",
     supportsUploads: true,
     supportsConfirmation: true,
+    group: "professional",
     icon: "book-open",
     color: {
       bar: "from-blue-400 to-blue-600",
@@ -116,6 +132,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     summaryKey: "fdpConducted",
     supportsUploads: true,
     supportsConfirmation: true,
+    group: "professional",
     icon: "presentation",
     color: {
       bar: "from-emerald-400 to-emerald-600",
@@ -142,6 +159,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     summaryKey: "caseStudies",
     supportsUploads: true,
     supportsConfirmation: true,
+    group: "academic",
     icon: "clipboard-list",
     color: {
       bar: "from-amber-400 to-amber-600",
@@ -168,6 +186,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     summaryKey: "guestLectures",
     supportsUploads: true,
     supportsConfirmation: true,
+    group: "academic",
     icon: "mic",
     color: {
       bar: "from-purple-400 to-purple-600",
@@ -194,6 +213,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     summaryKey: "workshops",
     supportsUploads: true,
     supportsConfirmation: true,
+    group: "academic",
     icon: "hammer",
     color: {
       bar: "from-rose-400 to-rose-600",
@@ -220,6 +240,7 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     summaryKey: "journalPublications",
     supportsUploads: true,
     supportsConfirmation: true,
+    group: "research",
     // RECORD FLOW: post-facto achievement — no permission PDF, no timer;
     // submit locks + streak counts immediately (see CategoryFlow).
     flow: "record",
@@ -240,6 +261,35 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Record published journal papers with proofs — submitted entries count immediately.",
     entryTitleField: "paperTitle",
     entryTitleFallback: "Journal Publication",
+  },
+  "conference-publications": {
+    slug: "conference-publications",
+    label: "Conference Publications",
+    schemaKey: "conference-publications",
+    schema: conferencePublicationsSchema,
+    summaryKey: "conferencePublications",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW — post-facto, specially collaborative (S5 ruling).
+    flow: "record",
+    group: "research",
+    icon: "megaphone",
+    color: {
+      bar: "from-sky-400 to-sky-600",
+      bg: "bg-sky-100",
+      text: "text-sky-600",
+      ring: "hover:ring-sky-200",
+      cta: "text-sky-500",
+      gradient: "from-sky-600 via-sky-700 to-sky-900",
+      accentBg: "bg-sky-500/10",
+      borderTop: "border-t-sky-500",
+      buttonBg: "bg-sky-600",
+      buttonHover: "hover:bg-sky-700",
+      chartHex: "#0284C7",
+    },
+    subtitle: "Record published conference papers with proofs — submitted entries count immediately.",
+    entryTitleField: "paperTitle",
+    entryTitleFallback: "Conference Publication",
   },
 };
 

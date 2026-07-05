@@ -15,6 +15,7 @@ const ADAPTER_MAP: Record<string, React.LazyExoticComponent<AdapterComponent>> =
   "guest-lectures": lazy(() => import("@/components/data-entry/adapters/guest-lectures")),
   workshops: lazy(() => import("@/components/data-entry/adapters/workshops")),
   "journal-publications": lazy(() => import("@/components/data-entry/adapters/journal-publications")),
+  "conference-publications": lazy(() => import("@/components/data-entry/adapters/conference-publications")),
 };
 
 export default function CategoryPageRouter({

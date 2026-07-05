@@ -120,6 +120,48 @@ export type JournalPublicationEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// ConferencePublicationEntry (record flow — no permission PDF, no timer)
+// ---------------------------------------------------------------------------
+
+export type ConferencePublicationEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  paperTitle: string;
+  conferenceName: string;
+  level: string;
+  organizedBy: string;
+  publicationDate: string;
+  issnIsbn: string;
+  pageNumbers: string;
+  doi: string;
+  indexing: string;
+  coAuthors: FacultyRowValue[];
+  externalAuthors: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  firstPage: FileMeta[];
+  indexProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ---------------------------------------------------------------------------
 // FdpAttended
 // ---------------------------------------------------------------------------
 

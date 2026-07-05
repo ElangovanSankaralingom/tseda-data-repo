@@ -70,11 +70,40 @@ test("export-filter spine: EVERY category collects academicYear + semesterType",
   }
 });
 
-test("registry: journal-publications is a record-flow category; originals stay permission", () => {
+test("registry: publications are record-flow categories; originals stay permission", () => {
   assert.equal(getCategoryFlow("journal-publications"), "record");
+  assert.equal(getCategoryFlow("conference-publications"), "record");
   for (const slug of ["workshops", "guest-lectures", "fdp-attended", "fdp-conducted", "case-studies"]) {
     assert.equal(getCategoryFlow(slug), "permission", `${slug} must remain permission-flow`);
   }
+});
+
+test("conference-publications: submit locks, wins instantly, scores 5/unit", async () => {
+  await withSandbox("record-conference", async () => {
+    const draft = await createEntry(OWNER, "conference-publications", {
+      academicYear: YEAR,
+      semesterType: "EVEN",
+      paperTitle: "CPTED in informal settlements",
+      conferenceName: "CPTED Conference 2026",
+      level: "International",
+      organizedBy: "SPA Bhopal",
+      publicationDate: "2026-01-16",
+      indexing: "Scopus",
+      firstPage: [{ storedPath: "uploads/x/cp.pdf", url: "/api/entry-file?p=2", fileName: "cp.pdf" }],
+    } as never);
+    const submitted = await commitDraft(OWNER, "conference-publications", String(draft.id)) as Record<string, unknown>;
+
+    assert.equal(submitted.confirmationStatus, "GENERATED");
+    assert.equal(submitted.entryFlow, "record");
+    assert.equal(submitted.editWindowExpiresAt, null);
+    const fields = getCategorySchema("conference-publications").fields;
+    assert.equal(isEntryWon(submitted as never, fields as never), true);
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const metric = score.metrics.find((m) => m.id === "conference_publication");
+    assert.equal(metric?.points, 5);
+    assert.equal(metric?.count, 1);
+  });
 });
 
 test("submit: rejects incomplete records; completed submit locks with no timer and wins instantly", async () => {

@@ -111,6 +111,13 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points: perUnit * entries.length, count: entries.length, notes: [] };
   },
 
+  /** Conference publications (record flow): same flat per-unit rule. */
+  conference_publication({ entriesByCategory, model }) {
+    const entries = entriesByCategory.get("conference-publications") ?? [];
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    return { points: perUnit * entries.length, count: entries.length, notes: [] };
+  },
+
   /** Workshops: India vs abroad via the entry's `level` field. */
   collab_workshop({ entriesByCategory, model }) {
     let points = 0;

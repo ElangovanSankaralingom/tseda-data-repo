@@ -17,7 +17,7 @@ import { categoryLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useTiltEffect } from "@/hooks/useTiltEffect";
-import { getCategoryConfig } from "@/data/categoryRegistry";
+import { getCategoryConfig, CATEGORY_GROUP_ORDER, CATEGORY_LIST, type CategoryGroup } from "@/data/categoryRegistry";
 import { getCategoryIcon } from "@/lib/ui/categoryIcons";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { TranslationKey, Language } from "@/lib/i18n";
@@ -59,13 +59,19 @@ type RecentEntry = {
   route: string;
 };
 
-type GroupKey = "all" | "professional" | "academic";
+type GroupKey = "all" | CategoryGroup;
 
-const GROUPS: Record<GroupKey, string[]> = {
-  all: [],
-  professional: ["fdp-attended", "fdp-conducted"],
-  academic: ["case-studies", "guest-lectures", "workshops"],
+// Display names for the registry-driven clubs. Adding a club = one entry in
+// CATEGORY_GROUP_ORDER (registry) + one labelKey here + i18n keys.
+const GROUP_LABEL_KEYS: Record<CategoryGroup, TranslationKey> = {
+  professional: "dashboard.groupProfessionalDev",
+  academic: "dashboard.groupAcademicActivities",
+  research: "dashboard.groupResearch",
 };
+
+function slugsOfGroup(group: CategoryGroup): string[] {
+  return CATEGORY_LIST.filter((slug) => getCategoryConfig(slug).group === group);
+}
 
 export default function DashboardClient({
   categories,
@@ -81,7 +87,7 @@ export default function DashboardClient({
 
   const filteredCategories = useMemo(() => {
     if (activeGroup === "all") return categories;
-    const slugs = GROUPS[activeGroup];
+    const slugs = slugsOfGroup(activeGroup);
     return categories.filter((c) => slugs.includes(c.slug));
   }, [activeGroup, categories]);
 
@@ -115,13 +121,15 @@ export default function DashboardClient({
     return () => window.removeEventListener("keydown", handleKeyNav);
   }, [handleKeyNav]);
 
-  const profCount = categories.filter((c) => GROUPS.professional.includes(c.slug)).length;
-  const acadCount = categories.filter((c) => GROUPS.academic.includes(c.slug)).length;
-
+  // Registry-driven clubs: a tab appears for every group that has at least
+  // one category on this dashboard — new clubs surface automatically.
   const groupTabs: { key: GroupKey; labelKey: TranslationKey; count: number }[] = [
     { key: "all", labelKey: "dashboard.categoriesLabel", count: categories.length },
-    { key: "professional", labelKey: "dashboard.groupProfessionalDev", count: profCount },
-    { key: "academic", labelKey: "dashboard.groupAcademicActivities", count: acadCount },
+    ...CATEGORY_GROUP_ORDER.map((group) => ({
+      key: group as GroupKey,
+      labelKey: GROUP_LABEL_KEYS[group],
+      count: categories.filter((c) => slugsOfGroup(group).includes(c.slug)).length,
+    })).filter((tab) => tab.count > 0),
   ];
 
   return (
@@ -170,9 +178,15 @@ export default function DashboardClient({
         >
         <div className="flex flex-col gap-6 lg:flex-row">
 
-          {/* ═══ LEFT: Category list ═══ */}
-          <div className="lg:w-80 xl:w-[360px] shrink-0 animate-card-lift">
-            <div className="flex flex-col gap-2.5">
+          {/* ═══ LEFT: Category list ═══
+               Scrollable rail (2026-07): the category set keeps growing, so
+               the list caps its height and scrolls instead of stretching the
+               whole page — a bottom fade signals there is more below. */}
+          <div className="lg:w-80 xl:w-[360px] shrink-0 animate-card-lift relative">
+            <div
+              className="flex flex-col gap-2.5 lg:max-h-[calc(100vh-260px)] lg:min-h-[420px] lg:overflow-y-auto lg:pr-1.5 lg:pb-6"
+              style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-strong) transparent" }}
+            >
               {filteredCategories.map((cat, idx) => {
                 const isAct = cat.slug === effectiveSlug;
                 const config = getCategoryConfig(cat.slug);
@@ -215,6 +229,14 @@ export default function DashboardClient({
                 );
               })}
             </div>
+            {/* Bottom fade — signals more categories below the fold. */}
+            {filteredCategories.length > 6 && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-10 lg:block"
+                style={{ background: "linear-gradient(to bottom, transparent, var(--color-surface-panel))" }}
+              />
+            )}
           </div>
 
           {/* ═══ RIGHT: Detail panel ═══ */}

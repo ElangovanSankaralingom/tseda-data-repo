@@ -269,8 +269,11 @@ export const AWARD_METRICS: readonly AwardMetricDefinition[] = [
     id: "conference_publication",
     section: "s5",
     label: "Conference Publications (Scopus-indexed / reputed forums)",
-    details: "First four authors can claim; accepted/presented-only papers not considered.",
-    source: "claim",
+    details:
+      "First four authors can claim; accepted/presented-only papers not considered. " +
+      "AUTO-TRACKED from the conference-publications category.",
+    source: "entry",
+    categories: ["conference-publications"],
     effort: "medium",
     pointsModel: { kind: "perUnit", points: 5 },
     proofs: ["Publication with clear date", "Scopus index proof"],

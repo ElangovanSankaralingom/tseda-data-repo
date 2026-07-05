@@ -112,3 +112,17 @@ test("wiring: every category has an API route and a router mapping", () => {
     );
   }
 });
+
+test("wiring: every category has a PROPER display name in BOTH dictionaries", async () => {
+  // A missing category.<slug> key makes the UI fall back to the raw slug
+  // ("journal-publications" instead of "Journal Publications") — caught in
+  // the wild 2026-07; never again.
+  const { categoryLabel } = await import("@/lib/i18n");
+  for (const slug of CATEGORY_LIST) {
+    for (const language of ["en", "ta"] as const) {
+      const label = categoryLabel(slug, language);
+      assert.notEqual(label, slug, `${slug}: missing category.* key in ${language} dictionary`);
+      assert.ok(label.trim().length > 0, `${slug}: empty display name in ${language}`);
+    }
+  }
+});
