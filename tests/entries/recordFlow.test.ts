@@ -73,6 +73,7 @@ test("export-filter spine: EVERY category collects academicYear + semesterType",
 test("registry: publications are record-flow categories; originals stay permission", () => {
   assert.equal(getCategoryFlow("journal-publications"), "record");
   assert.equal(getCategoryFlow("conference-publications"), "record");
+  assert.equal(getCategoryFlow("books-and-chapters"), "record");
   for (const slug of ["workshops", "guest-lectures", "fdp-attended", "fdp-conducted", "case-studies"]) {
     assert.equal(getCategoryFlow(slug), "permission", `${slug} must remain permission-flow`);
   }
@@ -103,6 +104,36 @@ test("conference-publications: submit locks, wins instantly, scores 5/unit", asy
     const metric = score.metrics.find((m) => m.id === "conference_publication");
     assert.equal(metric?.points, 5);
     assert.equal(metric?.count, 1);
+  });
+});
+
+test("books-and-chapters: kind splits the two metrics (Book 10 / Chapter 5)", async () => {
+  await withSandbox("record-books", async () => {
+    const base = {
+      academicYear: YEAR,
+      semesterType: "ODD",
+      publisher: "Springer",
+      isbn: "978-3-16-148410-0",
+      publicationDate: "2025-11-10",
+      coverIsbnProof: [{ storedPath: "uploads/x/cover.pdf", url: "/api/entry-file?p=3", fileName: "cover.pdf" }],
+    };
+    const book = await createEntry(OWNER, "books-and-chapters", {
+      ...base, kind: "Book", bookTitle: "Sustainable Urbanism in South India",
+    } as never);
+    await commitDraft(OWNER, "books-and-chapters", String(book.id));
+
+    const chapter = await createEntry(OWNER, "books-and-chapters", {
+      ...base, kind: "Chapter", bookTitle: "Handbook of Tropical Housing",
+      chapterTitle: "Climate-responsive courtyard housing",
+    } as never);
+    await commitDraft(OWNER, "books-and-chapters", String(chapter.id));
+
+    const score = await computeFacultyAwardScore(OWNER, YEAR);
+    const byId = new Map(score.metrics.map((m) => [m.id, m]));
+    assert.equal(byId.get("book_publication")?.points, 10);
+    assert.equal(byId.get("book_publication")?.count, 1);
+    assert.equal(byId.get("book_chapter")?.points, 5);
+    assert.equal(byId.get("book_chapter")?.count, 1);
   });
 });
 

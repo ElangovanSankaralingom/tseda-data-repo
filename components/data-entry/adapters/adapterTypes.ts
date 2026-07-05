@@ -162,6 +162,47 @@ export type ConferencePublicationEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// BookChapterEntry (record flow — no permission PDF, no timer)
+// ---------------------------------------------------------------------------
+
+export type BookChapterEntry = {
+  id: string;
+  sharedEntryId?: string;
+  sourceEmail?: string;
+  sharedRole?: string;
+  entryFlow?: string;
+  confirmationStatus?: EntryStatus;
+  requestEditStatus?: RequestEditStatus;
+  requestEditRequestedAtISO?: string | null;
+  requestEditMessage?: string;
+  academicYear: string;
+  semesterType: string;
+  kind: string;
+  bookTitle: string;
+  chapterTitle: string;
+  publisher: string;
+  isbn: string;
+  editionOrVolume: string;
+  pageNumbers: string;
+  publicationDate: string;
+  coAuthors: FacultyRowValue[];
+  externalAuthors: string;
+  pdfMeta?: {
+    storedPath: string;
+    url: string;
+    fileName: string;
+    generatedAtISO: string;
+  } | null;
+  pdfStale?: boolean;
+  pdfSourceHash?: string;
+  coverIsbnProof: FileMeta[];
+  publicationProof: FileMeta[];
+  streak: StreakState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ---------------------------------------------------------------------------
 // FdpAttended
 // ---------------------------------------------------------------------------
 

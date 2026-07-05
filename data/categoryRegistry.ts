@@ -1,3 +1,4 @@
+import { booksAndChaptersSchema } from "@/data/schemas/books-and-chapters";
 import { caseStudiesSchema } from "@/data/schemas/case-studies";
 import { conferencePublicationsSchema } from "@/data/schemas/conference-publications";
 import { fdpAttendedSchema } from "@/data/schemas/fdp-attended";
@@ -15,6 +16,7 @@ export const CATEGORY_SLUGS = [
   "workshops",
   "journal-publications",
   "conference-publications",
+  "books-and-chapters",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
@@ -26,7 +28,8 @@ export type CategorySummaryKey =
   | "guestLectures"
   | "workshops"
   | "journalPublications"
-  | "conferencePublications";
+  | "conferencePublications"
+  | "booksAndChapters";
 
 export type CategoryColor = {
   /** Progress bar gradient: "from-blue-400 to-blue-600" */
@@ -290,6 +293,36 @@ export const CATEGORY_REGISTRY: Record<CategorySlug, CategoryConfig> = {
     subtitle: "Record published conference papers with proofs — submitted entries count immediately.",
     entryTitleField: "paperTitle",
     entryTitleFallback: "Conference Publication",
+  },
+  "books-and-chapters": {
+    slug: "books-and-chapters",
+    label: "Books & Chapters",
+    schemaKey: "books-and-chapters",
+    schema: booksAndChaptersSchema,
+    summaryKey: "booksAndChapters",
+    supportsUploads: true,
+    supportsConfirmation: true,
+    // RECORD FLOW — post-facto, collaborative; `kind` drives book (10) vs
+    // chapter (5) award metrics.
+    flow: "record",
+    group: "research",
+    icon: "library",
+    color: {
+      bar: "from-indigo-400 to-indigo-600",
+      bg: "bg-indigo-100",
+      text: "text-indigo-600",
+      ring: "hover:ring-indigo-200",
+      cta: "text-indigo-500",
+      gradient: "from-indigo-600 via-indigo-700 to-indigo-900",
+      accentBg: "bg-indigo-500/10",
+      borderTop: "border-t-indigo-500",
+      buttonBg: "bg-indigo-600",
+      buttonHover: "hover:bg-indigo-700",
+      chartHex: "#4F46E5",
+    },
+    subtitle: "Record published books and book chapters with proofs — submitted entries count immediately.",
+    entryTitleField: "bookTitle",
+    entryTitleFallback: "Book / Chapter",
   },
 };
 

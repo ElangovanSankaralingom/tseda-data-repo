@@ -49,10 +49,13 @@
    (National/International), organizedBy, publicationDate, ISSN/ISBN, DOI,
    pages, indexing, coAuthors (`collaborates: true`), externalAuthors;
    proofs: first page (required), proceedings/index proof.
-3. **books-and-chapters** [RECORD, collaborative] (feeds `book_publication`
-   10 / `book_chapter` 5) — form T8/T9. One category, kind Book|Chapter;
-   authors collaborates; publisher, ISBN, monthYearEdition, chapterTitle
-   (chapter only). Proofs: cover/ISBN.
+3. ~~**books-and-chapters**~~ ✅ SHIPPED 2026-07 [RECORD, collaborative] —
+   one category, `kind` Book|Chapter drives `book_publication` (10) vs
+   `book_chapter` (5), both auto-tracked. Fields: academicYear,
+   semesterType, kind, bookTitle, chapterTitle (required for chapters),
+   publisher, ISBN, edition/volume, pages, publicationDate, coAuthors
+   (`collaborates: true`), externalAuthors; proofs: cover/ISBN page
+   (required), publication proof.
 4. **patents** [RECORD] (feeds `utility_patent` granted 10 / published 5)
    — form T5/T6. status Published|Granted (tier key!), inventors
    collaborates, nationalOrInternational, applicationDate,

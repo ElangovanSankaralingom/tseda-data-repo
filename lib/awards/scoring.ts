@@ -118,6 +118,24 @@ const DERIVERS: Record<string, (input: DeriverInput) => DeriverResult> = {
     return { points: perUnit * entries.length, count: entries.length, notes: [] };
   },
 
+  /** Books (record flow): books-and-chapters entries with kind = Book. */
+  book_publication({ entriesByCategory, model }) {
+    const entries = (entriesByCategory.get("books-and-chapters") ?? []).filter(
+      (entry) => String(entry.kind ?? "") === "Book",
+    );
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    return { points: perUnit * entries.length, count: entries.length, notes: [] };
+  },
+
+  /** Chapters (record flow): books-and-chapters entries with kind = Chapter. */
+  book_chapter({ entriesByCategory, model }) {
+    const entries = (entriesByCategory.get("books-and-chapters") ?? []).filter(
+      (entry) => String(entry.kind ?? "") === "Chapter",
+    );
+    const perUnit = model.kind === "perUnit" ? model.points : 0;
+    return { points: perUnit * entries.length, count: entries.length, notes: [] };
+  },
+
   /** Workshops: India vs abroad via the entry's `level` field. */
   collab_workshop({ entriesByCategory, model }) {
     let points = 0;

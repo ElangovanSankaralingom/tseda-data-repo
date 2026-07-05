@@ -3,6 +3,8 @@
  *
  * Import this in client components that need to render category icons.
  * The icon names match the `icon` field in CategoryConfig.
+ * KEEP IN SYNC with the registry — an unmapped name silently falls back to
+ * the default document icon (tests/schemas/schemaInvariants.test.ts guards).
  */
 import { createElement } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -10,6 +12,8 @@ import {
   BookOpen,
   FileSearch,
   FileText,
+  Library,
+  Megaphone,
   Mic,
   Presentation,
   Wrench,
@@ -21,9 +25,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "clipboard-list": FileSearch,
   mic: Mic,
   hammer: Wrench,
+  megaphone: Megaphone,
+  library: Library,
 };
 
 const DEFAULT_ICON: LucideIcon = FileText;
+
+/** Exposed for the registry↔icon-map invariant test. */
+export function hasCategoryIcon(iconName: string): boolean {
+  return iconName in ICON_MAP;
+}
 
 export function getCategoryIcon(iconName: string): LucideIcon {
   return ICON_MAP[iconName] ?? DEFAULT_ICON;

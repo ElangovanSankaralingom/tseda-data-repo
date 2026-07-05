@@ -113,6 +113,17 @@ test("wiring: every category has an API route and a router mapping", () => {
   }
 });
 
+test("wiring: every category icon resolves in the icon map (no silent fallback)", async () => {
+  // An unmapped icon name renders the default document icon without any
+  // error — caught in the wild 2026-07 ("megaphone" was missing).
+  const { hasCategoryIcon } = await import("@/lib/ui/categoryIcons");
+  const { getCategoryConfig } = await import("@/data/categoryRegistry");
+  for (const slug of CATEGORY_LIST) {
+    const icon = getCategoryConfig(slug).icon;
+    assert.ok(hasCategoryIcon(icon), `${slug}: icon "${icon}" is not in ICON_MAP (lib/ui/categoryIcons.ts)`);
+  }
+});
+
 test("wiring: every category has a PROPER display name in BOTH dictionaries", async () => {
   // A missing category.<slug> key makes the UI fall back to the raw slug
   // ("journal-publications" instead of "Journal Publications") — caught in
