@@ -4,7 +4,8 @@
  * end (Elan's ruling, 2026-07).
  *
  * Run (dev server stopped):
- *   npm run seed:fresh
+ *   npm run seed:fresh    — wipe + seed + verify
+ *   npm run data:clear    — wipe ONLY (no new data)
  *
  * What it does:
  *   1. WIPES user trees + every derived store (feed, analytics cache,
@@ -253,6 +254,25 @@ async function verifyUser(email: string) {
 }
 
 async function main() {
+  // ── WIPE-ONLY MODE (npm run data:clear): clear everything, seed nothing ──
+  if (process.argv.includes("--wipe-only")) {
+    console.log("═══ TSEDA data clear ═══");
+    await wipe();
+    const leftoverUsers = await fs.readdir(getUsersRootDir()).catch(() => [] as string[]);
+    if (leftoverUsers.length > 0) {
+      console.error(`✗ users directory not empty after wipe: ${leftoverUsers.join(", ")}`);
+      process.exit(1);
+    }
+    if ((await listFeedEvents(50)).length > 0) {
+      console.error("✗ feed not empty after wipe");
+      process.exit(1);
+    }
+    console.log("✓ all user data cleared — entries, indexes, feed, uploads, trash, caches");
+    console.log("  (admin config kept: registry, roles, settings, award points)");
+    console.log("Start the app: every surface should show its empty state.");
+    return;
+  }
+
   console.log("═══ TSEDA fresh-data seed + wiring verification ═══");
   await wipe();
 

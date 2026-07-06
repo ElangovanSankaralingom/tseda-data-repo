@@ -16,7 +16,8 @@
     "migrate:data": "node --experimental-strip-types scripts/migrate-data.ts",
     "backup:data": "node --experimental-strip-types scripts/backup-data.ts",
     "prepare": "husky",
-    "seed:fresh": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts"
+    "seed:fresh": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts",
+    "data:clear": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts --wipe-only"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
