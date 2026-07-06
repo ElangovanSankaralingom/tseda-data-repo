@@ -1,7 +1,5 @@
 import "server-only";
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getCategoryFlow, isValidCategorySlug } from "@/data/categoryRegistry";
 import { recordEntryMilestones } from "@/lib/feed/feedEvents";
 import { readCategoryEntryById } from "@/lib/dataStore";
@@ -59,6 +57,13 @@ function statusCodeFromError(error: AppError) {
 }
 
 async function getAuthorizedTceEmail() {
+  // Deferred: next-auth only resolves inside the Next runtime. Module-level
+  // import broke standalone tooling (seed script) that uses
+  // generateAndPersistEntryPdf without any HTTP session (2026-07).
+  const [{ getServerSession }, { authOptions }] = await Promise.all([
+    import("next-auth"),
+    import("@/lib/auth"),
+  ]);
   const session = await getServerSession(authOptions);
   const email = normalizeEmail(session?.user?.email ?? "");
   if (!email.endsWith(ALLOWED_EMAIL_SUFFIX)) {

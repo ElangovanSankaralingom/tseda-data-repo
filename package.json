@@ -15,7 +15,8 @@
     "test:ci": "NODE_ENV=test c8 --check-coverage --lines 50 --functions 45 --branches 40 --reporter=text --reporter=lcov node --test --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs tests/**/*.test.ts",
     "migrate:data": "node --experimental-strip-types scripts/migrate-data.ts",
     "backup:data": "node --experimental-strip-types scripts/backup-data.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seed:fresh": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
