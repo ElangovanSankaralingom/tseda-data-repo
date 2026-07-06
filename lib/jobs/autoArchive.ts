@@ -20,7 +20,7 @@ import {
   revalidateDashboardSummary,
 } from "@/lib/entries/internal/engineHelpers";
 import { recordEntryMilestones } from "@/lib/feed/feedEvents";
-import { removeFeedEvent } from "@/lib/feed/feedStore";
+import { removeEntryFeedEvents } from "@/lib/feed/feedStore";
 import { logger } from "@/lib/logger";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -189,8 +189,7 @@ export async function runAutoArchive(): Promise<Result<AutoArchiveResult>> {
               null,
             );
             revalidateDashboardSummary(userEmail);
-            await removeFeedEvent(`streak_started:${removedId}`).catch(() => false);
-            await removeFeedEvent(`streak_won:${removedId}`).catch(() => false);
+            await removeEntryFeedEvents(removedId);
 
             const title = extractEntryTitle(entry as unknown as Record<string, unknown>, category);
             notifyAutoArchived(userEmail, title, category).catch((err) => {

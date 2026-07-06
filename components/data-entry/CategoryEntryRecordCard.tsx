@@ -14,6 +14,7 @@ import {
   type EntryListGroup,
 } from "@/lib/entryCategorization";
 import { isEntryCommitted } from "@/lib/entries/workflow";
+import { getStreakTier } from "@/lib/streakProgress";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   type CategoryEntryRenderEntry,
@@ -207,17 +208,18 @@ export function createCategoryEntryRecordRenderer<TEntry extends CategoryEntryRe
     const resolvedPreviewUrl = previewUrl?.(entry) ?? entry.pdfMeta?.url ?? null;
     const editTime = getEntryEditTime(entry);
 
-    // Streak tier medal (Elan, 2026-07): a WON entry wears its tier — GOLD
-    // for permission-flow wins, SILVER for record-flow wins. Mirrors
-    // lib/streakProgress isEntryWon semantics client-side.
+    // Streak tier medal (Elan, 2026-07): a WON entry wears its tier. The
+    // TIER RULE itself lives in lib/streakProgress.getStreakTier (single
+    // source of truth — 2026-07 wiring audit); only the "has it won?"
+    // visibility gating is decided from renderer state here.
     const raw = entry as Record<string, unknown>;
     const eligibleForTier = raw.streakEligible === true && raw.streakPermanentlyRemoved !== true;
-    const isRecordEntry = raw.entryFlow === "record";
-    const streakTier: "gold" | "silver" | null = !eligibleForTier
-      ? null
-      : isRecordEntry
-        ? (String(raw.confirmationStatus ?? "") === "GENERATED" ? "silver" : null)
-        : (group === "locked_in" && raw.pdfStale !== true && !!entry.pdfMeta ? "gold" : null);
+    const tier = getStreakTier(raw as Parameters<typeof getStreakTier>[0]);
+    const hasWonLook =
+      tier === "silver"
+        ? String(raw.confirmationStatus ?? "") === "GENERATED"
+        : group === "locked_in" && raw.pdfStale !== true && !!entry.pdfMeta;
+    const streakTier: "gold" | "silver" | null = eligibleForTier && hasWonLook ? tier : null;
 
     return (
       <CategoryEntryRecordCard

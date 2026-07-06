@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useCallback, useState } from "react";
 import { UserPlus, Users, Building2, X, Plus, Download } from "lucide-react";
@@ -42,6 +43,7 @@ export default function FacultyClient({ initialConfig }: { initialConfig: Config
       const data = (await res.json()) as Config & { error?: string };
       if (!res.ok) { setError(data.error || t("common.error")); return false; }
       setConfig({ faculty: data.faculty ?? [], departments: data.departments ?? [] });
+      notifyDataChanged();
       return true;
     } catch { setError(t("common.error")); return false; }
     finally { setBusy(false); }

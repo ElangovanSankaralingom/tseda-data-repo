@@ -185,6 +185,24 @@ export async function recordEntryMilestonesAwaited(
 }
 
 /**
+ * Reconcile an entry's presence on the wall after a mutation that can
+ * change what it has earned (admin grant/reject/archive/restore, user
+ * requests, stage-2 file deletion): the wall ends up holding EXACTLY the
+ * entry's earned events — archived entries lose all cards, un-wins lose
+ * the win card, restores re-assert. Single lock pass; best-effort.
+ */
+export async function reconcileEntryFeedPresence(
+  ownerEmail: string,
+  category: CategoryKey,
+  entry: Record<string, unknown>,
+): Promise<void> {
+  const entryId = String(entry.id ?? "").trim();
+  if (!entryId) return;
+  const { syncEntryFeedEvents } = await import("@/lib/feed/feedStore");
+  await syncEntryFeedEvents(entryId, collectEntryMilestoneEvents(ownerEmail, category, entry));
+}
+
+/**
  * Best-effort: after a generate/finalise/save succeeds, record milestone
  * events for the department activity feed. Milestone-only (no entry data is
  * broadcast). Idempotent via deterministic event ids, so re-running never

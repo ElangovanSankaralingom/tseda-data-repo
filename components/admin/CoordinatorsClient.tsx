@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useCallback, useMemo, useState } from "react";
 import { Network, Plus, Trash2, X, ShieldCheck, Download, ClipboardPen } from "lucide-react";
@@ -71,6 +72,7 @@ export default function CoordinatorsClient({
         return false;
       }
       setConfig(data);
+      notifyDataChanged();
       return true;
     } catch {
       setError(t("common.error"));

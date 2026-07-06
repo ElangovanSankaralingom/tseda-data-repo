@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useEffect, useState } from "react";
 import { GraduationCap, Network, Plus, Trash2, Loader2, Save } from "lucide-react";
@@ -160,6 +161,7 @@ export default function ResearchTab() {
         setProfile(body.data.profile);
         setDirty(false);
         setMessage({ type: "ok", text: t("research.saved") });
+        notifyDataChanged();
       } else {
         setMessage({ type: "err", text: body.error?.message ?? t("common.error") });
       }

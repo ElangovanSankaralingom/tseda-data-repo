@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useCallback, useMemo, useState } from "react";
 import { Columns, Plus, Trash2, ArrowUp, ArrowDown, X, Check, Download } from "lucide-react";
@@ -70,6 +71,7 @@ export default function FormatsClient({
         return false;
       }
       if (data.templates) setTemplates(data.templates);
+      notifyDataChanged();
       return true;
     } catch {
       setError(t("common.error"));

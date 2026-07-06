@@ -2,6 +2,7 @@ import "server-only";
 
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { canManageEditRequests } from "@/lib/admin/roles";
 import { canApproveDeleteForCategory } from "@/lib/admin/coordinators";
@@ -66,6 +67,17 @@ export async function restoreFromBin(adminEmail: string, trashId: string): Promi
     await upsertEntryRaw(owner, category, record);
     await refreshIndexForMutation(owner, category, null, record);
     revalidateDashboardSummary(owner);
+    // Restored committed data re-enters scoring and the Department Pulse
+    // (2026-07 wiring audit): invalidate analytics, re-assert wall events.
+    fireAndForget(
+      (async () => {
+        const { invalidateAnalyticsCache } = await import("@/lib/analytics/cache");
+        await invalidateAnalyticsCache();
+        const { reconcileEntryFeedPresence } = await import("@/lib/feed/feedEvents");
+        await reconcileEntryFeedPresence(owner, category, record as Record<string, unknown>);
+      })(),
+      "bin.restore.reconcile",
+    );
     logger.info({ event: "bin.restore", trashId, adminEmail: email, category, entryId: manifest.entryId });
     return record;
   });

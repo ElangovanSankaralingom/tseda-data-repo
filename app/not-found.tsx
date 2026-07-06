@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FileQuestion } from "lucide-react";
+import { dashboard } from "@/lib/entryNavigation";
 
 export default function NotFound() {
   return (
@@ -11,7 +12,7 @@ export default function NotFound() {
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Link
-          href="/dashboard"
+          href={dashboard()}
           className="mt-6 inline-flex items-center rounded-lg bg-[var(--color-button-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--color-text-on-accent)] shadow-sm transition hover:bg-[var(--color-primary-light)] hover:shadow"
         >
           Go to Dashboard

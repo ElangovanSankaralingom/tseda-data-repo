@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useState } from "react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -102,6 +103,7 @@ export default function UploadsTab({ draft, setDraft, saveCurrentTab, showToast 
 
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || "Delete failed");
+      notifyDataChanged();
 
       const nextDraft = {
         ...draft,

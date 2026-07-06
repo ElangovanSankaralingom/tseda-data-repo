@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useMemo, useState } from "react";
 import { Award, Sparkles, Target, CircleDashed, FileDown, GraduationCap, Loader2 } from "lucide-react";
@@ -128,6 +129,7 @@ export default function AwardProgress() {
         claim={feedbackBody?.data?.years?.[score.academicYear] ?? null}
         onSaved={async () => {
           await Promise.all([refreshScore(), refreshFeedback()]);
+          notifyDataChanged();
         }}
       />
 

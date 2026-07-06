@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
@@ -139,6 +140,7 @@ export default function AdminConfirmationsClient({ slaDays = 3 }: { slaDays?: nu
         return;
       }
 
+      notifyDataChanged();
       setRows((current) =>
         current.filter(
           (item) =>

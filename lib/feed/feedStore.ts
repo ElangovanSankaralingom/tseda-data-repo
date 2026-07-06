@@ -208,6 +208,65 @@ export async function toggleReaction(
   });
 }
 
+/** Every deterministic per-entry event id — extend HERE when the emitter
+ *  learns a new per-entry kind, and every cleanup/sync path follows. */
+function perEntryEventIds(entryId: string): string[] {
+  return [`streak_started:${entryId}`, `streak_won:${entryId}`, `entry_committed:${entryId}`];
+}
+
+/**
+ * Remove EVERY milestone event tied to an entry — the one true cleanup for
+ * delete/quarantine paths. Single lock pass.
+ */
+export async function removeEntryFeedEvents(entryId: string): Promise<void> {
+  await syncEntryFeedEvents(entryId, []);
+}
+
+/**
+ * Make the wall TELL THE TRUTH about one entry (2026-07 wiring audit): in a
+ * single lock pass, drop the entry's per-entry events that are no longer
+ * earned and append the ones that are (existing ids keep their original
+ * timestamps/reactions). Covers un-wins (stage-2 file deleted), archive
+ * (nothing earned → all removed) and restore (events re-asserted).
+ */
+export async function syncEntryFeedEvents(entryId: string, earned: NewFeedEvent[]): Promise<void> {
+  const id = entryId.trim();
+  if (!id) return;
+  const managed = new Set(perEntryEventIds(id));
+  const earnedById = new Map(earned.filter((e) => managed.has(e.id)).map((e) => [e.id, e]));
+  try {
+    await withLock(FEED_LOCK_KEY, async () => {
+      const config = await readConfig();
+      const kept = config.events.filter((e) => !managed.has(e.id) || earnedById.has(e.id));
+      const present = new Set(kept.map((e) => e.id));
+      const additions: FeedEvent[] = [];
+      for (const event of earnedById.values()) {
+        if (present.has(event.id)) continue;
+        const actorEmail = normalizeEmail(event.actorEmail);
+        if (!actorEmail) continue;
+        additions.push({
+          id: event.id,
+          type: event.type,
+          actorEmail,
+          categoryKey: event.categoryKey ?? null,
+          milestone: event.milestone ?? null,
+          withNames: (event.withNames ?? []).slice(0, 4),
+          tier: event.tier ?? null,
+          createdAt: event.createdAt ?? new Date().toISOString(),
+          reactions: emptyReactions(),
+        });
+      }
+      if (additions.length === 0 && kept.length === config.events.length) return;
+      const events = [...additions, ...kept]
+        .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+        .slice(0, MAX_FEED_EVENTS);
+      await writeConfig({ version: CONFIG_VERSION, events });
+    });
+  } catch {
+    // Feed coherence is best-effort; the originating action must not fail.
+  }
+}
+
 /** Remove a feed event entirely (master moderation). Returns true if one was removed. */
 export async function removeFeedEvent(eventId: string): Promise<boolean> {
   const targetId = eventId.trim();

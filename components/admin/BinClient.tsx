@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useCallback, useState } from "react";
 import { Trash2, RotateCcw, X, Inbox } from "lucide-react";
@@ -36,6 +37,7 @@ export default function BinClient({ initialEntries }: { initialEntries: BinEntry
         return;
       }
       if (data.entries) setEntries(data.entries);
+      notifyDataChanged();
     } catch {
       setError(t("common.error"));
     } finally {

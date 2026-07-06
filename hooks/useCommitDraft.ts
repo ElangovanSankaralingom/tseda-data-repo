@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useCallback } from "react";
 import { AppError } from "@/lib/errors";
@@ -62,6 +63,9 @@ export function useCommitDraft<TEntry extends CommitEntryLike>(args: {
         });
       }
 
+      // A commit changes the dashboard, analytics strip, award panel and
+      // Department Pulse — ring the instant-update bus (2026-07 audit).
+      notifyDataChanged();
       return hydrateEntry ? hydrateEntry(entry) : entry;
     },
     [category, hydrateEntry]

@@ -382,6 +382,19 @@ export async function handleCategoryFileDelete(request: Request, category: Categ
           nextEntry as Parameters<typeof refreshIndexForMutation>[3],
         );
         revalidateDashboardSummary(email);
+
+        // Deleting a stage-2 file can UN-WIN a streak — the wall and the
+        // analytics cache must follow the truth (2026-07 wiring audit).
+        const { fireAndForget } = await import("@/lib/utils/fireAndForget");
+        fireAndForget(
+          (async () => {
+            const { invalidateAnalyticsCache } = await import("@/lib/analytics/cache");
+            await invalidateAnalyticsCache();
+            const { reconcileEntryFeedPresence } = await import("@/lib/feed/feedEvents");
+            await reconcileEntryFeedPresence(email, category, nextEntry);
+          })(),
+          "fileDelete.reconcile",
+        );
       }
     }
 

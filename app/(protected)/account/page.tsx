@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -141,6 +142,7 @@ export default function AccountPage() {
       setDraft((current) => applySavedTabToDraft(draftOverride ?? current, updated, tab));
       setSaveAttemptedTabs((current) => ({ ...current, [tab]: false }));
       setAutoSaveStatus("saved");
+      notifyDataChanged();
       setTimeout(() => setAutoSaveStatus("idle"), 2000);
     } catch (error: unknown) {
       setToast({ type: "err", msg: getErrorMessage(error, "Save failed. Try again.") });
@@ -189,6 +191,7 @@ export default function AccountPage() {
     try {
       const res = await fetch("/api/me/reset", { method: "POST" });
       if (!res.ok) throw new Error("Reset failed");
+      notifyDataChanged();
       router.push(dashboard());
       router.refresh();
     } catch {

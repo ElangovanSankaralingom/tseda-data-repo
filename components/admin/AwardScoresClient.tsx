@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -127,6 +128,7 @@ export default function AwardScoresClient({ canAwardCommittee }: { canAwardCommi
           interviewAwards={interviewAwards}
           onAwardSaved={async () => {
             await Promise.all([refreshScore(), refreshAwards()]);
+            notifyDataChanged();
           }}
         />
       )}

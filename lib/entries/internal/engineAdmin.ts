@@ -306,9 +306,8 @@ export async function approveDelete<T extends EntryEngineRecord = EntryEngineRec
       (async () => {
         const { invalidateAnalyticsCache } = await import("@/lib/analytics/cache");
         await invalidateAnalyticsCache();
-        const { removeFeedEvent } = await import("@/lib/feed/feedStore");
-        await removeFeedEvent(`streak_started:${id}`);
-        await removeFeedEvent(`streak_won:${id}`);
+        const { removeEntryFeedEvents } = await import("@/lib/feed/feedStore");
+        await removeEntryFeedEvents(id);
       })(),
       "invalidateAnalyticsCache",
     );

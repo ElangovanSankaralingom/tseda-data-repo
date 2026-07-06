@@ -18,6 +18,8 @@ import {
   readEntryRaw,
   upsertEntryRaw,
   appendWalEventOrThrow,
+  refreshIndexForMutation,
+  revalidateDashboardSummary,
 } from "./engineHelpers.ts";
 
 /**
@@ -172,6 +174,11 @@ async function markFanOutDone(
       }),
     );
     await upsertEntryRaw(originOwner, category, after as EntryEngineRecord);
+    // House rule (wiring audit): EVERY entry write refreshes the derived
+    // stores — the flag itself is metadata, but the updatedAt bump must
+    // reach the index/summary so "recent entries" ordering stays truthful.
+    await refreshIndexForMutation(originOwner, category, before as EntryEngineRecord, after as EntryEngineRecord);
+    revalidateDashboardSummary(originOwner);
   });
 }
 

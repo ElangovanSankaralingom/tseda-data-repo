@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -149,6 +150,7 @@ export default function SettingsDashboard({ initialSettings, initialCounts }: Pr
           setSettings(body.data.settings);
           setCounts(body.data.counts);
         }
+        notifyDataChanged();
       }
     } catch {
       // silent

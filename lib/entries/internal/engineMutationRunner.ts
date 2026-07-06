@@ -31,6 +31,41 @@ import {
   trackEntryMutationFailure,
 } from "./engineHelpers.ts";
 
+/**
+ * Post-mutation coherence (2026-07 wiring audit): whenever a mutation flips
+ * an entry's STATUS, two more derived surfaces change meaning —
+ *  - the analytics cache (scoring counts GENERATED only, so grant/reject/
+ *    archive/restore/requests all move committed data in or out of scope);
+ *  - the Department Pulse (archived entries leave the wall; restored/
+ *    re-finalised entries re-assert their idempotent events).
+ * Centralised HERE so no individual admin/user action can forget it.
+ * Fire-and-forget: coherence must never fail the originating action.
+ */
+function reconcileDerivedSurfacesOnStatusChange(
+  ownerEmail: string,
+  category: CategoryKey,
+  fromStatus: string | null,
+  toStatus: string | null,
+  entry: EntryEngineRecord,
+): void {
+  if (!fromStatus || fromStatus === toStatus) return;
+  void (async () => {
+    try {
+      const { invalidateAnalyticsCache } = await import("@/lib/analytics/cache");
+      await invalidateAnalyticsCache();
+      const { reconcileEntryFeedPresence } = await import("@/lib/feed/feedEvents");
+      await reconcileEntryFeedPresence(ownerEmail, category, entry as Record<string, unknown>);
+    } catch (error) {
+      logger.warn({
+        event: "entry.mutation.reconcile_failed",
+        userEmail: ownerEmail,
+        category,
+        message: error instanceof Error ? error.message : "unknown",
+      });
+    }
+  })();
+}
+
 export type AdminMutationConfig = {
   action: EntryMutationActionName;
   walAction: WalAction;
@@ -164,6 +199,13 @@ export async function runAdminMutation<T extends EntryEngineRecord = EntryEngine
       meta: config.successMeta,
     });
 
+    reconcileDerivedSurfacesOnStatusChange(
+      normalizedOwner,
+      config.category,
+      trackedFromStatus,
+      trackedToStatus,
+      resultEntry,
+    );
     config.afterSuccess?.(resultEntry);
     return resultEntry;
   } catch (error) {
@@ -288,6 +330,13 @@ export async function runUserRequestMutation<T extends EntryEngineRecord = Entry
       source: "manual",
     });
 
+    reconcileDerivedSurfacesOnStatusChange(
+      normalizedOwner,
+      config.category,
+      trackedFromStatus,
+      trackedToStatus,
+      updatedEntry,
+    );
     config.afterSuccess?.(updatedEntry);
     return updatedEntry;
   } catch (error) {

@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useState } from "react";
 import { Loader2, RotateCcw, SlidersHorizontal } from "lucide-react";
@@ -67,6 +68,7 @@ export default function AwardPointsClient() {
                   metric={metric}
                   onSaved={async () => {
                     await mutate();
+                    notifyDataChanged();
                   }}
                 />
               ))}

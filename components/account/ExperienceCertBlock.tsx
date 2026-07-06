@@ -1,4 +1,5 @@
 "use client";
+import { notifyDataChanged } from "@/lib/ui/appRefresh";
 
 import { useState } from "react";
 import { MiniButton, ProgressBar } from "./AccountUI";
@@ -53,6 +54,7 @@ export default function CertificateBlock({
       setProgress(0);
       setBusy(false);
       setLocalError(null);
+      notifyDataChanged();
 
       await onCertificateChange(null);
     } catch (error: unknown) {
