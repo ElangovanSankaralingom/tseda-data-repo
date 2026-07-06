@@ -47,10 +47,13 @@ export type NewFeedEvent = {
   createdAt?: string;
 };
 
-type FeedConfig = { version: number; events: FeedEvent[] };
+type FeedConfig = { version: number; events: FeedEvent[]; suppressedIds: string[] };
 
 const CONFIG_VERSION = 1 as const;
 const MAX_FEED_EVENTS = 200;
+/** Moderation tombstones kept so reconcile sweeps never resurrect a card a
+ *  master admin removed on purpose. */
+const MAX_SUPPRESSED_IDS = 500;
 const FEED_LOCK_KEY = "feed.activity";
 
 // Universe-aware: demo-mode milestones land in the demo feed, so the real
@@ -124,7 +127,12 @@ function sanitize(raw: unknown): FeedConfig {
   const events = Array.from(byId.values())
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, MAX_FEED_EVENTS);
-  return { version: CONFIG_VERSION, events };
+  const suppressedIds = Array.isArray(r.suppressedIds)
+    ? (r.suppressedIds as unknown[])
+        .filter((v): v is string => typeof v === "string" && !!v.trim())
+        .slice(0, MAX_SUPPRESSED_IDS)
+    : [];
+  return { version: CONFIG_VERSION, events, suppressedIds };
 }
 
 async function readConfig(): Promise<FeedConfig> {
@@ -132,7 +140,7 @@ async function readConfig(): Promise<FeedConfig> {
     const raw = await fs.readFile(feedPath(), "utf8");
     return sanitize(raw.trim() ? JSON.parse(raw) : null);
   } catch {
-    return { version: CONFIG_VERSION, events: [] };
+    return { version: CONFIG_VERSION, events: [], suppressedIds: [] };
   }
 }
 
@@ -150,6 +158,8 @@ export async function appendFeedEvent(event: NewFeedEvent): Promise<void> {
     await withLock(FEED_LOCK_KEY, async () => {
       const config = await readConfig();
       if (config.events.some((e) => e.id === id)) return;
+      // Master-moderated ids stay off the wall — even if re-emitted.
+      if (config.suppressedIds.includes(id)) return;
       const next: FeedEvent = {
         id,
         type: event.type,
@@ -163,7 +173,7 @@ export async function appendFeedEvent(event: NewFeedEvent): Promise<void> {
       };
       if (!next.actorEmail) return;
       const events = [next, ...config.events].slice(0, MAX_FEED_EVENTS);
-      await writeConfig({ version: CONFIG_VERSION, events });
+      await writeConfig({ version: CONFIG_VERSION, events, suppressedIds: config.suppressedIds });
     });
   } catch {
     // Feed is best-effort; never let it break the originating action.
@@ -239,9 +249,10 @@ export async function syncEntryFeedEvents(entryId: string, earned: NewFeedEvent[
       const config = await readConfig();
       const kept = config.events.filter((e) => !managed.has(e.id) || earnedById.has(e.id));
       const present = new Set(kept.map((e) => e.id));
+      const suppressed = new Set(config.suppressedIds);
       const additions: FeedEvent[] = [];
       for (const event of earnedById.values()) {
-        if (present.has(event.id)) continue;
+        if (present.has(event.id) || suppressed.has(event.id)) continue;
         const actorEmail = normalizeEmail(event.actorEmail);
         if (!actorEmail) continue;
         additions.push({
@@ -260,7 +271,7 @@ export async function syncEntryFeedEvents(entryId: string, earned: NewFeedEvent[
       const events = [...additions, ...kept]
         .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
         .slice(0, MAX_FEED_EVENTS);
-      await writeConfig({ version: CONFIG_VERSION, events });
+      await writeConfig({ version: CONFIG_VERSION, events, suppressedIds: config.suppressedIds });
     });
   } catch {
     // Feed coherence is best-effort; the originating action must not fail.
@@ -275,7 +286,11 @@ export async function removeFeedEvent(eventId: string): Promise<boolean> {
     const config = await readConfig();
     const next = config.events.filter((e) => e.id !== targetId);
     if (next.length === config.events.length) return false;
-    await writeConfig({ version: CONFIG_VERSION, events: next });
+    // Tombstone: moderation is final — reconcile sweeps and re-emission
+    // must never resurrect a card a master admin removed on purpose.
+    const suppressedIds = [targetId, ...config.suppressedIds.filter((id) => id !== targetId)]
+      .slice(0, MAX_SUPPRESSED_IDS);
+    await writeConfig({ version: CONFIG_VERSION, events: next, suppressedIds });
     return true;
   });
 }

@@ -203,6 +203,7 @@ Concepts that live in one place and must be consumed from there ONLY:
 - **Feed win/start events** → emitted via `recordEntryMilestones` on generate, finalise, SAVE (a save can be the win moment — last stage-2 upload persisting), and nightly auto-finalise. Idempotent by deterministic event ids. Removed when the entry is deleted (admin approve + nightly quarantine).
 - **Derived stores** (per-user index, dashboard summary): refreshed on EVERY write path — engine mutations, upload-slot DELETE handler, nightly autoArchive, editGrantExpiry.
 - **Storage universe** → `lib/demo/universe.ts` + `lib/userStore.ts:getUniverseDataRoot()` / `lib/config/storagePaths.ts:universePrivateDataRoot()`. See Demo Mode below.
+- **Continuous sync (2026-07, three layers)** → derived stores never depend on a single refresh call. (1) WRITE-TIME: every mutation path refreshes index/summary/feed/analytics (guarded by the runner hook). (2) READ-TIME: `lib/data/storeRevision.ts` — the dataStore write choke point bumps a per-user revision; `ensureUserIndex` compares it against the index's stamped `storeRev` (O(1)) and rebuilds on drift, so any missed refresh heals on the next page load. (3) NIGHTLY: `lib/jobs/syncReconcile.ts` rebuilds every index and truth-syncs every entry's feed events (`syncEntryFeedEvents` — wall holds EXACTLY what each entry earned; master-moderation tombstones `suppressedIds` are never resurrected). New per-entry feed event kinds must be added to `perEntryEventIds` in feedStore.
 
 ### Demo Mode (2026-07) — parallel practice universe
 
@@ -358,7 +359,7 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 ## Current State
 
-- **595 tests, 0 failures** (2026-07: + record-flow suite, demo isolation, entryScope guards, award scoring/report/appraisal suites, wiring-completeness guards, feed-backfill suite, path-resolution guards, award deriver-coverage guard)
+- **599 tests, 0 failures** (2026-07: + record-flow suite, demo isolation, entryScope guards, award scoring/report/appraisal suites, wiring-completeness guards, feed-backfill suite, path-resolution guards, award deriver-coverage guard)
 - **Playbooks:** SQLite migration → `docs/SQLITE-MIGRATION.md` (planned, not started); deployment topology + scaling walls → `docs/DEPLOYMENT.md`. Read BEFORE touching storage or running multiple instances.
 - **Faculty Awards system (2026-07):** rulebook → `data/awardMetrics.ts` (T'SEDA 7-section scheme as data — NEVER hardcode point values elsewhere); admin overrides → `lib/awards/config.ts` (+ `/api/admin/awards/points`); scoring → `lib/awards/scoring.ts` (committed entries only, year-bucketed via `academicYear`, explicit per-metric derivers); dashboard panel `AwardProgress`. Visibility: self + admin, no leaderboard. Build order for everything else → `docs/AWARDS-ROADMAP.md`.
 - **Build: clean** (Turbopack warnings are cosmetic)

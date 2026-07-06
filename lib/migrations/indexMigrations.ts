@@ -24,6 +24,8 @@ function migrateUserIndexV0ToV1(raw: Record<string, unknown>, nowISO: string) {
     version: USER_INDEX_SCHEMA_VERSION,
     userEmail,
     updatedAt: toISO(raw.updatedAt, nowISO),
+    // -1 = unknown → the next ensureUserIndex read rebuilds and stamps it.
+    storeRev: -1,
     totalsByCategory: emptyCategoryMap(() => 0),
     countsByStatus: createEntryStatusRecord(() => 0),
     pendingByCategory: emptyCategoryMap(() => 0),

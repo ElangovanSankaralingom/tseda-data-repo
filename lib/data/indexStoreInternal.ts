@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { readStoreRevision } from "@/lib/data/storeRevision";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
 import { readCategoryEntries } from "@/lib/dataStore";
 import { AppError } from "@/lib/errors";
@@ -54,6 +55,9 @@ export type UserIndex = {
   version: number;
   userEmail: string;
   updatedAt: string;
+  /** Store revision this index was built from (continuous-sync drift check).
+   *  -1 = unknown (legacy index) → readers rebuild once and stamp it. */
+  storeRev: number;
   totalsByCategory: Record<CategoryKey, number>;
   countsByStatus: Record<EntryStatus, number>;
   pendingByCategory: Record<CategoryKey, number>;
@@ -141,6 +145,7 @@ export function createEmptyUserIndex(userEmail: string, nowISO = new Date().toIS
     version: USER_INDEX_VERSION,
     userEmail,
     updatedAt: nowISO,
+    storeRev: 0,
     totalsByCategory: emptyCategoryMap(() => 0),
     countsByStatus: emptyStatusMap(),
     pendingByCategory: emptyCategoryMap(() => 0),
@@ -290,6 +295,7 @@ export function hydrateIndex(
     version: USER_INDEX_VERSION,
     userEmail,
     updatedAt: toOptionalISO(migratedRaw.updatedAt) ?? nowISO,
+    storeRev: Number.isFinite(Number(migratedRaw.storeRev)) ? Number(migratedRaw.storeRev) : -1,
   };
 
   const totalsByCategory = isRecord(migratedRaw.totalsByCategory) ? migratedRaw.totalsByCategory : null;
@@ -408,7 +414,11 @@ export async function readIndexRaw(userEmail: string): Promise<unknown | null> {
 
 export async function buildUserIndex(userEmail: string): Promise<UserIndex> {
   const nowISO = new Date().toISOString();
+  // Pre-read: if an entry write lands while we build, the stamp is older
+  // than the store's revision and the NEXT read heals again — convergent.
+  const preRev = await readStoreRevision(userEmail);
   const index = createEmptyUserIndex(userEmail, nowISO);
+  index.storeRev = preRev;
   const streakInputs: StreakProgressAggregateEntry[] = [];
 
   const results = await Promise.all(

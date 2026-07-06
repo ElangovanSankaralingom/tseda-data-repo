@@ -14,6 +14,7 @@ import { normalizeEmail } from "@/lib/facultyDirectory";
 import type { Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
 import { getSearchSnapshotKey } from "@/lib/search/searchText";
+import { readStoreRevision } from "@/lib/data/storeRevision";
 import { type Entry } from "@/lib/types/entry";
 import { logger } from "@/lib/logger";
 import {
@@ -120,6 +121,25 @@ export async function ensureUserIndex(userEmail: string): Promise<Result<UserInd
           event: "index.ensure.rebuilt-invalid",
           userEmail: normalizedEmail,
           count: Object.values(rebuilt.totalsByCategory).reduce((sum, value) => sum + value, 0),
+        });
+        return rebuilt;
+      }
+
+      // CONTINUOUS SYNC (2026-07, Elan's ruling): the index records the
+      // store revision it was built from; every read compares it against
+      // the store's CURRENT revision (one tiny file read). Any write that
+      // slipped past the event-driven refresh — a forgotten call site, an
+      // out-of-band edit, a restored backup — heals right here, on read,
+      // instead of waiting for the next mutation.
+      const currentRev = await readStoreRevision(normalizedEmail);
+      if (hydrated.index.storeRev !== currentRev) {
+        const rebuilt = await buildUserIndex(normalizedEmail);
+        await writeIndexFile(normalizedEmail, rebuilt);
+        logger.warn({
+          event: "index.ensure.rebuilt-stale-rev",
+          userEmail: normalizedEmail,
+          indexRev: String(hydrated.index.storeRev),
+          storeRev: String(currentRev),
         });
         return rebuilt;
       }
@@ -253,6 +273,9 @@ export async function updateIndexForEntryMutation(
       }
 
       next.updatedAt = nowISO;
+      // Stamp the revision the store is at NOW (the entry write that
+      // triggered this refresh already bumped it) — continuous-sync check.
+      next.storeRev = await readStoreRevision(normalizedEmail);
       await writeIndexFile(normalizedEmail, next);
       logger.info({
         event: "index.entryMutation.applied",

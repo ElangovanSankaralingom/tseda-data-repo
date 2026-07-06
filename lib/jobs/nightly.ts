@@ -14,6 +14,7 @@ import { runEditGrantExpiry, type EditGrantExpiryResult } from "@/lib/jobs/editG
 import { runTimerWarnings, type TimerWarningResult } from "@/lib/jobs/timerWarning";
 import { findOrphanUploads, type OrphanScanResult } from "@/lib/jobs/orphanFileCleanup";
 import { runNightlyWalCompaction, type NightlyWalCompactionResult } from "@/lib/jobs/walCompaction";
+import { runSyncReconcile, type SyncReconcileResult } from "@/lib/jobs/syncReconcile";
 import { logger, withTimer } from "@/lib/logger";
 import { type Result } from "@/lib/result";
 import { safeAction } from "@/lib/safeAction";
@@ -54,6 +55,8 @@ export type NightlyMaintenanceSummary = {
   timerWarnings: JobStepResult<TimerWarningResult>;
   walCompaction: JobStepResult<NightlyWalCompactionResult>;
   orphanScan: JobStepResult<OrphanScanResult>;
+  /** Continuous-sync backstop: index rebuild + feed truth-sync per user. */
+  syncReconcile?: JobStepResult<SyncReconcileResult>;
 };
 
 function maintenanceDirPath() {
@@ -234,6 +237,12 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
     const timerWarningsResult = await withTimer("jobs.nightly.step.timerWarnings", () => runTimerWarnings());
     const walCompactionResult = await withTimer("jobs.nightly.step.walCompaction", () => runNightlyWalCompaction());
     const orphanScanResult = await withTimer("jobs.nightly.step.orphanScan", () => safeAction(() => findOrphanUploads(), { context: "jobs.nightly.orphan_scan" }));
+    // Continuous-sync backstop (Elan, 2026-07): rebuild every index from the
+    // live store and truth-sync every entry's feed events, AFTER the steps
+    // above have finished mutating entries for the night.
+    const syncReconcileResult = await withTimer("jobs.nightly.step.syncReconcile", () =>
+      safeAction(() => runSyncReconcile(), { context: "jobs.nightly.sync_reconcile" }),
+    );
     // S1: purge quarantine bundles past the 30-day retention window. Best-effort
     // — a purge failure must never fail the nightly run or block other steps.
     await withTimer("jobs.nightly.step.quarantinePurge", () =>
@@ -287,6 +296,9 @@ export async function runNightlyMaintenance(): Promise<Result<NightlyMaintenance
       orphanScan: orphanScanResult.ok
         ? stepSuccess(orphanScanResult.data)
         : stepFailure(orphanScanResult.error),
+      syncReconcile: syncReconcileResult.ok
+        ? stepSuccess(syncReconcileResult.data)
+        : stepFailure(syncReconcileResult.error),
     };
 
     await writeLastRun(summary);

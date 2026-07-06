@@ -17,6 +17,7 @@ import {
   migrateEntry,
 } from "@/lib/migrations";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { bumpStoreRevision } from "@/lib/data/storeRevision";
 import { withUserDataLock } from "@/lib/data/locks";
 import { logger } from "@/lib/logger";
 import { normalizeEntry } from "@/lib/normalize";
@@ -111,6 +112,10 @@ export class DataStore {
     const payload = JSON.stringify(store, null, 2);
     await atomicWriteTextFile(filePath, payload);
     if (meta) {
+      // THE write choke point: every entry write from every path bumps the
+      // user's store revision, so derived stores can detect drift in O(1)
+      // and self-heal on read (2026-07 continuous-sync strategy).
+      await bumpStoreRevision(meta.userEmail);
       logger.info({
         event: "datastore.category.write",
         userEmail: meta.userEmail,
