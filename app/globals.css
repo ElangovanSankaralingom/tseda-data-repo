@@ -439,6 +439,19 @@ select:focus {
   outline-color: var(--color-input-focus-ring);
 }
 
+/* ── WCAG 2.4.7 Focus Visible (2026-07 a11y audit) ──
+   Keyboard focus must be unmistakable on EVERY interactive element.
+   :focus-visible only — mouse clicks stay clean. Components may override
+   with their own focus-visible treatment; this is the guaranteed floor. */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-input-focus-ring);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
 ::placeholder {
   color: var(--color-text-muted);
 }

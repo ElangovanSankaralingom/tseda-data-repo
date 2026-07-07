@@ -52,7 +52,7 @@ function AccentSlider({
 function BetaBadge({ label }: { label: string }) {
   return (
     <span
-      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
       style={{
         background: "var(--color-status-warning-bg)",
         color: "var(--color-status-warning)",

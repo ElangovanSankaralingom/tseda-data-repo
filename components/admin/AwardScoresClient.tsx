@@ -212,7 +212,7 @@ function ScorePanel({
           <div className="text-xl font-black leading-none text-[var(--color-button-primary-text)]">
             {score.totalPoints}
           </div>
-          <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
+          <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
             {t("awardsAdmin.totalPoints")}
           </div>
         </div>

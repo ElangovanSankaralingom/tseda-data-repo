@@ -150,7 +150,7 @@ function PointsRow({
               {metric.label}
             </span>
             {metric.overridden ? (
-              <span className="shrink-0 rounded-md border border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--color-status-warning)]">
+              <span className="shrink-0 rounded-md border border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-bg)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-status-warning)]">
                 {t("awardsAdmin.overriddenBadge")}
               </span>
             ) : null}

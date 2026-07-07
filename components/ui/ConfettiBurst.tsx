@@ -37,6 +37,12 @@ export default function ConfettiBurst({ active }: { active: boolean }) {
 
   useEffect(() => {
     if (!active) return;
+    // WCAG 2.3.3: the burst uses an INLINE animation style, which the
+    // class-based prefers-reduced-motion kill list in globals.css cannot
+    // reach — honor the preference here and render nothing at all.
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
     const init = setTimeout(() => {
       setParticles(createParticles());
       setVisible(true);

@@ -228,7 +228,7 @@ export function Heatmap({ entries }: { entries: { date: string }[] }) {
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         <div className="flex shrink-0 flex-col gap-1 pr-1 pt-0">
           {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-            <div key={i} className="flex h-3 w-4 items-center text-[9px] text-[var(--color-text-secondary)]">
+            <div key={i} className="flex h-3 w-4 items-center text-[10px] text-[var(--color-text-secondary)]">
               {i % 2 === 0 ? d : ""}
             </div>
           ))}

@@ -57,7 +57,8 @@ export default function BetaProgramCard() {
           <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{t("beta.programTitle")}</h3>
           <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("beta.programDesc")}</p>
 
-          <div className="mt-3">
+          {/* role=status: membership changes are announced politely. */}
+          <div className="mt-3" role="status">
             {isMember ? (
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-status-success-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--color-status-success)]">

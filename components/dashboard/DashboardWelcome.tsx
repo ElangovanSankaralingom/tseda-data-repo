@@ -52,7 +52,7 @@ function HeroAwardPoints({ score }: { score: AwardScore | null }) {
         <div className="font-mono text-xl font-black leading-none tabular-nums text-[var(--color-text-on-accent)]">
           {score.totalPoints}
         </div>
-        <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
+        <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--color-text-on-accent-muted)]">
           {t("dashboard.awardPoints")} · {score.academicYear.replace("Academic Year ", "")}
         </div>
       </div>

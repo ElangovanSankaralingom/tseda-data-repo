@@ -127,21 +127,21 @@ export default function DashboardAnalytics(props: DashboardAnalyticsProps) {
           <div className="rounded-xl bg-[var(--color-palette-yellow-bg)] p-3 text-center">
             <Trophy className="mx-auto size-4 text-[var(--color-palette-yellow-fg)]" />
             <div className="mt-1 text-xl font-black tabular-nums text-[var(--color-palette-yellow-fg)]">{goldWins}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
               {t("streak.goldBadge")}
             </div>
           </div>
           <div className="rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-inset)] p-3 text-center">
             <Medal className="mx-auto size-4 text-[var(--color-text-secondary)]" />
             <div className="mt-1 text-xl font-black tabular-nums text-[var(--color-text-primary)]">{silverWins}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
               {t("streak.silverBadge")}
             </div>
           </div>
           <div className="rounded-xl bg-[var(--color-surface-panel-raised)] p-3 text-center">
             <Flame className="mx-auto size-4 text-[var(--color-status-warning)]" />
             <div className="mt-1 text-xl font-black tabular-nums text-[var(--color-text-primary)]">{streakActivated}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
               {t("dashboardAnalytics.running")}
             </div>
           </div>

@@ -114,7 +114,7 @@ export default function EntryShell({
 
           {/* HUD corner coordinates */}
           <div
-            className="absolute top-3 right-4 font-mono text-[9px] tracking-wider select-none pointer-events-none"
+            className="absolute top-3 right-4 font-mono text-[10px] tracking-wider select-none pointer-events-none"
             style={{ color: "var(--color-text-on-accent-muted)" }}
           >
             [{category.toUpperCase().replace(/-/g, ".")}]

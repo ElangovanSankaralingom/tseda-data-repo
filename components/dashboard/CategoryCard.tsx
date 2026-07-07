@@ -147,7 +147,7 @@ function CategoryCard({
             </div>
             <div className="flex-1" />
             {/* ── Keyboard shortcut badge ── */}
-            <span className="flex size-5 items-center justify-center rounded font-mono text-[9px] font-bold border transition-colors duration-200" style={{ color: "var(--color-text-tertiary)", borderColor: "var(--color-border-subtle)", backgroundColor: "var(--color-surface-raised)" }} onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-secondary)"; e.currentTarget.style.borderColor = "var(--color-border-default)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-tertiary)"; e.currentTarget.style.borderColor = "var(--color-border-subtle)"; }}>
+            <span className="flex size-5 items-center justify-center rounded font-mono text-[10px] font-bold border transition-colors duration-200" style={{ color: "var(--color-text-tertiary)", borderColor: "var(--color-border-subtle)", backgroundColor: "var(--color-surface-raised)" }} onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-secondary)"; e.currentTarget.style.borderColor = "var(--color-border-default)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-tertiary)"; e.currentTarget.style.borderColor = "var(--color-border-subtle)"; }}>
               {index + 1}
             </span>
           </div>
@@ -185,7 +185,7 @@ function CategoryCard({
                     <span
                       key={pill.label}
                       className={cn(
-                        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[9px] font-bold border border-[var(--color-surface-raised)]",
+                        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[10px] font-bold border border-[var(--color-surface-raised)]",
                         pill.className
                       )}
                     >

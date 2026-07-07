@@ -96,14 +96,17 @@ const ReactionBar = React.memo(function ReactionBar({
         const Icon = REACTION_ICON[reaction];
         const count = event.reactions[reaction] ?? 0;
         const mine = event.myReactions.includes(reaction);
+        const label = t(`feed.react.${reaction}` as TranslationKey);
         return (
           <button
             key={reaction}
             type="button"
             onClick={() => onToggle(event.id, reaction)}
             aria-pressed={mine}
-            aria-label={t(`feed.react.${reaction}` as TranslationKey)}
-            className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold transition-all duration-150 active:scale-95 ${
+            // aria-label overrides inner text — include the live count so
+            // screen readers hear "Celebrate, 3" not just "Celebrate".
+            aria-label={count > 0 ? `${label} (${count})` : label}
+            className={`inline-flex min-h-[32px] min-w-[44px] items-center justify-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-150 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-input-focus-ring)] ${
               mine
                 ? "border-[var(--color-primary)]/40 text-[var(--color-primary)]"
                 : "border-[var(--color-border-default)] bg-[var(--color-surface-inset)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
@@ -179,7 +182,7 @@ const MilestoneCard = React.memo(function MilestoneCard({
           type="button"
           onClick={() => onRemove(event.id)}
           aria-label={t("feed.remove")}
-          className="absolute right-2 top-2 z-10 rounded-full p-1 text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-status-error-bg)] hover:text-[var(--color-status-error)]"
+          className="absolute right-1 top-1 z-10 flex size-8 items-center justify-center rounded-full text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-status-error-bg)] hover:text-[var(--color-status-error)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-input-focus-ring)]"
         >
           <X className="size-3.5" />
         </button>

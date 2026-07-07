@@ -120,7 +120,7 @@ export default function FacultyClient({ initialConfig }: { initialConfig: Config
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                   {f.departments.length === 0 && <span className="text-[11px] text-[var(--color-text-tertiary)]">{t("faculty.unassigned")}</span>}
                   {f.departments.map((id) => (
-                    <span key={id} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] text-[var(--color-text-secondary)]" style={inset}>
+                    <span key={id} className="inline-flex items-center gap-1 rounded-md min-h-[28px] px-2.5 py-1 text-[11px] text-[var(--color-text-secondary)]" style={inset}>
                       {deptLabelById(id)}
                       <button type="button" disabled={busy} onClick={() => post({ action: "setDepartments", email: f.email, departmentIds: f.departments.filter((x) => x !== id) })} aria-label={t("common.remove")} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-status-error)]"><X className="size-3" /></button>
                     </span>
@@ -137,17 +137,17 @@ export default function FacultyClient({ initialConfig }: { initialConfig: Config
                   <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">{t("beta.programTitle")}</span>
                   {f.betaStatus === "requested" ? (
                     <>
-                      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ background: "var(--color-status-warning-bg)", color: "var(--color-status-warning)" }}>{t("beta.requestedBadge")}</span>
-                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "member" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ background: "var(--color-status-success-bg)", color: "var(--color-status-success)" }}>{t("beta.approve")}</button>
-                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "none" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.reject")}</button>
+                      <span className="inline-flex items-center rounded-md min-h-[28px] px-2.5 py-1 text-[11px] font-semibold" style={{ background: "var(--color-status-warning-bg)", color: "var(--color-status-warning)" }}>{t("beta.requestedBadge")}</span>
+                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "member" })} className="rounded-md min-h-[28px] px-2.5 py-1 text-[11px] font-semibold" style={{ background: "var(--color-status-success-bg)", color: "var(--color-status-success)" }}>{t("beta.approve")}</button>
+                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "none" })} className="rounded-md min-h-[28px] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.reject")}</button>
                     </>
                   ) : f.betaStatus === "member" ? (
                     <>
-                      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ background: "var(--color-palette-violet-bg)", color: "var(--color-palette-violet-fg)" }}>{t("beta.memberBadge")}</span>
-                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "none" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.remove")}</button>
+                      <span className="inline-flex items-center rounded-md min-h-[28px] px-2.5 py-1 text-[11px] font-semibold" style={{ background: "var(--color-palette-violet-bg)", color: "var(--color-palette-violet-fg)" }}>{t("beta.memberBadge")}</span>
+                      <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "none" })} className="rounded-md min-h-[28px] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.remove")}</button>
                     </>
                   ) : (
-                    <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "member" })} className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.addMember")}</button>
+                    <button type="button" disabled={busy} onClick={() => post({ action: "setBeta", email: f.email, betaStatus: "member" })} className="rounded-md min-h-[28px] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text-secondary)]" style={inset}>{t("beta.addMember")}</button>
                   )}
                 </div>
               </div>
