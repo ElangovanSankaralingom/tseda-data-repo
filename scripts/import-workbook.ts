@@ -5,6 +5,7 @@
  *   npm run import:workbook -- <workbook.xlsx>                # dry run (default)
  *   npm run import:workbook -- <workbook.xlsx> --apply        # create drafts
  *   npm run import:workbook -- <workbook.xlsx> --sheet "R&D – Journals"
+ *   npm run import:workbook -- <workbook.xlsx> --dlc-owner you@tce.edu  # owner for student sheets
  *   npm run import:workbook -- <workbook.xlsx> --out ./import-report
  *
  * DRY RUN writes <out>.md + <out>.json and touches NOTHING else. --apply
@@ -42,11 +43,19 @@ async function main() {
     .filter((f) => f.status === "active")
     .map((f) => ({ email: f.email, name: f.name }));
   const ledger = await readJson<ImportLedger>(LEDGER_FILE, {}, PRIVATE_DIR);
+  const dlcOwnerEmail = args.includes("--dlc-owner") ? args[args.indexOf("--dlc-owner") + 1] : undefined;
+  const dlcOwner = dlcOwnerEmail
+    ? registry.find((f) => f.email.toLowerCase() === dlcOwnerEmail.toLowerCase())
+    : undefined;
+  if (dlcOwnerEmail && !dlcOwner) {
+    console.error(`--dlc-owner ${dlcOwnerEmail} is not an active faculty in the registry`);
+    process.exit(1);
+  }
 
-  const plan = planImport(workbook, { registry, ledger }, { sheetFilter });
+  const plan = planImport(workbook, { registry, ledger, dlcOwner }, { sheetFilter });
   let applyResult;
   if (apply) {
-    applyResult = await applyImport(plan, { registry, ledger, createEntry });
+    applyResult = await applyImport(plan, { registry, ledger, dlcOwner, createEntry });
     await writeJson(LEDGER_FILE, applyResult.ledger, PRIVATE_DIR);
   }
 

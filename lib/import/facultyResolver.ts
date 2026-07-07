@@ -139,7 +139,7 @@ export function resolveName(raw: string, registry: readonly RegistryFaculty[]): 
  */
 export function resolveNameList(rawCell: string, registry: readonly RegistryFaculty[]): { raw: string; resolution: NameResolution }[] {
   return rawCell
-    .split(/[;,/\n]|\s+&\s+|\s+and\s+/i)
+    .split(/[;,/\n&]|\s+and\s+/i)
     .map((part) => part.trim())
     .filter((part) => part.length > 1)
     .map((part) => ({ raw: part, resolution: resolveName(part, registry) }));

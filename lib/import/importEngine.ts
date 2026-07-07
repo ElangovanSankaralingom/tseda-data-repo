@@ -1,6 +1,7 @@
 import "server-only";
 import crypto from "node:crypto";
 import { ENTRY_SCHEMAS } from "@/data/schemas";
+import { getCategoryEntryScope } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
 import type { SchemaFieldDefinition } from "@/data/schemas/types";
 import type { Workbook, CellValue } from "@/lib/import/xlsxReader";
@@ -73,6 +74,10 @@ export type ImportLedger = Record<string, { entryId: string; category: CategoryK
 export type ImportDeps = {
   registry: readonly RegistryFaculty[];
   ledger: ImportLedger;
+  /** Owner for rows in dlc-scoped categories (student sheets) that carry no
+   *  faculty name — typically the DLC coordinator running the import.
+   *  NEVER applied to faculty-scoped categories. */
+  dlcOwner?: { email: string; name: string };
 };
 
 const OWNERISH_FIELD_KEYS = new Set(["teacherName", "facultyName", "recipient", "coordinator"]);
@@ -132,10 +137,27 @@ function normalizeCell(
       return null;
     }
     if (n.inferred) issues.push({ severity: "info", message: `${field.label}: ${n.inferred}` });
+    // Unit repair: the workbook's salary columns are rupees ("3,00,000");
+    // packageLpa wants lakhs per annum. Anything ≥ 1000 is clearly rupees.
+    if (field.key === "packageLpa" && n.value >= 1000) {
+      const lpa = Math.round((n.value / 1e5) * 100) / 100;
+      issues.push({ severity: "info", message: `${field.label}: ₹${n.value.toLocaleString("en-IN")} read as ${lpa} LPA` });
+      return lpa;
+    }
     return n.value;
   }
   if (field.kind === "boolean") {
     return normalizeBoolean(raw)?.value ?? null;
+  }
+  // A raw NUMBER in the Excel date-serial range landing in a string field is
+  // almost always a cell Excel silently date-converted ("7/2025" → 45848).
+  // Keep what the sheet says, but flag it for the faculty pass.
+  if (typeof raw === "number" && raw >= 36526 && raw <= 73415) {
+    const d = normalizeDate(raw);
+    issues.push({
+      severity: "info",
+      message: `${field.label}: cell holds ${raw} — likely an Excel-converted date (${d?.value ?? "?"}); verify the original text`,
+    });
   }
   const text = cleanText(raw);
   if (field.maxLength && text.length > field.maxLength) {
@@ -153,7 +175,6 @@ function planRow(
   columns: Map<number, string>,
   row: CellValue[],
   deps: ImportDeps,
-  missingForCommitFromMapping: string[],
   batchHashes: Set<string>,
   unresolved: ImportPlan["summary"]["unresolvedNames"],
 ): RowPlan {
@@ -170,6 +191,20 @@ function planRow(
       sheetName, rowNumber, category, outcome: "empty",
       payload: {}, issues: [], missingForCommit: [], dedupHash: "",
     };
+  }
+  // Repeated-header echo: departmental sheets restate their header row at
+  // section breaks (per semester). If most populated cells reproduce the
+  // header cells verbatim, this is furniture, not data.
+  {
+    const nonEmpty = row.filter((c) => c !== null && c !== "" && c !== undefined);
+    const headerSet = new Set(headers.filter((h): h is string => !!h).map((h) => cleanText(h).toLowerCase()));
+    const echo = nonEmpty.filter((c) => headerSet.has(cleanText(c).toLowerCase())).length;
+    if (nonEmpty.length >= 2 && echo / nonEmpty.length >= 0.6) {
+      return {
+        sheetName, rowNumber, category, outcome: "empty",
+        payload: {}, issues: [], missingForCommit: [], dedupHash: "",
+      };
+    }
   }
 
   for (const [col, key] of columns) {
@@ -244,6 +279,10 @@ function planRow(
       }
     }
   }
+  if (!owner && deps.dlcOwner && getCategoryEntryScope(category) === "dlc") {
+    owner = deps.dlcOwner;
+    issues.push({ severity: "info", message: `Owner defaulted to DLC coordinator ${deps.dlcOwner.name} (dlc-scoped category)` });
+  }
   if (!owner) {
     issues.push({ severity: "attention", message: "No owner could be resolved for this row" });
   }
@@ -290,8 +329,10 @@ function planRow(
     errors = schema.validate(payload, "create");
   }
 
+  // Payload truth only: the sheet-level mapping gaps stay in the sheet
+  // section; spine inference may have filled fields no column carried.
   const required = schema.requiredForCommit ?? [];
-  const missingForCommit = [...new Set([...missingForCommitFromMapping, ...required.filter((k) => !(k in payload) && k !== "id")])];
+  const missingForCommit = required.filter((k) => !(k in payload) && k !== "id");
 
   // Content hash over category + owner + stage-1 scalars (stable order).
   const hashable = Object.entries(payload)
@@ -327,7 +368,7 @@ export function planImport(workbook: Workbook, deps: ImportDeps, opts?: { sheetF
         const rowPlan = planRow(
           classification.category, sheet.name, r + 1, headers,
           classification.mapping.columns, sheet.rows[r], deps,
-          classification.mapping.missingForCommit, batchHashes, unresolvedNames,
+          batchHashes, unresolvedNames,
         );
         if (rowPlan.outcome !== "empty") plan.rows.push(rowPlan);
       }
