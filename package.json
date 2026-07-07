@@ -20,7 +20,8 @@
     "data:clear": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts --wipe-only",
     "migrate:sqlite": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/migrate-json-to-sqlite.ts",
     "migrate:sqlite:reverse": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/export-sqlite-to-json.ts",
-    "test:sqlite": "DATA_LAYER=sqlite npm test"
+    "test:sqlite": "DATA_LAYER=sqlite npm test",
+    "import:workbook": "NODE_ENV=production node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/import-workbook.ts"
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",

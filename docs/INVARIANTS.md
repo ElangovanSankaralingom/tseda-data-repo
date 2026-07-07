@@ -133,6 +133,14 @@ the staging dir (`backupService.ts:352`). *Verify:*
 
 ## 6 · Deliberate decisions (do not "fix" without a ruling)
 
+- Workbook imports land as prefilled DRAFTS, never committed entries
+  (ruled 2026-07-07): faculty review and submit their own copies, so
+  streaks stay earned and the feed stays silent by construction. The
+  importer (lib/import/) writes ONLY via engine createEntry (I-W1),
+  omits unparseable values rather than fabricating them, and keeps an
+  idempotency ledger (.data/import-ledger.json) so re-runs never
+  duplicate. Attention rows (unresolved owner, ambiguous sheet) are
+  never auto-imported.
 - Gold vs silver is a TIER, never a number (ruled 2026-07-07): no code
   path may weight gold wins above silver numerically — streak counts,
   award influence, and every leaderboard-ish surface count each win as 1.
@@ -153,6 +161,10 @@ the staging dir (`backupService.ts:352`). *Verify:*
 ## 7 · Recipes
 
 - Fresh test data: `npm run seed:fresh` · wipe only: `npm run data:clear`.
+- Workbook import: `npm run import:workbook -- <file.xlsx>` (dry-run →
+  report .md/.json) then `--apply` for READY rows. `--sheet <name>`
+  scopes one sheet. Header dialects live in lib/import/sheetMatcher.ts
+  HEADER_SYNONYMS — extend there when the report shows unmapped columns.
 - Backend parity: `npm run test:sqlite`.
 - Migration (his machine, app stopped): backup → `npm run migrate:sqlite`
   → `DATA_LAYER=sqlite` → smoke per playbook → rollback = flip env
