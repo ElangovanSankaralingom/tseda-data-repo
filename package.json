@@ -17,9 +17,14 @@
     "backup:data": "node --experimental-strip-types scripts/backup-data.ts",
     "prepare": "husky",
     "seed:fresh": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts",
-    "data:clear": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts --wipe-only"
+    "data:clear": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/seedFreshData.ts --wipe-only",
+    "migrate:sqlite": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/migrate-json-to-sqlite.ts",
+    "migrate:sqlite:reverse": "NODE_ENV=test node --experimental-strip-types --experimental-loader ./tests/helpers/pathAliasLoader.mjs scripts/export-sqlite-to-json.ts",
+    "test:sqlite": "DATA_LAYER=sqlite npm test"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "docx": "^9.7.1",

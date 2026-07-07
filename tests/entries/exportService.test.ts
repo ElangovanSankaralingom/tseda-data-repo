@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DataStore } from "../../lib/dataStore.ts";
+import { writeCategoryEntries } from "../../lib/dataStore.ts";
 import {
   buildExportRows,
   getExportCategoryOptions,
@@ -17,9 +17,13 @@ import { createTestDataRoot } from "../helpers/testDataRoot.ts";
 
 const email = "faculty.export@tce.edu";
 
-async function withSandbox<T>(label: string, run: (store: DataStore) => Promise<T>): Promise<T> {
+type SeedStore = { writeCategory: typeof writeCategoryEntries };
+
+async function withSandbox<T>(label: string, run: (store: SeedStore) => Promise<T>): Promise<T> {
   const sandbox = await createTestDataRoot(label);
-  const store = new DataStore();
+  // Seed through the backend-agnostic façade — the export suite must prove
+  // parity on BOTH backends (json + sqlite), not hand-write JSON files.
+  const store: SeedStore = { writeCategory: writeCategoryEntries };
   try {
     return await run(store);
   } finally {

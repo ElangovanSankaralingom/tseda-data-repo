@@ -23,6 +23,7 @@ import { logger } from "@/lib/logger";
 import { normalizeEntry } from "@/lib/normalize";
 import type { Entry } from "@/lib/types/entry";
 import { getUserCategoryStoreFile } from "@/lib/userStore";
+import { createDataLayer } from "@/lib/data/createDataLayer";
 
 export type EntryEngineRecord = Entry;
 
@@ -359,11 +360,19 @@ export class DataStore {
   }
 }
 
+/**
+ * FAÇADE (2026-07 sqlite migration): these module-level functions are the
+ * single public door to entry storage — 13+ modules import them directly.
+ * They now delegate to the ACTIVE DataLayer (DATA_LAYER env: json | sqlite),
+ * so switching backends moves ALL traffic, not just the engine's.
+ * The DataStore class below remains the JSON primitive, used only by
+ * JsonDataLayer and file-level tooling.
+ */
 export async function readCategoryEntries(
   email: string,
   category: CategoryKey
 ): Promise<EntryEngineRecord[]> {
-  return new DataStore().readCategory(email, category);
+  return createDataLayer().listEntries(email, category);
 }
 
 export async function writeCategoryEntries(
@@ -371,7 +380,7 @@ export async function writeCategoryEntries(
   category: CategoryKey,
   entries: EntryEngineRecord[]
 ) {
-  return new DataStore().writeCategory(email, category, entries);
+  await createDataLayer().replaceEntries(email, category, entries);
 }
 
 export async function readCategoryEntryById(
@@ -379,7 +388,7 @@ export async function readCategoryEntryById(
   category: CategoryKey,
   entryId: string
 ): Promise<EntryEngineRecord | null> {
-  return new DataStore().readEntryById(email, category, entryId);
+  return createDataLayer().getEntry(email, category, entryId);
 }
 
 export async function upsertCategoryEntry(
@@ -388,7 +397,7 @@ export async function upsertCategoryEntry(
   entry: EntryEngineRecord,
   options?: { insertPosition?: "start" | "end" }
 ): Promise<EntryEngineRecord> {
-  return new DataStore().upsertCategoryEntry(email, category, entry, options);
+  return createDataLayer().saveEntry(email, category, entry, options);
 }
 
 export async function deleteCategoryEntry(
@@ -396,5 +405,5 @@ export async function deleteCategoryEntry(
   category: CategoryKey,
   entryId: string
 ): Promise<EntryEngineRecord | null> {
-  return new DataStore().deleteCategoryEntry(email, category, entryId);
+  return createDataLayer().deleteEntry(email, category, entryId);
 }

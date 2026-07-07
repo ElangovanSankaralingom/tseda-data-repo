@@ -10,13 +10,11 @@ import "server-only";
  */
 
 import fs from "node:fs/promises";
-import {
-  readCategoryEntries,
-  writeCategoryEntries,
-  readCategoryEntryById,
-  upsertCategoryEntry,
-  deleteCategoryEntry,
-} from "@/lib/dataStore";
+// The DataStore CLASS is the JSON primitive. This adapter must never call
+// the dataStore FAÇADE functions — those delegate to createDataLayer()
+// (backend-agnostic since the 2026-07 sqlite migration), which would
+// recurse straight back here.
+import { DataStore } from "@/lib/dataStore";
 import { withLock } from "@/lib/data/locks";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getUsersRootDir } from "@/lib/userStore";
@@ -32,11 +30,11 @@ import type { DataLayer, DataLayerEntry, UpsertOptions } from "@/lib/data/dataLa
 
 export class JsonDataLayer implements DataLayer {
   async listEntries(email: string, category: CategoryKey): Promise<DataLayerEntry[]> {
-    return readCategoryEntries(email, category);
+    return new DataStore().readCategory(email, category);
   }
 
   async getEntry(email: string, category: CategoryKey, id: string): Promise<DataLayerEntry | null> {
-    return readCategoryEntryById(email, category, id);
+    return new DataStore().readEntryById(email, category, id);
   }
 
   async saveEntry(
@@ -45,15 +43,15 @@ export class JsonDataLayer implements DataLayer {
     entry: DataLayerEntry,
     options?: UpsertOptions,
   ): Promise<DataLayerEntry> {
-    return upsertCategoryEntry(email, category, entry, options);
+    return new DataStore().upsertCategoryEntry(email, category, entry, options);
   }
 
   async replaceEntries(email: string, category: CategoryKey, entries: DataLayerEntry[]): Promise<void> {
-    await writeCategoryEntries(email, category, entries);
+    await new DataStore().writeCategory(email, category, entries);
   }
 
   async deleteEntry(email: string, category: CategoryKey, id: string): Promise<DataLayerEntry | null> {
-    return deleteCategoryEntry(email, category, id);
+    return new DataStore().deleteCategoryEntry(email, category, id);
   }
 
   async listUsers(): Promise<string[]> {

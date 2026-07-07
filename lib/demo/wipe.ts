@@ -4,6 +4,7 @@ import path from "node:path";
 import { getDataRoot, safeEmailDir } from "@/lib/userStore";
 import { privateDataRoot } from "@/lib/config/storagePaths";
 import { DEMO_SEGMENT } from "@/lib/demo/universe";
+import { closeSqliteConnectionsUnder, deleteUserFromDbFile } from "@/lib/data/sqliteDataLayer";
 import { logger } from "@/lib/logger";
 
 /**
@@ -53,11 +54,17 @@ export async function wipeOwnDemoData(email: string): Promise<void> {
   const dir = safeEmailDir(email);
   await removeDemoDir(path.join(demoDataRoot(), "users", dir));
   await removeDemoDir(path.join(demoPrivateRoot(), "entry-uploads", dir));
+  // SQLite backend (2026-07): the demo universe's entries live in the demo
+  // db, not the users tree — delete this user's rows there too. Path is
+  // inside the demo private root by construction; no-op when absent.
+  deleteUserFromDbFile(path.join(demoPrivateRoot(), "tseda.db"), email);
   logger.info({ event: "demo.wipe.user", email });
 }
 
 /** Wipe the ENTIRE demo universe under both storage roots. */
 export async function wipeDemoUniverse(): Promise<void> {
+  // Close any open demo-db handle BEFORE removing the tree (sqlite, 2026-07).
+  closeSqliteConnectionsUnder(demoPrivateRoot());
   await removeDemoDir(demoDataRoot());
   await removeDemoDir(demoPrivateRoot());
   logger.info({ event: "demo.wipe.universe" });

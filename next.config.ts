@@ -31,6 +31,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Native module — must not be bundled by Turbopack (SQLITE-MIGRATION.md).
+  serverExternalPackages: ["better-sqlite3"],
   output: "standalone",
   outputFileTracingRoot: path.resolve("."),
   images: {

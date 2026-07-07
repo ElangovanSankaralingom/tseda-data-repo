@@ -9,7 +9,9 @@ import type {
   SchemaFieldKind,
 } from "@/data/schemas/types";
 import { isCategoryKey } from "@/lib/categories";
-import { DataStore } from "@/lib/dataStore";
+// Backend-agnostic façade (2026-07 sqlite migration): exports must read
+// through the ACTIVE DataLayer, never the JSON primitive directly.
+import { readCategoryEntries } from "@/lib/dataStore";
 import { AppError, normalizeError } from "@/lib/errors";
 import { normalizeEntryStatus } from "@/lib/entries/workflow";
 import type { CategoryKey } from "@/lib/entries/types";
@@ -332,12 +334,11 @@ async function collectFilteredEntries(
 
   const rows = new Array<CollectedExportEntry>();
   const countsByStatus = createEmptyStatusCounts();
-  const store = new DataStore();
 
   for (const categoryKey of categoryKeys) {
     const categoryConfig = getCategoryConfig(categoryKey);
     const schema = getCategorySchema(categoryKey);
-    const list = await store.readCategory(normalizedEmail, categoryKey);
+    const list = await readCategoryEntries(normalizedEmail, categoryKey);
 
     for (const rawEntry of list) {
       const entry = normalizeEntry(rawEntry, schema) as Record<string, unknown>;

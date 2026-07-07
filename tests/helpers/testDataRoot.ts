@@ -38,6 +38,15 @@ export async function createTestDataRoot(label: string): Promise<TestDataRootCon
       }
     },
     async cleanup() {
+      // SQLite backend: close any connection whose db lives inside this
+      // sandbox BEFORE removing the tree — an open tseda.db/-wal handle
+      // makes the recursive rm fail with ENOTEMPTY (2026-07 migration).
+      try {
+        const { resetSqliteConnections } = await import("../../lib/data/sqliteDataLayer.ts");
+        resetSqliteConnections();
+      } catch {
+        // json-only environments have nothing to close
+      }
       await fs.rm(root, { recursive: true, force: true });
     },
   };

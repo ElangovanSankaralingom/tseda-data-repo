@@ -13,6 +13,11 @@ import "server-only";
 
 import type { DataLayer } from "@/lib/data/dataLayer";
 import { JsonDataLayer } from "@/lib/data/jsonDataLayer";
+// Static import (2026-07): the old lazy require() crashed under the ESM
+// test runner (no require in module scope), and better-sqlite3 is a pinned
+// dependency now — loading it is milliseconds. serverExternalPackages in
+// next.config.ts keeps the native module out of the bundle.
+import { SqliteDataLayer } from "@/lib/data/sqliteDataLayer";
 
 let instance: DataLayer | null = null;
 
@@ -23,17 +28,7 @@ let instance: DataLayer | null = null;
  */
 export function createDataLayer(): DataLayer {
   if (instance) return instance;
-
   const backend = process.env.DATA_LAYER || "json";
-
-  if (backend === "sqlite") {
-    // Lazy import to avoid loading better-sqlite3 when not needed
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { SqliteDataLayer } = require("@/lib/data/sqliteDataLayer") as typeof import("@/lib/data/sqliteDataLayer");
-    instance = new SqliteDataLayer();
-  } else {
-    instance = new JsonDataLayer();
-  }
-
+  instance = backend === "sqlite" ? new SqliteDataLayer() : new JsonDataLayer();
   return instance;
 }
