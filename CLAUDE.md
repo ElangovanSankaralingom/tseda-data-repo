@@ -359,8 +359,8 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 ## Current State
 
-- **606 tests, 0 failures** (2026-07: + record-flow suite, demo isolation, entryScope guards, award scoring/report/appraisal suites, wiring-completeness guards, feed-backfill suite, path-resolution guards, award deriver-coverage guard)
-- **Playbooks:** SQLite migration → `docs/SQLITE-MIGRATION.md` (planned, not started); deployment topology + scaling walls → `docs/DEPLOYMENT.md`. Read BEFORE touching storage or running multiple instances.
+- **637 tests, 0 failures — on BOTH storage backends** (`npm test` json · `npm run test:sqlite`) (2026-07: + record-flow suite, demo isolation, entryScope guards, award scoring/report/appraisal suites, wiring-completeness guards, feed-backfill suite, path-resolution guards, award deriver-coverage guard)
+- **Playbooks:** SQLite migration → `docs/SQLITE-MIGRATION.md` (**phases 0–4 EXECUTED 2026-07**: backend implemented, full-suite parity proven, migration + reverse tooling shipped — cutover/phase 5 is Elan's call; JSON stays default). Invariants + handoff codex → `docs/INVARIANTS.md` (read FIRST). Deployment → `docs/DEPLOYMENT.md`; deployment topology + scaling walls → `docs/DEPLOYMENT.md`. Read BEFORE touching storage or running multiple instances.
 - **Faculty Awards system (2026-07):** rulebook → `data/awardMetrics.ts` (T'SEDA 7-section scheme as data — NEVER hardcode point values elsewhere); admin overrides → `lib/awards/config.ts` (+ `/api/admin/awards/points`); scoring → `lib/awards/scoring.ts` (committed entries only, year-bucketed via `academicYear`, explicit per-metric derivers); dashboard panel `AwardProgress`. Visibility: self + admin, no leaderboard. Build order for everything else → `docs/AWARDS-ROADMAP.md`.
 - **Build: clean** (2026-07: production build verified on Elan's machine — 132 routes; the Turbopack NFT 'overly broad pattern' warnings are silenced with `/*turbopackIgnore: true*/` annotations at the dynamic data-root path joins; new dynamic `path.join(process.cwd(), getDataRoot(), …)` call sites should carry the same annotation)
 - **Docker + CI/CD ready** (GitHub Actions)
