@@ -105,6 +105,12 @@ export type CanonicalStreakSnapshot = {
  */
 export type StreakTier = "gold" | "silver";
 
+/**
+ * RULING (2026-07-07, Elan): the tier is a visual/status distinction ONLY.
+ * No numeric weight anywhere — streak counts, award influence, and any
+ * leaderboard-ish surface count every win as 1 regardless of tier. Do not
+ * add a gold multiplier without a new explicit ruling (docs/INVARIANTS.md §6).
+ */
 export function getStreakTier(entry: StreakProgressEntryLike): StreakTier {
   return isRecordFlowEntry(entry) ? "silver" : "gold";
 }

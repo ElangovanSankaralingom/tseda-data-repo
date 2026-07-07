@@ -133,6 +133,10 @@ the staging dir (`backupService.ts:352`). *Verify:*
 
 ## 6 · Deliberate decisions (do not "fix" without a ruling)
 
+- Gold vs silver is a TIER, never a number (ruled 2026-07-07): no code
+  path may weight gold wins above silver numerically — streak counts,
+  award influence, and every leaderboard-ish surface count each win as 1.
+  The tier's only outputs are visual badges and the feed event's `tier`.
 - Record-flow corrections are re-requestable forever (records must stay
   correctable); permission flow keeps one-request-ever + permanent locks.
 - A record entry under a pending correction shows a "logged" card, not its
