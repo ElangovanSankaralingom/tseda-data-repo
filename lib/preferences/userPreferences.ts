@@ -1,4 +1,5 @@
 import "server-only";
+import { atomicWriteTextFileSync } from "@/lib/data/fileAtomic";
 
 import fs from "node:fs";
 import path from "node:path";
@@ -52,6 +53,6 @@ export function setUserPreferences(
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const current = getUserPreferences(email);
   const updated = { ...current, ...prefs };
-  fs.writeFileSync(filePath, JSON.stringify(updated, null, 2));
+  atomicWriteTextFileSync(filePath, JSON.stringify(updated, null, 2));
   return updated;
 }

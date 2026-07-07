@@ -3,6 +3,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { withLock } from "@/lib/data/locks";
 import { getDataRoot } from "@/lib/userStore";
 import {
   AWARD_METRICS,
@@ -62,6 +63,9 @@ export async function setAwardPointsOverride(
   if (!getAwardMetric(metricId)) {
     throw new Error(`Unknown award metric: ${metricId}`);
   }
+  // Locked RMW (2026-07 concurrency audit): concurrent committee edits on
+  // different metrics must never lose each other's overrides.
+  return withLock("awards.points-config", async () => {
   const config = await getAwardPointsConfig();
   if (update === null) {
     delete config.overrides[metricId];
@@ -91,6 +95,7 @@ export async function setAwardPointsOverride(
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await atomicWriteTextFile(filePath, JSON.stringify(config, null, 2));
   return config;
+  });
 }
 
 /** Registry defaults + admin overrides → the points model scoring must use. */

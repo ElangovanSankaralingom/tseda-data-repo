@@ -3,6 +3,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { withLock } from "@/lib/data/locks";
 import { logger } from "@/lib/logger";
 import { getDataRoot } from "@/lib/userStore";
 import {
@@ -134,6 +135,9 @@ export async function setSetting(key: string, value: unknown, changedBy: string)
   const validation = validateSetting(key, value);
   if (!validation.valid) throw new Error(`Invalid value for ${key}: ${validation.error}`);
 
+  // Locked RMW (2026-07 concurrency audit): two concurrent saves must never
+  // lose each other's keys. Re-entrant, so setSettings' batch lock nests.
+  await withLock("settings.store", async () => {
   const config = await readConfig();
   const oldValue = config.settings[key]?.value ?? def.default;
   const nowISO = new Date().toISOString();
@@ -155,18 +159,22 @@ export async function setSetting(key: string, value: unknown, changedBy: string)
     oldValue: JSON.stringify(oldValue),
     newValue: JSON.stringify(value),
   });
+  });
 }
 
 export async function setSettings(
   settings: Record<string, unknown>,
   changedBy: string
 ): Promise<void> {
-  for (const [key, value] of Object.entries(settings)) {
-    await setSetting(key, value, changedBy);
-  }
+  await withLock("settings.store", async () => {
+    for (const [key, value] of Object.entries(settings)) {
+      await setSetting(key, value, changedBy);
+    }
+  });
 }
 
 export async function resetAllSettings(changedBy: string): Promise<void> {
+  await withLock("settings.store", async () => {
   const config = await readConfig();
   const nowISO = new Date().toISOString();
 
@@ -184,6 +192,7 @@ export async function resetAllSettings(changedBy: string): Promise<void> {
 
   await writeConfig({ version: SETTINGS_VERSION, settings: {} });
   logger.info({ event: "settings.reset-all", changedBy });
+  });
 }
 
 export async function getAllSettingsWithMeta(): Promise<SettingWithMeta[]> {

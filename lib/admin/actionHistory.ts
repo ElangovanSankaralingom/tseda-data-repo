@@ -1,4 +1,5 @@
 import "server-only";
+import { atomicWriteTextFileSync } from "@/lib/data/fileAtomic";
 
 import fs from "node:fs";
 import path from "node:path";
@@ -42,7 +43,7 @@ function ensureFile(): string {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify({ records: [] }, null, 2));
+    atomicWriteTextFileSync(filePath, JSON.stringify({ records: [] }, null, 2));
   }
   return filePath;
 }
@@ -55,7 +56,7 @@ function readHistory(): HistoryFile {
 
 function writeHistory(data: HistoryFile): void {
   const filePath = ensureFile();
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  atomicWriteTextFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
 export function appendActionHistory(

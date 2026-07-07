@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { withLock } from "@/lib/data/locks";
 import { getUserStoreDir } from "@/lib/userStore";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 
@@ -74,6 +75,9 @@ export async function setFeedbackClaim(
   if (!/^Academic Year \d{4}-\d{4}$/.test(year)) {
     throw new Error("academicYear must look like \"Academic Year 2025-2026\".");
   }
+  // Locked per-user RMW (2026-07 concurrency audit): ODD/EVEN saves must
+  // never lose each other.
+  return withLock(`feedback-claims:${normalizeEmail(email)}`, async () => {
   const store = await readFeedbackClaims(email);
   const odd = sanitizePercent(claim.odd);
   const even = sanitizePercent(claim.even);
@@ -94,6 +98,7 @@ export async function setFeedbackClaim(
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await atomicWriteTextFile(filePath, JSON.stringify(store, null, 2));
   return store;
+  });
 }
 
 /** Average of the entered semesters (single-semester claims count as-is). */

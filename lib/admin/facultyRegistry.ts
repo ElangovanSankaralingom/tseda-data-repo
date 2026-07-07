@@ -1,4 +1,5 @@
 import "server-only";
+import { atomicWriteTextFileSync } from "@/lib/data/fileAtomic";
 
 import fs from "node:fs";
 import path from "node:path";
@@ -145,8 +146,7 @@ function sanitize(raw: unknown): FacultyRegistryConfig {
 
 function write(config: FacultyRegistryConfig): FacultyRegistryConfig {
   const filePath = configPath();
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  atomicWriteTextFileSync(filePath, `${JSON.stringify(config, null, 2)}\n`);
   return config;
 }
 

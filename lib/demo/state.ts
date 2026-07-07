@@ -1,4 +1,5 @@
 import "server-only";
+import { withLock } from "@/lib/data/locks";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
@@ -109,6 +110,9 @@ export async function enterDemoMode(email: string): Promise<void> {
   if (!(await isDemoParticipant(normalized))) {
     throw new Error("Not permitted to use demo mode");
   }
+  // Locked RMW (2026-07 concurrency audit): a lost activation would leave a
+  // user believing they are in demo while their requests hit REAL data.
+  await withLock("demo.state", async () => {
   const state = await readState();
   if (state.active[normalized]) return;
   const next: DemoState = {
@@ -117,22 +121,25 @@ export async function enterDemoMode(email: string): Promise<void> {
   };
   await writeState(next);
   logger.info({ event: "demo.enter", email: normalized });
+  });
 }
 
 /** Exit demo mode: deactivate, wipe the user's demo data, and if nobody is
  *  left in the mode, wipe the entire demo universe (feed, trash, caches). */
 export async function exitDemoMode(email: string): Promise<void> {
   const normalized = normalizeEmail(email);
-  const state = await readState();
-  if (!state.active[normalized]) return;
-  const active = { ...state.active };
-  delete active[normalized];
-  await writeState({ ...state, active });
-  await wipeOwnDemoData(normalized);
-  if (Object.keys(active).length === 0) {
-    await wipeDemoUniverse();
-  }
-  logger.info({ event: "demo.exit", email: normalized });
+  await withLock("demo.state", async () => {
+    const state = await readState();
+    if (!state.active[normalized]) return;
+    const active = { ...state.active };
+    delete active[normalized];
+    await writeState({ ...state, active });
+    await wipeOwnDemoData(normalized);
+    if (Object.keys(active).length === 0) {
+      await wipeDemoUniverse();
+    }
+    logger.info({ event: "demo.exit", email: normalized });
+  });
 }
 
 /** Replace the assignment roster (master admin action). Faculty removed from
@@ -146,14 +153,16 @@ export async function setDemoRoster(emails: string[], actorEmail: string): Promi
         .filter((e) => e && e !== normalizeEmail(actorEmail) && isFacultyAllowed(e)),
     ),
   ).sort();
-  const state = await readState();
-  const removedActive = Object.keys(state.active).filter(
-    (email) => !roster.includes(email) && !isMasterAdmin(email),
-  );
-  await writeState({ ...state, roster });
-  for (const email of removedActive) {
-    await exitDemoMode(email);
-  }
-  logger.info({ event: "demo.roster.set", actor: normalizeEmail(actorEmail), count: roster.length });
-  return getDemoState();
+  return withLock("demo.state", async () => {
+    const state = await readState();
+    const removedActive = Object.keys(state.active).filter(
+      (email) => !roster.includes(email) && !isMasterAdmin(email),
+    );
+    await writeState({ ...state, roster });
+    for (const email of removedActive) {
+      await exitDemoMode(email); // re-entrant: we already hold demo.state
+    }
+    logger.info({ event: "demo.roster.set", actor: normalizeEmail(actorEmail), count: roster.length });
+    return getDemoState();
+  });
 }

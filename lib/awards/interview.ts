@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteTextFile } from "@/lib/data/fileAtomic";
+import { withLock } from "@/lib/data/locks";
 import { getUserStoreDir } from "@/lib/userStore";
 import { normalizeEmail } from "@/lib/facultyDirectory";
 import { getAwardMetric, maxPointsOf } from "@/data/awardMetrics";
@@ -85,6 +86,9 @@ export async function setInterviewAward(
     throw new Error("academicYear must look like \"Academic Year 2025-2026\".");
   }
 
+  // Locked per-user RMW (2026-07 concurrency audit): concurrent committee
+  // edits on different metrics must never lose each other.
+  return withLock(`interview-points:${normalizeEmail(email)}`, async () => {
   const store = await readInterviewPoints(email);
   const yearAwards = { ...(store.years[year] ?? {}) };
 
@@ -115,4 +119,5 @@ export async function setInterviewAward(
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await atomicWriteTextFile(filePath, JSON.stringify(store, null, 2));
   return store.years[year] ?? {};
+  });
 }
