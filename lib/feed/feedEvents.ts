@@ -3,8 +3,8 @@ import "server-only";
 import { getCategorySchema } from "@/data/categoryRegistry";
 import type { CategoryKey } from "@/lib/entries/types";
 import { appendFeedEvent, type FeedEventType, type NewFeedEvent } from "@/lib/feed/feedStore";
-import { getStreakTier, isEntryActivated, isEntryWon, type StreakProgressEntryLike } from "@/lib/streakProgress";
-import { isEntryCommitted, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
+import { getStreakTier, hasPdfGenerated, isEntryActivated, isEntryStreakEligible, isEntryWon, isRecordFlowEntry, isStreakPermanentlyRemoved, type StreakProgressEntryLike } from "@/lib/streakProgress";
+import { isEntryCommitted, isEntryFinalized, normalizeEntryStatus, type EntryStateLike } from "@/lib/entries/workflow";
 import { fireAndForget } from "@/lib/utils/fireAndForget";
 import { addNotification } from "@/lib/confirmations/notificationStore";
 import { resolveFacultyName } from "@/lib/admin/facultyRegistry";
@@ -115,7 +115,23 @@ export function collectEntryMilestoneEvents(
     const committedAt = toISO(entry.committedAtISO) ?? toISO(entry.generatedAt);
 
     const activated = isEntryActivated(candidate);
-    if (activated) {
+    const fields = getCategorySchema(category).fields;
+    const won = isEntryWon(candidate, fields);
+
+    // "Started" is CUMULATIVE history: isEntryActivated flips false once an
+    // entry finalizes (activated means mid-journey), but ANY finalized
+    // permission entry with its streak intact — won OR demoted by a stale
+    // PDF — passed through activation on its way. Its started card stays
+    // earned, or every reconcile would strip history off the wall
+    // (2026-07 emission logic pass). Records never activate.
+    const passedThroughActivation =
+      !isRecordFlowEntry(candidate) &&
+      isEntryStreakEligible(candidate) &&
+      !isStreakPermanentlyRemoved(candidate) &&
+      hasPdfGenerated(candidate) &&
+      isEntryFinalized(entry as EntryStateLike);
+    const startedEarned = activated || passedThroughActivation;
+    if (startedEarned) {
       events.push({
         id: `streak_started:${entryId}`,
         type: "streak_started",
@@ -126,8 +142,6 @@ export function collectEntryMilestoneEvents(
       });
     }
 
-    const fields = getCategorySchema(category).fields;
-    const won = isEntryWon(candidate, fields);
     if (won) {
       const streak = entry.streak as { completedAtISO?: unknown } | null | undefined;
       const wonAt = toISO(streak?.completedAtISO) ?? committedAt;
@@ -145,7 +159,7 @@ export function collectEntryMilestoneEvents(
     // Committed but never on the streak track (past-dated permission
     // entries) → the plain "logged" pulse card. Archived entries stay off
     // the wall — an expired incomplete window is nothing to broadcast.
-    if (!activated && !won) {
+    if (!startedEarned && !won) {
       const state = entry as EntryStateLike;
       if (isEntryCommitted(state) && normalizeEntryStatus(state) !== "ARCHIVED") {
         events.push({
@@ -177,8 +191,10 @@ export async function recordEntryMilestonesAwaited(
 ): Promise<void> {
   const events = collectEntryMilestoneEvents(actorEmail, category, entry);
   for (const event of events) {
-    await appendFeedEvent(event);
-    if (event.type === "streak_won") {
+    const added = await appendFeedEvent(event);
+    // Win-count milestone fires only on a FRESH win — an idempotent
+    // re-emit (backfill, reconcile) must not re-check thresholds.
+    if (added && event.type === "streak_won") {
       fireAndForget(emitWinMilestone(actorEmail), "feed.win_milestone");
     }
   }
@@ -216,10 +232,15 @@ export function recordEntryMilestones(
 ): void {
   try {
     for (const event of collectEntryMilestoneEvents(actorEmail, category, entry)) {
-      fireAndForget(appendFeedEvent(event), `feed.${event.type}`);
-      if (event.type === "streak_won") {
-        fireAndForget(emitWinMilestone(actorEmail), "feed.win_milestone");
-      }
+      fireAndForget(
+        appendFeedEvent(event).then((added) => {
+          // Win-count milestone only on a FRESH win (see awaited variant).
+          if (added && event.type === "streak_won") {
+            fireAndForget(emitWinMilestone(actorEmail), "feed.win_milestone");
+          }
+        }),
+        `feed.${event.type}`,
+      );
     }
   } catch {
     // Best-effort only.

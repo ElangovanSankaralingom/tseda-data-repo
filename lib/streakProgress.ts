@@ -186,7 +186,7 @@ export function isStreakPermanentlyRemoved(entry: StreakProgressEntryLike): bool
  * Accepts both the canonical `pdfGenerated` flag and the legacy `pdfGeneratedAt` timestamp
  * for backward compatibility with entries created before `pdfGenerated` was introduced.
  */
-function hasPdfGenerated(entry: StreakProgressEntryLike): boolean {
+export function hasPdfGenerated(entry: StreakProgressEntryLike): boolean {
   if (entry.pdfGenerated === true) return true;
   // Fallback: if pdfGeneratedAt is a non-empty string, treat as generated
   if (typeof entry.pdfGeneratedAt === "string" && entry.pdfGeneratedAt.trim()) return true;
@@ -225,7 +225,7 @@ export function isEntryActivated(entry: StreakProgressEntryLike): boolean {
 
 /** Record-flow entries (post-facto achievements) — stamped at submit by the
  *  engine. No PDF and no timer exist for them; the streak rules branch here. */
-function isRecordFlowEntry(entry: StreakProgressEntryLike): boolean {
+export function isRecordFlowEntry(entry: StreakProgressEntryLike): boolean {
   return (entry as Record<string, unknown>).entryFlow === "record";
 }
 

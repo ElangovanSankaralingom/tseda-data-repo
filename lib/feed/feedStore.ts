@@ -150,16 +150,21 @@ async function writeConfig(config: FeedConfig): Promise<void> {
   await atomicWriteTextFile(filePath, `${JSON.stringify(config, null, 2)}\n`);
 }
 
-/** Append a milestone event. Idempotent: a duplicate id is silently ignored. */
-export async function appendFeedEvent(event: NewFeedEvent): Promise<void> {
+/**
+ * Append a milestone event. Idempotent: a duplicate or suppressed id is
+ * silently ignored. Returns TRUE only when the event was newly added — the
+ * emitter uses this to fire follow-ups (win-count milestones) exactly once
+ * instead of on every idempotent re-emit (2026-07 emission logic pass).
+ */
+export async function appendFeedEvent(event: NewFeedEvent): Promise<boolean> {
   const id = event.id.trim();
-  if (!id) return;
+  if (!id) return false;
   try {
-    await withLock(FEED_LOCK_KEY, async () => {
+    return await withLock(FEED_LOCK_KEY, async () => {
       const config = await readConfig();
-      if (config.events.some((e) => e.id === id)) return;
+      if (config.events.some((e) => e.id === id)) return false;
       // Master-moderated ids stay off the wall — even if re-emitted.
-      if (config.suppressedIds.includes(id)) return;
+      if (config.suppressedIds.includes(id)) return false;
       const next: FeedEvent = {
         id,
         type: event.type,
@@ -171,12 +176,14 @@ export async function appendFeedEvent(event: NewFeedEvent): Promise<void> {
         createdAt: event.createdAt ?? new Date().toISOString(),
         reactions: emptyReactions(),
       };
-      if (!next.actorEmail) return;
+      if (!next.actorEmail) return false;
       const events = [next, ...config.events].slice(0, MAX_FEED_EVENTS);
       await writeConfig({ version: CONFIG_VERSION, events, suppressedIds: config.suppressedIds });
+      return true;
     });
   } catch {
     // Feed is best-effort; never let it break the originating action.
+    return false;
   }
 }
 
