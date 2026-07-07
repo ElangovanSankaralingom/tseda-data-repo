@@ -172,7 +172,7 @@ async function listBackupFilesInternal(): Promise<BackupFileInfo[]> {
     if (!entry.isFile()) continue;
     if (!entry.name.toLowerCase().endsWith(".zip")) continue;
 
-    const filePath = path.join(backupsRoot, entry.name);
+    const filePath = path.join(/*turbopackIgnore: true*/ backupsRoot, entry.name);
     const stats = await fs.stat(filePath);
     files.push({
       filename: entry.name,
@@ -331,7 +331,7 @@ export type BackupRestoreResult = {
 export async function restoreBackup(filename: string): Promise<Result<BackupRestoreResult>> {
   try {
     const safeName = sanitizeBackupFilename(filename);
-    const filePath = path.join(getBackupRoot(), safeName);
+    const filePath = path.join(/*turbopackIgnore: true*/ getBackupRoot(), safeName);
     const buffer = await fs.readFile(filePath);
     const entries = parseAndVerifyStoredZip(buffer); // throws on corruption/CRC
 
@@ -387,12 +387,12 @@ export async function createBackupZip(): Promise<Result<BackupCreateResult>> {
 
     const slug = timestampSlug();
     let filename = `backup-${slug}.zip`;
-    let filePath = path.join(backupsRoot, filename);
+    let filePath = path.join(/*turbopackIgnore: true*/ backupsRoot, filename);
 
     try {
       await fs.access(filePath);
       filename = `backup-${slug}-${Date.now()}.zip`;
-      filePath = path.join(backupsRoot, filename);
+      filePath = path.join(/*turbopackIgnore: true*/ backupsRoot, filename);
     } catch {
       // File does not exist, use default name.
     }
@@ -456,7 +456,7 @@ export async function readBackupFile(
 ): Promise<Result<BackupStreamResult>> {
   try {
     const safeName = sanitizeBackupFilename(filename);
-    const filePath = path.join(getBackupRoot(), safeName);
+    const filePath = path.join(/*turbopackIgnore: true*/ getBackupRoot(), safeName);
     const stats = await fs.stat(filePath);
     if (!stats.isFile()) {
       throw new AppError({

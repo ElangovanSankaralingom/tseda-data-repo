@@ -23,7 +23,7 @@ function isAnyObj(value: unknown): value is AnyObj {
 function readProfile(email: string): AnyObj {
   ensureDirs();
   const key = safeEmailKey(email);
-  const file = path.join(PROFILES_DIR, `${key}.json`);
+  const file = path.join(/*turbopackIgnore: true*/ PROFILES_DIR, `${key}.json`);
   if (!fs.existsSync(file)) {
     const seed = {
       email,
@@ -62,7 +62,7 @@ function readProfile(email: string): AnyObj {
 function writeProfile(email: string, profile: AnyObj) {
   ensureDirs();
   const key = safeEmailKey(email);
-  const file = path.join(PROFILES_DIR, `${key}.json`);
+  const file = path.join(/*turbopackIgnore: true*/ PROFILES_DIR, `${key}.json`);
   profile.updatedAt = new Date().toISOString();
   fs.writeFileSync(file, JSON.stringify(profile, null, 2), "utf-8");
 }

@@ -175,7 +175,7 @@ async function DELETEHandler(req: Request) {
 
   if (certPath) {
     const base = path.join(process.cwd(), "data", "uploads", email.toLowerCase());
-    const resolved = path.resolve(certPath);
+    const resolved = path.resolve(/*turbopackIgnore: true*/ certPath);
     if (resolved.startsWith(path.resolve(base))) {
       await fs.rm(resolved, { force: true }).catch(() => {});
     }

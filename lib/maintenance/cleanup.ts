@@ -104,7 +104,7 @@ async function cleanExportTmp(): Promise<{ count: number; bytes: number }> {
 
 export async function runCleanup(): Promise<Result<CleanupResult>> {
   return safeAction(async () => {
-    const dataRoot = path.join(process.cwd(), getDataRoot());
+    const dataRoot = path.join(/*turbopackIgnore: true*/ process.cwd(), getDataRoot());
 
     const tmpResult = await cleanTmpFiles(dataRoot);
     const exportResult = await cleanExportTmp();

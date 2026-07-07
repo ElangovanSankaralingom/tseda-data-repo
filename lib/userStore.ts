@@ -22,7 +22,7 @@ export function getUniverseDataRoot() {
 }
 
 export function getUsersRootDir(dataRoot?: string) {
-  return path.join(process.cwd(), dataRoot ?? getUniverseDataRoot(), "users");
+  return path.join(/*turbopackIgnore: true*/ process.cwd(), dataRoot ?? getUniverseDataRoot(), "users");
 }
 
 export function getUserStoreDir(email: string, dataRoot?: string) {

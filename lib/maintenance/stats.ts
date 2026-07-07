@@ -63,7 +63,7 @@ async function fileSize(filePath: string): Promise<number> {
 export async function computeSystemStats(): Promise<Result<SystemStats>> {
   return safeAction(async () => {
     const startedAt = Date.now();
-    const dataRoot = path.join(process.cwd(), getDataRoot());
+    const dataRoot = path.join(/*turbopackIgnore: true*/ process.cwd(), getDataRoot());
 
     const usersResult = await listUsers();
     const userEmails = usersResult.ok ? usersResult.data : [];

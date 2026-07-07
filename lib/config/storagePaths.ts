@@ -20,7 +20,7 @@ import { universeRoot } from "@/lib/demo/universe";
  *  (2026-07 audit follow-up). */
 export function privateDataRoot(): string {
   const custom = process.env.PRIVATE_DATA_ROOT?.trim();
-  return custom ? path.resolve(process.cwd(), custom) : path.join(process.cwd(), ".data");
+  return custom ? path.resolve(/*turbopackIgnore: true*/ process.cwd(), custom) : path.join(/*turbopackIgnore: true*/ process.cwd(), ".data");
 }
 
 /** Private root of the CURRENT UNIVERSE — `<root>/demo` inside a demo-mode

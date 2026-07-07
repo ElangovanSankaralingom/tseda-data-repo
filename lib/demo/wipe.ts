@@ -16,7 +16,7 @@ import { logger } from "@/lib/logger";
  */
 
 function demoDataRoot(): string {
-  return path.join(process.cwd(), getDataRoot(), DEMO_SEGMENT);
+  return path.join(/*turbopackIgnore: true*/ process.cwd(), getDataRoot(), DEMO_SEGMENT);
 }
 
 function demoPrivateRoot(): string {

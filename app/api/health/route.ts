@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const dataRoot = path.join(process.cwd(), getDataRoot());
+  const dataRoot = path.join(/*turbopackIgnore: true*/ process.cwd(), getDataRoot());
   const usersDir = path.join(dataRoot, "users");
   const uploadsDir = entryUploadsRoot();
 
