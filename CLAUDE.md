@@ -359,7 +359,7 @@ Everything else (routes, workflow, timer, buttons, nightly job, dashboard) auto-
 
 ## Current State
 
-- **599 tests, 0 failures** (2026-07: + record-flow suite, demo isolation, entryScope guards, award scoring/report/appraisal suites, wiring-completeness guards, feed-backfill suite, path-resolution guards, award deriver-coverage guard)
+- **606 tests, 0 failures** (2026-07: + record-flow suite, demo isolation, entryScope guards, award scoring/report/appraisal suites, wiring-completeness guards, feed-backfill suite, path-resolution guards, award deriver-coverage guard)
 - **Playbooks:** SQLite migration → `docs/SQLITE-MIGRATION.md` (planned, not started); deployment topology + scaling walls → `docs/DEPLOYMENT.md`. Read BEFORE touching storage or running multiple instances.
 - **Faculty Awards system (2026-07):** rulebook → `data/awardMetrics.ts` (T'SEDA 7-section scheme as data — NEVER hardcode point values elsewhere); admin overrides → `lib/awards/config.ts` (+ `/api/admin/awards/points`); scoring → `lib/awards/scoring.ts` (committed entries only, year-bucketed via `academicYear`, explicit per-metric derivers); dashboard panel `AwardProgress`. Visibility: self + admin, no leaderboard. Build order for everything else → `docs/AWARDS-ROADMAP.md`.
 - **Build: clean** (Turbopack warnings are cosmetic)
