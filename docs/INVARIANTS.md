@@ -113,6 +113,24 @@ authenticity (`tamilAuthenticity.test.ts`: no English in a Tamil slot).
 **I-U3. One number, one home** (dashboard IA): hero = identity+action,
 analytics strip owns every number. Loading states never fabricate stats.
 
+## 5.5 · Untrusted-input surfaces (2026-07 security pass)
+
+**I-X1. CSV exports neutralize formula injection (CWE-1236).** Every cell
+begins-with `= + - @ \t \r` is apostrophe-prefixed in `csvEscape`
+(`lib/export/exportGenerators.ts`) so a malicious entry title can't execute
+in Excel. XLSX is inherently safe (user text = `inlineStr` cells, never
+`<f>`). *Verify:* `tests/security/exportInjection.test.ts`.
+
+**I-X2. File routes assert a resolve+`path.sep` boundary, never a `..` strip
+(CWE-22).** `/api/file`, `/api/me/file/download`, `/api/me/avatar`,
+`/api/me/certificate` resolve the final path and require it to equal the
+user's root or start with `root + path.sep` (a bare `startsWith(root)` lets
+a sibling-prefix dir escape). Blocklist `.replace(/\.\./)` is banned as a
+sole defense. `/api/entry-file` adds an ownership check via
+`ownerOfStoredPath`. Backup restore validates every extracted path inside
+the staging dir (`backupService.ts:352`). *Verify:*
+`tests/security/pathBoundary.test.ts`.
+
 ## 6 · Deliberate decisions (do not "fix" without a ruling)
 
 - Record-flow corrections are re-requestable forever (records must stay

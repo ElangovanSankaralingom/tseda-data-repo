@@ -24,8 +24,16 @@ jobs:
           GOOGLE_CLIENT_SECRET: ci-placeholder
           NEXTAUTH_SECRET: ci-placeholder-secret-value-for-build
           NEXTAUTH_URL: http://localhost:3000
-      - name: Tests with coverage
+      - name: Tests with coverage (JSON backend)
         run: npm run test:ci
+        env:
+          NODE_ENV: test
+      - name: Tests (SQLite backend parity)
+        # 2026-07: the full suite must pass on BOTH storage backends. This
+        # is the mechanical guard behind the flag-gated migration — a
+        # backend regression fails CI, not a smoke test after cutover. The
+        # lifecycle fuzzer runs inside both suites.
+        run: npm run test:sqlite
         env:
           NODE_ENV: test
       - name: Security audit

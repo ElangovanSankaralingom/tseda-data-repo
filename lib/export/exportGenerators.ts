@@ -10,8 +10,21 @@ import { normalizeError } from "@/lib/errors";
 // CSV
 // ---------------------------------------------------------------------------
 
+/**
+ * Neutralize CSV formula injection (CWE-1236, 2026-07 security pass).
+ * A cell whose text begins with = + - @ (or a tab/CR Excel reads as a
+ * leading formula char) is EVALUATED when the sheet opens — so a faculty
+ * entry titled `=HYPERLINK("http://evil","x")` attacks whoever opens the
+ * departmental export. Quote-escaping does NOT stop this; the fix prefixes
+ * a single apostrophe, forcing text interpretation. (The XLSX path is
+ * already safe: user strings are inlineStr cells, never <f> formulas.)
+ */
+function neutralizeFormula(text: string): string {
+  return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+}
+
 function csvEscape(value: string | number | boolean) {
-  const text = String(value ?? "");
+  const text = neutralizeFormula(String(value ?? ""));
   if (/[",\n]/.test(text)) {
     return `"${text.replace(/"/g, "\"\"")}"`;
   }

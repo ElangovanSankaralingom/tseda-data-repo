@@ -36,13 +36,21 @@ async function GETHandler(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const relativePath = String(searchParams.get("path") || "").replace(/\.\./g, "");
+  const relativePath = String(searchParams.get("path") || "");
 
   if (!relativePath) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
-  const fullPath = path.join(process.cwd(), "storage", safeName(email), relativePath);
+  // Robust traversal defense (2026-07 security pass): the old `.replace(..)`
+  // strip was a blocklist — one bad encoding away from escaping. Instead
+  // resolve the final path and assert it stays STRICTLY inside this user's
+  // own storage dir. safeName() already constrains the email segment.
+  const base = path.resolve(path.join(process.cwd(), "storage", safeName(email)));
+  const fullPath = path.resolve(path.join(base, relativePath));
+  if (fullPath !== base && !fullPath.startsWith(base + path.sep)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const data = await fs.readFile(fullPath);

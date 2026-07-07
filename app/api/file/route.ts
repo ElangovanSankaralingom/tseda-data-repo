@@ -35,7 +35,10 @@ async function GETHandler(req: Request) {
   // Allow only within this user's upload dir (S0: private .data root)
   const base = path.join(process.cwd(), ".data", "uploads", email.toLowerCase());
   const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(base))) {
+  // path.sep boundary (2026-07): startsWith(base) alone lets a sibling dir
+  // whose name has `base` as a prefix escape (…/alice vs …/alice2).
+  const resolvedBase = path.resolve(base);
+  if (resolved !== resolvedBase && !resolved.startsWith(resolvedBase + path.sep)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
