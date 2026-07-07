@@ -71,7 +71,7 @@ export async function computeSystemStats(): Promise<Result<SystemStats>> {
     let walTotalFiles = 0;
     let walTotalBytes = 0;
     for (const email of userEmails) {
-      const walPath = path.join(getUserStoreDir(email), "events.log");
+      const walPath = path.join(/*turbopackIgnore: true*/ getUserStoreDir(email), "events.log");
       const size = await fileSize(walPath);
       if (size > 0) {
         walTotalFiles += 1;
@@ -79,7 +79,7 @@ export async function computeSystemStats(): Promise<Result<SystemStats>> {
       }
     }
 
-    const dataBytes = await dirSize(path.join(dataRoot, "users"));
+    const dataBytes = await dirSize(path.join(/*turbopackIgnore: true*/ dataRoot, "users"));
     const backupDir = path.join(process.cwd(), ".data_backups");
     const backupDirBytes = await dirSize(backupDir);
     const uploadBytes = await dirSize(path.join(process.cwd(), ".data", "entry-uploads"));

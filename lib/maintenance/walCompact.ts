@@ -21,7 +21,7 @@ export type WalCompactResult = {
 };
 
 function getWalFilePath(userEmail: string) {
-  return path.join(getUserStoreDir(userEmail), WAL_FILE_NAME);
+  return path.join(/*turbopackIgnore: true*/ getUserStoreDir(userEmail), WAL_FILE_NAME);
 }
 
 export async function compactUserWal(
@@ -32,7 +32,7 @@ export async function compactUserWal(
     const walPath = getWalFilePath(userEmail);
     let raw: string;
     try {
-      raw = await fs.readFile(walPath, "utf8");
+      raw = await fs.readFile(/*turbopackIgnore: true*/ walPath, "utf8");
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
       if (code === "ENOENT") return { linesBefore: 0, linesAfter: 0, bytesFreed: 0 };

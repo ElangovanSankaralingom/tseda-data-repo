@@ -26,9 +26,9 @@ export function getUsersRootDir(dataRoot?: string) {
 }
 
 export function getUserStoreDir(email: string, dataRoot?: string) {
-  return path.join(getUsersRootDir(dataRoot), safeEmailDir(email));
+  return path.join(/*turbopackIgnore: true*/ getUsersRootDir(dataRoot), safeEmailDir(email));
 }
 
 export function getUserCategoryStoreFile(email: string, fileName: string, dataRoot?: string) {
-  return path.join(getUserStoreDir(email, dataRoot), fileName);
+  return path.join(/*turbopackIgnore: true*/ getUserStoreDir(email, dataRoot), fileName);
 }

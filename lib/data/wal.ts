@@ -74,7 +74,7 @@ type BuildEventParams = {
 };
 
 function getWalFilePath(userEmail: string) {
-  return path.join(getUserStoreDir(userEmail), WAL_FILE_NAME);
+  return path.join(/*turbopackIgnore: true*/ getUserStoreDir(userEmail), WAL_FILE_NAME);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -311,7 +311,7 @@ export async function readEvents(
     let raw = "";
 
     try {
-      raw = await fs.readFile(walFilePath, "utf8");
+      raw = await fs.readFile(/*turbopackIgnore: true*/ walFilePath, "utf8");
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
       if (code === "ENOENT") return [];

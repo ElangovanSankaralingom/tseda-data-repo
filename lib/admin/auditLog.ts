@@ -206,10 +206,10 @@ async function collectAllEvents(): Promise<ParsedAuditEvent[]> {
   for (const userDir of userDirs) {
     if (!userDir.isDirectory()) continue;
 
-    const walPath = path.join(usersRoot, userDir.name, "events.log");
+    const walPath = path.join(/*turbopackIgnore: true*/ usersRoot, userDir.name, "events.log");
     let raw = "";
     try {
-      raw = await fs.readFile(walPath, "utf8");
+      raw = await fs.readFile(/*turbopackIgnore: true*/ walPath, "utf8");
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
       if (code === "ENOENT") continue;

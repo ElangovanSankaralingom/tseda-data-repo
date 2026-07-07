@@ -28,7 +28,7 @@ function demoPrivateRoot(): string {
  *  under one of the two storage roots. */
 export function assertDemoPath(target: string): void {
   const resolved = path.resolve(target);
-  const allowedRoots = [path.resolve(demoDataRoot()), path.resolve(demoPrivateRoot())];
+  const allowedRoots = [path.resolve(/*turbopackIgnore: true*/ demoDataRoot()), path.resolve(/*turbopackIgnore: true*/ demoPrivateRoot())];
   const ok = allowedRoots.some(
     (root) => resolved === root || resolved.startsWith(root + path.sep),
   );
@@ -52,8 +52,8 @@ async function removeDemoDir(target: string): Promise<void> {
  *  wipe when the last participant leaves, and by the nightly sweep. */
 export async function wipeOwnDemoData(email: string): Promise<void> {
   const dir = safeEmailDir(email);
-  await removeDemoDir(path.join(demoDataRoot(), "users", dir));
-  await removeDemoDir(path.join(demoPrivateRoot(), "entry-uploads", dir));
+  await removeDemoDir(path.join(/*turbopackIgnore: true*/ demoDataRoot(), "users", dir));
+  await removeDemoDir(path.join(/*turbopackIgnore: true*/ demoPrivateRoot(), "entry-uploads", dir));
   // SQLite backend (2026-07): the demo universe's entries live in the demo
   // db, not the users tree — delete this user's rows there too. Path is
   // inside the demo private root by construction; no-op when absent.
@@ -73,7 +73,7 @@ export async function wipeDemoUniverse(): Promise<void> {
 /** Owner dirs currently present in the demo users tree (nightly sweep). */
 export async function listDemoUserDirs(): Promise<string[]> {
   try {
-    const entries = await fs.readdir(path.join(demoDataRoot(), "users"), {
+    const entries = await fs.readdir(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ demoDataRoot(), "users"), {
       withFileTypes: true,
     });
     return entries.filter((e) => e.isDirectory()).map((e) => e.name);

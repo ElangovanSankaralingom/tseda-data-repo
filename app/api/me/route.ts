@@ -24,7 +24,7 @@ function readProfile(email: string): AnyObj {
   ensureDirs();
   const key = safeEmailKey(email);
   const file = path.join(/*turbopackIgnore: true*/ PROFILES_DIR, `${key}.json`);
-  if (!fs.existsSync(file)) {
+  if (!fs.existsSync(/*turbopackIgnore: true*/ file)) {
     const seed = {
       email,
       facultyId: normalizeEmail(email),
@@ -56,7 +56,7 @@ function readProfile(email: string): AnyObj {
     fs.writeFileSync(file, JSON.stringify(seed, null, 2), "utf-8");
     return seed;
   }
-  return JSON.parse(fs.readFileSync(file, "utf-8"));
+  return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ file, "utf-8"));
 }
 
 function writeProfile(email: string, profile: AnyObj) {

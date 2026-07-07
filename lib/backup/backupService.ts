@@ -173,7 +173,7 @@ async function listBackupFilesInternal(): Promise<BackupFileInfo[]> {
     if (!entry.name.toLowerCase().endsWith(".zip")) continue;
 
     const filePath = path.join(/*turbopackIgnore: true*/ backupsRoot, entry.name);
-    const stats = await fs.stat(filePath);
+    const stats = await fs.stat(/*turbopackIgnore: true*/ filePath);
     files.push({
       filename: entry.name,
       filePath,
@@ -305,7 +305,7 @@ function parseAndVerifyStoredZip(buffer: Buffer): BackupEntry[] {
 
 async function verifyBackupZip(filePath: string): Promise<boolean> {
   try {
-    const buffer = await fs.readFile(filePath);
+    const buffer = await fs.readFile(/*turbopackIgnore: true*/ filePath);
     parseAndVerifyStoredZip(buffer);
     return true;
   } catch {
@@ -332,7 +332,7 @@ export async function restoreBackup(filename: string): Promise<Result<BackupRest
   try {
     const safeName = sanitizeBackupFilename(filename);
     const filePath = path.join(/*turbopackIgnore: true*/ getBackupRoot(), safeName);
-    const buffer = await fs.readFile(filePath);
+    const buffer = await fs.readFile(/*turbopackIgnore: true*/ filePath);
     const entries = parseAndVerifyStoredZip(buffer); // throws on corruption/CRC
 
     const dataRoot = path.resolve(getDataRoot());
@@ -457,7 +457,7 @@ export async function readBackupFile(
   try {
     const safeName = sanitizeBackupFilename(filename);
     const filePath = path.join(/*turbopackIgnore: true*/ getBackupRoot(), safeName);
-    const stats = await fs.stat(filePath);
+    const stats = await fs.stat(/*turbopackIgnore: true*/ filePath);
     if (!stats.isFile()) {
       throw new AppError({
         code: "NOT_FOUND",
@@ -465,7 +465,7 @@ export async function readBackupFile(
       });
     }
 
-    const buffer = await fs.readFile(filePath);
+    const buffer = await fs.readFile(/*turbopackIgnore: true*/ filePath);
     return ok({
       filename: safeName,
       sizeBytes: buffer.length,

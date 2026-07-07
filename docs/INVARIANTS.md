@@ -49,7 +49,11 @@ tripwire).
 `getUserStoreDir`/`getUserCategoryStoreFile`/`privateDataRoot` already
 join `process.cwd()`. Wrapping them in another `join(cwd, …)` doubles the
 path (the Pulse-backfill bug). New dynamic `path.join(process.cwd(),
-getDataRoot(), …)` sites carry `/*turbopackIgnore: true*/`.
+getDataRoot(), …)` sites carry `/*turbopackIgnore: true*/` — and so does
+EVERY call in the dynamic chain: the `fs.readFile/readdir/stat/existsSync`
+that consumes the joined path traces separately (proven by Elan's 2026-07-07
+build log — an annotated join on line N still left the fs call on line N+1
+warning). Annotate the join AND the fs consumer.
 *Verify:* `tests/wiring/pathResolution.test.ts` (static scan + contracts).
 
 ## 2 · Workflow engine
